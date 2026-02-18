@@ -9,6 +9,8 @@
 import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { DEFAULT_PLAN_CONFIGS, type UserPlan } from '../_shared/types/token-types.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Token status response interface
@@ -42,6 +44,9 @@ interface TokenStatusResponse {
  * 4. Returns formatted status with plan information
  */
 async function handleTokenStatus(req: Request, services: ServiceContainer): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   const { authService, tokenService } = services
   // 1. Get user context SECURELY from AuthService
   const userContext = await authService.getUserContext(req)
@@ -95,22 +100,24 @@ async function handleTokenStatus(req: Request, services: ServiceContainer): Prom
 }
 
 /**
- * Gets human-readable plan description
- * 
+ * Gets human-readable plan description dynamically from config
+ *
+ * Uses DEFAULT_PLAN_CONFIGS as the single source of truth for plan details.
+ * This ensures descriptions stay in sync with actual token limits.
+ *
  * @param userPlan - User's subscription plan
- * @returns Descriptive text for the plan
+ * @returns Descriptive text for the plan with accurate token limits
  */
 function getPlanDescription(userPlan: string): string {
-  switch (userPlan) {
-    case 'free':
-      return 'Anonymous users with 20 tokens daily'
-    case 'standard':
-      return 'Authenticated users with 100 tokens daily + purchase option'
-    case 'premium':
-      return 'Unlimited access for admin and subscription users'
-    default:
-      return 'Unknown plan'
+  // Validate plan exists in config
+  if (!(userPlan in DEFAULT_PLAN_CONFIGS)) {
+    return 'Unknown plan'
   }
+
+  const planConfig = DEFAULT_PLAN_CONFIGS[userPlan as UserPlan]
+
+  // Return the description directly from config (already includes token counts)
+  return planConfig.description
 }
 
 /**
@@ -133,7 +140,7 @@ async function parseAndValidateRequest(req: Request): Promise<void> {
 
 // Create the Edge Function using the factory pattern
 createFunction(handleTokenStatus, {
-  requireAuth: true,  // SECURITY: Force authentication for token status
+  requireAuth: false,  // Allow both authenticated and anonymous users (handled by AuthService)
   enableAnalytics: true,
   allowedMethods: ['GET']
 })

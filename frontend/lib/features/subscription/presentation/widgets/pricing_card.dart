@@ -15,7 +15,7 @@ class PricingCard extends StatelessWidget {
   final String price;
   final String? originalPrice;
   final String priceSubtext;
-  final String tokenInfo;
+  final String? tokenInfo;
   final String? promotionalText;
   final String? badge;
   final Color? badgeColor;
@@ -25,6 +25,7 @@ class PricingCard extends StatelessWidget {
   final bool isHighlighted;
   final bool isPremium;
   final bool isMobile;
+  final Color? accentColor;
 
   const PricingCard({
     super.key,
@@ -32,7 +33,7 @@ class PricingCard extends StatelessWidget {
     required this.price,
     this.originalPrice,
     required this.priceSubtext,
-    required this.tokenInfo,
+    this.tokenInfo,
     this.promotionalText,
     this.badge,
     this.badgeColor,
@@ -42,6 +43,7 @@ class PricingCard extends StatelessWidget {
     this.isHighlighted = false,
     this.isPremium = false,
     this.isMobile = false,
+    this.accentColor,
   });
 
   @override
@@ -52,7 +54,7 @@ class PricingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isHighlighted
-              ? AppTheme.primaryColor
+              ? (accentColor ?? AppTheme.primaryColor)
               : isPremium
                   ? AppTheme.successColor.withOpacity(0.5)
                   : Theme.of(context).colorScheme.outline.withOpacity(0.2),
@@ -61,7 +63,7 @@ class PricingCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isHighlighted
-                ? AppTheme.primaryColor.withOpacity(0.15)
+                ? (accentColor ?? AppTheme.primaryColor).withOpacity(0.15)
                 : Colors.black.withOpacity(0.05),
             blurRadius: isHighlighted ? 20 : 10,
             offset: const Offset(0, 4),
@@ -183,26 +185,29 @@ class PricingCard extends StatelessWidget {
           _buildPriceSection(context),
           const SizedBox(height: 8),
 
-          // Token info
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isPremium
-                  ? AppTheme.successColor.withOpacity(0.1)
-                  : AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              tokenInfo,
-              style: AppFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color:
-                    isPremium ? AppTheme.successColor : AppTheme.primaryColor,
+          // Token info (only show if provided)
+          if (tokenInfo != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isPremium
+                    ? AppTheme.successColor.withOpacity(0.18)
+                    : (accentColor ?? AppTheme.primaryLightColor)
+                        .withOpacity(0.18),
+                borderRadius: BorderRadius.circular(20),
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                tokenInfo!,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isPremium
+                      ? AppTheme.successColor
+                      : (accentColor ?? AppTheme.primaryLightColor),
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
 
           // Promotional text
           if (promotionalText != null) ...[
@@ -234,7 +239,7 @@ class PricingCard extends StatelessWidget {
               backgroundColor: isPremium
                   ? AppTheme.successColor
                   : isHighlighted
-                      ? AppTheme.primaryColor
+                      ? (accentColor ?? AppTheme.primaryColor)
                       : Theme.of(context).colorScheme.outline.withOpacity(0.2),
               foregroundColor: isPremium || isHighlighted
                   ? Colors.white
@@ -259,15 +264,20 @@ class PricingCard extends StatelessWidget {
   }
 
   Widget _buildFeatureItem(BuildContext context, String feature) {
+    final isUnavailable = feature.toLowerCase().contains('not included');
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.check_circle_rounded,
+            isUnavailable ? Icons.cancel_outlined : Icons.check_circle_rounded,
             size: 18,
-            color: isPremium ? AppTheme.successColor : AppTheme.primaryColor,
+            color: isUnavailable
+                ? Theme.of(context).colorScheme.onSurface.withOpacity(0.3)
+                : isPremium
+                    ? AppTheme.successColor
+                    : (accentColor ?? AppTheme.primaryLightColor),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -275,7 +285,9 @@ class PricingCard extends StatelessWidget {
               feature,
               style: AppFonts.inter(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                color: isUnavailable
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35)
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ),

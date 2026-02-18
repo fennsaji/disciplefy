@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Centralized authentication validation utilities
 /// Reduces code duplication across auth_bloc and auth_service
@@ -56,9 +56,7 @@ class AuthValidator {
         );
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH VALIDATOR] Error checking stored auth state: $e');
-      }
+      Logger.error('🔐 [AUTH VALIDATOR] Error checking stored auth state: $e');
       return AuthStateValidationResult.error(
         message: 'Failed to validate authentication state: $e',
       );

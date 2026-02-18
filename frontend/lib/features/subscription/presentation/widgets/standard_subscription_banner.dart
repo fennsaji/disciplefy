@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 
 /// Banner widget shown on Home screen when user needs to subscribe
 /// to Standard plan after trial ends, when trial is ending soon,
@@ -151,7 +153,8 @@ class StandardSubscriptionBanner extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '\u20b950/month',
+                          sl<PricingService>()
+                              .getFormattedPricePerMonth('standard'),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: (isUrgent
                                     ? const Color(0xFFFF6B6B)
@@ -222,7 +225,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
 
     // New user without trial (signed up after March 31)
     if (status.isNewUserWithoutTrial) {
-      return 'Get 100 tokens daily for just \u20b950/month';
+      return 'Get 20 tokens daily for just ${sl<PricingService>().getFormattedPricePerMonth('standard')}';
     }
 
     // Needs subscription

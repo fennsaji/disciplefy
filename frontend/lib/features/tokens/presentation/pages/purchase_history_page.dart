@@ -11,6 +11,7 @@ import '../bloc/token_event.dart';
 import '../bloc/token_state.dart';
 import '../widgets/purchase_history_card.dart';
 import '../widgets/purchase_statistics_card.dart';
+import '../../../../core/utils/logger.dart';
 
 class PurchaseHistoryPage extends StatefulWidget {
   const PurchaseHistoryPage({super.key});
@@ -95,7 +96,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
           state.statistics == null) {
         // Purchase history has loaded successfully and we haven't triggered stats yet
         _hasTriggeredStatistics = true;
-        debugPrint(
+        Logger.debug(
             '📊 [PURCHASE_HISTORY_PAGE] Purchase history loaded, triggering statistics (one-time)');
         context.read<TokenBloc>().add(const GetPurchaseStatistics());
       }

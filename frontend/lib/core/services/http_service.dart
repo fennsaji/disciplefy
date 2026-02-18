@@ -4,6 +4,7 @@ import 'dart:async';
 
 import '../error/exceptions.dart';
 import 'api_auth_helper.dart';
+import '../utils/logger.dart';
 
 /// Centralized HTTP service with automatic 401 error handling and token refresh
 class HttpService {
@@ -69,8 +70,10 @@ class HttpService {
       await ApiAuthHelper.validateTokenForRequest();
     } catch (e) {
       if (e is TokenValidationException) {
-        print('🔐 [HTTP] Pre-request token validation failed: ${e.message}');
-        print('🔐 [HTTP] Triggering immediate logout to prevent CORS errors');
+        Logger.error(
+            '🔐 [HTTP] Pre-request token validation failed: ${e.message}');
+        Logger.debug(
+            '🔐 [HTTP] Triggering immediate logout to prevent CORS errors');
         await _handleAuthenticationFailure();
         throw AuthenticationException(
           message: 'Authentication token is invalid. Please login again.',
@@ -89,20 +92,22 @@ class HttpService {
 
         // Handle 401 Unauthorized - this should rarely happen now with pre-validation
         if (response.statusCode == 401) {
-          print(
+          Logger.debug(
               '🔐 [HTTP] 401 Unauthorized received for: $url (unexpected after pre-validation)');
 
           // Only attempt refresh if we have a session and haven't exceeded retries
           if (retryCount < _maxRetries && ApiAuthHelper.isAuthenticated) {
-            print('🔐 [HTTP] Attempting token refresh...');
+            Logger.debug('🔐 [HTTP] Attempting token refresh...');
 
             final refreshed = await _refreshToken();
             if (refreshed) {
-              print('🔐 [HTTP] Token refresh successful, retrying request...');
+              Logger.debug(
+                  '🔐 [HTTP] Token refresh successful, retrying request...');
               retryCount++;
               continue; // Retry the request
             } else {
-              print('🔐 [HTTP] Token refresh failed, logging out user...');
+              Logger.error(
+                  '🔐 [HTTP] Token refresh failed, logging out user...');
               await _handleAuthenticationFailure();
               throw const AuthenticationException(
                 message: 'Session expired. Please login again.',
@@ -110,7 +115,7 @@ class HttpService {
               );
             }
           } else {
-            print(
+            Logger.debug(
                 '🔐 [HTTP] No valid session or max retries reached, logging out...');
             await _handleAuthenticationFailure();
             throw const AuthenticationException(
@@ -122,7 +127,7 @@ class HttpService {
 
         return response;
       } catch (e) {
-        print('🚨 [HTTP] Request error for $url: $e');
+        Logger.error('🚨 [HTTP] Request error for $url: $e');
         if (e is AuthenticationException) {
           rethrow;
         }
@@ -153,7 +158,7 @@ class HttpService {
       final currentSession = supabase.auth.currentSession;
 
       if (currentSession == null) {
-        print('🔐 [HTTP] No current session to refresh');
+        Logger.debug('🔐 [HTTP] No current session to refresh');
         return false;
       }
 
@@ -163,7 +168,7 @@ class HttpService {
           DateTime.fromMillisecondsSinceEpoch(currentSession.expiresAt! * 1000);
 
       if (expiryTime.isAfter(now.add(const Duration(minutes: 5)))) {
-        print('🔐 [HTTP] Token is still valid, no refresh needed');
+        Logger.debug('🔐 [HTTP] Token is still valid, no refresh needed');
         return true;
       }
 
@@ -171,15 +176,15 @@ class HttpService {
       final response = await supabase.auth.refreshSession();
 
       if (response.session != null) {
-        print('🔐 [HTTP] Token refresh successful');
+        Logger.debug('🔐 [HTTP] Token refresh successful');
         ApiAuthHelper.logAuthState();
         return true;
       } else {
-        print('🔐 [HTTP] Token refresh failed');
+        Logger.error('🔐 [HTTP] Token refresh failed');
         return false;
       }
     } catch (e) {
-      print('🔐 [HTTP] Token refresh error: $e');
+      Logger.error('🔐 [HTTP] Token refresh error: $e');
       return false;
     }
   }
@@ -187,7 +192,7 @@ class HttpService {
   /// Handle authentication failure by clearing session and data
   Future<void> _handleAuthenticationFailure() async {
     try {
-      print('🔐 [HTTP] Handling authentication failure...');
+      Logger.debug('🔐 [HTTP] Handling authentication failure...');
 
       // Notify the app about the authentication failure through the stream
       _authFailureController.add('Session expired or invalid');
@@ -198,9 +203,10 @@ class HttpService {
       // Clear any cached data
       await _clearUserData();
 
-      print('🔐 [HTTP] Authentication failure handled');
+      Logger.error('🔐 [HTTP] Authentication failure handled');
     } catch (e) {
-      print('🔐 [HTTP] Error during authentication failure handling: $e');
+      Logger.debug(
+          '🔐 [HTTP] Error during authentication failure handling: $e');
     }
   }
 
@@ -209,9 +215,9 @@ class HttpService {
     try {
       // TODO: Clear any Hive boxes or other local storage
       // Add specific data clearing logic here as needed
-      print('🔐 [HTTP] User data cleared');
+      Logger.error('🔐 [HTTP] User data cleared');
     } catch (e) {
-      print('🔐 [HTTP] Error clearing user data: $e');
+      Logger.debug('🔐 [HTTP] Error clearing user data: $e');
     }
   }
 
@@ -224,7 +230,7 @@ class HttpService {
       await ApiAuthHelper.validateTokenForRequest();
     } catch (e) {
       if (e is TokenValidationException) {
-        print(
+        Logger.error(
             '🔐 [HTTP] Header creation token validation failed: ${e.message}');
         throw AuthenticationException(
           message: 'Authentication token is invalid. Please login again.',

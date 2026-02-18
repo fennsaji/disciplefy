@@ -18,32 +18,45 @@ class PaymentConstants {
   };
 
   // Token pricing
-  static const int tokensPerRupee = 10; // 10 tokens = ₹1
+  static const int tokensPerRupee = 2; // 2 tokens = ₹1
 
-  // Default payment packages
+  // Default payment packages (FALLBACK ONLY - actual packages fetched from backend)
+  // Progressive discount: 0% → 10% → 20% → 25% → 30% → 40%
   static const List<Map<String, dynamic>> defaultPackages = [
     {
-      'tokens': 50,
-      'rupees': 5,
+      'tokens': 20,
+      'rupees': 10,
       'discount': 0,
       'isPopular': false,
     },
     {
-      'tokens': 100,
-      'rupees': 9,
+      'tokens': 50,
+      'rupees': 22,
       'discount': 10,
       'isPopular': false,
     },
     {
-      'tokens': 250,
-      'rupees': 20,
+      'tokens': 100,
+      'rupees': 40,
       'discount': 20,
       'isPopular': true,
     },
     {
-      'tokens': 500,
-      'rupees': 35,
+      'tokens': 200,
+      'rupees': 75,
+      'discount': 25,
+      'isPopular': false,
+    },
+    {
+      'tokens': 400,
+      'rupees': 140,
       'discount': 30,
+      'isPopular': false,
+    },
+    {
+      'tokens': 1000,
+      'rupees': 300,
+      'discount': 40,
       'isPopular': false,
     },
   ];

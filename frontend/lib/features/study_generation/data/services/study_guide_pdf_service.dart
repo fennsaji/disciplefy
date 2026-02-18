@@ -1,4 +1,6 @@
+import 'dart:isolate';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/material.dart'
@@ -26,7 +28,6 @@ import 'package:flutter/material.dart'
         FontWeight,
         FontStyle,
         MainAxisSize,
-        debugPrint,
         FocusManager,
         decodeImageFromList,
         View;
@@ -43,6 +44,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../../core/models/app_language.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Service for generating PDF documents from study guides.
 ///
@@ -75,28 +77,50 @@ class StudyGuidePdfService {
   }
 
   /// Generates a text-based PDF (for English and other Latin scripts).
+  ///
+  /// Runs PDF construction in a background isolate to avoid blocking the
+  /// main thread. Falls back to main-thread execution if the isolate fails
+  /// (e.g. on platforms where isolates are unsupported or restricted).
   Future<Uint8List> _generateTextBasedPdf(StudyGuide guide) async {
+    // dart:isolate is unsupported on Flutter Web — skip directly to main thread.
+    if (kIsWeb) return _buildTextPdfOnCurrentThread(guide);
+
+    final guideData = _studyGuideToMap(guide);
+    try {
+      return await Isolate.run(() => _buildTextPdfInIsolate(guideData));
+    } catch (e) {
+      Logger.warning(
+          '[StudyGuidePdfService] Isolate PDF failed, using main thread: $e');
+      return _buildTextPdfOnCurrentThread(guide);
+    }
+  }
+
+  /// Builds the text-based PDF on the current (main) thread.
+  ///
+  /// Used as a fallback when the isolate-based path fails.
+  Future<Uint8List> _buildTextPdfOnCurrentThread(StudyGuide guide) async {
     final theme = await _getThemeForLanguage(guide.language);
     final pdf = pw.Document(theme: theme);
 
     pdf.addPage(
       pw.MultiPage(
+        maxPages: 100,
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
-        header: (context) => _buildHeader(guide),
-        footer: (context) => _buildFooter(context, guide),
-        build: (context) => [
+        header: (_) => _buildHeader(guide),
+        footer: (ctx) => _buildFooter(ctx, guide),
+        build: (_) => [
           _buildTitleSection(guide),
           pw.SizedBox(height: 20),
-          _buildSection('Summary', guide.summary),
-          _buildSection('Interpretation', guide.interpretation),
-          _buildSection('Historical Context', guide.context),
-          _buildListSection('Related Scriptures', guide.relatedVerses),
-          _buildNumberedListSection(
+          ..._buildSection('Summary', guide.summary),
+          ..._buildSection('Interpretation', guide.interpretation),
+          ..._buildSection('Historical Context', guide.context),
+          ..._buildListSection('Related Scriptures', guide.relatedVerses),
+          ..._buildNumberedListSection(
               'Reflection Questions', guide.reflectionQuestions),
-          _buildListSection('Prayer Points', guide.prayerPoints),
+          ..._buildListSection('Prayer Points', guide.prayerPoints),
           if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty)
-            _buildSection('Personal Notes', guide.personalNotes!),
+            ..._buildSection('Personal Notes', guide.personalNotes!),
         ],
       ),
     );
@@ -328,7 +352,7 @@ class StudyGuidePdfService {
 
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      debugPrint('Error capturing widget as image: $e');
+      Logger.debug('Error capturing widget as image: $e');
       return null;
     }
   }
@@ -633,6 +657,90 @@ class StudyGuidePdfService {
     );
   }
 
+  /// Converts [StudyGuide] to a primitive map safe for isolate transfer.
+  ///
+  /// Only includes fields required for PDF rendering; complex objects like
+  /// [TokenConsumption] are intentionally omitted.
+  Map<String, dynamic> _studyGuideToMap(StudyGuide guide) => {
+        'id': guide.id,
+        'input': guide.input,
+        'inputType': guide.inputType,
+        'summary': guide.summary,
+        'interpretation': guide.interpretation,
+        'context': guide.context,
+        'passage': guide.passage,
+        'relatedVerses': List<String>.from(guide.relatedVerses),
+        'reflectionQuestions': List<String>.from(guide.reflectionQuestions),
+        'prayerPoints': List<String>.from(guide.prayerPoints),
+        'language': guide.language,
+        'createdAt': guide.createdAt.millisecondsSinceEpoch,
+        'personalNotes': guide.personalNotes,
+      };
+
+  /// Reconstructs a minimal [StudyGuide] from a primitive map (used inside
+  /// the background isolate — only PDF-relevant fields are populated).
+  static StudyGuide _mapToStudyGuide(Map<String, dynamic> data) => StudyGuide(
+        id: data['id'] as String,
+        input: data['input'] as String,
+        inputType: data['inputType'] as String,
+        summary: data['summary'] as String,
+        interpretation: data['interpretation'] as String,
+        context: data['context'] as String,
+        passage: data['passage'] as String?,
+        relatedVerses: List<String>.from(data['relatedVerses'] as List),
+        reflectionQuestions:
+            List<String>.from(data['reflectionQuestions'] as List),
+        prayerPoints: List<String>.from(data['prayerPoints'] as List),
+        language: data['language'] as String,
+        createdAt:
+            DateTime.fromMillisecondsSinceEpoch(data['createdAt'] as int),
+        personalNotes: data['personalNotes'] as String?,
+      );
+
+  /// Builds the full PDF inside a background isolate.
+  ///
+  /// Creates a fresh [StudyGuidePdfService] and [StudyGuide] instance from
+  /// the serialized [data] map so no non-transferable objects are captured
+  /// across the isolate boundary.
+  static Future<Uint8List> _buildTextPdfInIsolate(
+      Map<String, dynamic> data) async {
+    final guide = _mapToStudyGuide(data);
+    final service = StudyGuidePdfService();
+
+    final theme = pw.ThemeData.withFont(
+      base: await PdfGoogleFonts.interRegular(),
+      bold: await PdfGoogleFonts.interBold(),
+      italic: await PdfGoogleFonts.interMedium(),
+    );
+    final pdf = pw.Document(theme: theme);
+
+    pdf.addPage(
+      pw.MultiPage(
+        maxPages: 100,
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        header: (_) => service._buildHeader(guide),
+        footer: (ctx) => service._buildFooter(ctx, guide),
+        build: (_) => [
+          service._buildTitleSection(guide),
+          pw.SizedBox(height: 20),
+          ...service._buildSection('Summary', guide.summary),
+          ...service._buildSection('Interpretation', guide.interpretation),
+          ...service._buildSection('Historical Context', guide.context),
+          ...service._buildListSection(
+              'Related Scriptures', guide.relatedVerses),
+          ...service._buildNumberedListSection(
+              'Reflection Questions', guide.reflectionQuestions),
+          ...service._buildListSection('Prayer Points', guide.prayerPoints),
+          if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty)
+            ...service._buildSection('Personal Notes', guide.personalNotes!),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
   /// Shares the PDF using the system share sheet.
   Future<void> sharePdf(StudyGuide guide, {BuildContext? context}) async {
     final pdfBytes = await generatePdf(guide, context: context);
@@ -854,37 +962,80 @@ class StudyGuidePdfService {
     }
   }
 
-  /// Builds a standard text section with a heading.
-  pw.Widget _buildSection(String title, String content) {
-    if (content.isEmpty) return pw.SizedBox.shrink();
+  // ─── Section builder helpers ─────────────────────────────────────────────
 
+  /// Splits [text] into page-safe chunks so no single [pw.Text] widget
+  /// exceeds page height and triggers [TooManyPagesException].
+  ///
+  /// Strategy:
+  ///   1. Split on newline boundaries (paragraphs).
+  ///   2. For paragraphs longer than [maxChars], split further at sentence
+  ///      endings (.  !  ?) to stay under the limit.
+  static List<String> _splitContentForPdf(String text, {int maxChars = 800}) {
+    if (text.isEmpty) return [];
+
+    final result = <String>[];
+
+    for (final paragraph in text.split(RegExp(r'\n+'))) {
+      final trimmed = paragraph.trim();
+      if (trimmed.isEmpty) continue;
+
+      if (trimmed.length <= maxChars) {
+        result.add(trimmed);
+      } else {
+        var chunk = '';
+        for (final sentence in trimmed.split(RegExp(r'(?<=[.!?])\s+'))) {
+          if (chunk.length + sentence.length > maxChars && chunk.isNotEmpty) {
+            result.add(chunk.trim());
+            chunk = sentence;
+          } else {
+            chunk += (chunk.isEmpty ? '' : ' ') + sentence;
+          }
+        }
+        if (chunk.isNotEmpty) result.add(chunk.trim());
+      }
+    }
+
+    return result.isEmpty ? [text.trim()] : result;
+  }
+
+  /// Builds a bordered section heading widget (shared by all section builders).
+  pw.Widget _buildSectionHeading(String title) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 20),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(vertical: 8),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(
-                  color: PdfColors.grey300,
-                ),
-              ),
-            ),
-            child: pw.Text(
-              title.toUpperCase(),
-              style: pw.TextStyle(
-                fontSize: 12,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey800,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          pw.SizedBox(height: 12),
-          pw.Text(
-            content,
+      margin: const pw.EdgeInsets.only(bottom: 12),
+      padding: const pw.EdgeInsets.symmetric(vertical: 8),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.grey300),
+        ),
+      ),
+      child: pw.Text(
+        title.toUpperCase(),
+        style: pw.TextStyle(
+          fontSize: 12,
+          fontWeight: pw.FontWeight.bold,
+          color: PdfColors.grey800,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  /// Builds a standard text section as a **flat list** of page-safe widgets.
+  ///
+  /// Returning a list (rather than a single wrapped container) lets
+  /// [pw.MultiPage] place each chunk independently, so long sections can
+  /// span pages without looping indefinitely.
+  List<pw.Widget> _buildSection(String title, String content) {
+    if (content.isEmpty) return [];
+
+    return [
+      _buildSectionHeading(title),
+      ..._splitContentForPdf(content).map(
+        (chunk) => pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 6),
+          child: pw.Text(
+            chunk,
             style: const pw.TextStyle(
               fontSize: 11,
               color: PdfColors.grey900,
@@ -892,133 +1043,90 @@ class StudyGuidePdfService {
             ),
             textAlign: pw.TextAlign.justify,
           ),
-        ],
+        ),
       ),
-    );
+      pw.SizedBox(height: 14),
+    ];
   }
 
-  /// Builds a bulleted list section.
-  pw.Widget _buildListSection(String title, List<String> items) {
-    if (items.isEmpty) return pw.SizedBox.shrink();
+  /// Builds a bulleted list section as a **flat list** of page-safe widgets.
+  List<pw.Widget> _buildListSection(String title, List<String> items) {
+    if (items.isEmpty) return [];
 
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 20),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(vertical: 8),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(
-                  color: PdfColors.grey300,
+    return [
+      _buildSectionHeading(title),
+      ...items.map(
+        (item) => pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 8),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: 6,
+                height: 6,
+                margin: const pw.EdgeInsets.only(top: 4, right: 10),
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey600,
+                  shape: pw.BoxShape.circle,
                 ),
               ),
-            ),
-            child: pw.Text(
-              title.toUpperCase(),
-              style: pw.TextStyle(
-                fontSize: 12,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey800,
-                letterSpacing: 1,
+              pw.Expanded(
+                child: pw.Text(
+                  item,
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey900,
+                    lineSpacing: 3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      pw.SizedBox(height: 14),
+    ];
+  }
+
+  /// Builds a numbered list section as a **flat list** of page-safe widgets.
+  List<pw.Widget> _buildNumberedListSection(String title, List<String> items) {
+    if (items.isEmpty) return [];
+
+    return [
+      _buildSectionHeading(title),
+      ...items.asMap().entries.map(
+            (entry) => pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 8),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(
+                    width: 20,
+                    margin: const pw.EdgeInsets.only(right: 8),
+                    child: pw.Text(
+                      '${entry.key + 1}.',
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.grey700,
+                      ),
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: pw.Text(
+                      entry.value,
+                      style: const pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey900,
+                        lineSpacing: 3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          pw.SizedBox(height: 12),
-          ...items.map((item) => pw.Padding(
-                padding: const pw.EdgeInsets.only(bottom: 8),
-                child: pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Container(
-                      width: 6,
-                      height: 6,
-                      margin: const pw.EdgeInsets.only(top: 4, right: 10),
-                      decoration: const pw.BoxDecoration(
-                        color: PdfColors.grey600,
-                        shape: pw.BoxShape.circle,
-                      ),
-                    ),
-                    pw.Expanded(
-                      child: pw.Text(
-                        item,
-                        style: const pw.TextStyle(
-                          fontSize: 11,
-                          color: PdfColors.grey900,
-                          lineSpacing: 3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
-    );
-  }
-
-  /// Builds a numbered list section.
-  pw.Widget _buildNumberedListSection(String title, List<String> items) {
-    if (items.isEmpty) return pw.SizedBox.shrink();
-
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 20),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(vertical: 8),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(
-                  color: PdfColors.grey300,
-                ),
-              ),
-            ),
-            child: pw.Text(
-              title.toUpperCase(),
-              style: pw.TextStyle(
-                fontSize: 12,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey800,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          pw.SizedBox(height: 12),
-          ...items.asMap().entries.map((entry) => pw.Padding(
-                padding: const pw.EdgeInsets.only(bottom: 8),
-                child: pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Container(
-                      width: 20,
-                      margin: const pw.EdgeInsets.only(right: 8),
-                      child: pw.Text(
-                        '${entry.key + 1}.',
-                        style: pw.TextStyle(
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.grey700,
-                        ),
-                      ),
-                    ),
-                    pw.Expanded(
-                      child: pw.Text(
-                        entry.value,
-                        style: const pw.TextStyle(
-                          fontSize: 11,
-                          color: PdfColors.grey900,
-                          lineSpacing: 3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
-    );
+      pw.SizedBox(height: 14),
+    ];
   }
 }

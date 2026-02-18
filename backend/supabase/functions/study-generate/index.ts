@@ -14,6 +14,8 @@ import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { StudyGuideInput } from '../_shared/types/index.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Request payload for study guide generation
@@ -76,14 +78,18 @@ function generateContentReference(inputType: string, inputValue: string): string
 
 /**
  * Study guide generation handler
- * 
+ *
  * This handler demonstrates the new secure pattern:
  * 1. Get user context SECURELY from AuthService
  * 2. Validate request body (no client-provided user context)
  * 3. Use injected services for business logic
  */
-async function handleStudyGenerate(req: Request, { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator }: ServiceContainer): Promise<Response> {
+async function handleStudyGenerate(req: Request, services: ServiceContainer): Promise<Response> {
+  // 0. Check maintenance mode FIRST (blocks non-admin users during maintenance)
+  await checkMaintenanceMode(req, services)
+
   // 1. Get user context SECURELY from the new AuthService
+  const { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator, usageLoggingService, costTrackingService } = services
   const userContext = await authService.getUserContext(req)
 
   // 2. Validate request body and parse data
@@ -205,6 +211,22 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
           session_id: userContext.sessionId,
           study_guide_id: existingContent.id
         }, req.headers.get('x-forwarded-for'))
+
+        // Log usage for cache hit (tokens consumed)
+        try {
+          await usageLoggingService.logStudyGeneration(
+            identifier,
+            userPlan,
+            tokenCost,
+            0, // No LLM cost for cache hits
+            study_mode || 'standard',
+            targetLanguage,
+            true, // success
+            0 // No latency for cache hits
+          )
+        } catch (usageLogError) {
+          console.error('Usage logging failed for cache hit:', usageLogError)
+        }
       }
 
       return new Response(JSON.stringify({
@@ -234,6 +256,25 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   
   // 5. Determine user plan and calculate token cost
   const userPlan = await authService.getUserPlan(req)
+
+  // 5a. Validate access to advanced study modes
+  const userId = userContext.userId!
+  const requestedMode = study_mode || 'standard'
+
+  // Map study modes to feature keys
+  const studyModeFeatures: Record<string, string> = {
+    'deep': 'deep_dive_mode',
+    'lectio': 'lectio_divina_mode',
+    'sermon': 'sermon_outline_mode'
+  }
+
+  // Check if advanced mode requires feature access
+  if (requestedMode in studyModeFeatures) {
+    const featureKey = studyModeFeatures[requestedMode]
+    await checkFeatureAccess(userId, userPlan, featureKey)
+    console.log(`✅ [StudyGenerate] Advanced mode '${requestedMode}' validated for user ${userId}`)
+  }
+
   const targetLanguage = language || 'en'
   const tokenCost = tokenService.calculateTokenCost(
     targetLanguage as SupportedLanguage,
@@ -281,6 +322,7 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   }
 
   // 7. Generate new content using LLM service
+  const startTime = Date.now()
   const generatedContent = await llmService.generateStudyGuide({
     inputType: input_type,
     inputValue: input_value,
@@ -288,6 +330,7 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
     language: targetLanguage,
     tier: userPlan  // Premium English users get GPT-4.1-mini
   })
+  const latencyMs = Date.now() - startTime
 
   // 8. Save to repository
   const savedGuide = await studyGuideRepository.saveStudyGuide(
@@ -322,7 +365,29 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
     session_id: userContext.sessionId
   }, req.headers.get('x-forwarded-for'))
 
-  // 10. Return response with token information
+  // 10. Log usage for profitability tracking
+  try {
+    const estimatedCost = costTrackingService.estimateStudyGenerationCost(
+      study_mode || 'standard',
+      targetLanguage
+    )
+
+    await usageLoggingService.logStudyGeneration(
+      userContext.userId || userContext.sessionId || 'anonymous',
+      userPlan,
+      tokenCost,
+      estimatedCost,
+      study_mode || 'standard',
+      targetLanguage,
+      true, // success
+      latencyMs
+    )
+  } catch (usageLogError) {
+    // Don't fail the request if usage logging fails
+    console.error('Usage logging failed:', usageLogError)
+  }
+
+  // 11. Return response with token information
   return new Response(JSON.stringify({
     success: true,
     data: {

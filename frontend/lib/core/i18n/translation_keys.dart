@@ -4,6 +4,8 @@ class TranslationKeys {
   static const studyGuideSummary = 'study_guide.sections.summary';
   static const studyGuideInterpretation = 'study_guide.sections.interpretation';
   static const studyGuideContext = 'study_guide.sections.context';
+  static const studyGuidePassageReading =
+      'study_guide.sections.passage_reading';
   static const studyGuideRelatedVerses = 'study_guide.sections.related_verses';
   static const studyGuideDiscussionQuestions =
       'study_guide.sections.discussion_questions';
@@ -488,10 +490,13 @@ class TranslationKeys {
   static const feedbackSubtitle = 'feedback.subtitle';
   static const feedbackIsHelpful = 'feedback.is_helpful';
   static const feedbackCategoryGeneral = 'feedback.category.general';
-  static const feedbackCategoryContent = 'feedback.category.content';
-  static const feedbackCategoryUsability = 'feedback.category.usability';
-  static const feedbackCategoryTechnical = 'feedback.category.technical';
-  static const feedbackCategorySuggestion = 'feedback.category.suggestion';
+  static const feedbackCategoryBugReport = 'feedback.category.bug_report';
+  static const feedbackCategoryFeatureRequest =
+      'feedback.category.feature_request';
+  static const feedbackCategoryContentFeedback =
+      'feedback.category.content_feedback';
+  static const feedbackCategoryStudyGuide = 'feedback.category.study_guide';
+  static const feedbackCategoryMemoryVerse = 'feedback.category.memory_verse';
   static const feedbackHintText = 'feedback.hint_text';
   static const feedbackButtonSend = 'feedback.button_send';
   static const feedbackEmptyMessage = 'feedback.empty_message';
@@ -1545,13 +1550,13 @@ class TranslationKeys {
   /// Description of the Standard study mode
   static const studyModeStandardDescription = 'study_mode.standard.description';
 
-  /// Name of the Deep study mode (25-minute read)
+  /// Name of the Deep study mode (15-minute read)
   static const studyModeDeepName = 'study_mode.deep.name';
 
   /// Description of the Deep study mode
   static const studyModeDeepDescription = 'study_mode.deep.description';
 
-  /// Name of the Lectio Divina study mode (15-minute meditative)
+  /// Name of the Lectio Divina study mode (10-minute meditative)
   static const studyModeLectioName = 'study_mode.lectio.name';
 
   /// Description of the Lectio Divina study mode
@@ -1746,10 +1751,10 @@ class TranslationKeys {
   /// Duration label for Standard mode (e.g., "10 min")
   static const studyModeStandardDuration = 'study_mode.standard.duration_label';
 
-  /// Duration label for Deep mode (e.g., "25 min")
+  /// Duration label for Deep mode (e.g., "15 min")
   static const studyModeDeepDuration = 'study_mode.deep.duration_label';
 
-  /// Duration label for Lectio mode (e.g., "15 min")
+  /// Duration label for Lectio mode (e.g., "10 min")
   static const studyModeLectioDuration = 'study_mode.lectio.duration_label';
 
   /// Duration label for Sermon mode (e.g., "50-60 min")

@@ -157,11 +157,15 @@ class EnrollmentResultModel extends EnrollmentResult {
   });
 
   factory EnrollmentResultModel.fromJson(Map<String, dynamic> json) {
+    final enrolledAtStr = json['enrolled_at'] as String;
+    final enrolledAt = DateTime.parse(enrolledAtStr);
+
     return EnrollmentResultModel(
       id: json['id'] as String,
       learningPathId: json['learning_path_id'] as String,
-      enrolledAt: DateTime.parse(json['enrolled_at'] as String),
-      startedAt: DateTime.parse(json['started_at'] as String),
+      enrolledAt: enrolledAt,
+      startedAt:
+          enrolledAt, // Use enrolled_at for both since database only has enrolled_at
     );
   }
 }

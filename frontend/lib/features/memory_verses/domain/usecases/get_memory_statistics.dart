@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import '../repositories/memory_verse_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Use case for fetching comprehensive memory verse statistics.
 ///
@@ -26,9 +27,9 @@ import '../repositories/memory_verse_repository.dart';
 /// result.fold(
 ///   (failure) => print('Error: ${failure.message}'),
 ///   (stats) {
-///     print('Total verses: ${stats['total_verses']}');
-///     print('Current streak: ${stats['current_streak']}');
-///     print('Mastery distribution: ${stats['mastery_distribution']}');
+///     Logger.debug('Total verses: ${stats['total_verses']}');
+///     Logger.debug('Current streak: ${stats['current_streak']}');
+///     Logger.debug('Mastery distribution: ${stats['mastery_distribution']}');
 ///   },
 /// );
 /// ```

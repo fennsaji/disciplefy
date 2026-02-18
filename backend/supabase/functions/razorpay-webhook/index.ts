@@ -8,7 +8,7 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { createHmac } from 'node:crypto'
+import { generateHmacSha256 } from '../_shared/utils/crypto-utils.ts'
 import type { RazorpaySubscriptionWebhook } from '../_shared/types/subscription-types.ts'
 
 /**
@@ -69,7 +69,7 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
   const body = await req.text()
 
   // Verify webhook signature
-  const isValidSignature = verifyWebhookSignature(body, signature)
+  const isValidSignature = await verifyWebhookSignature(body, signature)
   if (!isValidSignature) {
     console.error('[Webhook] Invalid signature received')
     throw new AppError(
@@ -220,16 +220,14 @@ function timingSafeEqual(a: string, b: string): boolean {
  * where attackers could determine the correct signature by measuring
  * comparison time differences
  */
-function verifyWebhookSignature(body: string, signature: string): boolean {
+async function verifyWebhookSignature(body: string, signature: string): Promise<boolean> {
   const webhookSecret = Deno.env.get('RAZORPAY_WEBHOOK_SECRET')
   if (!webhookSecret) {
     console.error('[Webhook] RAZORPAY_WEBHOOK_SECRET not configured')
     return false
   }
 
-  const expectedSignature = createHmac('sha256', webhookSecret)
-    .update(body)
-    .digest('hex')
+  const expectedSignature = await generateHmacSha256(webhookSecret, body)
 
   // CRITICAL: Use constant-time comparison to prevent timing attacks
   return timingSafeEqual(signature, expectedSignature)
@@ -436,18 +434,27 @@ async function handleSubscriptionAuthenticated(
 
   const razorpaySubId = subscriptionEntity.id
   const userId = subscriptionEntity.notes?.user_id
-  // Extract plan_type from notes (set during subscription creation)
-  const planType = subscriptionEntity.notes?.plan_type || 'premium'
+  // Extract plan_code from notes (set during subscription creation)
+  const planCode = subscriptionEntity.notes?.plan_code || 'premium'
 
-  console.log(`[Webhook] Subscription authenticated: ${razorpaySubId}, plan: ${planType}`)
+  console.log(`[Webhook] Subscription authenticated: ${razorpaySubId}, plan: ${planCode}`)
 
-  // Update subscription status and ensure plan type is preserved
+  // Update subscription status and provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'authenticated',
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
       razorpay_customer_id: subscriptionEntity.customer_id,
-      subscription_plan: planType,  // Ensure plan type is set
+      // subscription_plan removed - plan code is accessed via plan_id → subscription_plans.plan_code
+      provider_metadata: {
+        customer_id: subscriptionEntity.customer_id,
+        plan_id: subscriptionEntity.plan_id,
+        status: subscriptionEntity.status,
+        quantity: subscriptionEntity.quantity,
+        authenticated_at: new Date().toISOString()
+      },
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)
@@ -461,13 +468,13 @@ async function handleSubscriptionAuthenticated(
   await analyticsLogger.logEvent('webhook_subscription_authenticated', {
     user_id: userId,
     subscription_id: razorpaySubId,
-    plan_type: planType
+    plan_code: planCode
   })
 }
 
 /**
  * Handle subscription.activated event
- * Subscription is now active - grant plan access (standard or premium)
+ * Subscription is now active - grant plan access (standard, plus, or premium)
  */
 async function handleSubscriptionActivated(
   payload: RazorpaySubscriptionWebhook,
@@ -483,17 +490,19 @@ async function handleSubscriptionActivated(
 
   const razorpaySubId = subscriptionEntity.id
   const userId = subscriptionEntity.notes?.user_id
-  // Extract plan_type from notes (set during subscription creation)
-  const planType = subscriptionEntity.notes?.plan_type || 'premium'
+  // Extract plan_code from notes (set during subscription creation)
+  const planCode = subscriptionEntity.notes?.plan_code || 'premium'
 
-  console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}, plan: ${planType}`)
+  console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}, plan: ${planCode}`)
 
-  // Update subscription status, billing info, and ensure plan type is preserved
+  // Update subscription status, billing info, and provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
-      subscription_plan: planType,  // Ensure plan type is set
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
+      // subscription_plan removed - plan code is accessed via plan_id → subscription_plans.plan_code
       current_period_start: subscriptionEntity.current_start
         ? new Date(subscriptionEntity.current_start * 1000).toISOString()
         : null,
@@ -505,6 +514,18 @@ async function handleSubscriptionActivated(
         : null,
       paid_count: subscriptionEntity.paid_count,
       remaining_count: subscriptionEntity.remaining_count,
+      provider_metadata: {
+        customer_id: subscriptionEntity.customer_id,
+        plan_id: subscriptionEntity.plan_id,
+        status: subscriptionEntity.status,
+        quantity: subscriptionEntity.quantity,
+        current_start: subscriptionEntity.current_start,
+        current_end: subscriptionEntity.current_end,
+        charge_at: subscriptionEntity.charge_at,
+        paid_count: subscriptionEntity.paid_count,
+        remaining_count: subscriptionEntity.remaining_count,
+        activated_at: new Date().toISOString()
+      },
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)
@@ -514,14 +535,14 @@ async function handleSubscriptionActivated(
     return
   }
 
-  const planLabel = planType === 'standard' ? 'Standard' : 'Premium'
+  const planLabel = planCode === 'standard' ? 'Standard' : planCode === 'plus' ? 'Plus' : 'Premium'
   console.log(`[Webhook] ✅ ${planLabel} access granted to user: ${userId}`)
 
   // Log event
   await analyticsLogger.logEvent('webhook_subscription_activated', {
     user_id: userId,
     subscription_id: razorpaySubId,
-    plan_type: planType,
+    plan_code: planCode,
     period_start: subscriptionEntity.current_start,
     period_end: subscriptionEntity.current_end
   })
@@ -562,10 +583,12 @@ async function handleSubscriptionCharged(
     return
   }
 
-  // Update subscription billing info
+  // Update subscription billing info and provider metadata
   await supabaseServiceClient
     .from('subscriptions')
     .update({
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
       current_period_start: subscriptionEntity.current_start
         ? new Date(subscriptionEntity.current_start * 1000).toISOString()
         : null,
@@ -577,6 +600,17 @@ async function handleSubscriptionCharged(
         : null,
       paid_count: subscriptionEntity.paid_count,
       remaining_count: subscriptionEntity.remaining_count,
+      provider_metadata: {
+        customer_id: subscriptionEntity.customer_id,
+        plan_id: subscriptionEntity.plan_id,
+        status: subscriptionEntity.status,
+        current_start: subscriptionEntity.current_start,
+        current_end: subscriptionEntity.current_end,
+        charge_at: subscriptionEntity.charge_at,
+        paid_count: subscriptionEntity.paid_count,
+        remaining_count: subscriptionEntity.remaining_count,
+        last_charged_at: new Date().toISOString()
+      },
       updated_at: new Date().toISOString()
     })
     .eq('id', subscription.id)
@@ -646,8 +680,14 @@ async function handleSubscriptionCancelled(
     .from('subscriptions')
     .update({
       status: 'cancelled',
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
       cancelled_at: new Date().toISOString(),
       cancel_at_cycle_end: false,  // Clear flag as it's now actually cancelled
+      provider_metadata: {
+        cancelled_at: new Date().toISOString(),
+        cancellation_source: 'razorpay_webhook'
+      },
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)
@@ -687,11 +727,17 @@ async function handleSubscriptionPaused(
 
   console.log(`[Webhook] Subscription paused: ${razorpaySubId}`)
 
-  // Update subscription status
+  // Update subscription status and provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'paused',
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
+      provider_metadata: {
+        paused_at: new Date().toISOString(),
+        pause_reason: 'payment_failure'
+      },
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)
@@ -729,11 +775,17 @@ async function handleSubscriptionResumed(
 
   console.log(`[Webhook] Subscription resumed: ${razorpaySubId}`)
 
-  // Update subscription status back to active
+  // Update subscription status back to active and update provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
+      provider_metadata: {
+        resumed_at: new Date().toISOString(),
+        previous_status: 'paused'
+      },
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)
@@ -773,11 +825,17 @@ async function handleSubscriptionCompleted(
 
   console.log(`[Webhook] Subscription completed: ${razorpaySubId}`)
 
-  // Update subscription status
+  // Update subscription status and provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'completed',
+      provider: 'razorpay',
+      provider_subscription_id: razorpaySubId,
+      provider_metadata: {
+        completed_at: new Date().toISOString(),
+        total_cycles_completed: subscriptionEntity.paid_count || 0
+      },
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)

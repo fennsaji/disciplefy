@@ -20,6 +20,8 @@ import {
 } from '../_shared/prompts/voice-conversation-prompts.ts'
 import { StreamMessage } from '../_shared/services/voice-streaming-service.ts'
 import { BibleBookNormalizer } from '../_shared/utils/bible-book-normalizer.ts'
+import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Request payload for voice conversation
@@ -41,6 +43,7 @@ type SSEEvent =
   | { type: 'stream_end'; data: { timestamp: number; scripture_references: string[]; translation: string } }
   | { type: 'message_limit_status'; data: { messageCount: number; limit: number; remaining: number } }
   | { type: 'conversation_limit_exceeded'; data: { message: string; messageCount: number; limit: number } }
+  | { type: 'monthly_conversation_limit_exceeded'; data: { message: string; conversations_used: number; limit: number; remaining: number; tier: string } }
   | { type: 'error'; data: { code: string; message: string } }
 
 /**
@@ -125,6 +128,10 @@ async function handleVoiceConversation(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
+  const startTime = Date.now()
   const corsHeaders = {
     'Access-Control-Allow-Origin': req.headers.get('origin') || '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -181,6 +188,28 @@ async function handleVoiceConversation(
 
   // Get user's subscription tier
   const tier = await services.authService.getUserPlan(req)
+  console.log(`👤 [Voice] User plan: ${tier}`)
+
+  // Feature flag validation - Check if ai_discipler is enabled for user's plan
+  const hasVoiceAccess = await isFeatureEnabledForPlan('ai_discipler', tier)
+
+  if (!hasVoiceAccess) {
+    console.warn(`⛔ [Voice] Feature access denied: ai_discipler not available for plan ${tier}`)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: {
+          code: 'FEATURE_NOT_AVAILABLE',
+          message: `AI Discipler voice conversation is not available for your current plan (${tier}). Please upgrade to Plus or Premium to access this feature.`,
+          requiredFeature: 'ai_discipler',
+          currentPlan: tier
+        }
+      }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  console.log(`✅ [Voice] Feature access granted: ai_discipler available for plan ${tier}`)
 
   // Return SSE streaming response
   return createSSEResponse(async (sendEvent) => {
@@ -225,6 +254,51 @@ async function handleVoiceConversation(
         : Promise.resolve(null),
       voiceConversationRepository.getConversationHistory(conversation_id)
     ])
+
+    // Enforce monthly conversation quota on the first message of each conversation.
+    // This is the server-side enforcement gate — it atomically checks the limit
+    // and increments the counter in one transaction, so it cannot be bypassed
+    // by calling the API directly without going through the Flutter client.
+    const isNewConversation = conversationHistory.length === 0
+
+    if (isNewConversation) {
+      console.log(`[Voice] New conversation ${conversation_id} — enforcing monthly quota for user ${userId} (tier: ${tier})`)
+
+      try {
+        const { data: quotaResult, error: quotaError } = await services.supabaseServiceClient.rpc(
+          'check_and_increment_voice_quota',
+          { p_user_id: userId, p_tier: tier }
+        )
+
+        if (quotaError) {
+          console.error(`[Voice] Quota check error for user ${userId}:`, quotaError)
+          // Fail-open: if DB is unavailable, don't block the user
+        } else if (quotaResult && !quotaResult.can_start) {
+          console.log(`[Voice] Monthly quota exceeded for user ${userId}: ${quotaResult.conversations_used}/${quotaResult.limit}`)
+
+          const tierNames: Record<string, string> = { free: 'Free', standard: 'Standard', plus: 'Plus', premium: 'Premium' }
+          const tierName = tierNames[tier.toLowerCase()] || tier
+          const word = quotaResult.limit === 1 ? 'conversation' : 'conversations'
+
+          await sendEvent({
+            type: 'monthly_conversation_limit_exceeded',
+            data: {
+              message: `You've reached your monthly limit of ${quotaResult.limit} voice ${word} for ${tierName} plan. Upgrade to continue using AI Study Buddy Voice this month.`,
+              conversations_used: quotaResult.conversations_used,
+              limit: quotaResult.limit,
+              remaining: 0,
+              tier
+            }
+          })
+          return
+        } else {
+          console.log(`[Voice] Monthly quota OK for user ${userId}: ${quotaResult?.conversations_used}/${quotaResult?.limit} (${quotaResult?.remaining} remaining)`)
+        }
+      } catch (quotaError) {
+        console.error(`[Voice] Unexpected quota error for user ${userId}:`, quotaError)
+        // Fail-open: proceed to avoid service disruption
+      }
+    }
 
     // Build system prompt
     const systemPrompt = getVoiceSystemPrompt(language_code, {
@@ -335,6 +409,48 @@ async function handleVoiceConversation(
           correctionsMade: validation.correctedBooks
         }
       })
+
+      // Log usage for profitability tracking
+      try {
+        const latencyMs = Date.now() - startTime
+
+        // Estimate token usage for voice conversation
+        const inputTokens = message.length * 4 // Rough estimate
+        const outputTokens = normalizedResponse.length * 4
+
+        // Calculate LLM cost based on model used
+        let llmCost = 0
+        if (modelUsed.includes('openai') || modelUsed.includes('gpt')) {
+          const costCalc = services.costTrackingService.calculateCost(
+            'openai',
+            modelUsed,
+            inputTokens,
+            outputTokens
+          )
+          llmCost = costCalc.totalCost
+        } else if (modelUsed.includes('anthropic') || modelUsed.includes('claude')) {
+          const costCalc = services.costTrackingService.calculateCost(
+            'anthropic',
+            modelUsed,
+            inputTokens,
+            outputTokens
+          )
+          llmCost = costCalc.totalCost
+        }
+
+        await services.usageLoggingService.logVoiceConversation(
+          userId,
+          tier,
+          llmCost,
+          language_code,
+          latencyMs,
+          true // success
+        )
+      } catch (usageLogError) {
+        console.error('[Voice] Usage logging failed:', usageLogError)
+        // Don't fail the request if usage logging fails
+      }
+
     } catch (saveError) {
       console.error(`[Voice] Failed to save messages for conversation ${conversation_id}:`, saveError)
       // Streaming succeeded but save failed - still send the response to user

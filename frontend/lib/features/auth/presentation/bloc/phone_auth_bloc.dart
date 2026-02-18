@@ -5,6 +5,7 @@ import '../../../../core/error/failures.dart';
 import '../../domain/repositories/phone_auth_repository.dart';
 import 'phone_auth_event.dart';
 import 'phone_auth_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing phone authentication state and operations
 class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
@@ -29,19 +30,15 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
     try {
       emit(const PhoneAuthLoadingState(message: 'Sending OTP...'));
 
-      if (kDebugMode) {
-        print(
-            '📱 [PHONE AUTH] Sending OTP to ${event.countryCode}${event.phoneNumber}');
-      }
+      Logger.debug(
+          '📱 [PHONE AUTH] Sending OTP to ${event.countryCode}${event.phoneNumber}');
 
       final result = await _phoneAuthRepository.sendOTP(
         phoneNumber: event.phoneNumber,
         countryCode: event.countryCode,
       );
 
-      if (kDebugMode) {
-        print('📱 [PHONE AUTH] OTP sent successfully');
-      }
+      Logger.debug('📱 [PHONE AUTH] OTP sent successfully');
 
       emit(OTPSentState(
         phoneNumber: event.phoneNumber,
@@ -50,9 +47,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
         sentAt: DateTime.now(),
       ));
     } catch (failure) {
-      if (kDebugMode) {
-        print('📱 [PHONE AUTH] Send OTP failed: $failure');
-      }
+      Logger.error('📱 [PHONE AUTH] Send OTP failed: $failure');
 
       emit(_mapFailureToErrorState(failure, 'Failed to send OTP'));
     }
@@ -66,10 +61,8 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
     try {
       emit(const PhoneAuthLoadingState(message: 'Verifying OTP...'));
 
-      if (kDebugMode) {
-        print(
-            '📱 [PHONE AUTH] Verifying OTP for ${event.countryCode}${event.phoneNumber}');
-      }
+      Logger.debug(
+          '📱 [PHONE AUTH] Verifying OTP for ${event.countryCode}${event.phoneNumber}');
 
       final result = await _phoneAuthRepository.verifyOTP(
         phoneNumber: event.phoneNumber,
@@ -78,9 +71,10 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
       );
 
       if (kDebugMode) {
-        print('📱 [PHONE AUTH] OTP verified successfully');
-        print('📱 [PHONE AUTH] User: ${result.user.email ?? result.user.id}');
-        print(
+        Logger.debug('📱 [PHONE AUTH] OTP verified successfully');
+        Logger.debug(
+            '📱 [PHONE AUTH] User: ${result.user.email ?? result.user.id}');
+        Logger.debug(
             '📱 [PHONE AUTH] Requires onboarding: ${result.requiresOnboarding}');
       }
 
@@ -91,9 +85,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
         onboardingStatus: result.onboardingStatus,
       ));
     } catch (failure) {
-      if (kDebugMode) {
-        print('📱 [PHONE AUTH] Verify OTP failed: $failure');
-      }
+      Logger.error('📱 [PHONE AUTH] Verify OTP failed: $failure');
 
       emit(_mapFailureToErrorState(failure, 'Failed to verify OTP'));
     }
@@ -107,19 +99,15 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
     try {
       emit(const PhoneAuthLoadingState(message: 'Resending OTP...'));
 
-      if (kDebugMode) {
-        print(
-            '📱 [PHONE AUTH] Resending OTP to ${event.countryCode}${event.phoneNumber}');
-      }
+      Logger.debug(
+          '📱 [PHONE AUTH] Resending OTP to ${event.countryCode}${event.phoneNumber}');
 
       final result = await _phoneAuthRepository.sendOTP(
         phoneNumber: event.phoneNumber,
         countryCode: event.countryCode,
       );
 
-      if (kDebugMode) {
-        print('📱 [PHONE AUTH] OTP resent successfully');
-      }
+      Logger.debug('📱 [PHONE AUTH] OTP resent successfully');
 
       emit(OTPSentState(
         phoneNumber: event.phoneNumber,
@@ -128,9 +116,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
         sentAt: DateTime.now(),
       ));
     } catch (failure) {
-      if (kDebugMode) {
-        print('📱 [PHONE AUTH] Resend OTP failed: $failure');
-      }
+      Logger.error('📱 [PHONE AUTH] Resend OTP failed: $failure');
 
       emit(_mapFailureToErrorState(failure, 'Failed to resend OTP'));
     }
@@ -141,9 +127,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
     PhoneAuthResetRequested event,
     Emitter<PhoneAuthState> emit,
   ) async {
-    if (kDebugMode) {
-      print('📱 [PHONE AUTH] Resetting phone auth state');
-    }
+    Logger.debug('📱 [PHONE AUTH] Resetting phone auth state');
     emit(const PhoneAuthInitialState());
   }
 

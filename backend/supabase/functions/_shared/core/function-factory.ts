@@ -487,6 +487,11 @@ async function parseUserContext(
   // Extract the token from Bearer prefix
   const token = authToken.replace('Bearer ', '')
 
+  // DEBUG: Log token comparison
+  console.log('[AUTH DEBUG] Token first 50 chars:', token.substring(0, 50))
+  console.log('[AUTH DEBUG] Anon key first 50 chars:', config.supabaseAnonKey.substring(0, 50))
+  console.log('[AUTH DEBUG] Tokens match:', token === config.supabaseAnonKey)
+
   // Check if the token is the anon key (not a valid user JWT)
   // When frontend has no session, it falls back to using anon key as Bearer token
   if (token === config.supabaseAnonKey) {
@@ -508,6 +513,9 @@ async function parseUserContext(
     throw new Error('Guest user without session - please sign in or use anonymous session')
   }
 
+  // Token is NOT the anon key, so it should be a valid user JWT
+  // Verify it with Supabase Auth
+  console.log('[AUTH] Verifying user JWT with Supabase Auth')
   const userSupabaseClient = createUserSupabaseClient(authToken, config.supabaseUrl, config.supabaseAnonKey)
   const { data: { user }, error } = await userSupabaseClient.auth.getUser()
 

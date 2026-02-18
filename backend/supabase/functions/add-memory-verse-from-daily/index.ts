@@ -15,6 +15,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Request payload structure
@@ -85,6 +86,36 @@ async function handleAddMemoryVerseFromDaily(
   // Validate authentication
   if (!userContext || userContext.type !== 'authenticated' || !userContext.userId) {
     throw new AppError('AUTHENTICATION_ERROR', 'Authentication required to save memory verses', 401)
+  }
+
+  // Validate feature access for memory verses
+  const userPlan = await services.authService.getUserPlan(req)
+  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
+  console.log(`✅ [AddMemoryVerseFromDaily] Feature access validated for user ${userContext.userId}`)
+
+  // Enforce per-plan verse count limit (DB-driven)
+  const verseLimit = await services.memoryVerseConfigService.getVerseLimits(userPlan)
+  if (verseLimit !== -1) {
+    const { count, error: countError } = await services.supabaseServiceClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userContext.userId)
+
+    if (countError) {
+      console.error('[AddMemoryVerseFromDaily] Failed to count existing verses:', countError)
+      throw new AppError('DATABASE_ERROR', 'Failed to check verse limit', 500)
+    }
+
+    const currentCount = count ?? 0
+    console.log(`📊 [AddMemoryVerseFromDaily] Verse count: ${currentCount}/${verseLimit} (plan: ${userPlan})`)
+
+    if (currentCount >= verseLimit) {
+      throw new AppError(
+        'VERSE_LIMIT_EXCEEDED',
+        `You have reached your limit of ${verseLimit} memory verse${verseLimit > 1 ? 's' : ''} on the ${userPlan} plan. Upgrade to add more.`,
+        403
+      )
+    }
   }
 
   // Parse and validate request body
@@ -210,6 +241,13 @@ async function handleAddMemoryVerseFromDaily(
     throw new AppError('CONFLICT', 'This verse is already in your memory deck', 409)
   }
 
+  // Get SM-2 initial state from database config
+  const memoryConfig = await services.memoryVerseConfigService.getMemoryVerseConfig()
+  const initialEaseFactor = memoryConfig.spacedRepetition.initialEaseFactor
+  const initialIntervalDays = memoryConfig.spacedRepetition.initialIntervalDays
+
+  console.log(`[AddMemoryVerseFromDaily] Using SM-2 initial state from config: ease=${initialEaseFactor}, interval=${initialIntervalDays}`)
+
   // Add verse to memory_verses table with SM-2 initial state
   const now = new Date().toISOString()
   const { data: memoryVerse, error: insertError } = await services.supabaseServiceClient
@@ -221,9 +259,9 @@ async function handleAddMemoryVerseFromDaily(
       language: language,
       source_type: 'daily_verse',
       source_id: dailyVerse.uuid, // Use the real UUID from the database
-      // SM-2 initial state
-      ease_factor: 2.5,
-      interval_days: 1,
+      // SM-2 initial state from database config
+      ease_factor: initialEaseFactor,
+      interval_days: initialIntervalDays,
       repetitions: 0,
       next_review_date: now, // Available for immediate review
       added_date: now,

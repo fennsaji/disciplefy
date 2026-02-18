@@ -1,4 +1,5 @@
 import '../../domain/entities/token_status.dart';
+import '../../../../core/constants/plan_constants.dart';
 
 /// Data model for TokenStatus that handles JSON serialization
 class TokenStatusModel extends TokenStatus {
@@ -68,6 +69,8 @@ class TokenStatusModel extends TokenStatus {
         return UserPlan.free;
       case 'standard':
         return UserPlan.standard;
+      case 'plus':
+        return UserPlan.plus;
       case 'premium':
         return UserPlan.premium;
       default:
@@ -88,17 +91,10 @@ class TokenStatusModel extends TokenStatus {
   }
 
   /// Get default plan description based on user plan
+  /// Uses centralized PlanConstants to avoid hardcoding
   static String _getDefaultPlanDescription(String userPlan) {
-    switch (userPlan.toLowerCase()) {
-      case 'free':
-        return 'Free users with daily token limit';
-      case 'standard':
-        return 'Authenticated users with 100 tokens daily + purchase option';
-      case 'premium':
-        return 'Premium users with unlimited token usage';
-      default:
-        return 'Free users with daily token limit';
-    }
+    final parsedPlan = _parseUserPlan(userPlan);
+    return PlanConstants.getDescription(parsedPlan);
   }
 
   /// Convert to JSON

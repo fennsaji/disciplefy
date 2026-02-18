@@ -172,11 +172,11 @@ class Logger {
 
     // Print the formatted log message
     if (kDebugMode) {
-      print(logMessage.toString());
+      debugPrint(logMessage.toString());
 
       // Print stack trace for errors and critical logs
       if (stackTrace != null && level.priority >= LogLevel.error.priority) {
-        print('Stack trace: $stackTrace');
+        debugPrint('Stack trace: $stackTrace');
       }
     }
 
@@ -203,7 +203,7 @@ class Logger {
     // Examples: Firebase Crashlytics, Sentry, Datadog, etc.
     // This would typically be an async operation
     if (kDebugMode) {
-      print('🚀 [LOGGING_SERVICE] Would send: ${level.label} - $message');
+      debugPrint('🚀 [LOGGING_SERVICE] Would send: ${level.label} - $message');
     }
   }
 

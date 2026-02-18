@@ -197,3 +197,67 @@ export interface LanguageConfig {
     readonly sermon?: WordCountTarget
   }
 }
+
+/**
+ * Prompt pair for multi-pass generation.
+ * Contains system and user messages for a single LLM call.
+ */
+export interface PromptPair {
+  readonly systemMessage: string
+  readonly userMessage: string
+}
+
+/**
+ * Token usage metadata from LLM API response
+ */
+export interface LLMUsageMetadata {
+  provider: 'openai' | 'anthropic'
+  model: string
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  costUsd: number  // Calculated using CostTrackingService
+}
+
+/**
+ * Wrapper for LLM responses that includes usage metadata
+ */
+export interface LLMResponseWithUsage<T = string> {
+  content: T
+  usage: LLMUsageMetadata
+}
+
+/**
+ * Cost tracking context for multi-pass operations
+ * Accumulates token usage across multiple LLM calls
+ */
+export class CostTrackingContext {
+  private calls: LLMUsageMetadata[] = []
+
+  addCall(usage: LLMUsageMetadata): void {
+    this.calls.push(usage)
+  }
+
+  getAggregate(): LLMUsageMetadata {
+    const totalInput = this.calls.reduce((sum, call) => sum + call.inputTokens, 0)
+    const totalOutput = this.calls.reduce((sum, call) => sum + call.outputTokens, 0)
+    const totalCost = this.calls.reduce((sum, call) => sum + call.costUsd, 0)
+
+    return {
+      provider: this.calls[0]?.provider || 'openai',
+      model: this.calls[0]?.model || 'unknown',
+      inputTokens: totalInput,
+      outputTokens: totalOutput,
+      totalTokens: totalInput + totalOutput,
+      costUsd: totalCost
+    }
+  }
+
+  getCalls(): LLMUsageMetadata[] {
+    return [...this.calls]
+  }
+
+  reset(): void {
+    this.calls = []
+  }
+}

@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'dart:io';
 
@@ -9,6 +8,7 @@ import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/repositories/daily_verse_repository.dart';
 import '../services/daily_verse_api_service.dart';
 import '../services/daily_verse_cache_interface.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of DailyVerseRepository with caching and offline support
 class DailyVerseRepositoryImpl implements DailyVerseRepository {
@@ -58,19 +58,13 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
             await _cacheService.cacheVerse(verse);
           } on HiveError catch (e) {
             // Cache failure is non-critical, continue with API result
-            if (kDebugMode) {
-              print('Warning: Hive cache error: ${e.message}');
-            }
+            Logger.debug('Warning: Hive cache error: ${e.message}');
           } on StorageException catch (e) {
             // Cache failure is non-critical, continue with API result
-            if (kDebugMode) {
-              print('Warning: Storage cache error: ${e.message}');
-            }
+            Logger.debug('Warning: Storage cache error: ${e.message}');
           } catch (e) {
             // Cache failure is non-critical, continue with API result
-            if (kDebugMode) {
-              print('Warning: Failed to cache verse: $e');
-            }
+            Logger.debug('Warning: Failed to cache verse: $e');
           }
           return Right(verse);
         },

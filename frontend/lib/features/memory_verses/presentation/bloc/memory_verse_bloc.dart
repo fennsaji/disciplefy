@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
@@ -33,6 +32,7 @@ import '../../data/services/memory_verse_notification_service.dart';
 import '../../data/services/suggested_verses_cache_service.dart';
 import 'memory_verse_event.dart';
 import 'memory_verse_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing Memory Verse feature state.
 ///
@@ -130,6 +130,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<SelectPracticeModeEvent>(_onSelectPracticeMode);
     on<SubmitPracticeSessionEvent>(_onSubmitPracticeSession);
     on<LoadPracticeModeStatsEvent>(_onLoadPracticeModeStats);
+    on<PracticeModeTierLockedEvent>(_onPracticeModeTierLocked);
+    on<PracticeUnlockLimitExceededEvent>(_onPracticeUnlockLimitExceeded);
     on<LoadMemoryStreakEvent>(_onLoadMemoryStreak);
     on<UseStreakFreezeEvent>(_onUseStreakFreeze);
     on<CheckStreakMilestoneEvent>(_onCheckStreakMilestone);
@@ -159,10 +161,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '📖 [BLOC] Loading due verses (limit: ${event.limit}, offset: ${event.offset})');
-      }
+      Logger.debug(
+          '📖 [BLOC] Loading due verses (limit: ${event.limit}, offset: ${event.offset})');
 
       // Show loading state (unless refreshing with existing data)
       if (!event.forceRefresh || state is! DueVersesLoaded) {
@@ -181,9 +181,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load due verses failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Load due verses failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -193,9 +191,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         (data) {
           final (verses, statistics) = data;
 
-          if (kDebugMode) {
-            print('✅ [BLOC] Loaded ${verses.length} due verses');
-          }
+          Logger.info('✅ [BLOC] Loaded ${verses.length} due verses');
 
           // Determine if more verses are available (basic pagination check)
           final hasMore = verses.length >= event.limit;
@@ -208,9 +204,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading verses: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading verses: $e');
       emit(MemoryVerseError(
         message: 'An unexpected error occurred',
         code: 'UNEXPECTED_ERROR',
@@ -226,9 +220,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Adding verse from daily: ${event.dailyVerseId}');
-      }
+      Logger.debug('📖 [BLOC] Adding verse from daily: ${event.dailyVerseId}');
 
       emit(const MemoryVerseLoading(message: 'Adding verse...'));
 
@@ -239,9 +231,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       await result.fold(
         (failure) async {
-          if (kDebugMode) {
-            print('❌ [BLOC] Add verse from daily failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Add verse from daily failed: ${failure.message}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -258,15 +249,11 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           }
         },
         (verse) async {
-          if (kDebugMode) {
-            print('✅ [BLOC] Verse added: ${verse.verseReference}');
-          }
+          Logger.debug('✅ [BLOC] Verse added: ${verse.verseReference}');
 
           // Clear suggested verses cache to refresh "Already Added" status
           await suggestedVersesCacheService.clearCache();
-          if (kDebugMode) {
-            print('🗑️ [BLOC] Cleared suggested verses cache');
-          }
+          Logger.debug('🗑️ [BLOC] Cleared suggested verses cache');
 
           // Check if emit is still valid before emitting
           if (!emit.isDone) {
@@ -278,9 +265,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error adding verse: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error adding verse: $e');
       emit(MemoryVerseError(
         message: 'Failed to add verse',
         code: 'UNEXPECTED_ERROR',
@@ -296,9 +281,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Adding manual verse: ${event.verseReference}');
-      }
+      Logger.debug('📖 [BLOC] Adding manual verse: ${event.verseReference}');
 
       emit(const MemoryVerseLoading(message: 'Adding verse...'));
 
@@ -310,9 +293,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Add manual verse failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Add manual verse failed: ${failure.message}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -329,9 +310,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           }
         },
         (verse) {
-          if (kDebugMode) {
-            print('✅ [BLOC] Manual verse added: ${verse.verseReference}');
-          }
+          Logger.info('✅ [BLOC] Manual verse added: ${verse.verseReference}');
 
           emit(VerseAdded(
             verse: verse,
@@ -340,9 +319,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error adding manual verse: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error adding manual verse: $e');
       emit(MemoryVerseError(
         message: 'Failed to add verse',
         code: 'UNEXPECTED_ERROR',
@@ -358,9 +335,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Submitting review (quality: ${event.qualityRating})');
-      }
+      Logger.debug(
+          '📖 [BLOC] Submitting review (quality: ${event.qualityRating})');
 
       emit(const MemoryVerseLoading(message: 'Processing review...'));
 
@@ -372,9 +348,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Submit review failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Submit review failed: ${failure.message}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -391,10 +365,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           }
         },
         (verse) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Review submitted. Next review: ${verse.nextReviewDate}');
-          }
+          Logger.info(
+              '✅ [BLOC] Review submitted. Next review: ${verse.nextReviewDate}');
 
           // Generate success message based on quality rating
           final qualityMessage = _getQualityMessage(event.qualityRating);
@@ -408,9 +380,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error submitting review: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error submitting review: $e');
       emit(MemoryVerseError(
         message: 'Failed to submit review',
         code: 'UNEXPECTED_ERROR',
@@ -426,9 +396,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Loading statistics');
-      }
+      Logger.debug('📖 [BLOC] Loading statistics');
 
       emit(const MemoryVerseLoading(message: 'Loading statistics...'));
 
@@ -436,9 +404,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load statistics failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Load statistics failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -446,16 +412,12 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (statistics) {
-          if (kDebugMode) {
-            print('✅ [BLOC] Statistics loaded');
-          }
+          Logger.info('✅ [BLOC] Statistics loaded');
           emit(StatisticsLoaded(statistics));
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading statistics: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading statistics: $e');
       emit(MemoryVerseError(
         message: 'Failed to load statistics',
         code: 'UNEXPECTED_ERROR',
@@ -483,9 +445,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('🔄 [BLOC] Syncing with remote server');
-      }
+      Logger.debug('🔄 [BLOC] Syncing with remote server');
 
       emit(const MemoryVerseLoading(message: 'Syncing with server...'));
 
@@ -498,9 +458,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Sync failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Sync failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -510,9 +468,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         (data) {
           final (verses, statistics) = data;
 
-          if (kDebugMode) {
-            print('✅ [BLOC] Sync completed. Loaded ${verses.length} verses');
-          }
+          Logger.info(
+              '✅ [BLOC] Sync completed. Loaded ${verses.length} verses');
 
           emit(SyncCompleted(
             message: 'Sync completed successfully',
@@ -524,9 +481,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error during sync: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error during sync: $e');
       emit(MemoryVerseError(
         message: 'Failed to sync with server',
         code: 'SYNC_ERROR',
@@ -562,10 +517,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '📖 [BLOC] Fetching verse text: ${event.book} ${event.chapter}:${event.verseStart}${event.verseEnd != null ? '-${event.verseEnd}' : ''}');
-      }
+      Logger.debug(
+          '📖 [BLOC] Fetching verse text: ${event.book} ${event.chapter}:${event.verseStart}${event.verseEnd != null ? '-${event.verseEnd}' : ''}');
 
       emit(const FetchingVerseText());
 
@@ -579,26 +532,20 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Fetch verse text failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Fetch verse text failed: ${failure.message}');
           emit(FetchVerseTextError(
             message: failure.message,
             code: failure.code,
           ));
         },
         (fetchedVerse) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Verse text fetched: ${fetchedVerse.localizedReference}');
-          }
+          Logger.info(
+              '✅ [BLOC] Verse text fetched: ${fetchedVerse.localizedReference}');
           emit(VerseTextFetched(fetchedVerse));
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error fetching verse text: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error fetching verse text: $e');
       emit(const FetchVerseTextError(
         message: 'Failed to fetch verse text',
         code: 'UNEXPECTED_ERROR',
@@ -614,9 +561,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('🗑️ [BLOC] Deleting verse: ${event.verseId}');
-      }
+      Logger.debug('🗑️ [BLOC] Deleting verse: ${event.verseId}');
 
       emit(const MemoryVerseLoading(message: 'Deleting verse...'));
 
@@ -624,9 +569,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Delete verse failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Delete verse failed: ${failure.message}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -643,17 +586,13 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           }
         },
         (_) {
-          if (kDebugMode) {
-            print('✅ [BLOC] Verse deleted successfully');
-          }
+          Logger.info('✅ [BLOC] Verse deleted successfully');
 
           emit(const VerseDeleted('Verse removed from memory deck'));
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error deleting verse: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error deleting verse: $e');
       emit(MemoryVerseError(
         message: 'Failed to delete verse',
         code: 'UNEXPECTED_ERROR',
@@ -673,10 +612,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '📖 [BLOC] Selecting practice mode: ${event.practiceMode} for verse ${event.verseId}');
-      }
+      Logger.debug(
+          '📖 [BLOC] Selecting practice mode: ${event.practiceMode} for verse ${event.verseId}');
 
       emit(const MemoryVerseLoading(message: 'Loading practice mode...'));
 
@@ -689,9 +626,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Select practice mode failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Select practice mode failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -699,10 +635,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (practiceMode) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Practice mode selected: ${practiceMode.modeType.name}');
-          }
+          Logger.info(
+              '✅ [BLOC] Practice mode selected: ${practiceMode.modeType.name}');
           emit(PracticeModeSelected(
             verseId: event.verseId,
             practiceMode: event.practiceMode,
@@ -715,9 +649,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error selecting practice mode: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error selecting practice mode: $e');
       emit(MemoryVerseError(
         message: 'Failed to select practice mode',
         code: 'UNEXPECTED_ERROR',
@@ -733,9 +665,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Submitting practice session: ${event.practiceMode}');
-      }
+      Logger.debug(
+          '📖 [BLOC] Submitting practice session: ${event.practiceMode}');
 
       emit(const MemoryVerseLoading(message: 'Processing practice...'));
 
@@ -752,10 +683,38 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [BLOC] Submit practice session failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Submit practice session failed: ${failure.message}');
+
+          // Check for practice mode restriction errors
+          if (failure.code == 'PRACTICE_MODE_TIER_LOCKED') {
+            // Extract error details from failure message
+            // Backend returns: { code, message, mode, tier, available_modes, required_tier }
+            Logger.debug(
+                '🔒 [BLOC] Practice mode tier-locked: ${failure.code}');
+            // Emit tier-locked state - UI will show upgrade dialog
+            // Note: We need error details from the API response
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+            ));
+            return;
           }
+
+          if (failure.code == 'PRACTICE_UNLOCK_LIMIT_EXCEEDED') {
+            // Extract error details from failure message
+            // Backend returns: { code, message, details: { unlocked_modes, unlocked_count, unlock_limit, etc. } }
+            Logger.error(
+                '⚠️ [BLOC] Daily unlock limit exceeded: ${failure.code}');
+            // Emit unlock-limit state - UI will show upgrade dialog
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+            ));
+            return;
+          }
+
+          // Generic error for other failures
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -763,10 +722,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (response) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Practice session submitted: ${response.xpEarned} XP earned');
-          }
+          Logger.info(
+              '✅ [BLOC] Practice session submitted: ${response.xpEarned} XP earned');
           emit(PracticeSessionSubmitted(
             verse: response.updatedVerse,
             message: 'Practice complete! +${response.xpEarned} XP',
@@ -779,9 +736,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error submitting practice session: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error submitting practice session: $e');
       emit(MemoryVerseError(
         message: 'Failed to submit practice session',
         code: 'UNEXPECTED_ERROR',
@@ -797,9 +752,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Loading practice mode statistics');
-      }
+      Logger.debug('📖 [BLOC] Loading practice mode statistics');
 
       emit(const MemoryVerseLoading(message: 'Loading statistics...'));
 
@@ -807,10 +760,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [BLOC] Load practice mode stats failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Load practice mode stats failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -818,10 +769,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (modes) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Practice mode statistics loaded: ${modes.length} modes');
-          }
+          Logger.info(
+              '✅ [BLOC] Practice mode statistics loaded: ${modes.length} modes');
 
           final modeStats = <String, Map<String, dynamic>>{};
           for (final mode in modes) {
@@ -837,14 +786,54 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading practice mode stats: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading practice mode stats: $e');
       emit(MemoryVerseError(
         message: 'Failed to load practice mode statistics',
         code: 'UNEXPECTED_ERROR',
       ));
     }
+  }
+
+  /// Handles PracticeModeTierLockedEvent.
+  ///
+  /// Emits state when user attempts to practice with a mode not available in their tier.
+  /// Triggers upgrade dialog in UI.
+  Future<void> _onPracticeModeTierLocked(
+    PracticeModeTierLockedEvent event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    Logger.debug(
+        '🔒 [BLOC] Practice mode tier-locked: ${event.mode} (current tier: ${event.currentTier})');
+
+    emit(MemoryVersePracticeModeTierLocked(
+      mode: event.mode,
+      currentTier: event.currentTier,
+      availableModes: event.availableModes,
+      requiredTier: event.requiredTier,
+      message: event.message,
+    ));
+  }
+
+  /// Handles PracticeUnlockLimitExceededEvent.
+  ///
+  /// Emits state when user exceeds daily unlock limit for a verse.
+  /// Triggers upgrade dialog in UI showing unlocked modes and upgrade options.
+  Future<void> _onPracticeUnlockLimitExceeded(
+    PracticeUnlockLimitExceededEvent event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    Logger.warning(
+        '⚠️ [BLOC] Daily unlock limit exceeded: ${event.unlockedCount}/${event.limit} modes unlocked (verse: ${event.verseId})');
+
+    emit(MemoryVerseUnlockLimitExceeded(
+      unlockedModes: event.unlockedModes,
+      unlockedCount: event.unlockedCount,
+      limit: event.limit,
+      tier: event.tier,
+      verseId: event.verseId,
+      date: event.date,
+      message: event.message,
+    ));
   }
 
   /// Handles LoadMemoryStreakEvent.
@@ -855,9 +844,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Loading memory streak');
-      }
+      Logger.debug('📖 [BLOC] Loading memory streak');
 
       emit(const MemoryVerseLoading(message: 'Loading streak...'));
 
@@ -865,9 +852,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load memory streak failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Load memory streak failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -875,10 +861,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (streak) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Memory streak loaded: ${streak.currentStreak} days');
-          }
+          Logger.info(
+              '✅ [BLOC] Memory streak loaded: ${streak.currentStreak} days');
           emit(MemoryStreakLoaded(
             currentStreak: streak.currentStreak,
             longestStreak: streak.longestStreak,
@@ -891,9 +875,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading memory streak: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading memory streak: $e');
       emit(MemoryVerseError(
         message: 'Failed to load memory streak',
         code: 'UNEXPECTED_ERROR',
@@ -909,9 +891,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Using streak freeze for date: ${event.freezeDate}');
-      }
+      Logger.debug(
+          '📖 [BLOC] Using streak freeze for date: ${event.freezeDate}');
 
       emit(const MemoryVerseLoading(message: 'Applying streak freeze...'));
 
@@ -919,9 +900,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Use streak freeze failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Use streak freeze failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -929,10 +908,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (streak) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Streak freeze used: ${streak.freezeDaysAvailable} remaining');
-          }
+          Logger.info(
+              '✅ [BLOC] Streak freeze used: ${streak.freezeDaysAvailable} remaining');
           emit(StreakFreezeUsed(
             message:
                 'Streak protected! ${streak.freezeDaysAvailable} freeze days remaining',
@@ -942,9 +919,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error using streak freeze: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error using streak freeze: $e');
       emit(MemoryVerseError(
         message: 'Failed to use streak freeze',
         code: 'UNEXPECTED_ERROR',
@@ -960,17 +935,14 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Checking streak milestone');
-      }
+      Logger.debug('📖 [BLOC] Checking streak milestone');
 
       final result = await getMemoryStreak();
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Check streak milestone failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Check streak milestone failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -989,9 +961,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
                             .difference(DateTime.now())
                             .inDays ==
                         0)) {
-              if (kDebugMode) {
-                print('✅ [BLOC] Streak milestone reached: $milestone days');
-              }
+              Logger.info('✅ [BLOC] Streak milestone reached: $milestone days');
               emit(StreakMilestoneReached(
                 milestone: milestone,
                 achievementUnlocked: '$milestone Day Streak',
@@ -1002,15 +972,11 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           }
 
           // No milestone reached
-          if (kDebugMode) {
-            print('ℹ️ [BLOC] No streak milestone at $currentStreak days');
-          }
+          Logger.debug('ℹ️ [BLOC] No streak milestone at $currentStreak days');
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error checking streak milestone: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error checking streak milestone: $e');
       emit(MemoryVerseError(
         message: 'Failed to check streak milestone',
         code: 'UNEXPECTED_ERROR',
@@ -1026,9 +992,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Loading mastery progress for verse: ${event.verseId}');
-      }
+      Logger.debug(
+          '📖 [BLOC] Loading mastery progress for verse: ${event.verseId}');
 
       emit(const MemoryVerseLoading(message: 'Loading mastery progress...'));
 
@@ -1036,9 +1001,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load mastery progress failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Load mastery progress failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1046,10 +1010,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (mastery) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Mastery progress loaded: ${mastery.masteryLevel.name}');
-          }
+          Logger.info(
+              '✅ [BLOC] Mastery progress loaded: ${mastery.masteryLevel.name}');
           emit(MasteryProgressLoaded(
             verseId: event.verseId,
             masteryLevel: mastery.masteryLevel.name,
@@ -1061,9 +1023,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading mastery progress: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading mastery progress: $e');
       emit(MemoryVerseError(
         message: 'Failed to load mastery progress',
         code: 'UNEXPECTED_ERROR',
@@ -1079,10 +1039,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '📖 [BLOC] Updating mastery level for verse: ${event.verseId} to ${event.newMasteryLevel}');
-      }
+      Logger.debug(
+          '📖 [BLOC] Updating mastery level for verse: ${event.verseId} to ${event.newMasteryLevel}');
 
       emit(const MemoryVerseLoading(message: 'Updating mastery level...'));
 
@@ -1095,9 +1053,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Update mastery level failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Update mastery level failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1105,10 +1062,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (mastery) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Mastery level updated: ${mastery.masteryLevel.name}');
-          }
+          Logger.info(
+              '✅ [BLOC] Mastery level updated: ${mastery.masteryLevel.name}');
           emit(MasteryLevelUpdated(
             verseId: event.verseId,
             newMasteryLevel: mastery.masteryLevel.name,
@@ -1118,9 +1073,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error updating mastery level: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error updating mastery level: $e');
       emit(MemoryVerseError(
         message: 'Failed to update mastery level',
         code: 'UNEXPECTED_ERROR',
@@ -1136,9 +1089,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Loading daily goal');
-      }
+      Logger.debug('📖 [BLOC] Loading daily goal');
 
       emit(const MemoryVerseLoading(message: 'Loading daily goal...'));
 
@@ -1146,9 +1097,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load daily goal failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Load daily goal failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1156,10 +1105,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (goal) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Daily goal loaded: ${goal.completedReviews}/${goal.targetReviews} reviews');
-          }
+          Logger.info(
+              '✅ [BLOC] Daily goal loaded: ${goal.completedReviews}/${goal.targetReviews} reviews');
           emit(DailyGoalLoaded(
             targetReviews: goal.targetReviews,
             completedReviews: goal.completedReviews,
@@ -1171,9 +1118,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading daily goal: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading daily goal: $e');
       emit(MemoryVerseError(
         message: 'Failed to load daily goal',
         code: 'UNEXPECTED_ERROR',
@@ -1189,20 +1134,16 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '📖 [BLOC] Updating daily goal progress (isNewVerse: ${event.isNewVerse})');
-      }
+      Logger.debug(
+          '📖 [BLOC] Updating daily goal progress (isNewVerse: ${event.isNewVerse})');
 
       final result =
           await updateDailyGoalProgress(isNewVerse: event.isNewVerse);
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [BLOC] Update daily goal progress failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Update daily goal progress failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1210,10 +1151,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (goal) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Daily goal progress updated: ${goal.completedReviews}/${goal.targetReviews}');
-          }
+          Logger.info(
+              '✅ [BLOC] Daily goal progress updated: ${goal.completedReviews}/${goal.targetReviews}');
 
           final goalJustCompleted =
               goal.goalAchieved && goal.bonusXpAwarded > 0;
@@ -1234,9 +1173,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error updating daily goal progress: $e');
-      }
+      Logger.error(
+          '❌ [BLOC] Unexpected error updating daily goal progress: $e');
       emit(MemoryVerseError(
         message: 'Failed to update daily goal progress',
         code: 'UNEXPECTED_ERROR',
@@ -1252,10 +1190,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '📖 [BLOC] Setting daily goal targets: ${event.targetReviews} reviews, ${event.targetNewVerses} new verses');
-      }
+      Logger.debug(
+          '📖 [BLOC] Setting daily goal targets: ${event.targetReviews} reviews, ${event.targetNewVerses} new verses');
 
       emit(const MemoryVerseLoading(message: 'Setting goal targets...'));
 
@@ -1266,9 +1202,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Set daily goal targets failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Set daily goal targets failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1276,10 +1211,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (goal) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Daily goal targets set: ${goal.targetReviews} reviews, ${goal.targetNewVerses} new verses');
-          }
+          Logger.info(
+              '✅ [BLOC] Daily goal targets set: ${goal.targetReviews} reviews, ${goal.targetNewVerses} new verses');
           emit(DailyGoalTargetsSet(
             message: 'Daily goals updated!',
             targetReviews: goal.targetReviews,
@@ -1288,9 +1221,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error setting daily goal targets: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error setting daily goal targets: $e');
       emit(MemoryVerseError(
         message: 'Failed to set daily goal targets',
         code: 'UNEXPECTED_ERROR',
@@ -1306,9 +1237,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Loading active challenges');
-      }
+      Logger.debug('📖 [BLOC] Loading active challenges');
 
       emit(const MemoryVerseLoading(message: 'Loading challenges...'));
 
@@ -1316,9 +1245,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load active challenges failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Load active challenges failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1326,10 +1254,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (challenges) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Active challenges loaded: ${challenges.length} challenges');
-          }
+          Logger.info(
+              '✅ [BLOC] Active challenges loaded: ${challenges.length} challenges');
 
           final challengeData = challenges
               .map((challenge) => {
@@ -1349,9 +1275,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading active challenges: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading active challenges: $e');
       emit(MemoryVerseError(
         message: 'Failed to load active challenges',
         code: 'UNEXPECTED_ERROR',
@@ -1367,9 +1291,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📖 [BLOC] Claiming challenge reward: ${event.challengeId}');
-      }
+      Logger.debug('📖 [BLOC] Claiming challenge reward: ${event.challengeId}');
 
       emit(const MemoryVerseLoading(message: 'Claiming reward...'));
 
@@ -1377,9 +1299,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Claim challenge reward failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Claim challenge reward failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1388,9 +1309,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
         (data) {
           final (challenge, xpEarned) = data;
-          if (kDebugMode) {
-            print('✅ [BLOC] Challenge reward claimed: $xpEarned XP');
-          }
+          Logger.info('✅ [BLOC] Challenge reward claimed: $xpEarned XP');
           emit(ChallengeRewardClaimed(
             challengeId: challenge.id,
             message: 'Challenge completed! +$xpEarned XP',
@@ -1400,9 +1319,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error claiming challenge reward: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error claiming challenge reward: $e');
       emit(MemoryVerseError(
         message: 'Failed to claim challenge reward',
         code: 'UNEXPECTED_ERROR',
@@ -1422,10 +1339,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '🏆 [BLOC] Loading Memory Champions leaderboard (period: ${event.period})');
-      }
+      Logger.debug(
+          '🏆 [BLOC] Loading Memory Champions leaderboard (period: ${event.period})');
 
       emit(const MemoryVerseLoading(message: 'Loading leaderboard...'));
 
@@ -1438,9 +1353,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load leaderboard failed: ${failure.message}');
-          }
+          Logger.error('❌ [BLOC] Load leaderboard failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1449,9 +1362,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
         (data) {
           final (leaderboard, userStats) = data;
-          if (kDebugMode) {
-            print('✅ [BLOC] Leaderboard loaded: ${leaderboard.length} entries');
-          }
+          Logger.info(
+              '✅ [BLOC] Leaderboard loaded: ${leaderboard.length} entries');
           emit(MemoryChampionsLeaderboardLoaded(
             leaderboard: leaderboard,
             userStats: userStats,
@@ -1460,9 +1372,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading leaderboard: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading leaderboard: $e');
       emit(const MemoryVerseError(
         message: 'Failed to load leaderboard',
         code: 'UNEXPECTED_ERROR',
@@ -1479,9 +1389,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('📊 [BLOC] Loading memory statistics');
-      }
+      Logger.debug('📊 [BLOC] Loading memory statistics');
 
       emit(const MemoryVerseLoading(message: 'Loading statistics...'));
 
@@ -1489,9 +1397,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load memory statistics failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Load memory statistics failed: ${failure.message}');
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -1499,18 +1406,14 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           ));
         },
         (statistics) {
-          if (kDebugMode) {
-            print('✅ [BLOC] Memory statistics loaded: $statistics');
-          }
+          Logger.info('✅ [BLOC] Memory statistics loaded: $statistics');
           // Get the statistics from the data envelope
           final statsData = statistics['statistics'] as Map<String, dynamic>;
           emit(MemoryStatisticsLoaded(statistics: statsData));
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading memory statistics: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading memory statistics: $e');
       emit(const MemoryVerseError(
         message: 'Failed to load statistics',
         code: 'UNEXPECTED_ERROR',
@@ -1530,10 +1433,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '💡 [BLOC] Loading suggested verses (category: ${event.category}, language: ${event.language})');
-      }
+      Logger.debug(
+          '💡 [BLOC] Loading suggested verses (category: ${event.category}, language: ${event.language})');
 
       emit(const SuggestedVersesLoading());
 
@@ -1552,19 +1453,16 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [BLOC] Load suggested verses failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Load suggested verses failed: ${failure.message}');
           emit(SuggestedVersesError(
             message: failure.message,
             code: failure.code,
           ));
         },
         (response) {
-          if (kDebugMode) {
-            print(
-                '✅ [BLOC] Suggested verses loaded: ${response.verses.length} verses');
-          }
+          Logger.info(
+              '✅ [BLOC] Suggested verses loaded: ${response.verses.length} verses');
           emit(SuggestedVersesLoaded(
             verses: response.verses,
             categories: response.categories,
@@ -1574,9 +1472,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error loading suggested verses: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error loading suggested verses: $e');
       emit(const SuggestedVersesError(
         message: 'Failed to load suggested verses',
         code: 'UNEXPECTED_ERROR',
@@ -1592,9 +1488,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     Emitter<MemoryVerseState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('💡 [BLOC] Adding suggested verse: ${event.verseReference}');
-      }
+      Logger.debug('💡 [BLOC] Adding suggested verse: ${event.verseReference}');
 
       emit(const MemoryVerseLoading(message: 'Adding verse to memory deck...'));
 
@@ -1607,9 +1501,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       await result.fold(
         (failure) async {
-          if (kDebugMode) {
-            print('❌ [BLOC] Add suggested verse failed: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [BLOC] Add suggested verse failed: ${failure.message}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -1626,15 +1519,12 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           }
         },
         (verse) async {
-          if (kDebugMode) {
-            print('✅ [BLOC] Suggested verse added: ${verse.verseReference}');
-          }
+          Logger.debug(
+              '✅ [BLOC] Suggested verse added: ${verse.verseReference}');
 
           // Clear suggested verses cache to refresh "Already Added" status
           await suggestedVersesCacheService.clearCache();
-          if (kDebugMode) {
-            print('🗑️ [BLOC] Cleared suggested verses cache');
-          }
+          Logger.debug('🗑️ [BLOC] Cleared suggested verses cache');
 
           // Check if emit is still valid before emitting
           if (!emit.isDone) {
@@ -1646,9 +1536,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [BLOC] Unexpected error adding suggested verse: $e');
-      }
+      Logger.error('❌ [BLOC] Unexpected error adding suggested verse: $e');
       emit(const MemoryVerseError(
         message: 'Failed to add verse',
         code: 'UNEXPECTED_ERROR',

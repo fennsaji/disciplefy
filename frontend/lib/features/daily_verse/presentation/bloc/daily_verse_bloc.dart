@@ -11,6 +11,7 @@ import '../../domain/usecases/get_default_language.dart';
 import '../../domain/repositories/streak_repository.dart';
 import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing daily verse state and operations
 class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
@@ -406,12 +407,12 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       );
 
       if (success) {
-        print(
+        Logger.debug(
             'Streak notification sent: $notificationType for $streakCount days');
       }
     } catch (e) {
       // Silently fail - notifications are optional
-      print('Failed to send streak notification: $e');
+      Logger.debug('Failed to send streak notification: $e');
     }
   }
 

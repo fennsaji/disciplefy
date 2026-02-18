@@ -899,3 +899,87 @@ class SuggestedVersesError extends MemoryVerseState {
   @override
   List<Object?> get props => [message, code];
 }
+
+// =============================================================================
+// PRACTICE MODE UNLOCK RESTRICTION STATES
+// =============================================================================
+
+/// State when practice mode is tier-locked (not available in user's tier).
+///
+/// **Parameters:**
+/// - [mode] - The locked practice mode
+/// - [currentTier] - User's current subscription tier
+/// - [availableModes] - List of modes available in user's tier
+/// - [requiredTier] - Minimum tier required to access this mode
+/// - [message] - User-friendly error message
+///
+/// UI should:
+/// - Show tier-lock overlay on mode card
+/// - Display upgrade dialog explaining tier restriction
+/// - Show available modes for current tier
+class MemoryVersePracticeModeTierLocked extends MemoryVerseState {
+  final String mode;
+  final String currentTier;
+  final List<String> availableModes;
+  final String requiredTier;
+  final String message;
+
+  const MemoryVersePracticeModeTierLocked({
+    required this.mode,
+    required this.currentTier,
+    required this.availableModes,
+    required this.requiredTier,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props =>
+      [mode, currentTier, availableModes, requiredTier, message];
+}
+
+/// State when daily unlock limit is exceeded for a verse.
+///
+/// **Parameters:**
+/// - [unlockedModes] - List of modes already unlocked today for this verse
+/// - [unlockedCount] - Number of modes unlocked
+/// - [limit] - Maximum unlocked modes allowed per verse per day
+/// - [tier] - User's current subscription tier
+/// - [verseId] - UUID of the memory verse
+/// - [date] - Current date (YYYY-MM-DD)
+/// - [message] - User-friendly error message
+///
+/// UI should:
+/// - Show unlock limit exceeded dialog
+/// - Display which modes are already unlocked
+/// - Show upgrade options for more unlock slots
+/// - Allow practicing already unlocked modes
+class MemoryVerseUnlockLimitExceeded extends MemoryVerseState {
+  final List<String> unlockedModes;
+  final int unlockedCount;
+  final int limit;
+  final String tier;
+  final String verseId;
+  final String date;
+  final String message;
+
+  const MemoryVerseUnlockLimitExceeded({
+    required this.unlockedModes,
+    required this.unlockedCount,
+    required this.limit,
+    required this.tier,
+    required this.verseId,
+    required this.date,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [
+        unlockedModes,
+        unlockedCount,
+        limit,
+        tier,
+        verseId,
+        date,
+        message,
+      ];
+}

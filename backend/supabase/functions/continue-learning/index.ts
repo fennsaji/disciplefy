@@ -299,6 +299,31 @@ async function handleContinueLearning(
     req.headers.get("x-forwarded-for"),
   );
 
+  // Log usage for profitability tracking (non-LLM, read-only feature)
+  try {
+    const userTier = await services.authService.getUserPlan(req);
+
+    await services.usageLoggingService.logUsage({
+      userId,
+      tier: userTier,
+      featureName: 'continue_learning',
+      operationType: 'read',
+      tokensConsumed: 0,
+      requestMetadata: {
+        language: validatedLanguage,
+        topics_count: localizedTopics.length,
+        limit: validatedLimit,
+      },
+      responseMetadata: {
+        success: true,
+        latency_ms: 0,
+      },
+    });
+  } catch (usageLogError) {
+    console.error('Usage logging failed:', usageLogError)
+    // Don't fail the request if usage logging fails
+  }
+
   return new Response(
     JSON.stringify({
       success: true,

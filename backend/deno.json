@@ -1,6 +1,5 @@
 {
   "nodeModulesDir": "auto",
-  "importMap": "./supabase/functions/_shared/import_map.json",
   "compilerOptions": {
     "strict": true,
     "noImplicitAny": true,
@@ -10,6 +9,10 @@
     "noUnusedParameters": false
   },
   "imports": {
-    "@types/node": "npm:@types/node@^20.0.0"
+    "std/": "https://deno.land/std@0.208.0/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "@types/node": "npm:@types/node@^20.0.0",
+    "razorpay": "npm:razorpay@2.9.2",
+    "pdf-lib": "https://esm.sh/pdf-lib@1.17.1"
   }
 }

@@ -3,6 +3,7 @@ import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../domain/repositories/reflections_repository.dart';
 import '../datasources/reflections_remote_data_source.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Concrete implementation of ReflectionsRepository.
 ///
@@ -95,7 +96,7 @@ class ReflectionsRepositoryImpl implements ReflectionsRepository {
       if (mode != null) {
         reflectionsByMode[mode] = entry.value;
       } else {
-        print(
+        Logger.warning(
             '⚠️ [REFLECTIONS_REPOSITORY] Skipping invalid study mode: ${entry.key}');
       }
     }

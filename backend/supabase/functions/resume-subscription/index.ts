@@ -12,6 +12,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { SubscriptionService } from '../_shared/services/subscription-service.ts'
 import type { Subscription } from '../_shared/types/subscription-types.ts'
 import type { PostgrestError } from 'https://esm.sh/@supabase/supabase-js@2'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 interface ResumeSubscriptionResponse {
   success: boolean
@@ -28,6 +29,9 @@ async function handleResumeSubscription(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     // 1. Authenticate user
     const userContext = await services.authService.getUserContext(req)

@@ -15,6 +15,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Response data structure
@@ -42,6 +43,10 @@ async function handleDeleteMemoryVerse(
   if (!userContext || userContext.type !== 'authenticated' || !userContext.userId) {
     throw new AppError('AUTHENTICATION_ERROR', 'Authentication required to delete memory verses', 401)
   }
+
+  // Validate feature access for memory verses
+  const userPlan = await services.authService.getUserPlan(req)
+  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
 
   // Get memory_verse_id from query parameter
   const url = new URL(req.url)

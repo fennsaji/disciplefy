@@ -71,10 +71,13 @@ export class TokenService {
    * @throws AppError when database operation fails
    */
   async getUserTokens(identifier: string, userPlan: UserPlan): Promise<TokenInfo> {
+    console.log(`[TokenService] getUserTokens called - identifier: ${identifier.substring(0, 8)}..., plan: ${userPlan}`)
+
     this.validateIdentifier(identifier)
     this.validateUserPlan(userPlan)
 
     try {
+      console.log('[TokenService] Calling get_or_create_user_tokens RPC...')
       const data = await this.rpcSingle<
         { p_identifier: string; p_user_plan: UserPlan },
         DatabaseUserTokensResult
@@ -83,6 +86,7 @@ export class TokenService {
         p_user_plan: userPlan
       })
 
+      console.log('[TokenService] RPC completed successfully')
       return this.mapUserTokens(data, userPlan)
 
     } catch (error) {
@@ -549,7 +553,7 @@ export class TokenService {
    * @throws AppError for invalid plans
    */
   private validateUserPlan(userPlan: UserPlan): void {
-    if (!['free', 'standard', 'premium'].includes(userPlan)) {
+    if (!['free', 'standard', 'plus', 'premium'].includes(userPlan)) {
       throw new AppError(
         'VALIDATION_ERROR',
         'Invalid user plan provided',

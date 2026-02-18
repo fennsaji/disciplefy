@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/navigation/route_observer.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
@@ -19,7 +22,11 @@ import '../../../study_topics/domain/repositories/topic_progress_repository.dart
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../../core/navigation/study_navigator.dart';
 import '../../../home/data/services/recommended_guides_service.dart';
 import '../bloc/study_bloc.dart';
@@ -42,6 +49,7 @@ import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/repositories/reflections_repository.dart';
 import '../widgets/reading_completion_card.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -228,13 +236,18 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
       _StudyGuideScreenV2ContentState();
 }
 
-class _StudyGuideScreenV2ContentState
-    extends State<_StudyGuideScreenV2Content> {
+class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
+    with RouteAware {
   final TextEditingController _notesController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   StudyGuide? _currentStudyGuide;
   bool _isLoading = true;
+
+  // Navigation and background generation tracking
+  bool _isUserOnScreen = true;
+  bool _isGenerationComplete = false;
+  String? _pendingStudyId;
   bool _hasError = false;
   String _errorMessage = '';
   bool _isInsufficientTokensError =
@@ -290,7 +303,6 @@ class _StudyGuideScreenV2ContentState
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
-  final GlobalKey _prayerPointsKey = GlobalKey();
 
   // Notification prompt state
   bool _hasTriggeredNotificationPrompt = false;
@@ -317,7 +329,22 @@ class _StudyGuideScreenV2ContentState
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route changes after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final route = ModalRoute.of(context);
+      if (route is PageRoute) {
+        appRouteObserver.subscribe(this, route);
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    // Unsubscribe from route observer
+    appRouteObserver.unsubscribe(this);
+
     // Stop TTS when navigating away
     sl<StudyGuideTTSService>().stop();
 
@@ -330,6 +357,115 @@ class _StudyGuideScreenV2ContentState
     _notesController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // ============================================================================
+  // ROUTE AWARENESS CALLBACKS
+  // ============================================================================
+
+  /// Called when user navigates to another screen (Study → Home)
+  @override
+  void didPushNext() {
+    if (kDebugMode) {
+      Logger.debug('🚪 [NAVIGATION] User navigated AWAY from study screen');
+      Logger.debug('   Generation complete: $_isGenerationComplete');
+      Logger.debug('   Pending study ID: $_pendingStudyId');
+    }
+
+    _isUserOnScreen = false;
+
+    // DON'T cancel the stream - let it complete in background
+    // The stream subscription will continue until completion
+
+    if (!_isGenerationComplete && _pendingStudyId != null) {
+      Logger.info('   ✅ Letting generation continue in background');
+      // Schedule periodic checks for completion
+      _scheduleCompletionCheck();
+    }
+  }
+
+  /// Called when user comes back to this screen (Home → Study)
+  @override
+  void didPopNext() async {
+    Logger.debug('👋 [NAVIGATION] User came BACK to study screen');
+
+    _isUserOnScreen = true;
+
+    // Check if generation completed while user was away
+    if (_pendingStudyId != null && !_isGenerationComplete) {
+      await _checkBackgroundGenerationStatus();
+    }
+  }
+
+  /// Called when this screen is first opened
+  @override
+  void didPush() {
+    Logger.debug('📱 [NAVIGATION] Study screen opened (fresh)');
+    _isUserOnScreen = true;
+  }
+
+  /// Called when user explicitly closes this screen (back button)
+  @override
+  void didPop() {
+    Logger.debug('🔙 [NAVIGATION] Study screen closed by user');
+    _isUserOnScreen = false;
+  }
+
+  // ============================================================================
+  // BACKGROUND GENERATION HELPERS
+  // ============================================================================
+
+  /// Schedule periodic checks for background generation completion
+  void _scheduleCompletionCheck() {
+    Future.delayed(const Duration(seconds: 10), () {
+      if (!_isUserOnScreen && !_isGenerationComplete && mounted) {
+        _checkBackgroundGenerationStatus();
+        _scheduleCompletionCheck(); // Check again
+      }
+    });
+  }
+
+  /// Check if background generation completed
+  Future<void> _checkBackgroundGenerationStatus() async {
+    if (_pendingStudyId == null) return;
+
+    try {
+      // Check if study was saved to database
+      final response = await Supabase.instance.client
+          .from('study_guides')
+          .select()
+          .eq('id', _pendingStudyId!)
+          .maybeSingle();
+
+      if (response != null) {
+        Logger.debug('✅ [NAVIGATION] Background generation completed!');
+
+        _isGenerationComplete = true;
+
+        // Load the completed study if user is back on screen
+        if (_isUserOnScreen && mounted) {
+          _loadExistingGuide(response);
+
+          // Show snackbar notification
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content:
+                    Text('Study generation completed while you were away!'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } else {
+        Logger.debug(
+            '⏳ [NAVIGATION] Background generation still in progress...');
+      }
+    } catch (e) {
+      Logger.debug('⚠️ [NAVIGATION] Error checking background status: $e');
+    }
   }
 
   /// Initialize study guide generation from query parameters
@@ -345,7 +481,7 @@ class _StudyGuideScreenV2ContentState
     // since the API requires the actual topic text, not the database ID.
 
     if (kDebugMode && widget.topicId != null) {
-      print(
+      Logger.error(
           '🔍 [STUDY_GUIDE_V2] Topic ID from notification: ${widget.topicId}');
     }
 
@@ -371,10 +507,8 @@ class _StudyGuideScreenV2ContentState
         final appLanguage = await languageService.getStudyContentLanguage();
         rawLanguageCode = appLanguage.code;
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '⚠️ [STUDY_GUIDE_V2] Failed to get study content language preference: $e');
-        }
+        Logger.warning(
+            '⚠️ [STUDY_GUIDE_V2] Failed to get study content language preference: $e');
       }
     }
 
@@ -382,7 +516,7 @@ class _StudyGuideScreenV2ContentState
     final normalizedLanguageCode = _normalizeLanguageCode(rawLanguageCode);
 
     if (kDebugMode && rawLanguageCode != normalizedLanguageCode) {
-      print(
+      Logger.info(
           '🌐 [STUDY_GUIDE_V2] Language normalized: $rawLanguageCode → $normalizedLanguageCode');
     }
 
@@ -397,6 +531,12 @@ class _StudyGuideScreenV2ContentState
     // Track topic progress start if we have a topic ID
     _startTopicProgress();
 
+    // Generate a pending study ID BEFORE starting generation
+    // This allows us to track background completion even if user navigates away
+    _pendingStudyId = const Uuid().v4();
+
+    Logger.info('🔄 [GENERATION] Starting with pending ID: $_pendingStudyId');
+
     // Dispatch streaming study guide generation event (V2 API)
     // This uses SSE for progressive section rendering
     context.read<StudyBloc>().add(GenerateStudyGuideStreamingRequested(
@@ -406,6 +546,7 @@ class _StudyGuideScreenV2ContentState
               .description, // Include topic description for richer context
           language: normalizedLanguageCode,
           studyMode: widget.studyMode,
+          pendingStudyId: _pendingStudyId, // Pass pending ID for tracking
         ));
   }
 
@@ -449,9 +590,7 @@ class _StudyGuideScreenV2ContentState
         createdAt: DateTime.now(),
       );
 
-      if (kDebugMode) {
-        print('✅ [STUDY_GUIDE_V2] Loaded existing guide: $input');
-      }
+      Logger.info('✅ [STUDY_GUIDE_V2] Loaded existing guide: $input');
 
       setState(() {
         _currentStudyGuide = studyGuide;
@@ -464,9 +603,7 @@ class _StudyGuideScreenV2ContentState
         }
       });
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
-      }
+      Logger.error('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
       _showError('Failed to load study guide. Please try again.');
     }
   }
@@ -481,9 +618,7 @@ class _StudyGuideScreenV2ContentState
       return;
     }
 
-    if (kDebugMode) {
-      print('📊 [TOPIC_PROGRESS] Starting topic progress for: $topicId');
-    }
+    Logger.debug('📊 [TOPIC_PROGRESS] Starting topic progress for: $topicId');
 
     try {
       final repository = sl<TopicProgressRepository>();
@@ -491,21 +626,16 @@ class _StudyGuideScreenV2ContentState
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
         },
         (_) {
-          if (kDebugMode) {
-            print('✅ [TOPIC_PROGRESS] Topic progress started successfully');
-          }
+          Logger.debug(
+              '✅ [TOPIC_PROGRESS] Topic progress started successfully');
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPIC_PROGRESS] Exception during start tracking: $e');
-      }
+      Logger.error('❌ [TOPIC_PROGRESS] Exception during start tracking: $e');
     }
   }
 
@@ -521,6 +651,13 @@ class _StudyGuideScreenV2ContentState
   /// Handle successful study guide generation
   void _handleGenerationSuccess(StudyGuide studyGuide) {
     if (!mounted) return;
+
+    // Mark generation as complete and clear pending study ID
+    _isGenerationComplete = true;
+    _pendingStudyId = null;
+
+    Logger.info('✅ [GENERATION] Study generation completed successfully');
+
     setState(() {
       _currentStudyGuide = studyGuide;
       _isLoading = false;
@@ -606,16 +743,12 @@ class _StudyGuideScreenV2ContentState
   void _loadPersonalNotesIfSaved() {
     if (_currentStudyGuide == null) return;
 
-    if (kDebugMode) {
-      print(
-          '🔍 [STUDY_GUIDE_V2] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
-    }
+    Logger.info(
+        '🔍 [STUDY_GUIDE_V2] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
 
     if (_isSaved && !_notesLoaded) {
-      if (kDebugMode) {
-        print(
-            '📝 [STUDY_GUIDE_V2] Requesting personal notes for guide: ${_currentStudyGuide!.id}');
-      }
+      Logger.debug(
+          '📝 [STUDY_GUIDE_V2] Requesting personal notes for guide: ${_currentStudyGuide!.id}');
       context.read<StudyBloc>().add(LoadPersonalNotesRequested(
             guideId: _currentStudyGuide!.id,
           ));
@@ -640,10 +773,8 @@ class _StudyGuideScreenV2ContentState
         if (currentText != (_loadedNotes ?? '').trim()) {
           // Auto-save notes independently (no longer requires guide to be saved)
           if (_currentStudyGuide != null) {
-            if (kDebugMode) {
-              print(
-                  '💾 [AUTO_SAVE] Saving personal notes (${currentText.length} chars)');
-            }
+            Logger.info(
+                '💾 [AUTO_SAVE] Saving personal notes (${currentText.length} chars)');
             context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
                   guideId: _currentStudyGuide!.id,
                   personalNotes: currentText.isEmpty ? null : currentText,
@@ -675,7 +806,7 @@ class _StudyGuideScreenV2ContentState
 
     if (kDebugMode) {
       final guideId = _currentStudyGuide?.id ?? 'streaming';
-      print('📊 [COMPLETION] Started tracking for guide: $guideId');
+      Logger.debug('📊 [COMPLETION] Started tracking for guide: $guideId');
     }
   }
 
@@ -691,12 +822,12 @@ class _StudyGuideScreenV2ContentState
     });
   }
 
-  /// Setup scroll listener to detect when user reaches prayer points section
+  /// Setup scroll listener to detect when user reaches bottom of content
   void _startScrollListener() {
     _scrollController.addListener(() {
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
-          _isPrayerPointsSectionVisible()) {
+          _isScrolledNearBottom()) {
         setState(() {
           _hasScrolledToBottom = true;
         });
@@ -705,21 +836,125 @@ class _StudyGuideScreenV2ContentState
     });
   }
 
-  /// Check if the prayer points section is visible on screen
-  bool _isPrayerPointsSectionVisible() {
-    final keyContext = _prayerPointsKey.currentContext;
-    if (keyContext == null) return false;
+  /// Check if user has scrolled near the bottom of the content
+  /// Returns true when scroll position is at 80% or more of max scroll extent
+  bool _isScrolledNearBottom() {
+    if (!_scrollController.hasClients) {
+      Logger.debug('📊 [SCROLL] No scroll clients attached yet');
+      return false;
+    }
 
-    final RenderObject? renderObject = keyContext.findRenderObject();
-    if (renderObject == null || renderObject is! RenderBox) return false;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
 
-    final RenderBox box = renderObject;
-    final Offset position = box.localToGlobal(Offset.zero);
-    final Size screenSize = MediaQuery.of(context).size;
+    if (kDebugMode) {
+      Logger.debug('📊 [SCROLL] Position check:');
+      Logger.debug('   Current: ${currentScroll.toStringAsFixed(1)}px');
+      Logger.debug('   Max: ${maxScroll.toStringAsFixed(1)}px');
+    }
 
-    // Check if the top of the prayer points section is visible on screen
-    // Consider visible when the section enters the bottom 80% of the screen
-    return position.dy < screenSize.height * 0.8;
+    // Handle case where content doesn't scroll (fits on screen)
+    if (maxScroll <= 0) {
+      Logger.debug(
+          '   → Content fits on screen, marking as scrolled to bottom');
+      return true;
+    }
+
+    // Check if scrolled to at least 80% of content (more forgiving threshold)
+    final scrollPercentage = currentScroll / maxScroll;
+    final isNearBottom = scrollPercentage >= 0.80;
+
+    if (kDebugMode) {
+      Logger.debug(
+          '   Percentage: ${(scrollPercentage * 100).toStringAsFixed(1)}%');
+      Logger.debug('   Is near bottom (≥80%): ${isNearBottom ? "✓" : "✗"}');
+    }
+
+    return isNearBottom;
+  }
+
+  /// Checks if AI Discipler feature is enabled based on feature flags and user's plan
+  bool _isAiDisciplerFeatureEnabled() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+  }
+
+  /// Checks if Voice Buddy (Listen/TTS) feature is enabled based on feature flags and user's plan
+  bool _isVoiceBuddyFeatureEnabled() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureEnabled('voice_buddy', userPlan);
+  }
+
+  /// Checks if Study Chat (text follow-up) feature is enabled based on feature flags and user's plan
+  bool _isStudyChatFeatureEnabled() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureEnabled('study_chat', userPlan);
+  }
+
+  /// Checks if Study Chat feature should be visible (not hidden)
+  bool _shouldShowStudyChat() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return !systemConfigService.shouldHideFeature('study_chat', userPlan);
+  }
+
+  /// Checks if Reflections feature should be visible (not hidden)
+  bool _shouldShowReflections() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return !systemConfigService.shouldHideFeature('reflections', userPlan);
+  }
+
+  /// Checks if Reflections feature is locked for current user
+  bool _isReflectionsLocked() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureLocked('reflections', userPlan);
   }
 
   /// Check if both completion conditions are met and mark complete if so
@@ -728,13 +963,19 @@ class _StudyGuideScreenV2ContentState
 
     const minTimeSeconds = 60; // 1 minute
     final timeConditionMet = _timeSpentSeconds >= minTimeSeconds;
-    final scrollConditionMet = _hasScrolledToBottom;
+
+    // In Reflect Mode, there's no scrolling, so auto-satisfy scroll condition
+    final scrollConditionMet =
+        _hasScrolledToBottom || _viewMode == StudyViewMode.reflect;
 
     if (kDebugMode) {
-      print('📊 [COMPLETION] Conditions check:');
-      print(
+      Logger.debug('📊 [COMPLETION] Conditions check:');
+      Logger.debug(
+          '   View Mode: ${_viewMode == StudyViewMode.read ? "Read" : "Reflect"}');
+      Logger.debug(
           '   Time: $_timeSpentSeconds/${minTimeSeconds}s (${timeConditionMet ? "✓" : "✗"})');
-      print('   Scroll: ${scrollConditionMet ? "✓" : "✗"}');
+      Logger.debug(
+          '   Scroll: ${scrollConditionMet ? "✓" : "✗"}${_viewMode == StudyViewMode.reflect ? " (Reflect mode - auto-met)" : ""}');
     }
 
     if (timeConditionMet && scrollConditionMet) {
@@ -742,8 +983,12 @@ class _StudyGuideScreenV2ContentState
     }
   }
 
-  /// Call the API to mark the study guide as completed
-  void _markStudyGuideComplete() {
+  /// Call the API to mark the study guide as completed.
+  ///
+  /// [isManual] should be true when triggered by the user tapping "Complete Study".
+  /// Auto-completion (conditions met) uses the default false, which enforces
+  /// time and scroll conditions on the server.
+  void _markStudyGuideComplete({bool isManual = false}) {
     if (_completionMarked || _currentStudyGuide == null) return;
 
     setState(() {
@@ -751,10 +996,11 @@ class _StudyGuideScreenV2ContentState
     });
 
     if (kDebugMode) {
-      print('✅ [COMPLETION] Marking guide as complete:');
-      print('   Guide ID: ${_currentStudyGuide!.id}');
-      print('   Time spent: $_timeSpentSeconds seconds');
-      print('   Scrolled to bottom: $_hasScrolledToBottom');
+      Logger.info('✅ [COMPLETION] Marking guide as complete:');
+      Logger.debug('   Guide ID: ${_currentStudyGuide!.id}');
+      Logger.debug('   Time spent: $_timeSpentSeconds seconds');
+      Logger.debug('   Scrolled to bottom: $_hasScrolledToBottom');
+      Logger.debug('   Manual: $isManual');
     }
 
     // Dispatch BLoC event to mark completion
@@ -762,6 +1008,7 @@ class _StudyGuideScreenV2ContentState
           guideId: _currentStudyGuide!.id,
           timeSpentSeconds: _timeSpentSeconds,
           scrolledToBottom: _hasScrolledToBottom,
+          isManual: isManual,
         ));
 
     // Cancel the tracking timer since completion is marked
@@ -775,18 +1022,16 @@ class _StudyGuideScreenV2ContentState
   Future<void> _completeTopicProgress() async {
     final topicId = widget.topicId;
     if (topicId == null || topicId.isEmpty) {
-      if (kDebugMode) {
-        print(
-            '📊 [TOPIC_PROGRESS] No topicId provided, skipping progress tracking');
-      }
+      Logger.debug(
+          '📊 [TOPIC_PROGRESS] No topicId provided, skipping progress tracking');
       return;
     }
 
     if (kDebugMode) {
-      print('📊 [TOPIC_PROGRESS] Completing topic progress:');
-      print('   Topic ID: $topicId');
-      print('   Study Mode: ${widget.studyMode.name}');
-      print('   Time spent: $_timeSpentSeconds seconds');
+      Logger.debug('📊 [TOPIC_PROGRESS] Completing topic progress:');
+      Logger.debug('   Topic ID: $topicId');
+      Logger.debug('   Study Mode: ${widget.studyMode.name}');
+      Logger.debug('   Time spent: $_timeSpentSeconds seconds');
     }
 
     try {
@@ -799,16 +1044,15 @@ class _StudyGuideScreenV2ContentState
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
         },
         (completionResult) {
           if (kDebugMode) {
-            print('✅ [TOPIC_PROGRESS] Topic completed successfully:');
-            print('   XP earned: ${completionResult.xpEarned}');
-            print('   First completion: ${completionResult.isFirstCompletion}');
+            Logger.debug('✅ [TOPIC_PROGRESS] Topic completed successfully:');
+            Logger.debug('   XP earned: ${completionResult.xpEarned}');
+            Logger.debug(
+                '   First completion: ${completionResult.isFirstCompletion}');
           }
 
           // Show XP earned feedback if this is the first completion
@@ -820,9 +1064,7 @@ class _StudyGuideScreenV2ContentState
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
-      }
+      Logger.error('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
     }
   }
 
@@ -1001,7 +1243,7 @@ class _StudyGuideScreenV2ContentState
                       _saveStudyGuide();
                       break;
                     case 'complete':
-                      _markStudyGuideComplete();
+                      _markStudyGuideComplete(isManual: true);
                       break;
                   }
                 },
@@ -1204,6 +1446,7 @@ class _StudyGuideScreenV2ContentState
       summary: state.content.summary ?? '',
       interpretation: state.content.interpretation ?? '',
       context: state.content.context ?? '',
+      passage: state.content.passage,
       relatedVerses: state.content.relatedVerses ?? [],
       reflectionQuestions: state.content.reflectionQuestions ?? [],
       prayerPoints: state.content.prayerPoints ?? [],
@@ -1453,48 +1696,62 @@ class _StudyGuideScreenV2ContentState
 
           SizedBox(height: isLargeScreen ? 32 : 24),
 
-          // Reading Completion Card (dismissible)
-          if (_showCompletionCard)
-            ReadingCompletionCard(
-              onReflect: () {
-                setState(() => _viewMode = StudyViewMode.reflect);
-              },
-              onMaybeLater: () {
-                // Simply dismiss the card
-                setState(() {
-                  _showCompletionCard = false;
-                });
-              },
-            ),
-
-          SizedBox(height: isLargeScreen ? 32 : 24),
-
-          // Follow-up Chat Section
-          Container(
-            key: _followUpChatKey,
-            child: BlocProvider(
-              create: (context) {
-                final bloc = sl<FollowUpChatBloc>();
-                bloc.add(StartConversationEvent(
-                  studyGuideId: _currentStudyGuide!.id,
-                  studyGuideTitle: _getDisplayTitle(),
-                ));
-                return bloc;
-              },
-              child: FollowUpChatWidget(
-                studyGuideId: _currentStudyGuide!.id,
-                studyGuideTitle: _getDisplayTitle(),
-                isExpanded: _isChatExpanded,
-                onToggleExpanded: () {
+          // Reading Completion Card (dismissible) - respect reflections feature access
+          if (_showCompletionCard && _shouldShowReflections())
+            LockedFeatureWrapper(
+              featureKey: 'reflections',
+              showLockOverlay: _isReflectionsLocked(),
+              child: ReadingCompletionCard(
+                onReflect: () {
+                  // Only proceed if not locked
+                  if (!_isReflectionsLocked()) {
+                    setState(() => _viewMode = StudyViewMode.reflect);
+                  }
+                },
+                onMaybeLater: () {
+                  // Simply dismiss the card
                   setState(() {
-                    _isChatExpanded = !_isChatExpanded;
+                    _showCompletionCard = false;
                   });
                 },
               ),
             ),
-          ),
 
           SizedBox(height: isLargeScreen ? 32 : 24),
+
+          // Follow-up Chat Section - with lock support for study_chat feature
+          LockedFeatureWrapper(
+            featureKey: 'study_chat',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  key: _followUpChatKey,
+                  child: BlocProvider(
+                    create: (context) {
+                      final bloc = sl<FollowUpChatBloc>();
+                      bloc.add(StartConversationEvent(
+                        studyGuideId: _currentStudyGuide!.id,
+                        studyGuideTitle: _getDisplayTitle(),
+                      ));
+                      return bloc;
+                    },
+                    child: FollowUpChatWidget(
+                      studyGuideId: _currentStudyGuide!.id,
+                      studyGuideTitle: _getDisplayTitle(),
+                      isExpanded: _isChatExpanded,
+                      onToggleExpanded: () {
+                        setState(() {
+                          _isChatExpanded = !_isChatExpanded;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(height: isLargeScreen ? 32 : 24),
+              ],
+            ),
+          ),
 
           // Notes Section
           _buildNotesSection(),
@@ -1546,11 +1803,11 @@ class _StudyGuideScreenV2ContentState
       );
 
       if (kDebugMode) {
-        print(
+        Logger.info(
             '✅ [REFLECTION] Saved reflection for guide: ${_currentStudyGuide!.id}');
-        print('   Responses: ${responses.length}');
-        print('   Time spent: ${timeSpent}s');
-        print('   Study mode: ${widget.studyMode.displayName}');
+        Logger.debug('   Responses: ${responses.length}');
+        Logger.debug('   Time spent: ${timeSpent}s');
+        Logger.debug('   Study mode: ${widget.studyMode.displayName}');
       }
 
       // Check if widget is still mounted before updating UI
@@ -1567,9 +1824,7 @@ class _StudyGuideScreenV2ContentState
         icon: Icons.check_circle,
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REFLECTION] Error saving reflection: $e');
-      }
+      Logger.error('❌ [REFLECTION] Error saving reflection: $e');
 
       // Check if widget is still mounted before updating UI
       if (!mounted) return;
@@ -1675,37 +1930,51 @@ class _StudyGuideScreenV2ContentState
 
             const SizedBox(height: 24),
 
-            // Interpretation Section (index 1)
+            // Context Section (index 1)
             _StudySection(
-              title: context.tr(TranslationKeys.studyGuideInterpretation),
-              icon: Icons.lightbulb_outline,
-              content: _currentStudyGuide!.interpretation,
+              title: context.tr(TranslationKeys.studyGuideContext),
+              icon: Icons.history_edu,
+              content: _currentStudyGuide!.context,
               isBeingRead: isReading && currentSection == 1,
             ),
 
             const SizedBox(height: 24),
 
-            // Context Section (index 2)
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideContext),
-              icon: Icons.history_edu,
-              content: _currentStudyGuide!.context,
-              isBeingRead: isReading && currentSection == 2,
-            ),
+            // Passage Reading Section (index 2) - LLM-generated passage for meditation
+            if (_currentStudyGuide!.passage != null &&
+                _currentStudyGuide!.passage!.isNotEmpty)
+              _StudySection(
+                title: context.tr(TranslationKeys.studyGuidePassageReading),
+                icon: Icons.auto_stories,
+                content: _currentStudyGuide!.passage!,
+                isBeingRead: isReading && currentSection == 2,
+              ),
 
-            const SizedBox(height: 24),
+            if (_currentStudyGuide!.passage != null &&
+                _currentStudyGuide!.passage!.isNotEmpty)
+              const SizedBox(height: 24),
 
-            // Related Verses Section (index 3)
+            // Interpretation Section (index 3)
             _StudySection(
-              title: context.tr(TranslationKeys.studyGuideRelatedVerses),
-              icon: Icons.menu_book,
-              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              title: context.tr(TranslationKeys.studyGuideInterpretation),
+              icon: Icons.lightbulb_outline,
+              content: _currentStudyGuide!.interpretation,
               isBeingRead: isReading && currentSection == 3,
             ),
 
             const SizedBox(height: 24),
 
-            // Discussion Questions Section (index 4)
+            // Related Verses Section (index 4)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideRelatedVerses),
+              icon: Icons.menu_book,
+              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              isBeingRead: isReading && currentSection == 4,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Discussion Questions Section (index 5)
             _StudySection(
               title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
               icon: Icons.quiz,
@@ -1714,14 +1983,13 @@ class _StudyGuideScreenV2ContentState
                   .entries
                   .map((entry) => '${entry.key + 1}. ${entry.value}')
                   .join('\n\n'),
-              isBeingRead: isReading && currentSection == 4,
+              isBeingRead: isReading && currentSection == 5,
             ),
 
             const SizedBox(height: 24),
 
-            // Prayer Points Section (index 5)
+            // Prayer Points Section (index 6)
             _StudySection(
-              key: _prayerPointsKey,
               title: context.tr(TranslationKeys.studyGuidePrayerPoints),
               icon: Icons.favorite,
               content: _currentStudyGuide!.prayerPoints
@@ -1729,7 +1997,7 @@ class _StudyGuideScreenV2ContentState
                   .entries
                   .map((entry) => '• ${entry.value}')
                   .join('\n'),
-              isBeingRead: isReading && currentSection == 5,
+              isBeingRead: isReading && currentSection == 6,
             ),
           ],
         );
@@ -1760,37 +2028,51 @@ class _StudyGuideScreenV2ContentState
 
             const SizedBox(height: 24),
 
-            // Main Sermon Body (index 1) - from interpretation
+            // Background/Context (index 1)
             _StudySection(
-              title: context.tr(TranslationKeys.sermonBody),
-              icon: Icons.menu_book,
-              content: _currentStudyGuide!.interpretation,
+              title: context.tr(TranslationKeys.sermonContext),
+              icon: Icons.history_edu,
+              content: _currentStudyGuide!.context,
               isBeingRead: isReading && currentSection == 1,
             ),
 
             const SizedBox(height: 24),
 
-            // Background/Context (index 2)
-            _StudySection(
-              title: context.tr(TranslationKeys.sermonContext),
-              icon: Icons.history_edu,
-              content: _currentStudyGuide!.context,
-              isBeingRead: isReading && currentSection == 2,
-            ),
+            // Passage Reading (index 2)
+            if (_currentStudyGuide!.passage != null &&
+                _currentStudyGuide!.passage!.isNotEmpty)
+              _StudySection(
+                title: context.tr(TranslationKeys.studyGuidePassageReading),
+                icon: Icons.auto_stories,
+                content: _currentStudyGuide!.passage!,
+                isBeingRead: isReading && currentSection == 2,
+              ),
 
-            const SizedBox(height: 24),
+            if (_currentStudyGuide!.passage != null &&
+                _currentStudyGuide!.passage!.isNotEmpty)
+              const SizedBox(height: 24),
 
-            // Supporting Verses (index 3) - from relatedVerses
+            // Main Sermon Body (index 3) - from interpretation
             _StudySection(
-              title: context.tr(TranslationKeys.sermonSupportingVerses),
-              icon: Icons.bookmark_border,
-              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              title: context.tr(TranslationKeys.sermonBody),
+              icon: Icons.menu_book,
+              content: _currentStudyGuide!.interpretation,
               isBeingRead: isReading && currentSection == 3,
             ),
 
             const SizedBox(height: 24),
 
-            // Discussion Questions (index 4) - from reflectionQuestions
+            // Supporting Verses (index 4) - from relatedVerses
+            _StudySection(
+              title: context.tr(TranslationKeys.sermonSupportingVerses),
+              icon: Icons.bookmark_border,
+              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              isBeingRead: isReading && currentSection == 4,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Discussion Questions (index 5) - from reflectionQuestions
             _StudySection(
               title: context.tr(TranslationKeys.sermonDiscussionQuestions),
               icon: Icons.question_answer,
@@ -1799,16 +2081,16 @@ class _StudyGuideScreenV2ContentState
                   .entries
                   .map((entry) => '${entry.key + 1}. ${entry.value}')
                   .join('\n\n'),
-              isBeingRead: isReading && currentSection == 4,
+              isBeingRead: isReading && currentSection == 5,
             ),
 
             const SizedBox(height: 24),
 
-            // Altar Call (index 5) - from prayerPoints with special styling
+            // Altar Call (index 6) - from prayerPoints with special styling
             _buildAltarCallSection(
               context,
               content: _currentStudyGuide!.prayerPoints.join('\n\n'),
-              isBeingRead: isReading && currentSection == 5,
+              isBeingRead: isReading && currentSection == 6,
             ),
           ],
         );
@@ -1835,6 +2117,26 @@ class _StudyGuideScreenV2ContentState
 
         const SizedBox(height: 16),
 
+        // Context (historical/cultural background)
+        _QuickStudySection(
+          title: context.tr(TranslationKeys.studyGuideContext),
+          content: _currentStudyGuide!.context,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Passage Reading
+        if (_currentStudyGuide!.passage != null &&
+            _currentStudyGuide!.passage!.isNotEmpty)
+          _QuickStudySection(
+            title: context.tr(TranslationKeys.studyGuidePassageReading),
+            content: _currentStudyGuide!.passage!,
+          ),
+
+        if (_currentStudyGuide!.passage != null &&
+            _currentStudyGuide!.passage!.isNotEmpty)
+          const SizedBox(height: 16),
+
         // Key Verse (interpretation)
         _QuickStudySection(
           title: context.tr(TranslationKeys.studyGuideKeyVerse),
@@ -1843,20 +2145,37 @@ class _StudyGuideScreenV2ContentState
 
         const SizedBox(height: 16),
 
-        // Quick Reflection
-        if (_currentStudyGuide!.reflectionQuestions.isNotEmpty)
+        // Related Verses
+        if (_currentStudyGuide!.relatedVerses.isNotEmpty)
           _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuideQuickReflection),
-            content: _currentStudyGuide!.reflectionQuestions.first,
+            title: context.tr(TranslationKeys.studyGuideRelatedVerses),
+            content: _currentStudyGuide!.relatedVerses.join('\n\n'),
           ),
 
         const SizedBox(height: 16),
 
-        // Brief Prayer
+        // Reflection Questions (all questions)
+        if (_currentStudyGuide!.reflectionQuestions.isNotEmpty)
+          _QuickStudySection(
+            title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
+            content: _currentStudyGuide!.reflectionQuestions
+                .asMap()
+                .entries
+                .map((entry) => '${entry.key + 1}. ${entry.value}')
+                .join('\n\n'),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Prayer Points (all prayer points)
         if (_currentStudyGuide!.prayerPoints.isNotEmpty)
           _QuickStudySection(
-            title: context.tr(TranslationKeys.studyGuideBriefPrayer),
-            content: _currentStudyGuide!.prayerPoints.first,
+            title: context.tr(TranslationKeys.studyGuidePrayerPoints),
+            content: _currentStudyGuide!.prayerPoints
+                .asMap()
+                .entries
+                .map((entry) => '• ${entry.value}')
+                .join('\n'),
           ),
       ],
     );
@@ -1924,23 +2243,37 @@ class _StudyGuideScreenV2ContentState
 
             const SizedBox(height: 28),
 
+            // Historical Context
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideHistoricalContext),
+              icon: Icons.history_edu,
+              content: _currentStudyGuide!.context,
+              isBeingRead: isReading && currentSection == 1,
+            ),
+
+            const SizedBox(height: 28),
+
+            // Passage Reading
+            if (_currentStudyGuide!.passage != null &&
+                _currentStudyGuide!.passage!.isNotEmpty)
+              _StudySection(
+                title: context.tr(TranslationKeys.studyGuidePassageReading),
+                icon: Icons.auto_stories,
+                content: _currentStudyGuide!.passage!,
+                isBeingRead: isReading && currentSection == 2,
+              ),
+
+            if (_currentStudyGuide!.passage != null &&
+                _currentStudyGuide!.passage!.isNotEmpty)
+              const SizedBox(height: 28),
+
             // In-Depth Interpretation
             _StudySection(
               title:
                   context.tr(TranslationKeys.studyGuideInDepthInterpretation),
               icon: Icons.lightbulb_outline,
               content: _currentStudyGuide!.interpretation,
-              isBeingRead: isReading && currentSection == 1,
-            ),
-
-            const SizedBox(height: 28),
-
-            // Historical Context
-            _StudySection(
-              title: context.tr(TranslationKeys.studyGuideHistoricalContext),
-              icon: Icons.history_edu,
-              content: _currentStudyGuide!.context,
-              isBeingRead: isReading && currentSection == 2,
+              isBeingRead: isReading && currentSection == 3,
             ),
 
             const SizedBox(height: 28),
@@ -1950,7 +2283,7 @@ class _StudyGuideScreenV2ContentState
               title: context.tr(TranslationKeys.studyGuideScriptureConnections),
               icon: Icons.menu_book,
               content: _currentStudyGuide!.relatedVerses.join('\n\n'),
-              isBeingRead: isReading && currentSection == 3,
+              isBeingRead: isReading && currentSection == 4,
             ),
 
             const SizedBox(height: 28),
@@ -1964,14 +2297,13 @@ class _StudyGuideScreenV2ContentState
                   .entries
                   .map((entry) => '${entry.key + 1}. ${entry.value}')
                   .join('\n\n'),
-              isBeingRead: isReading && currentSection == 4,
+              isBeingRead: isReading && currentSection == 5,
             ),
 
             const SizedBox(height: 28),
 
             // Prayer for Application
             _StudySection(
-              key: _prayerPointsKey,
               title: context.tr(TranslationKeys.studyGuidePrayerForApplication),
               icon: Icons.favorite,
               content: _currentStudyGuide!.prayerPoints
@@ -1979,7 +2311,7 @@ class _StudyGuideScreenV2ContentState
                   .entries
                   .map((entry) => '• ${entry.value}')
                   .join('\n'),
-              isBeingRead: isReading && currentSection == 5,
+              isBeingRead: isReading && currentSection == 6,
             ),
           ],
         );
@@ -2039,21 +2371,34 @@ class _StudyGuideScreenV2ContentState
 
         const SizedBox(height: 24),
 
+        // About This Practice
+        _LectioStudySection(
+          title: context.tr(TranslationKeys.lectioAboutPracticeEmoji),
+          content: _currentStudyGuide!.context,
+          icon: Icons.info_outline,
+        ),
+
+        const SizedBox(height: 24),
+
+        // Passage Reading
+        if (_currentStudyGuide!.passage != null &&
+            _currentStudyGuide!.passage!.isNotEmpty)
+          _LectioStudySection(
+            title: context.tr(TranslationKeys.studyGuidePassageReading),
+            content: _currentStudyGuide!.passage!,
+            icon: Icons.auto_stories,
+          ),
+
+        if (_currentStudyGuide!.passage != null &&
+            _currentStudyGuide!.passage!.isNotEmpty)
+          const SizedBox(height: 24),
+
         // Lectio & Meditatio
         _LectioStudySection(
           title: context.tr(TranslationKeys.lectioLectioMeditatio),
           subtitle: context.tr(TranslationKeys.lectioReadMeditate),
           content: _currentStudyGuide!.interpretation,
           icon: Icons.auto_stories,
-        ),
-
-        const SizedBox(height: 24),
-
-        // About This Practice
-        _LectioStudySection(
-          title: context.tr(TranslationKeys.lectioAboutPracticeEmoji),
-          content: _currentStudyGuide!.context,
-          icon: Icons.info_outline,
         ),
 
         const SizedBox(height: 24),
@@ -2308,207 +2653,213 @@ class _StudyGuideScreenV2ContentState
       ),
       child: Row(
         children: [
-          // Listen Button (Left) - Reactive to TTS state
+          // Listen Button (Left) - with lock support for voice_buddy feature
           Expanded(
-            child: SizedBox(
-              height: 56,
-              child: ValueListenableBuilder<StudyGuideTtsState>(
-                valueListenable: ttsService.state,
-                builder: (context, ttsState, child) {
-                  final isPlaying = ttsState.status == TtsStatus.playing;
-                  final isPaused = ttsState.status == TtsStatus.paused;
-                  final isLoading = ttsState.status == TtsStatus.loading;
-                  final showControls = isPlaying || isPaused;
+            child: LockedFeatureWrapper(
+              featureKey: 'voice_buddy',
+              child: SizedBox(
+                height: 56,
+                child: ValueListenableBuilder<StudyGuideTtsState>(
+                  valueListenable: ttsService.state,
+                  builder: (context, ttsState, child) {
+                    final isPlaying = ttsState.status == TtsStatus.playing;
+                    final isPaused = ttsState.status == TtsStatus.paused;
+                    final isLoading = ttsState.status == TtsStatus.loading;
+                    final showControls = isPlaying || isPaused;
 
-                  if (showControls) {
-                    // Show split button with pause/resume + settings
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: accentColor, width: 2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          // Main play/pause button
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => ttsService.togglePlayPause(),
-                              borderRadius: const BorderRadius.horizontal(
-                                left: Radius.circular(10),
-                              ),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      isPlaying
-                                          ? Icons.pause_rounded
-                                          : Icons.play_arrow_rounded,
-                                      color: accentColor,
-                                      size: 22,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      isPlaying ? 'Pause' : 'Resume',
-                                      style: AppFonts.inter(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
+                    if (showControls) {
+                      // Show split button with pause/resume + settings
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: accentColor, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            // Main play/pause button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => ttsService.togglePlayPause(),
+                                borderRadius: const BorderRadius.horizontal(
+                                  left: Radius.circular(10),
+                                ),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isPlaying
+                                            ? Icons.pause_rounded
+                                            : Icons.play_arrow_rounded,
                                         color: accentColor,
+                                        size: 22,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        isPlaying ? 'Pause' : 'Resume',
+                                        style: AppFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: accentColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          // Divider
-                          Container(
-                            width: 1,
-                            height: 32,
-                            color: accentColor.withOpacity(0.3),
-                          ),
-                          // Settings button
-                          InkWell(
-                            onTap: () => showTtsControlSheet(context),
-                            borderRadius: const BorderRadius.horizontal(
-                              right: Radius.circular(10),
+                            // Divider
+                            Container(
+                              width: 1,
+                              height: 32,
+                              color: accentColor.withOpacity(0.3),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 16),
-                              child: Icon(
-                                Icons.tune,
-                                color: accentColor,
+                            // Settings button
+                            InkWell(
+                              onTap: () => showTtsControlSheet(context),
+                              borderRadius: const BorderRadius.horizontal(
+                                right: Radius.circular(10),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 16),
+                                child: Icon(
+                                  Icons.tune,
+                                  color: accentColor,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      // Show regular Listen button
+                      return OutlinedButton.icon(
+                        onPressed: () {
+                          if (_currentStudyGuide != null) {
+                            // Load and start reading the study guide if not already playing
+                            final status = ttsService.state.value.status;
+                            if (status == TtsStatus.idle ||
+                                status == TtsStatus.error) {
+                              ttsService.startReading(_currentStudyGuide!,
+                                  mode: widget.studyMode);
+                            }
+                            // Open the control sheet
+                            showTtsControlSheet(context);
+                          }
+                        },
+                        icon: isLoading
+                            ? SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: accentColor,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.headphones_rounded,
                                 size: 22,
                               ),
+                        label: Text(
+                          isLoading
+                              ? context.tr(TranslationKeys.studyGuideLoading)
+                              : context.tr(TranslationKeys.studyGuideListen),
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: accentColor,
+                          side: BorderSide(
+                            color: accentColor,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
+          // Ask AI Button (Right) - only show if ai_discipler is enabled and study_chat is not hidden
+          if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
+            // Add spacing (Listen button is always shown with lock support)
+            const SizedBox(width: 16),
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        // Expand chat first if collapsed
+                        if (!_isChatExpanded) {
+                          setState(() {
+                            _isChatExpanded = true;
+                          });
+                        }
+
+                        // Then scroll to Follow-up Chat section after a brief delay
+                        // to allow the expand animation to start
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          final chatContext = _followUpChatKey.currentContext;
+                          if (chatContext != null && mounted) {
+                            Scrollable.ensureVisible(
+                              chatContext,
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                              alignment: 0.1, // Position near top of viewport
+                            );
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.tr(TranslationKeys.studyGuideAskAi),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
                         ],
                       ),
-                    );
-                  } else {
-                    // Show regular Listen button
-                    return OutlinedButton.icon(
-                      onPressed: () {
-                        if (_currentStudyGuide != null) {
-                          // Load and start reading the study guide if not already playing
-                          final status = ttsService.state.value.status;
-                          if (status == TtsStatus.idle ||
-                              status == TtsStatus.error) {
-                            ttsService.startReading(_currentStudyGuide!,
-                                mode: widget.studyMode);
-                          }
-                          // Open the control sheet
-                          showTtsControlSheet(context);
-                        }
-                      },
-                      icon: isLoading
-                          ? SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: accentColor,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.headphones_rounded,
-                              size: 22,
-                            ),
-                      label: Text(
-                        isLoading
-                            ? context.tr(TranslationKeys.studyGuideLoading)
-                            : context.tr(TranslationKeys.studyGuideListen),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: accentColor,
-                        side: BorderSide(
-                          color: accentColor,
-                          width: 2,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Ask AI Button (Right) - Scroll to Follow-up Chat section
-          Expanded(
-            child: SizedBox(
-              height: 56,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      // Expand chat first if collapsed
-                      if (!_isChatExpanded) {
-                        setState(() {
-                          _isChatExpanded = true;
-                        });
-                      }
-
-                      // Then scroll to Follow-up Chat section after a brief delay
-                      // to allow the expand animation to start
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        final chatContext = _followUpChatKey.currentContext;
-                        if (chatContext != null && mounted) {
-                          Scrollable.ensureVisible(
-                            chatContext,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOut,
-                            alignment: 0.1, // Position near top of viewport
-                          );
-                        }
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.auto_awesome_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.tr(TranslationKeys.studyGuideAskAi),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -2908,7 +3259,6 @@ class _StudySection extends StatelessWidget {
   final bool isBeingRead;
 
   const _StudySection({
-    super.key,
     required this.title,
     required this.icon,
     required this.content,

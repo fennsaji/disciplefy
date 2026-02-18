@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../domain/entities/daily_verse_entity.dart';
 import 'daily_verse_cache_interface.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Web-compatible caching service for daily verses using SharedPreferences only
 /// This service provides the same interface as DailyVerseCacheService but works on web
@@ -19,9 +19,8 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
     if (_isInitialized) return;
     _isInitialized = true;
 
-    if (kDebugMode) {
-      print('🌐 [DAILY VERSE WEB CACHE] Initialized (using SharedPreferences)');
-    }
+    Logger.info(
+        '🌐 [DAILY VERSE WEB CACHE] Initialized (using SharedPreferences)');
   }
 
   /// Cache a daily verse using SharedPreferences
@@ -48,13 +47,9 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       await prefs.setString('$_keyPrefix$dateKey', jsonEncode(verseData));
       await prefs.setString(_lastFetchKey, DateTime.now().toIso8601String());
 
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Cached verse for $dateKey');
-      }
+      Logger.error('🌐 [DAILY VERSE WEB CACHE] Cached verse for $dateKey');
     } catch (e) {
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Cache error: $e');
-      }
+      Logger.debug('🌐 [DAILY VERSE WEB CACHE] Cache error: $e');
     }
   }
 
@@ -73,9 +68,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       final verseMap = jsonDecode(cachedData) as Map<String, dynamic>;
       return _createVerseFromMap(verseMap);
     } catch (e) {
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Get cache error: $e');
-      }
+      Logger.error('🌐 [DAILY VERSE WEB CACHE] Get cache error: $e');
       return null;
     }
   }
@@ -110,9 +103,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       // Refresh if last fetch was before today's midnight
       return lastFetch.isBefore(todayMidnight);
     } catch (e) {
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Should fetch check error: $e');
-      }
+      Logger.error('🌐 [DAILY VERSE WEB CACHE] Should fetch check error: $e');
       return true; // On error, fetch to be safe
     }
   }
@@ -146,9 +137,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       return todaysVerse == null || !todaysVerse.isToday;
     } catch (e) {
       // On error, refresh to be safe
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Should refresh check error: $e');
-      }
+      Logger.error('🌐 [DAILY VERSE WEB CACHE] Should refresh check error: $e');
       return true;
     }
   }
@@ -160,9 +149,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_preferredLanguageKey, language.code);
     } catch (e) {
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Set language error: $e');
-      }
+      Logger.error('🌐 [DAILY VERSE WEB CACHE] Set language error: $e');
     }
   }
 
@@ -181,9 +168,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
           return VerseLanguage.english;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Get language error: $e');
-      }
+      Logger.error('🌐 [DAILY VERSE WEB CACHE] Get language error: $e');
       return VerseLanguage.english;
     }
   }
@@ -200,14 +185,10 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
         await prefs.remove(key);
       }
 
-      if (kDebugMode) {
-        print(
-            '🌐 [DAILY VERSE WEB CACHE] Cleared ${verseKeys.length} cached verses');
-      }
+      Logger.error(
+          '🌐 [DAILY VERSE WEB CACHE] Cleared ${verseKeys.length} cached verses');
     } catch (e) {
-      if (kDebugMode) {
-        print('🌐 [DAILY VERSE WEB CACHE] Clear cache error: $e');
-      }
+      Logger.debug('🌐 [DAILY VERSE WEB CACHE] Clear cache error: $e');
     }
   }
 

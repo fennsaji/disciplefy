@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/memory_verse_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Local data source for caching memory verses using Hive.
 ///
@@ -27,18 +28,14 @@ class MemoryVerseLocalDataSource {
   Future<void> initialize() async {
     // If already initialized, skip
     if (_cacheBox != null && _cacheBox!.isOpen) {
-      if (kDebugMode) {
-        print('ℹ️ [MEMORY VERSES CACHE] Hive box already initialized');
-      }
+      Logger.debug('ℹ️ [MEMORY VERSES CACHE] Hive box already initialized');
       return;
     }
 
     // Prevent concurrent initialization
     if (_isInitializing) {
-      if (kDebugMode) {
-        print(
-            '⏳ [MEMORY VERSES CACHE] Initialization already in progress, waiting...');
-      }
+      Logger.debug(
+          '⏳ [MEMORY VERSES CACHE] Initialization already in progress, waiting...');
       // Wait for initialization to complete
       while (_isInitializing) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -50,13 +47,12 @@ class MemoryVerseLocalDataSource {
 
     try {
       _cacheBox = await Hive.openBox<String>(_boxName);
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Hive box initialized');
-      }
+      Logger.error('✅ [MEMORY VERSES CACHE] Hive box initialized');
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Failed to initialize Hive box: $e');
-        print(
+        Logger.debug(
+            '❌ [MEMORY VERSES CACHE] Failed to initialize Hive box: $e');
+        Logger.debug(
             '🔄 [MEMORY VERSES CACHE] Attempting to delete corrupted box and retry...');
       }
 
@@ -64,13 +60,10 @@ class MemoryVerseLocalDataSource {
       try {
         await Hive.deleteBoxFromDisk(_boxName);
         _cacheBox = await Hive.openBox<String>(_boxName);
-        if (kDebugMode) {
-          print('✅ [MEMORY VERSES CACHE] Hive box recovered after deletion');
-        }
+        Logger.error(
+            '✅ [MEMORY VERSES CACHE] Hive box recovered after deletion');
       } catch (recoveryError) {
-        if (kDebugMode) {
-          print('❌ [MEMORY VERSES CACHE] Recovery failed: $recoveryError');
-        }
+        Logger.debug('❌ [MEMORY VERSES CACHE] Recovery failed: $recoveryError');
         rethrow;
       }
     } finally {
@@ -81,10 +74,8 @@ class MemoryVerseLocalDataSource {
   /// Ensures the Hive box is initialized before use (lazy initialization)
   Future<Box<String>> _ensureInitialized() async {
     if (_cacheBox == null || !_cacheBox!.isOpen) {
-      if (kDebugMode) {
-        print(
-            '⚠️ [MEMORY VERSES CACHE] Box not initialized, initializing now...');
-      }
+      Logger.warning(
+          '⚠️ [MEMORY VERSES CACHE] Box not initialized, initializing now...');
       await initialize();
     }
 
@@ -114,9 +105,7 @@ class MemoryVerseLocalDataSource {
               (json) => MemoryVerseModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error getting cached verses: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error getting cached verses: $e');
       return [];
     }
   }
@@ -136,9 +125,7 @@ class MemoryVerseLocalDataSource {
           .toList()
         ..sort((a, b) => a.nextReviewDate.compareTo(b.nextReviewDate));
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error getting due verses: $e');
-      }
+      Logger.error('❌ [MEMORY VERSES CACHE] Error getting due verses: $e');
       return [];
     }
   }
@@ -152,9 +139,7 @@ class MemoryVerseLocalDataSource {
         orElse: () => throw Exception('Verse not found'),
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error getting verse by ID: $e');
-      }
+      Logger.error('❌ [MEMORY VERSES CACHE] Error getting verse by ID: $e');
       return null;
     }
   }
@@ -169,13 +154,9 @@ class MemoryVerseLocalDataSource {
       );
       await box.put(_versesKey, versesJson);
 
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Cached ${verses.length} verses');
-      }
+      Logger.error('✅ [MEMORY VERSES CACHE] Cached ${verses.length} verses');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error caching verses: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error caching verses: $e');
       rethrow;
     }
   }
@@ -194,13 +175,10 @@ class MemoryVerseLocalDataSource {
       // Save back to cache
       await cacheVerses(allVerses);
 
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Cached verse: ${verse.verseReference}');
-      }
+      Logger.error(
+          '✅ [MEMORY VERSES CACHE] Cached verse: ${verse.verseReference}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error caching verse: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error caching verse: $e');
       rethrow;
     }
   }
@@ -212,13 +190,9 @@ class MemoryVerseLocalDataSource {
       allVerses.removeWhere((verse) => verse.id == id);
       await cacheVerses(allVerses);
 
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Removed verse: $id');
-      }
+      Logger.error('✅ [MEMORY VERSES CACHE] Removed verse: $id');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error removing verse: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error removing verse: $e');
       rethrow;
     }
   }
@@ -240,14 +214,10 @@ class MemoryVerseLocalDataSource {
 
       await box.put(_syncQueueKey, jsonEncode(queue));
 
-      if (kDebugMode) {
-        print(
-            '✅ [MEMORY VERSES CACHE] Added to sync queue: ${operation['type']}');
-      }
+      Logger.error(
+          '✅ [MEMORY VERSES CACHE] Added to sync queue: ${operation['type']}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error adding to sync queue: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error adding to sync queue: $e');
       rethrow;
     }
   }
@@ -262,9 +232,7 @@ class MemoryVerseLocalDataSource {
 
       return queue.cast<Map<String, dynamic>>();
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error getting sync queue: $e');
-      }
+      Logger.error('❌ [MEMORY VERSES CACHE] Error getting sync queue: $e');
       return [];
     }
   }
@@ -276,13 +244,9 @@ class MemoryVerseLocalDataSource {
 
       await box.put(_syncQueueKey, '[]');
 
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Sync queue cleared');
-      }
+      Logger.error('✅ [MEMORY VERSES CACHE] Sync queue cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error clearing sync queue: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error clearing sync queue: $e');
       rethrow;
     }
   }
@@ -294,13 +258,9 @@ class MemoryVerseLocalDataSource {
 
       await box.put(_lastSyncKey, DateTime.now().toIso8601String());
 
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Last sync time updated');
-      }
+      Logger.error('✅ [MEMORY VERSES CACHE] Last sync time updated');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error updating last sync time: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error updating last sync time: $e');
     }
   }
 
@@ -314,9 +274,7 @@ class MemoryVerseLocalDataSource {
 
       return DateTime.parse(timestampStr);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error getting last sync time: $e');
-      }
+      Logger.error('❌ [MEMORY VERSES CACHE] Error getting last sync time: $e');
       return null;
     }
   }
@@ -328,13 +286,9 @@ class MemoryVerseLocalDataSource {
 
       await box.clear();
 
-      if (kDebugMode) {
-        print('✅ [MEMORY VERSES CACHE] Cache cleared');
-      }
+      Logger.debug('✅ [MEMORY VERSES CACHE] Cache cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [MEMORY VERSES CACHE] Error clearing cache: $e');
-      }
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error clearing cache: $e');
       rethrow;
     }
   }

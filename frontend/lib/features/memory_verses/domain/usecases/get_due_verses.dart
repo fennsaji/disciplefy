@@ -4,6 +4,7 @@ import '../../../../core/error/failures.dart';
 import '../entities/memory_verse_entity.dart';
 import '../entities/review_statistics_entity.dart';
 import '../repositories/memory_verse_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Use case for fetching verses that are due for review.
 ///
@@ -30,8 +31,8 @@ import '../repositories/memory_verse_repository.dart';
 ///   (failure) => print('Error: ${failure.message}'),
 ///   (data) {
 ///     final (verses, stats) = data;
-///     print('Due verses: ${verses.length}');
-///     print('Total verses: ${stats.totalVerses}');
+///     Logger.debug('Due verses: ${verses.length}');
+///     Logger.debug('Total verses: ${stats.totalVerses}');
 ///   },
 /// );
 /// ```

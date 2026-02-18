@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../config/app_config.dart';
 import '../error/exceptions.dart';
+import '../utils/logger.dart';
 
 /// Unified authentication helper for all API services
 /// Ensures consistent authentication across the application
@@ -21,19 +22,46 @@ class ApiAuthHelper {
   /// Get API headers with proper authentication
   /// Uses live Supabase session for authenticated users
   /// Uses anon key authorization for unauthenticated users (required for Edge Functions)
-  static Future<Map<String, String>> getAuthHeaders() async {
+  ///
+  /// OAUTH FIX: After Google/Apple OAuth login, there's a brief delay before the session
+  /// is persisted to currentSession. We retry a few times to handle this timing issue.
+  static Future<Map<String, String>> getAuthHeaders({
+    int maxRetries = 3,
+    Duration retryDelay = const Duration(milliseconds: 500),
+  }) async {
     try {
       final headers = <String, String>{
         'Content-Type': 'application/json',
         'apikey': AppConfig.supabaseAnonKey,
       };
 
-      // Get live Supabase session (same pattern as working StudyGuidesApiService)
-      final session = Supabase.instance.client.auth.currentSession;
+      // Try to get session with retry logic for OAuth flow
+      Session? session;
+      for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        session = Supabase.instance.client.auth.currentSession;
+
+        if (session != null && session.accessToken.isNotEmpty) {
+          // Session found
+          break;
+        }
+
+        if (attempt < maxRetries) {
+          // Wait before retrying (only if we have more attempts)
+          Logger.debug(
+              '🔐 [API] Session not ready (attempt $attempt/$maxRetries), retrying in ${retryDelay.inMilliseconds}ms...');
+          await Future.delayed(retryDelay);
+        }
+      }
+
       if (session != null && session.accessToken.isNotEmpty) {
         headers['Authorization'] = 'Bearer ${session.accessToken}';
-        print(
-            '🔐 [API] Using Supabase session token for user: ${session.user.id}');
+
+        // Warn if session token is unexpectedly the anon key
+        final isAnonKey = session.accessToken == AppConfig.supabaseAnonKey;
+        if (isAnonKey) {
+          Logger.warning(
+              '🚨 [API] CRITICAL: Session token is the anon key! Should not happen after OAuth login.');
+        }
       } else {
         // For unauthenticated users, use anon key in Authorization header
         // This is required for Edge Functions to accept the request
@@ -42,13 +70,13 @@ class ApiAuthHelper {
         // Also add x-session-id header for backend session tracking
         final sessionId = await _getOrCreateAnonymousSessionId();
         headers['x-session-id'] = sessionId;
-        print(
+        Logger.debug(
             '🔐 [API] Using anon key authorization with session ID: $sessionId');
       }
 
       return headers;
     } catch (e) {
-      print('🚨 [API] Error creating auth headers: $e');
+      Logger.error('🚨 [API] Error creating auth headers: $e');
       rethrow;
     }
   }
@@ -67,16 +95,17 @@ class ApiAuthHelper {
       if (sessionId == null || sessionId.isEmpty) {
         sessionId = _uuid.v4();
         await box.put(_sessionIdKey, sessionId);
-        print('🔐 [API] Created new anonymous session ID: $sessionId');
+        Logger.debug('🔐 [API] Created new anonymous session ID: $sessionId');
       } else {
-        print('🔐 [API] Using existing anonymous session ID: $sessionId');
+        Logger.debug(
+            '🔐 [API] Using existing anonymous session ID: $sessionId');
       }
 
       return sessionId;
     } catch (e) {
       // Fallback to generating a new session ID
       final fallbackId = _uuid.v4();
-      print('🔐 [API] Fallback to generated session ID: $fallbackId');
+      Logger.debug('🔐 [API] Fallback to generated session ID: $fallbackId');
       return fallbackId;
     }
   }
@@ -99,12 +128,13 @@ class ApiAuthHelper {
     try {
       final session = Supabase.instance.client.auth.currentSession;
       if (session == null) {
-        print('🔐 [TOKEN_VALIDATION] No session found - token invalid');
+        Logger.debug('🔐 [TOKEN_VALIDATION] No session found - token invalid');
         return false;
       }
 
       if (session.accessToken.isEmpty) {
-        print('🔐 [TOKEN_VALIDATION] Empty access token - token invalid');
+        Logger.debug(
+            '🔐 [TOKEN_VALIDATION] Empty access token - token invalid');
         return false;
       }
 
@@ -115,21 +145,22 @@ class ApiAuthHelper {
         final now = DateTime.now();
 
         if (now.isAfter(expiryDate)) {
-          print(
+          Logger.debug(
               '🔐 [TOKEN_VALIDATION] Token expired at: $expiryDate - token invalid');
           return false;
         }
 
-        print(
+        Logger.debug(
             '🔐 [TOKEN_VALIDATION] Token is valid for user: ${session.user.id} (expires: $expiryDate)');
       } else {
-        print(
+        Logger.debug(
             '🔐 [TOKEN_VALIDATION] ℹ️  No expiry timestamp - token assumed valid for user: ${session.user.id}');
       }
 
       return true;
     } catch (e) {
-      print('🔐 [TOKEN_VALIDATION] Error validating token: $e - token invalid');
+      Logger.error(
+          '🔐 [TOKEN_VALIDATION] Error validating token: $e - token invalid');
       return false;
     }
   }
@@ -145,44 +176,95 @@ class ApiAuthHelper {
   /// Validate token before making authenticated API requests
   /// Throws TokenValidationException if token is invalid
   /// Automatically refreshes session if token is expired or close to expiry
-  static Future<void> validateTokenForRequest() async {
-    // Anonymous users don't need token validation
-    if (!requiresTokenValidation()) {
-      print('🔐 [TOKEN_VALIDATION] Anonymous user - skipping token validation');
-      return;
+  ///
+  /// OAUTH FIX: After Google/Apple OAuth login, we retry validation a few times
+  /// to handle the timing delay while session is being persisted.
+  static Future<void> validateTokenForRequest({
+    int maxRetries = 3,
+    Duration retryDelay = const Duration(milliseconds: 500),
+  }) async {
+    // Try validation with retries to handle OAuth timing
+    Exception? lastError;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Check if we need to validate at all
+        if (!requiresTokenValidation()) {
+          if (attempt > 1) {
+            Logger.debug(
+                '🔐 [TOKEN_VALIDATION] Session became anonymous during retry (attempt $attempt/$maxRetries)');
+          } else {
+            Logger.debug(
+                '🔐 [TOKEN_VALIDATION] Anonymous user - skipping token validation');
+          }
+          return;
+        }
+
+        if (attempt > 1) {
+          Logger.debug(
+              '🔐 [TOKEN_VALIDATION] Retry attempt $attempt/$maxRetries after ${retryDelay.inMilliseconds}ms delay');
+        } else {
+          Logger.debug(
+              '🔐 [TOKEN_VALIDATION] Starting token validation for authenticated user');
+        }
+
+        // Proactively refresh session if expired or close to expiry
+        final refreshed = await _refreshSessionIfNeeded();
+        if (!refreshed) {
+          throw const TokenValidationException(
+            message:
+                'Authentication session expired and could not be refreshed',
+            code: 'SESSION_EXPIRED',
+          );
+        }
+
+        // Validate the (now refreshed) token
+        if (!validateCurrentToken()) {
+          throw const TokenValidationException(
+            message: 'Authentication token is invalid or expired',
+            code: 'TOKEN_INVALID',
+          );
+        }
+
+        Logger.debug(
+            '🔐 [TOKEN_VALIDATION] ✅ Token validation passed - proceeding with request');
+        return;
+      } on TokenValidationException catch (e) {
+        lastError = e;
+
+        // If this is not the last attempt and the error is about session expiry,
+        // it might be an OAuth timing issue - retry
+        if (attempt < maxRetries && e.code == 'SESSION_EXPIRED') {
+          Logger.error(
+              '🔐 [TOKEN_VALIDATION] Session validation failed (attempt $attempt/$maxRetries), retrying...');
+          await Future.delayed(retryDelay);
+        } else {
+          // Last attempt or non-retryable error
+          rethrow;
+        }
+      } catch (e) {
+        lastError = e is Exception ? e : Exception(e.toString());
+        if (attempt < maxRetries) {
+          Logger.error(
+              '🔐 [TOKEN_VALIDATION] Unexpected error (attempt $attempt/$maxRetries): $e');
+          await Future.delayed(retryDelay);
+        } else {
+          rethrow;
+        }
+      }
     }
 
-    print(
-        '🔐 [TOKEN_VALIDATION] Starting token validation for authenticated user');
-
-    // Proactively refresh session if expired or close to expiry
-    // This prevents initial API failures after long inactivity
-    final refreshed = await _refreshSessionIfNeeded();
-    if (!refreshed) {
-      print(
-          '🔐 [TOKEN_VALIDATION] ❌ Session refresh failed - both access and refresh tokens may be expired');
-      print('🔐 [TOKEN_VALIDATION] User will need to re-authenticate');
-      throw const TokenValidationException(
-        message: 'Authentication session expired and could not be refreshed',
-        code: 'SESSION_EXPIRED',
-      );
+    // If we exhausted all retries, throw the last error
+    if (lastError != null) {
+      if (lastError is TokenValidationException) {
+        throw lastError;
+      } else {
+        throw TokenValidationException(
+          message: 'Token validation failed: ${lastError.toString()}',
+          code: 'VALIDATION_ERROR',
+        );
+      }
     }
-
-    print(
-        '🔐 [TOKEN_VALIDATION] Session refresh check complete - validating token');
-
-    // Validate the (now refreshed) token
-    if (!validateCurrentToken()) {
-      print(
-          '🔐 [TOKEN_VALIDATION] ❌ Token validation failed after refresh - unexpected error');
-      throw const TokenValidationException(
-        message: 'Authentication token is invalid or expired',
-        code: 'TOKEN_INVALID',
-      );
-    }
-
-    print(
-        '🔐 [TOKEN_VALIDATION] ✅ Token validation passed - proceeding with request');
   }
 
   /// Refresh session if token is expired or expires within 5 minutes
@@ -194,7 +276,7 @@ class ApiAuthHelper {
   static Future<bool> _refreshSessionIfNeeded() async {
     // If refresh already in progress, wait for it to complete
     if (_refreshCompleter != null) {
-      print(
+      Logger.debug(
           '🔐 [SESSION_REFRESH] ⏳ Refresh already in progress, waiting for completion...');
       return await _refreshCompleter!.future;
     }
@@ -206,7 +288,7 @@ class ApiAuthHelper {
       final session = Supabase.instance.client.auth.currentSession;
 
       if (session == null) {
-        print('🔐 [SESSION_REFRESH] No session to refresh');
+        Logger.debug('🔐 [SESSION_REFRESH] No session to refresh');
         _refreshCompleter!.complete(false);
         return false;
       }
@@ -214,9 +296,9 @@ class ApiAuthHelper {
       // Check if token has expiry information
       if (session.expiresAt == null) {
         // No expiry timestamp - assume session is valid (persistent/long-lived session)
-        print(
+        Logger.debug(
             '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp found - assuming session is valid');
-        print(
+        Logger.debug(
             '🔐 [SESSION_REFRESH] ℹ️  Session may be persistent or long-lived');
         _refreshCompleter!.complete(true);
         return true;
@@ -229,13 +311,13 @@ class ApiAuthHelper {
       final expiresWithin5Min = now.add(const Duration(minutes: 5));
 
       if (expiryTime.isAfter(expiresWithin5Min)) {
-        print(
+        Logger.debug(
             '🔐 [SESSION_REFRESH] Token is still valid (expires: $expiryTime) - no refresh needed');
         _refreshCompleter!.complete(true);
         return true;
       }
 
-      print(
+      Logger.debug(
           '🔐 [SESSION_REFRESH] Token expired or expires soon (expires: $expiryTime) - refreshing...');
 
       // Attempt to refresh the session
@@ -249,31 +331,31 @@ class ApiAuthHelper {
           final now = DateTime.now();
 
           if (now.isAfter(newExpiry)) {
-            print(
+            Logger.error(
                 '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
-            print(
+            Logger.debug(
                 '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
             _refreshCompleter!.complete(false);
             return false;
           }
 
-          print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
-          print('🔐 [SESSION_REFRESH] New token expires: $newExpiry');
+          Logger.debug('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
+          Logger.debug('🔐 [SESSION_REFRESH] New token expires: $newExpiry');
         } else {
-          print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
-          print(
+          Logger.debug('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
+          Logger.debug(
               '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp on refreshed session - assumed valid');
         }
 
         _refreshCompleter!.complete(true);
         return true;
       } else {
-        print('🔐 [SESSION_REFRESH] ❌ Session refresh returned null');
+        Logger.error('🔐 [SESSION_REFRESH] ❌ Session refresh returned null');
         _refreshCompleter!.complete(false);
         return false;
       }
     } catch (e) {
-      print('🔐 [SESSION_REFRESH] ❌ Session refresh error: $e');
+      Logger.error('🔐 [SESSION_REFRESH] ❌ Session refresh error: $e');
       _refreshCompleter!.complete(false);
       return false;
     } finally {
@@ -286,11 +368,11 @@ class ApiAuthHelper {
   static void logAuthState() {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
-      print('🔐 [DEBUG] Authenticated user: ${session.user.id}');
-      print(
+      Logger.debug('🔐 [DEBUG] Authenticated user: ${session.user.id}');
+      Logger.debug(
           '🔐 [DEBUG] Token expires: ${DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000)}');
     } else {
-      print('🔐 [DEBUG] Anonymous user - no active session');
+      Logger.debug('🔐 [DEBUG] Anonymous user - no active session');
     }
   }
 }

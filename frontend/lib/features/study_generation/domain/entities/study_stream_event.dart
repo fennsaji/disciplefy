@@ -5,6 +5,7 @@ enum StudyStreamSectionType {
   summary,
   interpretation,
   context,
+  passage,
   relatedVerses,
   reflectionQuestions,
   prayerPoints,
@@ -172,6 +173,7 @@ class StreamingStudyGuideContent {
   final String? summary;
   final String? interpretation;
   final String? context;
+  final String? passage;
   final List<String>? relatedVerses;
   final List<String>? reflectionQuestions;
   final List<String>? prayerPoints;
@@ -192,6 +194,7 @@ class StreamingStudyGuideContent {
     this.summary,
     this.interpretation,
     this.context,
+    this.passage,
     this.relatedVerses,
     this.reflectionQuestions,
     this.prayerPoints,
@@ -234,6 +237,9 @@ class StreamingStudyGuideContent {
       context: section.type == StudyStreamSectionType.context
           ? section.contentAsString
           : context,
+      passage: section.type == StudyStreamSectionType.passage
+          ? section.contentAsString
+          : passage,
       relatedVerses: section.type == StudyStreamSectionType.relatedVerses
           ? section.contentAsList
           : relatedVerses,
@@ -284,6 +290,7 @@ class StreamingStudyGuideContent {
       summary: summary,
       interpretation: interpretation,
       context: context,
+      passage: passage,
       relatedVerses: relatedVerses,
       reflectionQuestions: reflectionQuestions,
       prayerPoints: prayerPoints,
@@ -307,6 +314,7 @@ class StreamingStudyGuideContent {
     String? summary,
     String? interpretation,
     String? context,
+    String? passage,
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
@@ -327,6 +335,7 @@ class StreamingStudyGuideContent {
       summary: summary ?? this.summary,
       interpretation: interpretation ?? this.interpretation,
       context: context ?? this.context,
+      passage: passage ?? this.passage,
       relatedVerses: relatedVerses ?? this.relatedVerses,
       reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
       prayerPoints: prayerPoints ?? this.prayerPoints,
@@ -352,6 +361,7 @@ class StreamingStudyGuideContent {
         summary,
         interpretation,
         context,
+        passage,
         relatedVerses,
         reflectionQuestions,
         prayerPoints,
@@ -374,6 +384,7 @@ class StreamingStudyGuideContent {
     if (summary != null) return 'summary';
     if (interpretation != null) return 'interpretation';
     if (context != null) return 'context';
+    if (passage != null) return 'passage';
     if (relatedVerses != null) return 'relatedVerses';
     if (reflectionQuestions != null) return 'reflectionQuestions';
     if (prayerPoints != null) return 'prayerPoints';

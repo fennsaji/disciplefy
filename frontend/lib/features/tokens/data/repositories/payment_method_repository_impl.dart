@@ -8,6 +8,7 @@ import '../../domain/entities/saved_payment_method.dart';
 import '../../domain/entities/payment_preferences.dart';
 import '../../domain/repositories/payment_method_repository.dart';
 import '../datasources/token_remote_data_source.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of PaymentMethodRepository that handles payment method operations.
 class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
@@ -24,41 +25,43 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
   Future<Either<Failure, List<SavedPaymentMethod>>> getPaymentMethods() async {
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Fetching payment methods from remote...');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Fetching payment methods from remote...');
 
         final paymentMethodModels = await _remoteDataSource.getPaymentMethods();
         final paymentMethods = paymentMethodModels;
 
-        print(
+        Logger.debug(
             '💳 [PAYMENT_REPO] Payment methods fetched successfully: ${paymentMethods.length} methods');
 
         return Right(paymentMethods);
       } on ServerException catch (e) {
-        print('🚨 [PAYMENT_REPO] Server exception: ${e.message}');
+        Logger.debug('🚨 [PAYMENT_REPO] Server exception: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print('🚨 [PAYMENT_REPO] Authentication exception: ${e.message}');
+        Logger.debug(
+            '🚨 [PAYMENT_REPO] Authentication exception: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print('🚨 [PAYMENT_REPO] Client exception: ${e.message}');
+        Logger.debug('🚨 [PAYMENT_REPO] Client exception: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print('🚨 [PAYMENT_REPO] Network exception: ${e.message}');
+        Logger.debug('🚨 [PAYMENT_REPO] Network exception: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print('🚨 [PAYMENT_REPO] Unexpected exception: $e');
+        Logger.error('🚨 [PAYMENT_REPO] Unexpected exception: $e');
         return Left(ClientFailure(
           message:
               'An unexpected error occurred while fetching payment methods',
@@ -66,7 +69,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection');
+      Logger.debug('🚨 [PAYMENT_REPO] No internet connection');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -100,7 +103,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
     );
 
     if (!validationResult.isValid) {
-      print(
+      Logger.error(
           '🚨 [PAYMENT_REPO] Input validation failed: ${validationResult.errorMessage}');
       return Left(ClientFailure(
         message: validationResult.errorMessage ?? 'Invalid input data',
@@ -110,7 +113,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
 
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Saving payment method: $methodType');
+        Logger.debug('💳 [PAYMENT_REPO] Saving payment method: $methodType');
 
         final methodId = await _remoteDataSource.savePaymentMethod(
           methodType: methodType,
@@ -124,43 +127,47 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
           expiryYear: expiryYear,
         );
 
-        print('💳 [PAYMENT_REPO] Payment method saved successfully: $methodId');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Payment method saved successfully: $methodId');
 
         return Right(methodId);
       } on ServerException catch (e) {
-        print('🚨 [PAYMENT_REPO] Server exception during save: ${e.message}');
+        Logger.debug(
+            '🚨 [PAYMENT_REPO] Server exception during save: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during save: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print('🚨 [PAYMENT_REPO] Client exception during save: ${e.message}');
+        Logger.debug(
+            '🚨 [PAYMENT_REPO] Client exception during save: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print('🚨 [PAYMENT_REPO] Network exception during save: ${e.message}');
+        Logger.debug(
+            '🚨 [PAYMENT_REPO] Network exception during save: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print('🚨 [PAYMENT_REPO] Unexpected exception during save: $e');
+        Logger.error('🚨 [PAYMENT_REPO] Unexpected exception during save: $e');
         return Left(ClientFailure(
           message: 'An unexpected error occurred while saving payment method',
           code: 'UNEXPECTED_ERROR',
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for save');
+      Logger.debug('🚨 [PAYMENT_REPO] No internet connection for save');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -173,44 +180,46 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
   Future<Either<Failure, bool>> setDefaultPaymentMethod(String methodId) async {
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Setting default payment method: $methodId');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Setting default payment method: $methodId');
 
         final success =
             await _remoteDataSource.setDefaultPaymentMethod(methodId);
 
-        print('💳 [PAYMENT_REPO] Default payment method set: $success');
+        Logger.debug('💳 [PAYMENT_REPO] Default payment method set: $success');
 
         return Right(success);
       } on ServerException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Server exception during set default: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during set default: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Client exception during set default: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Network exception during set default: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print('🚨 [PAYMENT_REPO] Unexpected exception during set default: $e');
+        Logger.error(
+            '🚨 [PAYMENT_REPO] Unexpected exception during set default: $e');
         return Left(ClientFailure(
           message:
               'An unexpected error occurred while setting default payment method',
@@ -218,7 +227,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for set default');
+      Logger.debug('🚨 [PAYMENT_REPO] No internet connection for set default');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -232,44 +241,47 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
       String methodId) async {
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Updating payment method usage: $methodId');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Updating payment method usage: $methodId');
 
         final success =
             await _remoteDataSource.updatePaymentMethodUsage(methodId);
 
-        print('💳 [PAYMENT_REPO] Payment method usage updated: $success');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Payment method usage updated: $success');
 
         return Right(success);
       } on ServerException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Server exception during usage update: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during usage update: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Client exception during usage update: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Network exception during usage update: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print('🚨 [PAYMENT_REPO] Unexpected exception during usage update: $e');
+        Logger.error(
+            '🚨 [PAYMENT_REPO] Unexpected exception during usage update: $e');
         return Left(ClientFailure(
           message:
               'An unexpected error occurred while updating payment method usage',
@@ -277,7 +289,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for usage update');
+      Logger.debug('🚨 [PAYMENT_REPO] No internet connection for usage update');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -295,7 +307,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
   }) async {
     if (await _networkInfo.isConnected) {
       try {
-        print(
+        Logger.debug(
             '💳 [PAYMENT_REPO] Recording payment method usage: $methodId for $transactionType');
 
         final success = await _remoteDataSource.recordPaymentMethodUsage(
@@ -305,39 +317,40 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
           metadata: metadata,
         );
 
-        print('💳 [PAYMENT_REPO] Payment method usage recorded: $success');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Payment method usage recorded: $success');
 
         return Right(success);
       } on ServerException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Server exception during usage recording: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during usage recording: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Client exception during usage recording: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Network exception during usage recording: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print(
+        Logger.error(
             '🚨 [PAYMENT_REPO] Unexpected exception during usage recording: $e');
         return Left(ClientFailure(
           message:
@@ -346,7 +359,8 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for usage recording');
+      Logger.debug(
+          '🚨 [PAYMENT_REPO] No internet connection for usage recording');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -359,48 +373,51 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
   Future<Either<Failure, bool>> deletePaymentMethod(String methodId) async {
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Deleting payment method: $methodId');
+        Logger.debug('💳 [PAYMENT_REPO] Deleting payment method: $methodId');
 
         final success = await _remoteDataSource.deletePaymentMethod(methodId);
 
-        print('💳 [PAYMENT_REPO] Payment method deleted: $success');
+        Logger.debug('💳 [PAYMENT_REPO] Payment method deleted: $success');
 
         return Right(success);
       } on ServerException catch (e) {
-        print('🚨 [PAYMENT_REPO] Server exception during delete: ${e.message}');
+        Logger.debug(
+            '🚨 [PAYMENT_REPO] Server exception during delete: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during delete: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print('🚨 [PAYMENT_REPO] Client exception during delete: ${e.message}');
+        Logger.debug(
+            '🚨 [PAYMENT_REPO] Client exception during delete: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Network exception during delete: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print('🚨 [PAYMENT_REPO] Unexpected exception during delete: $e');
+        Logger.error(
+            '🚨 [PAYMENT_REPO] Unexpected exception during delete: $e');
         return Left(ClientFailure(
           message: 'An unexpected error occurred while deleting payment method',
           code: 'UNEXPECTED_ERROR',
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for delete');
+      Logger.debug('🚨 [PAYMENT_REPO] No internet connection for delete');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -413,45 +430,47 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
   Future<Either<Failure, PaymentPreferences>> getPaymentPreferences() async {
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Fetching payment preferences from remote...');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Fetching payment preferences from remote...');
 
         final preferencesModel =
             await _remoteDataSource.getPaymentPreferences();
         final preferences = preferencesModel;
 
-        print('💳 [PAYMENT_REPO] Payment preferences fetched successfully');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Payment preferences fetched successfully');
 
         return Right(preferences);
       } on ServerException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Server exception during preferences fetch: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during preferences fetch: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Client exception during preferences fetch: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Network exception during preferences fetch: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print(
+        Logger.error(
             '🚨 [PAYMENT_REPO] Unexpected exception during preferences fetch: $e');
         return Left(ClientFailure(
           message:
@@ -460,7 +479,8 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for preferences fetch');
+      Logger.debug(
+          '🚨 [PAYMENT_REPO] No internet connection for preferences fetch');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -478,7 +498,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
   }) async {
     if (await _networkInfo.isConnected) {
       try {
-        print('💳 [PAYMENT_REPO] Updating payment preferences...');
+        Logger.debug('💳 [PAYMENT_REPO] Updating payment preferences...');
 
         final preferencesModel =
             await _remoteDataSource.updatePaymentPreferences(
@@ -489,39 +509,40 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         );
         final preferences = preferencesModel;
 
-        print('💳 [PAYMENT_REPO] Payment preferences updated successfully');
+        Logger.debug(
+            '💳 [PAYMENT_REPO] Payment preferences updated successfully');
 
         return Right(preferences);
       } on ServerException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Server exception during preferences update: ${e.message}');
         return Left(ServerFailure(
           message: e.message,
           code: e.code,
         ));
       } on AuthenticationException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Authentication exception during preferences update: ${e.message}');
         return Left(AuthenticationFailure(
           message: e.message,
           code: e.code,
         ));
       } on ClientException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Client exception during preferences update: ${e.message}');
         return Left(ClientFailure(
           message: e.message,
           code: e.code,
         ));
       } on NetworkException catch (e) {
-        print(
+        Logger.debug(
             '🚨 [PAYMENT_REPO] Network exception during preferences update: ${e.message}');
         return Left(NetworkFailure(
           message: e.message,
           code: e.code,
         ));
       } catch (e) {
-        print(
+        Logger.error(
             '🚨 [PAYMENT_REPO] Unexpected exception during preferences update: $e');
         return Left(ClientFailure(
           message:
@@ -530,7 +551,8 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         ));
       }
     } else {
-      print('🚨 [PAYMENT_REPO] No internet connection for preferences update');
+      Logger.debug(
+          '🚨 [PAYMENT_REPO] No internet connection for preferences update');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',

@@ -12,6 +12,7 @@ import '../../domain/entities/notification_preferences.dart';
 import '../../domain/entities/time_of_day_vo.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../models/notification_preferences_model.dart';
+import '../../../../core/utils/logger.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
   final SupabaseClient supabaseClient;
@@ -271,18 +272,21 @@ class NotificationRepositoryImpl implements NotificationRepository {
       }
 
       // For authenticated users, call backend API
-      print('[NotificationRepo] Calling backend to update preferences...');
-      print('[NotificationRepo] dailyVerseEnabled: $dailyVerseEnabled');
-      print(
+      Logger.debug(
+          '[NotificationRepo] Calling backend to update preferences...');
+      Logger.debug('[NotificationRepo] dailyVerseEnabled: $dailyVerseEnabled');
+      Logger.debug(
           '[NotificationRepo] recommendedTopicEnabled: $recommendedTopicEnabled');
-      print('[NotificationRepo] streakReminderEnabled: $streakReminderEnabled');
-      print(
+      Logger.debug(
+          '[NotificationRepo] streakReminderEnabled: $streakReminderEnabled');
+      Logger.debug(
           '[NotificationRepo] streakMilestoneEnabled: $streakMilestoneEnabled');
-      print('[NotificationRepo] streakLostEnabled: $streakLostEnabled');
-      print('[NotificationRepo] streakReminderTime: $streakReminderTime');
-      print(
+      Logger.debug('[NotificationRepo] streakLostEnabled: $streakLostEnabled');
+      Logger.debug(
+          '[NotificationRepo] streakReminderTime: $streakReminderTime');
+      Logger.debug(
           '[NotificationRepo] memoryVerseReminderEnabled: $memoryVerseReminderEnabled');
-      print(
+      Logger.debug(
           '[NotificationRepo] memoryVerseReminderTime: $memoryVerseReminderTime');
 
       // Format TimeOfDayVO to TIME format for backend
@@ -321,8 +325,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
         },
       );
 
-      print('[NotificationRepo] Response status: ${response.status}');
-      print('[NotificationRepo] Response data: ${response.data}');
+      Logger.info('[NotificationRepo] Response status: ${response.status}');
+      Logger.debug('[NotificationRepo] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         // Check if backend returns preferences directly (not wrapped in 'data')
@@ -341,7 +345,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
           final model =
               NotificationPreferencesModel.fromJson(preferencesWithUser);
-          print('[NotificationRepo] Successfully updated preferences');
+          Logger.debug('[NotificationRepo] Successfully updated preferences');
           return Right(model);
         }
 
@@ -352,22 +356,22 @@ class NotificationRepositoryImpl implements NotificationRepository {
               dataWrapper['preferences'] as Map<String, dynamic>?;
           if (preferences != null) {
             final model = NotificationPreferencesModel.fromJson(preferences);
-            print(
+            Logger.debug(
                 '[NotificationRepo] Successfully updated preferences (legacy structure)');
             return Right(model);
           }
         }
       }
 
-      print(
+      Logger.debug(
           '[NotificationRepo] Failed to update - unexpected response structure');
       return Left(
           ServerFailure(message: 'Failed to update notification preferences'));
     } on AuthException catch (e) {
-      print('[NotificationRepo] Auth error: ${e.message}');
+      Logger.error('[NotificationRepo] Auth error: ${e.message}');
       return Left(AuthenticationFailure(message: e.message));
     } catch (e) {
-      print('[NotificationRepo] Error updating preferences: $e');
+      Logger.error('[NotificationRepo] Error updating preferences: $e');
       return Left(ServerFailure(message: e.toString()));
     }
   }

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Data model for OTP sent response
 class OTPSentResponse {
@@ -219,7 +220,7 @@ class PhoneAuthRemoteDataSourceImpl implements PhoneAuthRemoteDataSource {
       } catch (e) {
         // On error, default to non-new user to avoid blocking authentication
         // Log for debugging but don't fail the auth flow
-        print('Failed to fetch onboarding status: ${e.toString()}');
+        Logger.debug('Failed to fetch onboarding status: ${e.toString()}');
         requiresOnboarding = false;
         onboardingStatus = 'completed';
       }
@@ -283,20 +284,21 @@ class PhoneAuthRemoteDataSourceImpl implements PhoneAuthRemoteDataSource {
   /// Format phone number with country code
   String _formatPhoneNumber(String phoneNumber, String countryCode) {
     // Debug logging
-    print('🔍 [PHONE FORMAT] Raw phoneNumber: "$phoneNumber"');
-    print('🔍 [PHONE FORMAT] Raw countryCode: "$countryCode"');
+    Logger.debug('🔍 [PHONE FORMAT] Raw phoneNumber: "$phoneNumber"');
+    Logger.debug('🔍 [PHONE FORMAT] Raw countryCode: "$countryCode"');
 
     // Remove any non-digit characters from phone number
     final cleanPhoneNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-    print('🔍 [PHONE FORMAT] Clean phoneNumber: "$cleanPhoneNumber"');
+    Logger.debug('🔍 [PHONE FORMAT] Clean phoneNumber: "$cleanPhoneNumber"');
 
     // Ensure country code starts with +
     final formattedCountryCode =
         countryCode.startsWith('+') ? countryCode : '+$countryCode';
-    print('🔍 [PHONE FORMAT] Formatted countryCode: "$formattedCountryCode"');
+    Logger.debug(
+        '🔍 [PHONE FORMAT] Formatted countryCode: "$formattedCountryCode"');
 
     final formatted = '$formattedCountryCode$cleanPhoneNumber';
-    print('🔍 [PHONE FORMAT] Final formatted: "$formatted"');
+    Logger.debug('🔍 [PHONE FORMAT] Final formatted: "$formatted"');
 
     return formatted;
   }

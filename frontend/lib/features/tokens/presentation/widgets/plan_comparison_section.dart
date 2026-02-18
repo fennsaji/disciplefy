@@ -48,6 +48,14 @@ class PlanComparisonSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             PlanCard(
+              plan: UserPlan.plus,
+              title: context.tr('tokens.plans.plus'),
+              subtitle: context.tr('tokens.plans.plus_subtitle'),
+              description: context.tr('tokens.plans.plus_desc'),
+              isCurrentPlan: tokenStatus.userPlan == UserPlan.plus,
+            ),
+            const SizedBox(height: 12),
+            PlanCard(
               plan: UserPlan.premium,
               title: context.tr('tokens.plans.premium'),
               subtitle: context.tr('tokens.plans.premium_subtitle'),
@@ -169,6 +177,8 @@ class PlanCard extends StatelessWidget {
         return Icons.person;
       case UserPlan.standard:
         return Icons.business;
+      case UserPlan.plus:
+        return Icons.workspace_premium;
       case UserPlan.premium:
         return Icons.star;
     }
@@ -180,6 +190,8 @@ class PlanCard extends StatelessWidget {
         return Colors.grey[600]!;
       case UserPlan.standard:
         return Colors.blue[600]!;
+      case UserPlan.plus:
+        return Colors.purple[600]!;
       case UserPlan.premium:
         return Colors.amber[700]!;
     }

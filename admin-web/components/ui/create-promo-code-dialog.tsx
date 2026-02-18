@@ -1,0 +1,347 @@
+'use client'
+
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
+import type { CreatePromoCodeRequest, DiscountType, EligibilityType } from '@/types/admin'
+
+interface CreatePromoCodeDialogProps {
+  onClose: () => void
+  onCreate: (data: CreatePromoCodeRequest) => Promise<void>
+  isLoading?: boolean
+}
+
+const TIER_OPTIONS = [
+  { value: 'free', label: 'Free' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'plus', label: 'Plus' },
+  { value: 'premium', label: 'Premium' },
+]
+
+export function CreatePromoCodeDialog({
+  onClose,
+  onCreate,
+  isLoading = false,
+}: CreatePromoCodeDialogProps) {
+  const [formData, setFormData] = useState<CreatePromoCodeRequest>({
+    code: '',
+    campaign_name: '',
+    description: '',
+    discount_type: 'percentage',
+    discount_value: 10,
+    applies_to_plan: ['standard', 'plus', 'premium'],
+    max_total_uses: undefined,
+    max_uses_per_user: 1,
+    eligible_for: 'all',
+    eligible_tiers: [],
+    eligible_user_ids: [],
+    start_date: format(new Date(), 'yyyy-MM-dd'),
+    end_date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+    is_active: true,
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Validate
+    if (!formData.code || !formData.campaign_name) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    if (formData.discount_type === 'percentage' && (formData.discount_value <= 0 || formData.discount_value > 100)) {
+      toast.error('Percentage discount must be between 1 and 100')
+      return
+    }
+
+    if (formData.discount_type === 'fixed_amount' && formData.discount_value <= 0) {
+      toast.error('Fixed amount discount must be greater than 0')
+      return
+    }
+
+    try {
+      await onCreate(formData)
+      onClose()
+    } catch (error) {
+      console.error('Failed to create promo code:', error)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Create Promo Code</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+            disabled={isLoading}
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900">Basic Information</h3>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Promo Code *
+              </label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                placeholder="e.g., LAUNCH2026"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 uppercase focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Campaign Name *
+              </label>
+              <input
+                type="text"
+                value={formData.campaign_name}
+                onChange={(e) => setFormData({ ...formData, campaign_name: e.target.value })}
+                placeholder="e.g., Launch Promotion 2026"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Description (Optional)
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Internal notes about this campaign..."
+                rows={2}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Discount */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900">Discount Settings</h3>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Discount Type *
+                </label>
+                <select
+                  value={formData.discount_type}
+                  onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as DiscountType })}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                >
+                  <option value="percentage">Percentage (%)</option>
+                  <option value="fixed_amount">Fixed Amount (₹)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Discount Value *
+                </label>
+                <input
+                  type="number"
+                  value={formData.discount_value}
+                  onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) })}
+                  min="1"
+                  max={formData.discount_type === 'percentage' ? '100' : undefined}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Applies to Plans *
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {TIER_OPTIONS.map((tier) => (
+                  <label key={tier.value} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.applies_to_plan.includes(tier.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            applies_to_plan: [...formData.applies_to_plan, tier.value],
+                          })
+                        } else {
+                          setFormData({
+                            ...formData,
+                            applies_to_plan: formData.applies_to_plan.filter((p) => p !== tier.value),
+                          })
+                        }
+                      }}
+                      className="h-4 w-4 text-primary focus:ring-primary"
+                      disabled={isLoading}
+                    />
+                    <span className="text-sm text-gray-700">{tier.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Usage Limits */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900">Usage Limits</h3>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Max Total Uses (Optional)
+                </label>
+                <input
+                  type="number"
+                  value={formData.max_total_uses || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    max_total_uses: e.target.value ? parseInt(e.target.value) : undefined,
+                  })}
+                  min="1"
+                  placeholder="Unlimited"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Max Uses Per User *
+                </label>
+                <input
+                  type="number"
+                  value={formData.max_uses_per_user}
+                  onChange={(e) => setFormData({ ...formData, max_uses_per_user: parseInt(e.target.value) })}
+                  min="1"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Eligibility */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900">Eligibility Rules</h3>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Who can use this code? *
+              </label>
+              <select
+                value={formData.eligible_for}
+                onChange={(e) => setFormData({ ...formData, eligible_for: e.target.value as EligibilityType })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isLoading}
+              >
+                <option value="all">All Users</option>
+                <option value="new_users_only">New Users Only</option>
+                <option value="specific_tiers">Specific Tiers</option>
+                <option value="specific_users">Specific Users</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900">Campaign Period</h3>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Start Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  End Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  min={formData.start_date}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="h-4 w-4 text-primary focus:ring-primary"
+                disabled={isLoading}
+              />
+              <span className="text-sm font-medium text-gray-700">Activate immediately</span>
+            </label>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Creating...
+                </span>
+              ) : (
+                'Create Promo Code'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}

@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:async';
+import '../utils/logger.dart';
 
 /// Auth state notifier for GoRouter refresh
 /// Listens to Supabase auth changes and notifies router to refresh
@@ -23,14 +24,14 @@ class AuthNotifier extends ChangeNotifier {
 
     // ANDROID DEBUG: Log initialization start with timestamp
     final initStartTime = DateTime.now();
-    print(
+    Logger.debug(
         '🚀 [AUTH NOTIFIER] Initialization started at ${initStartTime.toIso8601String()}');
 
     // Check initial auth state (may be null during restoration)
     _isAuthenticated = Supabase.instance.client.auth.currentUser != null;
 
     // ANDROID DEBUG: Log initial state
-    print(
+    Logger.debug(
         '📊 [AUTH NOTIFIER] Initial state: isAuthenticated=$_isAuthenticated, user=${Supabase.instance.client.auth.currentUser?.id ?? "null"}');
 
     // Listen to auth state changes
@@ -46,13 +47,13 @@ class AuthNotifier extends ChangeNotifier {
         _isAuthenticated = authState.session?.user != null;
 
         // ANDROID DEBUG: Log auth state event details
-        print(
+        Logger.debug(
             '📨 [AUTH NOTIFIER] Auth state event received after ${timeSinceInit}ms:');
-        print('   └─ Event: ${authState.event}');
-        print(
+        Logger.debug('   └─ Event: ${authState.event}');
+        Logger.debug(
             '   └─ Session: ${authState.session != null ? "exists" : "null"}');
-        print('   └─ User: ${authState.session?.user.id ?? "null"}');
-        print(
+        Logger.debug('   └─ User: ${authState.session?.user.id ?? "null"}');
+        Logger.debug(
             '   └─ Was authenticated: $wasAuthenticated → Now: $_isAuthenticated');
 
         // ANDROID FIX: Mark as initialized after first auth state event
@@ -62,16 +63,17 @@ class AuthNotifier extends ChangeNotifier {
           // Cancel timeout timer since initialization completed normally
           _initTimeout?.cancel();
           _initTimeout = null;
-          print(
+          Logger.debug(
               '✅ [AUTH NOTIFIER] Session restoration complete - auth initialized after ${timeSinceInit}ms');
         }
 
         // Notify if auth state changed OR if this is the first initialization
         if (wasAuthenticated != _isAuthenticated || !wasInitialized) {
-          print('🔄 [AUTH NOTIFIER] Notifying router of state change');
+          Logger.debug('🔄 [AUTH NOTIFIER] Notifying router of state change');
           notifyListeners();
         } else {
-          print('⏭️  [AUTH NOTIFIER] State unchanged, skipping notification');
+          Logger.debug(
+              '⏭️  [AUTH NOTIFIER] State unchanged, skipping notification');
         }
       },
     );
@@ -87,24 +89,24 @@ class AuthNotifier extends ChangeNotifier {
       // Only proceed if not disposed and not already initialized
       if (!_isDisposed && !_isInitialized) {
         _isInitialized = true;
-        print(
+        Logger.warning(
             '⏱️ [AUTH NOTIFIER] TIMEOUT after ${timeSinceInit}ms - no auth event received');
-        print(
+        Logger.warning(
             '⚠️  [AUTH NOTIFIER] Forcing initialization to prevent infinite loading');
-        print(
+        Logger.debug(
             '   └─ Current user: ${Supabase.instance.client.auth.currentUser?.id ?? "null"}');
-        print('   └─ Is authenticated: $_isAuthenticated');
+        Logger.debug('   └─ Is authenticated: $_isAuthenticated');
         notifyListeners();
       } else if (_isDisposed) {
-        print(
+        Logger.debug(
             '🗑️  [AUTH NOTIFIER] Timeout fired but already disposed, ignoring');
       } else {
-        print(
+        Logger.info(
             '✅ [AUTH NOTIFIER] Timeout fired but already initialized, ignoring');
       }
     });
 
-    print('⏳ [AUTH NOTIFIER] 5-second timeout timer started');
+    Logger.debug('⏳ [AUTH NOTIFIER] 5-second timeout timer started');
   }
 
   bool get isAuthenticated => _isAuthenticated;
@@ -113,7 +115,7 @@ class AuthNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
-    print('🗑️  [AUTH NOTIFIER] Disposing - cleaning up resources');
+    Logger.debug('🗑️  [AUTH NOTIFIER] Disposing - cleaning up resources');
 
     // Mark as disposed to prevent timer callback from running
     _isDisposed = true;
@@ -122,14 +124,14 @@ class AuthNotifier extends ChangeNotifier {
     if (_initTimeout != null) {
       _initTimeout?.cancel();
       _initTimeout = null;
-      print('   └─ Timeout timer cancelled');
+      Logger.debug('   └─ Timeout timer cancelled');
     }
 
     // Cancel auth state subscription
     _authSubscription.cancel();
-    print('   └─ Auth subscription cancelled');
+    Logger.debug('   └─ Auth subscription cancelled');
 
-    print('✅ [AUTH NOTIFIER] Disposal complete');
+    Logger.debug('✅ [AUTH NOTIFIER] Disposal complete');
 
     super.dispose();
   }

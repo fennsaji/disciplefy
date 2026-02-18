@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/settings/domain/entities/theme_mode_entity.dart';
 import '../../features/settings/data/models/theme_mode_model.dart';
+import '../utils/logger.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
@@ -64,7 +65,7 @@ class ThemeService extends ChangeNotifier {
   }
 
   Future<void> updateTheme(ThemeModeEntity theme) async {
-    debugPrint(
+    Logger.debug(
         'ThemeService: updateTheme called - New theme: ${theme.mode}, isDark: ${theme.isDarkMode}');
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -72,10 +73,10 @@ class ThemeService extends ChangeNotifier {
       await prefs.setString(_themeModeKey, themeModel.toStringValue());
 
       _currentTheme = theme;
-      debugPrint('ThemeService: Theme updated and notifyListeners called');
+      Logger.debug('ThemeService: Theme updated and notifyListeners called');
       notifyListeners();
     } catch (e) {
-      debugPrint('ThemeService: Failed to update theme: $e');
+      Logger.debug('ThemeService: Failed to update theme: $e');
       throw Exception('Failed to update theme: $e');
     }
   }

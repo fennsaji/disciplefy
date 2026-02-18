@@ -1,4 +1,4 @@
-import 'dart:developer' as developer;
+import '../../../../core/utils/logger.dart';
 import '../../domain/entities/usage_statistics.dart';
 
 /// Helper function to safely parse integer values from JSON.
@@ -22,17 +22,13 @@ int _safeParseInt(dynamic value, {int defaultValue = 0, String? fieldName}) {
     final parsed = int.tryParse(value);
     if (parsed != null) return parsed;
 
-    developer.log(
-      '⚠️ [USAGE_STATISTICS_MODEL] Failed to parse int from string: "$value" for field: ${fieldName ?? "unknown"}',
-      name: 'UsageStatisticsModel',
-    );
+    Logger.warning(
+        '⚠️ [USAGE_STATISTICS_MODEL] Failed to parse int from string: "$value" for field: ${fieldName ?? "unknown"}');
     return defaultValue;
   }
 
-  developer.log(
-    '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for int field: ${value.runtimeType} (value: $value) for field: ${fieldName ?? "unknown"}',
-    name: 'UsageStatisticsModel',
-  );
+  Logger.warning(
+      '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for int field: ${value.runtimeType} (value: $value) for field: ${fieldName ?? "unknown"}');
   return defaultValue;
 }
 
@@ -55,20 +51,16 @@ String? _safeParseString(dynamic value,
   if (value is String) {
     if (value.trim().isEmpty) {
       if (defaultValue != null) {
-        developer.log(
-          '⚠️ [USAGE_STATISTICS_MODEL] Empty string for field: ${fieldName ?? "unknown"}, using default',
-          name: 'UsageStatisticsModel',
-        );
+        Logger.warning(
+            '⚠️ [USAGE_STATISTICS_MODEL] Empty string for field: ${fieldName ?? "unknown"}, using default');
       }
       return defaultValue;
     }
     return value;
   }
 
-  developer.log(
-    '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for string field: ${value.runtimeType} (value: $value) for field: ${fieldName ?? "unknown"}',
-    name: 'UsageStatisticsModel',
-  );
+  Logger.warning(
+      '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for string field: ${value.runtimeType} (value: $value) for field: ${fieldName ?? "unknown"}');
   return defaultValue;
 }
 
@@ -302,17 +294,13 @@ class UsageStatisticsModel extends UsageStatistics {
                 if (item is Map<String, dynamic>) {
                   return FeatureBreakdownModel.fromJson(item);
                 } else {
-                  developer.log(
-                    '⚠️ [USAGE_STATISTICS_MODEL] Skipping malformed feature breakdown item: invalid type ${item.runtimeType}',
-                    name: 'UsageStatisticsModel',
-                  );
+                  Logger.warning(
+                      '⚠️ [USAGE_STATISTICS_MODEL] Skipping malformed feature breakdown item: invalid type ${item.runtimeType}');
                   return null;
                 }
               } catch (e) {
-                developer.log(
-                  '⚠️ [USAGE_STATISTICS_MODEL] Error parsing feature breakdown item: $e',
-                  name: 'UsageStatisticsModel',
-                );
+                Logger.warning(
+                    '⚠️ [USAGE_STATISTICS_MODEL] Error parsing feature breakdown item: $e');
                 return null;
               }
             })
@@ -332,17 +320,13 @@ class UsageStatisticsModel extends UsageStatistics {
                 if (item is Map<String, dynamic>) {
                   return LanguageBreakdownModel.fromJson(item);
                 } else {
-                  developer.log(
-                    '⚠️ [USAGE_STATISTICS_MODEL] Skipping malformed language breakdown item: invalid type ${item.runtimeType}',
-                    name: 'UsageStatisticsModel',
-                  );
+                  Logger.warning(
+                      '⚠️ [USAGE_STATISTICS_MODEL] Skipping malformed language breakdown item: invalid type ${item.runtimeType}');
                   return null;
                 }
               } catch (e) {
-                developer.log(
-                  '⚠️ [USAGE_STATISTICS_MODEL] Error parsing language breakdown item: $e',
-                  name: 'UsageStatisticsModel',
-                );
+                Logger.warning(
+                    '⚠️ [USAGE_STATISTICS_MODEL] Error parsing language breakdown item: $e');
                 return null;
               }
             })
@@ -362,17 +346,13 @@ class UsageStatisticsModel extends UsageStatistics {
                 if (item is Map<String, dynamic>) {
                   return StudyModeBreakdownModel.fromJson(item);
                 } else {
-                  developer.log(
-                    '⚠️ [USAGE_STATISTICS_MODEL] Skipping malformed study mode breakdown item: invalid type ${item.runtimeType}',
-                    name: 'UsageStatisticsModel',
-                  );
+                  Logger.warning(
+                      '⚠️ [USAGE_STATISTICS_MODEL] Skipping malformed study mode breakdown item: invalid type ${item.runtimeType}');
                   return null;
                 }
               } catch (e) {
-                developer.log(
-                  '⚠️ [USAGE_STATISTICS_MODEL] Error parsing study mode breakdown item: $e',
-                  name: 'UsageStatisticsModel',
-                );
+                Logger.warning(
+                    '⚠️ [USAGE_STATISTICS_MODEL] Error parsing study mode breakdown item: $e');
                 return null;
               }
             })
@@ -389,16 +369,12 @@ class UsageStatisticsModel extends UsageStatistics {
         if (dateValue is String) {
           firstUsageDate = DateTime.parse(dateValue);
         } else {
-          developer.log(
-            '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for first_usage_date: ${dateValue.runtimeType}',
-            name: 'UsageStatisticsModel',
-          );
+          Logger.warning(
+              '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for first_usage_date: ${dateValue.runtimeType}');
         }
       } catch (e) {
-        developer.log(
-          '⚠️ [USAGE_STATISTICS_MODEL] Error parsing first_usage_date: $e',
-          name: 'UsageStatisticsModel',
-        );
+        Logger.warning(
+            '⚠️ [USAGE_STATISTICS_MODEL] Error parsing first_usage_date: $e');
       }
     }
 
@@ -409,16 +385,12 @@ class UsageStatisticsModel extends UsageStatistics {
         if (dateValue is String) {
           lastUsageDate = DateTime.parse(dateValue);
         } else {
-          developer.log(
-            '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for last_usage_date: ${dateValue.runtimeType}',
-            name: 'UsageStatisticsModel',
-          );
+          Logger.warning(
+              '⚠️ [USAGE_STATISTICS_MODEL] Invalid type for last_usage_date: ${dateValue.runtimeType}');
         }
       } catch (e) {
-        developer.log(
-          '⚠️ [USAGE_STATISTICS_MODEL] Error parsing last_usage_date: $e',
-          name: 'UsageStatisticsModel',
-        );
+        Logger.warning(
+            '⚠️ [USAGE_STATISTICS_MODEL] Error parsing last_usage_date: $e');
       }
     }
 

@@ -12,6 +12,7 @@ import '../bloc/token_event.dart';
 import '../bloc/token_state.dart';
 import '../widgets/usage_history_list_item.dart';
 import '../widgets/usage_statistics_card.dart';
+import '../../../../core/utils/logger.dart';
 
 class TokenUsageHistoryPage extends StatefulWidget {
   const TokenUsageHistoryPage({super.key});
@@ -104,7 +105,7 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
           state.statistics == null) {
         // Usage history has loaded successfully and we haven't triggered stats yet
         _hasTriggeredStatistics = true;
-        debugPrint(
+        Logger.debug(
             '📊 [USAGE_HISTORY_PAGE] Usage history loaded, triggering statistics (one-time)');
         context.read<TokenBloc>().add(const GetUsageStatistics());
 
