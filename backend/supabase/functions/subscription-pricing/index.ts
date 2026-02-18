@@ -15,10 +15,18 @@ interface ProviderPricing {
   [planCode: string]: PlanPricing
 }
 
+interface PlanFeatures {
+  voice_conversations_monthly: number
+}
+
 interface PricingResponse {
   success: boolean
   data: {
     [provider: string]: ProviderPricing
+  }
+  /** Plan-level features (not provider-specific) */
+  plans?: {
+    [planCode: string]: PlanFeatures
   }
   error?: string
 }
@@ -56,6 +64,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Fetch all pricing data from subscription_plan_providers
+    // Only fetch active plans (no deprecation tracking for first release)
     const { data: pricingData, error: pricingError } = await supabase
       .from('subscription_plan_providers')
       .select(`
@@ -89,6 +98,17 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Fetch plan-level features (voice quota etc.)
+    const { data: planFeatureData, error: featureError } = await supabase
+      .from('subscription_plans')
+      .select('plan_code, features')
+      .in('plan_code', ['standard', 'plus', 'premium'])
+      .eq('is_active', true)
+
+    if (featureError) {
+      console.warn('Warning: Could not fetch plan features:', featureError)
+    }
+
     // Format pricing data by provider
     const formattedPricing: { [provider: string]: ProviderPricing } = {}
 
@@ -113,10 +133,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Build plan features map
+    const planFeatures: { [planCode: string]: PlanFeatures } = {}
+    for (const plan of (planFeatureData ?? [])) {
+      planFeatures[plan.plan_code] = {
+        voice_conversations_monthly: plan.features?.voice_conversations_monthly ?? 0,
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         data: formattedPricing,
+        plans: planFeatures,
       } as PricingResponse),
       {
         status: 200,

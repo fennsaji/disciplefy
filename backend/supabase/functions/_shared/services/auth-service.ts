@@ -380,81 +380,58 @@ export class AuthService {
   }
 
   /**
-   * Determines the user's subscription plan based on context and profile
+   * Resolves the user's subscription plan tier.
    *
-   * This method implements the SIMPLIFIED user plan logic for the token system:
-   * - Anonymous users → 'free' plan (8 tokens/day)
-   * - Admin users (user_profiles.is_admin = true) → 'premium' plan (unlimited)
-   * - Active subscription users → Plan from subscription record (premium/plus/standard/trial/free)
-   * - Premium trial active → 'premium' plan (7-day trial for new users)
-   * - Default fallback → 'free' plan
+   * Delegates entirely to the canonical SQL function `get_user_plan_with_subscription`
+   * which is the single source of truth for plan resolution across all edge functions
+   * and database RPC calls.
    *
-   * NOTE: Trial users now have subscription records with status='trial' in the database.
-   * This eliminates the need for complex time-based trial period checks.
-   *
-   * Daily token limits are defined in DEFAULT_PLAN_CONFIGS (token-types.ts):
-   * - free: 8 tokens/day
-   * - standard: 20 tokens/day
-   * - plus: 50 tokens/day
-   * - premium: unlimited
+   * Resolution order (enforced in SQL):
+   *   1. Anonymous / unauthenticated → 'free'
+   *   2. Admin flag → 'premium'
+   *   3. Active premium trial → 'premium'
+   *   4. Active premium subscription → 'premium'
+   *   5. Active plus subscription → 'plus'
+   *   6. Active standard subscription → 'standard'
+   *   7. Explicit free subscription (admin override) → 'free'
+   *   8. Global standard trial period active → 'standard'
+   *   9. Grace period after trial → 'standard'
+   *  10. Fallback → 'free'
    *
    * @param req - HTTP request to get user context from
    * @returns Promise resolving to user's subscription plan
    */
   async getUserPlan(req: Request): Promise<UserPlan> {
-    // Import Premium trial helper
-    const { isInPremiumTrial } = await import('../config/subscription-config.ts')
-
     try {
       const userContext = await this.getUserContext(req)
-      console.log('[AuthService] getUserPlan - userContext:', { type: userContext.type, userId: userContext.userId })
 
-      // 1. Anonymous users always get free plan
       if (userContext.type === 'anonymous') {
-        console.log('[AuthService] getUserPlan - returning free (anonymous)')
         return 'free'
       }
 
-      // 2. Must be authenticated with valid userId
       if (userContext.type !== 'authenticated' || !userContext.userId) {
-        console.log('[AuthService] getUserPlan - returning free (not authenticated)')
         return 'free'
       }
 
-      // 3. Admin users get premium access
-      const isAdmin = await this.isAdminUser(userContext.userId)
-      console.log('[AuthService] getUserPlan - isAdmin:', isAdmin)
-      if (isAdmin) {
-        console.log('[AuthService] getUserPlan - returning premium (admin)')
-        return 'premium'
+      if (!this.supabaseServiceClient) {
+        console.warn('[AuthService] getUserPlan - no service client, defaulting to free')
+        return 'free'
       }
 
-      // 4. Check for subscription in database (now includes trial subscriptions!)
-      const subscription = await this.getActiveSubscription(userContext.userId)
-      console.log('[AuthService] getUserPlan - subscription:', subscription)
-      if (subscription) {
-        const plan = this.mapSubscriptionToPlan(subscription)
-        console.log('[AuthService] getUserPlan - mapped plan:', plan, 'from plan_type:', subscription.plan_type, 'status:', subscription.status)
-        return plan
+      // Single source of truth: canonical SQL function handles all logic
+      const { data: plan, error } = await this.supabaseServiceClient
+        .rpc('get_user_plan_with_subscription', { p_user_id: userContext.userId })
+
+      if (error || !plan) {
+        console.warn('[AuthService] getUserPlan - RPC failed, defaulting to free:', error?.message)
+        return 'free'
       }
 
-      // 5. Check for active Premium trial (7-day trial for new users)
-      const premiumTrialEndAt = await this.getPremiumTrialEndDate(userContext.userId)
-      console.log('[AuthService] getUserPlan - premiumTrialEndAt:', premiumTrialEndAt)
-      if (isInPremiumTrial(premiumTrialEndAt)) {
-        console.log('[AuthService] getUserPlan - returning premium (7-day trial)')
-        return 'premium'
-      }
-
-      // 6. Default fallback: Users without subscription get free plan
-      // NOTE: This should rarely happen as all users should have a subscription record now
-      // (either trial during global trial period, or free after trial expires)
-      console.log('[AuthService] getUserPlan - returning free (no subscription found - this should be rare)')
-      return 'free'
+      console.log(`[AuthService] getUserPlan - user ${userContext.userId} → ${plan}`)
+      return plan as UserPlan
 
     } catch (error) {
-      console.warn('[AuthService] Failed to determine user plan, defaulting to free:', error)
-      // Fail safe: return free plan if determination fails
+      console.warn('[AuthService] getUserPlan - exception, defaulting to free:', error)
       return 'free'
     }
   }
@@ -580,24 +557,20 @@ export class AuthService {
    * @param userProfile - Optional user profile from database
    * @returns User's subscription plan
    */
+  /**
+   * @deprecated Use the async `getUserPlan(req)` instead.
+   * This static method cannot call the RPC and has no subscription awareness.
+   * It only handles anonymous → free and admin → premium; all other users get 'free'.
+   */
   static determineUserPlan(userContext: UserContext, userProfile?: UserProfile | null): UserPlan {
-    // Anonymous users always get free plan
     if (userContext.type === 'anonymous') {
       return 'free'
     }
-    
-    // Check if user is admin (gets premium access)
     if (userProfile?.is_admin) {
       return 'premium'
     }
-    
-    // TODO: Add subscription logic when implemented
-    // if (userProfile?.subscription?.status === 'active') {
-    //   return 'premium'
-    // }
-    
-    // Default: authenticated users get standard plan
-    return 'standard'
+    // Cannot resolve subscription synchronously — callers must migrate to getUserPlan(req)
+    return 'free'
   }
 }
 

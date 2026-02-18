@@ -8,12 +8,24 @@ import AchievementsTable from '@/components/tables/achievements-table'
 import UserAchievementsTable from '@/components/tables/user-achievements-table'
 import StreaksTable from '@/components/tables/streaks-table'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { useTheme } from '@/components/theme-provider'
+import { CHART_COLORS, getTooltipStyle, getAxisStroke, getGridStroke } from '@/components/charts/chart-config'
+import { TabNav } from '@/components/ui/tab-nav'
+import { PageHeader } from '@/components/ui/page-header'
 
 type TabType = 'achievements-catalog' | 'user-achievements' | 'streak-analytics'
+
+const GAMIFICATION_TABS = [
+  { value: 'achievements-catalog', label: 'Achievements Catalog', icon: '🏆' },
+  { value: 'user-achievements', label: 'User Achievements', icon: '🎯' },
+  { value: 'streak-analytics', label: 'Streak Analytics', icon: '🔥' },
+]
 
 export default function GamificationPage() {
   const [activeTab, setActiveTab] = useState<TabType>('achievements-catalog')
   const queryClient = useQueryClient()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
 
   // Filters
   const [achievementsFilters, setAchievementsFilters] = useState({
@@ -150,7 +162,7 @@ export default function GamificationPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category Distribution */}
             {Object.keys(stats.by_category).length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Achievements by Category
                 </h3>
@@ -170,7 +182,7 @@ export default function GamificationPage() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '8px' }} />
+                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -178,16 +190,16 @@ export default function GamificationPage() {
 
             {/* Tier Distribution */}
             {Object.keys(stats.by_tier).length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Achievements by Tier
                 </h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={Object.entries(stats.by_tier).map(([name, value]) => ({ name, value }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="name" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '8px' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
+                    <XAxis dataKey="name" stroke={getAxisStroke(isDark)} />
+                    <YAxis stroke={getAxisStroke(isDark)} />
+                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
                     <Bar dataKey="value" fill="#8B5CF6" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -225,7 +237,7 @@ export default function GamificationPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
           {achievementsLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
@@ -286,7 +298,7 @@ export default function GamificationPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category Distribution */}
             {Object.keys(stats.by_category || {}).length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Unlocks by Category
                 </h3>
@@ -306,7 +318,7 @@ export default function GamificationPage() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '8px' }} />
+                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -314,16 +326,16 @@ export default function GamificationPage() {
 
             {/* Tier Distribution */}
             {Object.keys(stats.by_tier || {}).length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Unlocks by Tier
                 </h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={Object.entries(stats.by_tier).map(([name, value]) => ({ name, value }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="name" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '8px' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
+                    <XAxis dataKey="name" stroke={getAxisStroke(isDark)} />
+                    <YAxis stroke={getAxisStroke(isDark)} />
+                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
                     <Bar dataKey="value" fill="#3B82F6" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -333,7 +345,7 @@ export default function GamificationPage() {
         )}
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
           {userAchievementsLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
@@ -388,7 +400,7 @@ export default function GamificationPage() {
 
         {/* Streak Distribution Chart */}
         {stats && (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Streak Distribution
             </h3>
@@ -397,10 +409,10 @@ export default function GamificationPage() {
                 name: name.replace('_', ' '),
                 value
               }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="name" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '8px' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
+                <XAxis dataKey="name" stroke={getAxisStroke(isDark)} />
+                <YAxis stroke={getAxisStroke(isDark)} />
+                <Tooltip contentStyle={getTooltipStyle(isDark)} />
                 <Bar dataKey="value" fill="#10B981" />
               </BarChart>
             </ResponsiveContainer>
@@ -411,7 +423,7 @@ export default function GamificationPage() {
         {leaderboards && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Top Current Streaks */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 🔥 Top Current Streaks
               </h3>
@@ -435,7 +447,7 @@ export default function GamificationPage() {
             </div>
 
             {/* Top Longest Streaks */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 🏅 Top Longest Streaks
               </h3>
@@ -459,7 +471,7 @@ export default function GamificationPage() {
             </div>
 
             {/* Top XP Earners */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 ⭐ Top XP Earners
               </h3>
@@ -502,7 +514,7 @@ export default function GamificationPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
           {streaksLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
@@ -517,51 +529,15 @@ export default function GamificationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Gamification Manager
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage achievements, track user progress, and analyze engagement
-        </p>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('achievements-catalog')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'achievements-catalog'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            🏆 Achievements Catalog
-          </button>
-          <button
-            onClick={() => setActiveTab('user-achievements')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'user-achievements'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            🎯 User Achievements
-          </button>
-          <button
-            onClick={() => setActiveTab('streak-analytics')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'streak-analytics'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            🔥 Streak Analytics
-          </button>
-        </nav>
-      </div>
+      <PageHeader
+        title="Gamification Manager"
+        description="Manage achievements, track user progress, and analyze engagement"
+      />
+      <TabNav
+        tabs={GAMIFICATION_TABS}
+        activeTab={activeTab}
+        onChange={(v) => setActiveTab(v as TabType)}
+      />
 
       {/* Tab Content */}
       {activeTab === 'achievements-catalog' && renderAchievementsCatalogTab()}

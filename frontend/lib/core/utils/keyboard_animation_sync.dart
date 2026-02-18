@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'device_keyboard_handler.dart';
+import 'logger.dart';
 
 /// Advanced keyboard animation synchronization for eliminating timing-related
 /// keyboard shadow issues on problematic Android devices.
@@ -31,9 +31,7 @@ class KeyboardAnimationSync {
   void initialize() {
     _stateController ??= StreamController<KeyboardAnimationState>.broadcast();
 
-    if (kDebugMode) {
-      print('🎬 [KEYBOARD ANIMATION SYNC] Initialized');
-    }
+    Logger.debug('🎬 [KEYBOARD ANIMATION SYNC] Initialized');
   }
 
   /// Clean up resources
@@ -42,9 +40,7 @@ class KeyboardAnimationSync {
     _stateController?.close();
     _stateController = null;
 
-    if (kDebugMode) {
-      print('🎬 [KEYBOARD ANIMATION SYNC] Disposed');
-    }
+    Logger.debug('🎬 [KEYBOARD ANIMATION SYNC] Disposed');
   }
 
   /// Handle keyboard metrics change with advanced synchronization
@@ -67,10 +63,8 @@ class KeyboardAnimationSync {
   }
 
   void _handleKeyboardAppearing(BuildContext context, double keyboardHeight) {
-    if (kDebugMode) {
-      print(
-          '🎬 [KEYBOARD ANIMATION SYNC] Keyboard appearing: ${keyboardHeight}px');
-    }
+    Logger.debug(
+        '🎬 [KEYBOARD ANIMATION SYNC] Keyboard appearing: ${keyboardHeight}px');
 
     _updateState(KeyboardAnimationState.appearing);
     _isTransitioning = true;
@@ -93,9 +87,7 @@ class KeyboardAnimationSync {
   }
 
   void _handleKeyboardDisappearing(BuildContext context) {
-    if (kDebugMode) {
-      print('🎬 [KEYBOARD ANIMATION SYNC] Keyboard disappearing');
-    }
+    Logger.debug('🎬 [KEYBOARD ANIMATION SYNC] Keyboard disappearing');
 
     _updateState(KeyboardAnimationState.disappearing);
     _isTransitioning = true;
@@ -114,9 +106,8 @@ class KeyboardAnimationSync {
   }
 
   void _handleKeyboardResizing(BuildContext context, double newHeight) {
-    if (kDebugMode) {
-      print('🎬 [KEYBOARD ANIMATION SYNC] Keyboard resizing: ${newHeight}px');
-    }
+    Logger.debug(
+        '🎬 [KEYBOARD ANIMATION SYNC] Keyboard resizing: ${newHeight}px');
 
     _updateState(KeyboardAnimationState.resizing);
 
@@ -129,9 +120,8 @@ class KeyboardAnimationSync {
   }
 
   void _handleAnimationComplete(KeyboardAnimationState finalState) {
-    if (kDebugMode) {
-      print('🎬 [KEYBOARD ANIMATION SYNC] Animation complete: $finalState');
-    }
+    Logger.debug(
+        '🎬 [KEYBOARD ANIMATION SYNC] Animation complete: $finalState');
 
     _updateState(finalState);
     _isTransitioning = false;

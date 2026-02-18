@@ -484,6 +484,7 @@ class StudySaveHandler {
         guideId: event.guideId,
         timeSpentSeconds: event.timeSpentSeconds,
         scrolledToBottom: event.scrolledToBottom,
+        isManual: event.isManual,
       );
 
       if (success) {

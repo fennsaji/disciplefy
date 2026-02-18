@@ -140,7 +140,7 @@ async function parseAndValidateRequest(req: Request): Promise<void> {
 
 // Create the Edge Function using the factory pattern
 createFunction(handleTokenStatus, {
-  requireAuth: true,  // SECURITY: Force authentication for token status
+  requireAuth: false,  // Allow both authenticated and anonymous users (handled by AuthService)
   enableAnalytics: true,
   allowedMethods: ['GET']
 })

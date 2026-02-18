@@ -180,7 +180,7 @@ export default function ImportLearningPathsPage() {
                 Select a JSON file exported from the learning paths export feature
               </p>
               <div className="mt-6">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary-dark">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary-600">
                   <svg
                     className="h-5 w-5"
                     fill="none"
@@ -343,7 +343,7 @@ export default function ImportLearningPathsPage() {
               </button>
               <button
                 onClick={handleImport}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
               >
                 <svg
                   className="h-5 w-5"
@@ -450,7 +450,7 @@ export default function ImportLearningPathsPage() {
               </button>
               <button
                 onClick={() => router.push('/learning-paths')}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
               >
                 Back to Learning Paths
               </button>

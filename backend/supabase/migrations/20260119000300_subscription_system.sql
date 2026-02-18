@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.subscription_plans (
   tier INTEGER NOT NULL CHECK (tier IN (0, 1, 2, 3)),  -- 0=free, 1=standard, 2=plus, 3=premium
   interval TEXT NOT NULL CHECK (interval IN ('monthly', 'yearly')),
   features JSONB NOT NULL DEFAULT '{}'::jsonb,  -- {"daily_tokens": 20, "followups": 5, ...}
+  marketing_features JSONB DEFAULT '[]'::jsonb, -- User-facing feature bullets for pricing UI
   is_active BOOLEAN DEFAULT true,
   is_visible BOOLEAN DEFAULT true,
   sort_order INTEGER DEFAULT 0,
@@ -47,6 +48,7 @@ COMMENT ON TABLE public.subscription_plans IS 'Master subscription plan definiti
 COMMENT ON COLUMN public.subscription_plans.plan_code IS 'Unique plan identifier: free, standard, plus, premium';
 COMMENT ON COLUMN public.subscription_plans.tier IS 'Plan tier for ordering: 0=free, 1=standard, 2=plus, 3=premium';
 COMMENT ON COLUMN public.subscription_plans.features IS 'JSON object containing plan features and limits';
+COMMENT ON COLUMN public.subscription_plans.marketing_features IS 'Array of user-facing feature bullet strings for pricing UI. Updated by marketing without app releases.';
 
 -- Trigger for updated_at
 CREATE TRIGGER set_subscription_plans_updated_at
@@ -400,7 +402,7 @@ COMMENT ON COLUMN public.subscriptions.discounted_price_minor IS 'Final price af
 -- Insert Free plan
 -- CRITICAL FIX: Set practice_modes to 2 (not 8) per specification
 -- Source: 20260118000005_fix_free_plan_practice_modes.sql
-INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, sort_order, description)
+INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, marketing_features, sort_order, description)
 VALUES (
   'free',
   'Free',
@@ -415,14 +417,25 @@ VALUES (
     "practice_modes": 2,
     "practice_limit": 1
   }'::jsonb,
+  '[
+    "Daily Bible Verse",
+    "8 Study Tokens/Day",
+    "All Study Modes (Limited Tokens)",
+    "Guided Learning Paths",
+    "Memorize up to 3 Verses",
+    "2 Memory Verse Practice Modes",
+    "Follow-Up on Study Guides — Not Included",
+    "Disciple AI — Not Included"
+  ]'::jsonb,
   0,
   'Free plan with basic features (Flip Card, Type It Out practice modes)'
 ) ON CONFLICT (plan_code) DO UPDATE
   SET features = EXCLUDED.features,
+      marketing_features = EXCLUDED.marketing_features,
       updated_at = NOW();
 
 -- Insert Standard plan
-INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, sort_order, description)
+INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, marketing_features, sort_order, description)
 VALUES (
   'standard',
   'Standard Monthly',
@@ -437,14 +450,25 @@ VALUES (
     "practice_modes": 8,
     "practice_limit": 2
   }'::jsonb,
+  '[
+    "Daily Bible Verse",
+    "20 Study Tokens/Day",
+    "All Study Modes (Limited Tokens)",
+    "Guided Learning Paths",
+    "Memorize up to 5 Verses",
+    "All 8 Memory Verse Practice Modes",
+    "5 Follow-Up per Study Guide",
+    "Disciple AI — 3 Sessions/Month"
+  ]'::jsonb,
   1,
   'Standard plan - 20 daily tokens, 5 follow-ups, 3 AI conversations/month'
 ) ON CONFLICT (plan_code) DO UPDATE
   SET features = EXCLUDED.features,
+      marketing_features = EXCLUDED.marketing_features,
       updated_at = NOW();
 
 -- Insert Plus plan
-INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, sort_order, description)
+INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, marketing_features, sort_order, description)
 VALUES (
   'plus',
   'Plus Monthly',
@@ -459,14 +483,25 @@ VALUES (
     "practice_modes": 8,
     "practice_limit": 3
   }'::jsonb,
+  '[
+    "Daily Bible Verse",
+    "50 Study Tokens/Day",
+    "All Study Modes",
+    "Guided Learning Paths",
+    "Memorize up to 10 Verses",
+    "All 8 Memory Verse Practice Modes",
+    "10 Follow-Up per Study Guide",
+    "Disciple AI — 10 Sessions/Month"
+  ]'::jsonb,
   2,
   'Plus plan - 50 daily tokens, 10 follow-ups, 10 AI conversations/month'
 ) ON CONFLICT (plan_code) DO UPDATE
   SET features = EXCLUDED.features,
+      marketing_features = EXCLUDED.marketing_features,
       updated_at = NOW();
 
 -- Insert Premium plan
-INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, sort_order, description)
+INSERT INTO public.subscription_plans (plan_code, plan_name, tier, interval, features, marketing_features, sort_order, description)
 VALUES (
   'premium',
   'Premium Monthly',
@@ -481,10 +516,21 @@ VALUES (
     "practice_modes": 8,
     "practice_limit": -1
   }'::jsonb,
+  '[
+    "Daily Bible Verse",
+    "Unlimited Study Tokens",
+    "All Study Modes",
+    "Guided Learning Paths",
+    "Memorize Unlimited Verses",
+    "All 8 Memory Verse Practice Modes",
+    "Unlimited Follow-Up per Study Guide",
+    "Disciple AI — Unlimited"
+  ]'::jsonb,
   3,
   'Premium plan - Unlimited tokens and features'
 ) ON CONFLICT (plan_code) DO UPDATE
   SET features = EXCLUDED.features,
+      marketing_features = EXCLUDED.marketing_features,
       updated_at = NOW();
 
 -- =====================================================
@@ -497,7 +543,7 @@ INSERT INTO public.subscription_plan_providers (plan_id, provider, provider_plan
 VALUES (
   (SELECT id FROM public.subscription_plans WHERE plan_code = 'standard'),
   'razorpay',
-  COALESCE(current_setting('app.razorpay_standard_plan_id', true), 'plan_standard_placeholder'),
+  COALESCE(current_setting('app.razorpay_standard_plan_id', true), 'plan_RoJtEiu7dU8Xgz'),
   7900,  -- ₹79.00
   'INR',
   'IN'
@@ -523,7 +569,7 @@ INSERT INTO public.subscription_plan_providers (plan_id, provider, provider_plan
 VALUES (
   (SELECT id FROM public.subscription_plans WHERE plan_code = 'premium'),
   'razorpay',
-  COALESCE(current_setting('app.razorpay_premium_plan_id', true), 'plan_premium_placeholder'),
+  COALESCE(current_setting('app.razorpay_premium_plan_id', true), 'plan_RcMPwlqIkuiMQb'),
   49900,  -- ₹499.00
   'INR',
   'IN'
@@ -1026,7 +1072,7 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   preferred_plan TEXT DEFAULT 'standard' CHECK (preferred_plan IN ('free', 'standard', 'plus', 'premium')),
-  learning_path_study_mode TEXT DEFAULT 'ask' CHECK (
+  learning_path_study_mode TEXT DEFAULT 'recommended' CHECK (
     learning_path_study_mode IN ('ask', 'recommended', 'quick', 'standard', 'deep', 'lectio', 'sermon')
   ),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1037,7 +1083,7 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
 COMMENT ON TABLE public.user_preferences IS
   'User preferences for subscription plans and learning path study modes';
 COMMENT ON COLUMN public.user_preferences.learning_path_study_mode IS
-  'Preferred study mode for learning path topics: ask (default), recommended, or specific mode';
+  'Preferred study mode for learning path topics: ask, recommended (default), or specific mode';
 
 ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 
@@ -1226,6 +1272,16 @@ BEGIN
       AND (sp.plan_code = 'standard' OR s.plan_type LIKE 'standard%')
   ) INTO v_has_standard_subscription;
   IF v_has_standard_subscription THEN RETURN 'standard'; END IF;
+
+  -- Check for explicit free subscription (admin override — takes priority over global trial)
+  -- If admin explicitly assigned a user to free tier, honour it and skip the trial fallback
+  IF EXISTS(
+    SELECT 1 FROM subscriptions s
+    LEFT JOIN subscription_plans sp ON s.plan_id = sp.id
+    WHERE s.user_id = p_user_id
+      AND s.status IN ('active', 'trial', 'in_progress', 'pending_cancellation')
+      AND (sp.plan_code = 'free' OR s.plan_type LIKE 'free%')
+  ) THEN RETURN 'free'; END IF;
 
   v_trial_active := is_standard_trial_active();
   IF v_trial_active THEN RETURN 'standard'; END IF;

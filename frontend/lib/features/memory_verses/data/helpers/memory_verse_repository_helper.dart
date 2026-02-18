@@ -1,11 +1,11 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../datasources/memory_verse_local_datasource.dart';
 import '../models/memory_verse_model.dart';
 import '../services/memory_verse_sync_service.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Helper class for common repository operations.
 ///
@@ -69,9 +69,7 @@ class MemoryVerseRepositoryHelper {
             'Failed to queue operation after network error in $operationName: $queueError',
           );
           // Log stack trace in debug mode for troubleshooting
-          if (kDebugMode) {
-            print('Stack trace: $stackTrace');
-          }
+          Logger.debug('Stack trace: $stackTrace');
           // Continue to return NetworkFailure despite queueing error
         }
       }
@@ -147,36 +145,26 @@ class MemoryVerseRepositoryHelper {
 
   /// Logs a debug message.
   void logDebug(String message) {
-    if (kDebugMode) {
-      print('📖 [REPOSITORY] $message');
-    }
+    Logger.info('📖 [REPOSITORY] $message');
   }
 
   /// Logs a success message.
   void logSuccess(String message) {
-    if (kDebugMode) {
-      print('✅ [REPOSITORY] $message');
-    }
+    Logger.debug('✅ [REPOSITORY] $message');
   }
 
   /// Logs an error message.
   void logError(String message) {
-    if (kDebugMode) {
-      print('❌ [REPOSITORY] $message');
-    }
+    Logger.error('❌ [REPOSITORY] $message');
   }
 
   /// Logs a warning message.
   void logWarning(String message) {
-    if (kDebugMode) {
-      print('⚠️ [REPOSITORY] $message');
-    }
+    Logger.debug('⚠️ [REPOSITORY] $message');
   }
 
   /// Logs an info message.
   void logInfo(String message) {
-    if (kDebugMode) {
-      print('🔍 [REPOSITORY] $message');
-    }
+    Logger.debug('🔍 [REPOSITORY] $message');
   }
 }

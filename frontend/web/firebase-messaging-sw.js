@@ -16,109 +16,76 @@ try {
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// ⚠️ SECURITY: Firebase config is now injected at runtime
-// The main Flutter app will post the config to this service worker
-// This prevents hardcoding API keys in the codebase
-//
-// Fallback config for local development (non-sensitive values only)
-let firebaseConfig = {
-  authDomain: "disciplefy---bible-study.firebaseapp.com",
-  projectId: "disciplefy---bible-study",
-  storageBucket: "disciplefy---bible-study.firebasestorage.app",
-  messagingSenderId: "16888340359",
-  appId: "1:16888340359:web:36ad4ae0d1ef1adf8e3d22",
-  measurementId: "G-TY0KDPH5TS"
-};
+// ⚠️ SECURITY: Firebase config is injected at runtime from main Flutter app
+// NO API keys are hardcoded in this file to prevent accidental Git exposure
+// The main app sends the complete config via postMessage after service worker loads
 
-// Listen for config from main app
+let isFirebaseInitialized = false;
+
+// Listen for Firebase config from main app
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'FIREBASE_CONFIG') {
+  if (event.data && event.data.type === 'FIREBASE_CONFIG' && !isFirebaseInitialized) {
     console.log('[FCM SW] 🔧 Received Firebase config from main app');
-    firebaseConfig = event.data.config;
-    // Re-initialize Firebase with the new config
-    if (typeof firebase !== 'undefined') {
-      firebase.initializeApp(firebaseConfig);
-      console.log('[FCM SW] ✅ Firebase re-initialized with runtime config');
+
+    try {
+      // Initialize Firebase with runtime config
+      firebase.initializeApp(event.data.config);
+      const messaging = firebase.messaging();
+      isFirebaseInitialized = true;
+      console.log('[FCM SW] ✅ Firebase initialized successfully with runtime config');
+
+      // Set up background message handler
+      messaging.onBackgroundMessage((payload) => {
+        console.log('='.repeat(80));
+        console.log('[FCM SW] 🔔🔔🔔 BACKGROUND MESSAGE RECEIVED 🔔🔔🔔');
+        console.log('[FCM SW] Timestamp:', new Date().toISOString());
+        console.log('[FCM SW] Full Payload:', JSON.stringify(payload, null, 2));
+        console.log('='.repeat(80));
+
+        // Customize notification
+        const notificationTitle = payload.notification?.title || 'Disciplefy';
+        const notificationBody = payload.notification?.body || 'You have a new notification';
+
+        const notificationOptions = {
+          body: notificationBody,
+          icon: payload.notification?.icon || '/icons/Icon-192.png',
+          badge: '/icons/Icon-192.png',
+          tag: payload.data?.type || 'default',
+          data: payload.data || {},
+          requireInteraction: false,
+        };
+
+        // Add action buttons based on notification type
+        if (payload.data?.type === 'daily_verse') {
+          notificationOptions.actions = [
+            { action: 'open', title: 'Read Verse', icon: '/icons/Icon-192.png' }
+          ];
+        } else if (payload.data?.type === 'recommended_topic') {
+          notificationOptions.actions = [
+            { action: 'open', title: 'View Topic', icon: '/icons/Icon-192.png' }
+          ];
+        }
+
+        console.log('[FCM SW] 🔔 Showing notification...');
+        return self.registration.showNotification(notificationTitle, notificationOptions)
+          .then(() => {
+            console.log('[FCM SW] ✅ ✅ ✅ NOTIFICATION DISPLAYED SUCCESSFULLY ✅ ✅ ✅');
+          })
+          .catch((error) => {
+            console.error('[FCM SW] ❌ Failed to show notification:', error);
+            throw error;
+          });
+      });
+
+    } catch (error) {
+      console.error('[FCM SW] ❌ Failed to initialize Firebase:', error);
     }
   }
 });
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-
-// Retrieve Firebase Messaging instance
-const messaging = firebase.messaging();
-
-// Handle background messages
-messaging.onBackgroundMessage((payload) => {
-  console.log('='.repeat(80));
-  console.log('[FCM SW] 🔔🔔🔔 BACKGROUND MESSAGE RECEIVED 🔔🔔🔔');
-  console.log('[FCM SW] Timestamp:', new Date().toISOString());
-  console.log('[FCM SW] Full Payload:', JSON.stringify(payload, null, 2));
-  console.log('[FCM SW] Notification:', payload.notification);
-  console.log('[FCM SW] Data:', payload.data);
-  console.log('[FCM SW] Message ID:', payload.messageId);
-  console.log('[FCM SW] From:', payload.from);
-  console.log('='.repeat(80));
-
-  // Customize notification here
-  const notificationTitle = payload.notification?.title || 'Disciplefy';
-  const notificationBody = payload.notification?.body || 'You have a new notification';
-
-  console.log('[FCM SW] 📝 Preparing notification...');
-  console.log('[FCM SW]    Title:', notificationTitle);
-  console.log('[FCM SW]    Body:', notificationBody);
-  console.log('[FCM SW]    Type:', payload.data?.type || 'none');
-
-  const notificationOptions = {
-    body: notificationBody,
-    icon: payload.notification?.icon || '/icons/Icon-192.png',
-    badge: '/icons/Icon-192.png',
-    tag: payload.data?.type || 'default',
-    data: payload.data || {},
-    // Show notification for 10 seconds
-    requireInteraction: false,
-  };
-
-  // Add action buttons based on notification type
-  if (payload.data?.type === 'daily_verse') {
-    notificationOptions.actions = [
-      { action: 'open', title: 'Read Verse', icon: '/icons/Icon-192.png' }
-    ];
-    console.log('[FCM SW] ✅ Added daily verse action button');
-  } else if (payload.data?.type === 'recommended_topic') {
-    notificationOptions.actions = [
-      { action: 'open', title: 'View Topic', icon: '/icons/Icon-192.png' }
-    ];
-    console.log('[FCM SW] ✅ Added recommended topic action button');
-  }
-
-  console.log('[FCM SW] 🔔 Showing notification...');
-  console.log('[FCM SW] Notification options:', JSON.stringify(notificationOptions, null, 2));
-
-  return self.registration.showNotification(notificationTitle, notificationOptions)
-    .then(() => {
-      console.log('[FCM SW] ✅ ✅ ✅ NOTIFICATION DISPLAYED SUCCESSFULLY ✅ ✅ ✅');
-      console.log('='.repeat(80));
-    })
-    .catch((error) => {
-      console.error('[FCM SW] ❌ ❌ ❌ FAILED TO SHOW NOTIFICATION ❌ ❌ ❌');
-      console.error('[FCM SW] Error:', error);
-      console.error('[FCM SW] Error details:', error.message, error.stack);
-      console.log('='.repeat(80));
-      throw error;
-    });
-});
-
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('='.repeat(80));
-  console.log('[FCM SW] 👆👆👆 NOTIFICATION CLICKED 👆👆👆');
-  console.log('[FCM SW] Notification:', event.notification);
-  console.log('[FCM SW] Action:', event.action);
-  console.log('[FCM SW] Data:', event.notification.data);
-  console.log('='.repeat(80));
-
+  console.log('[FCM SW] 👆 Notification clicked');
   event.notification.close();
 
   // Determine the URL to open based on notification data
@@ -126,9 +93,8 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.notification.data) {
     const data = event.notification.data;
-
     if (data.type === 'daily_verse') {
-      urlToOpen = self.location.origin + '/'; // Home page has daily verse
+      urlToOpen = self.location.origin + '/';
     } else if (data.type === 'recommended_topic' && data.topic_id) {
       urlToOpen = self.location.origin + `/study-topics?topic_id=${data.topic_id}`;
     } else if (data.click_action) {
@@ -136,46 +102,28 @@ self.addEventListener('notificationclick', (event) => {
     }
   }
 
-  console.log('[FCM SW] 🔗 Opening URL:', urlToOpen);
-
   // Open the app or focus existing window
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        console.log('[FCM SW] 🔍 Found', clientList.length, 'client window(s)');
-
-        // Check if there's already a window open with our app
-        for (let i = 0; i < clientList.length; i++) {
-          const client = clientList[i];
-          console.log('[FCM SW] 🔍 Checking client:', client.url);
-
+        // Check if there's already a window open
+        for (const client of clientList) {
           if (client.url.includes(self.location.origin)) {
-            console.log('[FCM SW] ✅ Found matching client, posting message');
-
-            // Instead of navigate (which causes the error), post a message to the client
-            // The client will handle the navigation
+            // Post message to client for navigation
             client.postMessage({
               type: 'NOTIFICATION_CLICK',
               url: urlToOpen,
               data: event.notification.data
             });
-
-            // Focus the client
             return client.focus();
           }
         }
-
         // No window found, open a new one
-        console.log('[FCM SW] 🆕 No existing client found, opening new window');
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }
       })
-      .catch((error) => {
-        console.error('[FCM SW] ❌ Error handling notification click:', error);
-      })
   );
 });
 
-// Log service worker registration
-console.log('[firebase-messaging-sw.js] Service worker registered and ready');
+console.log('[FCM SW] Service worker registered and waiting for Firebase config from main app');

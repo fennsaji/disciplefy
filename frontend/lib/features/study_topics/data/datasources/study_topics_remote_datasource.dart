@@ -7,6 +7,7 @@ import '../../../../core/services/http_service.dart';
 import '../../../home/data/models/recommended_guide_topic_model.dart';
 import '../../../home/domain/entities/recommended_guide_topic.dart';
 import '../../domain/entities/study_topics_filter.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Result containing topics and total count from the API.
 class TopicsResult {
@@ -87,7 +88,7 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
 
   /// Logs debug message if debug mode is enabled.
   void _logDebug(String message) {
-    if (kDebugMode) print(message);
+    if (kDebugMode) Logger.debug(message);
   }
 
   /// Builds the URI for topics API request with query parameters.
@@ -159,15 +160,16 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
   @override
   Future<List<String>> getCategories({String language = 'en'}) async {
     try {
-      if (kDebugMode) {
-        print('🚀 [STUDY_TOPICS] Fetching categories for language: $language');
-      }
+      Logger.debug(
+          '🚀 [STUDY_TOPICS] Fetching categories for language: $language');
 
       final headers = await _buildCategoriesHeaders();
       final response = await _fetchCategoriesResponse(headers, language);
       return _handleCategoriesSuccess(response.body);
     } catch (e) {
-      if (kDebugMode) print('💥 [STUDY_TOPICS] Exception in getCategories: $e');
+      if (kDebugMode) {
+        Logger.debug('💥 [STUDY_TOPICS] Exception in getCategories: $e');
+      }
 
       if (e is ServerException) rethrow;
 
@@ -194,10 +196,8 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
       headers: headers,
     );
 
-    if (kDebugMode) {
-      print(
-          '📡 [STUDY_TOPICS] Categories API Response Status: ${response.statusCode}');
-    }
+    Logger.info(
+        '📡 [STUDY_TOPICS] Categories API Response Status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       return response;
@@ -210,20 +210,16 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
   List<String> _handleCategoriesSuccess(String responseBody) {
     final categories = _parseCategoriesResponse(responseBody);
 
-    if (kDebugMode) {
-      print(
-          '✅ [STUDY_TOPICS] Successfully fetched ${categories.length} categories');
-    }
+    Logger.info(
+        '✅ [STUDY_TOPICS] Successfully fetched ${categories.length} categories');
 
     return categories;
   }
 
   /// Handles categories API error responses.
   Never _handleCategoriesError(dynamic response) {
-    if (kDebugMode) {
-      print(
-          '❌ [STUDY_TOPICS] Categories API error: ${response.statusCode} - ${response.body}');
-    }
+    Logger.error(
+        '❌ [STUDY_TOPICS] Categories API error: ${response.statusCode} - ${response.body}');
 
     throw ServerException(
       message: 'Failed to fetch categories: ${response.statusCode}',
@@ -234,7 +230,9 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
   /// Parses topics API response and converts to domain entities with total count.
   TopicsResult _parseTopicsResponse(String responseBody) {
     try {
-      if (kDebugMode) print('📄 [STUDY_TOPICS] Parsing topics response...');
+      if (kDebugMode) {
+        Logger.debug('📄 [STUDY_TOPICS] Parsing topics response...');
+      }
 
       final jsonData = json.decode(responseBody) as Map<String, dynamic>;
       _validateTopicsResponse(jsonData);
@@ -244,15 +242,13 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
       final topics = response.toEntities();
       final total = response.total;
 
-      if (kDebugMode) {
-        print(
-            '✅ [STUDY_TOPICS] Successfully parsed ${topics.length} topics (total: $total)');
-      }
+      Logger.info(
+          '✅ [STUDY_TOPICS] Successfully parsed ${topics.length} topics (total: $total)');
       return TopicsResult(topics: topics, total: total);
     } catch (e) {
       if (kDebugMode) {
-        print('💥 [STUDY_TOPICS] JSON parsing error: $e');
-        print('📄 [STUDY_TOPICS] Raw response: $responseBody');
+        Logger.error('💥 [STUDY_TOPICS] JSON parsing error: $e');
+        Logger.debug('📄 [STUDY_TOPICS] Raw response: $responseBody');
       }
 
       if (e is ClientException) rethrow;
@@ -267,9 +263,8 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
   /// Validates that the topics response has the expected structure.
   void _validateTopicsResponse(Map<String, dynamic> jsonData) {
     if (jsonData['success'] != true) {
-      if (kDebugMode) {
-        print('❌ [STUDY_TOPICS] Unexpected API response format: $jsonData');
-      }
+      Logger.error(
+          '❌ [STUDY_TOPICS] Unexpected API response format: $jsonData');
       throw const ClientException(
         message: 'API response missing topics data',
         code: 'TOPICS_PARSE_ERROR',
@@ -280,9 +275,8 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
     if (data is! Map<String, dynamic> ||
         !data.containsKey('topics') ||
         !data.containsKey('total')) {
-      if (kDebugMode) {
-        print('❌ [STUDY_TOPICS] Unexpected API response format: $jsonData');
-      }
+      Logger.error(
+          '❌ [STUDY_TOPICS] Unexpected API response format: $jsonData');
       throw const ClientException(
         message: 'API response missing topics data',
         code: 'TOPICS_PARSE_ERROR',
@@ -293,7 +287,9 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
   /// Parses categories API response and extracts category names.
   List<String> _parseCategoriesResponse(String responseBody) {
     try {
-      if (kDebugMode) print('📄 [STUDY_TOPICS] Parsing categories response...');
+      if (kDebugMode) {
+        Logger.debug('📄 [STUDY_TOPICS] Parsing categories response...');
+      }
 
       final Map<String, dynamic> jsonData = json.decode(responseBody);
 
@@ -305,27 +301,24 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
           if (categoriesData is List) {
             final categories = List<String>.from(categoriesData);
 
-            if (kDebugMode) {
-              print(
-                  '✅ [STUDY_TOPICS] Successfully parsed ${categories.length} categories');
-            }
+            Logger.info(
+                '✅ [STUDY_TOPICS] Successfully parsed ${categories.length} categories');
             return categories;
           }
         }
       }
 
       // If we reach here, the response format is unexpected
-      if (kDebugMode) {
-        print('❌ [STUDY_TOPICS] Unexpected API response format: $jsonData');
-      }
+      Logger.error(
+          '❌ [STUDY_TOPICS] Unexpected API response format: $jsonData');
       throw const ClientException(
         message: 'API response missing categories data',
         code: 'CATEGORIES_PARSE_ERROR',
       );
     } catch (e) {
       if (kDebugMode) {
-        print('💥 [STUDY_TOPICS] JSON parsing error: $e');
-        print('📄 [STUDY_TOPICS] Raw response: $responseBody');
+        Logger.error('💥 [STUDY_TOPICS] JSON parsing error: $e');
+        Logger.debug('📄 [STUDY_TOPICS] Raw response: $responseBody');
       }
 
       if (e is ClientException) {

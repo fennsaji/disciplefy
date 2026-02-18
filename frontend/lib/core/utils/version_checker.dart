@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/system_config_service.dart';
 import '../router/app_router.dart';
+import 'logger.dart';
 
 /// Version Checker Utility
 ///
@@ -43,7 +44,7 @@ class VersionChecker {
       } else if (Platform.isIOS) {
         platform = 'ios';
       } else {
-        debugPrint('[VersionChecker] Unsupported platform');
+        Logger.debug('[VersionChecker] Unsupported platform');
         return;
       }
 
@@ -51,12 +52,12 @@ class VersionChecker {
       final minVersion =
           configService.config?.versionControl.minVersion[platform] ?? '1.0.0';
 
-      debugPrint(
+      Logger.debug(
           '[VersionChecker] Current: $currentVersion, Min required: $minVersion, Platform: $platform');
 
       // Compare versions
       if (_isVersionLessThan(currentVersion, minVersion)) {
-        debugPrint('[VersionChecker] Update required!');
+        Logger.debug('[VersionChecker] Update required!');
 
         // Check if force update is enabled
         final forceUpdate =
@@ -68,10 +69,10 @@ class VersionChecker {
           _showOptionalUpdateDialog(currentVersion, minVersion, platform);
         }
       } else {
-        debugPrint('[VersionChecker] App version is up to date');
+        Logger.debug('[VersionChecker] App version is up to date');
       }
     } catch (e) {
-      debugPrint('[VersionChecker] Error checking version: $e');
+      Logger.debug('[VersionChecker] Error checking version: $e');
       // Don't block app on version check failure
     }
   }
@@ -101,7 +102,7 @@ class VersionChecker {
 
       return false; // Versions are equal
     } catch (e) {
-      debugPrint('[VersionChecker] Error comparing versions: $e');
+      Logger.debug('[VersionChecker] Error comparing versions: $e');
       return false; // On error, assume version is ok
     }
   }
@@ -114,7 +115,7 @@ class VersionChecker {
     // Get navigation context
     final context = _getNavigationContext();
     if (context == null) {
-      debugPrint('[VersionChecker] Cannot show dialog - no context');
+      Logger.debug('[VersionChecker] Cannot show dialog - no context');
       return;
     }
 
@@ -172,7 +173,7 @@ class VersionChecker {
       String currentVersion, String minVersion, String platform) {
     final context = _getNavigationContext();
     if (context == null) {
-      debugPrint('[VersionChecker] Cannot show dialog - no context');
+      Logger.debug('[VersionChecker] Cannot show dialog - no context');
       return;
     }
 
@@ -223,7 +224,7 @@ class VersionChecker {
       final navigatorState = AppRouter.rootNavigatorKey.currentState;
       return navigatorState?.context;
     } catch (e) {
-      debugPrint('[VersionChecker] Error getting context: $e');
+      Logger.debug('[VersionChecker] Error getting context: $e');
       return null;
     }
   }
@@ -252,7 +253,7 @@ class VersionChecker {
         storeUrl = Uri.base.toString();
         break;
       default:
-        debugPrint('[VersionChecker] Unknown platform: $platform');
+        Logger.debug('[VersionChecker] Unknown platform: $platform');
         return;
     }
 
@@ -261,10 +262,10 @@ class VersionChecker {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        debugPrint('[VersionChecker] Cannot launch URL: $storeUrl');
+        Logger.debug('[VersionChecker] Cannot launch URL: $storeUrl');
       }
     } catch (e) {
-      debugPrint('[VersionChecker] Error opening app store: $e');
+      Logger.debug('[VersionChecker] Error opening app store: $e');
     }
   }
 }

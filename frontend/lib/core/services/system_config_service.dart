@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/memory_verses/models/memory_verse_config.dart';
+import '../utils/logger.dart';
 
 /// System configuration service
 ///
@@ -44,10 +45,10 @@ class SystemConfigService extends ChangeNotifier {
 
   /// Initialize the service (load from cache, then fetch fresh)
   Future<void> initialize() async {
-    debugPrint('🔧 [SystemConfigService] initialize() called');
+    Logger.debug('🔧 [SystemConfigService] initialize() called');
 
     if (_isInitialized) {
-      debugPrint('ℹ️  [SystemConfigService] Already initialized, skipping');
+      Logger.debug('ℹ️  [SystemConfigService] Already initialized, skipping');
       return;
     }
 
@@ -55,24 +56,24 @@ class SystemConfigService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      debugPrint('📦 [SystemConfigService] Loading from cache...');
+      Logger.debug('📦 [SystemConfigService] Loading from cache...');
       // Load from cache first
       await _loadFromCache();
 
       // Fetch fresh data in background (if cache is stale)
       if (_shouldRefresh()) {
-        debugPrint(
+        Logger.debug(
             '🔄 [SystemConfigService] Cache is stale, fetching fresh data...');
         await fetchSystemConfig(forceRefresh: true);
       } else {
-        debugPrint('✅ [SystemConfigService] Using cached config (fresh)');
+        Logger.debug('✅ [SystemConfigService] Using cached config (fresh)');
       }
 
       _isInitialized = true;
-      debugPrint('✅ [SystemConfigService] Initialization complete');
+      Logger.debug('✅ [SystemConfigService] Initialization complete');
     } catch (e) {
       _error = 'Failed to initialize system config: $e';
-      debugPrint('❌ [SystemConfigService] Initialization error: $e');
+      Logger.debug('❌ [SystemConfigService] Initialization error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -81,12 +82,12 @@ class SystemConfigService extends ChangeNotifier {
 
   /// Fetch system configuration from backend
   Future<void> fetchSystemConfig({bool forceRefresh = false}) async {
-    debugPrint(
+    Logger.debug(
         '📡 [SystemConfigService] fetchSystemConfig() called (forceRefresh: $forceRefresh)');
 
     // Check cache first (unless force refresh)
     if (!forceRefresh && !_shouldRefresh()) {
-      debugPrint('ℹ️ [SystemConfigService] Using cached config');
+      Logger.debug('ℹ️ [SystemConfigService] Using cached config');
       return;
     }
 
@@ -95,7 +96,7 @@ class SystemConfigService extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      debugPrint(
+      Logger.debug(
           '🌐 [SystemConfigService] Calling backend API: /functions/v1/system-config');
 
       final response = await _supabase.functions.invoke(
@@ -103,13 +104,13 @@ class SystemConfigService extends ChangeNotifier {
         method: HttpMethod.get,
       );
 
-      debugPrint(
+      Logger.debug(
           '📥 [SystemConfigService] Response received: status=${response.status}');
 
       if (response.status == 200) {
         final data = response.data as Map<String, dynamic>;
 
-        debugPrint(
+        Logger.debug(
             '📄 [SystemConfigService] Response data keys: ${data.keys.toList()}');
 
         if (data['success'] == true) {
@@ -119,10 +120,10 @@ class SystemConfigService extends ChangeNotifier {
           // Save to cache
           await _saveToCache();
 
-          debugPrint('✅ [SystemConfigService] Config fetched successfully');
-          debugPrint(
+          Logger.debug('✅ [SystemConfigService] Config fetched successfully');
+          Logger.debug(
               '   - Maintenance mode: ${_config?.maintenanceMode.enabled}');
-          debugPrint(
+          Logger.debug(
               '   - Feature flags count: ${_config?.featureFlags.length}');
         } else {
           throw Exception(data['error'] ?? 'Failed to fetch system config');
@@ -132,7 +133,7 @@ class SystemConfigService extends ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to fetch system config: $e';
-      debugPrint('❌ [SystemConfigService] Fetch error: $e');
+      Logger.debug('❌ [SystemConfigService] Fetch error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -268,15 +269,15 @@ class SystemConfigService extends ChangeNotifier {
         if (cacheAge < _cacheDuration.inMilliseconds) {
           _config = SystemConfig.fromJson(jsonDecode(cachedJson));
           _lastFetch = DateTime.fromMillisecondsSinceEpoch(cachedTimestamp);
-          debugPrint(
+          Logger.debug(
               '✅ [SystemConfigService] Loaded from cache (age: \${cacheAge ~/ 1000}s)');
         } else {
-          debugPrint(
+          Logger.debug(
               'ℹ️ [SystemConfigService] Cache expired (age: \${cacheAge ~/ 1000}s)');
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [SystemConfigService] Cache load error: $e');
+      Logger.debug('⚠️ [SystemConfigService] Cache load error: $e');
     }
   }
 
@@ -289,9 +290,9 @@ class SystemConfigService extends ChangeNotifier {
       await prefs.setInt(
           _cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
 
-      debugPrint('✅ [SystemConfigService] Saved to cache');
+      Logger.debug('✅ [SystemConfigService] Saved to cache');
     } catch (e) {
-      debugPrint('⚠️ [SystemConfigService] Cache save error: $e');
+      Logger.debug('⚠️ [SystemConfigService] Cache save error: $e');
     }
   }
 
@@ -321,10 +322,10 @@ class SystemConfigService extends ChangeNotifier {
       _config = null;
       _lastFetch = null;
 
-      debugPrint('✅ [SystemConfigService] Cache cleared');
+      Logger.debug('✅ [SystemConfigService] Cache cleared');
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ [SystemConfigService] Cache clear error: $e');
+      Logger.debug('⚠️ [SystemConfigService] Cache clear error: $e');
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Service for handling speech-to-text functionality.
 ///
@@ -27,11 +28,11 @@ class SpeechService {
       _isInitialized = await _speechToText.initialize(
         onError: (error) {
           // Log error but don't throw - let caller handle via result
-          print('🎙️ [SPEECH] Error: ${error.errorMsg}');
+          Logger.error('🎙️ [SPEECH] Error: ${error.errorMsg}');
         },
         onStatus: (status) {
           // Status updates: listening, notListening, done
-          print('🎙️ [SPEECH] Status changed: $status');
+          Logger.debug('🎙️ [SPEECH] Status changed: $status');
           _onStatusChange?.call(status);
         },
       );

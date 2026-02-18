@@ -10,6 +10,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
+import '../utils/logger.dart';
 
 class IAPService {
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -22,14 +23,14 @@ class IAPService {
   /// Initialize IAP service
   Future<void> initialize() async {
     if (kIsWeb) {
-      debugPrint('🛒 [IAP] Web platform - IAP not available');
+      Logger.debug('🛒 [IAP] Web platform - IAP not available');
       return;
     }
 
     // Check if IAP is available
     final available = await _iap.isAvailable();
     if (!available) {
-      debugPrint('🛒 [IAP] Store not available on this device');
+      Logger.debug('🛒 [IAP] Store not available on this device');
       return;
     }
 
@@ -43,45 +44,45 @@ class IAPService {
     // Listen to purchase updates
     _subscription = _iap.purchaseStream.listen(
       _handlePurchaseUpdate,
-      onDone: () => debugPrint('🛒 [IAP] Purchase stream closed'),
+      onDone: () => Logger.debug('🛒 [IAP] Purchase stream closed'),
       onError: (error) {
-        debugPrint('🛒 [IAP] Purchase stream error: $error');
+        Logger.debug('🛒 [IAP] Purchase stream error: $error');
         onPurchaseError?.call(error.toString());
       },
     );
 
-    debugPrint('🛒 [IAP] Service initialized');
+    Logger.debug('🛒 [IAP] Service initialized');
   }
 
   /// Dispose IAP service
   void dispose() {
     _subscription?.cancel();
-    debugPrint('🛒 [IAP] Service disposed');
+    Logger.debug('🛒 [IAP] Service disposed');
   }
 
   /// Fetch available products from store
   Future<List<ProductDetails>> getProducts(Set<String> productIds) async {
-    debugPrint('🛒 [IAP] Fetching products: $productIds');
+    Logger.debug('🛒 [IAP] Fetching products: $productIds');
 
     final response = await _iap.queryProductDetails(productIds);
 
     if (response.error != null) {
-      debugPrint('🛒 [IAP] Error fetching products: ${response.error}');
+      Logger.debug('🛒 [IAP] Error fetching products: ${response.error}');
       throw Exception('Failed to fetch products: ${response.error?.message}');
     }
 
     if (response.productDetails.isEmpty) {
-      debugPrint('🛒 [IAP] No products found');
+      Logger.debug('🛒 [IAP] No products found');
       throw Exception('No products found for the given IDs');
     }
 
-    debugPrint('🛒 [IAP] Found ${response.productDetails.length} products');
+    Logger.debug('🛒 [IAP] Found ${response.productDetails.length} products');
     return response.productDetails;
   }
 
   /// Purchase a product
   Future<void> purchaseProduct(ProductDetails product) async {
-    debugPrint('🛒 [IAP] Initiating purchase: ${product.id}');
+    Logger.debug('🛒 [IAP] Initiating purchase: ${product.id}');
 
     final purchaseParam = PurchaseParam(productDetails: product);
 
@@ -89,24 +90,24 @@ class IAPService {
       final success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
 
       if (!success) {
-        debugPrint('🛒 [IAP] Purchase initiation failed');
+        Logger.debug('🛒 [IAP] Purchase initiation failed');
         onPurchaseError?.call('Failed to initiate purchase');
       }
     } catch (e) {
-      debugPrint('🛒 [IAP] Purchase error: $e');
+      Logger.debug('🛒 [IAP] Purchase error: $e');
       onPurchaseError?.call(e.toString());
     }
   }
 
   /// Restore previous purchases
   Future<void> restorePurchases() async {
-    debugPrint('🛒 [IAP] Restoring purchases');
+    Logger.debug('🛒 [IAP] Restoring purchases');
 
     try {
       await _iap.restorePurchases();
-      debugPrint('🛒 [IAP] Restore completed');
+      Logger.debug('🛒 [IAP] Restore completed');
     } catch (e) {
-      debugPrint('🛒 [IAP] Restore error: $e');
+      Logger.debug('🛒 [IAP] Restore error: $e');
       onPurchaseError?.call('Failed to restore purchases: $e');
     }
   }
@@ -114,7 +115,7 @@ class IAPService {
   /// Handle purchase updates from store
   void _handlePurchaseUpdate(List<PurchaseDetails> purchases) {
     for (final purchase in purchases) {
-      debugPrint(
+      Logger.debug(
           '🛒 [IAP] Purchase update: ${purchase.productID}, status: ${purchase.status}');
 
       if (purchase.status == PurchaseStatus.purchased ||
@@ -122,10 +123,10 @@ class IAPService {
         // Notify callback with successful purchase
         onPurchaseUpdate?.call(purchase);
       } else if (purchase.status == PurchaseStatus.error) {
-        debugPrint('🛒 [IAP] Purchase error: ${purchase.error}');
+        Logger.debug('🛒 [IAP] Purchase error: ${purchase.error}');
         onPurchaseError?.call(purchase.error?.message ?? 'Purchase failed');
       } else if (purchase.status == PurchaseStatus.canceled) {
-        debugPrint('🛒 [IAP] Purchase cancelled by user');
+        Logger.debug('🛒 [IAP] Purchase cancelled by user');
         onPurchaseError?.call('Purchase cancelled');
       }
 

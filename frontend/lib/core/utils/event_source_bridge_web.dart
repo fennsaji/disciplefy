@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 import 'dart:async';
 import 'dart:js' as js;
+import 'logger.dart';
 
 final Map<int, StreamController<String>> _controllers = {};
 final Map<int, int> _connectionIds = {};
@@ -54,7 +55,7 @@ Stream<String> connect({
       throw Exception('Failed to create JavaScript connection');
     }
   } catch (e) {
-    print('[EventSourceBridge] ❌ Failed to create connection: $e');
+    Logger.error('[EventSourceBridge] ❌ Failed to create connection: $e');
     controller.addError(e);
     controller.close();
     _controllers.remove(dartId);

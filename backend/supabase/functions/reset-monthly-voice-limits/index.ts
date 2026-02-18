@@ -95,10 +95,10 @@ serve(async (req) => {
       console.log(`[ResetMonthlyVoiceLimits] Deleted ${deletedCount || 0} records older than ${threeMonthsAgo}`)
     }
 
-    // Note: We don't need to explicitly reset counters to 0
-    // The get_or_create_monthly_voice_usage function will automatically
-    // create new records with 0 counters for the current month when users
-    // start new conversations
+    // Note: We don't need to explicitly reset counters to 0.
+    // New monthly records with 0 counters are created automatically when
+    // users start conversations (via check_and_increment_voice_quota on first
+    // message, or check_voice_quota on quota display).
 
     console.log(`[ResetMonthlyVoiceLimits] Reset completed successfully for ${currentMonth}`)
 

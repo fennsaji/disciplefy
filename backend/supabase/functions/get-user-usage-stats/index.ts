@@ -110,15 +110,28 @@ serve(async (req) => {
       return priority1 >= priority2 ? p1 : p2;
     };
 
+    /**
+     * Maps plan_type column value to a base plan name.
+     * plan_type values: free_tier, free_monthly, standard_trial, standard_monthly,
+     * standard_yearly, plus_monthly, plus_yearly, premium_monthly, premium_yearly, premium_admin
+     */
+    const planTypeToBasePlan = (planType: string | null | undefined): string => {
+      if (!planType) return 'free';
+      if (planType.startsWith('premium')) return 'premium';
+      if (planType.startsWith('plus')) return 'plus';
+      if (planType.startsWith('standard')) return 'standard';
+      return 'free';
+    };
+
     // MERGE LOGIC: Query BOTH subscription and user_tokens tables
     // Use the highest plan found between them (premium > plus > standard > free)
 
-    // 1. Get subscription plan from subscriptions table
+    // 1. Get subscription plan from subscriptions table (uses plan_type column)
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
-      .select('subscription_plan, status')
+      .select('plan_type, status')
       .eq('user_id', user.id)
-      .in('status', ['active', 'authenticated', 'pending_cancellation'])
+      .in('status', ['active', 'trial', 'pending_cancellation'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -127,7 +140,7 @@ serve(async (req) => {
       console.error('[get-user-usage-stats] Error fetching subscription:', subError);
     }
 
-    const subscriptionPlan = subscription?.subscription_plan;
+    const subscriptionPlan = planTypeToBasePlan(subscription?.plan_type);
 
     // 2. Get user plan from user_tokens table (check ALL rows for this user)
     const { data: userTokens, error: tokensError } = await supabase
@@ -152,7 +165,8 @@ serve(async (req) => {
     const currentPlan = getHigherPlan(subscriptionPlan, userTokensPlan);
 
     console.log('[get-user-usage-stats] Plan determination:', {
-      subscription_plan: subscriptionPlan || 'none',
+      subscription_plan_type: subscription?.plan_type || 'none',
+      subscription_base_plan: subscriptionPlan,
       user_tokens_plan: userTokensPlan,
       merged_plan: currentPlan,
       source: subscriptionPlan === currentPlan ? 'subscriptions' :
@@ -191,7 +205,7 @@ serve(async (req) => {
     console.log('[get-user-usage-stats] Success:', {
       user_id: user.id,
       plan: currentPlan,
-      subscription_plan: subscriptionPlan || 'none',
+      subscription_plan_type: subscription?.plan_type || 'none',
       user_tokens_plan: userTokensPlan,
       usage: `${tokensUsedToday}/${dailyLimit} (today)`,
       streak: streakDays,

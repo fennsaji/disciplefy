@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../domain/repositories/secure_store_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of SecureStoreRepository that wraps FlutterSecureStorage
 /// Isolates FlutterSecureStorage SDK from domain layer following Clean Architecture
@@ -12,13 +12,9 @@ class SecureStoreRepositoryImpl implements SecureStoreRepository {
   Future<void> clearAll() async {
     try {
       await _secureStorage.deleteAll();
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ✅ All secure storage cleared');
-      }
+      Logger.error('🔐 [SECURE STORE] ✅ All secure storage cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ❌ Error clearing secure storage: $e');
-      }
+      Logger.debug('🔐 [SECURE STORE] ❌ Error clearing secure storage: $e');
       rethrow;
     }
   }
@@ -28,9 +24,7 @@ class SecureStoreRepositoryImpl implements SecureStoreRepository {
     try {
       return await _secureStorage.read(key: key);
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ❌ Error reading key $key: $e');
-      }
+      Logger.error('🔐 [SECURE STORE] ❌ Error reading key $key: $e');
       rethrow;
     }
   }
@@ -39,13 +33,9 @@ class SecureStoreRepositoryImpl implements SecureStoreRepository {
   Future<void> write(String key, String value) async {
     try {
       await _secureStorage.write(key: key, value: value);
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ✅ Written key: $key');
-      }
+      Logger.error('🔐 [SECURE STORE] ✅ Written key: $key');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ❌ Error writing key $key: $e');
-      }
+      Logger.debug('🔐 [SECURE STORE] ❌ Error writing key $key: $e');
       rethrow;
     }
   }
@@ -54,13 +44,9 @@ class SecureStoreRepositoryImpl implements SecureStoreRepository {
   Future<void> delete(String key) async {
     try {
       await _secureStorage.delete(key: key);
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ✅ Deleted key: $key');
-      }
+      Logger.error('🔐 [SECURE STORE] ✅ Deleted key: $key');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ❌ Error deleting key $key: $e');
-      }
+      Logger.debug('🔐 [SECURE STORE] ❌ Error deleting key $key: $e');
       rethrow;
     }
   }
@@ -70,9 +56,7 @@ class SecureStoreRepositoryImpl implements SecureStoreRepository {
     try {
       return await _secureStorage.containsKey(key: key);
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [SECURE STORE] ❌ Error checking key $key: $e');
-      }
+      Logger.error('🔐 [SECURE STORE] ❌ Error checking key $key: $e');
       rethrow;
     }
   }

@@ -1,5 +1,8 @@
 'use client'
 
+import { EditIcon, DeleteIcon, actionButtonStyles } from '@/components/ui/action-icons'
+import { EmptyState } from '@/components/ui/empty-state'
+
 interface Achievement {
   id: string
   title: string
@@ -73,7 +76,7 @@ export default function AchievementsTable({
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {achievements.map((achievement) => (
             <tr key={achievement.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
               <td className="px-6 py-4">
@@ -114,22 +117,28 @@ export default function AchievementsTable({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button
-                  onClick={() => onEdit(achievement)}
-                  className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete "${achievement.title}"? This will remove it from all users.`)) {
-                      onDelete(achievement.id)
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(achievement)}
+                    className={actionButtonStyles.edit}
+                    title="Edit"
+                  >
+                    <EditIcon />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete "${achievement.title}"? This will remove it from all users.`)) {
+                        onDelete(achievement.id)
+                      }
+                    }}
+                    className={actionButtonStyles.delete}
+                    title="Delete"
+                  >
+                    <DeleteIcon />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -137,9 +146,7 @@ export default function AchievementsTable({
       </table>
 
       {achievements.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No achievements found</p>
-        </div>
+        <EmptyState title="No achievements" description="No achievements match the current filter." icon="🏆" />
       )}
     </div>
   )

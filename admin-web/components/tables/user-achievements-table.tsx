@@ -1,5 +1,8 @@
 'use client'
 
+import { DeleteIcon, actionButtonStyles } from '@/components/ui/action-icons'
+import { EmptyState } from '@/components/ui/empty-state'
+
 interface UserAchievement {
   id: string
   user_id: string
@@ -73,7 +76,7 @@ export default function UserAchievementsTable({
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {userAchievements.map((ua) => (
             <tr key={ua.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
               <td className="px-6 py-4">
@@ -118,14 +121,16 @@ export default function UserAchievementsTable({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
+                  type="button"
                   onClick={() => {
                     if (confirm(`Are you sure you want to revoke "${ua.achievement_title}" from ${ua.user_name}?`)) {
                       onRevoke(ua.id)
                     }
                   }}
-                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                  className={actionButtonStyles.delete}
+                  title="Revoke"
                 >
-                  Revoke
+                  <DeleteIcon />
                 </button>
               </td>
             </tr>
@@ -134,9 +139,7 @@ export default function UserAchievementsTable({
       </table>
 
       {userAchievements.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No user achievements found</p>
-        </div>
+        <EmptyState title="No user achievements" description="No user achievements match the current filter." icon="🎖️" />
       )}
     </div>
   )

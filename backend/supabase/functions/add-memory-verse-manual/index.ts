@@ -129,7 +129,7 @@ async function handleAddMemoryVerseManual(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
-  
+
   // Validate authentication
   if (!userContext || userContext.type !== 'authenticated' || !userContext.userId) {
     throw new AppError('AUTHENTICATION_ERROR', 'Authentication required to save memory verses', 401)
@@ -143,6 +143,31 @@ async function handleAddMemoryVerseManual(
   const userId = userContext.userId!
   await checkFeatureAccess(userId, userPlan, 'memory_verses')
   console.log(`✅ [AddMemoryVerse] Feature access granted: memory_verses available for plan ${userPlan}`)
+
+  // Enforce per-plan verse count limit (DB-driven)
+  const verseLimit = await services.memoryVerseConfigService.getVerseLimits(userPlan)
+  if (verseLimit !== -1) {
+    const { count, error: countError } = await services.supabaseServiceClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+
+    if (countError) {
+      console.error('[AddMemoryVerse] Failed to count existing verses:', countError)
+      throw new AppError('DATABASE_ERROR', 'Failed to check verse limit', 500)
+    }
+
+    const currentCount = count ?? 0
+    console.log(`📊 [AddMemoryVerse] Verse count: ${currentCount}/${verseLimit} (plan: ${userPlan})`)
+
+    if (currentCount >= verseLimit) {
+      throw new AppError(
+        'VERSE_LIMIT_EXCEEDED',
+        `You have reached your limit of ${verseLimit} memory verse${verseLimit > 1 ? 's' : ''} on the ${userPlan} plan. Upgrade to add more.`,
+        403
+      )
+    }
+  }
 
   // Parse request body
   let body: AddManualVerseRequest

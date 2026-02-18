@@ -25,6 +25,7 @@ interface Plan {
   tier: number
   interval: string
   features: Record<string, unknown>
+  marketing_features: string[]
   description: string | null
   sort_order: number
   pricing: {
@@ -94,6 +95,7 @@ serve(async (req) => {
         tier,
         interval,
         features,
+        marketing_features,
         description,
         sort_order,
         subscription_plan_providers!left (
@@ -178,6 +180,7 @@ serve(async (req) => {
             tier: plan.tier,
             interval: plan.interval,
             features: plan.features,
+            marketing_features: plan.marketing_features ?? [],
             description: plan.description,
             sort_order: plan.sort_order,
             pricing: {
@@ -233,6 +236,7 @@ serve(async (req) => {
           tier: plan.tier,
           interval: plan.interval,
           features: plan.features,
+          marketing_features: plan.marketing_features ?? [],
           description: plan.description,
           sort_order: plan.sort_order,
           pricing: {

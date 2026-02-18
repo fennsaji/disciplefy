@@ -324,7 +324,7 @@ export function ContentEditor({
             <button
               type="button"
               onClick={addVerse}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
             >
               <svg
                 className="h-4 w-4"
@@ -391,7 +391,7 @@ export function ContentEditor({
                 <button
                   type="button"
                   onClick={addVerse}
-                  className="mt-2 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+                  className="mt-2 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   Add your first verse
                 </button>
@@ -410,7 +410,7 @@ export function ContentEditor({
             <button
               type="button"
               onClick={addQuestion}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
             >
               <svg
                 className="h-4 w-4"
@@ -472,7 +472,7 @@ export function ContentEditor({
                 <button
                   type="button"
                   onClick={addQuestion}
-                  className="mt-2 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+                  className="mt-2 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   Add your first question
                 </button>
@@ -491,7 +491,7 @@ export function ContentEditor({
             <button
               type="button"
               onClick={addPrayerPoint}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
             >
               <svg
                 className="h-4 w-4"
@@ -551,7 +551,7 @@ export function ContentEditor({
                 <button
                   type="button"
                   onClick={addPrayerPoint}
-                  className="mt-2 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+                  className="mt-2 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   Add your first prayer point
                 </button>
@@ -587,7 +587,7 @@ export function ContentEditor({
             <button
               type="button"
               onClick={addInsight}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
             >
               <svg
                 className="h-4 w-4"
@@ -651,7 +651,7 @@ export function ContentEditor({
                 <button
                   type="button"
                   onClick={addInsight}
-                  className="mt-2 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+                  className="mt-2 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   Add your first insight
                 </button>
@@ -671,7 +671,7 @@ export function ContentEditor({
               <button
                 type="button"
                 onClick={addSummaryInsight}
-                className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+                className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
               >
                 <svg
                   className="h-4 w-4"
@@ -737,7 +737,7 @@ export function ContentEditor({
               <button
                 type="button"
                 onClick={addReflectionAnswer}
-                className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark dark:text-primary-400 dark:hover:text-primary-300"
+                className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
               >
                 <svg
                   className="h-4 w-4"
@@ -877,7 +877,7 @@ export function ContentEditor({
           type="button"
           onClick={handleSave}
           disabled={!hasChanges || isSaving}
-          className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : 'Save Changes'}
         </button>

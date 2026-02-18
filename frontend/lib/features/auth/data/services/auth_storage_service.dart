@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/auth_params.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Dedicated service for authentication data storage
 /// Handles secure storage operations and provides atomic transaction support
@@ -25,11 +26,11 @@ class AuthStorageService {
   /// Prevents race conditions by ensuring all-or-nothing storage operations
   Future<void> storeAuthData(AuthDataStorageParams params) async {
     if (kDebugMode) {
-      print('🔐 [AUTH STORAGE] Starting atomic auth data storage...');
-      print('🔐 [AUTH STORAGE] - userType: ${params.userType}');
-      print('🔐 [AUTH STORAGE] - userId: ${params.userId}');
-      print('🔐 [AUTH STORAGE] - expiresAt: ${params.expiresAt}');
-      print(
+      Logger.debug('🔐 [AUTH STORAGE] Starting atomic auth data storage...');
+      Logger.debug('🔐 [AUTH STORAGE] - userType: ${params.userType}');
+      Logger.debug('🔐 [AUTH STORAGE] - userId: ${params.userId}');
+      Logger.debug('🔐 [AUTH STORAGE] - expiresAt: ${params.expiresAt}');
+      Logger.debug(
           '🔐 [AUTH STORAGE] - deviceId: ${params.deviceId != null ? "SET" : "NULL"}');
     }
 
@@ -82,13 +83,10 @@ class AuthStorageService {
           _secureStorage.write(key: entry.key, value: entry.value),
       ]);
 
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ✅ Stored in FlutterSecureStorage atomically');
-      }
+      Logger.error(
+          '🔐 [AUTH STORAGE] ✅ Stored in FlutterSecureStorage atomically');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ❌ FlutterSecureStorage write failed: $e');
-      }
+      Logger.debug('🔐 [AUTH STORAGE] ❌ FlutterSecureStorage write failed: $e');
       // If secure storage fails, clear any partial writes and rethrow
       await _clearSecureStorageData();
       rethrow;
@@ -123,8 +121,9 @@ class AuthStorageService {
         if (storedValue != entry.value) {
           verificationFailed = true;
           if (kDebugMode) {
-            print('🔐 [AUTH STORAGE] ⚠️ Verification failed for ${entry.key}');
-            print(
+            Logger.error(
+                '🔐 [AUTH STORAGE] ⚠️ Verification failed for ${entry.key}');
+            Logger.debug(
                 '🔐 [AUTH STORAGE] Expected: ${entry.value}, Got: $storedValue');
           }
         }
@@ -132,10 +131,8 @@ class AuthStorageService {
 
       if (verificationFailed) {
         // SECURITY FIX: Rollback Hive changes if verification failed
-        if (kDebugMode) {
-          print(
-              '🔐 [AUTH STORAGE] ⚠️ Rolling back Hive changes due to verification failure');
-        }
+        Logger.warning(
+            '🔐 [AUTH STORAGE] ⚠️ Rolling back Hive changes due to verification failure');
 
         // Restore old values
         for (final entry in oldValues.entries) {
@@ -153,20 +150,22 @@ class AuthStorageService {
       }
 
       if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ✅ Stored in Hive atomically and verified');
+        Logger.debug(
+            '🔐 [AUTH STORAGE] ✅ Stored in Hive atomically and verified');
 
         // Verify what was actually stored
         final storedUserType = box.get('user_type');
         final storedOnboarding = box.get('onboarding_completed');
-        print(
+        Logger.debug(
             '🔐 [AUTH STORAGE] 🔍 Verification - Hive user_type: $storedUserType');
-        print(
+        Logger.debug(
             '🔐 [AUTH STORAGE] 🔍 Verification - Hive onboarding_completed: $storedOnboarding');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ❌ Hive storage failed: $e');
-        print('🔐 [AUTH STORAGE] ⚠️ Continuing with FlutterSecureStorage only');
+        Logger.error('🔐 [AUTH STORAGE] ❌ Hive storage failed: $e');
+        Logger.debug(
+            '🔐 [AUTH STORAGE] ⚠️ Continuing with FlutterSecureStorage only');
       }
       // ACCEPTABLE: Don't fail the entire operation if only Hive fails
       // FlutterSecureStorage is the primary source of truth
@@ -174,9 +173,7 @@ class AuthStorageService {
       // Router guards will fall back to checking Supabase session directly
     }
 
-    if (kDebugMode) {
-      print('🔐 [AUTH STORAGE] ✅ Atomic auth data storage completed');
-    }
+    Logger.error('🔐 [AUTH STORAGE] ✅ Atomic auth data storage completed');
   }
 
   /// Clears secure storage data in case of partial write failure
@@ -193,9 +190,7 @@ class AuthStorageService {
         _secureStorage.delete(key: _deviceIdKey), // SECURITY FIX
       ]);
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ⚠️ Error clearing secure storage: $e');
-      }
+      Logger.error('🔐 [AUTH STORAGE] ⚠️ Error clearing secure storage: $e');
     }
   }
 
@@ -218,13 +213,10 @@ class AuthStorageService {
   Future<void> clearSecureStorage() async {
     try {
       await _secureStorage.deleteAll();
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
-      }
+      Logger.error('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');
-      }
+      Logger.debug(
+          '🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');
       rethrow;
     }
   }
@@ -232,10 +224,8 @@ class AuthStorageService {
   /// Legacy method - redirects to ClearUserDataUseCase for proper orchestration
   @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
   Future<void> clearAllData() async {
-    if (kDebugMode) {
-      print(
-          '🔐 [AUTH STORAGE] ⚠️ clearAllData is deprecated. Use ClearUserDataUseCase instead.');
-    }
+    Logger.warning(
+        '🔐 [AUTH STORAGE] ⚠️ clearAllData is deprecated. Use ClearUserDataUseCase instead.');
     await clearSecureStorage();
   }
 }

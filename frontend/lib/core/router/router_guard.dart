@@ -282,6 +282,10 @@ class RouterGuard {
 
     // Check Hive storage for guest/local auth
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        await Hive.openBox(_hiveBboxName);
+      }
       final box = Hive.box(_hiveBboxName);
       final userType = box.get(_userTypeKey);
       final userId = box.get(_userIdKey);
@@ -404,6 +408,15 @@ class RouterGuard {
   /// ANDROID FIX: Checks both SharedPreferences and Hive for redundancy
   static OnboardingState _getOnboardingState() {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        // Box not open - return default state
+        Logger.warning(
+          'Hive box not open, returning default onboarding state',
+          tag: 'ROUTER',
+        );
+        return const OnboardingState(isCompleted: false);
+      }
       final box = Hive.box(_hiveBboxName);
 
       // ANDROID FIX: Check SharedPreferences first (more reliable on Android)
@@ -822,6 +835,10 @@ class RouterGuard {
   /// This runs in the background to avoid delaying user navigation
   static Future<void> _checkAutoActivateFreePlanAsync() async {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        await Hive.openBox(_hiveBboxName);
+      }
       final box = Hive.box(_hiveBboxName);
       final shouldActivate =
           box.get('auto_activate_free_plan', defaultValue: false) as bool;
@@ -850,7 +867,7 @@ class RouterGuard {
       try {
         existingSub = await Supabase.instance.client
             .from('subscriptions')
-            .select('id, subscription_plan, status')
+            .select('id, status, plan_id, subscription_plans!inner(plan_code)')
             .eq('user_id', userId)
             .maybeSingle()
             .timeout(
@@ -877,7 +894,8 @@ class RouterGuard {
           'User already has subscription, skipping free plan activation',
           tag: 'ROUTER_FREE_ACTIVATION',
           context: {
-            'existing_plan': existingSub['subscription_plan'],
+            'existing_plan':
+                existingSub['subscription_plans']?['plan_code'] ?? 'unknown',
             'status': existingSub['status'],
           },
         );
@@ -938,6 +956,10 @@ class RouterGuard {
   /// PERFORMANCE FIX: Only does database check if flag is actually set (rare case)
   static Future<String?> _checkPendingPlanUpgradeAsync() async {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        await Hive.openBox(_hiveBboxName);
+      }
       final box = Hive.box(_hiveBboxName);
 
       // Check for pending plan upgrade (new system)
@@ -1022,8 +1044,7 @@ class RouterGuard {
       if (selectedPlanCode == 'premium' || hasPendingPremium) {
         upgradePath = AppRoutes.premiumUpgrade;
       } else if (selectedPlanCode == 'plus') {
-        upgradePath = AppRoutes
-            .premiumUpgrade; // TODO: Create plus upgrade route if needed
+        upgradePath = AppRoutes.plusUpgrade;
       } else if (selectedPlanCode == 'standard') {
         upgradePath = AppRoutes.standardUpgrade;
       } else if (selectedPlanCode == 'free') {
@@ -1209,6 +1230,11 @@ class RouterGuard {
   /// SECURITY FIX: Check if the session has expired
   static bool _isSessionExpired() {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        // Box not open - assume session is valid to prevent breaking existing sessions
+        return false;
+      }
       final box = Hive.box(_hiveBboxName);
       final expiresAtStr = box.get(_sessionExpiresAtKey) as String?;
 
@@ -1249,6 +1275,14 @@ class RouterGuard {
   /// SECURITY FIX: Clear expired session data from Hive
   static void _clearExpiredSession() {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        Logger.warning(
+          'Cannot clear expired session - Hive box not open',
+          tag: 'AUTH_SECURITY',
+        );
+        return;
+      }
       final box = Hive.box(_hiveBboxName);
       box.delete(_userTypeKey);
       box.delete(_userIdKey);

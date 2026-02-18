@@ -607,7 +607,7 @@ export default function EditTopicPage({ params }: PageProps) {
                     <button
                       type="button"
                       onClick={() => window.open('/learning-paths/create', '_blank')}
-                      className="mt-4 text-sm text-primary hover:text-primary-dark"
+                      className="mt-4 text-sm text-primary hover:text-primary-600"
                     >
                       Create a learning path
                     </button>
@@ -697,7 +697,7 @@ export default function EditTopicPage({ params }: PageProps) {
                           <button
                             type="button"
                             onClick={handleSavePathLinks}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
                           >
                             Save Path Links
                           </button>
@@ -736,7 +736,7 @@ export default function EditTopicPage({ params }: PageProps) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save Changes'}
               </button>

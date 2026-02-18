@@ -1,13 +1,54 @@
+/// Plan-level features (not provider-specific).
+class PlanFeatures {
+  /// Monthly voice conversation quota. -1 means unlimited.
+  final int voiceConversationsMonthly;
+
+  const PlanFeatures({required this.voiceConversationsMonthly});
+
+  factory PlanFeatures.fromJson(Map<String, dynamic> json) {
+    return PlanFeatures(
+      voiceConversationsMonthly:
+          json['voice_conversations_monthly'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'voice_conversations_monthly': voiceConversationsMonthly,
+      };
+
+  /// Fallback features for a plan when backend data is unavailable.
+  factory PlanFeatures.fallback(String planCode) {
+    switch (planCode) {
+      case 'standard':
+        return const PlanFeatures(voiceConversationsMonthly: 3);
+      case 'plus':
+        return const PlanFeatures(voiceConversationsMonthly: 10);
+      case 'premium':
+        return const PlanFeatures(voiceConversationsMonthly: -1);
+      default:
+        return const PlanFeatures(voiceConversationsMonthly: 0);
+    }
+  }
+}
+
 /// Subscription pricing model for database-driven pricing
 class SubscriptionPricing {
   final Map<String, ProviderPricing> providers;
 
+  /// Plan-level features keyed by plan code (e.g. 'standard', 'plus', 'premium').
+  final Map<String, PlanFeatures> planFeatures;
+
   const SubscriptionPricing({
     required this.providers,
+    this.planFeatures = const {},
   });
 
   /// Get pricing for a specific provider
   ProviderPricing? getProvider(String provider) => providers[provider];
+
+  /// Get features for a specific plan
+  PlanFeatures getPlanFeatures(String planCode) =>
+      planFeatures[planCode] ?? PlanFeatures.fallback(planCode);
 
   /// Get Razorpay pricing (default for web)
   ProviderPricing get razorpay =>
@@ -23,21 +64,35 @@ class SubscriptionPricing {
 
   factory SubscriptionPricing.fromJson(Map<String, dynamic> json) {
     final providersMap = <String, ProviderPricing>{};
+    final featuresMap = <String, PlanFeatures>{};
 
-    json.forEach((provider, pricingData) {
-      if (pricingData is Map<String, dynamic>) {
-        providersMap[provider] = ProviderPricing.fromJson(pricingData);
+    json.forEach((key, value) {
+      if (key == 'plans' && value is Map<String, dynamic>) {
+        value.forEach((planCode, featureData) {
+          if (featureData is Map<String, dynamic>) {
+            featuresMap[planCode] = PlanFeatures.fromJson(featureData);
+          }
+        });
+      } else if (value is Map<String, dynamic>) {
+        providersMap[key] = ProviderPricing.fromJson(value);
       }
     });
 
-    return SubscriptionPricing(providers: providersMap);
+    return SubscriptionPricing(
+        providers: providersMap, planFeatures: featuresMap);
   }
 
   Map<String, dynamic> toJson() {
-    return providers.map((provider, pricing) => MapEntry(
+    final json = providers.map((provider, pricing) => MapEntry(
           provider,
           pricing.toJson(),
         ));
+    if (planFeatures.isNotEmpty) {
+      json['plans'] = planFeatures.map(
+        (planCode, features) => MapEntry(planCode, features.toJson()),
+      );
+    }
+    return json;
   }
 
   /// Empty pricing (fallback)

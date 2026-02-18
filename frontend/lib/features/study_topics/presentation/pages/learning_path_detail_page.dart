@@ -19,6 +19,7 @@ import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Detail page for a learning path showing topics and progress.
 class LearningPathDetailPage extends StatefulWidget {
@@ -79,7 +80,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       LearningPathTopic topic, LearningPathDetail path) async {
     // Auto-enroll if not enrolled yet
     if (!path.isEnrolled) {
-      debugPrint(
+      Logger.debug(
           '[LEARNING_PATH_DETAIL] Auto-enrolling user in path: ${path.title}');
       context
           .read<LearningPathsBloc>()
@@ -98,7 +99,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       // Use path's recommended mode
       selectedMode =
           studyModeFromString(path.recommendedMode) ?? StudyMode.standard;
-      debugPrint(
+      Logger.debug(
           '[LEARNING_PATH_DETAIL] Using recommended mode: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
     } else if (StudyModePreferences.isSpecificMode(learningPathModePreference,
@@ -106,12 +107,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       // Use specific mode from settings (quick, standard, deep, lectio)
       selectedMode =
           studyModeFromString(learningPathModePreference) ?? StudyMode.standard;
-      debugPrint(
+      Logger.debug(
           '[LEARNING_PATH_DETAIL] Using specific mode from settings: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
     } else {
       // learningPathModePreference is null or 'ask' → Show mode selection sheet
-      debugPrint(
+      Logger.debug(
           '[LEARNING_PATH_DETAIL] Showing mode selection sheet with recommended mode');
 
       final recommendedMode =
@@ -148,7 +149,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           authProvider.cacheProfile(userId, currentProfile);
         }
 
-        debugPrint(
+        Logger.debug(
             '[LEARNING_PATH_DETAIL] Saved "always use recommended" preference');
       }
 
@@ -156,7 +157,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       if (result['rememberChoice'] == true) {
         final languageService = sl<LanguagePreferenceService>();
         await languageService.saveStudyModePreference(selectedMode);
-        debugPrint(
+        Logger.debug(
             '[LEARNING_PATH_DETAIL] Saved general study mode preference: ${selectedMode.name}');
       }
 
@@ -187,7 +188,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
     final pathIdParam = path.id.isNotEmpty ? '&path_id=${path.id}' : '';
 
-    debugPrint(
+    Logger.debug(
         '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}');
 
     // Use push and await the result - when user returns, refresh the data
@@ -197,7 +198,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     // Refresh data when returning from the study guide - force refresh to bypass cache
     if (mounted) {
-      debugPrint(
+      Logger.debug(
           '[LEARNING_PATH_DETAIL] Returned from study guide, refreshing with forceRefresh: true');
       _loadPathDetails(forceRefresh: true);
     }

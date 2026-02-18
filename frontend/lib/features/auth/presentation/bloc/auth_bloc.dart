@@ -19,6 +19,7 @@ import '../../domain/utils/auth_validator.dart';
 import '../../../../core/di/injection_container.dart';
 import 'auth_event.dart';
 import 'auth_state.dart' as auth_states;
+import '../../../../core/utils/logger.dart';
 
 /// Authentication BLoC managing user authentication state
 /// Follows Clean Architecture principles with proper separation of concerns
@@ -120,19 +121,16 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       const maxRetries = 3;
 
       while (retryCount < maxRetries) {
-        if (kDebugMode) {
-          print(
-              '🔐 [AUTH INIT] Attempt ${retryCount + 1}/$maxRetries to read session');
-        }
+        Logger.debug(
+            '🔐 [AUTH INIT] Attempt ${retryCount + 1}/$maxRetries to read session');
 
         try {
           // Check if user is already authenticated (Supabase)
           supabaseUser = _authService.currentUser;
 
           if (supabaseUser != null) {
-            if (kDebugMode) {
-              print('✅ [AUTH INIT] Session found on attempt ${retryCount + 1}');
-            }
+            Logger.debug(
+                '✅ [AUTH INIT] Session found on attempt ${retryCount + 1}');
             break;
           }
 
@@ -141,17 +139,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           // Wait before retry with exponential backoff
           if (retryCount < maxRetries) {
             final delayMs = 500 * retryCount; // 500ms, 1000ms, 1500ms
-            if (kDebugMode) {
-              print(
-                  '⏳ [AUTH INIT] No session found, retry $retryCount/$maxRetries in ${delayMs}ms...');
-            }
+            Logger.debug(
+                '⏳ [AUTH INIT] No session found, retry $retryCount/$maxRetries in ${delayMs}ms...');
             await Future.delayed(Duration(milliseconds: delayMs));
           }
         } catch (e) {
-          if (kDebugMode) {
-            print(
-                '⚠️  [AUTH INIT] Session read attempt $retryCount failed: $e');
-          }
+          Logger.error(
+              '⚠️  [AUTH INIT] Session read attempt $retryCount failed: $e');
           retryCount++;
 
           if (retryCount < maxRetries) {
@@ -163,9 +157,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       // If session found after retries, proceed with authentication
       if (supabaseUser != null) {
-        if (kDebugMode) {
-          print('✅ [AUTH INIT] User authenticated: ${supabaseUser.id}');
-        }
+        Logger.debug('✅ [AUTH INIT] User authenticated: ${supabaseUser.id}');
 
         // For email auth users, always fetch fresh profile to get latest email_verified status
         // This ensures the verification banner shows/hides correctly after page reload
@@ -173,9 +165,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
         Map<String, dynamic>? profile;
         if (isEmailUser) {
-          if (kDebugMode) {
-            print('📧 [AUTH INIT] Email user - fetching fresh profile');
-          }
+          Logger.debug('📧 [AUTH INIT] Email user - fetching fresh profile');
           profile =
               await _userProfileService.getUserProfileAsMap(supabaseUser.id);
         } else {
@@ -193,13 +183,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       // Log detailed failure information after all retries
       if (kDebugMode) {
-        print(
+        Logger.error(
             '🔐 [AUTH INIT] ⚠️  Session recovery failed after $maxRetries attempts');
-        print('   Possible causes:');
-        print('   1. Android Keystore was cleared by OS');
-        print('   2. Storage corruption or read failure');
-        print('   3. Session expired on backend');
-        print('   4. First app launch (no session exists)');
+        Logger.debug('   Possible causes:');
+        Logger.debug('   1. Android Keystore was cleared by OS');
+        Logger.debug('   2. Storage corruption or read failure');
+        Logger.debug('   3. Session expired on backend');
+        Logger.debug('   4. First app launch (no session exists)');
       }
 
       // Check for anonymous session using async method with retry
@@ -207,19 +197,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           await _retryOperation(() => _authService.isAuthenticatedAsync());
 
       if (isStorageAuthenticated) {
-        if (kDebugMode) {
-          print(
-              '🔐 [AUTH INIT] Storage indicates authentication - validating token...');
-        }
+        Logger.debug(
+            '🔐 [AUTH INIT] Storage indicates authentication - validating token...');
 
         // Validate token before trusting storage
         final isTokenValid = await _authService.isTokenValid();
 
         if (!isTokenValid) {
-          if (kDebugMode) {
-            print(
-                '🔐 [AUTH INIT] ⚠️  Token invalid or expired - clearing stale data');
-          }
+          Logger.warning(
+              '🔐 [AUTH INIT] ⚠️  Token invalid or expired - clearing stale data');
 
           // Clear stale data and force re-authentication
           await _clearUserDataUseCase.execute();
@@ -227,9 +213,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           return;
         }
 
-        if (kDebugMode) {
-          print('🔐 [AUTH INIT] ✅ Token valid - creating anonymous session');
-        }
+        Logger.debug(
+            '🔐 [AUTH INIT] ✅ Token valid - creating anonymous session');
 
         // Create mock user for anonymous session
         final user = _createAnonymousUser();
@@ -239,15 +224,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           isAnonymous: true,
         ));
       } else {
-        if (kDebugMode) {
-          print('🔐 [AUTH INIT] No valid session - user is unauthenticated');
-        }
+        Logger.debug(
+            '🔐 [AUTH INIT] No valid session - user is unauthenticated');
         emit(const auth_states.UnauthenticatedState());
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('🔐 [AUTH INIT] ❌ Critical error during initialization: $e');
-        print('🔐 [AUTH INIT] Stack trace: $stackTrace');
+        Logger.error(
+            '🔐 [AUTH INIT] ❌ Critical error during initialization: $e');
+        Logger.debug('🔐 [AUTH INIT] Stack trace: $stackTrace');
       }
       emit(const auth_states.AuthErrorState(
         message: 'Failed to initialize authentication',
@@ -314,22 +299,19 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     await _retryWithExponentialBackoff(
       operation: () async {
-        if (kDebugMode) {
-          print(
-              '🔐 [AUTH BLOC] 🚀 Starting Google OAuth callback processing...');
-        }
+        Logger.debug(
+            '🔐 [AUTH BLOC] 🚀 Starting Google OAuth callback processing...');
         emit(const auth_states.AuthLoadingState());
 
         if (kDebugMode) {
-          print('🔐 [AUTH BLOC] - Code: ${event.code.substring(0, 20)}...');
-          print('🔐 [AUTH BLOC] - State: ${event.state}');
+          Logger.debug(
+              '🔐 [AUTH BLOC] - Code: ${event.code.substring(0, 20)}...');
+          Logger.debug('🔐 [AUTH BLOC] - State: ${event.state}');
         }
 
         // Process the OAuth callback using AuthService with retry
-        if (kDebugMode) {
-          print(
-              '🔐 [AUTH BLOC] 📞 Calling _authService.processGoogleOAuthCallback...');
-        }
+        Logger.debug(
+            '🔐 [AUTH BLOC] 📞 Calling _authService.processGoogleOAuthCallback...');
         final success =
             await _retryOperation(() => _authService.processGoogleOAuthCallback(
                   GoogleOAuthCallbackParams(
@@ -339,8 +321,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
                 ));
 
         if (kDebugMode) {
-          print('🔐 [AUTH BLOC] 📊 OAuth callback result: $success');
-          print(
+          Logger.debug('🔐 [AUTH BLOC] 📊 OAuth callback result: $success');
+          Logger.debug(
               '🔐 [AUTH BLOC] 📊 _authService.isAuthenticated: ${_authService.isAuthenticated}');
         }
 
@@ -354,25 +336,20 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         if (validationResult.isSuccess) {
           final user = validationResult.user!;
           if (kDebugMode) {
-            print(
+            Logger.debug(
                 '🔐 [AUTH BLOC] 👤 Retrieved user: ${user.id} (${user.email ?? "Anonymous"})');
-            print('🔐 [AUTH BLOC] 👤 User isAnonymous: ${user.isAnonymous}');
+            Logger.debug(
+                '🔐 [AUTH BLOC] 👤 User isAnonymous: ${user.isAnonymous}');
           }
 
           // Load user profile data with retry and caching
-          if (kDebugMode) {
-            print('🔐 [AUTH BLOC] 📄 Loading user profile...');
-          }
+          Logger.debug('🔐 [AUTH BLOC] 📄 Loading user profile...');
           final profile =
               await _retryOperation(() => _getProfileWithCache(user.id));
-          if (kDebugMode) {
-            print(
-                '🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
-          }
+          Logger.error(
+              '🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
 
-          if (kDebugMode) {
-            print('🔐 [AUTH BLOC] ✅ Emitting AuthenticatedState...');
-          }
+          Logger.debug('🔐 [AUTH BLOC] ✅ Emitting AuthenticatedState...');
           // Invalidate router cache since auth status changed
           RouterGuard.invalidateLanguageSelectionCache();
 
@@ -382,16 +359,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             profile: profile,
           ));
 
-          if (kDebugMode) {
-            print('🔐 [AUTH BLOC] ✅ AuthenticatedState emitted successfully');
-          }
+          Logger.debug(
+              '🔐 [AUTH BLOC] ✅ AuthenticatedState emitted successfully');
         } else {
           // Handle validation failure
           final errorMessage = validationResult.errorMessage ??
               'OAuth callback processing failed';
-          if (kDebugMode) {
-            print('🔐 [AUTH BLOC] ❌ $errorMessage');
-          }
+          Logger.error('🔐 [AUTH BLOC] ❌ $errorMessage');
           throw auth_exceptions.AuthenticationFailedException(errorMessage);
         }
       },
@@ -449,19 +423,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print('🔐 [AUTH BLOC] 📊 Checking current session state...');
-      }
+      Logger.debug('🔐 [AUTH BLOC] 📊 Checking current session state...');
 
       // Check current Supabase session
       final currentUser = _authService.currentUser;
       final currentSession = Supabase.instance.client.auth.currentSession;
 
       if (currentUser != null && currentSession != null) {
-        if (kDebugMode) {
-          print(
-              '🔐 [AUTH BLOC] ✅ Valid session found: ${currentUser.email ?? currentUser.id}');
-        }
+        Logger.debug(
+            '🔐 [AUTH BLOC] ✅ Valid session found: ${currentUser.email ?? currentUser.id}');
 
         // Load user profile if not anonymous with caching
         Map<String, dynamic>? profile;
@@ -475,15 +445,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           isAnonymous: currentUser.isAnonymous,
         ));
       } else {
-        if (kDebugMode) {
-          print('🔐 [AUTH BLOC] ❌ No valid session found');
-        }
+        Logger.error('🔐 [AUTH BLOC] ❌ No valid session found');
         emit(const auth_states.UnauthenticatedState());
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH BLOC] ❌ Session check error: $e');
-      }
+      Logger.error('🔐 [AUTH BLOC] ❌ Session check error: $e');
       emit(auth_states.AuthErrorState(
           message: 'Session check failed: ${e.toString()}'));
     }
@@ -495,19 +461,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      if (kDebugMode) {
-        print(
-            '🔍 [SESSION VALIDATION] App resumed - validating current session...');
-      }
+      Logger.debug(
+          '🔍 [SESSION VALIDATION] App resumed - validating current session...');
 
       final currentState = state;
 
       // Only validate if currently authenticated
       if (currentState is auth_states.AuthenticatedState) {
-        if (kDebugMode) {
-          print(
-              '🔍 [SESSION VALIDATION] Current user: ${currentState.isAnonymous ? "Anonymous" : currentState.user.email}');
-        }
+        Logger.debug(
+            '🔍 [SESSION VALIDATION] Current user: ${currentState.isAnonymous ? "Anonymous" : currentState.user.email}');
 
         // For non-anonymous users, validate Supabase session and token
         if (!currentState.isAnonymous) {
@@ -515,10 +477,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           final currentSession = Supabase.instance.client.auth.currentSession;
 
           if (currentUser == null || currentSession == null) {
-            if (kDebugMode) {
-              print(
-                  '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found - clearing stale data');
-            }
+            Logger.error(
+                '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found - clearing stale data');
 
             // Clear stale data and force re-authentication
             await _clearUserDataUseCase.execute();
@@ -530,20 +490,16 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           // ANDROID FIX: Use ensureTokenValid() to attempt refresh instead of just checking
           final isTokenValid = await _authService.ensureTokenValid();
           if (!isTokenValid) {
-            if (kDebugMode) {
-              print(
-                  '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
-            }
+            Logger.error(
+                '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
             add(const TokenRefreshFailed(
                 reason:
                     'Token expired and refresh failed during session validation'));
             return;
           }
 
-          if (kDebugMode) {
-            print(
-                '🔍 [SESSION VALIDATION] ✅ Supabase session and token are valid');
-          }
+          Logger.info(
+              '🔍 [SESSION VALIDATION] ✅ Supabase session and token are valid');
 
           // Check if email verification status changed (in case user verified via link)
           // Only check for email auth users who haven't verified yet
@@ -552,10 +508,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
                 await _authService.syncEmailVerificationStatus();
             if (isNowVerified) {
               // Email was just verified - fetch fresh profile (bypass cache)
-              if (kDebugMode) {
-                print(
-                    '🔍 [SESSION VALIDATION] 📧 Email verified! Refreshing profile...');
-              }
+              Logger.debug(
+                  '🔍 [SESSION VALIDATION] 📧 Email verified! Refreshing profile...');
               final profile =
                   await _userProfileService.getUserProfileAsMap(currentUser.id);
               emit(auth_states.AuthenticatedState(
@@ -570,30 +524,22 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           final isStorageAuthenticated =
               await _authService.isAuthenticatedAsync();
           if (!isStorageAuthenticated) {
-            if (kDebugMode) {
-              print(
-                  '🔍 [SESSION VALIDATION] ❌ Anonymous session storage inconsistent - clearing');
-            }
+            Logger.error(
+                '🔍 [SESSION VALIDATION] ❌ Anonymous session storage inconsistent - clearing');
             await _clearUserDataUseCase.execute();
             emit(const auth_states.UnauthenticatedState());
             return;
           }
 
-          if (kDebugMode) {
-            print(
-                '🔍 [SESSION VALIDATION] ✅ Anonymous session storage is valid');
-          }
+          Logger.info(
+              '🔍 [SESSION VALIDATION] ✅ Anonymous session storage is valid');
         }
       } else {
-        if (kDebugMode) {
-          print(
-              '🔍 [SESSION VALIDATION] Current state: ${currentState.runtimeType} - no validation needed');
-        }
+        Logger.debug(
+            '🔍 [SESSION VALIDATION] Current state: ${currentState.runtimeType} - no validation needed');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🔍 [SESSION VALIDATION] ❌ Validation error: $e');
-      }
+      Logger.error('🔍 [SESSION VALIDATION] ❌ Validation error: $e');
       // Don't emit error state for validation failures to avoid disrupting UX
       // Let the current state persist and rely on other mechanisms to handle issues
     }
@@ -615,15 +561,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         final languageService = sl<LanguagePreferenceService>();
         languageService.invalidateLanguageCache();
         RouterGuard.invalidateLanguageSelectionCache();
-        if (kDebugMode) {
-          print(
-              '📄 [AUTH BLOC] All caches invalidated on sign out (language + router)');
-        }
+        Logger.warning(
+            '📄 [AUTH BLOC] All caches invalidated on sign out (language + router)');
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '📄 [AUTH BLOC] Warning: Could not invalidate caches on sign out: $e');
-        }
+        Logger.warning(
+            '📄 [AUTH BLOC] Warning: Could not invalidate caches on sign out: $e');
       }
 
       // Clear all user data including authentication and storage
@@ -631,9 +573,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
-      if (kDebugMode) {
-        print('Sign-out error: $e');
-      }
+      Logger.debug('Sign-out error: $e');
       emit(const auth_states.AuthErrorState(message: 'Failed to sign out'));
     }
   }
@@ -649,10 +589,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (authState.event == AuthChangeEvent.signedIn) {
         final user = authState.session?.user;
         if (user != null) {
-          if (kDebugMode) {
-            print(
-                '🔐 [AUTH BLOC] User signed in - Phone: ${user.phone != null}, Anonymous: ${user.isAnonymous}');
-          }
+          Logger.debug(
+              '🔐 [AUTH BLOC] User signed in - Phone: ${user.phone != null}, Anonymous: ${user.isAnonymous}');
 
           // For phone authentication, clear language selection cache for new users
           if (user.phone != null && !user.isAnonymous) {
@@ -660,15 +598,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
               final languageService = sl<LanguagePreferenceService>();
               languageService.invalidateLanguageCache();
               RouterGuard.invalidateLanguageSelectionCache();
-              if (kDebugMode) {
-                print(
-                    '📄 [AUTH BLOC] Language selection cache cleared for phone auth user');
-              }
+              Logger.warning(
+                  '📄 [AUTH BLOC] Language selection cache cleared for phone auth user');
             } catch (e) {
-              if (kDebugMode) {
-                print(
-                    '📄 [AUTH BLOC] Warning: Could not clear language cache: $e');
-              }
+              Logger.warning(
+                  '📄 [AUTH BLOC] Warning: Could not clear language cache: $e');
             }
           }
 
@@ -700,17 +634,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Auth state change error: $e');
-      }
+      Logger.debug('Auth state change error: $e');
       // For flow state errors and similar, just ignore and don't change state
       // This prevents Supabase OAuth recovery errors from affecting anonymous sessions
       if (e.toString().contains('flow_state_not_found') ||
           e.toString().contains('invalid flow state')) {
-        if (kDebugMode) {
-          print(
-              'Ignoring Supabase flow state error - likely expired OAuth session');
-        }
+        Logger.error(
+            'Ignoring Supabase flow state error - likely expired OAuth session');
         return;
       }
       // Don't emit error state for auth state changes to avoid loops
@@ -730,9 +660,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
-      if (kDebugMode) {
-        print('Delete account error: $e');
-      }
+      Logger.debug('Delete account error: $e');
       emit(const auth_states.AuthErrorState(
           message: 'Failed to delete account'));
     }
@@ -883,9 +811,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Emit success state
       emit(auth_states.PasswordResetSentState(email: event.email));
     } catch (e) {
-      if (kDebugMode) {
-        print('Password reset error: $e');
-      }
+      Logger.debug('Password reset error: $e');
       if (e is auth_exceptions.AuthException) {
         emit(_mapExceptionToErrorState(e));
       } else {
@@ -914,10 +840,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       final currentState = state;
       if (currentState is auth_states.AuthenticatedState &&
           !currentState.needsEmailVerification) {
-        if (kDebugMode) {
-          print(
-              '📧 [AUTH BLOC] Email already verified in profile, skipping resend');
-        }
+        Logger.debug(
+            '📧 [AUTH BLOC] Email already verified in profile, skipping resend');
         return;
       }
 
@@ -929,9 +853,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Get cached profile for the state
       final profile = await _getProfileWithCache(user.id);
 
-      if (kDebugMode) {
-        print('📧 [AUTH BLOC] Verification email sent to ${user.email}');
-      }
+      Logger.debug('📧 [AUTH BLOC] Verification email sent to ${user.email}');
 
       // Emit VerificationEmailSentState which extends AuthenticatedState
       // This maintains the authenticated session while signaling email was sent
@@ -943,9 +865,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         isAnonymous: false,
       ));
     } catch (e) {
-      if (kDebugMode) {
-        print('📧 [AUTH BLOC] Resend verification email error: $e');
-      }
+      Logger.error('📧 [AUTH BLOC] Resend verification email error: $e');
       if (e is auth_exceptions.AuthException) {
         emit(_mapExceptionToErrorState(e));
       } else {
@@ -965,24 +885,19 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     try {
       final user = _authService.currentUser;
       if (user == null) {
-        if (kDebugMode) {
-          print('📧 [AUTH BLOC] Cannot refresh profile - no user logged in');
-        }
+        Logger.debug(
+            '📧 [AUTH BLOC] Cannot refresh profile - no user logged in');
         return;
       }
 
-      if (kDebugMode) {
-        print('📧 [AUTH BLOC] Refreshing user profile for ${user.id}');
-      }
+      Logger.debug('📧 [AUTH BLOC] Refreshing user profile for ${user.id}');
 
       // Force fetch fresh profile from database (bypass cache)
       final profile = await _userProfileService.getUserProfileAsMap(user.id);
 
       if (profile != null) {
-        if (kDebugMode) {
-          print(
-              '📧 [AUTH BLOC] Profile refreshed - email_verified: ${profile['email_verified']}');
-        }
+        Logger.debug(
+            '📧 [AUTH BLOC] Profile refreshed - email_verified: ${profile['email_verified']}');
 
         emit(auth_states.AuthenticatedState(
           user: user,
@@ -990,14 +905,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           isAnonymous: user.isAnonymous,
         ));
       } else {
-        if (kDebugMode) {
-          print('📧 [AUTH BLOC] Profile not found during refresh');
-        }
+        Logger.error('📧 [AUTH BLOC] Profile not found during refresh');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('📧 [AUTH BLOC] Error refreshing profile: $e');
-      }
+      Logger.debug('📧 [AUTH BLOC] Error refreshing profile: $e');
       // Don't emit error state - just keep current state
     }
   }
@@ -1011,9 +922,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       }
       return await _userProfileService.isCurrentUserAdmin(user.id);
     } catch (e) {
-      if (kDebugMode) {
-        print('Admin check error: $e');
-      }
+      Logger.debug('Admin check error: $e');
       return false;
     }
   }
@@ -1025,8 +934,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       if (kDebugMode) {
-        print('🚨 TOKEN EXPIRED: ${event.reason}');
-        print('🚨 TOKEN EXPIRED: Clearing all stale data');
+        Logger.debug('🚨 TOKEN EXPIRED: ${event.reason}');
+        Logger.debug('🚨 TOKEN EXPIRED: Clearing all stale data');
 
         // Log current storage state before cleanup for debugging
         try {
@@ -1034,12 +943,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           final storedUserId = await _authService.getUserId();
           final isOnboardingCompleted =
               await _authService.isOnboardingCompleted();
-          print('🚨 Pre-cleanup storage state:');
-          print('🚨   UserType: $storedUserType');
-          print('🚨   UserId: $storedUserId');
-          print('🚨   Onboarding completed: $isOnboardingCompleted');
+          Logger.debug('🚨 Pre-cleanup storage state:');
+          Logger.debug('🚨   UserType: $storedUserType');
+          Logger.debug('🚨   UserId: $storedUserId');
+          Logger.debug('🚨   Onboarding completed: $isOnboardingCompleted');
         } catch (storageError) {
-          print('🚨 Error reading storage state: $storageError');
+          Logger.debug('🚨 Error reading storage state: $storageError');
         }
       }
 
@@ -1049,17 +958,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
 
-      if (kDebugMode) {
-        print(
-            '🚨 TOKEN EXPIRED: Cleanup completed, emitting unauthenticated state');
-      }
+      Logger.debug(
+          '🚨 TOKEN EXPIRED: Cleanup completed, emitting unauthenticated state');
 
       // Emit unauthenticated state
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
-      if (kDebugMode) {
-        print('🚨 Error handling token refresh failure: $e');
-      }
+      Logger.debug('🚨 Error handling token refresh failure: $e');
       // Still emit unauthenticated state even if cleanup fails
       emit(const auth_states.UnauthenticatedState());
     }
@@ -1072,8 +977,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       if (kDebugMode) {
-        print('🚨 FORCE LOGOUT: ${event.reason}');
-        print('🚨 FORCE LOGOUT: Clearing all stale data');
+        Logger.debug('🚨 FORCE LOGOUT: ${event.reason}');
+        Logger.debug('🚨 FORCE LOGOUT: Clearing all stale data');
 
         // Log current storage state before cleanup for debugging
         try {
@@ -1081,12 +986,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           final storedUserId = await _authService.getUserId();
           final isOnboardingCompleted =
               await _authService.isOnboardingCompleted();
-          print('🚨 Pre-cleanup storage state:');
-          print('🚨   UserType: $storedUserType');
-          print('🚨   UserId: $storedUserId');
-          print('🚨   Onboarding completed: $isOnboardingCompleted');
+          Logger.debug('🚨 Pre-cleanup storage state:');
+          Logger.debug('🚨   UserType: $storedUserType');
+          Logger.debug('🚨   UserId: $storedUserId');
+          Logger.debug('🚨   Onboarding completed: $isOnboardingCompleted');
         } catch (storageError) {
-          print('🚨 Error reading storage state: $storageError');
+          Logger.debug('🚨 Error reading storage state: $storageError');
         }
       }
 
@@ -1098,17 +1003,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
 
-      if (kDebugMode) {
-        print(
-            '🚨 FORCE LOGOUT: Cleanup completed, emitting unauthenticated state');
-      }
+      Logger.debug(
+          '🚨 FORCE LOGOUT: Cleanup completed, emitting unauthenticated state');
 
       // Emit unauthenticated state
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
-      if (kDebugMode) {
-        print('🚨 Error during force logout: $e');
-      }
+      Logger.debug('🚨 Error during force logout: $e');
       // Still emit unauthenticated state even if cleanup fails
       emit(const auth_states.UnauthenticatedState());
     }
@@ -1175,9 +1076,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         severity: exception.severity,
       );
     } else {
-      if (kDebugMode) {
-        print('Unexpected authentication exception: $exception');
-      }
+      Logger.debug('Unexpected authentication exception: $exception');
       return const auth_states.AuthErrorState(
         message: 'An unexpected error occurred',
       );
@@ -1212,15 +1111,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         final languageService = sl<LanguagePreferenceService>();
         languageService.invalidateLanguageCache();
         RouterGuard.invalidateLanguageSelectionCache();
-        if (kDebugMode) {
-          print(
-              '📄 [AUTH BLOC] All caches invalidated after profile update (language + router)');
-        }
+        Logger.warning(
+            '📄 [AUTH BLOC] All caches invalidated after profile update (language + router)');
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '📄 [AUTH BLOC] Warning: Could not invalidate caches after profile update: $e');
-        }
+        Logger.warning(
+            '📄 [AUTH BLOC] Warning: Could not invalidate caches after profile update: $e');
       }
 
       // Fetch fresh profile data
@@ -1235,9 +1130,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         isAnonymous: user.isAnonymous,
       ));
     } catch (e) {
-      if (kDebugMode) {
-        print('Profile update error: $e');
-      }
+      Logger.debug('Profile update error: $e');
       emit(const auth_states.AuthErrorState(
           message: 'Failed to update profile'));
     }
@@ -1265,9 +1158,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       // Check if we should fetch profile
       if (authStateProvider.shouldFetchProfile(userId)) {
-        if (kDebugMode) {
-          print('📄 [AUTH BLOC] Fetching profile for user: $userId');
-        }
+        Logger.debug('📄 [AUTH BLOC] Fetching profile for user: $userId');
 
         // Fetch profile from API
         final profile = await _userProfileService.getUserProfileAsMap(userId);
@@ -1275,23 +1166,17 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         // Cache the profile in AuthStateProvider
         authStateProvider.cacheProfile(userId, profile);
 
-        if (kDebugMode) {
-          print('📄 [AUTH BLOC] Profile fetched and cached');
-        }
+        Logger.debug('📄 [AUTH BLOC] Profile fetched and cached');
 
         return profile;
       } else {
-        if (kDebugMode) {
-          print('📄 [AUTH BLOC] Using cached profile for user: $userId');
-        }
+        Logger.debug('📄 [AUTH BLOC] Using cached profile for user: $userId');
 
         // Return cached profile
         return authStateProvider.userProfile;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('📄 [AUTH BLOC] Error getting profile with cache: $e');
-      }
+      Logger.error('📄 [AUTH BLOC] Error getting profile with cache: $e');
       return null;
     }
   }
@@ -1315,16 +1200,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       } catch (e) {
         attempt++;
 
-        if (kDebugMode) {
-          print('🔄 [AUTH RETRY] Attempt $attempt failed: $e');
-        }
+        Logger.error('🔄 [AUTH RETRY] Attempt $attempt failed: $e');
 
         // Check if error is retryable
         if (!_isRetryableError(e) || attempt >= _maxRetryAttempts) {
-          if (kDebugMode) {
-            print(
-                '🚫 [AUTH RETRY] Error not retryable or max attempts reached');
-          }
+          Logger.error(
+              '🚫 [AUTH RETRY] Error not retryable or max attempts reached');
           rethrow;
         }
 
@@ -1337,10 +1218,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           ),
         );
 
-        if (kDebugMode) {
-          print(
-              '🕐 [AUTH RETRY] Retrying in ${actualDelay.inMilliseconds}ms...');
-        }
+        Logger.debug(
+            '🕐 [AUTH RETRY] Retrying in ${actualDelay.inMilliseconds}ms...');
 
         await Future.delayed(actualDelay);
         delay = Duration(milliseconds: (delay.inMilliseconds * 2).round());
@@ -1359,9 +1238,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     try {
       await _retryOperation(operation);
     } on Exception catch (e) {
-      if (kDebugMode) {
-        print('🚨 [AUTH RECOVERY] $operationName failed after all retries: $e');
-      }
+      Logger.error(
+          '🚨 [AUTH RECOVERY] $operationName failed after all retries: $e');
       onError(e);
     }
   }
@@ -1444,85 +1322,79 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
           // Only validate tokens for non-anonymous users (they have Supabase sessions)
           if (!authState.isAnonymous) {
-            if (kDebugMode) {
-              print(
-                  '🔄 [TOKEN VALIDATION] Periodic validation and refresh check...');
-            }
+            Logger.debug(
+                '🔄 [TOKEN VALIDATION] Periodic validation and refresh check...');
 
             // CRITICAL FIX: Use ensureTokenValid instead of just checking
             // This will automatically refresh the token if it's expiring soon
             final isValid = await _authService.ensureTokenValid();
 
             if (!isValid) {
-              if (kDebugMode) {
-                print(
-                    '🔄 [TOKEN VALIDATION] ❌ Token refresh failed - forcing logout');
-              }
+              Logger.error(
+                  '🔄 [TOKEN VALIDATION] ❌ Token refresh failed - forcing logout');
               add(const TokenRefreshFailed(
                   reason:
                       'Token expired and refresh failed during periodic validation'));
-            } else if (kDebugMode) {
-              print(
+            } else {
+              Logger.debug(
                   '🔄 [TOKEN VALIDATION] ✅ Token valid (refreshed if needed)');
             }
           }
         }
       } catch (e) {
-        if (kDebugMode) {
-          print('🔄 [TOKEN VALIDATION] Error during periodic validation: $e');
-        }
+        Logger.error(
+            '🔄 [TOKEN VALIDATION] Error during periodic validation: $e');
         // Don't trigger logout on validation errors, just log them
       }
     });
 
-    if (kDebugMode) {
-      print(
-          '🔄 [TOKEN VALIDATION] Automatic token validation and refresh started (10-minute intervals)');
-    }
+    Logger.debug(
+        '🔄 [TOKEN VALIDATION] Automatic token validation and refresh started (10-minute intervals)');
   }
 
   /// Stops the token validation timer
   void _stopTokenValidationTimer() {
     _tokenValidationTimer?.cancel();
     _tokenValidationTimer = null;
-    if (kDebugMode) {
-      print('🔄 [TOKEN VALIDATION] Automatic token validation stopped');
-    }
+    Logger.debug('🔄 [TOKEN VALIDATION] Automatic token validation stopped');
   }
 
   /// Logs authentication state transitions for debugging and monitoring
   Future<void> _logAuthStateTransition(
       auth_states.AuthState from, auth_states.AuthState to) async {
     if (kDebugMode) {
-      print('🔄 [AUTH TRANSITION] ${from.runtimeType} → ${to.runtimeType}');
+      Logger.debug(
+          '🔄 [AUTH TRANSITION] ${from.runtimeType} → ${to.runtimeType}');
 
       if (to is auth_states.AuthenticatedState) {
         final userInfo =
             to.isAnonymous ? 'Anonymous' : (to.user.email ?? to.user.id);
-        print('🔄 [AUTH TRANSITION]   User: $userInfo');
+        Logger.debug('🔄 [AUTH TRANSITION]   User: $userInfo');
 
         try {
           final storedUserType = await _authService.getUserType();
           final storedUserId = await _authService.getUserId();
-          print('🔄 [AUTH TRANSITION]   Storage UserType: $storedUserType');
-          print('🔄 [AUTH TRANSITION]   Storage UserId: $storedUserId');
+          Logger.debug(
+              '🔄 [AUTH TRANSITION]   Storage UserType: $storedUserType');
+          Logger.debug('🔄 [AUTH TRANSITION]   Storage UserId: $storedUserId');
         } catch (e) {
-          print('🔄 [AUTH TRANSITION]   Storage read error: $e');
+          Logger.error('🔄 [AUTH TRANSITION]   Storage read error: $e');
         }
       } else if (to is auth_states.AuthErrorState) {
-        print('🔄 [AUTH TRANSITION]   Error: ${to.message}');
+        Logger.debug('🔄 [AUTH TRANSITION]   Error: ${to.message}');
       } else if (to is auth_states.UnauthenticatedState) {
-        print('🔄 [AUTH TRANSITION]   Cleared to unauthenticated state');
+        Logger.debug('🔄 [AUTH TRANSITION]   Cleared to unauthenticated state');
       }
 
       // Log critical transitions for monitoring
       if (from is auth_states.AuthenticatedState &&
           to is auth_states.UnauthenticatedState) {
-        print('🚨 [AUTH MONITOR] CRITICAL: User logged out or session expired');
+        Logger.debug(
+            '🚨 [AUTH MONITOR] CRITICAL: User logged out or session expired');
       }
       if (from is auth_states.UnauthenticatedState &&
           to is auth_states.AuthenticatedState) {
-        print('✅ [AUTH MONITOR] SUCCESS: User authenticated');
+        Logger.debug('✅ [AUTH MONITOR] SUCCESS: User authenticated');
       }
     }
   }

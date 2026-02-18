@@ -13,6 +13,7 @@ const navigation = [
   { name: 'Promo Codes', href: '/promo-codes', icon: '🎟️' },
   { name: 'Learning Paths', href: '/learning-paths', icon: '🎓' },
   { name: 'Study Guides', href: '/topics', icon: '📚' },
+  { name: 'Memory Verses', href: '/memory-verses', icon: '📖' },
   { name: 'Content Management', href: '/content-management', icon: '📝' },
   { name: 'Gamification', href: '/gamification', icon: '🎮' },
   { name: 'System Config', href: '/system-config', icon: '⚙️' },

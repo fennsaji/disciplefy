@@ -13,6 +13,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../../data/models/subscription_v2_models.dart';
+import '../utils/plan_features_extractor.dart';
 import '../widgets/pricing_card.dart';
 import '../widgets/promo_code_input.dart';
 
@@ -329,8 +330,8 @@ class _PricingPageState extends State<PricingPage> {
     SubscriptionPlanModel plan, {
     bool isMobile = false,
   }) {
-    // Extract features from plan.features JSON and SystemConfigService
-    final features = _extractFeatures(plan.features, plan.planCode);
+    // Extract features — uses DB marketing_features when populated, computed fallback otherwise
+    final features = _extractFeatures(plan);
 
     // Determine badge and styling based on tier
     String? badge;
@@ -345,7 +346,9 @@ class _PricingPageState extends State<PricingPage> {
         break;
       case 2: // Plus
         badge = 'Recommended';
-        badgeColor = const Color(0xFFFF9800); // Orange
+        badgeColor =
+            const Color(0xFF7C3AED); // Violet — matches plus-upgrade page
+        isHighlighted = true;
         break;
       case 3: // Premium
         badge = context.tr(TranslationKeys.pricingBestValue);
@@ -390,180 +393,12 @@ class _PricingPageState extends State<PricingPage> {
       isHighlighted: isHighlighted,
       isPremium: isPremium,
       isMobile: isMobile,
+      accentColor: plan.tier == 2 ? const Color(0xFF7C3AED) : null,
     );
   }
 
-  List<String> _extractFeatures(
-      Map<String, dynamic> featuresJson, String planCode) {
-    final features = <String>[];
-
-    // Extract daily tokens with mode restrictions
-    final dailyTokens = featuresJson['daily_tokens'] as int?;
-    final followUps = featuresJson['followups'] as int?;
-    final studyModes = featuresJson['study_modes'] as List?;
-
-    if (dailyTokens != null) {
-      if (dailyTokens == -1) {
-        features.add('Unlimited AI tokens (all study modes)');
-      } else if (dailyTokens == 8) {
-        // Free plan - Quick Read only
-        features.add('$dailyTokens AI tokens daily (Quick Read only)');
-      } else {
-        features.add('$dailyTokens AI tokens daily (all study modes)');
-      }
-    }
-
-    // Daily verse notifications (all plans)
-    features.add('Daily verse notifications');
-
-    // Learning paths & study topics (all plans)
-    features.add('Learning paths & Study topics');
-
-    // Token purchase option (all plans except Premium)
-    if (dailyTokens != -1) {
-      features.add('Purchase additional tokens (4 tokens/₹1)');
-    }
-
-    // Extract follow-ups per study guide
-    if (followUps != null && followUps > 0) {
-      if (followUps == -1) {
-        features.add('Unlimited follow-ups per study guide');
-      } else {
-        features.add('$followUps follow-ups per study guide');
-      }
-    }
-
-    // Extract AI Discipler conversations
-    final aiDiscipler = featuresJson['ai_discipler'] as int?;
-    if (aiDiscipler != null) {
-      if (aiDiscipler == -1) {
-        features.add('Unlimited AI Discipler conversations');
-      } else {
-        features.add('$aiDiscipler AI Discipler conversations/month');
-      }
-    }
-
-    // Get memory verses from SystemConfigService (single source of truth)
-    try {
-      final systemConfig = sl<SystemConfigService>();
-      final memoryConfig = systemConfig.config?.memoryVerseConfig;
-
-      if (memoryConfig != null) {
-        final tierLower = planCode.toLowerCase();
-        int? memoryVerses;
-
-        // Get limit based on tier
-        switch (tierLower) {
-          case 'free':
-            memoryVerses = memoryConfig.verseLimits['free'];
-            break;
-          case 'standard':
-            memoryVerses = memoryConfig.verseLimits['standard'];
-            break;
-          case 'plus':
-            memoryVerses = memoryConfig.verseLimits['plus'];
-            break;
-          case 'premium':
-            memoryVerses = memoryConfig.verseLimits['premium'];
-            break;
-        }
-
-        if (memoryVerses != null) {
-          if (memoryVerses == -1) {
-            features.add('Unlimited active memory verses');
-          } else {
-            features.add('$memoryVerses active memory verses');
-          }
-        }
-      }
-    } catch (e) {
-      Logger.error('Failed to get memory verse limits from system config',
-          tag: 'PRICING', error: e);
-      // Fallback to hardcoded values if config not available
-      if (planCode.toLowerCase() == 'free') {
-        features.add('3 active memory verses');
-      } else if (planCode.toLowerCase() == 'standard') {
-        features.add('5 active memory verses');
-      } else if (planCode.toLowerCase() == 'plus') {
-        features.add('10 active memory verses');
-      } else if (planCode.toLowerCase() == 'premium') {
-        features.add('Unlimited active memory verses');
-      }
-    }
-
-    // Extract practice modes with specific mode names
-    final practiceModes = featuresJson['practice_modes'] as int?;
-
-    if (practiceModes != null) {
-      if (dailyTokens == 8) {
-        // Free plan - only 2 modes
-        features.add('2 practice modes (Flip Card, Type It Out)');
-      } else if (practiceModes == 8) {
-        features.add('All 8 practice modes');
-      }
-    }
-
-    // Get practice unlock limit from SystemConfigService (single source of truth)
-    try {
-      final systemConfig = sl<SystemConfigService>();
-      final memoryConfig = systemConfig.config?.memoryVerseConfig;
-
-      if (memoryConfig != null) {
-        final tierLower = planCode.toLowerCase();
-        int? practiceLimit;
-
-        // Get limit based on tier
-        switch (tierLower) {
-          case 'free':
-            practiceLimit = memoryConfig.unlockLimits['free'];
-            break;
-          case 'standard':
-            practiceLimit = memoryConfig.unlockLimits['standard'];
-            break;
-          case 'plus':
-            practiceLimit = memoryConfig.unlockLimits['plus'];
-            break;
-          case 'premium':
-            practiceLimit = memoryConfig.unlockLimits['premium'];
-            break;
-        }
-
-        if (practiceLimit != null) {
-          if (practiceLimit == -1) {
-            features.add('Unlimited practice sessions per verse');
-          } else {
-            features.add(
-                '$practiceLimit practice session${practiceLimit > 1 ? 's' : ''} per verse per day');
-          }
-        }
-      }
-    } catch (e) {
-      Logger.error('Failed to get practice unlock limits from system config',
-          tag: 'PRICING', error: e);
-      // Fallback to hardcoded values if config not available
-      if (planCode.toLowerCase() == 'free') {
-        features.add('1 practice session per verse per day');
-      } else if (planCode.toLowerCase() == 'standard') {
-        features.add('2 practice sessions per verse per day');
-      } else if (planCode.toLowerCase() == 'plus') {
-        features.add('3 practice sessions per verse per day');
-      } else if (planCode.toLowerCase() == 'premium') {
-        features.add('Unlimited practice sessions per verse');
-      }
-    }
-
-    // Study guide history (Standard and above)
-    if (dailyTokens != null && dailyTokens > 8) {
-      features.add('Study guide history');
-    }
-
-    // Add fallback if no features extracted
-    if (features.isEmpty) {
-      features.add('Basic Bible study features');
-    }
-
-    return features;
-  }
+  List<String> _extractFeatures(SubscriptionPlanModel plan) =>
+      PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
 
   Future<void> _handlePremiumPlanPress(BuildContext context) async {
     // Save pending premium upgrade flag for post-login redirect
@@ -579,7 +414,7 @@ class _PricingPageState extends State<PricingPage> {
       // Save promo code if one is applied
       if (_appliedPromo != null) {
         await box.put('pending_promo_code', _appliedPromo!.code);
-        print('💰 [PRICING] Saved promo code: ${_appliedPromo!.code}');
+        Logger.debug('💰 [PRICING] Saved promo code: ${_appliedPromo!.code}');
       }
 
       if (context.mounted) {
@@ -638,10 +473,10 @@ class _PricingPageState extends State<PricingPage> {
       // Save promo code if applied
       if (_appliedPromo != null) {
         await box.put('pending_promo_code', _appliedPromo!.code);
-        print('💰 [PRICING] Saved promo code: ${_appliedPromo!.code}');
+        Logger.debug('💰 [PRICING] Saved promo code: ${_appliedPromo!.code}');
       }
 
-      print(
+      Logger.debug(
           '📦 [PRICING] Saved plan selection: ${plan.planCode} (₹${plan.displayPriceMinor / 100})');
 
       if (context.mounted) {

@@ -68,7 +68,7 @@ export default function LearningPathDetailPage({ params }: PageProps) {
           </h3>
           <button
             onClick={() => router.push('/learning-paths')}
-            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
           >
             Back to Learning Paths
           </button>
@@ -124,7 +124,7 @@ export default function LearningPathDetailPage({ params }: PageProps) {
 
           <button
             onClick={() => router.push(`/learning-paths/${id}/edit`)}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
           >
             <svg
               className="h-4 w-4"

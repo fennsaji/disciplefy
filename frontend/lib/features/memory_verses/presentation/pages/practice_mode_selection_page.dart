@@ -4,13 +4,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../memory_verses/models/memory_verse_config.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
 import '../../domain/repositories/memory_verse_repository.dart';
 import '../widgets/practice_mode_card.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Practice mode selection page.
 ///
@@ -51,13 +55,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   /// Map of mode type to stats from database
   final Map<PracticeModeType, PracticeModeEntity> _modeStatsMap = {};
 
-  // TODO: Fetch actual user subscription tier from Supabase
-  // For now, hardcode as 'free' for demonstration
-  final String _userTier = 'free'; // Can be: free, standard, plus, premium
-
-  // TODO: Fetch actual unlocked modes for today from backend
-  // For now, empty list means no modes unlocked yet
-  final List<String> _unlockedModesToday = [];
+  String _userTier = 'free';
+  List<String> _unlockedModesToday = [];
 
   @override
   void initState() {
@@ -68,10 +67,12 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   /// Load verse info and practice mode stats in parallel
   Future<void> _loadData() async {
     try {
-      // Load both verse and mode stats in parallel
+      // Load verse, mode stats, user tier, and today's unlocked modes in parallel
       await Future.wait([
         _loadVerse(),
         _loadPracticeModeStats(),
+        _loadUserTier(),
+        _loadUnlockedModesToday(),
       ]);
 
       if (!mounted) return;
@@ -135,7 +136,57 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     } catch (e) {
       // If stats can't be loaded, continue with empty stats
       // This allows the page to still work for new verses
-      debugPrint('Failed to load practice mode stats: $e');
+      Logger.debug('Failed to load practice mode stats: $e');
+    }
+  }
+
+  /// Load user's active subscription tier from Supabase.
+  ///
+  /// Uses the canonical `get_user_plan_with_subscription` RPC function which
+  /// correctly handles all tier detection cases: admin users, premium trials,
+  /// plan_id JOIN, plan_type fallback for IAP subscriptions, standard trial,
+  /// and grace period — identical logic to what the backend enforces.
+  Future<void> _loadUserTier() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client.rpc(
+          'get_user_plan_with_subscription',
+          params: {'p_user_id': user.id});
+
+      if (response != null) {
+        _userTier = (response as String?) ?? 'free';
+      }
+    } catch (e) {
+      Logger.debug('Failed to load user tier: $e');
+    }
+  }
+
+  /// Load today's unlocked practice modes for this verse from Supabase
+  Future<void> _loadUnlockedModesToday() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final todayDate = DateTime.now().toIso8601String().substring(0, 10);
+
+      final response = await Supabase.instance.client
+          .from('daily_unlocked_modes')
+          .select('unlocked_modes')
+          .eq('user_id', user.id)
+          .eq('memory_verse_id', widget.verseId)
+          .eq('practice_date', todayDate)
+          .maybeSingle();
+
+      if (response != null) {
+        final modes = response['unlocked_modes'];
+        if (modes is List) {
+          _unlockedModesToday = List<String>.from(modes);
+        }
+      }
+    } catch (e) {
+      Logger.debug('Failed to load unlocked modes: $e');
     }
   }
 
@@ -201,34 +252,33 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     }
   }
 
-  /// Check if a mode is tier-locked based on user's subscription
-  bool _isModeTierLocked(PracticeModeType modeType) {
-    // Free tier can only access flip_card and type_it_out
-    if (_userTier == 'free') {
-      return modeType != PracticeModeType.flipCard &&
-          modeType != PracticeModeType.typeItOut;
+  /// Get memory verse config from system config service (DB-driven).
+  /// Falls back to default config if not loaded yet.
+  MemoryVerseConfig get _memoryConfig {
+    try {
+      return sl<SystemConfigService>().config?.memoryVerseConfig ??
+          MemoryVerseConfig.defaultConfig();
+    } catch (_) {
+      return MemoryVerseConfig.defaultConfig();
     }
-    // All other tiers (standard, plus, premium) have access to all modes
-    return false;
   }
 
-  /// Check if a mode has reached daily unlock limit
-  bool _isModeUnlockLimitReached(PracticeModeType modeType) {
-    // Premium tier has unlimited unlocks
-    if (_userTier == 'premium') {
-      return false;
-    }
+  /// Check if a mode is tier-locked based on user's subscription.
+  /// Uses DB-driven config via SystemConfigService.
+  bool _isModeTierLocked(PracticeModeType modeType) {
+    return !_memoryConfig.hasAccessToMode(_userTier, modeType.toJson());
+  }
 
-    // Check tier-based unlock limits
-    int unlockLimit = 1; // free
-    if (_userTier == 'standard') unlockLimit = 2;
-    if (_userTier == 'plus') unlockLimit = 3;
+  /// Check if a mode has reached daily unlock limit.
+  /// Uses DB-driven unlock limits via SystemConfigService.
+  bool _isModeUnlockLimitReached(PracticeModeType modeType) {
+    final unlockLimit = _memoryConfig.getUnlockLimitForTier(_userTier);
+
+    // -1 means unlimited (e.g. premium)
+    if (unlockLimit == -1) return false;
 
     // If mode is already unlocked today, it's not limited
-    final modeSlug = modeType.toJson();
-    if (_unlockedModesToday.contains(modeSlug)) {
-      return false;
-    }
+    if (_unlockedModesToday.contains(modeType.toJson())) return false;
 
     // If user has reached their daily unlock limit, mode is locked
     return _unlockedModesToday.length >= unlockLimit;
@@ -303,12 +353,10 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     return modeNames[modeSlug] ?? modeSlug;
   }
 
-  /// Get unlock limit based on tier
+  /// Get unlock limit based on tier from DB-driven config.
+  /// Returns -1 for unlimited (premium).
   int _getUnlockLimit() {
-    if (_userTier == 'premium') return -1; // Unlimited
-    if (_userTier == 'plus') return 3;
-    if (_userTier == 'standard') return 2;
-    return 1; // free
+    return _memoryConfig.getUnlockLimitForTier(_userTier);
   }
 
   /// Get translated difficulty filter label
@@ -395,11 +443,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                 ),
               ),
 
-              // Daily Unlocked Modes Indicator
-              if (!_isLoading && !_hasError)
-                _buildUnlockedModesIndicator(theme),
-
-              // Difficulty Filter
+              // Difficulty Filter (fixed, above scrollable area)
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -439,69 +483,107 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                 ),
               ),
 
-              // Practice Mode Grid
+              // Scrollable: Unlocked Modes Indicator + Practice Mode Grid
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : filteredModes.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.filter_alt_off,
-                                  size: 64,
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withAlpha((0.5 * 255).round()),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  context.tr(
-                                      TranslationKeys.practiceSelectionNoModes),
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
+                    : CustomScrollView(
+                        slivers: [
+                          // Daily Unlocked Modes Indicator (scrolls with content)
+                          if (!_hasError)
+                            SliverToBoxAdapter(
+                              child: _buildUnlockedModesIndicator(theme),
                             ),
-                          )
-                        : GridView.builder(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.88,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                            itemCount: filteredModes.length,
-                            itemBuilder: (context, index) {
-                              final mode = filteredModes[index];
-                              final isRecommended =
-                                  mode.modeType == recommendedMode;
-                              final isTierLocked =
-                                  _isModeTierLocked(mode.modeType);
-                              final isUnlockLimitReached =
-                                  _isModeUnlockLimitReached(mode.modeType);
 
-                              return PracticeModeCard(
-                                mode: mode,
-                                isRecommended: isRecommended,
-                                isFirstRecommended:
-                                    isRecommended && _isFirstRecommendation,
-                                isTierLocked: isTierLocked,
-                                isUnlockLimitReached: isUnlockLimitReached,
-                                onTap: () => _selectMode(mode.modeType),
-                              );
-                            },
-                          ),
+                          // Practice Mode Grid or empty state
+                          if (filteredModes.isEmpty)
+                            SliverFillRemaining(
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.filter_alt_off,
+                                      size: 64,
+                                      color: theme.colorScheme.onSurfaceVariant
+                                          .withAlpha((0.5 * 255).round()),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      context.tr(TranslationKeys
+                                          .practiceSelectionNoModes),
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              sliver: SliverGrid(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final mode = filteredModes[index];
+                                    final isRecommended =
+                                        mode.modeType == recommendedMode;
+                                    final isTierLocked =
+                                        _isModeTierLocked(mode.modeType);
+                                    final isUnlockLimitReached =
+                                        _isModeUnlockLimitReached(
+                                            mode.modeType);
+
+                                    return PracticeModeCard(
+                                      mode: mode,
+                                      isRecommended: isRecommended,
+                                      isFirstRecommended: isRecommended &&
+                                          _isFirstRecommendation,
+                                      isTierLocked: isTierLocked,
+                                      isUnlockLimitReached:
+                                          isUnlockLimitReached,
+                                      onTap: () => _selectMode(mode.modeType),
+                                      onLockedTap: isTierLocked
+                                          ? () =>
+                                              context.push(AppRoutes.pricing)
+                                          : () => ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    'Daily limit reached. Practice with your unlocked modes or upgrade for more.'),
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                              )),
+                                    );
+                                  },
+                                  childCount: filteredModes.length,
+                                ),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.88,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
               ),
             ],
           ),
         ),
       ),
     ).withAuthProtection();
+  }
+
+  /// Returns a dark-mode-safe text color for a given base color.
+  Color _adaptiveTextColor(Color base, ThemeData theme) {
+    return theme.brightness == Brightness.dark
+        ? Color.lerp(base, Colors.white, 0.4)!
+        : base;
   }
 
   /// Build the daily unlocked modes indicator widget
@@ -675,7 +757,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                       Text(
                         _getModeName(modeSlug),
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: Colors.green.shade700,
+                          color:
+                              _adaptiveTextColor(Colors.green.shade700, theme),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -709,7 +792,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                           ? 'Choose ${unlockLimit == 1 ? 'a' : 'up to $unlockLimit'} mode${unlockLimit > 1 ? 's' : ''} to practice today'
                           : 'You can unlock $slotsRemaining more mode${slotsRemaining > 1 ? 's' : ''} today',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.blue.shade900,
+                        color: _adaptiveTextColor(Colors.blue.shade900, theme),
                       ),
                     ),
                   ),
@@ -737,7 +820,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                     child: Text(
                       'Daily limit reached. Practice with unlocked modes or upgrade for more!',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange.shade900,
+                        color:
+                            _adaptiveTextColor(Colors.orange.shade900, theme),
                       ),
                     ),
                   ),

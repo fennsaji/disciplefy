@@ -13,6 +13,7 @@ import '../bloc/token_event.dart';
 import '../bloc/token_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Token Purchase Page
 ///
@@ -88,10 +89,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         _isPricingLoading = false;
       });
 
-      debugPrint(
+      Logger.debug(
           '💰 [TokenPurchasePage] Pricing loaded: $_tokensPerRupee tokens/₹, ${_packages.length} packages');
     } catch (e) {
-      debugPrint('❌ [TokenPurchasePage] Failed to fetch pricing: $e');
+      Logger.debug('❌ [TokenPurchasePage] Failed to fetch pricing: $e');
       setState(() {
         _pricingError =
             'Failed to load pricing. Please check your connection and try again.';
@@ -109,23 +110,23 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   }
 
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    debugPrint('✅ Payment Success: ${response.paymentId}');
+    Logger.debug('✅ Payment Success: ${response.paymentId}');
 
     // Use stored token amount from when order was created
     final tokenAmount = _currentPurchaseTokens;
 
     if (tokenAmount == 0) {
-      debugPrint(
+      Logger.debug(
           '[TokenPurchasePage] ⚠️ Warning: Token amount is 0, payment may not be credited');
     }
 
     try {
       // Call backend to confirm payment and credit tokens
-      debugPrint('[TokenPurchasePage] Confirming payment with backend...');
-      debugPrint('[TokenPurchasePage] Payment ID: ${response.paymentId}');
-      debugPrint('[TokenPurchasePage] Order ID: ${response.orderId}');
-      debugPrint('[TokenPurchasePage] Signature: ${response.signature}');
-      debugPrint('[TokenPurchasePage] Token Amount: $tokenAmount');
+      Logger.debug('[TokenPurchasePage] Confirming payment with backend...');
+      Logger.debug('[TokenPurchasePage] Payment ID: ${response.paymentId}');
+      Logger.debug('[TokenPurchasePage] Order ID: ${response.orderId}');
+      Logger.debug('[TokenPurchasePage] Signature: ${response.signature}');
+      Logger.debug('[TokenPurchasePage] Token Amount: $tokenAmount');
 
       final dataSource = sl<TokenRemoteDataSource>();
       await dataSource.confirmPayment(
@@ -135,7 +136,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         tokenAmount: tokenAmount,
       );
 
-      debugPrint('[TokenPurchasePage] Payment confirmed successfully!');
+      Logger.debug('[TokenPurchasePage] Payment confirmed successfully!');
 
       // Show success message
       if (mounted) {
@@ -155,7 +156,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      debugPrint('[TokenPurchasePage] ❌ Failed to confirm payment: $e');
+      Logger.debug('[TokenPurchasePage] ❌ Failed to confirm payment: $e');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -174,7 +175,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    debugPrint('❌ Payment Error: ${response.code} - ${response.message}');
+    Logger.debug('❌ Payment Error: ${response.code} - ${response.message}');
 
     setState(() {
       _isLoading = false;
@@ -191,7 +192,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    debugPrint('💼 External Wallet: ${response.walletName}');
+    Logger.debug('💼 External Wallet: ${response.walletName}');
   }
 
   void _onPackageSelected(TokenPackage package) {
@@ -241,7 +242,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     return BlocListener<TokenBloc, TokenState>(
       listener: (context, state) {
         if (state is TokenOrderCreated) {
-          debugPrint('[TokenPurchasePage] Order created: ${state.orderId}');
+          Logger.debug('[TokenPurchasePage] Order created: ${state.orderId}');
 
           // Store purchase details for later confirmation
           setState(() {
@@ -249,7 +250,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
             _currentOrderId = state.orderId;
           });
 
-          debugPrint(
+          Logger.debug(
               '[TokenPurchasePage] Stored purchase context: $_currentPurchaseTokens tokens, order $_currentOrderId');
 
           // Open payment gateway using PaymentService

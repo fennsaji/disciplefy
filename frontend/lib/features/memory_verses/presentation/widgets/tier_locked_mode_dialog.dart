@@ -8,7 +8,7 @@ import '../../models/memory_verse_config.dart';
 
 /// Dialog shown when user attempts to use a practice mode not available in their tier.
 /// Displays tier restriction info and upgrade options.
-/// Now uses dynamic config from database instead of hardcoded values.
+/// Uses dynamic config from database instead of hardcoded values.
 class TierLockedModeDialog extends StatelessWidget {
   final String mode;
   final String currentTier;
@@ -47,7 +47,7 @@ class TierLockedModeDialog extends StatelessWidget {
   }
 
   /// Get user-friendly mode names
-  String _getModeName(String mode) {
+  String _getModeName(String modeSlug) {
     const modeNames = {
       'flip_card': 'Flip Card',
       'type_it_out': 'Type It Out',
@@ -58,7 +58,7 @@ class TierLockedModeDialog extends StatelessWidget {
       'word_bank': 'Word Bank',
       'audio': 'Audio Practice',
     };
-    return modeNames[mode] ?? mode;
+    return modeNames[modeSlug] ?? modeSlug;
   }
 
   String _getTierDisplayName(String tier) {
@@ -70,28 +70,33 @@ class TierLockedModeDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final modeName = _getModeName(mode);
     final currentTierName = _getTierDisplayName(currentTier);
-
-    // Convert available mode slugs to readable names
     final availableModeNames =
         availableModes.map((m) => _getModeName(m)).toList();
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: theme.colorScheme.surface,
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: theme.colorScheme.errorContainer,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.lock, color: Colors.red, size: 24),
+            child: Icon(
+              Icons.lock,
+              color: theme.colorScheme.error,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Upgrade Required',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -103,43 +108,53 @@ class TierLockedModeDialog extends StatelessWidget {
           children: [
             Text(
               message,
-              style: const TextStyle(fontSize: 15, height: 1.4),
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
             const SizedBox(height: 16),
+
+            // Current plan includes box
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline,
-                          color: Colors.blue[700], size: 18),
+                      Icon(
+                        Icons.info_outline,
+                        color: theme.colorScheme.primary,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Your $currentTierName Plan Includes:',
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...availableModeNames.map((modeName) => Padding(
+                  ...availableModeNames.map((name) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle,
-                                color: Colors.green, size: 16),
+                            Icon(
+                              Icons.check_circle,
+                              color: theme.colorScheme.tertiary,
+                              size: 16,
+                            ),
                             const SizedBox(width: 8),
                             Text(
-                              modeName,
-                              style: const TextStyle(fontSize: 13),
+                              name,
+                              style: theme.textTheme.bodySmall,
                             ),
                           ],
                         ),
@@ -147,10 +162,13 @@ class TierLockedModeDialog extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Unlock advanced practice modes with:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             ..._buildDynamicPlanOptions(context),
@@ -160,7 +178,10 @@ class TierLockedModeDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Maybe Later'),
+          child: Text(
+            'Maybe Later',
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -169,7 +190,7 @@ class TierLockedModeDialog extends StatelessWidget {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: const Text('Upgrade Now'),
@@ -178,15 +199,14 @@ class TierLockedModeDialog extends StatelessWidget {
     );
   }
 
-  /// Build plan options dynamically from system config
+  /// Build plan options dynamically from system config (DB-driven)
   List<Widget> _buildDynamicPlanOptions(BuildContext context) {
     try {
       final systemConfig = sl<SystemConfigService>();
       final memoryConfig = systemConfig.config?.memoryVerseConfig;
+      final pricingService = sl<PricingService>();
 
       if (memoryConfig == null) {
-        // Fallback to database pricing if config not available
-        final pricingService = sl<PricingService>();
         return [
           _buildPlanOption(
             context,
@@ -203,7 +223,7 @@ class TierLockedModeDialog extends StatelessWidget {
           _buildPlanOption(
             context,
             'Premium',
-            'All modes unlocked automatically + unlimited practice',
+            'All 8 practice modes + unlimited practice',
             pricingService.getFormattedPricePerMonth('premium'),
           ),
         ];
@@ -211,27 +231,19 @@ class TierLockedModeDialog extends StatelessWidget {
 
       final tierComparison = memoryConfig.getTierComparison();
 
-      // Filter out free tier and current tier
       final upgradeTiers = tierComparison
           .where((t) => t.tier != 'free' && t.tier != currentTier.toLowerCase())
           .toList();
 
-      final pricingService = sl<PricingService>();
-
       return upgradeTiers.map((tier) {
-        final modeCount = tier.modeCount;
-        final unlockText = tier.unlockLimitText;
-        final price = pricingService.getFormattedPricePerMonth(tier.tier);
-
         return _buildPlanOption(
           context,
           tier.tierName,
-          'All $modeCount practice modes + $unlockText',
-          price,
+          'All ${tier.modeCount} practice modes + ${tier.unlockLimitText}',
+          pricingService.getFormattedPricePerMonth(tier.tier),
         );
       }).toList();
     } catch (e) {
-      // Fallback on error
       final pricingService = sl<PricingService>();
       return [
         _buildPlanOption(
@@ -250,16 +262,25 @@ class TierLockedModeDialog extends StatelessWidget {
     String description,
     String price,
   ) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.upgrade, color: Colors.blue, size: 16),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(
+              Icons.upgrade,
+              color: theme.colorScheme.primary,
+              size: 16,
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                style: theme.textTheme.bodySmall,
                 children: [
                   TextSpan(
                     text: '$name: ',
@@ -268,7 +289,9 @@ class TierLockedModeDialog extends StatelessWidget {
                   TextSpan(text: '$description '),
                   TextSpan(
                     text: '($price)',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

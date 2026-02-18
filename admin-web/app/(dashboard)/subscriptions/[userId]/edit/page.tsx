@@ -6,6 +6,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { searchUsers, updateSubscription, createPaymentRecord } from '@/lib/api/admin'
 import type { SubscriptionTier, SubscriptionStatus } from '@/types/admin'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
 
 const TIER_OPTIONS: { value: SubscriptionTier; label: string; icon: string; description: string }[] = [
   { value: 'free', label: 'Free', icon: '🆓', description: '8 tokens per day - Basic access' },
@@ -195,32 +197,12 @@ export default function EditSubscriptionPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading subscription details...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState label="Loading subscriptions..." />
   }
 
   if (error || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/20">
-          <p className="font-medium text-red-800 dark:text-red-300">Error loading subscription</p>
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-            {error instanceof Error ? error.message : 'User not found'}
-          </p>
-          <button
-            onClick={() => router.push('/subscriptions')}
-            className="mt-4 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-200"
-          >
-            Back to Subscriptions
-          </button>
-        </div>
-      </div>
+      <ErrorState title="Error loading subscriptions" message={error instanceof Error ? error.message : 'User not found'} />
     )
   }
 
@@ -464,7 +446,7 @@ export default function EditSubscriptionPage() {
           <button
             type="submit"
             disabled={updateMutation.isPending}
-            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
           >
             {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
           </button>

@@ -43,6 +43,7 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final pricingService = sl<PricingService>();
 
     return AlertDialog(
@@ -52,16 +53,18 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: colorScheme.error.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.block, color: Colors.red, size: 24),
+            child: Icon(Icons.block, color: colorScheme.error, size: 24),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Monthly Limit Reached',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -73,54 +76,59 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
           children: [
             Text(
               'You\'ve used all $limit voice conversation${limit > 1 ? 's' : ''} for this month.',
-              style: const TextStyle(fontSize: 15),
+              style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: colorScheme.onSurface.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Conversations Used:',
-                    style: TextStyle(fontSize: 14),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                    ),
                   ),
                   Text(
                     '$conversationsUsed / $limit',
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Upgrade to get more conversations:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             _buildPlanOption(
               context,
               'Standard',
-              '3 conversations/month',
+              pricingService.getVoiceQuotaLabel('standard'),
               pricingService.getFormattedPricePerMonth('standard'),
             ),
             _buildPlanOption(
               context,
               'Plus',
-              '10 conversations/month',
+              pricingService.getVoiceQuotaLabel('plus'),
               pricingService.getFormattedPricePerMonth('plus'),
             ),
             _buildPlanOption(
               context,
               'Premium',
-              'Unlimited conversations',
+              pricingService.getVoiceQuotaLabel('premium'),
               pricingService.getFormattedPricePerMonth('premium'),
             ),
           ],
@@ -137,8 +145,8 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
             Navigator.pushNamed(context, AppRoutes.pricing);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: const Text('View Plans'),
@@ -153,6 +161,8 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
     String conversations,
     String price,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -162,7 +172,10 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurface,
+                ),
                 children: [
                   TextSpan(
                     text: '$name: ',
@@ -171,7 +184,9 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
                   TextSpan(text: '$conversations '),
                   TextSpan(
                     text: '($price)',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                 ],
               ),

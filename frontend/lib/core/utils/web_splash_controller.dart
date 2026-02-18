@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'logger.dart';
 
 /// Controller for web splash screen management
 class WebSplashController {
@@ -8,13 +9,9 @@ class WebSplashController {
       try {
         // The splash screen JavaScript will automatically hide after 5 seconds
         // This is just to ensure the app is ready if needed
-        if (kDebugMode) {
-          print('Flutter app is ready');
-        }
+        Logger.debug('Flutter app is ready');
       } catch (e) {
-        if (kDebugMode) {
-          print('Could not signal Flutter ready: $e');
-        }
+        Logger.debug('Could not signal Flutter ready: $e');
       }
     }
   }

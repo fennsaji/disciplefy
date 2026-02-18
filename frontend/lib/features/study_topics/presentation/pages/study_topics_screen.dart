@@ -88,13 +88,13 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
 
       result.fold(
         (failure) {
-          debugPrint(
+          Logger.debug(
               '⚠️ [STUDY_TOPICS] Failed to get subscription: ${failure.message}');
           _userPlan = 'free'; // Default to free on error
         },
         (subscription) {
           _userPlan = subscription.currentPlan;
-          debugPrint('👤 [STUDY_TOPICS] User plan: $_userPlan');
+          Logger.debug('👤 [STUDY_TOPICS] User plan: $_userPlan');
         },
       );
 
@@ -116,21 +116,22 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       }
 
       if (shouldHideLearningPaths) {
-        debugPrint(
+        Logger.debug(
             '🙈 [STUDY_TOPICS] Learning Paths hidden for plan $_userPlan');
       } else {
-        debugPrint(
+        Logger.debug(
             '👀 [STUDY_TOPICS] Learning Paths visible for plan $_userPlan (may be locked)');
       }
 
       if (shouldHideLeaderboard) {
-        debugPrint('🙈 [STUDY_TOPICS] Leaderboard hidden for plan $_userPlan');
+        Logger.debug(
+            '🙈 [STUDY_TOPICS] Leaderboard hidden for plan $_userPlan');
       } else {
-        debugPrint(
+        Logger.debug(
             '👀 [STUDY_TOPICS] Leaderboard visible for plan $_userPlan (may be locked)');
       }
     } catch (e) {
-      debugPrint('❌ [STUDY_TOPICS] Error checking feature access: $e');
+      Logger.debug('❌ [STUDY_TOPICS] Error checking feature access: $e');
       // Default to enabled on error to avoid breaking existing users
       if (mounted) {
         setState(() {
@@ -145,7 +146,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   /// When app language changes, study content language is reset to default,
   /// so we need to refresh the content to reflect the new app language.
   void _setupLanguageChangeListener() {
-    debugPrint('[STUDY_TOPICS] Setting up language change listener');
+    Logger.debug('[STUDY_TOPICS] Setting up language change listener');
 
     // Cancel any existing subscription before creating a new one
     _languageSubscription?.cancel();
@@ -153,14 +154,14 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     // Store the subscription to ensure proper cleanup
     _languageSubscription =
         _languageService.languageChanges.listen((newLanguage) async {
-      debugPrint(
+      Logger.debug(
           '[STUDY_TOPICS] App language changed to: ${newLanguage.displayName}');
 
       // When app language changes, study content language is automatically reset to default
       // Reload content with the new language
       if (mounted) {
         await _loadLanguageAndInitialize();
-        debugPrint(
+        Logger.debug(
             '[STUDY_TOPICS] Content refreshed after app language change');
       }
     });
@@ -293,7 +294,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   /// Handle deep link to specific topic (e.g., from notification)
   void _handleTopicDeepLink(String topicId) async {
-    debugPrint('[StudyTopics] Deep link detected for topic ID: $topicId');
+    Logger.debug('[StudyTopics] Deep link detected for topic ID: $topicId');
 
     // Show mode selection sheet before navigating
     if (mounted) {
@@ -511,21 +512,22 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       return;
     }
 
-    debugPrint('🔍 [CONTINUE_LEARNING] Starting navigation...');
-    debugPrint('🔍 Topic: ${topic.title}');
-    debugPrint('🔍 Is from learning path: ${topic.isFromLearningPath}');
-    debugPrint('🔍 Learning path name: ${topic.learningPathName}');
-    debugPrint('🔍 Recommended mode raw: ${topic.recommendedMode}');
+    Logger.debug('🔍 [CONTINUE_LEARNING] Starting navigation...');
+    Logger.debug('🔍 Topic: ${topic.title}');
+    Logger.debug('🔍 Is from learning path: ${topic.isFromLearningPath}');
+    Logger.debug('🔍 Learning path name: ${topic.learningPathName}');
+    Logger.debug('🔍 Recommended mode raw: ${topic.recommendedMode}');
 
     // Parse recommended mode from topic if it's from a learning path
     StudyMode? recommendedMode;
     if (topic.recommendedMode != null) {
       recommendedMode = _parseStudyMode(topic.recommendedMode!);
       if (recommendedMode == null) {
-        debugPrint(
+        Logger.debug(
             '⚠️ Invalid recommended mode: ${topic.recommendedMode}, defaulting to null');
       } else {
-        debugPrint('✅ Parsed recommended mode: ${recommendedMode.displayName}');
+        Logger.debug(
+            '✅ Parsed recommended mode: ${recommendedMode.displayName}');
       }
     }
 
@@ -539,27 +541,27 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       final authProvider = sl<AuthStateProvider>();
       savedModeRaw =
           authProvider.userProfile?['learning_path_study_mode'] as String?;
-      debugPrint(
+      Logger.debug(
           '🔍 [CONTINUE_LEARNING] Learning path mode preference: "$savedModeRaw"');
     } else {
       // Check general preference for non-learning-path topics
       final languageService = sl<LanguagePreferenceService>();
       savedModeRaw = await languageService.getStudyModePreferenceRaw();
-      debugPrint(
+      Logger.debug(
           '🔍 [CONTINUE_LEARNING] General mode preference: "$savedModeRaw"');
     }
 
     // If user selected "always use recommended" and topic has a recommended mode, use it directly
-    debugPrint('🔍 Checking auto-use recommended conditions:');
-    debugPrint(
+    Logger.debug('🔍 Checking auto-use recommended conditions:');
+    Logger.debug(
         '   - savedModeRaw == "recommended": ${StudyModePreferences.isRecommended(savedModeRaw)}');
-    debugPrint('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
-    debugPrint('   - recommendedMode != null: ${recommendedMode != null}');
+    Logger.debug('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
+    Logger.debug('   - recommendedMode != null: ${recommendedMode != null}');
 
     if (StudyModePreferences.isRecommended(savedModeRaw) &&
         topic.isFromLearningPath &&
         recommendedMode != null) {
-      debugPrint(
+      Logger.debug(
           '✅ [CONTINUE_LEARNING] Auto-using recommended mode: ${recommendedMode.displayName}');
       _isNavigating = true;
       await _navigateToStudyGuideWithMode(
@@ -573,7 +575,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       final savedMode = _parseStudyMode(
           savedModeRaw!); // Safe: isSpecificMode guarantees non-null
       if (savedMode != null) {
-        debugPrint(
+        Logger.debug(
             '✅ [CONTINUE_LEARNING] Using saved mode preference: ${savedMode.displayName}');
         _isNavigating = true;
         await _navigateToStudyGuideWithMode(
@@ -583,7 +585,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
 
     // No saved preference or couldn't parse - show mode selection sheet
-    debugPrint('📋 [CONTINUE_LEARNING] Showing mode selection sheet');
+    Logger.debug('📋 [CONTINUE_LEARNING] Showing mode selection sheet');
     final result = await ModeSelectionSheet.show(
       context: context,
       languageCode: widget.currentLanguage,
@@ -615,7 +617,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 StudyModePreferences.recommended;
             authProvider.cacheProfile(userId, currentProfile);
           }
-          debugPrint(
+          Logger.debug(
               '[CONTINUE_LEARNING] Saved "always use recommended" to learning path preference');
         } else if (rememberChoice) {
           final userProfileService = sl<UserProfileService>();
@@ -630,7 +632,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
             currentProfile['learning_path_study_mode'] = mode.value;
             authProvider.cacheProfile(userId, currentProfile);
           }
-          debugPrint(
+          Logger.debug(
               '[CONTINUE_LEARNING] Saved "${mode.displayName}" to learning path preference');
         }
       } else {
@@ -691,7 +693,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final pathIdParam =
         topic.learningPathId != null ? '&path_id=${topic.learningPathId}' : '';
 
-    debugPrint(
+    Logger.debug(
         '[CONTINUE_LEARNING] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
 
     // Use push() and await - when user returns, refresh the data
@@ -715,7 +717,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    debugPrint(
+    Logger.debug(
         '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
 
     // Use context.go() to properly update the browser URL

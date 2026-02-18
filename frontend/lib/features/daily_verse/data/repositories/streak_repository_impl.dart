@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/daily_verse_streak.dart';
 import '../../domain/repositories/streak_repository.dart';
 import '../models/daily_verse_streak_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of StreakRepository using Supabase
 class StreakRepositoryImpl implements StreakRepository {
@@ -141,7 +142,7 @@ class StreakRepositoryImpl implements StreakRepository {
       return data?['sent'] == true;
     } catch (e) {
       // Log error but don't throw - notifications are optional
-      print('Failed to send streak notification: $e');
+      Logger.debug('Failed to send streak notification: $e');
       return false;
     }
   }

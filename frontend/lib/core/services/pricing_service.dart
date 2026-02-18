@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/subscription_pricing.dart';
+import '../utils/logger.dart';
 
 /// Service for managing subscription pricing
 ///
@@ -29,7 +30,7 @@ class PricingService {
       // Fetch fresh data from API
       await fetchPricing();
     } catch (e) {
-      debugPrint('⚠️ [PricingService] Error initializing: $e');
+      Logger.debug('⚠️ [PricingService] Error initializing: $e');
       // Use fallback pricing if initialization fails
       _pricing = SubscriptionPricing.empty();
     }
@@ -40,11 +41,11 @@ class PricingService {
     try {
       // Check if cache is still valid
       if (!forceRefresh && _isCacheValid()) {
-        debugPrint('✅ [PricingService] Using cached pricing');
+        Logger.debug('✅ [PricingService] Using cached pricing');
         return;
       }
 
-      debugPrint('🔄 [PricingService] Fetching fresh pricing from API...');
+      Logger.debug('🔄 [PricingService] Fetching fresh pricing from API...');
 
       final response = await Supabase.instance.client.functions.invoke(
         'subscription-pricing',
@@ -69,9 +70,9 @@ class PricingService {
       // Save to cache
       await _saveToCache();
 
-      debugPrint('✅ [PricingService] Pricing fetched successfully');
+      Logger.debug('✅ [PricingService] Pricing fetched successfully');
     } catch (e) {
-      debugPrint('❌ [PricingService] Error fetching pricing: $e');
+      Logger.debug('❌ [PricingService] Error fetching pricing: $e');
       // Keep using cached pricing if fetch fails
       _pricing ??= SubscriptionPricing.empty();
     }
@@ -83,7 +84,7 @@ class PricingService {
     final providerPricing = pricing.getProvider(selectedProvider);
 
     if (providerPricing == null) {
-      debugPrint(
+      Logger.debug(
           '⚠️ [PricingService] Provider "$selectedProvider" not found, using fallback');
       return PlanPrice.fallback(planCode).formatted;
     }
@@ -91,7 +92,7 @@ class PricingService {
     final planPrice = providerPricing.getPlan(planCode);
 
     if (planPrice == null) {
-      debugPrint(
+      Logger.debug(
           '⚠️ [PricingService] Plan "$planCode" not found in provider "$selectedProvider", using fallback');
       return PlanPrice.fallback(planCode).formatted;
     }
@@ -102,6 +103,20 @@ class PricingService {
   /// Get formatted price with "/month" suffix
   String getFormattedPricePerMonth(String planCode, {String? provider}) {
     return '${getFormattedPrice(planCode, provider: provider)}/month';
+  }
+
+  /// Get the monthly voice conversation quota for a plan.
+  /// Returns -1 for unlimited.
+  int getVoiceQuota(String planCode) {
+    return pricing.getPlanFeatures(planCode).voiceConversationsMonthly;
+  }
+
+  /// Get a human-readable voice quota label for a plan.
+  /// e.g. "3 conversations/month", "Unlimited conversations"
+  String getVoiceQuotaLabel(String planCode) {
+    final quota = getVoiceQuota(planCode);
+    if (quota < 0) return 'Unlimited conversations';
+    return '$quota conversation${quota == 1 ? '' : 's'}/month';
   }
 
   /// Get price amount in minor units (paise/cents)
@@ -142,7 +157,7 @@ class PricingService {
     final providerPricing = pricing.getProvider(selectedProvider);
 
     if (providerPricing == null) {
-      debugPrint(
+      Logger.debug(
           '⚠️ [PricingService] Provider "$selectedProvider" not found for product ID');
       return null;
     }
@@ -150,13 +165,13 @@ class PricingService {
     final planPrice = providerPricing.getPlan(planCode);
 
     if (planPrice == null) {
-      debugPrint(
+      Logger.debug(
           '⚠️ [PricingService] Plan "$planCode" not found in provider "$selectedProvider" for product ID');
       return null;
     }
 
     if (planPrice.productId == null) {
-      debugPrint(
+      Logger.debug(
           '⚠️ [PricingService] No product ID configured for plan "$planCode" in provider "$selectedProvider"');
     }
 
@@ -201,10 +216,10 @@ class PricingService {
         _lastFetch =
             DateTime.fromMillisecondsSinceEpoch(cachedTimestamp * 1000);
 
-        debugPrint('✅ [PricingService] Loaded pricing from cache');
+        Logger.debug('✅ [PricingService] Loaded pricing from cache');
       }
     } catch (e) {
-      debugPrint('⚠️ [PricingService] Error loading from cache: $e');
+      Logger.debug('⚠️ [PricingService] Error loading from cache: $e');
     }
   }
 
@@ -221,9 +236,9 @@ class PricingService {
       await prefs.setString(_cacheKey, pricingJson);
       await prefs.setInt(_cacheTimestampKey, timestamp);
 
-      debugPrint('✅ [PricingService] Saved pricing to cache');
+      Logger.debug('✅ [PricingService] Saved pricing to cache');
     } catch (e) {
-      debugPrint('⚠️ [PricingService] Error saving to cache: $e');
+      Logger.debug('⚠️ [PricingService] Error saving to cache: $e');
     }
   }
 
@@ -236,29 +251,29 @@ class PricingService {
 
   /// Debug helper to print current pricing
   void debugPrintPricing() {
-    debugPrint('📊 [PricingService] Current Pricing:');
-    debugPrint('  Razorpay:');
-    debugPrint(
+    Logger.debug('📊 [PricingService] Current Pricing:');
+    Logger.debug('  Razorpay:');
+    Logger.debug(
         '    Standard: ${pricing.razorpay.standard.formatted} (Product ID: ${pricing.razorpay.standard.productId ?? "N/A"})');
-    debugPrint(
+    Logger.debug(
         '    Plus: ${pricing.razorpay.plus.formatted} (Product ID: ${pricing.razorpay.plus.productId ?? "N/A"})');
-    debugPrint(
+    Logger.debug(
         '    Premium: ${pricing.razorpay.premium.formatted} (Product ID: ${pricing.razorpay.premium.productId ?? "N/A"})');
-    debugPrint('  Google Play:');
-    debugPrint(
+    Logger.debug('  Google Play:');
+    Logger.debug(
         '    Standard: ${pricing.googlePlay.standard.formatted} (Product ID: ${pricing.googlePlay.standard.productId ?? "N/A"})');
-    debugPrint(
+    Logger.debug(
         '    Plus: ${pricing.googlePlay.plus.formatted} (Product ID: ${pricing.googlePlay.plus.productId ?? "N/A"})');
-    debugPrint(
+    Logger.debug(
         '    Premium: ${pricing.googlePlay.premium.formatted} (Product ID: ${pricing.googlePlay.premium.productId ?? "N/A"})');
-    debugPrint('  Apple App Store:');
-    debugPrint(
+    Logger.debug('  Apple App Store:');
+    Logger.debug(
         '    Standard: ${pricing.appleAppStore.standard.formatted} (Product ID: ${pricing.appleAppStore.standard.productId ?? "N/A"})');
-    debugPrint(
+    Logger.debug(
         '    Plus: ${pricing.appleAppStore.plus.formatted} (Product ID: ${pricing.appleAppStore.plus.productId ?? "N/A"})');
-    debugPrint(
+    Logger.debug(
         '    Premium: ${pricing.appleAppStore.premium.formatted} (Product ID: ${pricing.appleAppStore.premium.productId ?? "N/A"})');
-    debugPrint('  Last Fetch: $_lastFetch');
-    debugPrint('  Cache Valid: ${_isCacheValid()}');
+    Logger.debug('  Last Fetch: $_lastFetch');
+    Logger.debug('  Cache Valid: ${_isCacheValid()}');
   }
 }

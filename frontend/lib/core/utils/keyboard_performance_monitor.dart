@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'device_keyboard_handler.dart';
+import 'logger.dart';
 
 /// Performance monitoring system for keyboard interactions to identify
 /// and resolve performance bottlenecks that could cause shadow issues.
@@ -35,9 +36,7 @@ class KeyboardPerformanceMonitor {
     _isMonitoring = true;
     _setupPerformanceTimer();
 
-    if (kDebugMode) {
-      print('⚡ [KEYBOARD PERFORMANCE] Monitoring started');
-    }
+    Logger.debug('⚡ [KEYBOARD PERFORMANCE] Monitoring started');
   }
 
   /// Stop performance monitoring
@@ -46,9 +45,7 @@ class KeyboardPerformanceMonitor {
     _performanceTimer?.cancel();
     _performanceTimer = null;
 
-    if (kDebugMode) {
-      print('⚡ [KEYBOARD PERFORMANCE] Monitoring stopped');
-    }
+    Logger.debug('⚡ [KEYBOARD PERFORMANCE] Monitoring stopped');
   }
 
   void _setupPerformanceTimer() {
@@ -82,11 +79,9 @@ class KeyboardPerformanceMonitor {
           frameDrops: _frameDropCount,
         ));
 
-        if (kDebugMode) {
-          print(
-              '⚡ [KEYBOARD PERFORMANCE] Transition: ${transitionTime.inMilliseconds}ms, '
-              'Height: $newHeight, Drops: $_frameDropCount');
-        }
+        Logger.debug(
+            '⚡ [KEYBOARD PERFORMANCE] Transition: ${transitionTime.inMilliseconds}ms, '
+            'Height: $newHeight, Drops: $_frameDropCount');
       }
 
       _frameDropCount = 0; // Reset for next transition
@@ -230,9 +225,7 @@ class KeyboardPerformanceMonitor {
     _totalTransitionTime = Duration.zero;
     _transitionCount = 0;
 
-    if (kDebugMode) {
-      print('⚡ [KEYBOARD PERFORMANCE] Metrics cleared');
-    }
+    Logger.debug('⚡ [KEYBOARD PERFORMANCE] Metrics cleared');
   }
 
   /// Export performance data for analysis

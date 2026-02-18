@@ -13,7 +13,7 @@ interface StatsCardProps {
 
 export function StatsCard({ title, value, subtitle, icon, trend }: StatsCardProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
@@ -35,7 +35,7 @@ export function StatsCard({ title, value, subtitle, icon, trend }: StatsCardProp
           )}
         </div>
         {icon && (
-          <div className="ml-4 text-4xl opacity-80">{icon}</div>
+          <div className="ml-4 text-3xl opacity-75">{icon}</div>
         )}
       </div>
     </div>

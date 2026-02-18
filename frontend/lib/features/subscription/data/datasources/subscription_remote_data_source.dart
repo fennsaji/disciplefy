@@ -6,6 +6,7 @@ import '../models/subscription_model.dart';
 import '../models/subscription_v2_models.dart';
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Abstract contract for remote subscription operations.
 abstract class SubscriptionRemoteDataSource {
@@ -228,7 +229,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Creating premium subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Creating premium subscription...');
 
       // Call Supabase Edge Function for subscription creation
       final response = await _supabaseClient.functions.invoke(
@@ -236,8 +237,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -300,7 +301,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected error: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected error: $e');
       throw ClientException(
         message: 'Unable to create subscription. Please try again later.',
         code: 'SUBSCRIPTION_CREATION_FAILED',
@@ -321,7 +322,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Cancelling subscription (cancel_at_cycle_end: $cancelAtCycleEnd)...');
 
       // Call Supabase Edge Function for subscription cancellation
@@ -334,8 +335,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -385,7 +386,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected cancellation error: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected cancellation error: $e');
       throw ClientException(
         message: 'Unable to cancel subscription. Please try again later.',
         code: 'CANCELLATION_FAILED',
@@ -403,7 +404,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Resuming cancelled subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Resuming cancelled subscription...');
 
       // Call Supabase Edge Function for subscription resumption
       final response = await _supabaseClient.functions.invoke(
@@ -411,8 +412,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -469,7 +470,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected resume error: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected resume error: $e');
       throw ClientException(
         message: 'Unable to resume subscription. Please try again later.',
         code: 'RESUME_FAILED',
@@ -484,7 +485,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💎 [SUBSCRIPTION_API] Fetching active subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching active subscription...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -508,7 +509,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           .limit(1)
           .maybeSingle();
 
-      print('💎 [SUBSCRIPTION_API] Active subscription response: $response');
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Active subscription response: $response');
 
       if (response != null) {
         final subscription = SubscriptionModel.fromJson(response);
@@ -522,16 +524,17 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
 
             // Only return if still within the active period
             if (periodEnd.isAfter(now)) {
-              print(
+              Logger.debug(
                   '💎 [SUBSCRIPTION_API] Cancelled subscription still active until $periodEnd');
               return subscription;
             } else {
-              print('💎 [SUBSCRIPTION_API] Cancelled subscription has expired');
+              Logger.debug(
+                  '💎 [SUBSCRIPTION_API] Cancelled subscription has expired');
               return null;
             }
           } else {
             // Immediate cancellation - not active
-            print(
+            Logger.debug(
                 '💎 [SUBSCRIPTION_API] Subscription was cancelled immediately');
             return null;
           }
@@ -553,7 +556,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting active subscription: $e');
       throw ClientException(
         message: 'Unable to fetch subscription status. Please try again later.',
@@ -569,7 +572,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💎 [SUBSCRIPTION_API] Fetching subscription history...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching subscription history...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -587,7 +590,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Subscription history response: ${response.length} subscriptions');
 
       return response.map((json) => SubscriptionModel.fromJson(json)).toList();
@@ -603,7 +606,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription history: $e');
       throw ClientException(
         message:
@@ -623,7 +626,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💎 [SUBSCRIPTION_API] Fetching subscription invoices...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching subscription invoices...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -647,13 +650,13 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         final endRange = startRange + (limit ?? 50) - 1;
         query = query.range(startRange, endRange);
 
-        print(
+        Logger.debug(
             '🔍 [SUBSCRIPTION_API] Using pagination range: $startRange to $endRange');
       }
 
       final response = await query;
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Invoices response: ${response.length} invoices');
 
       return response
@@ -671,7 +674,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected error getting invoices: $e');
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error getting invoices: $e');
       throw ClientException(
         message: 'Unable to fetch invoices. Please try again later.',
         code: 'GET_INVOICES_FAILED',
@@ -683,13 +687,13 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   @override
   Future<UserSubscriptionStatus> getSubscriptionStatus() async {
     try {
-      print('💎 [SUBSCRIPTION_API] Fetching subscription status...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching subscription status...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
       if (user == null) {
         // Return default status for unauthenticated users
-        print(
+        Logger.debug(
             '💎 [SUBSCRIPTION_API] User not authenticated, returning default status');
         return UserSubscriptionStatus.defaultStatus();
       }
@@ -700,7 +704,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         params: {'p_user_id': user.id},
       );
 
-      print('💎 [SUBSCRIPTION_API] Subscription status response: $response');
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Subscription status response: $response');
 
       if (response != null) {
         return UserSubscriptionStatus.fromJson(
@@ -715,7 +720,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     } on AuthenticationException {
       rethrow;
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription status: $e');
       // Return default status on error instead of throwing
       return UserSubscriptionStatus.defaultStatus();
@@ -731,7 +736,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Creating Standard subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Creating Standard subscription...');
 
       // Call Supabase Edge Function for Standard subscription creation
       final response = await _supabaseClient.functions.invoke(
@@ -739,8 +744,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -817,7 +822,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating Standard subscription: $e');
       throw ClientException(
         message:
@@ -837,7 +842,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Creating Plus subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Creating Plus subscription...');
 
       // Call Supabase Edge Function for Plus subscription creation
       final response = await _supabaseClient.functions.invoke(
@@ -845,8 +850,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -916,7 +921,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating Plus subscription: $e');
       throw ClientException(
         message: 'Unable to create Plus subscription. Please try again later.',
@@ -935,7 +940,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Starting Premium trial...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Starting Premium trial...');
 
       // Call Supabase Edge Function for Premium trial
       final response = await _supabaseClient.functions.invoke(
@@ -943,8 +948,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -1032,7 +1037,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error starting Premium trial: $e');
       throw ClientException(
         message: 'Unable to start Premium trial. Please try again later.',
@@ -1049,7 +1054,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     String? promoCode,
   }) async {
     try {
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Fetching plans for provider: $provider, region: $region, promo: $promoCode');
 
       // Build query parameters
@@ -1065,8 +1070,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -1103,7 +1108,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     } on ClientException {
       rethrow;
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected error fetching plans: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected error fetching plans: $e');
       throw ClientException(
         message: 'Unable to fetch subscription plans. Please try again later.',
         code: 'PLANS_FETCH_FAILED',
@@ -1125,7 +1130,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Validating promo code: $promoCode');
+      Logger.debug('💎 [SUBSCRIPTION_API] Validating promo code: $promoCode');
 
       // Call Supabase Edge Function
       final response = await _supabaseClient.functions.invoke(
@@ -1138,8 +1143,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         return ValidatePromoCodeResponseModel.fromJson(
@@ -1179,7 +1184,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected error validating promo code: $e');
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error validating promo code: $e');
       throw ClientException(
         message: 'Unable to validate promo code. Please try again later.',
         code: 'PROMO_VALIDATION_FAILED',
@@ -1203,7 +1209,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Creating subscription V2 - plan: $planCode, provider: $provider');
 
       // Call Supabase Edge Function
@@ -1219,8 +1225,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -1293,7 +1299,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating subscription V2: $e');
       throw ClientException(
         message: 'Unable to create subscription. Please try again later.',

@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/config/app_config.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import 'daily_verse_cache_interface.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Local caching service for daily verses using Hive for structured data
 /// and SharedPreferences for simple settings
@@ -254,9 +254,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       }
     } catch (e) {
       // Non-critical error, just log and continue
-      if (kDebugMode) {
-        print('Warning: Failed to cleanup old cache entries: $e');
-      }
+      Logger.debug('Warning: Failed to cleanup old cache entries: $e');
     }
   }
 
@@ -267,9 +265,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       await prefs.setInt(_lastFetchKey, DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       // Non-critical error
-      if (kDebugMode) {
-        print('Warning: Failed to update last fetch time: $e');
-      }
+      Logger.debug('Warning: Failed to update last fetch time: $e');
     }
   }
 

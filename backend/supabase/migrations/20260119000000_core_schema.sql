@@ -69,6 +69,10 @@ CREATE TABLE user_profiles (
   premium_trial_end_at TIMESTAMPTZ,
   has_used_premium_trial BOOLEAN DEFAULT FALSE,
 
+  -- Study preferences (added: 2026-02-18)
+  default_study_mode VARCHAR(20) DEFAULT 'recommended'
+    CHECK (default_study_mode IN ('quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended', 'ask')),
+
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

@@ -2,6 +2,7 @@ import '../models/app_language.dart';
 import '../di/injection_container.dart';
 import '../router/app_routes.dart';
 import 'language_preference_service.dart';
+import '../utils/logger.dart';
 
 /// Service to handle authentication flow redirects including language selection
 class AuthFlowService {
@@ -32,7 +33,7 @@ class AuthFlowService {
 
       return null; // No redirect needed
     } catch (e) {
-      print('Error checking post-auth redirect: $e');
+      Logger.debug('Error checking post-auth redirect: $e');
       return null; // Don't block user flow due to errors
     }
   }
@@ -42,7 +43,7 @@ class AuthFlowService {
     try {
       await _languageService.markLanguageSelectionCompleted();
     } catch (e) {
-      print('Error marking initial setup complete: $e');
+      Logger.debug('Error marking initial setup complete: $e');
     }
   }
 
@@ -58,7 +59,7 @@ class AuthFlowService {
       // Check if user has completed language selection
       return false; // If we reach here, selection is completed
     } catch (e) {
-      print('Error checking if should show language selection: $e');
+      Logger.debug('Error checking if should show language selection: $e');
       return false;
     }
   }
@@ -69,7 +70,7 @@ class AuthFlowService {
       await _languageService.saveLanguagePreference(language);
       await _languageService.markLanguageSelectionCompleted();
     } catch (e) {
-      print('Error initializing user language: $e');
+      Logger.debug('Error initializing user language: $e');
       // Still mark as completed to prevent infinite loops
       await _languageService.markLanguageSelectionCompleted();
     }

@@ -1,11 +1,11 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
 import '../datasources/learning_paths_remote_datasource.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of [LearningPathsRepository].
 class LearningPathsRepositoryImpl implements LearningPathsRepository {
@@ -71,24 +71,24 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     String language = 'en',
     bool forceRefresh = false,
   }) async {
-    debugPrint(
+    Logger.debug(
         '[LearningPathsRepo] getLearningPathDetails called for $pathId with forceRefresh: $forceRefresh');
 
     // Check cache
     if (!forceRefresh && _isDetailsCacheValid(pathId)) {
-      debugPrint(
+      Logger.debug(
           '[LearningPathsRepo] Returning cached path details (progress: ${_detailsCache[pathId]?.progressPercentage}%)');
       return Right(_detailsCache[pathId]!);
     }
 
-    debugPrint('[LearningPathsRepo] Fetching fresh path details from API...');
+    Logger.debug('[LearningPathsRepo] Fetching fresh path details from API...');
     try {
       final detail = await _remoteDataSource.getLearningPathDetails(
         pathId: pathId,
         language: language,
       );
 
-      debugPrint(
+      Logger.debug(
           '[LearningPathsRepo] Got fresh path details - progress: ${detail.progressPercentage}%');
 
       // Update cache
@@ -188,17 +188,17 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     String language = 'en',
     bool forceRefresh = false,
   }) async {
-    debugPrint(
+    Logger.debug(
         '[LearningPathsRepo] getRecommendedPath called with forceRefresh: $forceRefresh');
 
     // Check cache first (skip if forceRefresh)
     if (!forceRefresh && _isRecommendedPathCacheValid()) {
-      debugPrint(
+      Logger.debug(
           '[LearningPathsRepo] Returning cached data (progress: ${_cachedRecommendedPath?.path.progressPercentage}%)');
       return Right(_cachedRecommendedPath!);
     }
 
-    debugPrint('[LearningPathsRepo] Fetching fresh data from API...');
+    Logger.debug('[LearningPathsRepo] Fetching fresh data from API...');
     try {
       final response = await _remoteDataSource.getRecommendedPath(
         language: language,
@@ -212,7 +212,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         ));
       }
 
-      debugPrint(
+      Logger.debug(
           '[LearningPathsRepo] Got fresh data - progress: ${result.path.progressPercentage}%, reason: ${result.reason}');
 
       // Update cache

@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
 
-/// Soft paywall dialog shown at usage thresholds (30%, 50%, 80%)
+/// Soft paywall dialog shown at usage thresholds (80%, 100%)
 ///
 /// Implements psychological principles:
 /// - Loss aversion: "Don't lose your streak"
 /// - Urgency: Token count and remaining usage
-/// - Progressive disclosure: Different messaging at each threshold
 class SoftPaywallDialog extends StatelessWidget {
   final int percentage;
   final int tokensRemaining;
   final int streakDays;
+  final String userPlan;
 
   const SoftPaywallDialog({
     required this.percentage,
     required this.tokensRemaining,
     this.streakDays = 0,
+    this.userPlan = 'free',
     super.key,
   });
 
@@ -28,6 +32,7 @@ class SoftPaywallDialog extends StatelessWidget {
     required int percentage,
     required int tokensRemaining,
     int streakDays = 0,
+    String userPlan = 'free',
   }) {
     return showDialog<void>(
       context: context,
@@ -35,36 +40,34 @@ class SoftPaywallDialog extends StatelessWidget {
         percentage: percentage,
         tokensRemaining: tokensRemaining,
         streakDays: streakDays,
+        userPlan: userPlan,
       ),
     );
   }
 
+  String get _planDisplayName {
+    final name = userPlan.toLowerCase();
+    return name.substring(0, 1).toUpperCase() + name.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.orange.shade400 : Colors.orange;
+
     final String title;
     final String message;
-    final IconData icon;
-    final Color color;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (percentage >= 80) {
-      title = '⚠️ Running Low on Study Tokens';
-      message =
-          'Only $tokensRemaining tokens left today. ${streakDays > 0 ? "Don't lose your $streakDays-day streak!" : "Upgrade for unlimited access."}';
-      icon = Icons.warning_amber_rounded;
-      color = isDark ? Colors.orange.shade400 : Colors.orange;
-    } else if (percentage >= 50) {
-      title = '📊 Halfway There';
-      message =
-          'You\'ve used $percentage% of your daily tokens. Upgrade for unlimited access?';
-      icon = Icons.insights;
-      color = AppTheme.primaryColor;
+    if (percentage >= 100) {
+      title = '🚫 No Study Tokens Left';
+      message = streakDays > 0
+          ? 'You\'ve used all your tokens today. Don\'t lose your $streakDays-day streak!'
+          : 'You\'ve used all your daily study tokens. Purchase more or upgrade for unlimited access.';
     } else {
-      title = '💡 Great Progress!';
-      message =
-          'You\'ve used $percentage% of your daily study tokens. Upgrade for unlimited access?';
-      icon = Icons.lightbulb_outline;
-      color = AppTheme.primaryColor;
+      title = '⚠️ Running Low on Study Tokens';
+      message = streakDays > 0
+          ? 'Only $tokensRemaining tokens left today. Don\'t lose your $streakDays-day streak!'
+          : 'Only $tokensRemaining tokens left today. Upgrade for unlimited access.';
     }
 
     return AlertDialog(
@@ -72,7 +75,7 @@ class SoftPaywallDialog extends StatelessWidget {
       backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
       title: Row(
         children: [
-          Icon(icon, color: color, size: 28),
+          Icon(Icons.warning_amber_rounded, color: color, size: 28),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -123,39 +126,83 @@ class SoftPaywallDialog extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 12),
+          // Action buttons stacked vertically
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                final router = GoRouter.of(context);
+                Navigator.of(context).pop();
+                router.push(AppRoutes.pricing);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'See Plans',
+                style: AppFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                final router = GoRouter.of(context);
+                final tokenState = context.read<TokenBloc>().state;
+                final tokenStatus =
+                    tokenState is TokenLoaded ? tokenState.tokenStatus : null;
+                Navigator.of(context).pop();
+                router.push(AppRoutes.tokenPurchase, extra: tokenStatus);
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppTheme.primaryColor),
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Purchase Tokens',
+                style: AppFonts.inter(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Continue on $_planDisplayName',
+                style: AppFonts.inter(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.7)
+                      : Colors.grey.shade700,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Continue Free',
-            style: AppFonts.inter(
-              color:
-                  isDark ? Colors.white.withOpacity(0.7) : Colors.grey.shade700,
-            ),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            context.go(AppRoutes.pricing);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            'See Plans',
-            style: AppFonts.inter(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

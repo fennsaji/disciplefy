@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import SubscriptionPriceUpdateModal from '../modals/subscription-price-update-modal'
 
 interface PricingData {
   id: string
@@ -13,6 +14,8 @@ interface PricingData {
   region: string
   isActive: boolean
   formattedPrice: string
+  providerPlanId: string  // Added for modal
+  productId?: string  // Added for IAP
 }
 
 interface PricingEditorProps {
@@ -32,6 +35,8 @@ export default function PricingEditor({
 }: PricingEditorProps) {
   const [pricing, setPricing] = useState<PricingData[]>(initialPricing)
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedPricing, setSelectedPricing] = useState<PricingData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Group pricing by provider
   const groupedPricing = pricing.reduce((acc, p) => {
@@ -52,6 +57,23 @@ export default function PricingEditor({
     setPricing(prev => prev.map(p =>
       p.id === id ? { ...p, isActive: !p.isActive } : p
     ))
+  }
+
+  const handleEditPrice = (pricingData: PricingData) => {
+    setSelectedPricing(pricingData)
+    setIsModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setSelectedPricing(null)
+  }
+
+  const handleUpdateSuccess = () => {
+    // Trigger parent component to refresh pricing data
+    if (onSaveComplete) {
+      onSaveComplete()
+    }
   }
 
   const handleSave = async () => {
@@ -147,28 +169,21 @@ export default function PricingEditor({
     return colors[planCode] || 'bg-gray-100 text-gray-800'
   }
 
-  // Read-only view
+  // Read-only view with edit capability
   if (!isEditing) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              💰 Subscription Pricing
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Values from <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">subscription_plan_providers</code> table
-            </p>
+      <>
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                💰 Subscription Pricing
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Click "Edit" to update prices. Razorpay creates new plans automatically, IAP requires console updates.
+              </p>
+            </div>
           </div>
-          {onEditStart && (
-            <button
-              onClick={onEditStart}
-              className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90"
-            >
-              Edit Pricing
-            </button>
-          )}
-        </div>
 
         <div className="space-y-6">
           {Object.entries(groupedPricing).map(([provider, plans]) => (
@@ -186,8 +201,20 @@ export default function PricingEditor({
                         : 'border-gray-300 dark:border-gray-600 opacity-50'
                     }`}
                   >
-                    <div className={`inline-block px-2 py-1 rounded text-xs font-semibold mb-2 ${getPlanColor(p.planCode)}`}>
-                      {p.planName}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getPlanColor(p.planCode)}`}>
+                        {p.planName}
+                      </div>
+                      <button
+                        onClick={() => handleEditPrice(p)}
+                        className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                        title="Edit price"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
                     </div>
                     <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {p.formattedPrice}
@@ -203,12 +230,33 @@ export default function PricingEditor({
           ))}
         </div>
       </div>
+
+      {/* Price Update Modal */}
+      {selectedPricing && (
+        <SubscriptionPriceUpdateModal
+          planProvider={{
+            id: selectedPricing.id,
+            provider: selectedPricing.provider as 'razorpay' | 'google_play' | 'apple_appstore',
+            planName: selectedPricing.planName,
+            planCode: selectedPricing.planCode,
+            currentPriceMinor: selectedPricing.basePriceMinor,
+            currency: selectedPricing.currency,
+            providerPlanId: selectedPricing.providerPlanId || '',
+            productId: selectedPricing.productId,
+            region: selectedPricing.region
+          }}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onSuccess={handleUpdateSuccess}
+        />
+      )}
+    </>
     )
   }
 
   // Edit mode
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           💰 Edit Subscription Pricing
@@ -237,17 +285,9 @@ export default function PricingEditor({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                      {getCurrencySymbol(p.currency)}
+                      {p.formattedPrice}
+                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">/month</span>
                     </span>
-                    <input
-                      type="number"
-                      value={formatPriceInput(p.basePriceMinor, p.currency)}
-                      onChange={(e) => handlePriceChange(p.id, parsePriceInput(e.target.value, p.currency))}
-                      step={p.currency === 'INR' ? '1' : '0.01'}
-                      min="0"
-                      className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">/month</span>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input

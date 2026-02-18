@@ -10,6 +10,7 @@ import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../data/repositories/token_cost_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Bottom sheet for selecting study mode before generating a study guide.
 ///
@@ -144,13 +145,13 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
 
       result.fold(
         (failure) {
-          print(
+          Logger.warning(
               '⚠️ [MODE_SELECTION] Failed to get subscription: ${failure.message}');
           _userPlan = 'free'; // Default to free on error
         },
         (subscription) {
           _userPlan = subscription.currentPlan;
-          print('👤 [MODE_SELECTION] User plan: $_userPlan');
+          Logger.debug('👤 [MODE_SELECTION] User plan: $_userPlan');
         },
       );
 
@@ -183,7 +184,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
 
         if (shouldHide) {
           // Hide mode completely (display_mode='hide')
-          print(
+          Logger.debug(
               '🙈 [MODE_SELECTION] Mode ${mode.name} ($featureKey) hidden for plan $_userPlan');
           continue; // Skip this mode
         }
@@ -193,14 +194,14 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         _lockedModes[mode] = isLocked;
 
         if (isLocked) {
-          print(
+          Logger.info(
               '🔒 [MODE_SELECTION] Mode ${mode.name} ($featureKey) locked for plan $_userPlan');
         }
       }
 
-      print(
+      Logger.info(
           '✅ [MODE_SELECTION] Available modes: ${_availableModes.map((m) => m.name).join(", ")}');
-      print(
+      Logger.debug(
           '🔒 [MODE_SELECTION] Locked modes: ${_lockedModes.entries.where((e) => e.value).map((e) => e.key.name).join(", ")}');
 
       // If selected mode is locked or hidden, switch to first unlocked mode
@@ -213,7 +214,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
               : StudyMode.standard,
         );
         _selectedMode = firstUnlockedMode;
-        print(
+        Logger.debug(
             'ℹ️ [MODE_SELECTION] Switching to ${_selectedMode.name} (originally selected mode not accessible)');
       }
 
@@ -223,7 +224,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         });
       }
     } catch (e) {
-      print('❌ [MODE_SELECTION] Error loading feature flags: $e');
+      Logger.error('❌ [MODE_SELECTION] Error loading feature flags: $e');
       // On error, show all modes (fail open)
       _availableModes = StudyMode.values;
       if (mounted) {
@@ -252,7 +253,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         result.fold(
           (failure) {
             // Repository fallback failed - don't show cost for this mode
-            print(
+            Logger.warning(
                 '⚠️ [MODE_SELECTION] Failed to get cost for ${mode.name}: ${failure.message}');
             // Don't set cost - badge won't be shown
           },
@@ -268,7 +269,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         });
       }
     } catch (e) {
-      print('❌ [MODE_SELECTION] Error loading token costs: $e');
+      Logger.error('❌ [MODE_SELECTION] Error loading token costs: $e');
       // Don't set costs - badges won't be shown
       if (mounted) {
         setState(() {

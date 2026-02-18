@@ -136,7 +136,7 @@ export default function PracticeModesEditor({
   // Read-only view
   if (!isEditing) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -148,15 +148,15 @@ export default function PracticeModesEditor({
           </div>
           <button
             onClick={onEditStart}
-            className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Free Tier */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">Free Tier</h4>
               <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -180,7 +180,7 @@ export default function PracticeModesEditor({
           </div>
 
           {/* Paid Tier */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">Paid Tier</h4>
               <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -209,7 +209,7 @@ export default function PracticeModesEditor({
 
   // Edit mode view
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           📖 Practice Mode Availability

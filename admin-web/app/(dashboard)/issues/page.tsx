@@ -4,49 +4,31 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FeedbackTable } from '@/components/tables/feedback-table'
 import { PurchaseIssuesTable } from '@/components/tables/purchase-issues-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { TabNav } from '@/components/ui/tab-nav'
 
 type TabType = 'purchase-issues' | 'feedback'
+
+const TABS = [
+  { value: 'purchase-issues', label: 'Purchase Issues', icon: '💳' },
+  { value: 'feedback', label: 'User Feedback', icon: '💬' },
+]
 
 export default function IssuesPage() {
   const [activeTab, setActiveTab] = useState<TabType>('purchase-issues')
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">⚠️ Issues & Feedback</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Manage purchase issues and user feedback
-        </p>
-      </div>
+      <PageHeader
+        title="⚠️ Issues & Feedback"
+        description="Manage purchase issues and user feedback"
+      />
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('purchase-issues')}
-            className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-              activeTab === 'purchase-issues'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="text-lg">💳</span>
-            Purchase Issues
-          </button>
-          <button
-            onClick={() => setActiveTab('feedback')}
-            className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-              activeTab === 'feedback'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="text-lg">💬</span>
-            User Feedback
-          </button>
-        </nav>
-      </div>
+      <TabNav
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={(v) => setActiveTab(v as TabType)}
+      />
 
       {/* Tab Content */}
       <div className="mt-6">

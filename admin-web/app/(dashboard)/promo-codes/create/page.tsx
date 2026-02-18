@@ -364,7 +364,7 @@ export default function CreatePromoCodePage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary-600 disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">

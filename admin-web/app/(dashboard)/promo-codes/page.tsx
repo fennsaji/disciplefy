@@ -3,11 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { PageHeader } from '@/components/ui/page-header'
 import { StatsCard } from '@/components/ui/stats-card'
 import { PromoCodeTable } from '@/components/tables/promo-code-table'
 import { listPromoCodes, togglePromoCode } from '@/lib/api/admin'
 import { formatCompactNumber } from '@/lib/utils/date'
 import type { PromoCodeCampaign } from '@/types/admin'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
 
 export default function PromoCodesPage() {
   const router = useRouter()
@@ -52,53 +55,40 @@ export default function PromoCodesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Promotional Campaigns</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Create and manage promotional codes for user acquisition and retention
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push('/promo-codes/create')}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <PageHeader
+        title="Promotional Campaigns"
+        description="Create and manage promotional codes for user acquisition and retention"
+        actions={
+          <button
+            type="button"
+            onClick={() => router.push('/promo-codes/create')}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Create Promo Code
-        </button>
-      </div>
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Create Promo Code
+          </button>
+        }
+      />
 
       {/* Error State */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-300">
-          <p className="font-medium">Error loading promo codes</p>
-          <p className="mt-1 text-sm">{error instanceof Error ? error.message : 'Unknown error'}</p>
-        </div>
+        <ErrorState title="Error loading promo codes" message={error instanceof Error ? error.message : 'Unknown error'} />
       )}
 
       {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading promo codes...</p>
-          </div>
-        </div>
-      )}
+      {isLoading && <LoadingState label="Loading promo codes..." />}
 
       {/* Stats Cards */}
       {stats && (

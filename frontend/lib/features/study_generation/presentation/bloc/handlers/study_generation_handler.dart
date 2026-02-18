@@ -6,6 +6,7 @@ import '../../../../../core/utils/error_message_sanitizer.dart';
 import '../../../domain/usecases/generate_study_guide.dart';
 import '../study_event.dart';
 import '../study_state.dart';
+import '../../../../../core/utils/logger.dart';
 
 /// Handler for study guide generation logic.
 ///
@@ -26,7 +27,7 @@ class StudyGenerationHandler {
     GenerateStudyGuideRequested event,
     Emitter<StudyState> emit,
   ) async {
-    print('🚨 [STUDY_BLOC] Starting study generation handling');
+    Logger.debug('🚨 [STUDY_BLOC] Starting study generation handling');
     emit(const StudyGenerationInProgress());
 
     try {
@@ -41,7 +42,7 @@ class StudyGenerationHandler {
 
       result.fold(
         (failure) {
-          print(
+          Logger.error(
               '🚨 [STUDY_BLOC] Emitting StudyGenerationFailure: ${failure.runtimeType} - ${failure.message}');
 
           // SECURITY FIX: Sanitize error message before exposing to user
@@ -57,7 +58,7 @@ class StudyGenerationHandler {
           ));
         },
         (studyGuide) {
-          print('🚨 [STUDY_BLOC] Emitting StudyGenerationSuccess');
+          Logger.debug('🚨 [STUDY_BLOC] Emitting StudyGenerationSuccess');
           emit(StudyGenerationSuccess(
             studyGuide: studyGuide,
             generatedAt: DateTime.now(),

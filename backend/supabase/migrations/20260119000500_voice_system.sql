@@ -428,79 +428,7 @@ COMMENT ON FUNCTION check_voice_quota() IS
   'Checks if authenticated user can start a new voice conversation based on MONTHLY tier quota from database (subscription_plans.features.voice_conversations_monthly)';
 
 -- -----------------------------------------------------
--- 2.3 Increment Voice Usage
--- -----------------------------------------------------
--- Fix: 20251124000001 - Made parameterless (uses auth.uid())
-
-CREATE OR REPLACE FUNCTION increment_voice_usage()
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO public, pg_catalog
-AS $$
-DECLARE
-  v_user_id UUID;
-  v_tier TEXT;
-  v_language TEXT;
-  v_current_month TEXT;
-BEGIN
-  -- Get current user ID from auth context
-  v_user_id := auth.uid();
-
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'User not authenticated';
-  END IF;
-
-  -- Get user's subscription tier
-  v_tier := get_user_subscription_tier(v_user_id);
-
-  -- Default language (will be updated when conversation is created)
-  v_language := 'en-US';
-
-  -- Get current month for monthly tracking
-  v_current_month := to_char(CURRENT_DATE, 'YYYY-MM');
-
-  INSERT INTO voice_usage_tracking (
-    user_id,
-    usage_date,
-    month_year,
-    tier_at_time,
-    daily_quota_limit,
-    daily_quota_used,
-    conversations_started,
-    monthly_conversations_started,
-    language_usage
-  )
-  VALUES (
-    v_user_id,
-    CURRENT_DATE,
-    v_current_month,
-    v_tier,
-    CASE
-      WHEN v_tier = 'free' THEN 0
-      WHEN v_tier = 'standard' THEN 10
-      WHEN v_tier = 'plus' THEN 10
-      WHEN v_tier = 'premium' THEN -1
-    END,
-    1,
-    1,
-    1,
-    jsonb_build_object(v_language, 1)
-  )
-  ON CONFLICT (user_id, usage_date)
-  DO UPDATE SET
-    daily_quota_used = voice_usage_tracking.daily_quota_used + 1,
-    conversations_started = voice_usage_tracking.conversations_started + 1,
-    monthly_conversations_started = voice_usage_tracking.monthly_conversations_started + 1,
-    updated_at = NOW();
-END;
-$$;
-
-COMMENT ON FUNCTION increment_voice_usage() IS
-  'Increments daily and monthly voice usage count when authenticated user starts a conversation';
-
--- -----------------------------------------------------
--- 2.4 Complete Voice Conversation
+-- 2.3 Complete Voice Conversation
 -- -----------------------------------------------------
 -- Fix: 20251128000008 - Added feedback params, auto-calculate duration, auth checks
 
@@ -770,88 +698,14 @@ COMMENT ON FUNCTION get_voice_conversation_history IS
   'Returns paginated conversation history with messages for authenticated user';
 
 -- -----------------------------------------------------
--- 2.7 Get or Create Monthly Voice Usage
+-- 2.7 Check and Increment Voice Quota (Atomic - Server-Side Enforcement)
 -- -----------------------------------------------------
--- Fix: 20260116000002 - NEW function for monthly tracking
+-- Called by the voice-conversation edge function (service role) on the first
+-- message of each conversation. Atomically checks the monthly limit and
+-- increments the counter in a single transaction, preventing TOCTOU races
+-- and bypasses from direct API calls.
 
-CREATE OR REPLACE FUNCTION get_or_create_monthly_voice_usage(
-  p_user_id UUID,
-  p_tier TEXT
-)
-RETURNS voice_usage_tracking
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO public, pg_catalog
-AS $$
-DECLARE
-  v_current_month TEXT;
-  v_usage_record voice_usage_tracking;
-  v_daily_quota_limit INTEGER;
-BEGIN
-  v_current_month := to_char(CURRENT_DATE, 'YYYY-MM');
-
-  -- Try to get existing record for current month
-  SELECT * INTO v_usage_record
-  FROM voice_usage_tracking
-  WHERE user_id = p_user_id
-    AND month_year = v_current_month;
-
-  -- If no record exists, create one
-  IF NOT FOUND THEN
-    -- Determine daily quota limit based on tier
-    v_daily_quota_limit := CASE
-      WHEN p_tier = 'premium' THEN -1  -- Unlimited
-      WHEN p_tier = 'plus' THEN 10
-      WHEN p_tier = 'standard' THEN 10
-      ELSE 0  -- free
-    END;
-
-    INSERT INTO voice_usage_tracking (
-      user_id,
-      usage_date,
-      month_year,
-      tier_at_time,
-      conversations_started,
-      conversations_completed,
-      monthly_conversations_started,
-      monthly_conversations_completed,
-      total_messages_sent,
-      total_messages_received,
-      total_conversation_seconds,
-      total_audio_seconds,
-      language_usage,
-      daily_quota_limit,
-      daily_quota_used,
-      quota_exceeded
-    ) VALUES (
-      p_user_id,
-      CURRENT_DATE,
-      v_current_month,
-      p_tier,
-      0, 0,  -- daily conversations
-      0, 0,  -- monthly conversations
-      0, 0, 0, 0,  -- message and time tracking
-      '{}'::jsonb,  -- language_usage
-      v_daily_quota_limit,
-      0,
-      FALSE
-    )
-    RETURNING * INTO v_usage_record;
-  END IF;
-
-  RETURN v_usage_record;
-END;
-$$;
-
-COMMENT ON FUNCTION get_or_create_monthly_voice_usage IS
-  'Atomically gets or creates a monthly voice usage tracking record for a user';
-
--- -----------------------------------------------------
--- 2.8 Check Monthly Voice Conversation Limit
--- -----------------------------------------------------
--- Fix: 20260116000002 - NEW function for explicit monthly limit checking
-
-CREATE OR REPLACE FUNCTION check_monthly_voice_conversation_limit(
+CREATE OR REPLACE FUNCTION check_and_increment_voice_quota(
   p_user_id UUID,
   p_tier TEXT
 )
@@ -861,148 +715,89 @@ SECURITY DEFINER
 SET search_path TO public, pg_catalog
 AS $$
 DECLARE
-  v_current_month TEXT;
-  v_conversations_used INTEGER;
   v_limit INTEGER;
-  v_remaining INTEGER;
-  v_can_start BOOLEAN;
+  v_current INTEGER;
+  v_current_month TEXT;
 BEGIN
   v_current_month := to_char(CURRENT_DATE, 'YYYY-MM');
 
-  -- Set limit based on tier (matches new monthly limits)
-  v_limit := CASE
-    WHEN p_tier = 'premium' THEN -1  -- Unlimited
-    WHEN p_tier = 'plus' THEN 10
-    WHEN p_tier = 'standard' THEN 3
-    ELSE 1  -- free
-  END;
+  -- Serialize concurrent calls for the same user to prevent TOCTOU
+  PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text));
 
-  -- Premium users bypass limit
+  -- Get monthly limit from subscription_plans (single source of truth)
+  SELECT COALESCE((features->>'voice_conversations_monthly')::INTEGER, 0)
+  INTO v_limit
+  FROM subscription_plans
+  WHERE plan_code = p_tier AND is_active = true;
+
+  v_limit := COALESCE(v_limit, 0);
+
+  -- Premium: unlimited, no tracking needed
   IF v_limit = -1 THEN
     RETURN jsonb_build_object(
-      'can_start', TRUE,
-      'conversations_used', 0,
-      'limit', -1,
-      'remaining', -1,
-      'tier', p_tier,
-      'month', v_current_month
+      'can_start', TRUE, 'conversations_used', 0, 'limit', -1, 'remaining', -1
     );
   END IF;
 
-  -- Get current month's usage
-  SELECT COALESCE(monthly_conversations_started, 0)
-  INTO v_conversations_used
-  FROM voice_usage_tracking
-  WHERE user_id = p_user_id
-    AND month_year = v_current_month;
-
-  -- If no record, user hasn't started any conversations this month
-  IF NOT FOUND THEN
-    v_conversations_used := 0;
+  -- Feature disabled for this tier
+  IF v_limit = 0 THEN
+    RETURN jsonb_build_object(
+      'can_start', FALSE, 'conversations_used', 0, 'limit', 0, 'remaining', 0
+    );
   END IF;
 
-  -- Calculate remaining and determine if user can start new conversation
-  v_remaining := GREATEST(0, v_limit - v_conversations_used);
-  v_can_start := v_conversations_used < v_limit;
+  -- Get current month's total usage (sum across all daily rows)
+  SELECT COALESCE(SUM(daily_quota_used), 0)
+  INTO v_current
+  FROM voice_usage_tracking
+  WHERE user_id = p_user_id
+    AND usage_date >= DATE_TRUNC('month', CURRENT_DATE)::DATE
+    AND usage_date <= (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month' - INTERVAL '1 day')::DATE;
+
+  -- Already at or over limit: reject
+  IF v_current >= v_limit THEN
+    RETURN jsonb_build_object(
+      'can_start', FALSE,
+      'conversations_used', v_current,
+      'limit', v_limit,
+      'remaining', 0
+    );
+  END IF;
+
+  -- Under limit: atomically increment the daily row
+  INSERT INTO voice_usage_tracking (
+    user_id, usage_date, month_year, tier_at_time,
+    daily_quota_limit, daily_quota_used, conversations_started,
+    monthly_conversations_started, language_usage
+  )
+  VALUES (
+    p_user_id, CURRENT_DATE, v_current_month, p_tier,
+    v_limit, 1, 1, 1, '{}'::jsonb
+  )
+  ON CONFLICT (user_id, usage_date)
+  DO UPDATE SET
+    daily_quota_used = voice_usage_tracking.daily_quota_used + 1,
+    conversations_started = voice_usage_tracking.conversations_started + 1,
+    monthly_conversations_started = voice_usage_tracking.monthly_conversations_started + 1,
+    updated_at = NOW();
 
   RETURN jsonb_build_object(
-    'can_start', v_can_start,
-    'conversations_used', v_conversations_used,
+    'can_start', TRUE,
+    'conversations_used', v_current + 1,
     'limit', v_limit,
-    'remaining', v_remaining,
-    'tier', p_tier,
-    'month', v_current_month
+    'remaining', GREATEST(0, v_limit - v_current - 1)
   );
 END;
 $$;
 
-COMMENT ON FUNCTION check_monthly_voice_conversation_limit IS
-  'Checks if a user can start a new voice conversation based on their tier and monthly usage. Returns JSON with can_start flag, usage stats, and remaining conversations. Tier limits: Free=1, Standard=3, Plus=10, Premium=unlimited per month.';
+COMMENT ON FUNCTION check_and_increment_voice_quota IS
+  'Atomically checks monthly voice quota and increments counter in one transaction. '
+  'Called by the voice-conversation edge function (service role) on the first message '
+  'of a new conversation. Uses advisory lock to prevent TOCTOU race conditions. '
+  'p_user_id must be provided explicitly since this runs under service role.';
 
--- -----------------------------------------------------
--- 2.9 Reset Monthly Voice Limits (Cron Job Function)
--- -----------------------------------------------------
--- NEW: Function for automated monthly reset via pg_cron
-
-CREATE OR REPLACE FUNCTION reset_monthly_voice_limits()
-RETURNS INTEGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO public, pg_catalog
-AS $$
-DECLARE
-  v_users_reset INTEGER := 0;
-  v_new_month TEXT;
-  v_user_record RECORD;
-BEGIN
-  v_new_month := to_char(CURRENT_DATE, 'YYYY-MM');
-
-  -- For each user who has voice usage tracking records
-  FOR v_user_record IN
-    SELECT DISTINCT user_id, tier_at_time
-    FROM voice_usage_tracking
-    WHERE month_year != v_new_month
-  LOOP
-    -- Create new monthly record with reset counters
-    INSERT INTO voice_usage_tracking (
-      user_id,
-      usage_date,
-      month_year,
-      tier_at_time,
-      conversations_started,
-      conversations_completed,
-      monthly_conversations_started,
-      monthly_conversations_completed,
-      total_messages_sent,
-      total_messages_received,
-      total_conversation_seconds,
-      total_audio_seconds,
-      language_usage,
-      daily_quota_limit,
-      daily_quota_used,
-      quota_exceeded
-    ) VALUES (
-      v_user_record.user_id,
-      CURRENT_DATE,
-      v_new_month,
-      v_user_record.tier_at_time,
-      0, 0,  -- daily conversations reset
-      0, 0,  -- monthly conversations reset
-      0, 0, 0, 0,  -- message and time tracking reset
-      '{}'::jsonb,
-      CASE
-        WHEN v_user_record.tier_at_time = 'premium' THEN -1
-        WHEN v_user_record.tier_at_time = 'plus' THEN 10
-        WHEN v_user_record.tier_at_time = 'standard' THEN 10
-        ELSE 0
-      END,
-      0,
-      FALSE
-    )
-    ON CONFLICT (user_id, usage_date) DO NOTHING;
-
-    v_users_reset := v_users_reset + 1;
-  END LOOP;
-
-  RAISE NOTICE 'Reset monthly voice limits for % users for month %', v_users_reset, v_new_month;
-  RETURN v_users_reset;
-END;
-$$;
-
-COMMENT ON FUNCTION reset_monthly_voice_limits IS
-  'Resets monthly voice conversation limits for all users. Should be called on 1st of every month via pg_cron.
-
-  CRON SETUP REQUIRED:
-  Run: backend/supabase/scripts/backup/setup_monthly_voice_reset_cron.sh
-
-  Or manually:
-  SELECT cron.schedule(
-    ''reset-monthly-voice-limits'',
-    ''0 0 1 * *'',  -- 1st of month at midnight UTC
-    $$SELECT reset_monthly_voice_limits();$$
-  );
-
-  Manual execution: SELECT reset_monthly_voice_limits();';
+-- Grant to service_role only (called from edge function with service key)
+GRANT EXECUTE ON FUNCTION check_and_increment_voice_quota TO service_role;
 
 -- =====================================================
 -- PART 3: TRIGGERS
@@ -1153,13 +948,9 @@ CREATE POLICY "Users can update own preferences"
 
 GRANT EXECUTE ON FUNCTION get_user_subscription_tier TO authenticated, anon, service_role;
 GRANT EXECUTE ON FUNCTION check_voice_quota TO authenticated, anon, service_role;
-GRANT EXECUTE ON FUNCTION increment_voice_usage TO authenticated, anon, service_role;
 GRANT EXECUTE ON FUNCTION complete_voice_conversation TO authenticated, anon, service_role;
 GRANT EXECUTE ON FUNCTION get_voice_preferences TO authenticated, anon, service_role;
 GRANT EXECUTE ON FUNCTION get_voice_conversation_history TO authenticated, anon, service_role;
-GRANT EXECUTE ON FUNCTION get_or_create_monthly_voice_usage TO authenticated, anon, service_role;
-GRANT EXECUTE ON FUNCTION check_monthly_voice_conversation_limit TO authenticated, anon, service_role;
-GRANT EXECUTE ON FUNCTION reset_monthly_voice_limits TO service_role; -- Only service_role for cron
 
 -- =====================================================
 -- PART 6: DATA FIXES
@@ -1218,11 +1009,11 @@ BEGIN
   END IF;
 
   -- Verify functions
-  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'reset_monthly_voice_limits') THEN
-    RAISE EXCEPTION 'Migration failed: reset_monthly_voice_limits function not created';
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'check_and_increment_voice_quota') THEN
+    RAISE EXCEPTION 'Migration failed: check_and_increment_voice_quota function not created';
   END IF;
 
-  RAISE NOTICE 'Migration 0006_voice_system.sql completed successfully - 4 tables, 9 functions';
+  RAISE NOTICE 'Migration 0006_voice_system.sql completed successfully - 4 tables, 6 functions';
 END $$;
 
 -- =====================================================
@@ -1239,17 +1030,17 @@ SET
   updated_at = NOW()
 WHERE plan_code = 'free';
 
--- Standard Plan: 10 conversations/month
+-- Standard Plan: 3 conversations/month
 UPDATE public.subscription_plans
 SET
-  features = features || '{"voice_conversations_monthly": 10}'::jsonb,
+  features = features || '{"voice_conversations_monthly": 3}'::jsonb,
   updated_at = NOW()
 WHERE plan_code = 'standard';
 
--- Plus Plan: 15 conversations/month
+-- Plus Plan: 10 conversations/month
 UPDATE public.subscription_plans
 SET
-  features = features || '{"voice_conversations_monthly": 15}'::jsonb,
+  features = features || '{"voice_conversations_monthly": 10}'::jsonb,
   updated_at = NOW()
 WHERE plan_code = 'plus';
 
@@ -1261,16 +1052,3 @@ SET
 WHERE plan_code = 'premium';
 
 COMMIT;
-
--- =====================================================
--- POST-MIGRATION SETUP REQUIRED
--- =====================================================
---
--- IMPORTANT: After this migration, you MUST setup the monthly
--- voice limit reset cron job by running:
---
---   backend/supabase/scripts/backup/setup_monthly_voice_reset_cron.sh
---
--- This schedules reset_monthly_voice_limits() to run automatically
--- on the 1st of every month at 00:00 UTC.
--- =====================================================

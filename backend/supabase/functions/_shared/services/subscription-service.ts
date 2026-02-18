@@ -528,6 +528,7 @@ export class SubscriptionService {
     try {
       // Create Razorpay customer
       const customer = await this.razorpay.customers.create({
+        name: authUser.user.user_metadata?.full_name || authUser.user.email,
         email: authUser.user.email,
         notes: {
           user_id: userId
@@ -647,7 +648,7 @@ export class SubscriptionService {
     }
 
     try {
-      await this.razorpay.subscriptions.cancel(razorpaySubscriptionId, cancelAtCycleEnd ? 1 : 0)
+      await this.razorpay.subscriptions.cancel(razorpaySubscriptionId, cancelAtCycleEnd)
 
       console.log('[SubscriptionService] Razorpay subscription cancelled:', razorpaySubscriptionId)
     } catch (error: any) {
@@ -677,9 +678,9 @@ export class SubscriptionService {
     }
 
     try {
-      // Call cancel endpoint with 0 to remove the cancel_at_cycle_end flag
-      // This is the same API used to cancel, but with 0 it resumes the subscription
-      await this.razorpay.subscriptions.cancel(razorpaySubscriptionId, 0)
+      // Call cancel endpoint with false to remove the cancel_at_cycle_end flag
+      // This is the same API used to cancel, but with false it resumes the subscription
+      await this.razorpay.subscriptions.cancel(razorpaySubscriptionId, false)
 
       console.log('[SubscriptionService] Razorpay subscription resumed:', razorpaySubscriptionId)
     } catch (error: any) {

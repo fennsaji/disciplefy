@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/user_profile_entity.dart';
@@ -6,6 +5,7 @@ import '../../domain/repositories/user_profile_repository.dart';
 import '../../../auth/domain/exceptions/auth_exceptions.dart'
     as auth_exceptions;
 import '../models/user_profile_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Supabase implementation of UserProfileRepository
 /// Handles all user profile database operations
@@ -27,9 +27,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
       return UserProfileModel.fromMap(response).toEntity();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error getting user profile: $e');
-      }
+      Logger.debug('Error getting user profile: $e');
       return null;
     }
   }
@@ -40,9 +38,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       final profileModel = UserProfileModel.fromEntity(profile);
       await _supabase.from('user_profiles').upsert(profileModel.toMap());
     } catch (e) {
-      if (kDebugMode) {
-        print('Error upserting user profile: $e');
-      }
+      Logger.debug('Error upserting user profile: $e');
       throw const auth_exceptions.AuthenticationFailedException(
           'Failed to update user profile');
     }
@@ -54,9 +50,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       // Delete user profile (cascade will handle related data)
       await _supabase.from('user_profiles').delete().eq('id', userId);
     } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting user profile: $e');
-      }
+      Logger.debug('Error deleting user profile: $e');
       throw const auth_exceptions.AuthenticationFailedException(
           'Failed to delete user profile');
     }
@@ -68,9 +62,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       final profile = await getUserProfile(userId);
       return profile?.isAdmin ?? false;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error checking admin status: $e');
-      }
+      Logger.debug('Error checking admin status: $e');
       return false;
     }
   }
@@ -84,9 +76,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', userId);
     } catch (e) {
-      if (kDebugMode) {
-        print('Error updating language preference: $e');
-      }
+      Logger.debug('Error updating language preference: $e');
       throw const auth_exceptions.AuthenticationFailedException(
           'Failed to update language preference');
     }
@@ -100,9 +90,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', userId);
     } catch (e) {
-      if (kDebugMode) {
-        print('Error updating theme preference: $e');
-      }
+      Logger.debug('Error updating theme preference: $e');
       throw const auth_exceptions.AuthenticationFailedException(
           'Failed to update theme preference');
     }

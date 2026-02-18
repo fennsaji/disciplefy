@@ -4,13 +4,15 @@ import 'dart:html' as html;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:js' as js;
 import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 
 class PaymentServiceWeb {
   /// Ensure Razorpay script is loaded and available
   static void ensureRazorpayLoaded() {
     if (kDebugMode) {
       final hasRazorpay = js.context.hasProperty('Razorpay');
-      print('[PaymentService] Web: Checking if Razorpay exists: $hasRazorpay');
+      Logger.debug(
+          '[PaymentService] Web: Checking if Razorpay exists: $hasRazorpay');
     }
   }
 
@@ -18,19 +20,13 @@ class PaymentServiceWeb {
   static Future<void> loadRazorpayScript() async {
     // Check if Razorpay is already loaded
     if (js.context.hasProperty('Razorpay')) {
-      if (kDebugMode) {
-        print('[PaymentService] Web: Razorpay already loaded');
-      }
+      Logger.debug('[PaymentService] Web: Razorpay already loaded');
       final razorpay = js.context['Razorpay'];
-      if (kDebugMode) {
-        print('[PaymentService] Web: Razorpay object: $razorpay');
-      }
+      Logger.debug('[PaymentService] Web: Razorpay object: $razorpay');
       return;
     }
 
-    if (kDebugMode) {
-      print('[PaymentService] Web: Loading Razorpay script...');
-    }
+    Logger.debug('[PaymentService] Web: Loading Razorpay script...');
 
     // Create and load Razorpay script
     final script = html.ScriptElement();
@@ -42,36 +38,30 @@ class PaymentServiceWeb {
 
     // Wait for script to load
     await script.onLoad.first;
-    if (kDebugMode) {
-      print('[PaymentService] Web: Razorpay script loaded');
-    }
+    Logger.debug('[PaymentService] Web: Razorpay script loaded');
 
     // Add delay to ensure script is fully initialized
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (kDebugMode) {
       final hasRazorpay = js.context.hasProperty('Razorpay');
-      print(
+      Logger.info(
           '[PaymentService] Web: After loading - Razorpay exists: $hasRazorpay');
     }
 
-    if (kDebugMode) {
-      print('[PaymentService] Web: ✅ Razorpay script initialization complete');
-    }
+    Logger.debug(
+        '[PaymentService] Web: ✅ Razorpay script initialization complete');
   }
 
   /// Check if Razorpay is available in browser
   static bool isRazorpayAvailable() {
     final hasRazorpay = js.context.hasProperty('Razorpay');
-    if (kDebugMode) {
-      print('[PaymentService] Web: Razorpay availability check: $hasRazorpay');
-    }
+    Logger.debug(
+        '[PaymentService] Web: Razorpay availability check: $hasRazorpay');
 
     if (hasRazorpay) {
       final razorpayObj = js.context['Razorpay'];
-      if (kDebugMode) {
-        print('[PaymentService] Web: Razorpay object: $razorpayObj');
-      }
+      Logger.debug('[PaymentService] Web: Razorpay object: $razorpayObj');
     }
 
     return hasRazorpay;

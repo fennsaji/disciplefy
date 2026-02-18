@@ -140,7 +140,7 @@ export default function ExportLearningPathsPage() {
             <button
               onClick={handleExport}
               disabled={selectedPaths.size === 0 || isExporting}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
                 className="h-5 w-5"

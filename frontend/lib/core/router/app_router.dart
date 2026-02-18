@@ -35,6 +35,7 @@ import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import '../../features/tokens/presentation/pages/token_usage_history_page.dart';
 import '../../features/tokens/domain/entities/token_status.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
+import '../../features/subscription/presentation/pages/plus_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/standard_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
 import '../../features/subscription/presentation/pages/subscription_payment_history_page.dart';
@@ -267,6 +268,14 @@ class AppRouter {
         builder: (context, state) => BlocProvider(
           create: (context) => sl<SubscriptionBloc>(),
           child: const PremiumUpgradePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.plusUpgrade,
+        name: 'plus_upgrade',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const PlusUpgradePage(),
         ),
       ),
       GoRoute(

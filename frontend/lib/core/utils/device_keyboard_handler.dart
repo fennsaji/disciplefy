@@ -1,5 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'logger.dart';
 
 /// Utility class for detecting devices that need custom keyboard handling
 /// to resolve keyboard shadow issues on specific Android OEMs.
@@ -26,15 +27,13 @@ class DeviceKeyboardHandler {
       _needsCustomHandling = await _determineCustomHandlingNeeded();
 
       if (kDebugMode) {
-        print(
+        Logger.debug(
             '🔧 [DEVICE KEYBOARD] Initialized for ${_androidInfo!.manufacturer} ${_androidInfo!.model}');
-        print(
+        Logger.debug(
             '🔧 [DEVICE KEYBOARD] Custom handling needed: $_needsCustomHandling');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🚨 [DEVICE KEYBOARD] Failed to initialize: $e');
-      }
+      Logger.debug('🚨 [DEVICE KEYBOARD] Failed to initialize: $e');
       _needsCustomHandling = false;
     }
   }
@@ -93,9 +92,8 @@ class DeviceKeyboardHandler {
     if (manufacturer.contains('samsung')) {
       // Galaxy S series, Note series, A series are most affected
       if (model.contains('galaxy') || model.contains('sm-')) {
-        if (kDebugMode) {
-          print('🔧 [DEVICE KEYBOARD] Samsung Galaxy device detected: $model');
-        }
+        Logger.debug(
+            '🔧 [DEVICE KEYBOARD] Samsung Galaxy device detected: $model');
         return true;
       }
     }
@@ -103,9 +101,7 @@ class DeviceKeyboardHandler {
     // Xiaomi/Redmi devices with MIUI
     if (manufacturer.contains('xiaomi') || manufacturer.contains('redmi')) {
       // Most Xiaomi devices with MIUI have keyboard issues
-      if (kDebugMode) {
-        print('🔧 [DEVICE KEYBOARD] Xiaomi/Redmi device detected: $model');
-      }
+      Logger.debug('🔧 [DEVICE KEYBOARD] Xiaomi/Redmi device detected: $model');
       return true;
     }
 
@@ -115,34 +111,26 @@ class DeviceKeyboardHandler {
       if (model.contains('oneplus') ||
           model.contains('op') ||
           model.contains('cph')) {
-        if (kDebugMode) {
-          print('🔧 [DEVICE KEYBOARD] OnePlus device detected: $model');
-        }
+        Logger.debug('🔧 [DEVICE KEYBOARD] OnePlus device detected: $model');
         return true;
       }
     }
 
     // Realme devices (similar to OnePlus/OPPO issues)
     if (manufacturer.contains('realme') || manufacturer.contains('oppo')) {
-      if (kDebugMode) {
-        print('🔧 [DEVICE KEYBOARD] Realme/OPPO device detected: $model');
-      }
+      Logger.debug('🔧 [DEVICE KEYBOARD] Realme/OPPO device detected: $model');
       return true;
     }
 
     // Vivo devices (similar keyboard handling issues)
     if (manufacturer.contains('vivo')) {
-      if (kDebugMode) {
-        print('🔧 [DEVICE KEYBOARD] Vivo device detected: $model');
-      }
+      Logger.debug('🔧 [DEVICE KEYBOARD] Vivo device detected: $model');
       return true;
     }
 
     // Honor devices (Huawei-based)
     if (manufacturer.contains('honor') || manufacturer.contains('huawei')) {
-      if (kDebugMode) {
-        print('🔧 [DEVICE KEYBOARD] Honor/Huawei device detected: $model');
-      }
+      Logger.debug('🔧 [DEVICE KEYBOARD] Honor/Huawei device detected: $model');
       return true;
     }
 
@@ -161,19 +149,15 @@ class DeviceKeyboardHandler {
 
       for (final pattern in problematicPatterns) {
         if (model.contains(pattern)) {
-          if (kDebugMode) {
-            print(
-                '🔧 [DEVICE KEYBOARD] Problematic model pattern detected: $pattern in $model');
-          }
+          Logger.debug(
+              '🔧 [DEVICE KEYBOARD] Problematic model pattern detected: $pattern in $model');
           return true;
         }
       }
     }
 
-    if (kDebugMode) {
-      print(
-          '🔧 [DEVICE KEYBOARD] No custom handling needed for: $manufacturer $model');
-    }
+    Logger.debug(
+        '🔧 [DEVICE KEYBOARD] No custom handling needed for: $manufacturer $model');
     return false;
   }
 

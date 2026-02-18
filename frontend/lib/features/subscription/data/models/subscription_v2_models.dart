@@ -47,6 +47,10 @@ class SubscriptionPlanModel {
   final int tier;
   final String interval;
   final Map<String, dynamic> features;
+
+  /// Human-readable feature bullets from DB (marketer-written copy).
+  /// When non-empty, used directly in UI instead of computed feature strings.
+  final List<String> marketingFeatures;
   final String? description;
   final int sortOrder;
   final PlanPricingModel pricing;
@@ -58,12 +62,18 @@ class SubscriptionPlanModel {
     required this.tier,
     required this.interval,
     required this.features,
+    this.marketingFeatures = const [],
     this.description,
     required this.sortOrder,
     required this.pricing,
   });
 
   factory SubscriptionPlanModel.fromJson(Map<String, dynamic> json) {
+    final rawMarketing = json['marketing_features'];
+    final marketingFeatures = rawMarketing is List
+        ? rawMarketing.whereType<String>().toList()
+        : <String>[];
+
     return SubscriptionPlanModel(
       planId: json['plan_id'] as String,
       planCode: json['plan_code'] as String,
@@ -71,6 +81,7 @@ class SubscriptionPlanModel {
       tier: json['tier'] as int,
       interval: json['interval'] as String,
       features: json['features'] as Map<String, dynamic>,
+      marketingFeatures: marketingFeatures,
       description: json['description'] as String?,
       sortOrder: json['sort_order'] as int,
       pricing:

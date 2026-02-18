@@ -5,60 +5,32 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { SecurityEventsTable } from '@/components/tables/security-events-table'
 import { AdminLogsTable } from '@/components/tables/admin-logs-table'
 import { UsageAlertsTable } from '@/components/tables/usage-alerts-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { TabNav } from '@/components/ui/tab-nav'
 
 type TabType = 'security-events' | 'admin-logs' | 'usage-alerts'
+
+const TABS = [
+  { value: 'security-events', label: 'LLM Security Events', icon: '⚠️' },
+  { value: 'admin-logs', label: 'Admin Activity Logs', icon: '📋' },
+  { value: 'usage-alerts', label: 'Usage Alerts', icon: '🔔' },
+]
 
 export default function SecurityDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('security-events')
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">🔒 Security Dashboard</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Monitor security events, admin activity, and usage alerts
-        </p>
-      </div>
+      <PageHeader
+        title="🔒 Security Dashboard"
+        description="Monitor security events, admin activity, and usage alerts"
+      />
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('security-events')}
-            className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-              activeTab === 'security-events'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="text-lg">⚠️</span>
-            LLM Security Events
-          </button>
-          <button
-            onClick={() => setActiveTab('admin-logs')}
-            className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-              activeTab === 'admin-logs'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="text-lg">📋</span>
-            Admin Activity Logs
-          </button>
-          <button
-            onClick={() => setActiveTab('usage-alerts')}
-            className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-              activeTab === 'usage-alerts'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="text-lg">🔔</span>
-            Usage Alerts
-          </button>
-        </nav>
-      </div>
+      <TabNav
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={(v) => setActiveTab(v as TabType)}
+      />
 
       {/* Tab Content */}
       <div className="mt-6">

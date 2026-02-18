@@ -186,7 +186,7 @@ export class RazorpayProvider extends PaymentProvider {
         cancel_at_cycle_end: cancelAtCycleEnd
       })
 
-      await this.razorpay.subscriptions.cancel(providerSubscriptionId, cancelAtCycleEnd ? 1 : 0)
+      await this.razorpay.subscriptions.cancel(providerSubscriptionId, cancelAtCycleEnd)
 
       console.log('[RazorpayProvider] Subscription cancelled successfully')
     } catch (error: unknown) {

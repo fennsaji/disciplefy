@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'scripture_verse_sheet.dart';
 import '../../core/constants/bible_books.dart';
+import '../../core/utils/logger.dart';
 
 /// A widget that renders markdown content with clickable scripture references
 /// Supports both block-level markdown (headings, lists) and inline markdown
@@ -105,7 +106,7 @@ class MarkdownWithScripture extends StatelessWidget {
           );
         } else if (href != null) {
           // Handle regular links if any
-          debugPrint('Regular link tapped: $href');
+          Logger.debug('Regular link tapped: $href');
         }
       },
     );

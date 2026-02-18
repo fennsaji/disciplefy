@@ -99,6 +99,12 @@ class MemoryVerseRemoteDataSource {
           message: 'This verse is already in your memory deck',
           code: 'VERSE_ALREADY_EXISTS',
         );
+      } else if (response.statusCode == 403) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final errorCode = jsonData['error']?['code'] as String? ?? 'FORBIDDEN';
+        final errorMessage = jsonData['error']?['message'] as String? ??
+            'You have reached your verse limit. Upgrade to add more.';
+        throw ServerException(message: errorMessage, code: errorCode);
       } else if (response.statusCode == 404) {
         throw const ServerException(
           message: 'Daily verse not found',
@@ -145,6 +151,12 @@ class MemoryVerseRemoteDataSource {
           message: 'This verse is already in your memory deck',
           code: 'VERSE_ALREADY_EXISTS',
         );
+      } else if (response.statusCode == 403) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final errorCode = jsonData['error']?['code'] as String? ?? 'FORBIDDEN';
+        final errorMessage = jsonData['error']?['message'] as String? ??
+            'You have reached your verse limit. Upgrade to add more.';
+        throw ServerException(message: errorMessage, code: errorCode);
       } else {
         _errorHandler.handleErrorResponse(response);
       }

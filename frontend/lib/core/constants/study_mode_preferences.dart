@@ -36,7 +36,7 @@ class StudyModePreferences {
   /// This is stored as 'ask' in the database learning_path_study_mode column
   ///
   /// Database constraint: learning_path_study_mode IN ('ask', 'recommended', 'quick', 'standard', 'deep', 'lectio', 'sermon')
-  static const String learningPathAskEveryTime = 'ask';
+  static const String learningPathDefault = 'recommended';
 
   // ============================================================================
   // Helper Methods
@@ -49,7 +49,7 @@ class StudyModePreferences {
 
   /// Check if a learning path mode preference means "ask every time"
   static bool isLearningPathAskEveryTime(String? value) {
-    return value == null || value == learningPathAskEveryTime;
+    return value == null || value == learningPathDefault;
   }
 
   /// Check if a preference means "use recommended mode"
@@ -61,7 +61,7 @@ class StudyModePreferences {
   static bool isSpecificMode(String? value, {required bool isLearningPath}) {
     if (value == null) return false;
     if (value == recommended) return false;
-    if (isLearningPath && value == learningPathAskEveryTime) return false;
+    if (isLearningPath && value == learningPathDefault) return false;
 
     // Must be one of the actual study modes
     const validModes = ['quick', 'standard', 'deep', 'lectio', 'sermon'];

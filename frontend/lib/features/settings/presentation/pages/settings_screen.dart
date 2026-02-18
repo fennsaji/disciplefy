@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +30,7 @@ import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -320,9 +320,8 @@ class _SettingsScreenContent extends StatelessWidget {
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              if (kDebugMode) {
-                print('🖼️ [SETTINGS] Failed to load profile picture: $error');
-              }
+              Logger.error(
+                  '🖼️ [SETTINGS] Failed to load profile picture: $error');
               // Return icon fallback on error
               return Icon(
                 Icons.person,
@@ -424,7 +423,7 @@ class _SettingsScreenContent extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             onTap: () {
-              debugPrint('Theme tile onTap triggered - opening bottom sheet');
+              Logger.debug('Theme tile onTap triggered - opening bottom sheet');
               _showThemeBottomSheet(context, state.settings.themeMode);
             },
           ),
@@ -1082,7 +1081,7 @@ class _SettingsScreenContent extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          debugPrint('Settings tile tapped: $title');
+          Logger.debug('Settings tile tapped: $title');
           if (onTap != null) {
             onTap();
           }
@@ -1199,7 +1198,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
   void _showThemeBottomSheet(
       BuildContext context, ThemeModeEntity currentTheme) {
-    debugPrint(
+    Logger.debug(
         'Opening theme bottom sheet - Current theme: ${currentTheme.mode}');
     final settingsBloc = BlocProvider.of<SettingsBloc>(context);
 
@@ -1490,7 +1489,7 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildLearningPathModeOption(
               builderContext,
               parentContext,
-              StudyModePreferences.learningPathAskEveryTime,
+              StudyModePreferences.learningPathDefault,
               context.tr(TranslationKeys.settingsAskEveryTime),
               Icons.help_outline,
               context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
@@ -1537,7 +1536,7 @@ class _SettingsScreenContent extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          debugPrint('Theme option selected: ${themeOption.mode}');
+          Logger.debug('Theme option selected: ${themeOption.mode}');
           settingsBloc.add(ThemeModeChanged(themeOption));
           Navigator.of(context).pop();
         },

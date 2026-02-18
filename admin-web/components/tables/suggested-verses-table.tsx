@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { EditIcon, DeleteIcon, ViewIcon, actionButtonStyles } from '@/components/ui/action-icons'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface Translation {
   reference: string
@@ -75,12 +77,12 @@ export default function SuggestedVersesTable({
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {verses.map((verse) => {
             const coverage = getTranslationCoverage(verse.translations)
             return (
-              <>
-                <tr key={verse.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <React.Fragment key={verse.id}>
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     #{verse.display_order}
                   </td>
@@ -113,29 +115,37 @@ export default function SuggestedVersesTable({
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => setExpandedId(expandedId === verse.id ? null : verse.id)}
-                      className="text-primary hover:text-primary/80 mr-4"
-                    >
-                      {expandedId === verse.id ? 'Collapse' : 'View'}
-                    </button>
-                    <button
-                      onClick={() => onEdit(verse)}
-                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this suggested verse?')) {
-                          onDelete(verse.id)
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(expandedId === verse.id ? null : verse.id)}
+                        className={actionButtonStyles.view}
+                        title="View"
+                      >
+                        <ViewIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(verse)}
+                        className={actionButtonStyles.edit}
+                        title="Edit"
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this suggested verse?')) {
+                            onDelete(verse.id)
+                          }
+                        }}
+                        className={actionButtonStyles.delete}
+                        title="Delete"
+                      >
+                        <DeleteIcon />
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 {expandedId === verse.id && (
@@ -161,16 +171,14 @@ export default function SuggestedVersesTable({
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             )
           })}
         </tbody>
       </table>
 
       {verses.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No suggested verses found</p>
-        </div>
+        <EmptyState title="No verses found" description="No suggested verses match the current filter." icon="📖" />
       )}
     </div>
   )

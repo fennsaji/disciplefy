@@ -653,7 +653,7 @@ BEGIN
 
     -- Get perfect recalls count (quality = 5)
     SELECT COUNT(*) INTO v_perfect_recalls
-    FROM practice_sessions ps
+    FROM review_sessions ps
     WHERE ps.user_id = p_user_id AND ps.quality_rating = 5;
 
     -- Get current practice streak
@@ -1037,7 +1037,7 @@ DECLARE
 BEGIN
     -- Get saved guides count
     SELECT COUNT(*) INTO v_saved_count
-    FROM study_guides
+    FROM user_study_guides
     WHERE user_id = p_user_id AND is_saved = TRUE;
 
     -- Check each saved achievement

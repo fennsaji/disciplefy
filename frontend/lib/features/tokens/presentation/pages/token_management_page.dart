@@ -23,6 +23,7 @@ import '../../../subscription/presentation/bloc/subscription_bloc.dart';
 import '../../../subscription/presentation/bloc/subscription_state.dart';
 import '../../../subscription/presentation/bloc/subscription_event.dart';
 import '../../../subscription/domain/entities/subscription.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Token Management Page
 ///
@@ -61,7 +62,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     // Refresh subscription data when returning to this page
     // This ensures we always have the latest subscription status
     if (ModalRoute.of(context)?.isCurrent == true) {
-      debugPrint(
+      Logger.debug(
           '[TokenManagement] Page became visible - refreshing subscription and token status');
       context.read<SubscriptionBloc>().add(const RefreshSubscription());
       context.read<TokenBloc>().add(const RefreshTokenStatus());
@@ -81,7 +82,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
     // When app resumes, refresh token status and subscription status
     if (state == AppLifecycleState.resumed) {
-      debugPrint(
+      Logger.debug(
           '[TokenManagement] App resumed - refreshing token and subscription status');
       context.read<TokenBloc>().add(const RefreshTokenStatus());
       context.read<SubscriptionBloc>().add(const RefreshSubscription());
@@ -96,10 +97,10 @@ class _TokenManagementPageState extends State<TokenManagementPage>
       final email = authState.email ??
           authState.profile?['email'] as String? ??
           'nil@email.com';
-      debugPrint('[TokenManagement] User email: $email');
+      Logger.debug('[TokenManagement] User email: $email');
       return email;
     }
-    debugPrint('[TokenManagement] No auth state - using fallback email');
+    Logger.debug('[TokenManagement] No auth state - using fallback email');
     return 'nil@email.com';
   }
 
@@ -112,23 +113,23 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           authState.user.userMetadata?['phone'] as String? ??
           authState.user.phone ??
           '+1234567890';
-      debugPrint('[TokenManagement] User phone: $phone');
+      Logger.debug('[TokenManagement] User phone: $phone');
       return phone;
     }
-    debugPrint('[TokenManagement] No auth state - using fallback phone');
+    Logger.debug('[TokenManagement] No auth state - using fallback phone');
     return '+1234567890';
   }
 
   void _showPurchaseDialog(TokenStatus tokenStatus) async {
     // Navigate to token purchase page
-    debugPrint('[TokenManagementPage] Navigating to token purchase page');
+    Logger.debug('[TokenManagementPage] Navigating to token purchase page');
 
     final result =
         await context.push(AppRoutes.tokenPurchase, extra: tokenStatus);
 
     // If purchase was successful (page returned true), refresh token status
     if (result == true && mounted) {
-      debugPrint(
+      Logger.debug(
           '[TokenManagementPage] Purchase successful, refreshing token status');
       context.read<TokenBloc>().add(const RefreshTokenStatus());
 
@@ -155,7 +156,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   Future<void> _openPaymentGateway(
       String orderId, int tokenAmount, double amount, String keyId) async {
     try {
-      debugPrint(
+      Logger.debug(
           '[TokenManagementPage] Opening payment gateway for order: $orderId');
 
       await PaymentService().openCheckout(
@@ -166,7 +167,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         userPhone: _getUserPhone(), // ✅ Get from authenticated user
         keyId: keyId,
         onSuccess: (response) {
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] Payment gateway success - triggering confirmation');
 
           final paymentId = response.paymentId ?? '';
@@ -174,14 +175,14 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
           // Prevent duplicate confirmation calls
           if (_processingPayments.contains(paymentId)) {
-            debugPrint(
+            Logger.debug(
                 '[TokenManagementPage] ⚠️ Payment $paymentId already being processed - ignoring duplicate');
             return;
           }
 
           // Mark payment as being processed
           _processingPayments.add(paymentId);
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] 🔒 Payment $paymentId marked as processing');
 
           // Get current token amount from BLoC state
@@ -193,7 +194,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             tokenAmount = currentState.tokensToPurchase;
           }
 
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] Payment success - confirming with $tokenAmount tokens');
 
           // Confirm payment
@@ -207,7 +208,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               );
         },
         onError: (response) {
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] Payment gateway error: ${response.message}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -218,7 +219,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         },
       );
     } catch (e) {
-      debugPrint('[TokenManagementPage] Error opening payment gateway: $e');
+      Logger.debug('[TokenManagementPage] Error opening payment gateway: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error opening payment: $e'),
@@ -257,7 +258,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           listener: (context, state) {
             // Handle purchase success - refresh token status immediately
             if (state is TokenPurchaseSuccess) {
-              debugPrint(
+              Logger.debug(
                   '[TokenManagementPage] TokenPurchaseSuccess received - refreshing token status');
               // Immediately refresh to get the latest balance
               context.read<TokenBloc>().add(const RefreshTokenStatus());

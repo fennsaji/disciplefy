@@ -6,6 +6,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/learning_path_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Remote data source for learning paths operations.
 abstract class LearningPathsRemoteDataSource {
@@ -319,6 +320,6 @@ class LearningPathsRemoteDataSourceImpl
   }
 
   void _logDebug(String message) {
-    if (kDebugMode) print('[LEARNING_PATHS] $message');
+    if (kDebugMode) Logger.debug('[LEARNING_PATHS] $message');
   }
 }
