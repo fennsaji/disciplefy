@@ -14,6 +14,7 @@ import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
 import '../../domain/repositories/memory_verse_repository.dart';
 import '../widgets/practice_mode_card.dart';
+import '../widgets/unlock_limit_exceeded_dialog.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Practice mode selection page.
@@ -169,7 +170,9 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      final todayDate = DateTime.now().toIso8601String().substring(0, 10);
+      // Use UTC date to match CURRENT_DATE used by the edge function and SQL functions
+      final todayDate =
+          DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
       final response = await Supabase.instance.client
           .from('daily_unlocked_modes')
@@ -549,13 +552,19 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                                       onLockedTap: isTierLocked
                                           ? () =>
                                               context.push(AppRoutes.pricing)
-                                          : () => ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                content: Text(
-                                                    'Daily limit reached. Practice with your unlocked modes or upgrade for more.'),
-                                                behavior:
-                                                    SnackBarBehavior.floating,
-                                              )),
+                                          : () =>
+                                              UnlockLimitExceededDialog.show(
+                                                context,
+                                                unlockedModes:
+                                                    _unlockedModesToday,
+                                                unlockedCount:
+                                                    _unlockedModesToday.length,
+                                                limit: _getUnlockLimit(),
+                                                tier: _userTier,
+                                                verseReference: currentVerse
+                                                        ?.verseReference ??
+                                                    '',
+                                              ),
                                     );
                                   },
                                   childCount: filteredModes.length,
@@ -800,7 +809,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
               ),
             ),
           ] else ...[
-            // Daily limit reached message
+            // Daily limit reached message + upgrade button
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(10),
@@ -818,7 +827,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Daily limit reached. Practice with unlocked modes or upgrade for more!',
+                      'Daily limit reached. Upgrade for more modes!',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color:
                             _adaptiveTextColor(Colors.orange.shade900, theme),
@@ -826,6 +835,23 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => context.push(AppRoutes.pricing),
+                icon: const Icon(Icons.upgrade, size: 18),
+                label: const Text('Upgrade Plan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
             ),
           ],

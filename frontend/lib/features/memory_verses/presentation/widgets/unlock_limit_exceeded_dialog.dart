@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
@@ -206,7 +207,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop();
-            Navigator.pushNamed(context, AppRoutes.pricing);
+            context.push(AppRoutes.pricing);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
