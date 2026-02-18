@@ -169,7 +169,9 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      final todayDate = DateTime.now().toIso8601String().substring(0, 10);
+      // Use UTC date to match CURRENT_DATE used by the edge function and SQL functions
+      final todayDate =
+          DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
       final response = await Supabase.instance.client
           .from('daily_unlocked_modes')
