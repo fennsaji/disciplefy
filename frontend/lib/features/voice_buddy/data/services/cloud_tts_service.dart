@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/bible_data.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Service for high-quality text-to-speech using Google Cloud TTS REST API.
 ///
@@ -73,12 +74,13 @@ class CloudTTSService {
 
     const apiKey = AppConfig.googleCloudTtsApiKey;
     if (apiKey.isEmpty) {
-      print('🔊 [CLOUD TTS] API key not configured, service unavailable');
+      Logger.debug(
+          '🔊 [CLOUD TTS] API key not configured, service unavailable');
       return false;
     }
 
     try {
-      print('🔊 [CLOUD TTS] Initializing with API key...');
+      Logger.debug('🔊 [CLOUD TTS] Initializing with API key...');
 
       _dio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 10),
@@ -86,14 +88,14 @@ class CloudTTSService {
       ));
 
       _isInitialized = true;
-      print('🔊 [CLOUD TTS] Initialized successfully');
+      Logger.debug('🔊 [CLOUD TTS] Initialized successfully');
 
       // Pre-configure voices for supported languages
       _configureVoices();
 
       return true;
     } catch (e) {
-      print('🔊 [CLOUD TTS] Initialization failed: $e');
+      Logger.debug('🔊 [CLOUD TTS] Initialization failed: $e');
       _isInitialized = false;
       return false;
     }
@@ -132,9 +134,9 @@ class CloudTTSService {
       ssmlGender: 'FEMALE',
     );
 
-    print('🔊 [CLOUD TTS] Configured voices:');
+    Logger.debug('🔊 [CLOUD TTS] Configured voices:');
     for (final entry in _voiceCache.entries) {
-      print('🔊 [CLOUD TTS]   ${entry.key}: ${entry.value.name}');
+      Logger.debug('🔊 [CLOUD TTS]   ${entry.key}: ${entry.value.name}');
     }
   }
 
@@ -169,17 +171,17 @@ class CloudTTSService {
       // Try fallback to en-US
       voice = _voiceCache['en-US'];
       if (voice == null) {
-        print('🔊 [CLOUD TTS] No voice available for $languageCode');
+        Logger.debug('🔊 [CLOUD TTS] No voice available for $languageCode');
         return false;
       }
-      print('🔊 [CLOUD TTS] Falling back to en-US voice');
+      Logger.debug('🔊 [CLOUD TTS] Falling back to en-US voice');
     }
 
     try {
-      print('🔊 [CLOUD TTS] Converting text to speech:');
-      print('  - Language: $languageCode');
-      print('  - Voice: ${voice.name}');
-      print('  - Text length: ${text.length} chars');
+      Logger.debug('🔊 [CLOUD TTS] Converting text to speech:');
+      Logger.debug('  - Language: $languageCode');
+      Logger.debug('  - Voice: ${voice.name}');
+      Logger.debug('  - Text length: ${text.length} chars');
 
       // Sanitize text with Bible reference conversion
       final sanitizedText = _sanitizeText(text, languageCode: languageCode);
@@ -218,7 +220,7 @@ class CloudTTSService {
       );
 
       if (response.statusCode != 200) {
-        print('🔊 [CLOUD TTS] API error: ${response.statusCode}');
+        Logger.error('🔊 [CLOUD TTS] API error: ${response.statusCode}');
         _isSpeaking = false;
         return false;
       }
@@ -226,14 +228,15 @@ class CloudTTSService {
       // Decode audio content (base64) with null-safety
       final dynamic rawAudioContent = response.data['audioContent'];
       if (rawAudioContent == null || rawAudioContent is! String) {
-        print(
+        Logger.debug(
             '🔊 [CLOUD TTS] API response missing audioContent or invalid type');
         _isSpeaking = false;
         return false;
       }
       final audioBytes = base64Decode(rawAudioContent);
 
-      print('🔊 [CLOUD TTS] Received ${audioBytes.length} bytes of audio');
+      Logger.debug(
+          '🔊 [CLOUD TTS] Received ${audioBytes.length} bytes of audio');
 
       // Play the audio
       await _playAudio(audioBytes, onComplete);
@@ -243,17 +246,17 @@ class CloudTTSService {
       _isSpeaking = false;
       // Don't log cancellation as an error
       if (e.type == DioExceptionType.cancel) {
-        print('🔊 [CLOUD TTS] Request cancelled');
+        Logger.info('🔊 [CLOUD TTS] Request cancelled');
         return false;
       }
-      print('🔊 [CLOUD TTS] API error: ${e.message}');
+      Logger.error('🔊 [CLOUD TTS] API error: ${e.message}');
       if (e.response != null) {
-        print('🔊 [CLOUD TTS] Response: ${e.response?.data}');
+        Logger.debug('🔊 [CLOUD TTS] Response: ${e.response?.data}');
       }
       return false;
     } catch (e) {
       _isSpeaking = false;
-      print('🔊 [CLOUD TTS] Error converting text to speech: $e');
+      Logger.error('🔊 [CLOUD TTS] Error converting text to speech: $e');
       return false;
     }
   }
@@ -267,13 +270,19 @@ class CloudTTSService {
       await _playerCompleteSubscription?.cancel();
       _playerCompleteSubscription = null;
 
-      // Dispose old player safely
+      // Capture and clear reference BEFORE stopping to prevent double-stop on web.
+      // On web, calling stop() on a disposed AudioPlayer throws WebAudioError even
+      // inside a try-catch because the platform rejects the promise before Dart
+      // can intercept it. Clearing the reference first makes subsequent stop()
+      // calls a safe no-op via the null-aware operator.
+      final oldPlayer = _audioPlayer;
+      _audioPlayer = null;
       try {
-        await _audioPlayer?.stop();
-        await _audioPlayer?.dispose();
+        await oldPlayer?.stop();
+        await oldPlayer?.dispose();
       } catch (e) {
         // Player may already be disposed, ignore
-        print('🔊 [CLOUD TTS] Old player cleanup: $e');
+        Logger.debug('🔊 [CLOUD TTS] Old player cleanup: $e');
       }
 
       // Create fresh player for this playback (fixes web issues)
@@ -282,11 +291,13 @@ class CloudTTSService {
 
       // Set up completion listener BEFORE playing
       _playerCompleteSubscription = player.onPlayerComplete.listen((_) {
-        print('🔊 [CLOUD TTS] Playback complete');
+        Logger.debug('🔊 [CLOUD TTS] Playback complete');
         _isSpeaking = false;
         _playerCompleteSubscription?.cancel();
         _playerCompleteSubscription = null;
-        // Dispose player after completion
+        // Clear field reference BEFORE disposing so any concurrent stop() call
+        // sees null and skips the disposed player.
+        if (identical(_audioPlayer, player)) _audioPlayer = null;
         try {
           player.dispose();
         } catch (e) {
@@ -294,11 +305,11 @@ class CloudTTSService {
         }
         onComplete?.call();
       }, onError: (error) {
-        print('🔊 [CLOUD TTS] Audio player error: $error');
+        Logger.error('🔊 [CLOUD TTS] Audio player error: $error');
         _isSpeaking = false;
         _playerCompleteSubscription?.cancel();
         _playerCompleteSubscription = null;
-        // Dispose player on error
+        if (identical(_audioPlayer, player)) _audioPlayer = null;
         try {
           player.dispose();
         } catch (e) {
@@ -309,9 +320,9 @@ class CloudTTSService {
 
       // Play from bytes
       await player.play(BytesSource(audioBytes));
-      print('🔊 [CLOUD TTS] Playback started');
+      Logger.error('🔊 [CLOUD TTS] Playback started');
     } catch (e) {
-      print('🔊 [CLOUD TTS] Error playing audio: $e');
+      Logger.debug('🔊 [CLOUD TTS] Error playing audio: $e');
       _isSpeaking = false;
       _playerCompleteSubscription?.cancel();
       _playerCompleteSubscription = null;
@@ -572,11 +583,11 @@ class CloudTTSService {
       return base64Decode(rawAudioContent);
     } on DioException catch (e) {
       if (e.type != DioExceptionType.cancel) {
-        print('🔊 [CLOUD TTS] Chunk fetch error: ${e.message}');
+        Logger.error('🔊 [CLOUD TTS] Chunk fetch error: ${e.message}');
       }
       return null;
     } catch (e) {
-      print('🔊 [CLOUD TTS] Chunk fetch error: $e');
+      Logger.error('🔊 [CLOUD TTS] Chunk fetch error: $e');
       return null;
     }
   }
@@ -602,7 +613,7 @@ class CloudTTSService {
     if (voice == null) {
       voice = _voiceCache['en-US'];
       if (voice == null) {
-        print('🔊 [CLOUD TTS] No voice available for $languageCode');
+        Logger.debug('🔊 [CLOUD TTS] No voice available for $languageCode');
         return false;
       }
     }
@@ -616,7 +627,7 @@ class CloudTTSService {
 
     // For very short text (1 chunk), use regular speak
     if (chunks.length == 1) {
-      print('🔊 [CLOUD TTS] Short text, using single request');
+      Logger.debug('🔊 [CLOUD TTS] Short text, using single request');
       return speak(
         text: text,
         languageCode: languageCode,
@@ -626,7 +637,7 @@ class CloudTTSService {
       );
     }
 
-    print('🔊 [CLOUD TTS] Streaming ${chunks.length} chunks');
+    Logger.debug('🔊 [CLOUD TTS] Streaming ${chunks.length} chunks');
 
     // Reset streaming state
     _audioQueue.clear();
@@ -642,7 +653,7 @@ class CloudTTSService {
 
     try {
       // Fetch first chunk and start playing immediately
-      print('🔊 [CLOUD TTS] Fetching first chunk...');
+      Logger.debug('🔊 [CLOUD TTS] Fetching first chunk...');
       final firstChunkAudio = await _fetchChunkAudio(
         text: chunks[0],
         voice: voice,
@@ -672,7 +683,7 @@ class CloudTTSService {
 
       return true;
     } catch (e) {
-      print('🔊 [CLOUD TTS] Streaming error: $e');
+      Logger.error('🔊 [CLOUD TTS] Streaming error: $e');
       _resetStreamingState();
       return false;
     }
@@ -698,7 +709,7 @@ class CloudTTSService {
 
       if (audio != null && !_streamingStopRequested) {
         _audioQueue.add(audio);
-        print('🔊 [CLOUD TTS] Pre-fetched chunk ${i + 2}/$_totalChunks');
+        Logger.debug('🔊 [CLOUD TTS] Pre-fetched chunk ${i + 2}/$_totalChunks');
 
         // Signal if someone is waiting for this chunk
         _nextChunkCompleter?.complete(audio);
@@ -716,7 +727,7 @@ class CloudTTSService {
     _currentChunkIndex = 0;
 
     while (_currentChunkIndex < _totalChunks && !_streamingStopRequested) {
-      print(
+      Logger.debug(
           '🔊 [CLOUD TTS] Playing chunk ${_currentChunkIndex + 1}/$_totalChunks');
 
       // Create completer to wait for playback completion
@@ -746,7 +757,7 @@ class CloudTTSService {
           currentAudio = _audioQueue[queueIndex];
         } else {
           // Wait for chunk to be fetched
-          print(
+          Logger.debug(
               '🔊 [CLOUD TTS] Waiting for chunk ${_currentChunkIndex + 1}...');
           _nextChunkCompleter = Completer<Uint8List?>();
           final nextAudio = await _nextChunkCompleter!.future;
@@ -758,7 +769,7 @@ class CloudTTSService {
     }
 
     _resetStreamingState();
-    print('🔊 [CLOUD TTS] Streaming playback complete');
+    Logger.debug('🔊 [CLOUD TTS] Streaming playback complete');
     onComplete?.call();
   }
 
@@ -770,10 +781,12 @@ class CloudTTSService {
       await _playerCompleteSubscription?.cancel();
       _playerCompleteSubscription = null;
 
-      // Dispose old player safely
+      // Capture and clear reference BEFORE stopping (same reasoning as _playAudio).
+      final oldPlayer = _audioPlayer;
+      _audioPlayer = null;
       try {
-        await _audioPlayer?.stop();
-        await _audioPlayer?.dispose();
+        await oldPlayer?.stop();
+        await oldPlayer?.dispose();
       } catch (e) {
         // Ignore
       }
@@ -788,7 +801,7 @@ class CloudTTSService {
         _playerCompleteSubscription = null;
         onChunkComplete();
       }, onError: (error) {
-        print('🔊 [CLOUD TTS] Chunk playback error: $error');
+        Logger.error('🔊 [CLOUD TTS] Chunk playback error: $error');
         _playerCompleteSubscription?.cancel();
         _playerCompleteSubscription = null;
         onChunkComplete();
@@ -797,7 +810,7 @@ class CloudTTSService {
       // Play
       await player.play(BytesSource(audioBytes));
     } catch (e) {
-      print('🔊 [CLOUD TTS] Error playing chunk: $e');
+      Logger.error('🔊 [CLOUD TTS] Error playing chunk: $e');
       onChunkComplete();
     }
   }
@@ -829,20 +842,22 @@ class CloudTTSService {
     await _playerCompleteSubscription?.cancel();
     _playerCompleteSubscription = null;
 
-    // Stop and dispose audio player safely
+    // Capture and clear reference BEFORE stopping to prevent concurrent
+    // calls from also trying to stop the same (possibly disposed) player.
+    final playerToStop = _audioPlayer;
+    _audioPlayer = null;
     try {
-      await _audioPlayer?.stop();
-      await _audioPlayer?.dispose();
-      _audioPlayer = null;
+      await playerToStop?.stop();
+      await playerToStop?.dispose();
     } catch (e) {
       // Player may already be disposed
-      print('🔊 [CLOUD TTS] Stop cleanup: $e');
+      Logger.debug('🔊 [CLOUD TTS] Stop cleanup: $e');
     }
 
     // Reset streaming state
     _resetStreamingState();
 
-    print('🔊 [CLOUD TTS] Playback stopped');
+    Logger.debug('🔊 [CLOUD TTS] Playback stopped');
   }
 
   /// Pause current playback.
@@ -850,7 +865,7 @@ class CloudTTSService {
     try {
       await _audioPlayer?.pause();
     } catch (e) {
-      print('🔊 [CLOUD TTS] Pause error: $e');
+      Logger.error('🔊 [CLOUD TTS] Pause error: $e');
     }
   }
 
@@ -859,7 +874,7 @@ class CloudTTSService {
     try {
       await _audioPlayer?.resume();
     } catch (e) {
-      print('🔊 [CLOUD TTS] Resume error: $e');
+      Logger.error('🔊 [CLOUD TTS] Resume error: $e');
     }
   }
 

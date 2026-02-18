@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
@@ -10,6 +9,7 @@ import '../../../domain/entities/study_mode.dart';
 import '../../../domain/entities/study_stream_event.dart';
 import '../study_event.dart';
 import '../study_state.dart';
+import '../../../../../core/utils/logger.dart';
 
 /// Handler for streaming study guide generation logic.
 ///
@@ -38,7 +38,7 @@ class StudyStreamingHandler {
     Emitter<StudyState> emit,
     void Function(StudyEvent) add,
   ) async {
-    debugPrint('🌊 [STREAMING_HANDLER] Starting streaming generation');
+    Logger.debug('🌊 [STREAMING_HANDLER] Starting streaming generation');
     _isCancelled = false;
 
     // Emit initial streaming state
@@ -61,22 +61,22 @@ class StudyStreamingHandler {
       await for (final streamEvent in stream) {
         // Check for cancellation
         if (_isCancelled) {
-          debugPrint('🌊 [STREAMING_HANDLER] Stream cancelled by user');
+          Logger.debug('🌊 [STREAMING_HANDLER] Stream cancelled by user');
           break;
         }
 
         // Handle each event type
         if (streamEvent is StudyStreamInitEvent) {
-          debugPrint('🌊 [STREAMING_HANDLER] Init: ${streamEvent.status}');
+          Logger.debug('🌊 [STREAMING_HANDLER] Init: ${streamEvent.status}');
           // Init event received, stream is starting
           // The state is already set, nothing else to do here
         } else if (streamEvent is StudyStreamSectionEvent) {
-          debugPrint(
+          Logger.debug(
               '🌊 [STREAMING_HANDLER] Section: ${streamEvent.sectionType}');
           // Dispatch internal event to update state with new section
           add(StudyStreamSectionReceived(sectionEvent: streamEvent));
         } else if (streamEvent is StudyStreamCompleteEvent) {
-          debugPrint(
+          Logger.debug(
               '🌊 [STREAMING_HANDLER] Complete: ${streamEvent.studyGuideId}');
           // Dispatch completion event
           add(StudyStreamCompleted(
@@ -86,7 +86,7 @@ class StudyStreamingHandler {
           ));
           break;
         } else if (streamEvent is StudyStreamErrorEvent) {
-          debugPrint(
+          Logger.debug(
               '🌊 [STREAMING_HANDLER] Error: ${streamEvent.code} - ${streamEvent.message}');
           // Dispatch error event
           add(StudyStreamErrorOccurred(
@@ -98,7 +98,7 @@ class StudyStreamingHandler {
         }
       }
     } catch (e) {
-      debugPrint('🌊 [STREAMING_HANDLER] Exception: $e');
+      Logger.debug('🌊 [STREAMING_HANDLER] Exception: $e');
       if (!_isCancelled) {
         add(StudyStreamErrorOccurred(
           code: 'STREAM_EXCEPTION',
@@ -118,7 +118,7 @@ class StudyStreamingHandler {
     StudyState currentState,
   ) {
     if (currentState is! StudyGenerationStreaming) {
-      debugPrint(
+      Logger.debug(
           '🌊 [STREAMING_HANDLER] Section received but not in streaming state');
       return;
     }
@@ -126,9 +126,9 @@ class StudyStreamingHandler {
     final sectionEvent = event.sectionEvent as StudyStreamSectionEvent;
     final updatedState = currentState.withSection(sectionEvent);
 
-    debugPrint(
+    Logger.debug(
         '🌊 [STREAMING_HANDLER] Updating state with section: ${sectionEvent.sectionType}');
-    debugPrint('🌊 [STREAMING_HANDLER] Progress: ${updatedState.progress}');
+    Logger.debug('🌊 [STREAMING_HANDLER] Progress: ${updatedState.progress}');
 
     emit(updatedState);
   }
@@ -143,16 +143,17 @@ class StudyStreamingHandler {
     StudyState currentState,
   ) {
     if (currentState is! StudyGenerationStreaming) {
-      debugPrint(
+      Logger.debug(
           '🌊 [STREAMING_HANDLER] Complete received but not in streaming state');
       return;
     }
 
-    debugPrint('🌊 [STREAMING_HANDLER] Stream completed successfully');
-    debugPrint('🌊 [STREAMING_HANDLER] Study Guide ID: ${event.studyGuideId}');
-    debugPrint(
+    Logger.debug('🌊 [STREAMING_HANDLER] Stream completed successfully');
+    Logger.debug(
+        '🌊 [STREAMING_HANDLER] Study Guide ID: ${event.studyGuideId}');
+    Logger.debug(
         '🌊 [STREAMING_HANDLER] Tokens consumed: ${event.tokensConsumed}');
-    debugPrint('🌊 [STREAMING_HANDLER] From cache: ${event.fromCache}');
+    Logger.debug('🌊 [STREAMING_HANDLER] From cache: ${event.fromCache}');
 
     // Convert streaming content to a complete study guide
     // For now, we keep the streaming state but mark it as complete
@@ -183,7 +184,7 @@ class StudyStreamingHandler {
     Emitter<StudyState> emit,
     StudyState currentState,
   ) {
-    debugPrint('🌊 [STREAMING_HANDLER] Handling stream error: ${event.code}');
+    Logger.debug('🌊 [STREAMING_HANDLER] Handling stream error: ${event.code}');
 
     StreamingStudyGuideContent? partialContent;
     String inputType = '';
@@ -225,7 +226,7 @@ class StudyStreamingHandler {
     CancelStudyStreamingRequested event,
     Emitter<StudyState> emit,
   ) {
-    debugPrint('🌊 [STREAMING_HANDLER] Cancelling stream');
+    Logger.debug('🌊 [STREAMING_HANDLER] Cancelling stream');
     _isCancelled = true;
     _activeSubscription?.cancel();
     _activeSubscription = null;

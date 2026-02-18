@@ -2,10 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { PageHeader } from '@/components/ui/page-header'
 import { UserSearchInput } from '@/components/ui/user-search-input'
 import { TokenManagementTable } from '@/components/tables/token-management-table'
 import { StatsCard } from '@/components/ui/stats-card'
 import { formatCompactNumber } from '@/lib/utils/date'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
 
 interface UserTokenBalance {
   id: string
@@ -115,15 +118,10 @@ export default function TokenManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Token Management</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Manage user token balances, view consumption, and track purchases
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Token Management"
+        description="Manage user token balances, view consumption, and track purchases"
+      />
 
       {/* Search and Filters */}
       <div className="space-y-4">
@@ -170,10 +168,7 @@ export default function TokenManagementPage() {
 
       {/* Error State */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-300">
-          <p className="font-medium">Error loading token balances</p>
-          <p className="mt-1 text-sm">{error instanceof Error ? error.message : 'Unknown error'}</p>
-        </div>
+        <ErrorState title="Error loading token data" message={error instanceof Error ? error.message : 'Unknown error'} />
       )}
 
       {/* Stats cards */}
@@ -222,14 +217,7 @@ export default function TokenManagementPage() {
           </div>
         )}
 
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading token balances...</p>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingState label="Loading token balances..." />}
 
         {allBalances && (
           <>

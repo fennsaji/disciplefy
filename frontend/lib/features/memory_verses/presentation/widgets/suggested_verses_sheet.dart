@@ -3,10 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../domain/entities/suggested_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
+import 'verse_limit_exceeded_dialog.dart';
 
 /// Bottom sheet for browsing and selecting suggested Bible verses.
 ///
@@ -126,6 +129,9 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
             // Verse List
             Expanded(
               child: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
+                // Only listen for events relevant to this sheet
+                listenWhen: (previous, current) =>
+                    current is VerseAdded || current is MemoryVerseError,
                 listener: (context, state) {
                   if (state is VerseAdded) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -138,14 +144,33 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                     _loadSuggestedVerses();
                     widget.onVerseAdded?.call();
                   } else if (state is MemoryVerseError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.message),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    if (state.code == 'VERSE_LIMIT_EXCEEDED') {
+                      String currentPlan = 'standard';
+                      try {
+                        final tokenState = context.read<TokenBloc>().state;
+                        if (tokenState is TokenLoaded) {
+                          currentPlan = tokenState.tokenStatus.userPlan.name;
+                        }
+                      } catch (_) {}
+                      VerseLimitExceededDialog.show(
+                        context,
+                        currentTier: currentPlan,
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
+                // Only rebuild when suggested-verses-specific state changes
+                buildWhen: (previous, current) =>
+                    current is SuggestedVersesLoading ||
+                    current is SuggestedVersesLoaded ||
+                    current is SuggestedVersesError,
                 builder: (context, state) {
                   if (state is SuggestedVersesLoading) {
                     return const Center(
@@ -166,7 +191,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                     );
                   }
 
-                  // Show loading by default (initial state)
+                  // Show loading for initial state
                   return const Center(
                     child: CircularProgressIndicator(),
                   );

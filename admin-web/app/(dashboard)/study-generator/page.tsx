@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { PageHeader } from '@/components/ui/page-header'
 import { SourceSelector, type GenerationConfig } from '@/components/study-generator/source-selector'
 import { StreamingPreview } from '@/components/study-generator/streaming-preview'
 import { ContentEditor } from '@/components/study-generator/content-editor'
@@ -138,15 +139,10 @@ export default function StudyGeneratorPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Study Generator</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Generate and customize study guides for any topic, verse, or question
-          </p>
-        </div>
-        {viewState !== 'configure' && (
+      <PageHeader
+        title="Study Generator"
+        description="Generate and customize study guides for any topic, verse, or question"
+        actions={viewState !== 'configure' ? (
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -189,8 +185,8 @@ export default function StudyGeneratorPage() {
               Start New
             </button>
           </div>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Error Message */}
       {error && (

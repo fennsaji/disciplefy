@@ -1,7 +1,7 @@
 // Mobile-specific Razorpay implementation
 import 'package:razorpay_flutter/razorpay_flutter.dart' as rzp;
-import 'package:flutter/foundation.dart';
 import '../models/payment_responses.dart';
+import '../utils/logger.dart';
 
 class PaymentServiceMobile {
   rzp.Razorpay? _razorpay;
@@ -17,9 +17,9 @@ class PaymentServiceMobile {
       _razorpay?.on(rzp.Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
       _razorpay?.on(rzp.Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
       _razorpay?.on(rzp.Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-      debugPrint('[PaymentServiceMobile] Razorpay initialized successfully');
+      Logger.debug('[PaymentServiceMobile] Razorpay initialized successfully');
     } catch (e) {
-      debugPrint('[PaymentServiceMobile] Failed to initialize Razorpay: $e');
+      Logger.debug('[PaymentServiceMobile] Failed to initialize Razorpay: $e');
       rethrow;
     }
   }
@@ -35,7 +35,7 @@ class PaymentServiceMobile {
     Function(ExternalWalletResponse)? onExternalWallet,
   }) {
     try {
-      debugPrint(
+      Logger.debug(
           '[PaymentServiceMobile] Opening Razorpay checkout with options: $options');
 
       // Store callbacks
@@ -49,7 +49,7 @@ class PaymentServiceMobile {
         throw Exception('Razorpay not initialized');
       }
     } catch (e) {
-      debugPrint('[PaymentServiceMobile] Error opening checkout: $e');
+      Logger.debug('[PaymentServiceMobile] Error opening checkout: $e');
       final mockError = PaymentFailureResponse(
         1,
         'Failed to initialize payment: ${e.toString()}',
@@ -59,7 +59,7 @@ class PaymentServiceMobile {
   }
 
   void _handlePaymentSuccess(rzp.PaymentSuccessResponse response) {
-    debugPrint(
+    Logger.debug(
         '[PaymentServiceMobile] Payment successful: ${response.paymentId}');
     if (_onPaymentSuccess != null) {
       // Convert Razorpay response to our custom response
@@ -74,7 +74,7 @@ class PaymentServiceMobile {
   }
 
   void _handlePaymentError(rzp.PaymentFailureResponse response) {
-    debugPrint(
+    Logger.debug(
         '[PaymentServiceMobile] Payment failed: ${response.code} - ${response.message}');
     if (_onPaymentError != null) {
       // Convert Razorpay response to our custom response
@@ -88,7 +88,7 @@ class PaymentServiceMobile {
   }
 
   void _handleExternalWallet(rzp.ExternalWalletResponse response) {
-    debugPrint(
+    Logger.debug(
         '[PaymentServiceMobile] External wallet selected: ${response.walletName}');
     if (_onExternalWallet != null) {
       // Convert Razorpay response to our custom response

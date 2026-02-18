@@ -1052,49 +1052,58 @@ export type Database = {
         }
         Relationships: []
       }
-      practice_sessions: {
+      review_sessions: {
         Row: {
-          created_at: string
           id: string
+          user_id: string
           memory_verse_id: string
+          practice_mode: string
+          review_date: string
+          quality_rating: number
+          confidence_rating: number | null
+          accuracy_percentage: number | null
+          hints_used: number | null
           new_ease_factor: number
           new_interval_days: number
           new_repetitions: number
-          practice_mode: string
-          quality_rating: number
-          review_date: string
           time_spent_seconds: number | null
-          user_id: string
+          created_at: string
         }
         Insert: {
-          created_at?: string
           id?: string
+          user_id: string
           memory_verse_id: string
+          practice_mode: string
+          review_date?: string
+          quality_rating: number
+          confidence_rating?: number | null
+          accuracy_percentage?: number | null
+          hints_used?: number | null
           new_ease_factor: number
           new_interval_days: number
           new_repetitions: number
-          practice_mode: string
-          quality_rating: number
-          review_date?: string
           time_spent_seconds?: number | null
-          user_id: string
+          created_at?: string
         }
         Update: {
-          created_at?: string
           id?: string
+          user_id?: string
           memory_verse_id?: string
+          practice_mode?: string
+          review_date?: string
+          quality_rating?: number
+          confidence_rating?: number | null
+          accuracy_percentage?: number | null
+          hints_used?: number | null
           new_ease_factor?: number
           new_interval_days?: number
           new_repetitions?: number
-          practice_mode?: string
-          quality_rating?: number
-          review_date?: string
           time_spent_seconds?: number | null
-          user_id?: string
+          created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "practice_sessions_memory_verse_id_fkey"
+            foreignKeyName: "review_sessions_memory_verse_id_fkey"
             columns: ["memory_verse_id"]
             isOneToOne: false
             referencedRelation: "memory_verses"
@@ -2971,10 +2980,6 @@ export type Database = {
         }
         Returns: Json
       }
-      check_monthly_voice_conversation_limit: {
-        Args: { p_tier: string; p_user_id: string }
-        Returns: Json
-      }
       check_saved_achievements: {
         Args: { p_user_id: string }
         Returns: {
@@ -3213,30 +3218,6 @@ export type Database = {
           updated_at: string
           user_id: string
         }[]
-      }
-      get_or_create_monthly_voice_usage: {
-        Args: { p_tier: string; p_user_id: string }
-        Returns: {
-          conversations_completed: number | null
-          conversations_started: number | null
-          created_at: string | null
-          daily_quota_limit: number | null
-          daily_quota_used: number | null
-          id: string
-          language_usage: Json | null
-          month_year: string
-          monthly_conversations_completed: number
-          monthly_conversations_started: number
-          quota_exceeded: boolean | null
-          tier_at_time: string
-          total_audio_seconds: number | null
-          total_conversation_seconds: number | null
-          total_messages_received: number | null
-          total_messages_sent: number | null
-          updated_at: string | null
-          usage_date: string
-          user_id: string
-        }
       }
       get_or_create_payment_preferences: {
         Args: Record<PropertyKey, never>
@@ -3510,10 +3491,6 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
-      increment_voice_usage: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       log_usage: {
         Args: {
           p_feature_name: string
@@ -3561,10 +3538,6 @@ export type Database = {
           p_user_plan?: string
         }
         Returns: string
-      }
-      reset_monthly_voice_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: number
       }
       save_payment_method: {
         Args: {

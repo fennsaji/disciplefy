@@ -1,6 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/onboarding_state_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Local data source for onboarding state using Hive
 abstract class OnboardingLocalDataSource {
@@ -57,7 +58,8 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
       }
     } catch (e) {
       // SharedPreferences failed, fall back to Hive
-      print('⚠️ [ONBOARDING] SharedPreferences read failed, using Hive: $e');
+      Logger.warning(
+          '⚠️ [ONBOARDING] SharedPreferences read failed, using Hive: $e');
     }
 
     // Fallback to Hive storage
@@ -74,7 +76,7 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
         await prefs.setString(_prefsLanguageKey, selectedLanguage);
       }
     } catch (e) {
-      print('⚠️ [ONBOARDING] Failed to sync to SharedPreferences: $e');
+      Logger.warning('⚠️ [ONBOARDING] Failed to sync to SharedPreferences: $e');
     }
 
     return OnboardingStateModel(
@@ -91,9 +93,11 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefsLanguageKey, languageCode);
-      print('✅ [ONBOARDING] Language preference saved to both storages');
+      Logger.warning(
+          '✅ [ONBOARDING] Language preference saved to both storages');
     } catch (e) {
-      print('⚠️ [ONBOARDING] Failed to save language to SharedPreferences: $e');
+      Logger.debug(
+          '⚠️ [ONBOARDING] Failed to save language to SharedPreferences: $e');
     }
   }
 
@@ -105,9 +109,10 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_prefsOnboardingKey, true);
-      print('✅ [ONBOARDING] Onboarding completion saved to both storages');
+      Logger.warning(
+          '✅ [ONBOARDING] Onboarding completion saved to both storages');
     } catch (e) {
-      print(
+      Logger.error(
           '⚠️ [ONBOARDING] Failed to save onboarding to SharedPreferences: $e');
     }
   }
@@ -122,9 +127,9 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prefsOnboardingKey);
       await prefs.remove(_prefsLanguageKey);
-      print('✅ [ONBOARDING] Onboarding reset in both storages');
+      Logger.warning('✅ [ONBOARDING] Onboarding reset in both storages');
     } catch (e) {
-      print('⚠️ [ONBOARDING] Failed to reset SharedPreferences: $e');
+      Logger.debug('⚠️ [ONBOARDING] Failed to reset SharedPreferences: $e');
     }
   }
 }

@@ -65,9 +65,9 @@ async function handleCreateStandardSubscription(
     // 5. Check if user already has active standard subscription
     const { data: existingSubscription } = await services.supabaseServiceClient
       .from('subscriptions')
-      .select('id, status, subscription_plan')
+      .select('id, status, plan_id, subscription_plans!inner(plan_code)')
       .eq('user_id', userId)
-      .eq('subscription_plan', 'standard')
+      .eq('subscription_plans.plan_code', 'standard')
       .in('status', ['active', 'authenticated', 'created', 'pending_cancellation'])
       .maybeSingle()
 

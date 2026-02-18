@@ -105,7 +105,7 @@ export default function TopicContentPage({ params }: PageProps) {
             </div>
             <button
               onClick={handleGenerateNew}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
             >
               <svg
                 className="h-5 w-5"
@@ -171,7 +171,7 @@ export default function TopicContentPage({ params }: PageProps) {
             </p>
             <button
               onClick={handleGenerateNew}
-              className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+              className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
             >
               Generate Study Guide
             </button>

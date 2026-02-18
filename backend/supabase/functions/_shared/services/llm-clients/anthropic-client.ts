@@ -77,7 +77,7 @@ export class AnthropicClient {
     // Savings: $0.013 → $0.0035 per guide (73% reduction)
     // Impact: ~₹1,533/month savings on Quick Read alone (1,758 guides/month)
     if (studyMode === 'quick') {
-      return 'claude-haiku-4-5-20250929'
+      return 'claude-haiku-4-5-20251001'
     }
 
     // v3.3: Claude Sonnet 4.5 for all other modes (better at following word count instructions)

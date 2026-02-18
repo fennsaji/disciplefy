@@ -4,6 +4,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
 
 export default function UserTokenDetailsPage() {
   const params = useParams()
@@ -87,32 +89,12 @@ export default function UserTokenDetailsPage() {
   }
 
   if (balanceLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading token details...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState label="Loading token details..." />
   }
 
   if (balanceError || !balance) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/20">
-          <p className="font-medium text-red-800 dark:text-red-300">Error loading token details</p>
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-            {balanceError instanceof Error ? balanceError.message : 'User not found'}
-          </p>
-          <button
-            onClick={() => router.push('/token-management')}
-            className="mt-4 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
-          >
-            Back to Token Management
-          </button>
-        </div>
-      </div>
+      <ErrorState title="Error loading token data" message={balanceError instanceof Error ? balanceError.message : 'User not found'} />
     )
   }
 

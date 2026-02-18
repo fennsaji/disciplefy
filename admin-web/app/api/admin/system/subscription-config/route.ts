@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { buildMarketingFeatures } from '@/lib/utils/plan-marketing-features'
 
 /**
  * GET - Fetch subscription configuration
@@ -182,13 +183,15 @@ export async function PATCH(request: NextRequest) {
       memory_verses: features?.memory_verses ?? 0,
       practice_modes: features?.practice_modes ?? 0,
       practice_limit: features?.practice_limit ?? 0,
-      study_modes: features?.study_modes || ['standard']
+      study_modes: features?.study_modes || ['standard'],
+      followups: features?.followups ?? 0
     }
 
     const { data: planData, error: planError } = await supabaseAdmin
       .from('subscription_plans')
       .update({
         features: updatedFeatures,
+        marketing_features: buildMarketingFeatures(updatedFeatures),
         is_active: is_active ?? true,
         updated_at: new Date().toISOString()
       })

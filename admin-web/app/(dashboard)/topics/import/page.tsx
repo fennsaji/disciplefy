@@ -198,7 +198,7 @@ export default function BulkImportPage() {
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     Select a CSV file containing topics to import
                   </p>
-                  <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
+                  <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600">
                     <svg
                       className="h-5 w-5"
                       fill="none"
@@ -319,7 +319,7 @@ export default function BulkImportPage() {
                   <button
                     type="button"
                     onClick={() => setStage('upload')}
-                    className="text-sm text-primary hover:text-primary-dark"
+                    className="text-sm text-primary hover:text-primary-600"
                   >
                     Upload Different File
                   </button>
@@ -493,7 +493,7 @@ export default function BulkImportPage() {
                     disabled={
                       parsedTopics.filter((t) => t.errors.length === 0).length === 0
                     }
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Import{' '}
                     {parsedTopics.filter((t) => t.errors.length === 0).length} Topics
@@ -505,7 +505,7 @@ export default function BulkImportPage() {
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
                 >
                   Done
                 </button>

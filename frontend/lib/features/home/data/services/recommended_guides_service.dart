@@ -9,6 +9,7 @@ import '../../../../core/services/http_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../models/recommended_guide_topic_model.dart';
 import '../datasources/recommended_topics_local_datasource.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Result container for "For You" topics API response.
 ///
@@ -135,7 +136,7 @@ class RecommendedGuidesService {
         if (!cacheEntry.isExpired(_defaultCacheExpiry)) {
           if (kDebugMode) {
             final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
-            print(
+            Logger.debug(
                 '✅ [TOPICS] Returning in-memory cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
           }
           return Right(cacheEntry.data);
@@ -154,19 +155,15 @@ class RecommendedGuidesService {
           final topics = cachedTopics.map((model) => model.toEntity()).toList();
           // Also populate in-memory cache for faster access
           _allTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
-          if (kDebugMode) {
-            print(
-                '✅ [TOPICS] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
-          }
+          Logger.debug(
+              '✅ [TOPICS] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
           return Right(topics);
         }
       }
 
       try {
-        if (kDebugMode) {
-          print(
-              '🚀 [TOPICS] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} topics from API...');
-        }
+        Logger.debug(
+            '🚀 [TOPICS] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} topics from API...');
 
         // Prepare headers for API request
         final headers = await _httpService.createHeaders();
@@ -186,9 +183,7 @@ class RecommendedGuidesService {
           headers: headers,
         );
 
-        if (kDebugMode) {
-          print('📡 [TOPICS] API Response Status: ${response.statusCode}');
-        }
+        Logger.info('📡 [TOPICS] API Response Status: ${response.statusCode}');
 
         if (response.statusCode == 200) {
           final result = _parseTopicsResponse(response.body);
@@ -206,26 +201,22 @@ class RecommendedGuidesService {
                   .toList();
               await _localDataSource.cacheTopics(cacheKey, topicModels);
 
-              if (kDebugMode) {
-                print(
-                    '💾 [TOPICS] Cached ${topics.length} topics for ${language ?? 'en'} (in-memory + persistent) for ${_defaultCacheExpiry.inHours} hours');
-              }
+              Logger.debug(
+                  '💾 [TOPICS] Cached ${topics.length} topics for ${language ?? 'en'} (in-memory + persistent) for ${_defaultCacheExpiry.inHours} hours');
             },
           );
 
           return result;
         } else {
-          if (kDebugMode) {
-            print(
-                '❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
-          }
+          Logger.error(
+              '❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
           return Left(ServerFailure(
               message: 'Failed to fetch topics: ${response.statusCode}'));
         }
       } catch (e, stackTrace) {
         if (kDebugMode) {
-          print('💥 [TOPICS] Exception: $e');
-          print('📚 [TOPICS] Stack trace: $stackTrace');
+          Logger.debug('💥 [TOPICS] Exception: $e');
+          Logger.debug('📚 [TOPICS] Stack trace: $stackTrace');
         }
 
         return Left(
@@ -262,7 +253,7 @@ class RecommendedGuidesService {
         if (!cacheEntry.isExpired(_filteredCacheExpiry)) {
           if (kDebugMode) {
             final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
-            print(
+            Logger.debug(
                 '✅ [TOPICS] Returning in-memory cached filtered topics (cached ${cacheAge.inMinutes} minutes ago)');
           }
           return Right(cacheEntry.data);
@@ -281,10 +272,8 @@ class RecommendedGuidesService {
           final topics = cachedTopics.map((model) => model.toEntity()).toList();
           // Also populate in-memory cache for faster access
           _filteredTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
-          if (kDebugMode) {
-            print(
-                '✅ [TOPICS] Returning persistent cached filtered topics (${topics.length} topics)');
-          }
+          Logger.debug(
+              '✅ [TOPICS] Returning persistent cached filtered topics (${topics.length} topics)');
           return Right(topics);
         }
       }
@@ -302,10 +291,8 @@ class RecommendedGuidesService {
         final uri = Uri.parse('$_baseUrl$_topicsEndpoint').replace(
             queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
-        if (kDebugMode) {
-          print(
-              '🚀 [TOPICS] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} filtered topics: $uri');
-        }
+        Logger.debug(
+            '🚀 [TOPICS] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} filtered topics: $uri');
 
         // Prepare headers for API request
         final headers = await _httpService.createHeaders();
@@ -332,22 +319,22 @@ class RecommendedGuidesService {
                   .toList();
               await _localDataSource.cacheTopics(cacheKey, topicModels);
 
-              if (kDebugMode) {
-                print(
-                    '💾 [TOPICS] Cached ${topics.length} filtered topics (in-memory + persistent) for ${_filteredCacheExpiry.inHours} hours');
-              }
+              Logger.debug(
+                  '💾 [TOPICS] Cached ${topics.length} filtered topics (in-memory + persistent) for ${_filteredCacheExpiry.inHours} hours');
             },
           );
 
           return result;
         } else {
-          if (kDebugMode) print('💥 [TOPICS] API error ${response.statusCode}');
+          if (kDebugMode) {
+            Logger.debug('💥 [TOPICS] API error ${response.statusCode}');
+          }
           return Left(ServerFailure(
               message:
                   'Failed to fetch filtered topics: ${response.statusCode}'));
         }
       } catch (e) {
-        if (kDebugMode) print('💥 [TOPICS] Filtered topics error: $e');
+        if (kDebugMode) Logger.debug('💥 [TOPICS] Filtered topics error: $e');
         return Left(
             NetworkFailure(message: 'Failed to fetch filtered topics: $e'));
       }
@@ -387,7 +374,7 @@ class RecommendedGuidesService {
         if (!cacheEntry.isExpired(_forYouCacheExpiry)) {
           if (kDebugMode) {
             final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
-            print(
+            Logger.debug(
                 '✅ [FOR YOU] Returning in-memory cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
           }
           // INVARIANT: We only cache results when hasCompletedQuestionnaire was true
@@ -411,10 +398,8 @@ class RecommendedGuidesService {
           final topics = cachedTopics.map((model) => model.toEntity()).toList();
           // Also populate in-memory cache for faster access
           _filteredTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
-          if (kDebugMode) {
-            print(
-                '✅ [FOR YOU] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
-          }
+          Logger.debug(
+              '✅ [FOR YOU] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
           // INVARIANT: We only cache results when hasCompletedQuestionnaire was true
           // (see caching logic at lines 464-480), so returning true here is safe.
           return Right(ForYouTopicsResult(
@@ -425,10 +410,8 @@ class RecommendedGuidesService {
       }
 
       try {
-        if (kDebugMode) {
-          print(
-              '🚀 [FOR YOU] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} personalized topics from API...');
-        }
+        Logger.debug(
+            '🚀 [FOR YOU] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} personalized topics from API...');
 
         // Prepare headers for API request (includes auth token for user identification)
         final headers = await _httpService.createHeaders();
@@ -449,9 +432,7 @@ class RecommendedGuidesService {
           body: requestBody,
         );
 
-        if (kDebugMode) {
-          print('📡 [FOR YOU] API Response Status: ${response.statusCode}');
-        }
+        Logger.info('📡 [FOR YOU] API Response Status: ${response.statusCode}');
 
         if (response.statusCode == 200) {
           final result = _parseForYouTopicsResponse(response.body);
@@ -476,27 +457,23 @@ class RecommendedGuidesService {
                   .toList();
               await _localDataSource.cacheTopics(cacheKey, topicModels);
 
-              if (kDebugMode) {
-                print(
-                    '💾 [FOR YOU] Cached ${forYouResult.topics.length} topics for ${language ?? 'en'} (in-memory + persistent) for ${_forYouCacheExpiry.inHours} hours');
-              }
+              Logger.debug(
+                  '💾 [FOR YOU] Cached ${forYouResult.topics.length} topics for ${language ?? 'en'} (in-memory + persistent) for ${_forYouCacheExpiry.inHours} hours');
             }
           }
 
           return result;
         } else {
-          if (kDebugMode) {
-            print(
-                '❌ [FOR YOU] API error: ${response.statusCode} - ${response.body}');
-          }
+          Logger.error(
+              '❌ [FOR YOU] API error: ${response.statusCode} - ${response.body}');
           return Left(ServerFailure(
               message:
                   'Failed to fetch personalized topics: ${response.statusCode}'));
         }
       } catch (e, stackTrace) {
         if (kDebugMode) {
-          print('💥 [FOR YOU] Exception: $e');
-          print('📚 [FOR YOU] Stack trace: $stackTrace');
+          Logger.debug('💥 [FOR YOU] Exception: $e');
+          Logger.debug('📚 [FOR YOU] Stack trace: $stackTrace');
         }
 
         return Left(NetworkFailure(
@@ -509,7 +486,7 @@ class RecommendedGuidesService {
   Either<Failure, ForYouTopicsResult> _parseForYouTopicsResponse(
       String responseBody) {
     try {
-      if (kDebugMode) print('📄 [FOR YOU] Parsing response...');
+      if (kDebugMode) Logger.debug('📄 [FOR YOU] Parsing response...');
       final Map<String, dynamic> jsonData = json.decode(responseBody);
 
       // Handle nested response format: {"success": true, "data": {...}}
@@ -524,7 +501,7 @@ class RecommendedGuidesService {
 
       // Log suggested learning path if present
       if (kDebugMode && topicsData.containsKey('suggestedLearningPath')) {
-        print(
+        Logger.info(
             '🎯 [FOR YOU] Suggested Learning Path: ${topicsData['suggestedLearningPath']}');
       }
 
@@ -534,15 +511,15 @@ class RecommendedGuidesService {
         final topics = response.toEntities();
 
         if (kDebugMode) {
-          print(
+          Logger.info(
               '✅ [FOR YOU] Successfully parsed ${topics.length} topics (questionnaire completed: $hasCompletedQuestionnaire)');
           // Log learning path fields for each topic
           for (final topic in topics) {
             if (topic.isFromLearningPath) {
-              print(
+              Logger.debug(
                   '  📍 Topic "${topic.title}" - Path: ${topic.learningPathName}, Position: ${topic.positionInPath}/${topic.totalTopicsInPath}');
             } else {
-              print(
+              Logger.debug(
                   '  📍 Topic "${topic.title}" - No learning path (learningPathId: ${topic.learningPathId})');
             }
           }
@@ -552,16 +529,15 @@ class RecommendedGuidesService {
           hasCompletedQuestionnaire: hasCompletedQuestionnaire,
         ));
       } else {
-        if (kDebugMode) {
-          print('❌ [FOR YOU] API response missing topics data: $topicsData');
-        }
+        Logger.error(
+            '❌ [FOR YOU] API response missing topics data: $topicsData');
         return const Left(
             ClientFailure(message: 'API response missing topics data'));
       }
     } catch (e) {
       if (kDebugMode) {
-        print('💥 [FOR YOU] JSON parsing error: $e');
-        print('📄 [FOR YOU] Raw response: $responseBody');
+        Logger.error('💥 [FOR YOU] JSON parsing error: $e');
+        Logger.debug('📄 [FOR YOU] Raw response: $responseBody');
       }
       return Left(ClientFailure(
           message: 'Failed to parse personalized topics response: $e'));
@@ -572,7 +548,7 @@ class RecommendedGuidesService {
   Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(
       String responseBody) {
     try {
-      if (kDebugMode) print('📄 [TOPICS] Parsing response...');
+      if (kDebugMode) Logger.debug('📄 [TOPICS] Parsing response...');
       final Map<String, dynamic> jsonData = json.decode(responseBody);
 
       // Parse the expected API format using RecommendedGuideTopicsResponse
@@ -585,21 +561,17 @@ class RecommendedGuidesService {
         final response = RecommendedGuideTopicsResponse.fromJson(topicsData);
         final topics = response.toEntities();
 
-        if (kDebugMode) {
-          print('✅ [TOPICS] Successfully parsed ${topics.length} topics');
-        }
+        Logger.info('✅ [TOPICS] Successfully parsed ${topics.length} topics');
         return Right(topics);
       } else {
-        if (kDebugMode) {
-          print('❌ [TOPICS] API response missing topics data: $jsonData');
-        }
+        Logger.error('❌ [TOPICS] API response missing topics data: $jsonData');
         return const Left(
             ClientFailure(message: 'API response missing topics data'));
       }
     } catch (e) {
       if (kDebugMode) {
-        print('💥 [TOPICS] JSON parsing error: $e');
-        print('📄 [TOPICS] Raw response: $responseBody');
+        Logger.error('💥 [TOPICS] JSON parsing error: $e');
+        Logger.debug('📄 [TOPICS] Raw response: $responseBody');
       }
       return Left(
           ClientFailure(message: 'Failed to parse topics response: $e'));
@@ -655,10 +627,8 @@ class RecommendedGuidesService {
       // Clear persistent cache entries for "for_you_*" keys
       await _localDataSource.clearCacheByPrefix('for_you_');
 
-      if (kDebugMode) {
-        print(
-            '🗑️ [FOR YOU] Cleared ${forYouKeys.length} For You cache entries (in-memory + persistent)');
-      }
+      Logger.debug(
+          '🗑️ [FOR YOU] Cleared ${forYouKeys.length} For You cache entries (in-memory + persistent)');
     });
   }
 
@@ -691,9 +661,7 @@ class RecommendedGuidesService {
       _allTopicsCache.clear();
       _filteredTopicsCache.clear();
       await _localDataSource.clearCache();
-      if (kDebugMode) {
-        print('🗑️ [TOPICS] All caches cleared (in-memory + persistent)');
-      }
+      Logger.debug('🗑️ [TOPICS] All caches cleared (in-memory + persistent)');
     });
   }
 
@@ -719,8 +687,8 @@ class RecommendedGuidesService {
   /// **Example:**
   /// ```dart
   /// final status = await recommendedGuidesService.getCacheStatus();
-  /// print('Total all-topics caches: ${status['in_memory_all_topics_caches_count']}');
-  /// print('Cache keys: ${status['in_memory_all_topics_cache_keys']}');
+  /// Logger.debug('Total all-topics caches: ${status['in_memory_all_topics_caches_count']}');
+  /// Logger.debug('Cache keys: ${status['in_memory_all_topics_cache_keys']}');
   /// ```
   Future<Map<String, dynamic>> getCacheStatus() async {
     // Serialize cache status reading with lock to prevent race conditions

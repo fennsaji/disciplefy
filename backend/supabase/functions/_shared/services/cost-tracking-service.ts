@@ -41,7 +41,7 @@ const LLM_PRICING = {
       input_per_1k: 0.003, // $0.003 per 1K input tokens
       output_per_1k: 0.015, // $0.015 per 1K output tokens
     },
-    'claude-haiku-4-5-20250929': {
+    'claude-haiku-4-5-20251001': {
       input_per_1k: 0.0008, // $0.0008 per 1K input tokens (73% cheaper than Sonnet)
       output_per_1k: 0.004, // $0.004 per 1K output tokens
     },

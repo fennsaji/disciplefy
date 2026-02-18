@@ -266,7 +266,7 @@ export async function getDailyTokenLimit(planCode: PlanType): Promise<number> {
 }
 
 // REMOVED: getVoiceMinutesLimit() - voice_minutes_monthly field removed from schema
-// Use voice_conversations_monthly quota instead via VoiceConversationLimitService
+// Use voice_conversations_monthly quota instead via check_and_increment_voice_quota (edge function)
 
 /**
  * Get unlocked study modes for a plan

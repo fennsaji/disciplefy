@@ -20,7 +20,6 @@ import {
 } from '../_shared/prompts/voice-conversation-prompts.ts'
 import { StreamMessage } from '../_shared/services/voice-streaming-service.ts'
 import { BibleBookNormalizer } from '../_shared/utils/bible-book-normalizer.ts'
-import { VoiceConversationLimitService } from '../_shared/services/voice-conversation-limit-service.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
@@ -44,7 +43,7 @@ type SSEEvent =
   | { type: 'stream_end'; data: { timestamp: number; scripture_references: string[]; translation: string } }
   | { type: 'message_limit_status'; data: { messageCount: number; limit: number; remaining: number } }
   | { type: 'conversation_limit_exceeded'; data: { message: string; messageCount: number; limit: number } }
-  | { type: 'monthly_conversation_limit_exceeded'; data: { message: string; conversations_used: number; limit: number; remaining: number; tier: string; month: string } }
+  | { type: 'monthly_conversation_limit_exceeded'; data: { message: string; conversations_used: number; limit: number; remaining: number; tier: string } }
   | { type: 'error'; data: { code: string; message: string } }
 
 /**
@@ -256,48 +255,48 @@ async function handleVoiceConversation(
       voiceConversationRepository.getConversationHistory(conversation_id)
     ])
 
-    // Check monthly conversation limit for NEW conversations only
-    // A conversation is considered new if it has no prior messages in history
+    // Enforce monthly conversation quota on the first message of each conversation.
+    // This is the server-side enforcement gate — it atomically checks the limit
+    // and increments the counter in one transaction, so it cannot be bypassed
+    // by calling the API directly without going through the Flutter client.
     const isNewConversation = conversationHistory.length === 0
 
     if (isNewConversation) {
-      console.log(`[Voice] New conversation detected: ${conversation_id}, checking monthly limit for user ${userId} (tier: ${tier})`)
-
-      // Initialize monthly limit service
-      const limitService = new VoiceConversationLimitService(services.supabaseServiceClient)
+      console.log(`[Voice] New conversation ${conversation_id} — enforcing monthly quota for user ${userId} (tier: ${tier})`)
 
       try {
-        const limitStatus = await limitService.checkMonthlyLimit(userId, tier)
+        const { data: quotaResult, error: quotaError } = await services.supabaseServiceClient.rpc(
+          'check_and_increment_voice_quota',
+          { p_user_id: userId, p_tier: tier }
+        )
 
-        if (!limitStatus.canStart) {
-          console.log(`[Voice] Monthly limit exceeded for user ${userId}: ${limitStatus.conversationsUsed}/${limitStatus.limit}`)
+        if (quotaError) {
+          console.error(`[Voice] Quota check error for user ${userId}:`, quotaError)
+          // Fail-open: if DB is unavailable, don't block the user
+        } else if (quotaResult && !quotaResult.can_start) {
+          console.log(`[Voice] Monthly quota exceeded for user ${userId}: ${quotaResult.conversations_used}/${quotaResult.limit}`)
+
+          const tierNames: Record<string, string> = { free: 'Free', standard: 'Standard', plus: 'Plus', premium: 'Premium' }
+          const tierName = tierNames[tier.toLowerCase()] || tier
+          const word = quotaResult.limit === 1 ? 'conversation' : 'conversations'
 
           await sendEvent({
             type: 'monthly_conversation_limit_exceeded',
             data: {
-              message: limitService.getMonthlyLimitMessage(tier, limitStatus.conversationsUsed, limitStatus.limit),
-              conversations_used: limitStatus.conversationsUsed,
-              limit: limitStatus.limit,
-              remaining: limitStatus.remaining,
-              tier: limitStatus.tier,
-              month: limitStatus.month || new Date().toISOString().substring(0, 7)
+              message: `You've reached your monthly limit of ${quotaResult.limit} voice ${word} for ${tierName} plan. Upgrade to continue using AI Study Buddy Voice this month.`,
+              conversations_used: quotaResult.conversations_used,
+              limit: quotaResult.limit,
+              remaining: 0,
+              tier
             }
           })
-          return // Stop execution - do not proceed with conversation
+          return
+        } else {
+          console.log(`[Voice] Monthly quota OK for user ${userId}: ${quotaResult?.conversations_used}/${quotaResult?.limit} (${quotaResult?.remaining} remaining)`)
         }
-
-        console.log(`[Voice] Monthly limit OK for user ${userId}: ${limitStatus.conversationsUsed}/${limitStatus.limit} (${limitStatus.remaining} remaining)`)
-
-        // Increment monthly counter AFTER we know the conversation will proceed
-        // Using fire-and-forget pattern (non-blocking)
-        // This will be incremented again after successful message save
-        limitService.incrementMonthlyCounter(userId, tier)
-          .catch(err => console.error(`[Voice] Failed to increment monthly counter for user ${userId}:`, err))
-
-      } catch (limitError) {
-        console.error(`[Voice] Error checking monthly limit for user ${userId}:`, limitError)
-        // Fail-open: if limit check fails, allow conversation to proceed
-        // This prevents service disruption if the limit checking system has issues
+      } catch (quotaError) {
+        console.error(`[Voice] Unexpected quota error for user ${userId}:`, quotaError)
+        // Fail-open: proceed to avoid service disruption
       }
     }
 

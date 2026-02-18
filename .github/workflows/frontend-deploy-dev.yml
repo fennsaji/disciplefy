@@ -181,7 +181,14 @@ jobs:
             --dart-define=FLUTTER_WEB_AUTO_DETECT=false \
             --dart-define=ENABLE_LOGGING=true \
             --dart-define=IS_DEVELOPMENT=true \
-            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }}
+            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }} \
+            --dart-define=FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }} \
+            --dart-define=FIREBASE_AUTH_DOMAIN=disciplefy---bible-study.firebaseapp.com \
+            --dart-define=FIREBASE_PROJECT_ID=disciplefy---bible-study \
+            --dart-define=FIREBASE_STORAGE_BUCKET=disciplefy---bible-study.firebasestorage.app \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID=16888340359 \
+            --dart-define=FIREBASE_APP_ID=1:16888340359:web:36ad4ae0d1ef1adf8e3d22 \
+            --dart-define=FIREBASE_MEASUREMENT_ID=G-TY0KDPH5TS
           
           echo "📊 Build statistics:"
           du -sh build/web

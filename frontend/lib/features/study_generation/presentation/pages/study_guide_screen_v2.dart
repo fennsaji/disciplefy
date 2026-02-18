@@ -49,6 +49,7 @@ import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/repositories/reflections_repository.dart';
 import '../widgets/reading_completion_card.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -366,9 +367,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   @override
   void didPushNext() {
     if (kDebugMode) {
-      print('🚪 [NAVIGATION] User navigated AWAY from study screen');
-      print('   Generation complete: $_isGenerationComplete');
-      print('   Pending study ID: $_pendingStudyId');
+      Logger.debug('🚪 [NAVIGATION] User navigated AWAY from study screen');
+      Logger.debug('   Generation complete: $_isGenerationComplete');
+      Logger.debug('   Pending study ID: $_pendingStudyId');
     }
 
     _isUserOnScreen = false;
@@ -377,9 +378,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // The stream subscription will continue until completion
 
     if (!_isGenerationComplete && _pendingStudyId != null) {
-      if (kDebugMode) {
-        print('   ✅ Letting generation continue in background');
-      }
+      Logger.info('   ✅ Letting generation continue in background');
       // Schedule periodic checks for completion
       _scheduleCompletionCheck();
     }
@@ -388,9 +387,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Called when user comes back to this screen (Home → Study)
   @override
   void didPopNext() async {
-    if (kDebugMode) {
-      print('👋 [NAVIGATION] User came BACK to study screen');
-    }
+    Logger.debug('👋 [NAVIGATION] User came BACK to study screen');
 
     _isUserOnScreen = true;
 
@@ -403,18 +400,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Called when this screen is first opened
   @override
   void didPush() {
-    if (kDebugMode) {
-      print('📱 [NAVIGATION] Study screen opened (fresh)');
-    }
+    Logger.debug('📱 [NAVIGATION] Study screen opened (fresh)');
     _isUserOnScreen = true;
   }
 
   /// Called when user explicitly closes this screen (back button)
   @override
   void didPop() {
-    if (kDebugMode) {
-      print('🔙 [NAVIGATION] Study screen closed by user');
-    }
+    Logger.debug('🔙 [NAVIGATION] Study screen closed by user');
     _isUserOnScreen = false;
   }
 
@@ -445,9 +438,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           .maybeSingle();
 
       if (response != null) {
-        if (kDebugMode) {
-          print('✅ [NAVIGATION] Background generation completed!');
-        }
+        Logger.debug('✅ [NAVIGATION] Background generation completed!');
 
         _isGenerationComplete = true;
 
@@ -469,14 +460,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           }
         }
       } else {
-        if (kDebugMode) {
-          print('⏳ [NAVIGATION] Background generation still in progress...');
-        }
+        Logger.debug(
+            '⏳ [NAVIGATION] Background generation still in progress...');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ [NAVIGATION] Error checking background status: $e');
-      }
+      Logger.debug('⚠️ [NAVIGATION] Error checking background status: $e');
     }
   }
 
@@ -493,7 +481,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // since the API requires the actual topic text, not the database ID.
 
     if (kDebugMode && widget.topicId != null) {
-      print(
+      Logger.error(
           '🔍 [STUDY_GUIDE_V2] Topic ID from notification: ${widget.topicId}');
     }
 
@@ -519,10 +507,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         final appLanguage = await languageService.getStudyContentLanguage();
         rawLanguageCode = appLanguage.code;
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '⚠️ [STUDY_GUIDE_V2] Failed to get study content language preference: $e');
-        }
+        Logger.warning(
+            '⚠️ [STUDY_GUIDE_V2] Failed to get study content language preference: $e');
       }
     }
 
@@ -530,7 +516,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final normalizedLanguageCode = _normalizeLanguageCode(rawLanguageCode);
 
     if (kDebugMode && rawLanguageCode != normalizedLanguageCode) {
-      print(
+      Logger.info(
           '🌐 [STUDY_GUIDE_V2] Language normalized: $rawLanguageCode → $normalizedLanguageCode');
     }
 
@@ -549,9 +535,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // This allows us to track background completion even if user navigates away
     _pendingStudyId = const Uuid().v4();
 
-    if (kDebugMode) {
-      print('🔄 [GENERATION] Starting with pending ID: $_pendingStudyId');
-    }
+    Logger.info('🔄 [GENERATION] Starting with pending ID: $_pendingStudyId');
 
     // Dispatch streaming study guide generation event (V2 API)
     // This uses SSE for progressive section rendering
@@ -606,9 +590,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         createdAt: DateTime.now(),
       );
 
-      if (kDebugMode) {
-        print('✅ [STUDY_GUIDE_V2] Loaded existing guide: $input');
-      }
+      Logger.info('✅ [STUDY_GUIDE_V2] Loaded existing guide: $input');
 
       setState(() {
         _currentStudyGuide = studyGuide;
@@ -621,9 +603,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         }
       });
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
-      }
+      Logger.error('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
       _showError('Failed to load study guide. Please try again.');
     }
   }
@@ -638,9 +618,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       return;
     }
 
-    if (kDebugMode) {
-      print('📊 [TOPIC_PROGRESS] Starting topic progress for: $topicId');
-    }
+    Logger.debug('📊 [TOPIC_PROGRESS] Starting topic progress for: $topicId');
 
     try {
       final repository = sl<TopicProgressRepository>();
@@ -648,21 +626,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
         },
         (_) {
-          if (kDebugMode) {
-            print('✅ [TOPIC_PROGRESS] Topic progress started successfully');
-          }
+          Logger.debug(
+              '✅ [TOPIC_PROGRESS] Topic progress started successfully');
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPIC_PROGRESS] Exception during start tracking: $e');
-      }
+      Logger.error('❌ [TOPIC_PROGRESS] Exception during start tracking: $e');
     }
   }
 
@@ -683,9 +656,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _isGenerationComplete = true;
     _pendingStudyId = null;
 
-    if (kDebugMode) {
-      print('✅ [GENERATION] Study generation completed successfully');
-    }
+    Logger.info('✅ [GENERATION] Study generation completed successfully');
 
     setState(() {
       _currentStudyGuide = studyGuide;
@@ -772,16 +743,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _loadPersonalNotesIfSaved() {
     if (_currentStudyGuide == null) return;
 
-    if (kDebugMode) {
-      print(
-          '🔍 [STUDY_GUIDE_V2] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
-    }
+    Logger.info(
+        '🔍 [STUDY_GUIDE_V2] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
 
     if (_isSaved && !_notesLoaded) {
-      if (kDebugMode) {
-        print(
-            '📝 [STUDY_GUIDE_V2] Requesting personal notes for guide: ${_currentStudyGuide!.id}');
-      }
+      Logger.debug(
+          '📝 [STUDY_GUIDE_V2] Requesting personal notes for guide: ${_currentStudyGuide!.id}');
       context.read<StudyBloc>().add(LoadPersonalNotesRequested(
             guideId: _currentStudyGuide!.id,
           ));
@@ -806,10 +773,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         if (currentText != (_loadedNotes ?? '').trim()) {
           // Auto-save notes independently (no longer requires guide to be saved)
           if (_currentStudyGuide != null) {
-            if (kDebugMode) {
-              print(
-                  '💾 [AUTO_SAVE] Saving personal notes (${currentText.length} chars)');
-            }
+            Logger.info(
+                '💾 [AUTO_SAVE] Saving personal notes (${currentText.length} chars)');
             context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
                   guideId: _currentStudyGuide!.id,
                   personalNotes: currentText.isEmpty ? null : currentText,
@@ -841,7 +806,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     if (kDebugMode) {
       final guideId = _currentStudyGuide?.id ?? 'streaming';
-      print('📊 [COMPLETION] Started tracking for guide: $guideId');
+      Logger.debug('📊 [COMPLETION] Started tracking for guide: $guideId');
     }
   }
 
@@ -875,9 +840,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Returns true when scroll position is at 80% or more of max scroll extent
   bool _isScrolledNearBottom() {
     if (!_scrollController.hasClients) {
-      if (kDebugMode) {
-        print('📊 [SCROLL] No scroll clients attached yet');
-      }
+      Logger.debug('📊 [SCROLL] No scroll clients attached yet');
       return false;
     }
 
@@ -885,16 +848,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final currentScroll = _scrollController.position.pixels;
 
     if (kDebugMode) {
-      print('📊 [SCROLL] Position check:');
-      print('   Current: ${currentScroll.toStringAsFixed(1)}px');
-      print('   Max: ${maxScroll.toStringAsFixed(1)}px');
+      Logger.debug('📊 [SCROLL] Position check:');
+      Logger.debug('   Current: ${currentScroll.toStringAsFixed(1)}px');
+      Logger.debug('   Max: ${maxScroll.toStringAsFixed(1)}px');
     }
 
     // Handle case where content doesn't scroll (fits on screen)
     if (maxScroll <= 0) {
-      if (kDebugMode) {
-        print('   → Content fits on screen, marking as scrolled to bottom');
-      }
+      Logger.debug(
+          '   → Content fits on screen, marking as scrolled to bottom');
       return true;
     }
 
@@ -903,8 +865,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final isNearBottom = scrollPercentage >= 0.80;
 
     if (kDebugMode) {
-      print('   Percentage: ${(scrollPercentage * 100).toStringAsFixed(1)}%');
-      print('   Is near bottom (≥80%): ${isNearBottom ? "✓" : "✗"}');
+      Logger.debug(
+          '   Percentage: ${(scrollPercentage * 100).toStringAsFixed(1)}%');
+      Logger.debug('   Is near bottom (≥80%): ${isNearBottom ? "✓" : "✗"}');
     }
 
     return isNearBottom;
@@ -1006,12 +969,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _hasScrolledToBottom || _viewMode == StudyViewMode.reflect;
 
     if (kDebugMode) {
-      print('📊 [COMPLETION] Conditions check:');
-      print(
+      Logger.debug('📊 [COMPLETION] Conditions check:');
+      Logger.debug(
           '   View Mode: ${_viewMode == StudyViewMode.read ? "Read" : "Reflect"}');
-      print(
+      Logger.debug(
           '   Time: $_timeSpentSeconds/${minTimeSeconds}s (${timeConditionMet ? "✓" : "✗"})');
-      print(
+      Logger.debug(
           '   Scroll: ${scrollConditionMet ? "✓" : "✗"}${_viewMode == StudyViewMode.reflect ? " (Reflect mode - auto-met)" : ""}');
     }
 
@@ -1020,8 +983,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
   }
 
-  /// Call the API to mark the study guide as completed
-  void _markStudyGuideComplete() {
+  /// Call the API to mark the study guide as completed.
+  ///
+  /// [isManual] should be true when triggered by the user tapping "Complete Study".
+  /// Auto-completion (conditions met) uses the default false, which enforces
+  /// time and scroll conditions on the server.
+  void _markStudyGuideComplete({bool isManual = false}) {
     if (_completionMarked || _currentStudyGuide == null) return;
 
     setState(() {
@@ -1029,10 +996,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     });
 
     if (kDebugMode) {
-      print('✅ [COMPLETION] Marking guide as complete:');
-      print('   Guide ID: ${_currentStudyGuide!.id}');
-      print('   Time spent: $_timeSpentSeconds seconds');
-      print('   Scrolled to bottom: $_hasScrolledToBottom');
+      Logger.info('✅ [COMPLETION] Marking guide as complete:');
+      Logger.debug('   Guide ID: ${_currentStudyGuide!.id}');
+      Logger.debug('   Time spent: $_timeSpentSeconds seconds');
+      Logger.debug('   Scrolled to bottom: $_hasScrolledToBottom');
+      Logger.debug('   Manual: $isManual');
     }
 
     // Dispatch BLoC event to mark completion
@@ -1040,6 +1008,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           guideId: _currentStudyGuide!.id,
           timeSpentSeconds: _timeSpentSeconds,
           scrolledToBottom: _hasScrolledToBottom,
+          isManual: isManual,
         ));
 
     // Cancel the tracking timer since completion is marked
@@ -1053,18 +1022,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Future<void> _completeTopicProgress() async {
     final topicId = widget.topicId;
     if (topicId == null || topicId.isEmpty) {
-      if (kDebugMode) {
-        print(
-            '📊 [TOPIC_PROGRESS] No topicId provided, skipping progress tracking');
-      }
+      Logger.debug(
+          '📊 [TOPIC_PROGRESS] No topicId provided, skipping progress tracking');
       return;
     }
 
     if (kDebugMode) {
-      print('📊 [TOPIC_PROGRESS] Completing topic progress:');
-      print('   Topic ID: $topicId');
-      print('   Study Mode: ${widget.studyMode.name}');
-      print('   Time spent: $_timeSpentSeconds seconds');
+      Logger.debug('📊 [TOPIC_PROGRESS] Completing topic progress:');
+      Logger.debug('   Topic ID: $topicId');
+      Logger.debug('   Study Mode: ${widget.studyMode.name}');
+      Logger.debug('   Time spent: $_timeSpentSeconds seconds');
     }
 
     try {
@@ -1077,16 +1044,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
         },
         (completionResult) {
           if (kDebugMode) {
-            print('✅ [TOPIC_PROGRESS] Topic completed successfully:');
-            print('   XP earned: ${completionResult.xpEarned}');
-            print('   First completion: ${completionResult.isFirstCompletion}');
+            Logger.debug('✅ [TOPIC_PROGRESS] Topic completed successfully:');
+            Logger.debug('   XP earned: ${completionResult.xpEarned}');
+            Logger.debug(
+                '   First completion: ${completionResult.isFirstCompletion}');
           }
 
           // Show XP earned feedback if this is the first completion
@@ -1098,9 +1064,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
-      }
+      Logger.error('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
     }
   }
 
@@ -1279,7 +1243,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                       _saveStudyGuide();
                       break;
                     case 'complete':
-                      _markStudyGuideComplete();
+                      _markStudyGuideComplete(isManual: true);
                       break;
                   }
                 },
@@ -1839,11 +1803,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       );
 
       if (kDebugMode) {
-        print(
+        Logger.info(
             '✅ [REFLECTION] Saved reflection for guide: ${_currentStudyGuide!.id}');
-        print('   Responses: ${responses.length}');
-        print('   Time spent: ${timeSpent}s');
-        print('   Study mode: ${widget.studyMode.displayName}');
+        Logger.debug('   Responses: ${responses.length}');
+        Logger.debug('   Time spent: ${timeSpent}s');
+        Logger.debug('   Study mode: ${widget.studyMode.displayName}');
       }
 
       // Check if widget is still mounted before updating UI
@@ -1860,9 +1824,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         icon: Icons.check_circle,
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REFLECTION] Error saving reflection: $e');
-      }
+      Logger.error('❌ [REFLECTION] Error saving reflection: $e');
 
       // Check if widget is still mounted before updating UI
       if (!mounted) return;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { buildMarketingFeatures } from '@/lib/utils/plan-marketing-features'
 
 /**
  * GET - Fetch all system configuration settings
@@ -203,6 +204,7 @@ export async function POST(request: NextRequest) {
             .from('subscription_plans')
             .update({
               features: updatedFeatures,
+              marketing_features: buildMarketingFeatures(updatedFeatures),
               updated_at: new Date().toISOString()
             })
             .eq('plan_code', update.plan_code)
@@ -243,6 +245,7 @@ export async function POST(request: NextRequest) {
             .from('subscription_plans')
             .update({
               features: updatedFeatures,
+              marketing_features: buildMarketingFeatures(updatedFeatures),
               updated_at: new Date().toISOString()
             })
             .eq('plan_code', update.plan_code)

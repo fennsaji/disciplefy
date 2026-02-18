@@ -23,6 +23,7 @@ class AppRoutes {
   static const String purchaseHistory = '/token-management/purchase-history';
   static const String usageHistory = '/token-management/usage-history';
   static const String premiumUpgrade = '/premium-upgrade';
+  static const String plusUpgrade = '/plus-upgrade';
   static const String standardUpgrade = '/standard-upgrade';
   static const String subscriptionManagement = '/subscription-management';
   static const String myPlan = '/my-plan';

@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
+import '../../data/datasources/subscription_remote_data_source.dart';
+import '../../data/models/subscription_v2_models.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
-import '../../domain/entities/subscription.dart';
+import '../utils/plan_features_extractor.dart';
 
-/// Premium Upgrade Page
-///
-/// Presents premium subscription benefits and allows users to upgrade
-/// to premium plan for ₹499/month with unlimited tokens and features.
 class PremiumUpgradePage extends StatefulWidget {
   const PremiumUpgradePage({super.key});
 
@@ -26,23 +27,63 @@ class PremiumUpgradePage extends StatefulWidget {
 class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     with WidgetsBindingObserver {
   bool _hasOpenedPayment = false;
+  bool _isLoadingPlan = true;
+
+  SubscriptionPlanModel? _premiumPlan;
+  SubscriptionPlanModel? _plusPlan; // for comparison
+  List<String> _features = [];
+  List<PlanComparisonRow> _comparisonRows = [];
 
   @override
   void initState() {
     super.initState();
-    // Add lifecycle observer to detect when app resumes
     WidgetsBinding.instance.addObserver(this);
-    // Check subscription eligibility when page opens
     context.read<SubscriptionBloc>().add(const CheckSubscriptionEligibility());
+    _loadPlanData();
+  }
+
+  Future<void> _loadPlanData() async {
+    try {
+      final dataSource = sl<SubscriptionRemoteDataSource>();
+      final platformService = PlatformDetectionService();
+      final provider = platformService
+          .providerToString(platformService.getPreferredProvider());
+
+      final response =
+          await dataSource.getPlans(provider: provider, region: 'IN');
+
+      SubscriptionPlanModel? premium;
+      SubscriptionPlanModel? plus;
+
+      for (final plan in response.plans) {
+        final code = plan.planCode.toLowerCase();
+        if (code == 'premium') premium = plan;
+        if (code == 'plus') plus = plan;
+      }
+
+      if (mounted && premium != null) {
+        setState(() {
+          _premiumPlan = premium;
+          _plusPlan = plus;
+          _features = PlanFeaturesExtractor.extractFeaturesFromPlan(premium!);
+          _comparisonRows =
+              PlanFeaturesExtractor.buildComparisonRows(plus, premium);
+          _isLoadingPlan = false;
+        });
+      } else if (mounted) {
+        setState(() => _isLoadingPlan = false);
+      }
+    } catch (e) {
+      Logger.error('[PremiumUpgrade] Failed to load plan data', error: e);
+      if (mounted) setState(() => _isLoadingPlan = false);
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // ✅ FIX: Refresh subscription when returning to this page (works on web!)
-    // This detects when user comes back from payment page
     if (ModalRoute.of(context)?.isCurrent == true && _hasOpenedPayment) {
-      debugPrint(
+      Logger.debug(
           '[PremiumUpgrade] Page became visible after payment - checking subscription status');
       context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     }
@@ -50,7 +91,6 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
 
   @override
   void dispose() {
-    // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -58,15 +98,21 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-
-    // When app resumes after user completes payment (mobile only)
     if (state == AppLifecycleState.resumed && _hasOpenedPayment) {
-      debugPrint(
+      Logger.debug(
           '[PremiumUpgrade] App resumed after payment - checking subscription status');
-      // Check if subscription is now active
       context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     }
   }
+
+  String get _displayPrice {
+    if (_premiumPlan != null) {
+      return _premiumPlan!.displayPrice.toStringAsFixed(0);
+    }
+    return '499';
+  }
+
+  String get _planName => _premiumPlan?.planName ?? 'Disciplefy Premium';
 
   @override
   Widget build(BuildContext context) {
@@ -83,11 +129,10 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // ✅ Manual refresh button for users to check subscription status
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
-              debugPrint(
+              Logger.debug(
                   '[PremiumUpgrade] Manual refresh - checking subscription status');
               context
                   .read<SubscriptionBloc>()
@@ -100,7 +145,6 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
-            // Show success message and open authorization URL
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -109,20 +153,12 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 duration: const Duration(seconds: 2),
               ),
             );
-
-            // Mark that we've opened payment
             _hasOpenedPayment = true;
-
-            // Open Razorpay authorization URL
             _openAuthorizationUrl(state.authorizationUrl);
           } else if (state is SubscriptionLoaded) {
-            // User has returned from payment and subscription is active
-            if (state.activeSubscription != null &&
-                state.activeSubscription!.isActive) {
-              debugPrint(
+            if (state.activeSubscription?.isActive == true) {
+              Logger.debug(
                   '[PremiumUpgrade] Subscription is now active - navigating back');
-
-              // Show success message
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -131,16 +167,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   duration: const Duration(seconds: 3),
                 ),
               );
-
-              // Navigate back to Token Management to show updated status
               Future.delayed(const Duration(seconds: 1), () {
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
+                if (mounted) Navigator.of(context).pop();
               });
             }
           } else if (state is SubscriptionError) {
-            // Show error message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage),
@@ -154,32 +185,27 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (_isLoadingPlan) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Premium Badge
                 _buildPremiumBadge(),
                 const SizedBox(height: 24),
-
-                // Pricing Card
                 _buildPricingCard(),
                 const SizedBox(height: 32),
-
-                // Benefits List
-                _buildBenefitsList(),
+                _buildFeaturesList(),
                 const SizedBox(height: 32),
-
-                // Plan Comparison
-                _buildPlanComparison(),
-                const SizedBox(height: 32),
-
-                // Upgrade Button or Eligibility Message
+                if (_comparisonRows.isNotEmpty) ...[
+                  _buildComparison(),
+                  const SizedBox(height: 32),
+                ],
                 _buildActionButton(state),
                 const SizedBox(height: 16),
-
-                // Terms and Info
                 _buildTermsInfo(),
                 const SizedBox(height: 24),
               ],
@@ -217,7 +243,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
           const SizedBox(height: 12),
           Text(
-            context.tr(TranslationKeys.premiumDisciplefyPremium),
+            _planName,
             style: AppFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -226,11 +252,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
           const SizedBox(height: 8),
           Text(
-            context.tr(TranslationKeys.premiumUnlockAccess),
+            _premiumPlan?.description ??
+                context.tr(TranslationKeys.premiumUnlockAccess),
             style: AppFonts.inter(
               fontSize: 14,
-              color:
-                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -242,9 +268,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   Widget _buildPricingCard() {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -260,7 +284,6 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         ),
         child: Column(
           children: [
-            // Limited Time Offer Badge
             Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -281,19 +304,20 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Original price with strikethrough
-                Padding(
-                  padding: const EdgeInsets.only(top: 12.0, right: 8),
-                  child: Text(
-                    '₹200',
-                    style: AppFonts.inter(
-                      fontSize: 18,
-                      color: Colors.white.withOpacity(0.7),
-                      decoration: TextDecoration.lineThrough,
-                      decorationColor: Colors.white.withOpacity(0.7),
+                if (_premiumPlan?.hasDiscount == true) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12.0, right: 8),
+                    child: Text(
+                      '₹${_premiumPlan!.pricing.basePriceFormatted.toStringAsFixed(0)}',
+                      style: AppFonts.inter(
+                        fontSize: 18,
+                        color: Colors.white.withOpacity(0.7),
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: Colors.white.withOpacity(0.7),
+                      ),
                     ),
                   ),
-                ),
+                ],
                 Text(
                   '₹',
                   style: AppFonts.inter(
@@ -303,7 +327,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   ),
                 ),
                 Text(
-                  '100',
+                  _displayPrice,
                   style: AppFonts.inter(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
@@ -321,23 +345,6 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            // Promo discount badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                context.tr(TranslationKeys.premiumPromoDiscount),
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -360,40 +367,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     );
   }
 
-  Widget _buildBenefitsList() {
-    final benefits = [
-      _BenefitItem(
-        icon: Icons.all_inclusive_rounded,
-        title: context.tr(TranslationKeys.premiumUnlimitedTokens),
-        description: context.tr(TranslationKeys.premiumUnlimitedTokensDesc),
-      ),
-      _BenefitItem(
-        icon: Icons.record_voice_over_rounded,
-        title: context.tr(TranslationKeys.premiumAiDiscipler),
-        description: context.tr(TranslationKeys.premiumAiDisciplerDesc),
-      ),
-      _BenefitItem(
-        icon: Icons.chat_bubble_outline_rounded,
-        title: context.tr(TranslationKeys.premiumUnlimitedFollowups),
-        description: context.tr(TranslationKeys.premiumUnlimitedFollowupsDesc),
-      ),
-      _BenefitItem(
-        icon: Icons.auto_awesome_rounded,
-        title: context.tr(TranslationKeys.premiumAiModels),
-        description: context.tr(TranslationKeys.premiumAiModelsDesc),
-      ),
-      _BenefitItem(
-        icon: Icons.history_rounded,
-        title: context.tr(TranslationKeys.premiumCompleteHistory),
-        description: context.tr(TranslationKeys.premiumCompleteHistoryDesc),
-      ),
-      _BenefitItem(
-        icon: Icons.event_available_rounded,
-        title: context.tr(TranslationKeys.premiumPrioritySupport),
-        description: context.tr(TranslationKeys.premiumPrioritySupportDesc),
-      ),
-    ];
-
+  Widget _buildFeaturesList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -406,72 +380,50 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
         ),
         const SizedBox(height: 16),
-        ...benefits.map((benefit) => Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildBenefitItem(benefit),
+        ..._features.map((feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: _buildFeatureRow(feature),
             )),
       ],
     );
   }
 
-  Widget _buildBenefitItem(_BenefitItem benefit) {
+  Widget _buildFeatureRow(String feature) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: AppTheme.primaryColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            benefit.icon,
-            size: 24,
-            color: AppTheme.primaryColor,
-          ),
+          child:
+              Icon(Icons.check_rounded, size: 18, color: AppTheme.primaryColor),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                benefit.title,
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              feature,
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-              const SizedBox(height: 4),
-              Text(
-                benefit.description,
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onBackground
-                      .withOpacity(0.7),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        Icon(
-          Icons.check_circle_rounded,
-          color: AppTheme.successColor,
-          size: 20,
         ),
       ],
     );
   }
 
-  Widget _buildPlanComparison() {
+  Widget _buildComparison() {
+    final prevName = _plusPlan?.planName ?? 'Plus';
+
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -485,34 +437,28 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 color: AppTheme.primaryColor,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              '$prevName vs ${_premiumPlan?.planName ?? 'Premium'}',
+              style: AppFonts.inter(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
             const SizedBox(height: 16),
-            _buildComparisonRow(
-              context.tr(TranslationKeys.premiumDailyTokens),
-              '100',
-              context.tr(TranslationKeys.premiumUnlimited),
-            ),
-            _buildComparisonRow(
-              context.tr(TranslationKeys.premiumFollowupQuestions),
-              context.tr(TranslationKeys.premiumLimited),
-              context.tr(TranslationKeys.premiumUnlimited),
-            ),
-            _buildComparisonRow(
-              context.tr(TranslationKeys.premiumAiModel),
-              context.tr(TranslationKeys.premiumBasic),
-              context.tr(TranslationKeys.premiumPremiumModel),
-            ),
-            _buildComparisonRow(
-              context.tr(TranslationKeys.premiumAiDiscipler),
-              '10/month',
-              context.tr(TranslationKeys.premiumUnlimited),
-            ),
+            ..._comparisonRows.map((row) => _buildComparisonRow(
+                  row.label,
+                  row.previousValue,
+                  row.currentValue,
+                )),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildComparisonRow(String feature, String standard, String premium) {
+  Widget _buildComparisonRow(
+      String feature, String previousValue, String currentValue) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -523,24 +469,23 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               feature,
               style: AppFonts.inter(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onBackground,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
           Expanded(
             child: Text(
-              standard,
+              previousValue,
               style: AppFonts.inter(
                 fontSize: 13,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              premium,
+              currentValue,
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -559,24 +504,20 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       if (!state.canSubscribe) {
         return Card(
           color: AppTheme.secondaryColor.withOpacity(0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  color: AppTheme.primaryColor,
-                ),
+                Icon(Icons.info_outline_rounded, color: AppTheme.primaryColor),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     state.eligibilityMessage,
                     style: AppFonts.inter(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -591,63 +532,12 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         state is SubscriptionLoading && state.operation == 'creating';
 
     return ElevatedButton(
-      onPressed: isLoading
-          ? null
-          : () async {
-              // Retrieve promo code and plan price from Hive
-              String? promoCode;
-              int? planPrice;
-              try {
-                Box box;
-                if (Hive.isBoxOpen('app_settings')) {
-                  box = Hive.box('app_settings');
-                } else {
-                  box = await Hive.openBox('app_settings');
-                }
-                promoCode = box.get('pending_promo_code') as String?;
-                planPrice = box.get('selected_plan_price') as int?;
-
-                if (promoCode != null) {
-                  print('💰 [UPGRADE] Retrieved promo code: $promoCode');
-                  // Clear after retrieval to prevent reuse
-                  await box.delete('pending_promo_code');
-                }
-
-                if (planPrice != null) {
-                  print('💵 [UPGRADE] Plan price: ₹${planPrice / 100}');
-                }
-              } catch (e) {
-                print('⚠️ [UPGRADE] Failed to retrieve promo/price: $e');
-              }
-
-              // Check if plan is free (₹0)
-              if (planPrice != null && planPrice == 0) {
-                print('🎁 [UPGRADE] Free plan detected, activating directly');
-
-                if (context.mounted) {
-                  context.read<SubscriptionBloc>().add(
-                        ActivateFreeSubscription(
-                          planCode: 'premium',
-                          promoCode: promoCode,
-                        ),
-                      );
-                }
-              } else {
-                // Regular paid subscription flow
-                if (context.mounted) {
-                  context
-                      .read<SubscriptionBloc>()
-                      .add(CreateSubscription(promoCode: promoCode));
-                }
-              }
-            },
+      onPressed: isLoading ? null : _handleUpgrade,
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
       ),
       child: isLoading
@@ -666,20 +556,52 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 const SizedBox(width: 8),
                 Text(
                   context.tr(TranslationKeys.premiumUpgradeButton),
-                  style: AppFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style:
+                      AppFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
     );
   }
 
+  Future<void> _handleUpgrade() async {
+    String? promoCode;
+    int? planPrice;
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      promoCode = box.get('pending_promo_code') as String?;
+      planPrice = box.get('selected_plan_price') as int?;
+
+      if (promoCode != null) {
+        Logger.debug('💰 [UPGRADE] Retrieved promo code: $promoCode');
+        await box.delete('pending_promo_code');
+      }
+      if (planPrice != null) {
+        Logger.warning('💵 [UPGRADE] Plan price: ₹${planPrice / 100}');
+      }
+    } catch (e) {
+      Logger.debug('⚠️ [UPGRADE] Failed to retrieve promo/price: $e');
+    }
+
+    if (!mounted) return;
+
+    if (planPrice != null && planPrice == 0) {
+      Logger.debug('🎁 [UPGRADE] Free plan detected, activating directly');
+      context.read<SubscriptionBloc>().add(
+            ActivateFreeSubscription(planCode: 'premium', promoCode: promoCode),
+          );
+    } else {
+      context
+          .read<SubscriptionBloc>()
+          .add(CreateSubscription(promoCode: promoCode));
+    }
+  }
+
   Widget _buildTermsInfo() {
     return Column(
       children: [
-        // ✅ Show helper message if payment was opened
         if (_hasOpenedPayment) ...[
           Container(
             padding: const EdgeInsets.all(12),
@@ -687,24 +609,19 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             decoration: BoxDecoration(
               color: AppTheme.secondaryColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.3),
-              ),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
+                Icon(Icons.info_outline_rounded,
+                    color: AppTheme.primaryColor, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     context.tr(TranslationKeys.premiumPaymentCompletedHint),
                     style: AppFonts.inter(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -716,7 +633,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           context.tr(TranslationKeys.premiumTermsAgree),
           style: AppFonts.inter(
             fontSize: 12,
-            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
           textAlign: TextAlign.center,
         ),
@@ -727,16 +644,14 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             Icon(
               Icons.lock_outline_rounded,
               size: 16,
-              color:
-                  Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             const SizedBox(width: 6),
             Text(
               context.tr(TranslationKeys.premiumSecurePayment),
               style: AppFonts.inter(
                 fontSize: 12,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -748,10 +663,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   Future<void> _openAuthorizationUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -763,16 +675,4 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       }
     }
   }
-}
-
-class _BenefitItem {
-  final IconData icon;
-  final String title;
-  final String description;
-
-  _BenefitItem({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
 }

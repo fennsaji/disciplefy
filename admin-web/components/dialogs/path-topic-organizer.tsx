@@ -319,7 +319,7 @@ export function PathTopicOrganizer({ pathId }: PathTopicOrganizerProps) {
           type="button"
           onClick={() => router.push(`/learning-paths/${pathId}/add-topic`)}
           disabled={isSaving}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <svg
             className="h-5 w-5"
@@ -363,7 +363,7 @@ export function PathTopicOrganizer({ pathId }: PathTopicOrganizerProps) {
           <button
             type="button"
             onClick={() => router.push(`/learning-paths/${pathId}/add-topic`)}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
           >
             <svg
               className="h-5 w-5"

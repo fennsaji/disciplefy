@@ -636,12 +636,13 @@ async function handleSubmitMemoryPractice(
   }
 
   // ========== NEW: Check practice mode unlock status ==========
-  // Get user's subscription tier
+  // Get user's subscription tier — include all non-expired statuses so trial
+  // and pending-cancellation users are not incorrectly downgraded to 'free'.
   const { data: subscription } = await services.supabaseServiceClient
     .from('user_subscriptions')
     .select('tier')
     .eq('user_id', userContext.userId)
-    .eq('status', 'active')
+    .in('status', ['active', 'trial', 'in_progress', 'pending_cancellation'])
     .maybeSingle()
 
   const userTier = subscription?.tier || 'free'

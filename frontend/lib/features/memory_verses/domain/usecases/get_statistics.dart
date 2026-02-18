@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/review_statistics_entity.dart';
 import '../repositories/memory_verse_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Use case for fetching memory verse review statistics.
 ///
@@ -28,10 +29,10 @@ import '../repositories/memory_verse_repository.dart';
 /// result.fold(
 ///   (failure) => print('Error: ${failure.message}'),
 ///   (stats) {
-///     print('Total verses: ${stats.totalVerses}');
-///     print('Due now: ${stats.dueVerses}');
+///     Logger.debug('Total verses: ${stats.totalVerses}');
+///     Logger.debug('Due now: ${stats.dueVerses}');
 ///     print('Mastery: ${stats.masteryPercentage.toStringAsFixed(1)}%');
-///     print('Motivation: ${stats.motivationalMessage}');
+///     Logger.debug('Motivation: ${stats.motivationalMessage}');
 ///   },
 /// );
 /// ```

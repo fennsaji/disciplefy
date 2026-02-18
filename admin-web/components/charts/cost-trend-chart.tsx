@@ -11,7 +11,9 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { format } from 'date-fns'
+import { useTheme } from '@/components/theme-provider'
 import { formatCurrency } from '@/lib/utils/date'
+import { getTooltipStyle, getAxisStroke, getGridStroke } from '@/components/charts/chart-config'
 import type { DailyCost } from '@/types/admin'
 
 interface CostTrendChartProps {
@@ -19,6 +21,9 @@ interface CostTrendChartProps {
 }
 
 export function CostTrendChart({ data }: CostTrendChartProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
   // Format data for chart
   const chartData = data.map((item) => ({
     date: format(new Date(item.date), 'MMM dd'),
@@ -33,31 +38,25 @@ export function CostTrendChart({ data }: CostTrendChartProps) {
       </h2>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" className="dark:stroke-gray-700" stroke="#f0f0f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
           <XAxis
             dataKey="date"
-            stroke="#6b7280"
-            className="dark:stroke-gray-400"
+            stroke={getAxisStroke(isDark)}
             fontSize={12}
             tickLine={false}
           />
           <YAxis
-            stroke="#6b7280"
-            className="dark:stroke-gray-400"
+            stroke={getAxisStroke(isDark)}
             fontSize={12}
             tickLine={false}
             tickFormatter={(value) => `$${value.toFixed(2)}`}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--tw-prose-body)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-            }}
+            contentStyle={getTooltipStyle(isDark)}
             formatter={(value: number | undefined) =>
               value !== undefined ? [formatCurrency(value), 'Cost'] : ['N/A', 'Cost']
             }
-            labelStyle={{ color: '#374151', fontWeight: 600 }}
+            labelStyle={{ color: isDark ? '#D1D5DB' : '#374151', fontWeight: 600 }}
           />
           <Legend
             wrapperStyle={{ paddingTop: '20px' }}

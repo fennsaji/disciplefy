@@ -2,7 +2,8 @@
 -- Consolidated Migration: Memory Verses System
 -- =====================================================
 -- Source: Merged 9 memory verse related migrations
--- Tables: 6 (memory_verses, practice_sessions, review_history, daily_unlocked_modes,
+-- Tables: 8 (memory_verses, review_sessions, review_history, daily_unlocked_modes,
+--           memory_practice_modes, memory_verse_mastery,
 --            memory_verse_collections, memory_verse_collection_items)
 -- Description: Complete spaced repetition system (SM-2 algorithm) with daily unlocked
 --              practice modes, tier-based limits, and topical verse collections
@@ -95,11 +96,11 @@ COMMENT ON COLUMN memory_verses.next_review_date IS
   'Scheduled date/time for next review';
 
 -- -----------------------------------------------------
--- 1.2 Practice Sessions Table
+-- 1.2 Review Sessions Table (practice attempts)
 -- -----------------------------------------------------
--- Stores individual practice attempts with quality ratings
+-- Stores individual practice attempts with quality ratings and performance metrics
 
-CREATE TABLE IF NOT EXISTS practice_sessions (
+CREATE TABLE IF NOT EXISTS review_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- Foreign keys
@@ -115,6 +116,11 @@ CREATE TABLE IF NOT EXISTS practice_sessions (
   review_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   quality_rating INTEGER NOT NULL CHECK (quality_rating BETWEEN 0 AND 5),
 
+  -- Enhanced performance tracking
+  confidence_rating INTEGER CHECK (confidence_rating BETWEEN 1 AND 5),
+  accuracy_percentage NUMERIC(5,2) CHECK (accuracy_percentage BETWEEN 0 AND 100),
+  hints_used INTEGER DEFAULT 0 CHECK (hints_used >= 0),
+
   -- SM-2 algorithm state after this practice
   new_ease_factor NUMERIC(4,2) NOT NULL CHECK (new_ease_factor >= 1.3),
   new_interval_days INTEGER NOT NULL CHECK (new_interval_days >= 0),
@@ -127,28 +133,34 @@ CREATE TABLE IF NOT EXISTS practice_sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Indexes for practice_sessions
-CREATE INDEX IF NOT EXISTS idx_practice_sessions_user_date
-  ON practice_sessions(user_id, review_date DESC);
+-- Indexes for review_sessions
+CREATE INDEX IF NOT EXISTS idx_review_sessions_user_date
+  ON review_sessions(user_id, review_date DESC);
 
-CREATE INDEX IF NOT EXISTS idx_practice_sessions_verse
-  ON practice_sessions(memory_verse_id, review_date DESC);
+CREATE INDEX IF NOT EXISTS idx_review_sessions_verse
+  ON review_sessions(memory_verse_id, review_date DESC);
 
-CREATE INDEX IF NOT EXISTS idx_practice_sessions_mode
-  ON practice_sessions(user_id, practice_mode, review_date DESC);
+CREATE INDEX IF NOT EXISTS idx_review_sessions_mode
+  ON review_sessions(user_id, practice_mode, review_date DESC);
 
 -- Comments
-COMMENT ON TABLE practice_sessions IS
-  'Records each individual practice session with quality rating and resulting SM-2 state';
-COMMENT ON COLUMN practice_sessions.quality_rating IS
+COMMENT ON TABLE review_sessions IS
+  'Records each individual practice session with quality rating, performance metrics, and resulting SM-2 state';
+COMMENT ON COLUMN review_sessions.quality_rating IS
   'SM-2 quality rating: 0=complete blackout, 1=incorrect with correct answer seeming familiar, 2=incorrect but remembered, 3=correct with serious difficulty, 4=correct after hesitation, 5=perfect recall';
-COMMENT ON COLUMN practice_sessions.practice_mode IS
+COMMENT ON COLUMN review_sessions.practice_mode IS
   'Practice mode used: flip_card, type_it_out, cloze, first_letter, progressive, word_scramble, word_bank, or audio';
-COMMENT ON COLUMN practice_sessions.new_ease_factor IS
+COMMENT ON COLUMN review_sessions.confidence_rating IS
+  'User self-assessment confidence (1-5), separate from SM-2 quality rating';
+COMMENT ON COLUMN review_sessions.accuracy_percentage IS
+  'Objective accuracy for typing/cloze modes (0-100)';
+COMMENT ON COLUMN review_sessions.hints_used IS
+  'Number of hints used during this practice session';
+COMMENT ON COLUMN review_sessions.new_ease_factor IS
   'Ease factor calculated after this practice session';
-COMMENT ON COLUMN practice_sessions.new_interval_days IS
+COMMENT ON COLUMN review_sessions.new_interval_days IS
   'Interval calculated after this practice session';
-COMMENT ON COLUMN practice_sessions.new_repetitions IS
+COMMENT ON COLUMN review_sessions.new_repetitions IS
   'Repetition count after this practice session';
 
 -- -----------------------------------------------------
@@ -438,7 +450,7 @@ AS $$
 BEGIN
   RETURN (
     SELECT COUNT(*)::INTEGER
-    FROM practice_sessions
+    FROM review_sessions
     WHERE user_id = p_user_id
       AND review_date::DATE = CURRENT_DATE
   );
@@ -481,7 +493,7 @@ BEGIN
   INTO v_recent_quality
   FROM (
     SELECT quality_rating
-    FROM practice_sessions
+    FROM review_sessions
     WHERE memory_verse_id = p_memory_verse_id
     ORDER BY review_date DESC
     LIMIT 5
@@ -937,6 +949,99 @@ CREATE TRIGGER trigger_daily_unlocked_modes_updated_at
   EXECUTE FUNCTION update_memory_verses_updated_at();
 
 -- =====================================================
+-- PART 4.3: Additional Columns for memory_verses
+-- =====================================================
+-- Columns needed by submit-memory-practice Edge Function
+
+ALTER TABLE memory_verses
+  ADD COLUMN IF NOT EXISTS mastery_level TEXT DEFAULT 'beginner'
+    CHECK (mastery_level IN ('beginner', 'intermediate', 'advanced', 'expert', 'master')),
+  ADD COLUMN IF NOT EXISTS times_perfectly_recalled INTEGER NOT NULL DEFAULT 0
+    CHECK (times_perfectly_recalled >= 0),
+  ADD COLUMN IF NOT EXISTS preferred_practice_mode TEXT
+    CHECK (preferred_practice_mode IN (
+      'flip_card', 'type_it_out', 'cloze', 'first_letter',
+      'progressive', 'word_scramble', 'word_bank', 'audio'
+    ));
+
+COMMENT ON COLUMN memory_verses.mastery_level IS
+  'Overall mastery level: beginner, intermediate, advanced, expert, master';
+COMMENT ON COLUMN memory_verses.times_perfectly_recalled IS
+  'Number of times the verse was recalled perfectly (quality_rating = 5)';
+COMMENT ON COLUMN memory_verses.preferred_practice_mode IS
+  'Most recently used practice mode for this verse';
+
+-- =====================================================
+-- PART 4.4: Practice Mode Statistics Table
+-- =====================================================
+-- Aggregated per-user, per-verse, per-mode statistics
+-- Used by submit-memory-practice and get-memory-statistics Edge Functions
+
+CREATE TABLE IF NOT EXISTS memory_practice_modes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  memory_verse_id UUID NOT NULL REFERENCES memory_verses(id) ON DELETE CASCADE,
+  mode_type TEXT NOT NULL CHECK (mode_type IN (
+    'flip_card', 'type_it_out', 'cloze', 'first_letter',
+    'progressive', 'word_scramble', 'word_bank', 'audio'
+  )),
+  times_practiced INTEGER NOT NULL DEFAULT 0 CHECK (times_practiced >= 0),
+  success_rate NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (success_rate BETWEEN 0 AND 100),
+  average_time_seconds INTEGER,
+  is_favorite BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_user_verse_mode UNIQUE(user_id, memory_verse_id, mode_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_memory_practice_modes_user_verse
+  ON memory_practice_modes(user_id, memory_verse_id);
+
+CREATE INDEX IF NOT EXISTS idx_memory_practice_modes_user_mode
+  ON memory_practice_modes(user_id, mode_type);
+
+COMMENT ON TABLE memory_practice_modes IS
+  'Aggregated statistics per user per verse per practice mode (success rate, count, avg time)';
+COMMENT ON COLUMN memory_practice_modes.success_rate IS
+  'Weighted average success rate (0-100): uses accuracy_percentage when available, else quality >= 3';
+COMMENT ON COLUMN memory_practice_modes.times_practiced IS
+  'Total number of practice sessions for this mode on this verse';
+
+-- =====================================================
+-- PART 4.5.a: Memory Verse Mastery Table
+-- =====================================================
+-- Overall mastery progress per user per verse across all modes
+
+CREATE TABLE IF NOT EXISTS memory_verse_mastery (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  memory_verse_id UUID NOT NULL REFERENCES memory_verses(id) ON DELETE CASCADE,
+  mastery_level TEXT NOT NULL DEFAULT 'beginner' CHECK (mastery_level IN (
+    'beginner', 'intermediate', 'advanced', 'expert', 'master'
+  )),
+  mastery_percentage INTEGER NOT NULL DEFAULT 0 CHECK (mastery_percentage BETWEEN 0 AND 100),
+  modes_mastered INTEGER NOT NULL DEFAULT 0 CHECK (modes_mastered >= 0),
+  perfect_recalls INTEGER NOT NULL DEFAULT 0 CHECK (perfect_recalls >= 0),
+  confidence_rating NUMERIC(3,2),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_user_verse_mastery UNIQUE(user_id, memory_verse_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_memory_verse_mastery_user
+  ON memory_verse_mastery(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_memory_verse_mastery_level
+  ON memory_verse_mastery(user_id, mastery_level);
+
+COMMENT ON TABLE memory_verse_mastery IS
+  'Overall mastery progress per user per verse: aggregates across all practice modes';
+COMMENT ON COLUMN memory_verse_mastery.modes_mastered IS
+  'Number of practice modes mastered (80%+ success rate with 5+ practices)';
+COMMENT ON COLUMN memory_verse_mastery.perfect_recalls IS
+  'Cumulative count of perfect recalls (quality_rating = 5) across all modes';
+
+-- =====================================================
 -- PART 4.5: Suggested Verses (Curated Popular Verses)
 -- =====================================================
 
@@ -989,7 +1094,7 @@ COMMENT ON COLUMN suggested_verses.display_order IS 'Order within category for c
 
 -- Enable RLS on all tables
 ALTER TABLE memory_verses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE practice_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE review_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_unlocked_modes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memory_verse_collections ENABLE ROW LEVEL SECURITY;
@@ -1021,22 +1126,22 @@ CREATE POLICY "Users can delete their own memory verses"
   USING (auth.uid() = user_id);
 
 -- -----------------------------------------------------
--- 5.2 practice_sessions Policies
+-- 5.2 review_sessions Policies
 -- -----------------------------------------------------
 
-CREATE POLICY "Users can view their own practice sessions"
-  ON practice_sessions FOR SELECT
+CREATE POLICY "Users can view their own review sessions"
+  ON review_sessions FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own practice sessions"
-  ON practice_sessions FOR INSERT
+CREATE POLICY "Users can insert their own review sessions"
+  ON review_sessions FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own practice sessions"
-  ON practice_sessions FOR DELETE
+CREATE POLICY "Users can delete their own review sessions"
+  ON review_sessions FOR DELETE
   USING (auth.uid() = user_id);
 
--- No UPDATE policy - practice sessions are immutable once created
+-- No UPDATE policy - review sessions are immutable once created
 
 -- -----------------------------------------------------
 -- 5.3 review_history Policies
@@ -1192,6 +1297,56 @@ CREATE POLICY "service_role_suggested_verse_translations_all"
   USING (true)
   WITH CHECK (true);
 
+-- -----------------------------------------------------
+-- 5.11 memory_practice_modes Policies
+-- -----------------------------------------------------
+
+ALTER TABLE memory_practice_modes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own practice mode stats"
+  ON memory_practice_modes FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own practice mode stats"
+  ON memory_practice_modes FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own practice mode stats"
+  ON memory_practice_modes FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Service role can manage practice mode stats"
+  ON memory_practice_modes FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+-- -----------------------------------------------------
+-- 5.12 memory_verse_mastery Policies
+-- -----------------------------------------------------
+
+ALTER TABLE memory_verse_mastery ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own verse mastery"
+  ON memory_verse_mastery FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own verse mastery"
+  ON memory_verse_mastery FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own verse mastery"
+  ON memory_verse_mastery FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Service role can manage verse mastery"
+  ON memory_verse_mastery FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
 -- =====================================================
 -- PART 6: TRIGGERS
 -- =====================================================
@@ -1252,11 +1407,14 @@ CREATE TRIGGER trg_memory_verse_collections_updated_at
 -- =====================================================
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON memory_verses TO authenticated;
-GRANT SELECT, INSERT, DELETE ON practice_sessions TO authenticated;
+GRANT SELECT, INSERT, DELETE ON review_sessions TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON review_history TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON daily_unlocked_modes TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON memory_verse_collections TO authenticated;
 GRANT SELECT, INSERT, DELETE ON memory_verse_collection_items TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON memory_practice_modes TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON memory_verse_mastery TO authenticated;
 
 GRANT EXECUTE ON FUNCTION validate_sm2_quality_rating TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION get_user_memory_verses_count TO authenticated, service_role;
@@ -1269,6 +1427,36 @@ GRANT EXECUTE ON FUNCTION cleanup_old_unlocked_modes TO service_role;
 GRANT EXECUTE ON FUNCTION get_memory_verse_reminder_notification_users TO service_role;
 
 -- =====================================================
+-- PART 7.1: user_subscriptions VIEW
+-- =====================================================
+-- Provides a simplified view of subscriptions with tier name
+-- Used by Edge Functions that query user_subscriptions.tier
+
+CREATE OR REPLACE VIEW user_subscriptions AS
+SELECT
+  s.id,
+  s.user_id,
+  s.provider,
+  s.provider_subscription_id,
+  s.plan_id,
+  sp.plan_code AS tier,
+  s.status,
+  s.plan_type,
+  s.current_period_start,
+  s.current_period_end,
+  s.cancel_at_cycle_end,
+  s.metadata,
+  s.created_at,
+  s.updated_at
+FROM subscriptions s
+LEFT JOIN subscription_plans sp ON s.plan_id = sp.id;
+
+COMMENT ON VIEW user_subscriptions IS
+  'Convenience view of subscriptions with tier (plan_code) exposed for Edge Function queries';
+
+GRANT SELECT ON user_subscriptions TO authenticated, service_role;
+
+-- =====================================================
 -- VERIFICATION
 -- =====================================================
 
@@ -1279,8 +1467,8 @@ BEGIN
     RAISE EXCEPTION 'Migration failed: memory_verses table not created';
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'practice_sessions') THEN
-    RAISE EXCEPTION 'Migration failed: practice_sessions table not created';
+  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'review_sessions') THEN
+    RAISE EXCEPTION 'Migration failed: review_sessions table not created';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'review_history') THEN
@@ -1309,7 +1497,7 @@ BEGIN
     RAISE EXCEPTION 'Migration failed: unlock_practice_mode function not created';
   END IF;
 
-  RAISE NOTICE 'Migration 0007_memory_system.sql completed successfully - 4 tables, 9 functions';
+  RAISE NOTICE 'Migration 0007_memory_system.sql completed successfully - review_sessions, memory_practice_modes, memory_verse_mastery, user_subscriptions view, 9 functions';
 END $$;
 
 COMMIT;

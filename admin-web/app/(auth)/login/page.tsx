@@ -1,121 +1,73 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function LoginPage() {
-  console.log('🔴 [LOGIN PAGE] Component mounted - Console logging is working!')
-  console.log('🔴 [LOGIN PAGE] Current URL:', typeof window !== 'undefined' ? window.location.href : 'SSR')
-
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
-  console.log('🔴 [LOGIN PAGE] Supabase client created:', !!supabase)
-
   const handleGoogleLogin = async () => {
     try {
-      console.log('🔵 [LOGIN] Starting Google OAuth login')
-      console.log('🔵 [LOGIN] Current URL:', window.location.origin)
-      console.log('🔵 [LOGIN] Redirect URL:', `${window.location.origin}/auth/callback`)
-
       setIsLoading(true)
       setError(null)
 
-      const { error, data } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
-      console.log('🔵 [LOGIN] OAuth response:', { error, data })
-
-      if (error) {
-        console.error('❌ [LOGIN] OAuth error:', error)
-        throw error
-      }
-
-      console.log('✅ [LOGIN] OAuth initiated successfully')
+      if (error) throw error
     } catch (err) {
-      console.error('❌ [LOGIN] Catch block error:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
       setIsLoading(false)
     }
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(to bottom right, #faf5ff, #ffffff, #eff6ff)'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '28rem',
-        padding: '2.5rem',
-        background: 'white',
-        borderRadius: '1rem',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-      }}>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-2xl">
+
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            margin: '0 auto 1rem',
-            background: 'linear-gradient(to bottom right, #9333ea, #3b82f6)',
-            borderRadius: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-          }}>
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-blue-500 shadow-lg">
             <svg
-              style={{ width: '40px', height: '40px', color: 'white' }}
+              className="h-10 w-10 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
             </svg>
           </div>
-          <h1 style={{
-            fontSize: '1.875rem',
-            fontWeight: 'bold',
-            color: '#111827',
-            marginBottom: '0.5rem'
-          }}>
-            Disciplefy Admin
-          </h1>
-          <p style={{ color: '#6b7280', fontSize: '1rem' }}>
-            Sign in to access the admin dashboard
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Disciplefy Admin</h1>
+          <p className="mt-2 text-gray-500">Sign in to access the admin dashboard</p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div style={{
-            marginBottom: '1.5rem',
-            padding: '1rem',
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '0.5rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+            <div className="flex items-start gap-3">
               <svg
-                style={{ width: '20px', height: '20px', color: '#dc2626', flexShrink: 0, marginTop: '2px' }}
+                className="mt-0.5 h-5 w-5 shrink-0 text-red-600"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
-              <p style={{ fontSize: '0.875rem', color: '#991b1b' }}>{error}</p>
+              <p className="text-sm text-red-800">{error}</p>
             </div>
           </div>
         )}
@@ -124,41 +76,9 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
-            padding: '1rem 1.5rem',
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.75rem',
-            fontSize: '1rem',
-            fontWeight: 500,
-            color: '#374151',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.5 : 1,
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            transition: 'all 0.2s',
-            marginBottom: '1.5rem'
-          }}
-          onMouseOver={(e) => {
-            if (!isLoading) {
-              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
-              e.currentTarget.style.borderColor = '#a78bfa';
-            }
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-            e.currentTarget.style.borderColor = '#e5e7eb';
-          }}
+          className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-6 py-4 text-base font-medium text-gray-700 shadow-md transition-all hover:border-purple-300 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <svg
-            style={{ width: '24px', height: '24px', flexShrink: 0 }}
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -180,28 +100,19 @@ export default function LoginPage() {
         </button>
 
         {/* Footer */}
-        <div style={{
-          paddingTop: '1rem',
-          borderTop: '1px solid #f3f4f6'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            fontSize: '0.875rem',
-            color: '#6b7280'
-          }}>
-            <svg
-              style={{ width: '16px', height: '16px' }}
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+        <div className="border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clipRule="evenodd"
+              />
             </svg>
             <p>Only authorized admin users can access this dashboard</p>
           </div>
         </div>
+
       </div>
     </div>
   )

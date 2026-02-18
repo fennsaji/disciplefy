@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -23,6 +22,7 @@ import '../../../../core/services/platform_payment_provider_service.dart';
 
 import 'subscription_event.dart';
 import 'subscription_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Subscription BLoC
 ///
@@ -681,7 +681,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           createdAt: DateTime.now(),
         ));
 
-        print(
+        Logger.info(
             '✅ [BLOC] Free subscription activated: ${v2Result.subscriptionId}');
 
         // Refresh to update UI
@@ -704,12 +704,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     final purchase = event.purchaseDetails;
 
     if (_pendingPurchasePlanCode == null) {
-      debugPrint(
+      Logger.debug(
           '⚠️ [BLOC] Purchase completed but no pending plan code - ignoring');
       return;
     }
 
-    debugPrint(
+    Logger.debug(
         '✅ [BLOC] IAP Purchase successful, validating receipt with backend');
 
     try {
@@ -727,7 +727,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       result.fold(
         (failure) {
-          debugPrint('❌ [BLOC] Receipt validation failed: $failure');
+          Logger.debug('❌ [BLOC] Receipt validation failed: $failure');
           emit(SubscriptionError(
             failure: failure,
             operation: 'creating IAP subscription',
@@ -735,7 +735,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           ));
         },
         (v2Result) {
-          debugPrint(
+          Logger.debug(
               '✅ [BLOC] Receipt validated, subscription created: ${v2Result.subscriptionId}');
 
           final createResult = CreateSubscriptionResult(
@@ -769,7 +769,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         },
       );
     } catch (e) {
-      debugPrint('❌ [BLOC] IAP purchase handling error: $e');
+      Logger.debug('❌ [BLOC] IAP purchase handling error: $e');
       emit(SubscriptionError(
         failure: ServerFailure(message: 'Failed to process purchase: $e'),
         operation: 'creating IAP subscription',
@@ -783,7 +783,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     IAPPurchaseError event,
     Emitter<SubscriptionState> emit,
   ) async {
-    debugPrint('❌ [BLOC] IAP Purchase error: ${event.error}');
+    Logger.debug('❌ [BLOC] IAP Purchase error: ${event.error}');
 
     // Clear pending purchase tracking
     _pendingPurchasePlanCode = null;
@@ -825,7 +825,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
     // Check if this is an IAP platform (Android/iOS)
     if (PlatformPaymentProviderService.isIAPPlatform()) {
-      debugPrint('🛒 [BLOC] IAP platform detected for $planCode');
+      Logger.debug('🛒 [BLOC] IAP platform detected for $planCode');
 
       try {
         await _initiateIAPPurchase(planCode, promoCode);
@@ -844,7 +844,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     }
 
     // Web platform - use Razorpay flow
-    debugPrint('🌐 [BLOC] Web platform for $planCode');
+    Logger.debug('🌐 [BLOC] Web platform for $planCode');
 
     final result = await _subscriptionRepository.createSubscriptionV2(
       planCode: planCode,
@@ -909,7 +909,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
     // Check if this is an IAP platform (Android/iOS)
     if (PlatformPaymentProviderService.isIAPPlatform()) {
-      debugPrint('🛒 [BLOC] IAP platform for $planCode');
+      Logger.debug('🛒 [BLOC] IAP platform for $planCode');
 
       try {
         await _initiateIAPPurchase(planCode, promoCode);
@@ -945,7 +945,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     }
 
     // Web platform - Razorpay flow
-    debugPrint('🌐 [BLOC] Web platform for $planCode');
+    Logger.debug('🌐 [BLOC] Web platform for $planCode');
 
     final result = await _subscriptionRepository.createSubscriptionV2(
       planCode: planCode,
@@ -1002,15 +1002,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   /// Set up IAP service callbacks for mobile platforms
   void _setupIAPCallbacks() {
     if (_iapService == null) {
-      debugPrint('🛒 [BLOC] IAP Service not available (web platform)');
+      Logger.debug('🛒 [BLOC] IAP Service not available (web platform)');
       return;
     }
 
-    debugPrint('🛒 [BLOC] Setting up IAP callbacks');
+    Logger.debug('🛒 [BLOC] Setting up IAP callbacks');
 
     // Handle purchase updates (success/failure)
     _iapService!.onPurchaseUpdate = (PurchaseDetails purchase) {
-      debugPrint(
+      Logger.debug(
           '🛒 [BLOC] IAP Purchase update: ${purchase.productID}, status: ${purchase.status}');
 
       if (purchase.status == PurchaseStatus.purchased ||
@@ -1022,7 +1022,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
     // Handle purchase errors
     _iapService!.onPurchaseError = (String error) {
-      debugPrint('🛒 [BLOC] IAP Purchase error: $error');
+      Logger.debug('🛒 [BLOC] IAP Purchase error: $error');
       // Add event instead of calling method directly
       add(IAPPurchaseError(error));
     };
@@ -1037,7 +1037,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       throw Exception('IAP Service not available');
     }
 
-    debugPrint('🛒 [BLOC] Initiating IAP purchase for plan: $planCode');
+    Logger.debug('🛒 [BLOC] Initiating IAP purchase for plan: $planCode');
 
     // Track pending purchase
     _pendingPurchasePlanCode = planCode;
@@ -1056,7 +1056,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
             'Product ID not configured for plan $planCode on provider $provider');
       }
 
-      debugPrint('🛒 [BLOC] Fetching product from store: $productId');
+      Logger.debug('🛒 [BLOC] Fetching product from store: $productId');
 
       // Fetch products from store
       final products = await _iapService!.getProducts({productId});
@@ -1066,15 +1066,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       }
 
       final product = products.first;
-      debugPrint(
+      Logger.debug(
           '🛒 [BLOC] Product found: ${product.title} - ${product.price}');
 
       // Initiate purchase
       await _iapService!.purchaseProduct(product);
 
-      debugPrint('✅ [BLOC] Purchase initiated successfully');
+      Logger.debug('✅ [BLOC] Purchase initiated successfully');
     } catch (e) {
-      debugPrint('❌ [BLOC] Failed to initiate IAP purchase: $e');
+      Logger.debug('❌ [BLOC] Failed to initiate IAP purchase: $e');
 
       // Clear pending purchase
       _pendingPurchasePlanCode = null;

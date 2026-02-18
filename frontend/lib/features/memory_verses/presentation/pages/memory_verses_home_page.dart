@@ -10,10 +10,10 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../widgets/verse_limit_exceeded_dialog.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../tokens/domain/entities/token_status.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
@@ -242,17 +242,28 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   .read<MemoryVerseBloc>()
                   .add(const LoadMemoryStreakEvent());
             } else if (state is MemoryVerseError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                  action: SnackBarAction(
-                    label: context.tr(TranslationKeys.commonRetry),
-                    textColor: Colors.white,
-                    onPressed: _loadVerses,
+              if (state.code == 'VERSE_LIMIT_EXCEEDED') {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    VerseLimitExceededDialog.show(
+                      context,
+                      currentTier: _getCurrentPlan(),
+                    );
+                  }
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                    action: SnackBarAction(
+                      label: context.tr(TranslationKeys.commonRetry),
+                      textColor: Colors.white,
+                      onPressed: _loadVerses,
+                    ),
                   ),
-                ),
-              );
+                );
+              }
             } else if (state is VerseAdded) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -791,6 +802,18 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         ),
       ),
     );
+  }
+
+  /// Returns the user's current plan from TokenBloc state, defaulting to 'standard'
+  /// (safe default for VERSE_LIMIT_EXCEEDED since free users can't reach this error)
+  String _getCurrentPlan() {
+    try {
+      final tokenState = context.read<TokenBloc>().state;
+      if (tokenState is TokenLoaded) {
+        return tokenState.tokenStatus.userPlan.name;
+      }
+    } catch (_) {}
+    return 'standard';
   }
 
   void _showAddVerseOptions(BuildContext context) {

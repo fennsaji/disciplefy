@@ -70,20 +70,20 @@ export async function GET(request: NextRequest) {
       .in('suggested_verse_id', verseIds)
 
     if (language) {
-      translationsQuery = translationsQuery.eq('language', language)
+      translationsQuery = translationsQuery.eq('language_code', language)
     }
 
     const { data: translations } = await translationsQuery
 
-    // Map translations to verses
+    // Map translations to verses using correct column names (language_code, verse_text, localized_reference)
     const versesWithTranslations = (suggestedVerses || []).map(verse => {
       const verseTranslations = (translations || []).filter(t => t.suggested_verse_id === verse.id)
       return {
         ...verse,
         translations: verseTranslations.reduce((acc, t) => {
-          acc[t.language] = {
-            reference: t.reference,
-            text: t.text
+          acc[t.language_code] = {
+            reference: t.localized_reference,
+            text: t.verse_text
           }
           return acc
         }, {} as Record<string, { reference: string; text: string }>)
@@ -183,12 +183,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create translations
+    // Create translations using correct column names (language_code, verse_text, localized_reference)
     const translationInserts = Object.entries(translations).map(([lang, data]: [string, any]) => ({
       suggested_verse_id: verse.id,
-      language: lang,
-      reference: data.reference,
-      text: data.text
+      language_code: lang,
+      localized_reference: data.reference,
+      verse_text: data.text
     }))
 
     const { error: translationsError } = await supabaseAdmin
@@ -281,16 +281,17 @@ export async function PATCH(request: NextRequest) {
 
     // Update translations if provided
     if (translations) {
+      // Upsert translations using correct column names (language_code, verse_text, localized_reference)
       for (const [lang, data] of Object.entries(translations) as [string, any][]) {
         await supabaseAdmin
           .from('suggested_verse_translations')
           .upsert({
             suggested_verse_id: id,
-            language: lang,
-            reference: data.reference,
-            text: data.text
+            language_code: lang,
+            localized_reference: data.reference,
+            verse_text: data.text
           }, {
-            onConflict: 'suggested_verse_id,language'
+            onConflict: 'suggested_verse_id,language_code'
           })
       }
     }

@@ -93,9 +93,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   late final UsageStatsBloc _usageStatsBloc;
   late final UsageThresholdService _usageThresholdService;
 
-  // Track last checked date for threshold reset (format: "2026-01-18")
-  String? _lastCheckedDate;
-
   @override
   void initState() {
     super.initState();
@@ -132,9 +129,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Listen to app language changes (UI language)
     _languageSubscription =
         languageService.languageChanges.listen((newLanguage) {
-      if (kDebugMode) {
-        print('[HOME] App language changed to: ${newLanguage.displayName}');
-      }
+      Logger.debug(
+          '[HOME] App language changed to: ${newLanguage.displayName}');
 
       // When app language changes, study content language is automatically reset to default
       // Refresh the "For You" topics with the new language
@@ -143,19 +139,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         homeBloc.add(const LoadForYouTopics(forceRefresh: true));
         homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
 
-        if (kDebugMode) {
-          print('[HOME] "For You" content refreshed after app language change');
-        }
+        Logger.debug(
+            '[HOME] "For You" content refreshed after app language change');
       }
     });
 
     // Listen to study content language changes (study guides language)
     _studyContentLanguageSubscription =
         languageService.studyContentLanguageChanges.listen((newLanguage) {
-      if (kDebugMode) {
-        print(
-            '[HOME] Study content language changed to: ${newLanguage.displayName}');
-      }
+      Logger.debug(
+          '[HOME] Study content language changed to: ${newLanguage.displayName}');
 
       // Refresh the "For You" topics with the new study content language
       if (mounted) {
@@ -163,10 +156,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         homeBloc.add(const LoadForYouTopics(forceRefresh: true));
         homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
 
-        if (kDebugMode) {
-          print(
-              '[HOME] "For You" content refreshed after study content language change');
-        }
+        Logger.debug(
+            '[HOME] "For You" content refreshed after study content language change');
       }
     });
   }
@@ -256,17 +247,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
       if (StudyModePreferences.isRecommended(savedModeRaw)) {
         // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
-        debugPrint('✅ [HOME] Using recommended mode for scripture: Deep Dive');
+        Logger.debug(
+            '✅ [HOME] Using recommended mode for scripture: Deep Dive');
         _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
         final savedMode = studyModeFromString(savedModeRaw);
         if (savedMode != null) {
-          debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
+          Logger.debug('✅ [HOME] Using saved study mode: ${savedMode.name}');
           _navigateToDailyVerseStudy(currentState, savedMode, false);
         } else {
           // Invalid mode string - fallback to mode selection sheet
-          debugPrint(
+          Logger.debug(
               '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
           const recommendedMode = StudyMode.deep;
           final String languageCode;
@@ -293,7 +285,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         }
       } else {
         // No saved preference (null) - show mode selection sheet with Deep Dive as recommended for scripture
-        debugPrint(
+        Logger.debug(
             '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
         const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
 
@@ -347,12 +339,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (rememberChoice) {
       // ✅ FIX: If user selected the recommended mode, save "recommended" instead of specific mode
       if (recommendedMode != null && mode == recommendedMode) {
-        debugPrint(
+        Logger.debug(
             '✅ [HOME] Saving preference as "recommended" (selected mode matches recommended)');
         sl<LanguagePreferenceService>()
             .saveStudyModePreferenceRaw('recommended');
       } else {
-        debugPrint('✅ [HOME] Saving preference as specific mode: ${mode.name}');
+        Logger.debug(
+            '✅ [HOME] Saving preference as specific mode: ${mode.name}');
         sl<LanguagePreferenceService>().saveStudyModePreference(mode);
       }
     }
@@ -373,7 +366,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final encodedReference = Uri.encodeComponent(verseReference);
 
-    debugPrint(
+    Logger.debug(
         '🔍 [HOME] Navigating to study guide V2 for daily verse: $verseReference with mode: ${mode.name}');
 
     // Navigate directly to study guide V2 - it will handle generation
@@ -445,9 +438,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             final currentUserName = authProvider.currentUserName;
 
             if (kDebugMode) {
-              print(
+              Logger.debug(
                   '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
-              print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+              Logger.debug('👤 [HOME] Auth state: ${authProvider.debugInfo}');
             }
 
             return Scaffold(
@@ -777,24 +770,29 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
-      // Reset threshold tracking if new day (daily token limits reset daily)
-      final currentDate =
-          usageStats.monthYear as String; // Format: "2026-01-18"
-      if (_lastCheckedDate != currentDate) {
-        _usageThresholdService.reset();
-        _lastCheckedDate = currentDate;
-        Logger.info(
-          'Reset threshold tracking for new day',
-          tag: 'HOME_USAGE_THRESHOLD',
-          context: {'date': currentDate},
-        );
-      }
+      String userPlan = 'free';
+      int purchasedTokens = 0;
+      try {
+        final tokenState = context.read<TokenBloc>().state;
+        if (tokenState is TokenLoaded) {
+          userPlan = tokenState.tokenStatus.userPlan.name;
+          purchasedTokens = tokenState.tokenStatus.purchasedTokens;
+        }
+      } catch (_) {}
 
+      // Pass currentDate so the service handles daily resets internally.
+      // The service is a singleton and persists across widget rebuilds,
+      // preventing the dialog from re-firing just because the widget was recreated.
+      // Pass purchasedTokens so the dialog is suppressed when the user has
+      // purchased tokens available (daily limit exhausted ≠ truly out of tokens).
       final showed = await _usageThresholdService.checkAndShowThreshold(
         context: context,
         tokensUsed: usageStats.tokensUsed,
         tokensTotal: usageStats.tokensTotal,
         streakDays: usageStats.streakDays,
+        userPlan: userPlan,
+        currentDate: usageStats.monthYear as String,
+        purchasedTokens: purchasedTokens,
       );
 
       if (showed) {
@@ -1079,7 +1077,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    debugPrint('[HOME] Navigating to learning path: $pathId');
+    Logger.debug('[HOME] Navigating to learning path: $pathId');
 
     // Use context.go() to properly update the browser URL
     // Include source=home so back button returns to home screen
@@ -1419,7 +1417,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final descriptionParam =
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
 
-    debugPrint(
+    Logger.debug(
         '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
 
     // Navigate directly to study guide V2 - it will handle generation

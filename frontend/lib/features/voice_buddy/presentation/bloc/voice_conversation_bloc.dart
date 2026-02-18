@@ -17,6 +17,7 @@ import '../../domain/entities/voice_preferences_entity.dart';
 import '../../domain/repositories/voice_buddy_repository.dart';
 import 'voice_conversation_event.dart';
 import 'voice_conversation_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing voice conversations.
 class VoiceConversationBloc
@@ -95,10 +96,10 @@ class VoiceConversationBloc
     if (!state.isListening) return;
     if (text.isEmpty) return;
 
-    print('🎙️ [VAD] Silence detected - stopping to get final result');
-    print(
+    Logger.debug('🎙️ [VAD] Silence detected - stopping to get final result');
+    Logger.debug(
         '  - Current text: "${text.length > 50 ? '${text.substring(0, 50)}...' : text}"');
-    print('  - Confidence: ${(confidence * 100).toStringAsFixed(1)}%');
+    Logger.debug('  - Confidence: ${(confidence * 100).toStringAsFixed(1)}%');
 
     // Just stop listening - let finalResult handler send the complete message
     add(const StopListening());
@@ -110,19 +111,19 @@ class VoiceConversationBloc
     // Log VAD state changes for debugging
     switch (vadState) {
       case VADState.calibrating:
-        print('🎙️ [VAD] Calibrating ambient noise...');
+        Logger.debug('🎙️ [VAD] Calibrating ambient noise...');
         break;
       case VADState.listening:
-        print('🎙️ [VAD] Ready - listening for speech');
+        Logger.debug('🎙️ [VAD] Ready - listening for speech');
         break;
       case VADState.speaking:
         // Don't log every speaking state change (too noisy)
         break;
       case VADState.silenceDetected:
-        print('🎙️ [VAD] Silence detected');
+        Logger.debug('🎙️ [VAD] Silence detected');
         break;
       case VADState.stopped:
-        print('🎙️ [VAD] Stopped');
+        Logger.debug('🎙️ [VAD] Stopped');
         break;
     }
   }
@@ -136,7 +137,8 @@ class VoiceConversationBloc
     // Handle failure case
     if (result.isLeft()) {
       result.fold(
-        (failure) => print('Failed to load preferences: ${failure.message}'),
+        (failure) =>
+            Logger.warning('Failed to load preferences: ${failure.message}'),
         (_) {},
       );
       return;
@@ -158,12 +160,12 @@ class VoiceConversationBloc
             await _languagePreferenceService.getStudyContentLanguage();
         // Convert study content language code to voice language code
         languageCode = _appLanguageToVoiceCode(appLanguage.code);
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Resolved default language to: $languageCode (from study content language: ${appLanguage.code})');
       } catch (e) {
         // Fallback to English if unable to get study content language
         languageCode = 'en-US';
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Failed to get study content language, using en-US: $e');
       }
     }
@@ -184,7 +186,7 @@ class VoiceConversationBloc
       voiceGender: voiceGenderStr,
     ));
 
-    print(
+    Logger.debug(
         '🎙️ [VOICE] Loaded TTS preferences: rate=${preferences.speakingRate}, pitch=${preferences.pitch}, gender=${preferences.ttsVoiceGender.value}');
   }
 
@@ -238,13 +240,18 @@ class VoiceConversationBloc
         status: VoiceConversationStatus.error,
         errorMessage: failure.message,
       )),
-      (conversation) => emit(state.copyWith(
-        status: VoiceConversationStatus.ready,
-        conversation: conversation,
-        messages: [],
-        languageCode: event.languageCode,
-        quota: quota,
-      )),
+      (conversation) {
+        // Emit ready state immediately so the user can start talking
+        emit(state.copyWith(
+          status: VoiceConversationStatus.ready,
+          conversation: conversation,
+          messages: [],
+          languageCode: event.languageCode,
+          quota: quota,
+        ));
+        // Refresh quota from DB so the display reflects the post-increment value
+        add(const CheckQuota());
+      },
     );
   }
 
@@ -284,7 +291,7 @@ class VoiceConversationBloc
 
     // Stop any ongoing TTS playback when user starts speaking
     if (state.isPlaying || _streamingTTSStarted) {
-      print('🎙️ [VOICE] User started speaking - stopping TTS playback');
+      Logger.debug('🎙️ [VOICE] User started speaking - stopping TTS playback');
       _playbackFallbackTimer?.cancel();
       _playbackFallbackTimer = null;
       if (_streamingTTSStarted) {
@@ -365,9 +372,9 @@ class VoiceConversationBloc
               // This will trigger finalResult which contains the complete text
               // Don't send here - let finalResult/statusChange handler send
               if (_hasStartedSpeaking && _currentTranscription.isNotEmpty) {
-                print(
+                Logger.debug(
                     '🎙️ [VOICE] 3-second silence detected - stopping to get final result');
-                print(
+                Logger.debug(
                     '  - Current text: "${_currentTranscription.length > 50 ? '${_currentTranscription.substring(0, 50)}...' : _currentTranscription}"');
                 add(const StopListening());
                 // Message will be sent by finalResult handler or _onSpeechStatusChanged
@@ -385,7 +392,7 @@ class VoiceConversationBloc
               // In continuous mode, send message but don't stop listening
               // VAD might have already sent via silence detection, but that's ok
               // as SendTextMessage checks for empty/duplicate
-              print(
+              Logger.debug(
                   '🎙️ [VOICE] FinalResult in continuous mode - sending message');
 
               // IMPORTANT: Clear transcription BEFORE sending to prevent duplicate
@@ -458,7 +465,7 @@ class VoiceConversationBloc
     // Prevent duplicate submissions if already processing/streaming
     if (state.status == VoiceConversationStatus.processing ||
         state.status == VoiceConversationStatus.streaming) {
-      print(
+      Logger.debug(
           '🎙️ [VOICE] Ignoring duplicate SendTextMessage - already processing');
       return;
     }
@@ -557,7 +564,7 @@ class VoiceConversationBloc
         queryParameters: queryParams,
       );
 
-      print(
+      Logger.debug(
           '🎙️ [VOICE] Starting EventSource stream to: ${uri.toString().substring(0, 100)}...');
 
       // Create EventSource connection
@@ -572,11 +579,11 @@ class VoiceConversationBloc
             final jsonData = jsonDecode(data) as Map<String, dynamic>;
             _handleStreamingEvent(jsonData);
           } catch (e) {
-            print('🎙️ [VOICE] Error parsing streaming data: $e');
+            Logger.error('🎙️ [VOICE] Error parsing streaming data: $e');
           }
         },
         onError: (error) {
-          print('🎙️ [VOICE] EventSource error: $error');
+          Logger.debug('🎙️ [VOICE] EventSource error: $error');
 
           if (error.toString().contains('QUOTA_EXCEEDED')) {
             add(const StreamError('Daily voice conversation quota exceeded'));
@@ -588,7 +595,7 @@ class VoiceConversationBloc
           }
         },
         onDone: () {
-          print('🎙️ [VOICE] EventSource connection closed');
+          Logger.debug('🎙️ [VOICE] EventSource connection closed');
         },
       );
     } catch (e) {
@@ -646,14 +653,15 @@ class VoiceConversationBloc
 
     // Check for quota_status event (informational, can ignore)
     if (data.containsKey('remaining') && data.containsKey('limit')) {
-      print('🎙️ [VOICE] Quota status: ${data['remaining']}/${data['limit']}');
+      Logger.debug(
+          '🎙️ [VOICE] Quota status: ${data['remaining']}/${data['limit']}');
       return;
     }
 
     // Check for stream_start event (informational)
     if (data.containsKey('timestamp') &&
         !data.containsKey('scripture_references')) {
-      print('🎙️ [VOICE] Stream started');
+      Logger.debug('🎙️ [VOICE] Stream started');
       return;
     }
 
@@ -692,7 +700,7 @@ class VoiceConversationBloc
         }
       }
 
-      print('🎙️ [VOICE] Raw response: $responseText');
+      Logger.debug('🎙️ [VOICE] Raw response: $responseText');
 
       // Parse SSE events from response text
       String fullContent = '';
@@ -749,7 +757,7 @@ class VoiceConversationBloc
                 final message = jsonData['message'] as String? ??
                     'Monthly conversation limit exceeded';
 
-                print(
+                Logger.debug(
                     '🎙️ [VOICE] Monthly limit exceeded: $conversationsUsed/$limit for $tier tier in $month');
 
                 // Dispatch MonthlyLimitExceeded event
@@ -764,7 +772,7 @@ class VoiceConversationBloc
                 return;
             }
           } catch (e) {
-            print('Error parsing SSE data: $e');
+            Logger.debug('Error parsing SSE data: $e');
           }
         }
       }
@@ -826,25 +834,33 @@ class VoiceConversationBloc
     // Capture continuous mode state for the callback
     final shouldContinueListening = state.isContinuousMode;
 
-    print('🎙️ [VOICE] Starting streaming TTS session');
-    print(
+    Logger.debug('🎙️ [VOICE] Starting streaming TTS session');
+    Logger.debug(
         '🎙️ [VOICE] Voice settings: rate=${state.speakingRate}, pitch=${state.pitch}, gender=${state.voiceGender}');
 
     // Note: isPlaying is already set to true in _onReceiveStreamChunk
     // to ensure both streamingResponse and isPlaying are emitted together
 
-    _ttsService.startStreamingSession(
+    // startStreamingSession is intentionally unawaited so the first chunk
+    // can be queued immediately. Attach catchError to prevent the unawaited
+    // Future from becoming an "Uncaught (in promise)" on web if TTS init
+    // throws (e.g., WebAudioError when stopping a previously disposed player).
+    _ttsService
+        .startStreamingSession(
       languageCode: state.languageCode,
       speakingRate: state.speakingRate,
       pitch: state.pitch,
       voiceGender: state.voiceGender,
       onComplete: () {
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Streaming TTS complete, shouldContinueListening: $shouldContinueListening');
         add(PlaybackCompleted(
             shouldContinueListening: shouldContinueListening));
       },
-    );
+    )
+        .catchError((Object e) {
+      Logger.error('🎙️ [VOICE] TTS startStreamingSession error: $e');
+    });
   }
 
   /// Process incoming text chunk for TTS - detect and queue complete sentences
@@ -872,7 +888,7 @@ class VoiceConversationBloc
 
       // Add to TTS queue if it has meaningful content
       if (completeSentence.trim().length > 3) {
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Queueing sentence: "${completeSentence.length > 50 ? '${completeSentence.substring(0, 50)}...' : completeSentence}"');
         _ttsService.addSentenceToQueue(completeSentence.trim());
       }
@@ -900,7 +916,7 @@ class VoiceConversationBloc
     if (_streamingTTSStarted) {
       // Queue any remaining buffered text (last sentence without trailing space)
       if (_streamingSentenceBuffer.trim().isNotEmpty) {
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Queueing final sentence: "${_streamingSentenceBuffer.length > 50 ? '${_streamingSentenceBuffer.substring(0, 50)}...' : _streamingSentenceBuffer}"');
         _ttsService.addSentenceToQueue(_streamingSentenceBuffer.trim());
       }
@@ -1050,18 +1066,18 @@ class VoiceConversationBloc
     final isDetectedLangAvailable =
         await _isLanguageAvailableForTTS(detectedLanguage);
 
-    print('🎙️ [VOICE] Playing response:');
-    print('  - User language: ${state.languageCode}');
-    print('  - Detected language: $detectedLanguage');
-    print('  - Detected lang available: $isDetectedLangAvailable');
-    print('  - Continuous mode: $shouldContinueListening');
+    Logger.debug('🎙️ [VOICE] Playing response:');
+    Logger.debug('  - User language: ${state.languageCode}');
+    Logger.debug('  - Detected language: $detectedLanguage');
+    Logger.debug('  - Detected lang available: $isDetectedLangAvailable');
+    Logger.warning('  - Continuous mode: $shouldContinueListening');
 
     // If detected language TTS is not available, skip TTS entirely
     // Just show text response on screen
     if (!isDetectedLangAvailable) {
-      print(
+      Logger.warning(
           '🎙️ [VOICE] ⚠️ TTS not available for $detectedLanguage - skipping voice playback');
-      print('🎙️ [VOICE] Text response will be shown on screen only');
+      Logger.debug('🎙️ [VOICE] Text response will be shown on screen only');
 
       // Update language state if needed (for speech recognition)
       final shouldUpdateLanguage = detectedLanguage != state.languageCode;
@@ -1071,7 +1087,8 @@ class VoiceConversationBloc
 
       // In continuous mode, restart listening after a short delay
       if (shouldContinueListening && state.hasActiveConversation) {
-        print('🎙️ [VOICE] Continuous mode - starting listening (no TTS)');
+        Logger.debug(
+            '🎙️ [VOICE] Continuous mode - starting listening (no TTS)');
         await Future.delayed(const Duration(milliseconds: 500));
         add(const StartListening());
       }
@@ -1081,7 +1098,7 @@ class VoiceConversationBloc
     // TTS is available - proceed with voice playback
     final shouldUpdateLanguage = detectedLanguage != state.languageCode;
     if (shouldUpdateLanguage) {
-      print(
+      Logger.debug(
           '🎙️ [VOICE] Switching language from ${state.languageCode} to $detectedLanguage');
     }
 
@@ -1100,7 +1117,7 @@ class VoiceConversationBloc
       pitch: state.pitch,
       voiceGender: state.voiceGender,
       onComplete: () {
-        print(
+        Logger.debug(
             '🎙️ [VOICE] TTS completed, shouldContinueListening: $shouldContinueListening');
         add(PlaybackCompleted(
             shouldContinueListening: shouldContinueListening));
@@ -1131,7 +1148,7 @@ class VoiceConversationBloc
       }
       return false;
     } catch (e) {
-      print('🎙️ [VOICE] Error checking language availability: $e');
+      Logger.error('🎙️ [VOICE] Error checking language availability: $e');
       return false;
     }
   }
@@ -1146,12 +1163,12 @@ class VoiceConversationBloc
     final estimatedDuration =
         Duration(milliseconds: (text.length / 10 * 1000).toInt() + 2000);
 
-    print(
+    Logger.debug(
         '🎙️ [VOICE] Setting fallback timer for ${estimatedDuration.inSeconds}s');
 
     _playbackFallbackTimer = Timer(estimatedDuration, () {
       if (state.isPlaying) {
-        print(
+        Logger.error(
             '🎙️ [VOICE] Fallback timer fired - TTS completion may have failed');
         add(PlaybackCompleted(
             shouldContinueListening: shouldContinueListening));
@@ -1169,11 +1186,11 @@ class VoiceConversationBloc
 
     // Don't process if not playing (already handled)
     if (!state.isPlaying) {
-      print('🎙️ [VOICE] PlaybackCompleted ignored - not playing');
+      Logger.debug('🎙️ [VOICE] PlaybackCompleted ignored - not playing');
       return;
     }
 
-    print(
+    Logger.debug(
         '🎙️ [VOICE] Playback completed, shouldContinueListening: ${event.shouldContinueListening}');
 
     // Stop playback state
@@ -1188,7 +1205,7 @@ class VoiceConversationBloc
 
     // Start listening again if continuous mode was enabled
     if (event.shouldContinueListening && state.hasActiveConversation) {
-      print('🎙️ [VOICE] Continuous mode - starting listening again');
+      Logger.debug('🎙️ [VOICE] Continuous mode - starting listening again');
       // Small delay before starting to listen again
       await Future.delayed(const Duration(milliseconds: 500));
       add(const StartListening());
@@ -1289,19 +1306,19 @@ class VoiceConversationBloc
     SpeechStatusChanged event,
     Emitter<VoiceConversationState> emit,
   ) {
-    print('🎙️ [VOICE] Speech status changed: ${event.status}');
+    Logger.debug('🎙️ [VOICE] Speech status changed: ${event.status}');
 
     // When status changes to 'notListening' or 'done', update UI accordingly
     if ((event.status == 'notListening' || event.status == 'done') &&
         state.isListening) {
-      print('🎙️ [VOICE] Speech recognition stopped - updating UI');
+      Logger.debug('🎙️ [VOICE] Speech recognition stopped - updating UI');
 
       // Before stopping, check if we have unsent transcription
       // Send it if we're not already processing a message
       if (_currentTranscription.isNotEmpty &&
           state.status != VoiceConversationStatus.processing &&
           state.status != VoiceConversationStatus.streaming) {
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Speech stopped with pending text - sending: $_currentTranscription');
 
         // Clear transcription before sending to prevent any future duplicates
@@ -1311,7 +1328,7 @@ class VoiceConversationBloc
 
         add(SendTextMessage(textToSend));
       } else if (_currentTranscription.isEmpty) {
-        print(
+        Logger.debug(
             '🎙️ [VOICE] Speech stopped but no pending text (already sent or empty)');
       }
 

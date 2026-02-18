@@ -9,6 +9,7 @@ import '../../features/user_profile/data/models/user_profile_model.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_cache_coordinator.dart';
+import '../utils/logger.dart';
 
 /// Service for managing user language preferences
 /// Enhanced version that checks database first for authenticated users
@@ -81,7 +82,7 @@ class LanguagePreferenceService {
 
         final dbLanguage = dbLanguageResult.fold(
           (failure) {
-            print(
+            Logger.warning(
                 '⚠️ [LANGUAGE_SERVICE] Database call failed: ${failure.message}');
             return null; // Failed to get from DB, fall back to local/cache
           },
@@ -92,7 +93,7 @@ class LanguagePreferenceService {
           // Sync local storage with database value and cache it
           await _prefs.setString(_languagePreferenceKey, dbLanguage.code);
           _cachedLanguage = dbLanguage;
-          print(
+          Logger.debug(
               '✅ [LANGUAGE_SERVICE] Retrieved from DB and cached: ${dbLanguage.displayName}');
           return dbLanguage;
         }
@@ -103,7 +104,7 @@ class LanguagePreferenceService {
       if (languageCode != null) {
         final language = AppLanguage.fromCode(languageCode);
         _cachedLanguage = language;
-        print(
+        Logger.debug(
             '✅ [LANGUAGE_SERVICE] Retrieved from local storage and cached: ${language.displayName}');
         return language;
       }
@@ -111,20 +112,21 @@ class LanguagePreferenceService {
       // Fallback to cached language before defaulting to English
       // This prevents language loss during temporary API/storage failures
       if (_cachedLanguage != null) {
-        print(
+        Logger.debug(
             '✅ [LANGUAGE_SERVICE] Using cached language (API/storage failed): ${_cachedLanguage!.displayName}');
         return _cachedLanguage!;
       }
 
       // Default to English only if all sources fail
-      print('⚠️ [LANGUAGE_SERVICE] All sources failed, defaulting to English');
+      Logger.warning(
+          '⚠️ [LANGUAGE_SERVICE] All sources failed, defaulting to English');
       return AppLanguage.english;
     } catch (e) {
-      print('Error getting selected language: $e');
+      Logger.debug('Error getting selected language: $e');
 
       // Even in error cases, try to use cached language before defaulting to English
       if (_cachedLanguage != null) {
-        print(
+        Logger.info(
             '✅ [LANGUAGE_SERVICE] Exception occurred, using cached language: ${_cachedLanguage!.displayName}');
         return _cachedLanguage!;
       }
@@ -145,7 +147,8 @@ class LanguagePreferenceService {
 
       // Cache the language immediately to prevent loss during API failures
       _cachedLanguage = language;
-      print('💾 [LANGUAGE_SERVICE] Language cached: ${language.displayName}');
+      Logger.debug(
+          '💾 [LANGUAGE_SERVICE] Language cached: ${language.displayName}');
 
       // For authenticated non-anonymous users, also save to database
       if (_authStateProvider.isAuthenticated &&
@@ -158,12 +161,13 @@ class LanguagePreferenceService {
 
         final dbUpdateSuccessful = updateResult.fold(
           (failure) {
-            print(
+            Logger.debug(
                 'Failed to update language preference in database: ${failure.message}');
             return false;
           },
           (profile) {
-            print('Language preference updated in database successfully');
+            Logger.debug(
+                'Language preference updated in database successfully');
             return true;
           },
         );
@@ -172,12 +176,12 @@ class LanguagePreferenceService {
         // This prevents race condition where router guard checks before DB update completes
         if (dbUpdateSuccessful) {
           _cacheLanguageCompletion(currentUserId, true);
-          print(
+          Logger.debug(
               '✅ [LANGUAGE_SERVICE] Language completion cached BEFORE invalidation');
 
           // Mark language selection as completed after successful DB save
           await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-          print(
+          Logger.debug(
               '✅ [LANGUAGE_SERVICE] Marked language selection completed after DB save');
 
           // FIX: Notify router guard to update its session cache immediately
@@ -186,16 +190,16 @@ class LanguagePreferenceService {
           // Now invalidate other caches after successful DB update
           _authStateProvider.invalidateProfileCache();
           _cacheCoordinator.invalidateLanguageCaches();
-          print(
+          Logger.debug(
               '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
         } else {
-          print(
+          Logger.error(
               '⚠️ [LANGUAGE_SERVICE] DB update failed - NOT marking language selection as completed');
         }
       } else {
         // For anonymous users, mark completion immediately after local storage save
         await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-        print(
+        Logger.debug(
             '✅ [LANGUAGE_SERVICE] Marked language selection completed for anonymous user');
 
         // FIX: Notify router guard to update its session cache immediately
@@ -205,14 +209,15 @@ class LanguagePreferenceService {
       // Reset study content language to default when app language changes
       // This ensures study content follows the new app language automatically
       await setStudyContentLanguageToDefault();
-      print(
+      Logger.debug(
           '🔄 [STUDY_CONTENT_LANGUAGE] Reset to default after app language change');
 
       // Notify listeners of the language change
       _languageChangeController.add(language);
-      print('🔄 Language preference changed to: ${language.displayName}');
+      Logger.debug(
+          '🔄 Language preference changed to: ${language.displayName}');
     } catch (e) {
-      print('Error saving language preference: $e');
+      Logger.debug('Error saving language preference: $e');
     }
   }
 
@@ -231,22 +236,22 @@ class LanguagePreferenceService {
         if (_isCacheFresh() &&
             _cachedUserId == currentUserId &&
             _cachedHasCompletedSelection != null) {
-          print(
+          Logger.debug(
               '🔍 [LANGUAGE_SELECTION] Using cached completion status: $_cachedHasCompletedSelection');
           return _cachedHasCompletedSelection!;
         }
 
-        print(
+        Logger.debug(
             '🔍 [LANGUAGE_SELECTION] Checking completion for authenticated user');
 
         // For new phone auth users, we need to check if they actually have a profile
         // If no profile exists, they haven't completed language selection
         final profileExists = await _userProfileService.profileExists();
-        print('🔍 [LANGUAGE_SELECTION] Profile exists: $profileExists');
+        Logger.debug('🔍 [LANGUAGE_SELECTION] Profile exists: $profileExists');
 
         if (!profileExists) {
           // New user - no profile means language selection not completed
-          print(
+          Logger.debug(
               '🔍 [LANGUAGE_SELECTION] New user detected - no profile exists');
           _cacheLanguageCompletion(currentUserId, false);
           return false;
@@ -257,20 +262,20 @@ class LanguagePreferenceService {
             await _userProfileService.getLanguagePreference();
         final hasLanguage = languageResult.fold(
           (failure) {
-            print(
+            Logger.error(
                 '❌ [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
 
             // Failure: Use locally stored/cached value as fallback instead of overwriting
             final locallyMarked =
                 _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-            print(
+            Logger.debug(
                 '📦 [LANGUAGE_SELECTION] Using cached local completion status: $locallyMarked');
 
             // Return local state, DO NOT cache false when remote call failed
             return locallyMarked;
           },
           (language) {
-            print(
+            Logger.info(
                 '✅ [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
             return true; // Has language preference in DB means completed
           },
@@ -281,7 +286,7 @@ class LanguagePreferenceService {
         if (languageResult.isRight()) {
           _cacheLanguageCompletion(currentUserId, hasLanguage);
         } else {
-          print(
+          Logger.warning(
               '⚠️ [LANGUAGE_SELECTION] Not caching result - using fallback local state due to API failure');
         }
 
@@ -289,12 +294,12 @@ class LanguagePreferenceService {
         if (hasLanguage && languageResult.isRight()) {
           final locallyMarked =
               _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-          print(
+          Logger.debug(
               '🔍 [LANGUAGE_SELECTION] Locally marked as completed: $locallyMarked');
 
           // If not locally marked but has DB preference, mark it locally for consistency
           if (!locallyMarked) {
-            print(
+            Logger.debug(
                 '🔄 [LANGUAGE_SELECTION] Marking locally as completed for consistency');
             await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
           }
@@ -306,11 +311,11 @@ class LanguagePreferenceService {
       // For anonymous users, check local storage completion flag
       final isCompleted =
           _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-      print(
+      Logger.debug(
           '🔍 [LANGUAGE_SELECTION] Anonymous user completion status: $isCompleted');
       return isCompleted;
     } catch (e) {
-      print('Error checking language selection completion: $e');
+      Logger.debug('Error checking language selection completion: $e');
       return false;
     }
   }
@@ -323,7 +328,8 @@ class LanguagePreferenceService {
       // FIX: Set local flag for ALL users, not just anonymous
       // This prevents race condition where router checks before DB update completes
       await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-      print('✅ [LANGUAGE_SERVICE] Marked language selection completed locally');
+      Logger.info(
+          '✅ [LANGUAGE_SERVICE] Marked language selection completed locally');
 
       // Also cache the completion state for the current user
       final currentUserId = _authStateProvider.userId;
@@ -333,7 +339,7 @@ class LanguagePreferenceService {
       // This prevents redirect loop when navigating to home after language selection
       RouterGuard.markLanguageSelectionCompleted();
     } catch (e) {
-      print('Error marking language selection completed: $e');
+      Logger.debug('Error marking language selection completed: $e');
     }
   }
 
@@ -366,17 +372,18 @@ class LanguagePreferenceService {
             await _userProfileService.updateLanguagePreference(localLanguage);
             // Update cached profile to reflect the change
             _authStateProvider.invalidateProfileCache();
-            print(
+            Logger.debug(
                 'Synced local language preference to database: ${localLanguage.displayName}');
           } else {
-            print('Language preferences already in sync, skipping API call');
+            Logger.debug(
+                'Language preferences already in sync, skipping API call');
           }
         } else {
           // No cached profile or language preference, update database
           await _userProfileService.updateLanguagePreference(localLanguage);
           // Update cached profile to reflect the change
           _authStateProvider.invalidateProfileCache();
-          print(
+          Logger.debug(
               'Synced local language preference to database: ${localLanguage.displayName}');
         }
       } else {
@@ -390,7 +397,7 @@ class LanguagePreferenceService {
             // Use cached language preference
             await _prefs.setString(_languagePreferenceKey, dbLanguageCode);
             final language = AppLanguage.fromCode(dbLanguageCode);
-            print(
+            Logger.debug(
                 'Synced cached language preference to local: ${language.displayName}');
             return;
           }
@@ -400,16 +407,17 @@ class LanguagePreferenceService {
         final dbLanguageResult =
             await _userProfileService.getLanguagePreference();
         dbLanguageResult.fold(
-          (failure) => print('No language preference found in database'),
+          (failure) =>
+              Logger.warning('No language preference found in database'),
           (language) async {
             await _prefs.setString(_languagePreferenceKey, language.code);
-            print(
+            Logger.debug(
                 'Synced database language preference to local: ${language.displayName}');
           },
         );
       }
     } catch (e) {
-      print('Error syncing with profile: $e');
+      Logger.debug('Error syncing with profile: $e');
     }
   }
 
@@ -421,7 +429,7 @@ class LanguagePreferenceService {
       _invalidateLanguageCache();
       _cacheCoordinator.invalidateLanguageCaches();
     } catch (e) {
-      print('Error resetting language selection: $e');
+      Logger.debug('Error resetting language selection: $e');
     }
   }
 
@@ -430,7 +438,7 @@ class LanguagePreferenceService {
     _cachedUserId = userId;
     _cachedHasCompletedSelection = hasCompleted;
     _cacheTimestamp = DateTime.now();
-    print(
+    Logger.debug(
         '🔄 [LANGUAGE_CACHE] Cached completion status: $hasCompleted for user: $userId');
   }
 
@@ -447,7 +455,7 @@ class LanguagePreferenceService {
     _cachedHasCompletedSelection = null;
     _cachedLanguage = null;
     _cacheTimestamp = null;
-    print('🔄 [LANGUAGE_CACHE] Language cache invalidated');
+    Logger.debug('🔄 [LANGUAGE_CACHE] Language cache invalidated');
   }
 
   /// Private helper for internal cache invalidation
@@ -463,7 +471,7 @@ class LanguagePreferenceService {
     try {
       // Save to local storage first (always)
       await _prefs.setString(_studyModePreferenceKey, mode.name);
-      print(
+      Logger.debug(
           '💾 [PREFERENCE_SERVICE] Study mode preference saved locally: ${mode.displayName}');
 
       // For authenticated users, also save to database
@@ -474,12 +482,12 @@ class LanguagePreferenceService {
 
         final dbUpdateSuccessful = updateResult.fold(
           (failure) {
-            print(
+            Logger.error(
                 '❌ [PREFERENCE_SERVICE] Failed to sync study mode to database: ${failure.message}');
             return false;
           },
           (profile) {
-            print(
+            Logger.info(
                 '✅ [PREFERENCE_SERVICE] Study mode synced to database: ${mode.displayName}');
             return true;
           },
@@ -488,12 +496,13 @@ class LanguagePreferenceService {
         // If database update failed, log a warning but don't block user
         // Local preference is still saved, so user experience is not disrupted
         if (!dbUpdateSuccessful) {
-          print(
+          Logger.error(
               '⚠️ [PREFERENCE_SERVICE] Study mode saved locally but database sync failed');
         }
       }
     } catch (e) {
-      print('❌ [PREFERENCE_SERVICE] Error saving study mode preference: $e');
+      Logger.debug(
+          '❌ [PREFERENCE_SERVICE] Error saving study mode preference: $e');
       // Re-throw to let caller handle the error
       rethrow;
     }
@@ -504,7 +513,7 @@ class LanguagePreferenceService {
     try {
       // Save to local storage first (always)
       await _prefs.setString(_studyModePreferenceKey, modeValue);
-      print(
+      Logger.debug(
           '💾 [PREFERENCE_SERVICE] Study mode preference saved locally: $modeValue');
 
       // For authenticated users, also save to database
@@ -515,12 +524,12 @@ class LanguagePreferenceService {
 
         final dbUpdateSuccessful = updateResult.fold(
           (failure) {
-            print(
+            Logger.error(
                 '❌ [PREFERENCE_SERVICE] Failed to sync study mode to database: ${failure.message}');
             return false;
           },
           (profile) {
-            print(
+            Logger.info(
                 '✅ [PREFERENCE_SERVICE] Study mode synced to database: $modeValue');
 
             // ✅ FIX: Update AuthStateProvider cache with new profile
@@ -528,7 +537,8 @@ class LanguagePreferenceService {
             if (userId != null) {
               final profileMap = UserProfileModel.fromEntity(profile).toJson();
               _authStateProvider.cacheProfile(userId, profileMap);
-              print('📄 [PREFERENCE_SERVICE] AuthStateProvider cache updated');
+              Logger.debug(
+                  '📄 [PREFERENCE_SERVICE] AuthStateProvider cache updated');
             }
 
             return true;
@@ -538,12 +548,13 @@ class LanguagePreferenceService {
         // If database update failed, log a warning but don't block user
         // Local preference is still saved, so user experience is not disrupted
         if (!dbUpdateSuccessful) {
-          print(
+          Logger.error(
               '⚠️ [PREFERENCE_SERVICE] Study mode saved locally but database sync failed');
         }
       }
     } catch (e) {
-      print('❌ [PREFERENCE_SERVICE] Error saving study mode preference: $e');
+      Logger.debug(
+          '❌ [PREFERENCE_SERVICE] Error saving study mode preference: $e');
       // Re-throw to let caller handle the error
       rethrow;
     }
@@ -554,7 +565,8 @@ class LanguagePreferenceService {
     try {
       // Clear local storage first (always)
       await _prefs.remove(_studyModePreferenceKey);
-      print('💾 [PREFERENCE_SERVICE] Study mode preference cleared locally');
+      Logger.debug(
+          '💾 [PREFERENCE_SERVICE] Study mode preference cleared locally');
 
       // For authenticated users, also clear database value
       if (_authStateProvider.isAuthenticated &&
@@ -564,19 +576,21 @@ class LanguagePreferenceService {
 
         final dbUpdateSuccessful = updateResult.fold(
           (failure) {
-            print(
+            Logger.error(
                 '❌ [PREFERENCE_SERVICE] Failed to clear study mode in database: ${failure.message}');
             return false;
           },
           (profile) {
-            print('✅ [PREFERENCE_SERVICE] Study mode cleared in database');
+            Logger.info(
+                '✅ [PREFERENCE_SERVICE] Study mode cleared in database');
 
             // ✅ FIX: Update AuthStateProvider cache with new profile
             final userId = _authStateProvider.userId;
             if (userId != null) {
               final profileMap = UserProfileModel.fromEntity(profile).toJson();
               _authStateProvider.cacheProfile(userId, profileMap);
-              print('📄 [PREFERENCE_SERVICE] AuthStateProvider cache updated');
+              Logger.debug(
+                  '📄 [PREFERENCE_SERVICE] AuthStateProvider cache updated');
             }
 
             return true;
@@ -586,15 +600,16 @@ class LanguagePreferenceService {
         // If database update failed, log a warning but don't block user
         // Local preference is still cleared, so user experience is not disrupted
         if (!dbUpdateSuccessful) {
-          print(
+          Logger.warning(
               '⚠️ [PREFERENCE_SERVICE] Study mode cleared locally but database sync failed');
         }
       } else {
-        print(
+        Logger.info(
             '✅ [PREFERENCE_SERVICE] Study mode preference cleared (local only)');
       }
     } catch (e) {
-      print('❌ [PREFERENCE_SERVICE] Error clearing study mode preference: $e');
+      Logger.error(
+          '❌ [PREFERENCE_SERVICE] Error clearing study mode preference: $e');
       // Re-throw to let caller handle the error
       rethrow;
     }
@@ -614,13 +629,13 @@ class LanguagePreferenceService {
         if (dbMode != null) {
           // Sync local storage with database value
           await _prefs.setString(_studyModePreferenceKey, dbMode);
-          print(
+          Logger.info(
               '✅ [PREFERENCE_SERVICE] Study mode preference from DB: $dbMode');
           return dbMode;
         } else {
           // ✅ FIX: When database is null, also clear local storage to stay in sync
           await _prefs.remove(_studyModePreferenceKey);
-          print(
+          Logger.info(
               '✅ [PREFERENCE_SERVICE] Study mode preference from DB: null (cleared local storage)');
           return null;
         }
@@ -629,7 +644,7 @@ class LanguagePreferenceService {
       // Fallback to local storage (only for anonymous users)
       final modeString = _prefs.getString(_studyModePreferenceKey);
       if (modeString != null) {
-        print(
+        Logger.info(
             '✅ [PREFERENCE_SERVICE] Study mode preference from local: $modeString');
         return modeString;
       }
@@ -637,7 +652,7 @@ class LanguagePreferenceService {
       // Return null when no preference saved (means "ask every time")
       return null;
     } catch (e) {
-      print('Error getting study mode preference: $e');
+      Logger.debug('Error getting study mode preference: $e');
       return null;
     }
   }
@@ -652,17 +667,17 @@ class LanguagePreferenceService {
         return dbModeResult.fold(
           (failure) {
             // Database call failed - fallback to local storage
-            print(
+            Logger.warning(
                 '⚠️ [PREFERENCE_SERVICE] Database call failed: ${failure.message}');
             final modeString = _prefs.getString(_studyModePreferenceKey);
             if (modeString != null) {
               final mode = studyModeFromString(modeString);
               if (mode != null) {
-                print(
+                Logger.info(
                     '✅ [PREFERENCE_SERVICE] Study mode from local (DB failed): ${mode.displayName}');
                 return mode;
               } else {
-                print(
+                Logger.warning(
                     '⚠️ [PREFERENCE_SERVICE] Invalid study mode string: $modeString');
               }
             }
@@ -673,13 +688,13 @@ class LanguagePreferenceService {
             if (mode != null) {
               // Sync local storage with database value
               await _prefs.setString(_studyModePreferenceKey, mode.name);
-              print(
+              Logger.info(
                   '✅ [PREFERENCE_SERVICE] Study mode from DB: ${mode.displayName}');
               return mode;
             } else {
               // ✅ FIX: Database returned null - clear local storage to stay in sync
               await _prefs.remove(_studyModePreferenceKey);
-              print(
+              Logger.info(
                   '✅ [PREFERENCE_SERVICE] Study mode from DB: null (cleared local storage)');
               return null;
             }
@@ -692,11 +707,11 @@ class LanguagePreferenceService {
       if (modeString != null) {
         final mode = studyModeFromString(modeString);
         if (mode != null) {
-          print(
+          Logger.info(
               '✅ [PREFERENCE_SERVICE] Study mode from local: ${mode.displayName}');
           return mode;
         } else {
-          print(
+          Logger.warning(
               '⚠️ [PREFERENCE_SERVICE] Invalid study mode string: $modeString');
         }
       }
@@ -704,7 +719,7 @@ class LanguagePreferenceService {
       // Return null when no preference saved (means "ask every time")
       return null;
     } catch (e) {
-      print('Error getting study mode preference: $e');
+      Logger.debug('Error getting study mode preference: $e');
       return null;
     }
   }
@@ -730,18 +745,18 @@ class LanguagePreferenceService {
       if (studyLanguageCode == null ||
           studyLanguageCode == _defaultStudyLanguageValue) {
         final appLanguage = await getSelectedLanguage();
-        print(
+        Logger.info(
             '✅ [STUDY_CONTENT_LANGUAGE] Using app language (default): ${appLanguage.displayName}');
         return appLanguage;
       }
 
       // Use the specific study content language
       final language = AppLanguage.fromCode(studyLanguageCode);
-      print(
+      Logger.info(
           '✅ [STUDY_CONTENT_LANGUAGE] Using study-specific language: ${language.displayName}');
       return language;
     } catch (e) {
-      print('Error getting study content language: $e');
+      Logger.debug('Error getting study content language: $e');
       return AppLanguage.english;
     }
   }
@@ -758,7 +773,7 @@ class LanguagePreferenceService {
         // Setting to default (use app language)
         await _prefs.setString(
             _studyContentLanguageKey, _defaultStudyLanguageValue);
-        print(
+        Logger.debug(
             '💾 [STUDY_CONTENT_LANGUAGE] Study content language set to default (app language)');
 
         // Notify listeners with current app language
@@ -766,15 +781,16 @@ class LanguagePreferenceService {
         _studyContentLanguageChangeController.add(currentLanguage);
       } else {
         await _prefs.setString(_studyContentLanguageKey, language.code);
-        print(
+        Logger.debug(
             '💾 [STUDY_CONTENT_LANGUAGE] Study content language saved: ${language.displayName}');
 
         // Notify listeners of the change
         _studyContentLanguageChangeController.add(language);
       }
-      print('ℹ️  [STUDY_CONTENT_LANGUAGE] App UI language remains unchanged');
+      Logger.error(
+          'ℹ️  [STUDY_CONTENT_LANGUAGE] App UI language remains unchanged');
     } catch (e) {
-      print('Error saving study content language: $e');
+      Logger.debug('Error saving study content language: $e');
       rethrow;
     }
   }
@@ -784,14 +800,14 @@ class LanguagePreferenceService {
     try {
       await _prefs.setString(
           _studyContentLanguageKey, _defaultStudyLanguageValue);
-      print(
+      Logger.debug(
           '💾 [STUDY_CONTENT_LANGUAGE] Study content language reset to default');
 
       // Notify listeners with current app language
       final currentLanguage = await getSelectedLanguage();
       _studyContentLanguageChangeController.add(currentLanguage);
     } catch (e) {
-      print('Error resetting study content language to default: $e');
+      Logger.debug('Error resetting study content language to default: $e');
       rethrow;
     }
   }
@@ -803,7 +819,7 @@ class LanguagePreferenceService {
       return studyLanguageCode == null ||
           studyLanguageCode == _defaultStudyLanguageValue;
     } catch (e) {
-      print('Error checking if study content language is default: $e');
+      Logger.debug('Error checking if study content language is default: $e');
       return true; // Default to true on error
     }
   }

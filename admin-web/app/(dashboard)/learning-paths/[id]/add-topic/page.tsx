@@ -395,7 +395,7 @@ export default function AddTopicToPathPage({ params }: PageProps) {
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.title || !formData.description || !formData.input_value}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? 'Creating...' : 'Create Study Guide'}
               </button>

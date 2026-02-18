@@ -8,8 +8,16 @@ import { StatsCard } from '@/components/ui/stats-card'
 import StudyGuidesTable from '@/components/tables/study-guides-table'
 import DailyVersesTable from '@/components/tables/daily-verses-table'
 import SuggestedVersesTable from '@/components/tables/suggested-verses-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { TabNav } from '@/components/ui/tab-nav'
 
 type TabType = 'study-guides' | 'daily-verses' | 'suggested-verses'
+
+const TABS = [
+  { value: 'study-guides', label: 'Study Guides Library', icon: '📚' },
+  { value: 'daily-verses', label: 'Daily Verses Manager', icon: '📅' },
+  { value: 'suggested-verses', label: 'Suggested Verses Curator', icon: '⭐' },
+]
 
 export default function ContentManagementPage() {
   const router = useRouter()
@@ -229,7 +237,7 @@ export default function ContentManagementPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
           {studyGuidesLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
@@ -343,7 +351,7 @@ export default function ContentManagementPage() {
         )}
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
           {dailyVersesLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
@@ -398,7 +406,7 @@ export default function ContentManagementPage() {
 
         {/* Category Breakdown */}
         {stats?.by_category && Object.keys(stats.by_category).length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Category Breakdown
             </h3>
@@ -444,7 +452,7 @@ export default function ContentManagementPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
           {suggestedVersesLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
@@ -465,51 +473,16 @@ export default function ContentManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Content Management
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage study guides, daily verses, and suggested verses
-        </p>
-      </div>
+      <PageHeader
+        title="Content Management"
+        description="Manage study guides, daily verses, and suggested verses"
+      />
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('study-guides')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'study-guides'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            📚 Study Guides Library
-          </button>
-          <button
-            onClick={() => setActiveTab('daily-verses')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'daily-verses'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            📅 Daily Verses Manager
-          </button>
-          <button
-            onClick={() => setActiveTab('suggested-verses')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'suggested-verses'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            ⭐ Suggested Verses Curator
-          </button>
-        </nav>
-      </div>
+      <TabNav
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={(v) => setActiveTab(v as TabType)}
+      />
 
       {/* Tab Content */}
       {activeTab === 'study-guides' && renderStudyGuidesTab()}

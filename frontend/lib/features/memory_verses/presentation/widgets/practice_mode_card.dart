@@ -20,6 +20,7 @@ class PracticeModeCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isTierLocked;
   final bool isUnlockLimitReached;
+  final VoidCallback? onLockedTap;
 
   const PracticeModeCard({
     super.key,
@@ -29,6 +30,7 @@ class PracticeModeCard extends StatelessWidget {
     required this.onTap,
     this.isTierLocked = false,
     this.isUnlockLimitReached = false,
+    this.onLockedTap,
   });
 
   @override
@@ -212,39 +214,62 @@ class PracticeModeCard extends StatelessWidget {
           // Lock overlay for tier-locked or unlock-limit modes
           if (isLocked)
             Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha((0.7 * 255).round()),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isTierLocked ? Icons.lock : Icons.lock_clock,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isTierLocked ? 'Upgrade Required' : 'Daily Limit Reached',
-                      style: theme.textTheme.titleSmall?.copyWith(
+              child: GestureDetector(
+                onTap: onLockedTap,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha((0.75 * 255).round()),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isTierLocked ? Icons.lock : Icons.lock_clock,
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        size: 36,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isTierLocked
-                          ? 'Tap to see plans'
-                          : 'Choose unlocked modes',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
+                      const SizedBox(height: 8),
+                      Text(
+                        isTierLocked
+                            ? 'Upgrade Required'
+                            : 'Daily Limit Reached',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      if (isTierLocked)
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha((0.2 * 255).round()),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white54),
+                          ),
+                          child: const Text(
+                            'Tap to see plans',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
+                          'Choose unlocked modes',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

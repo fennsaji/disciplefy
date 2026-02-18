@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/repositories/storage_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of StorageRepository handling different storage types
 /// Separated into data layer following Clean Architecture principles
@@ -26,13 +26,9 @@ class StorageRepositoryImpl implements StorageRepository {
   Future<void> clearSecureStorage() async {
     try {
       await _secureStorage.deleteAll();
-      if (kDebugMode) {
-        print('🗄️ [STORAGE REPO] ✅ Secure storage cleared');
-      }
+      Logger.error('🗄️ [STORAGE REPO] ✅ Secure storage cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [STORAGE REPO] ❌ Failed to clear secure storage: $e');
-      }
+      Logger.debug('🗄️ [STORAGE REPO] ❌ Failed to clear secure storage: $e');
       rethrow;
     }
   }
@@ -58,14 +54,10 @@ class StorageRepositoryImpl implements StorageRepository {
       await box.close();
       await Hive.deleteBoxFromDisk(boxName);
 
-      if (kDebugMode) {
-        print(
-            '🗄️ [STORAGE REPO] ✅ Cleared Hive box: $boxName ($itemCount items)');
-      }
+      Logger.error(
+          '🗄️ [STORAGE REPO] ✅ Cleared Hive box: $boxName ($itemCount items)');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [STORAGE REPO] ❌ Error clearing Hive box $boxName: $e');
-      }
+      Logger.debug('🗄️ [STORAGE REPO] ❌ Error clearing Hive box $boxName: $e');
       rethrow;
     }
   }
@@ -91,15 +83,12 @@ class StorageRepositoryImpl implements StorageRepository {
           }
         }
 
-        if (kDebugMode) {
-          print(
-              '🗄️ [STORAGE REPO] ✅ Cleared $clearedKeys user keys from app_settings');
-        }
+        Logger.error(
+            '🗄️ [STORAGE REPO] ✅ Cleared $clearedKeys user keys from app_settings');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [STORAGE REPO] ❌ Error clearing app_settings user data: $e');
-      }
+      Logger.debug(
+          '🗄️ [STORAGE REPO] ❌ Error clearing app_settings user data: $e');
       rethrow;
     }
   }
@@ -109,13 +98,10 @@ class StorageRepositoryImpl implements StorageRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      if (kDebugMode) {
-        print('🗄️ [STORAGE REPO] ✅ SharedPreferences cleared');
-      }
+      Logger.error('🗄️ [STORAGE REPO] ✅ SharedPreferences cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [STORAGE REPO] ❌ Failed to clear SharedPreferences: $e');
-      }
+      Logger.debug(
+          '🗄️ [STORAGE REPO] ❌ Failed to clear SharedPreferences: $e');
       rethrow;
     }
   }

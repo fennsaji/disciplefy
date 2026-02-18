@@ -2,12 +2,15 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { PageHeader } from '@/components/ui/page-header'
 import { UserSearchInput } from '@/components/ui/user-search-input'
 import { SubscriptionTable } from '@/components/tables/subscription-table'
 import { StatsCard } from '@/components/ui/stats-card'
 import { searchUsers } from '@/lib/api/admin'
 import { formatCompactNumber } from '@/lib/utils/date'
 import type { SubscriptionTier } from '@/types/admin'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
 
 export default function SubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -96,15 +99,10 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Subscription Management</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Manage user subscriptions, update plans, and apply custom discounts
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Subscription Management"
+        description="Manage user subscriptions, update plans, and apply custom discounts"
+      />
 
       {/* Search and Filters */}
       <div className="space-y-4">
@@ -166,10 +164,7 @@ export default function SubscriptionsPage() {
 
       {/* Error State */}
       {searchError && (
-        <div className="rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-300">
-          <p className="font-medium">Error searching users</p>
-          <p className="mt-1 text-sm">{searchError instanceof Error ? searchError.message : 'Unknown error'}</p>
-        </div>
+        <ErrorState title="Error loading subscriptions" message={searchError instanceof Error ? searchError.message : 'Unknown error'} />
       )}
 
       {/* Stats cards */}
@@ -203,7 +198,7 @@ export default function SubscriptionsPage() {
       )}
 
       {/* User table */}
-      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">User Subscriptions</h2>
 
         {!searchResults && !isSearching && !searchError && (
@@ -218,14 +213,7 @@ export default function SubscriptionsPage() {
           </div>
         )}
 
-        {isSearching && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">Searching users...</p>
-            </div>
-          </div>
-        )}
+        {isSearching && <LoadingState label="Loading subscriptions..." />}
 
         {searchResults && (
           <>

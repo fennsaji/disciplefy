@@ -7,8 +7,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/pricing_service.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../data/datasources/subscription_remote_data_source.dart';
+import '../utils/plan_features_extractor.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -33,12 +34,44 @@ class MyPlanPage extends StatefulWidget {
 }
 
 class _MyPlanPageState extends State<MyPlanPage> {
+  List<String> _planFeatures = [];
+  bool _featuresLoading = true;
+
   @override
   void initState() {
     super.initState();
     // Load subscription and invoices when page opens
     context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     context.read<SubscriptionBloc>().add(const GetSubscriptionInvoices());
+    _loadPlanFeatures();
+  }
+
+  /// Fetch plan features from the DB via get-plans Edge Function,
+  /// using the same data source as PricingPage for consistency.
+  Future<void> _loadPlanFeatures() async {
+    try {
+      final tokenState = sl<TokenBloc>().state;
+      final userPlan = tokenState is TokenLoaded
+          ? tokenState.tokenStatus.userPlan
+          : UserPlan.free;
+
+      final response = await sl<SubscriptionRemoteDataSource>()
+          .getPlans(provider: 'razorpay');
+
+      final plan = response.plans.firstWhere(
+        (p) => p.planCode == userPlan.name,
+        orElse: () => response.plans.first,
+      );
+
+      if (mounted) {
+        setState(() {
+          _planFeatures = PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
+          _featuresLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _featuresLoading = false);
+    }
   }
 
   @override
@@ -811,8 +844,6 @@ class _MyPlanPageState extends State<MyPlanPage> {
     final planColor = _getPlanColor(userPlan);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final features = _getPlanFeatures(userPlan);
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -844,7 +875,24 @@ class _MyPlanPageState extends State<MyPlanPage> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 12),
-            ...features.map((feature) => _buildFeatureItem(feature, planColor)),
+            if (_featuresLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else if (_planFeatures.isEmpty)
+              Text(
+                'No features available',
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                ),
+              )
+            else
+              ..._planFeatures.map((f) => _buildFeatureItem(f, planColor)),
           ],
         ),
       ),
@@ -1097,217 +1145,37 @@ class _MyPlanPageState extends State<MyPlanPage> {
     SubscriptionState state,
     UserSubscriptionStatus? subscriptionStatus,
   ) {
-    final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
     final isLoading = state is SubscriptionLoading;
-    // Check for loading during standard subscription creation
-    final isCreatingSubscription =
-        (state is UserSubscriptionStatusLoaded && state.isLoading) ||
-            (state is SubscriptionLoading &&
-                state.operation == 'creating standard subscription');
 
-    // Check for special states
-    final isInGracePeriod = subscriptionStatus?.isInGracePeriod ?? false;
-    final hasTrialExpired = subscriptionStatus?.hasTrialExpired ?? false;
-    final isNewUserWithoutTrial =
-        subscriptionStatus?.isNewUserWithoutTrial ?? false;
-
-    // Premium trial states
-    final canStartPremiumTrial =
-        subscriptionStatus?.canStartPremiumTrial ?? false;
-    final isInPremiumTrial = subscriptionStatus?.isInPremiumTrial ?? false;
-    final isStartingPremiumTrial = state is SubscriptionLoading &&
-        state.operation == 'starting premium trial';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Users eligible for Premium trial: Show start trial
-        if (canStartPremiumTrial && !isInPremiumTrial) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanStart7DayTrial),
-            sublabel: context.tr(TranslationKeys.myPlanTryAllFeaturesFree),
-            icon: Icons.rocket_launch,
-            color: const Color(0xFF6A4FB6),
-            isLoading: isStartingPremiumTrial,
-            onPressed: () {
-              context.read<SubscriptionBloc>().add(
-                    const StartPremiumTrial(),
-                  );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
-            sublabel:
-                sl<PricingService>().getFormattedPricePerMonth('standard'),
-            icon: Icons.auto_awesome,
-            color: Colors.teal[600]!,
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-            isOutlined: true,
-          ),
-        ]
-        // Users in Premium trial: Show upgrade options
-        else if (isInPremiumTrial) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-            sublabel: context.tr(TranslationKeys.myPlanKeepPremiumAccess),
-            icon: Icons.workspace_premium,
-            color: Colors.amber[700]!,
-            onPressed: () => context.push(AppRoutes.premiumUpgrade),
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanSubscribeToStandard),
-            sublabel: context.tr(TranslationKeys.myPlanAfterTrial),
-            icon: Icons.auto_awesome,
-            color: const Color(0xFF6A4FB6),
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-            isOutlined: true,
-          ),
-        ]
-        // Grace period users: Show urgent subscribe
-        else if (isInGracePeriod && subscription == null) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanSubscribeNow),
-            sublabel: context.tr(TranslationKeys.myPlanKeepStandardAccess),
-            icon: Icons.credit_card,
-            color: subscriptionStatus!.graceDaysRemaining <= 3
-                ? Colors.orange[700]!
-                : const Color(0xFF6A4FB6),
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-            sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
-            icon: Icons.workspace_premium,
-            color: Colors.amber[700]!,
-            onPressed: () => context.push(AppRoutes.premiumUpgrade),
-            isOutlined: true,
-          ),
-        ]
-        // Trial expired users: Show subscribe to regain access
-        else if (hasTrialExpired) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanSubscribeToStandard),
-            sublabel: context.tr(TranslationKeys.myPlanRegainAccess),
-            icon: Icons.auto_awesome,
-            color: const Color(0xFF6A4FB6),
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-            sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
-            icon: Icons.workspace_premium,
-            color: Colors.amber[700]!,
-            onPressed: () => context.push(AppRoutes.premiumUpgrade),
-            isOutlined: true,
-          ),
-        ]
-        // New users (never had trial): Show promo
-        else if (isNewUserWithoutTrial) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
-            sublabel: context.tr(TranslationKeys.myPlanGetTokensDailyFor),
-            icon: Icons.auto_awesome,
-            color: const Color(0xFF6A4FB6),
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-            sublabel: context.tr(TranslationKeys.myPlanUnlimitedTokensFor),
-            icon: Icons.workspace_premium,
-            color: Colors.amber[700]!,
-            onPressed: () => context.push(AppRoutes.premiumUpgrade),
-            isOutlined: true,
-          ),
-        ]
-        // Free users (generic): Show upgrade options
-        else if (userPlan == UserPlan.free) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
-            sublabel:
-                sl<PricingService>().getFormattedPricePerMonth('standard'),
-            icon: Icons.auto_awesome,
-            color: const Color(0xFF6A4FB6),
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-            sublabel: '\u20b9100/month',
-            icon: Icons.workspace_premium,
-            color: Colors.amber[700]!,
-            onPressed: () => context.push(AppRoutes.premiumUpgrade),
-          ),
-        ]
-        // Standard trial (no subscription): Show subscribe now
-        else if (userPlan == UserPlan.standard &&
-            subscription == null &&
-            isTrialActive) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanSubscribeNow),
-            sublabel: context.tr(TranslationKeys.myPlanContinueAfterTrial),
-            icon: Icons.credit_card,
-            color: const Color(0xFF6A4FB6),
-            isLoading: isCreatingSubscription,
-            onPressed: () => context.push(AppRoutes.standardUpgrade),
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-            sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
-            icon: Icons.workspace_premium,
-            color: Colors.amber[700]!,
-            onPressed: () => context.push(AppRoutes.premiumUpgrade),
-            isOutlined: true,
-          ),
-        ]
-        // Active subscription with pending cancellation: Show continue option
-        else if (subscription?.status ==
-            SubscriptionStatus.pending_cancellation) ...[
+    // Pending cancellation: resume button + view plans
+    if (subscription?.status == SubscriptionStatus.pending_cancellation) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           _buildActionButton(
             label: context.tr(TranslationKeys.myPlanContinueSubscription),
             sublabel: context.tr(TranslationKeys.myPlanResumeSubscription),
             icon: Icons.restart_alt,
             color: AppTheme.successColor,
             isLoading: isLoading,
-            onPressed: () {
-              context.read<SubscriptionBloc>().add(
-                    const ResumeSubscription(),
-                  );
-            },
+            onPressed: () => context
+                .read<SubscriptionBloc>()
+                .add(const ResumeSubscription()),
           ),
+          const SizedBox(height: 12),
+          _buildViewPlansButton(),
+        ],
+      );
+    }
+
+    // Active subscription: view plans (if standard, for upgrade) + cancel
+    if (subscription != null && subscription.isActive) {
+      final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           if (userPlan == UserPlan.standard) ...[
-            const SizedBox(height: 12),
-            _buildActionButton(
-              label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-              sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
-              icon: Icons.workspace_premium,
-              color: Colors.amber[700]!,
-              onPressed: () => context.push(AppRoutes.premiumUpgrade),
-              isOutlined: true,
-            ),
-          ],
-        ]
-        // Active subscription: Show cancel option
-        else if (subscription != null && subscription.isActive) ...[
-          if (userPlan == UserPlan.standard) ...[
-            _buildActionButton(
-              label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
-              sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
-              icon: Icons.workspace_premium,
-              color: Colors.amber[700]!,
-              onPressed: () => context.push(AppRoutes.premiumUpgrade),
-            ),
+            _buildViewPlansButton(),
             const SizedBox(height: 12),
           ],
           _buildActionButton(
@@ -1319,24 +1187,37 @@ class _MyPlanPageState extends State<MyPlanPage> {
             isLoading: isLoading,
             onPressed: () => _showCancelConfirmationDialog(subscription),
           ),
-        ]
-        // Expired subscription: Show resubscribe
-        else if (subscription != null && !subscription.isActive) ...[
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanResubscribe),
-            sublabel: context.tr(TranslationKeys.myPlanRenewSubscription),
-            icon: Icons.refresh,
-            color: AppTheme.primaryColor,
-            onPressed: () {
-              if (userPlan == UserPlan.standard) {
-                context.push(AppRoutes.standardUpgrade);
-              } else {
-                context.push(AppRoutes.premiumUpgrade);
-              }
-            },
-          ),
         ],
-      ],
+      );
+    }
+
+    // All other states (trial, expired, free, grace period): single View Plans button
+    return _buildViewPlansButton();
+  }
+
+  Widget _buildViewPlansButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => context.push(AppRoutes.pricing),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        icon: const Icon(Icons.auto_awesome, size: 20),
+        label: Text(
+          'Upgrade',
+          style: AppFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 
@@ -1559,42 +1440,6 @@ class _MyPlanPageState extends State<MyPlanPage> {
         return Icons.workspace_premium;
       case UserPlan.premium:
         return Icons.star;
-    }
-  }
-
-  List<String> _getPlanFeatures(UserPlan plan) {
-    switch (plan) {
-      case UserPlan.free:
-        return [
-          context.tr(TranslationKeys.pricingFreeFeature1),
-          context.tr(TranslationKeys.pricingFreeFeature2),
-          context.tr(TranslationKeys.pricingFreeFeature3),
-          context.tr(TranslationKeys.pricingFreeFeature4),
-        ];
-      case UserPlan.standard:
-        return [
-          context.tr(TranslationKeys.pricingStandardFeature1),
-          context.tr(TranslationKeys.pricingStandardFeature2),
-          context.tr(TranslationKeys.pricingStandardFeature3),
-          context.tr(TranslationKeys.pricingStandardFeature4),
-          context.tr(TranslationKeys.pricingStandardFeature5),
-        ];
-      case UserPlan.plus:
-        return [
-          '50 Daily Tokens + Purchase More',
-          'All Study Modes',
-          '10 Follow-ups per Guide',
-          '10 AI Discipler Conversations/Month',
-          'All Practice Modes (3/day per verse)',
-        ];
-      case UserPlan.premium:
-        return [
-          context.tr(TranslationKeys.pricingPremiumFeature1),
-          context.tr(TranslationKeys.pricingPremiumFeature2),
-          context.tr(TranslationKeys.pricingPremiumFeature3),
-          context.tr(TranslationKeys.pricingPremiumFeature4),
-          context.tr(TranslationKeys.pricingPremiumFeature5),
-        ];
     }
   }
 

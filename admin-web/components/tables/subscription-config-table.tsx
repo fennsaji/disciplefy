@@ -1,5 +1,7 @@
 'use client'
 
+import { EditIcon, actionButtonStyles } from '@/components/ui/action-icons'
+
 interface SubscriptionConfig {
   id: string
   plan_code: string
@@ -73,7 +75,7 @@ export default function SubscriptionConfigTable({
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {configs.map((config) => (
             <tr key={config.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
               <td className="px-6 py-4 whitespace-nowrap">
@@ -113,10 +115,12 @@ export default function SubscriptionConfigTable({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
+                  type="button"
                   onClick={() => onEdit(config)}
-                  className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  className={actionButtonStyles.edit}
+                  title="Edit"
                 >
-                  Edit
+                  <EditIcon />
                 </button>
               </td>
             </tr>

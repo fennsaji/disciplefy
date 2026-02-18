@@ -7,7 +7,7 @@ import '../../../../core/services/pricing_service.dart';
 
 /// Dialog shown when user exceeds their daily practice mode unlock limit for a verse.
 /// Displays unlocked modes, remaining slots, and upgrade options.
-/// Now uses dynamic config from database instead of hardcoded values.
+/// Uses dynamic config from database instead of hardcoded values.
 class UnlockLimitExceededDialog extends StatelessWidget {
   final List<String> unlockedModes;
   final int unlockedCount;
@@ -47,7 +47,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
   }
 
   /// Get user-friendly mode names
-  String _getModeName(String mode) {
+  String _getModeName(String modeSlug) {
     const modeNames = {
       'flip_card': 'Flip Card',
       'type_it_out': 'Type It Out',
@@ -58,34 +58,39 @@ class UnlockLimitExceededDialog extends StatelessWidget {
       'word_bank': 'Word Bank',
       'audio': 'Audio Practice',
     };
-    return modeNames[mode] ?? mode;
+    return modeNames[modeSlug] ?? modeSlug;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Convert unlocked mode slugs to readable names
     final unlockedModeNames =
-        unlockedModes.map((mode) => _getModeName(mode)).toList();
+        unlockedModes.map((m) => _getModeName(m)).toList();
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: theme.colorScheme.surface,
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: theme.colorScheme.tertiaryContainer,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.lock_clock, color: Colors.orange, size: 24),
+            child: Icon(
+              Icons.lock_clock,
+              color: theme.colorScheme.tertiary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Daily Unlock Limit Reached',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -97,14 +102,17 @@ class UnlockLimitExceededDialog extends StatelessWidget {
           children: [
             Text(
               'You\'ve unlocked $unlockedCount practice mode${unlockedCount > 1 ? 's' : ''} for "$verseReference" today.',
-              style: const TextStyle(fontSize: 15),
+              style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
+
+            // Unlocked modes box
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,61 +120,73 @@ class UnlockLimitExceededDialog extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Modes Unlocked Today:',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w600),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         '$unlockedCount / $limit',
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...unlockedModeNames.map((modeName) => Padding(
+                  ...unlockedModeNames.map((name) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle,
-                                color: Colors.green, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              modeName,
-                              style: const TextStyle(fontSize: 13),
+                            Icon(
+                              Icons.check_circle,
+                              color: theme.colorScheme.tertiary,
+                              size: 16,
                             ),
+                            const SizedBox(width: 8),
+                            Text(name, style: theme.textTheme.bodySmall),
                           ],
                         ),
                       )),
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Upgrade to unlock more modes per verse per day:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             ..._buildDynamicPlanOptions(context),
             const SizedBox(height: 8),
+
+            // Info box
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: theme.colorScheme.primaryContainer.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue[700], size: 18),
+                  Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'You can still practice unlimited times with your unlocked modes today!',
-                      style: TextStyle(fontSize: 12, color: Colors.black87),
+                      style: theme.textTheme.bodySmall,
                     ),
                   ),
                 ],
@@ -178,7 +198,10 @@ class UnlockLimitExceededDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Maybe Later'),
+          child: Text(
+            'Maybe Later',
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -187,7 +210,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: const Text('View Plans'),
@@ -196,15 +219,14 @@ class UnlockLimitExceededDialog extends StatelessWidget {
     );
   }
 
-  /// Build plan options dynamically from system config
+  /// Build plan options dynamically from system config (DB-driven)
   List<Widget> _buildDynamicPlanOptions(BuildContext context) {
     try {
       final systemConfig = sl<SystemConfigService>();
       final memoryConfig = systemConfig.config?.memoryVerseConfig;
+      final pricingService = sl<PricingService>();
 
       if (memoryConfig == null) {
-        // Fallback to database pricing if config not available
-        final pricingService = sl<PricingService>();
         return [
           _buildPlanOption(
               context,
@@ -226,42 +248,33 @@ class UnlockLimitExceededDialog extends StatelessWidget {
       final tierComparison = memoryConfig.getTierComparison();
       final currentTierLower = tier.toLowerCase();
 
-      return tierComparison
-          .where((t) => t.tier != 'free') // Exclude free tier from upgrades
-          .map((tierInfo) {
+      return tierComparison.where((t) => t.tier != 'free').map((tierInfo) {
         final isUpgrade = _shouldShowAsUpgrade(currentTierLower, tierInfo.tier);
-        final price = _getPriceForTier(tierInfo.tier);
-
         return _buildPlanOption(
           context,
           tierInfo.tierName,
           tierInfo.unlockLimitText,
-          price,
+          pricingService.getFormattedPricePerMonth(tierInfo.tier),
           isUpgrade,
         );
       }).toList();
     } catch (e) {
-      // Fallback on error
       final pricingService = sl<PricingService>();
       return [
-        _buildPlanOption(context, 'Standard', '2 modes per verse per day',
-            pricingService.getFormattedPricePerMonth('standard'), true),
+        _buildPlanOption(
+          context,
+          'Standard',
+          '2 modes per verse per day',
+          pricingService.getFormattedPricePerMonth('standard'),
+          true,
+        ),
       ];
     }
   }
 
-  /// Check if tier should be shown as upgrade option
   bool _shouldShowAsUpgrade(String currentTier, String targetTier) {
     const tierOrder = ['free', 'standard', 'plus', 'premium'];
-    final currentIndex = tierOrder.indexOf(currentTier);
-    final targetIndex = tierOrder.indexOf(targetTier);
-    return targetIndex > currentIndex;
-  }
-
-  /// Get pricing for tier
-  String _getPriceForTier(String tier) {
-    final pricingService = sl<PricingService>();
-    return pricingService.getFormattedPricePerMonth(tier);
+    return tierOrder.indexOf(targetTier) > tierOrder.indexOf(currentTier);
   }
 
   Widget _buildPlanOption(
@@ -269,22 +282,29 @@ class UnlockLimitExceededDialog extends StatelessWidget {
     String name,
     String modes,
     String price,
-    bool showCheckmark,
+    bool isUpgrade,
   ) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            showCheckmark ? Icons.check_circle : Icons.circle_outlined,
-            color: showCheckmark ? Colors.green : Colors.grey,
-            size: 16,
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(
+              isUpgrade ? Icons.upgrade : Icons.circle_outlined,
+              color: isUpgrade
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 16,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                style: theme.textTheme.bodySmall,
                 children: [
                   TextSpan(
                     text: '$name: ',
@@ -293,7 +313,9 @@ class UnlockLimitExceededDialog extends StatelessWidget {
                   TextSpan(text: '$modes '),
                   TextSpan(
                     text: '($price)',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

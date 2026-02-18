@@ -8,6 +8,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/services/http_service.dart';
 import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
+import '../../../../core/utils/logger.dart';
 
 /// Dedicated service for OAuth operations
 /// Handles Google OAuth flow, Apple OAuth, and third-party authentication
@@ -25,9 +26,7 @@ class OAuthService {
         return await _signInWithGoogleMobile();
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Google Sign-In Error: $e');
-      }
+      Logger.debug('Google Sign-In Error: $e');
       rethrow;
     }
   }
@@ -35,7 +34,7 @@ class OAuthService {
   /// Mobile Google Sign-In using native Google Sign-In SDK
   Future<bool> _signInWithGoogleMobile() async {
     try {
-      print('🔐 [OAUTH SERVICE] 🚀 Starting Mobile Google Sign-In...');
+      Logger.debug('🔐 [OAUTH SERVICE] 🚀 Starting Mobile Google Sign-In...');
 
       // CRITICAL FIX: Configure GoogleSignIn with serverClientId for Supabase
       // Supabase requires the Web OAuth Client ID to validate ID tokens
@@ -51,34 +50,35 @@ class OAuthService {
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
       // Initialize with serverClientId for Supabase authentication
-      print('🔐 [OAUTH SERVICE] 🔧 Initializing Google Sign-In plugin...');
-      print('🔐 [OAUTH SERVICE] - Using serverClientId: $webClientId');
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] 🔧 Initializing Google Sign-In plugin...');
+      Logger.debug('🔐 [OAUTH SERVICE] - Using serverClientId: $webClientId');
       await googleSignIn.initialize(
         serverClientId: webClientId,
       );
 
       // Trigger Google Sign-In flow
-      print('🔐 [OAUTH SERVICE] 📱 Launching Google Sign-In UI...');
+      Logger.debug('🔐 [OAUTH SERVICE] 📱 Launching Google Sign-In UI...');
       final GoogleIdentity googleUser = await googleSignIn.authenticate();
 
-      print(
+      Logger.debug(
           '🔐 [OAUTH SERVICE] ✅ Google account selected: ${googleUser.email}');
 
       // Get authentication tokens
-      print('🔐 [OAUTH SERVICE] 🔑 Retrieving authentication tokens...');
+      Logger.debug('🔐 [OAUTH SERVICE] 🔑 Retrieving authentication tokens...');
       final GoogleSignInAuthentication googleAuth =
           (googleUser as GoogleSignInAccount).authentication;
 
       final String? idToken = googleAuth.idToken;
 
       if (idToken == null) {
-        print('🔐 [OAUTH SERVICE] ❌ Failed to get ID token from Google');
+        Logger.error('🔐 [OAUTH SERVICE] ❌ Failed to get ID token from Google');
         throw auth_exceptions.AuthenticationFailedException(
             'Failed to authenticate with Google');
       }
 
-      print('🔐 [OAUTH SERVICE] ✅ ID token received');
-      print(
+      Logger.debug('🔐 [OAUTH SERVICE] ✅ ID token received');
+      Logger.debug(
           '🔐 [OAUTH SERVICE] 🔄 Signing in to Supabase with Google credentials...');
 
       // Sign in to Supabase with Google ID token
@@ -89,20 +89,21 @@ class OAuthService {
       );
 
       if (response.user == null) {
-        print('🔐 [OAUTH SERVICE] ❌ Supabase sign-in failed');
+        Logger.error('🔐 [OAUTH SERVICE] ❌ Supabase sign-in failed');
         throw auth_exceptions.AuthenticationFailedException(
             'Failed to create Supabase session');
       }
 
-      print('🔐 [OAUTH SERVICE] ✅ Supabase session created successfully');
-      print('🔐 [OAUTH SERVICE] - User: ${response.user!.email}');
-      print('🔐 [OAUTH SERVICE] - User ID: ${response.user!.id}');
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] ✅ Supabase session created successfully');
+      Logger.debug('🔐 [OAUTH SERVICE] - User: ${response.user!.email}');
+      Logger.debug('🔐 [OAUTH SERVICE] - User ID: ${response.user!.id}');
 
       return true;
     } on auth_exceptions.OAuthCancelledException {
       rethrow;
     } catch (e) {
-      print('🔐 [OAUTH SERVICE] ❌ Mobile Google Sign-In Error: $e');
+      Logger.error('🔐 [OAUTH SERVICE] ❌ Mobile Google Sign-In Error: $e');
 
       if (e.toString().contains('DEVELOPER_ERROR') ||
           e.toString().contains('API_NOT_CONNECTED')) {
@@ -119,11 +120,12 @@ class OAuthService {
   /// FIXED: Now properly configured to work with Supabase auth endpoints
   Future<bool> _signInWithGoogleWeb() async {
     try {
-      print('🔐 [OAUTH SERVICE] 🚀 Starting Google OAuth NATIVE PKCE flow...');
-      print('🔐 [OAUTH SERVICE] - Supabase server: 127.0.0.1:54321');
-      print(
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] 🚀 Starting Google OAuth NATIVE PKCE flow...');
+      Logger.debug('🔐 [OAUTH SERVICE] - Supabase server: 127.0.0.1:54321');
+      Logger.debug(
           '🔐 [OAUTH SERVICE] - OAuth callback: 127.0.0.1:54321/auth/v1/callback');
-      print(
+      Logger.debug(
           '🔐 [OAUTH SERVICE] - Using pure PKCE flow (NO custom Flutter callbacks)');
 
       // CRITICAL FIX: Pure native Supabase PKCE flow
@@ -135,17 +137,18 @@ class OAuthService {
         // NO authScreenLaunchMode - use default platform behavior
       );
 
-      print('🔐 [OAUTH SERVICE] ✅ OAuth PKCE flow initiated successfully');
-      print(
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] ✅ OAuth PKCE flow initiated successfully');
+      Logger.debug(
           '🔐 [OAUTH SERVICE] - Google will redirect to: 127.0.0.1:54321/auth/v1/callback');
-      print(
+      Logger.debug(
           '🔐 [OAUTH SERVICE] - Supabase will handle PKCE token exchange automatically');
 
       // Wait for Supabase to process the OAuth callback and establish session
       // The auth state change listener will detect the successful authentication
       return response;
     } catch (e) {
-      print('🔐 [OAUTH SERVICE] ❌ Web Google OAuth PKCE Error: $e');
+      Logger.error('🔐 [OAUTH SERVICE] ❌ Web Google OAuth PKCE Error: $e');
 
       // Enhanced error handling for specific PKCE configuration issues
       if (e.toString().contains('flow_state_not_found')) {
@@ -170,23 +173,29 @@ class OAuthService {
   /// ENHANCED: Better session detection for corrected PKCE flow
   Future<bool> checkOAuthSessionEstablished() async {
     try {
-      print('🔐 [OAUTH SERVICE] 🔍 Checking for established OAuth session...');
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] 🔍 Checking for established OAuth session...');
 
       // First, check if session already exists
       final currentSession = Supabase.instance.client.auth.currentSession;
 
       if (currentSession != null) {
-        print('🔐 [OAUTH SERVICE] ✅ OAuth session found immediately');
-        print('🔐 [OAUTH SERVICE] - User: ${currentSession.user.email}');
-        print(
-            '🔐 [OAUTH SERVICE] - Provider: ${currentSession.user.appMetadata['provider'] ?? 'unknown'}');
-        print(
-            '🔐 [OAUTH SERVICE] - Session ID: ${currentSession.accessToken.substring(0, 20)}...');
+        Logger.debug(
+            '🔐 [OAUTH SERVICE] ✅ Session found for user: ${currentSession.user.id}');
+
+        final isAnonKey =
+            currentSession.accessToken == AppConfig.supabaseAnonKey;
+        if (isAnonKey) {
+          Logger.warning(
+              '🚨 [OAUTH SERVICE] Session contains anon key instead of user JWT!');
+        }
+
         return true;
       }
 
       // For PKCE flow, Supabase may need time to process the callback
-      print('🔐 [OAUTH SERVICE] ⏳ Waiting for Supabase PKCE token exchange...');
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] ⏳ Waiting for Supabase PKCE token exchange...');
 
       // Wait in intervals to check for session establishment
       for (int i = 0; i < 10; i++) {
@@ -194,25 +203,29 @@ class OAuthService {
 
         final session = Supabase.instance.client.auth.currentSession;
         if (session != null) {
-          print(
-              '🔐 [OAUTH SERVICE] ✅ OAuth session established after ${(i + 1) * 500}ms');
-          print('🔐 [OAUTH SERVICE] - User: ${session.user.email}');
-          print(
-              '🔐 [OAUTH SERVICE] - Provider: ${session.user.appMetadata['provider'] ?? 'unknown'}');
+          Logger.debug(
+              '🔐 [OAUTH SERVICE] ✅ Session established after ${(i + 1) * 500}ms for user: ${session.user.id}');
+
+          final isAnonKey = session.accessToken == AppConfig.supabaseAnonKey;
+          if (isAnonKey) {
+            Logger.warning(
+                '🚨 [OAUTH SERVICE] Session contains anon key instead of user JWT!');
+          }
+
           return true;
         }
 
-        print('🔐 [OAUTH SERVICE] ⏳ Still waiting... (attempt ${i + 1}/10)');
+        Logger.warning(
+            '🔐 [OAUTH SERVICE] ⏳ Still waiting... (attempt ${i + 1}/10)');
       }
 
-      print('🔐 [OAUTH SERVICE] ⚠️ No OAuth session found after 5 seconds');
-      print(
+      Logger.debug(
+          '🔐 [OAUTH SERVICE] ⚠️ No OAuth session found after 5 seconds');
+      Logger.error(
           '🔐 [OAUTH SERVICE] ⚠️ This may indicate PKCE flow failed or configuration issues');
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [OAUTH SERVICE] ❌ Error checking OAuth session: $e');
-      }
+      Logger.error('🔐 [OAUTH SERVICE] ❌ Error checking OAuth session: $e');
       throw auth_exceptions.AuthenticationFailedException(
           'Failed to verify OAuth session: ${e.toString()}');
     }
@@ -224,12 +237,12 @@ class OAuthService {
     try {
       // For Supabase native PKCE flow, we typically don't need to process callbacks manually
       // The session is established automatically by Supabase's OAuth handling
-      print('🔐 [OAUTH SERVICE] 🔍 Processing OAuth callback...');
+      Logger.debug('🔐 [OAUTH SERVICE] 🔍 Processing OAuth callback...');
 
       // Check if session is already established (common with PKCE flow)
       final currentSession = Supabase.instance.client.auth.currentSession;
       if (currentSession != null) {
-        print('🔐 [OAUTH SERVICE] ✅ OAuth session already established');
+        Logger.debug('🔐 [OAUTH SERVICE] ✅ OAuth session already established');
         return true;
       }
 
@@ -238,15 +251,16 @@ class OAuthService {
 
       final laterSession = Supabase.instance.client.auth.currentSession;
       if (laterSession != null) {
-        print('🔐 [OAUTH SERVICE] ✅ OAuth session established after delay');
+        Logger.debug(
+            '🔐 [OAUTH SERVICE] ✅ OAuth session established after delay');
         return true;
       }
 
-      print(
+      Logger.warning(
           '🔐 [OAUTH SERVICE] ⚠️ No OAuth session found after callback processing');
       return false;
     } catch (e) {
-      print('🔐 [OAUTH SERVICE] ❌ Error processing OAuth callback: $e');
+      Logger.error('🔐 [OAUTH SERVICE] ❌ Error processing OAuth callback: $e');
       rethrow;
     }
   }
@@ -256,15 +270,14 @@ class OAuthService {
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser != null && currentUser.isAnonymous) {
-        print(
+        Logger.debug(
             '🔐 [OAUTH SERVICE] 👤 Found existing anonymous user: ${currentUser.id}');
         return currentUser.id;
       }
       return null;
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [OAUTH SERVICE] ⚠️ Error checking anonymous session: $e');
-      }
+      Logger.error(
+          '🔐 [OAUTH SERVICE] ⚠️ Error checking anonymous session: $e');
       return null;
     }
   }
@@ -273,7 +286,7 @@ class OAuthService {
   /// FIXED: Updated for corrected PKCE flow configuration
   Future<bool> signInWithApple() async {
     try {
-      print('🍎 [OAUTH SERVICE] 🚀 Starting Apple OAuth PKCE flow...');
+      Logger.debug('🍎 [OAUTH SERVICE] 🚀 Starting Apple OAuth PKCE flow...');
 
       // FIXED: Same as Google - use native Supabase PKCE flow
       // Apple OAuth will also redirect to Supabase auth endpoints
@@ -283,11 +296,11 @@ class OAuthService {
         // NO authScreenLaunchMode - use default platform behavior
       );
 
-      print(
+      Logger.debug(
           '🍎 [OAUTH SERVICE] ✅ Apple OAuth PKCE flow initiated successfully');
       return true;
     } catch (e) {
-      print('🍎 [OAUTH SERVICE] ❌ Apple Sign-In Error: $e');
+      Logger.error('🍎 [OAUTH SERVICE] ❌ Apple Sign-In Error: $e');
 
       if (e.toString().contains('redirect_uri_mismatch')) {
         throw auth_exceptions.AuthConfigException(
@@ -303,9 +316,9 @@ class OAuthService {
     if (!kIsWeb) {
       try {
         await GoogleSignIn.instance.signOut();
-        print('🔐 [OAUTH SERVICE] ✅ Signed out from Google');
+        Logger.error('🔐 [OAUTH SERVICE] ✅ Signed out from Google');
       } catch (e) {
-        print('🔐 [OAUTH SERVICE] ⚠️ Error signing out from Google: $e');
+        Logger.debug('🔐 [OAUTH SERVICE] ⚠️ Error signing out from Google: $e');
       }
     }
   }

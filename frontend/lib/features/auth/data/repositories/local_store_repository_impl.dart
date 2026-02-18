@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/repositories/local_store_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of LocalStoreRepository that wraps Hive and SharedPreferences
 /// Isolates Hive and SharedPreferences SDKs from domain layer following Clean Architecture
@@ -43,14 +43,10 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // Clear SharedPreferences
       await clearSharedPreferences();
 
-      if (kDebugMode) {
-        print(
-            '🗄️ [LOCAL STORE] ✅ All local storage cleared and reinitialized');
-      }
+      Logger.error(
+          '🗄️ [LOCAL STORE] ✅ All local storage cleared and reinitialized');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ❌ Error clearing all local storage: $e');
-      }
+      Logger.debug('🗄️ [LOCAL STORE] ❌ Error clearing all local storage: $e');
       rethrow;
     }
   }
@@ -76,13 +72,10 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       await box.close();
       await Hive.deleteBoxFromDisk(boxName);
 
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ✅ Cleared box: $boxName ($itemCount items)');
-      }
+      Logger.error(
+          '🗄️ [LOCAL STORE] ✅ Cleared box: $boxName ($itemCount items)');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ❌ Error clearing box $boxName: $e');
-      }
+      Logger.debug('🗄️ [LOCAL STORE] ❌ Error clearing box $boxName: $e');
       rethrow;
     }
   }
@@ -98,13 +91,9 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ✅ SharedPreferences cleared');
-      }
+      Logger.error('🗄️ [LOCAL STORE] ✅ SharedPreferences cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ❌ Failed to clear SharedPreferences: $e');
-      }
+      Logger.debug('🗄️ [LOCAL STORE] ❌ Failed to clear SharedPreferences: $e');
       rethrow;
     }
   }
@@ -124,15 +113,12 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
           }
         }
 
-        if (kDebugMode) {
-          print(
-              '🗄️ [LOCAL STORE] ✅ Cleared $clearedKeys user keys from app_settings');
-        }
+        Logger.error(
+            '🗄️ [LOCAL STORE] ✅ Cleared $clearedKeys user keys from app_settings');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ❌ Error clearing app_settings user data: $e');
-      }
+      Logger.debug(
+          '🗄️ [LOCAL STORE] ❌ Error clearing app_settings user data: $e');
       rethrow;
     }
   }
@@ -146,13 +132,9 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // Reopen essential boxes
       await Hive.openBox('app_settings');
 
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ✅ Storage reinitialized');
-      }
+      Logger.error('🗄️ [LOCAL STORE] ✅ Storage reinitialized');
     } catch (e) {
-      if (kDebugMode) {
-        print('🗄️ [LOCAL STORE] ❌ Error reinitializing storage: $e');
-      }
+      Logger.debug('🗄️ [LOCAL STORE] ❌ Error reinitializing storage: $e');
       rethrow;
     }
   }

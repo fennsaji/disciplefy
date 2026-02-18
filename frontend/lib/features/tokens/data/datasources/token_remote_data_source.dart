@@ -11,6 +11,7 @@ import '../models/token_usage_history_model.dart';
 import '../models/usage_statistics_model.dart';
 import '../models/token_pricing_model.dart';
 import '../../domain/entities/payment_order_response.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Abstract contract for remote token operations.
 abstract class TokenRemoteDataSource {
@@ -256,7 +257,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   @override
   Future<TokenPricingModel> getTokenPricing({String? region}) async {
     try {
-      print('💰 [TOKEN_API] Fetching token pricing...');
+      Logger.debug('💰 [TOKEN_API] Fetching token pricing...');
 
       final queryParams = <String, String>{};
       if (region != null) {
@@ -270,8 +271,9 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      print('💰 [TOKEN_API] Pricing response status: ${response.status}');
-      print('💰 [TOKEN_API] Pricing response data: ${response.data}');
+      Logger.debug(
+          '💰 [TOKEN_API] Pricing response status: ${response.status}');
+      Logger.debug('💰 [TOKEN_API] Pricing response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -300,7 +302,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
     } on ServerException {
       rethrow;
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected pricing error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected pricing error: $e');
       throw ClientException(
         message: 'Unable to fetch token pricing. Please try again later.',
         code: 'TOKEN_PRICING_FAILED',
@@ -318,7 +320,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('🪙 [TOKEN_API] Fetching token status...');
+      Logger.debug('🪙 [TOKEN_API] Fetching token status...');
 
       // Call Supabase Edge Function for token status
       final response = await _supabaseClient.functions.invoke(
@@ -327,8 +329,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         headers: headers,
       );
 
-      print('🪙 [TOKEN_API] Response status: ${response.status}');
-      print('🪙 [TOKEN_API] Response data: ${response.data}');
+      Logger.debug('🪙 [TOKEN_API] Response status: ${response.status}');
+      Logger.debug('🪙 [TOKEN_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -372,7 +374,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected error: $e');
       throw ClientException(
         message: 'Unable to fetch token information. Please try again later.',
         code: 'TOKEN_STATUS_FAILED',
@@ -392,7 +394,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('🪙 [TOKEN_API] Creating payment order for $tokenAmount tokens...');
+      Logger.debug(
+          '🪙 [TOKEN_API] Creating payment order for $tokenAmount tokens...');
 
       // Validate input parameters
       if (tokenAmount <= 0) {
@@ -412,9 +415,10 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         headers: headers,
       );
 
-      print(
+      Logger.debug(
           '🪙 [TOKEN_API] Order creation response status: ${response.status}');
-      print('🪙 [TOKEN_API] Order creation response data: ${response.data}');
+      Logger.debug(
+          '🪙 [TOKEN_API] Order creation response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -483,7 +487,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected order creation error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected order creation error: $e');
       throw ClientException(
         message: 'Unable to create payment order. Please try again later.',
         code: 'ORDER_CREATION_FAILED',
@@ -501,7 +505,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   }) async {
     // Prevent duplicate payment confirmation calls
     if (_processingPayments.contains(paymentId)) {
-      print(
+      Logger.error(
           '⚠️ [TOKEN_API] Payment $paymentId already being confirmed - throwing duplicate error');
       throw const ClientException(
         message: 'Payment confirmation already in progress',
@@ -511,14 +515,14 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
 
     // Mark payment as being processed
     _processingPayments.add(paymentId);
-    print(
+    Logger.debug(
         '🔒 [TOKEN_API] Payment $paymentId marked as processing at HTTP level');
 
     try {
       await ApiAuthHelper.validateTokenForRequest();
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('🪙 [TOKEN_API] Confirming payment: $paymentId');
+      Logger.debug('🪙 [TOKEN_API] Confirming payment: $paymentId');
 
       _validateConfirmPaymentParams(paymentId, orderId, signature, tokenAmount);
 
@@ -534,33 +538,33 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
 
       // Clean up processing set on success
       _processingPayments.remove(paymentId);
-      print(
+      Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (success)');
 
       return result;
     } on NetworkException {
       _processingPayments.remove(paymentId);
-      print(
+      Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (NetworkException)');
       rethrow;
     } on ServerException {
       _processingPayments.remove(paymentId);
-      print(
+      Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (ServerException)');
       rethrow;
     } on AuthenticationException {
       _processingPayments.remove(paymentId);
-      print(
+      Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (AuthenticationException)');
       rethrow;
     } on ClientException {
       _processingPayments.remove(paymentId);
-      print(
+      Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (ClientException)');
       rethrow;
     } on TokenValidationException {
       _processingPayments.remove(paymentId);
-      print(
+      Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (TokenValidationException)');
       throw const AuthenticationException(
         message: 'Authentication token is invalid. Please sign in again.',
@@ -568,9 +572,9 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       );
     } catch (e) {
       _processingPayments.remove(paymentId);
-      print(
+      Logger.error(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (UnexpectedException)');
-      print('🚨 [TOKEN_API] Unexpected payment confirmation error: $e');
+      Logger.debug('🚨 [TOKEN_API] Unexpected payment confirmation error: $e');
       throw ClientException(
         message: 'Unable to confirm payment. Please try again later.',
         code: 'CONFIRMATION_FAILED',
@@ -591,7 +595,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('🪙 [TOKEN_API] Fetching purchase history...');
+      Logger.debug('🪙 [TOKEN_API] Fetching purchase history...');
 
       // Get purchase history from database
       var query = _supabaseClient
@@ -605,13 +609,13 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         final endRange = startRange + (limit ?? 50) - 1;
         query = query.range(startRange, endRange);
 
-        print(
+        Logger.debug(
             '🔍 [TOKEN_API] Using pagination range: $startRange to $endRange (offset: ${offset ?? 0}, limit: ${limit ?? 50})');
       }
 
       final response = await query;
 
-      print(
+      Logger.debug(
           '🪙 [TOKEN_API] Purchase history response: ${response.length} records');
 
       return response
@@ -629,7 +633,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected purchase history error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected purchase history error: $e');
       throw ClientException(
         message: 'Unable to fetch purchase history. Please try again later.',
         code: 'PURCHASE_HISTORY_FAILED',
@@ -647,7 +651,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('🪙 [TOKEN_API] Fetching purchase statistics...');
+      Logger.debug('🪙 [TOKEN_API] Fetching purchase statistics...');
 
       // Get current user ID for the statistics query
       final user = _supabaseClient.auth.currentUser;
@@ -664,7 +668,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_user_id': user!.id,
       });
 
-      print('🪙 [TOKEN_API] Purchase statistics response: $response');
+      Logger.debug('🪙 [TOKEN_API] Purchase statistics response: $response');
 
       if (response != null && response is List && response.isNotEmpty) {
         // The RPC function returns a table (array of rows), we need the first row
@@ -703,7 +707,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected purchase statistics error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected purchase statistics error: $e');
       throw ClientException(
         message: 'Unable to fetch purchase statistics. Please try again later.',
         code: 'PURCHASE_STATISTICS_FAILED',
@@ -718,12 +722,12 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Fetching saved payment methods...');
+      Logger.debug('💳 [TOKEN_API] Fetching saved payment methods...');
 
       // Get payment methods from database using RPC function
       final response = await _supabaseClient.rpc('get_user_payment_methods');
 
-      print(
+      Logger.debug(
           '💳 [TOKEN_API] Payment methods response: ${response?.length ?? 0} methods');
 
       if (response is List) {
@@ -746,7 +750,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected payment methods error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected payment methods error: $e');
       throw ClientException(
         message: 'Unable to fetch payment methods. Please try again later.',
         code: 'PAYMENT_METHODS_FAILED',
@@ -771,7 +775,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Saving payment method: $methodType');
+      Logger.debug('💳 [TOKEN_API] Saving payment method: $methodType');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -797,7 +801,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_expiry_year': expiryYear,
       });
 
-      print('💳 [TOKEN_API] Payment method saved: $response');
+      Logger.debug('💳 [TOKEN_API] Payment method saved: $response');
 
       if (response != null) {
         return response as String;
@@ -819,7 +823,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected save payment method error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected save payment method error: $e');
       throw ClientException(
         message: 'Unable to save payment method. Please try again later.',
         code: 'SAVE_PAYMENT_METHOD_FAILED',
@@ -834,7 +838,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Setting default payment method: $methodId');
+      Logger.debug('💳 [TOKEN_API] Setting default payment method: $methodId');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -852,7 +856,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_user_id': user.id,
       });
 
-      print('💳 [TOKEN_API] Default payment method result: $response');
+      Logger.debug('💳 [TOKEN_API] Default payment method result: $response');
 
       return response == true;
     } on NetworkException {
@@ -867,7 +871,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected set default payment method error: $e');
+      Logger.error(
+          '🚨 [TOKEN_API] Unexpected set default payment method error: $e');
       throw ClientException(
         message:
             'Unable to set default payment method. Please try again later.',
@@ -883,7 +888,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Updating payment method usage: $methodId');
+      Logger.debug('💳 [TOKEN_API] Updating payment method usage: $methodId');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -901,7 +906,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_user_id': user.id,
       });
 
-      print('💳 [TOKEN_API] Payment method usage updated: $response');
+      Logger.debug('💳 [TOKEN_API] Payment method usage updated: $response');
 
       return response == true;
     } on NetworkException {
@@ -916,7 +921,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected update payment method usage error: $e');
+      Logger.error(
+          '🚨 [TOKEN_API] Unexpected update payment method usage error: $e');
       throw ClientException(
         message:
             'Unable to update payment method usage. Please try again later.',
@@ -937,7 +943,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print(
+      Logger.debug(
           '💳 [TOKEN_API] Recording payment method usage: $methodId for $transactionType');
 
       // Get current user ID
@@ -959,7 +965,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_metadata': metadata ?? {},
       });
 
-      print('💳 [TOKEN_API] Payment method usage recorded: $response');
+      Logger.debug('💳 [TOKEN_API] Payment method usage recorded: $response');
 
       return response == true;
     } on NetworkException {
@@ -974,7 +980,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected record payment method usage error: $e');
+      Logger.error(
+          '🚨 [TOKEN_API] Unexpected record payment method usage error: $e');
       throw ClientException(
         message:
             'Unable to record payment method usage. Please try again later.',
@@ -990,7 +997,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Deleting payment method: $methodId');
+      Logger.debug('💳 [TOKEN_API] Deleting payment method: $methodId');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -1008,7 +1015,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_user_id': user.id,
       });
 
-      print('💳 [TOKEN_API] Payment method deleted: $response');
+      Logger.debug('💳 [TOKEN_API] Payment method deleted: $response');
 
       return response == true;
     } on NetworkException {
@@ -1023,7 +1030,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected delete payment method error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected delete payment method error: $e');
       throw ClientException(
         message: 'Unable to delete payment method. Please try again later.',
         code: 'DELETE_PAYMENT_METHOD_FAILED',
@@ -1038,13 +1045,13 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Fetching payment preferences...');
+      Logger.debug('💳 [TOKEN_API] Fetching payment preferences...');
 
       // Get payment preferences using database function
       final response =
           await _supabaseClient.rpc('get_payment_preferences_for_user');
 
-      print('💳 [TOKEN_API] Payment preferences response: $response');
+      Logger.debug('💳 [TOKEN_API] Payment preferences response: $response');
 
       if (response != null) {
         return prefs.PaymentPreferencesModel.fromJson(
@@ -1067,7 +1074,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected payment preferences error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected payment preferences error: $e');
       throw ClientException(
         message: 'Unable to fetch payment preferences. Please try again later.',
         code: 'PAYMENT_PREFERENCES_FAILED',
@@ -1087,7 +1094,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💳 [TOKEN_API] Updating payment preferences...');
+      Logger.debug('💳 [TOKEN_API] Updating payment preferences...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -1108,7 +1115,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'p_default_payment_type': defaultPaymentType,
       });
 
-      print('💳 [TOKEN_API] Payment preferences updated: $response');
+      Logger.debug('💳 [TOKEN_API] Payment preferences updated: $response');
 
       if (response != null) {
         return prefs.PaymentPreferencesModel.fromJson(
@@ -1131,7 +1138,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected update payment preferences error: $e');
+      Logger.error(
+          '🚨 [TOKEN_API] Unexpected update payment preferences error: $e');
       throw ClientException(
         message:
             'Unable to update payment preferences. Please try again later.',
@@ -1155,7 +1163,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('📊 [TOKEN_API] Fetching usage history...');
+      Logger.debug('📊 [TOKEN_API] Fetching usage history...');
 
       // Build query parameters
       final queryParams = <String, String>{
@@ -1165,7 +1173,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         if (endDate != null) 'end_date': endDate.toIso8601String(),
       };
 
-      print('📊 [TOKEN_API] Query params: $queryParams');
+      Logger.debug('📊 [TOKEN_API] Query params: $queryParams');
 
       // Call token-usage-history Edge Function
       final response = await _supabaseClient.functions.invoke(
@@ -1175,7 +1183,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      print('📊 [TOKEN_API] Usage history response status: ${response.status}');
+      Logger.debug(
+          '📊 [TOKEN_API] Usage history response status: ${response.status}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -1184,7 +1193,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
           final data = responseData['data'] as Map<String, dynamic>;
           final historyList = data['history'] as List<dynamic>;
 
-          print('📊 [TOKEN_API] Retrieved ${historyList.length} usage records');
+          Logger.debug(
+              '📊 [TOKEN_API] Retrieved ${historyList.length} usage records');
 
           return historyList
               .map((json) =>
@@ -1226,7 +1236,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected usage history error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected usage history error: $e');
       throw ClientException(
         message: 'Unable to fetch usage history. Please try again later.',
         code: 'USAGE_HISTORY_FAILED',
@@ -1247,7 +1257,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('📊 [TOKEN_API] Fetching usage statistics...');
+      Logger.debug('📊 [TOKEN_API] Fetching usage statistics...');
 
       // Build query parameters
       final queryParams = <String, String>{
@@ -1256,7 +1266,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         if (endDate != null) 'end_date': endDate.toIso8601String(),
       };
 
-      print('📊 [TOKEN_API] Statistics query params: $queryParams');
+      Logger.debug('📊 [TOKEN_API] Statistics query params: $queryParams');
 
       // Call token-usage-history Edge Function with statistics flag
       final response = await _supabaseClient.functions.invoke(
@@ -1266,7 +1276,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      print(
+      Logger.debug(
           '📊 [TOKEN_API] Usage statistics response status: ${response.status}');
 
       if (response.status == 200 && response.data != null) {
@@ -1277,12 +1287,12 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
           final statisticsData = data['statistics'];
 
           if (statisticsData != null) {
-            print('📊 [TOKEN_API] Statistics retrieved successfully');
+            Logger.debug('📊 [TOKEN_API] Statistics retrieved successfully');
             return UsageStatisticsModel.fromJson(
                 statisticsData as Map<String, dynamic>);
           } else {
             // Return empty statistics if no data available
-            print(
+            Logger.debug(
                 '📊 [TOKEN_API] No statistics data available, returning empty');
             return UsageStatisticsModel.empty();
           }
@@ -1322,7 +1332,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected usage statistics error: $e');
+      Logger.error('🚨 [TOKEN_API] Unexpected usage statistics error: $e');
       throw ClientException(
         message: 'Unable to fetch usage statistics. Please try again later.',
         code: 'USAGE_STATISTICS_FAILED',
@@ -1372,9 +1382,9 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       headers: headers,
     );
 
-    print(
+    Logger.debug(
         '🪙 [TOKEN_API] Payment confirmation response status: ${response.status}');
-    print(
+    Logger.debug(
         '🪙 [TOKEN_API] Payment confirmation response data: ${response.data}');
 
     return response;

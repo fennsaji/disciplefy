@@ -31,6 +31,7 @@ import '../../../../core/usecases/usecase.dart';
 
 import 'token_event.dart';
 import 'token_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Token BLoC
 ///
@@ -112,8 +113,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     Emitter<TokenState> emit,
   ) async {
     if (kDebugMode) {
-      print('🪙 [TOKEN_BLOC] GetTokenStatus event received');
-      print(
+      Logger.debug('🪙 [TOKEN_BLOC] GetTokenStatus event received');
+      Logger.debug(
           '🪙 [TOKEN_BLOC] Cache valid: ${_isCacheValid()}, cached status: $_cachedTokenStatus');
     }
 
@@ -123,10 +124,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         authState is auth_state.AuthenticatedState && authState.isAnonymous;
 
     if (isGuest) {
-      if (kDebugMode) {
-        print(
-            '🪙 [TOKEN_BLOC] Guest user detected - using default token status');
-      }
+      Logger.debug(
+          '🪙 [TOKEN_BLOC] Guest user detected - using default token status');
       final guestTokenStatus = _createGuestTokenStatus();
       _updateCache(guestTokenStatus);
       emit(TokenLoaded(
@@ -138,10 +137,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     // Check if cached data is valid
     if (_isCacheValid() && _cachedTokenStatus != null) {
-      if (kDebugMode) {
-        print(
-            '🪙 [TOKEN_BLOC] Using cached token status: ${_cachedTokenStatus!.userPlan}');
-      }
+      Logger.debug(
+          '🪙 [TOKEN_BLOC] Using cached token status: ${_cachedTokenStatus!.userPlan}');
       emit(TokenLoaded(
         tokenStatus: _cachedTokenStatus!,
         lastUpdated: _lastCacheUpdate!,
@@ -149,18 +146,15 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       return;
     }
 
-    if (kDebugMode) {
-      print('🪙 [TOKEN_BLOC] Fetching token status from API...');
-    }
+    Logger.debug('🪙 [TOKEN_BLOC] Fetching token status from API...');
     emit(const TokenLoading(operation: 'fetching'));
 
     final result = await _getTokenStatus(NoParams());
 
     result.fold(
       (failure) {
-        if (kDebugMode) {
-          print('🪙 [TOKEN_BLOC] ❌ Token fetch failed: ${failure.message}');
-        }
+        Logger.error(
+            '🪙 [TOKEN_BLOC] ❌ Token fetch failed: ${failure.message}');
         emit(TokenError(
           failure: failure,
           operation: 'fetching',
@@ -168,10 +162,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         ));
       },
       (tokenStatus) {
-        if (kDebugMode) {
-          print(
-              '🪙 [TOKEN_BLOC] ✅ Token fetch success: plan=${tokenStatus.userPlan}, tokens=${tokenStatus.totalTokens}');
-        }
+        Logger.debug(
+            '🪙 [TOKEN_BLOC] ✅ Token fetch success: plan=${tokenStatus.userPlan}, tokens=${tokenStatus.totalTokens}');
         _updateCache(tokenStatus);
         emit(TokenLoaded(
           tokenStatus: tokenStatus,
@@ -214,10 +206,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         authState is auth_state.AuthenticatedState && authState.isAnonymous;
 
     if (isGuest) {
-      if (kDebugMode) {
-        print(
-            '🪙 [TOKEN_BLOC] Guest user - using default token status on refresh');
-      }
+      Logger.debug(
+          '🪙 [TOKEN_BLOC] Guest user - using default token status on refresh');
       final guestTokenStatus = _createGuestTokenStatus();
       _updateCache(guestTokenStatus);
       emit(TokenLoaded(
@@ -578,7 +568,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     ConfirmPayment event,
     Emitter<TokenState> emit,
   ) async {
-    debugPrint(
+    Logger.debug(
         '🔍 [TOKEN_BLOC] _onConfirmPayment called for payment: ${event.paymentId}');
     if (_cachedTokenStatus == null) {
       emit(const TokenError(
@@ -651,17 +641,17 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     final offset = event.offset ?? 0;
     final limit = event.limit ?? 20;
 
-    debugPrint(
+    Logger.debug(
         '🔍 [TOKEN_BLOC] GetPurchaseHistory called - offset: $offset, limit: $limit');
-    debugPrint('🔍 [TOKEN_BLOC] Current state: ${state.runtimeType}');
+    Logger.debug('🔍 [TOKEN_BLOC] Current state: ${state.runtimeType}');
 
     // Only show loading if this is the first load (offset = 0)
     if (offset == 0) {
-      debugPrint(
+      Logger.debug(
           '🔍 [TOKEN_BLOC] Emitting PurchaseHistoryLoading (offset = 0)');
       emit(const PurchaseHistoryLoading());
     } else {
-      debugPrint(
+      Logger.debug(
           '🔍 [TOKEN_BLOC] Skipping loading state (offset > 0, pagination)');
     }
 
@@ -674,7 +664,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     result.fold(
       (failure) {
-        debugPrint(
+        Logger.debug(
             '😨 [TOKEN_BLOC] Purchase history fetch failed: ${failure.message}');
         emit(PurchaseHistoryError(
           failure: failure,
@@ -682,11 +672,11 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         ));
       },
       (newPurchases) {
-        debugPrint(
+        Logger.debug(
             '🔍 [TOKEN_BLOC] Received ${newPurchases.length} new purchases from API');
-        debugPrint(
+        Logger.debug(
             '🔍 [TOKEN_BLOC] Checking pagination condition: offset=$offset > 0 = ${offset > 0}');
-        debugPrint(
+        Logger.debug(
             '🔍 [TOKEN_BLOC] Current state is PurchaseHistoryLoaded: ${state is PurchaseHistoryLoaded}');
 
         // If this is pagination (offset > 0), accumulate with existing data
@@ -696,7 +686,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
               List<PurchaseHistory>.from(currentState.purchases)
                 ..addAll(newPurchases);
 
-          debugPrint(
+          Logger.debug(
               '🔄 [TOKEN_BLOC] Pagination: Added ${newPurchases.length} purchases to existing ${currentState.purchases.length}, total: ${combinedPurchases.length}');
 
           // Preserve existing statistics if they exist
@@ -712,7 +702,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
               : (state is! PurchaseHistoryLoaded
                   ? 'State not PurchaseHistoryLoaded'
                   : 'Unknown');
-          debugPrint(
+          Logger.debug(
               '🔄 [TOKEN_BLOC] Initial/Refresh load ($reason): ${newPurchases.length} purchases');
           emit(PurchaseHistoryLoaded(
             purchases: newPurchases,
@@ -728,8 +718,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     GetPurchaseStatistics event,
     Emitter<TokenState> emit,
   ) async {
-    debugPrint('🔍 [TOKEN_BLOC] GetPurchaseStatistics called');
-    debugPrint(
+    Logger.debug('🔍 [TOKEN_BLOC] GetPurchaseStatistics called');
+    Logger.debug(
         '🔍 [TOKEN_BLOC] Current state before statistics fetch: ${state.runtimeType}');
 
     // Check if we currently have purchase history loaded
@@ -738,7 +728,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     if (currentState is PurchaseHistoryLoaded) {
       existingPurchases = currentState.purchases;
-      debugPrint(
+      Logger.debug(
           '🔍 [TOKEN_BLOC] Found existing purchase history with ${existingPurchases.length} items');
     }
 
@@ -752,11 +742,11 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         operation: 'fetch_statistics',
       )),
       (statistics) {
-        debugPrint('🔍 [TOKEN_BLOC] Statistics loaded successfully');
+        Logger.debug('🔍 [TOKEN_BLOC] Statistics loaded successfully');
 
         // If we had existing purchase history, preserve it with the new statistics
         if (existingPurchases != null && existingPurchases.isNotEmpty) {
-          debugPrint(
+          Logger.debug(
               '🔍 [TOKEN_BLOC] Preserving ${existingPurchases.length} existing purchases with new statistics');
           emit(PurchaseHistoryLoaded(
             purchases: existingPurchases,
@@ -765,7 +755,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
           ));
         } else {
           // No existing history, emit statistics only
-          debugPrint(
+          Logger.debug(
               '🔍 [TOKEN_BLOC] No existing purchases to preserve, emitting statistics only');
           emit(PurchaseStatisticsLoaded(
             statistics: statistics,
@@ -782,7 +772,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     Emitter<TokenState> emit,
   ) async {
     // Get fresh purchase history (statistics will be auto-loaded after completion)
-    debugPrint(
+    Logger.debug(
         '🔄 [TOKEN_BLOC] RefreshPurchaseHistory - loading fresh data from offset 0');
     add(const GetPurchaseHistory(limit: 20, offset: 0));
   }
@@ -795,16 +785,16 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     final offset = event.offset ?? 0;
     final limit = event.limit ?? 20;
 
-    debugPrint(
+    Logger.debug(
         '📊 [TOKEN_BLOC] GetUsageHistory called - offset: $offset, limit: $limit');
-    debugPrint('📊 [TOKEN_BLOC] Current state: ${state.runtimeType}');
+    Logger.debug('📊 [TOKEN_BLOC] Current state: ${state.runtimeType}');
 
     // Only show loading if this is the first load (offset = 0)
     if (offset == 0) {
-      debugPrint('📊 [TOKEN_BLOC] Emitting UsageHistoryLoading (offset = 0)');
+      Logger.debug('📊 [TOKEN_BLOC] Emitting UsageHistoryLoading (offset = 0)');
       emit(const UsageHistoryLoading());
     } else {
-      debugPrint(
+      Logger.debug(
           '📊 [TOKEN_BLOC] Skipping loading state (offset > 0, pagination)');
     }
 
@@ -819,7 +809,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     result.fold(
       (failure) {
-        debugPrint(
+        Logger.debug(
             '❌ [TOKEN_BLOC] Usage history fetch failed: ${failure.message}');
         emit(UsageHistoryError(
           failure: failure,
@@ -827,11 +817,11 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         ));
       },
       (newRecords) {
-        debugPrint(
+        Logger.debug(
             '📊 [TOKEN_BLOC] Received ${newRecords.length} new usage records from API');
-        debugPrint(
+        Logger.debug(
             '📊 [TOKEN_BLOC] Checking pagination condition: offset=$offset > 0 = ${offset > 0}');
-        debugPrint(
+        Logger.debug(
             '📊 [TOKEN_BLOC] Current state is UsageHistoryLoaded: ${state is UsageHistoryLoaded}');
 
         // Determine if there are more records (hasMore flag for pagination)
@@ -841,7 +831,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         if (offset > 0 && state is UsageHistoryLoaded) {
           final currentState = state as UsageHistoryLoaded;
 
-          debugPrint(
+          Logger.debug(
               '🔄 [TOKEN_BLOC] Pagination: Adding ${newRecords.length} records to existing ${currentState.usageHistory.length}');
 
           // Use the appendRecords method from UsageHistoryLoaded state
@@ -853,7 +843,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
               : (state is! UsageHistoryLoaded
                   ? 'State not UsageHistoryLoaded'
                   : 'Unknown');
-          debugPrint(
+          Logger.debug(
               '🔄 [TOKEN_BLOC] Initial/Refresh load ($reason): ${newRecords.length} records');
           emit(UsageHistoryLoaded(
             usageHistory: newRecords,
@@ -870,8 +860,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     GetUsageStatistics event,
     Emitter<TokenState> emit,
   ) async {
-    debugPrint('📊 [TOKEN_BLOC] GetUsageStatistics called');
-    debugPrint(
+    Logger.debug('📊 [TOKEN_BLOC] GetUsageStatistics called');
+    Logger.debug(
         '📊 [TOKEN_BLOC] Current state before statistics fetch: ${state.runtimeType}');
 
     // Check if we currently have usage history loaded
@@ -882,7 +872,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     if (currentState is UsageHistoryLoaded) {
       existingHistory = currentState.usageHistory;
       hasMore = currentState.hasMore;
-      debugPrint(
+      Logger.debug(
           '📊 [TOKEN_BLOC] Found existing usage history with ${existingHistory.length} items');
     }
 
@@ -901,11 +891,11 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         operation: 'fetch_usage_statistics',
       )),
       (statistics) {
-        debugPrint('📊 [TOKEN_BLOC] Usage statistics loaded successfully');
+        Logger.debug('📊 [TOKEN_BLOC] Usage statistics loaded successfully');
 
         // If we had existing usage history, preserve it with the new statistics
         if (existingHistory != null && existingHistory.isNotEmpty) {
-          debugPrint(
+          Logger.debug(
               '📊 [TOKEN_BLOC] Preserving ${existingHistory.length} existing records with new statistics');
           emit(UsageHistoryLoaded(
             usageHistory: existingHistory,
@@ -915,7 +905,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
           ));
         } else {
           // No existing history, emit statistics only
-          debugPrint(
+          Logger.debug(
               '📊 [TOKEN_BLOC] No existing records to preserve, emitting statistics only');
           emit(UsageStatisticsLoaded(
             statistics: statistics,
@@ -932,7 +922,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     Emitter<TokenState> emit,
   ) async {
     // Get fresh usage history (statistics will be auto-loaded after completion)
-    debugPrint(
+    Logger.debug(
         '🔄 [TOKEN_BLOC] RefreshUsageHistory - loading fresh data from offset 0');
     add(const GetUsageHistory(limit: 20, offset: 0));
   }

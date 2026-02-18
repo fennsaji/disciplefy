@@ -486,7 +486,7 @@ export default function CreateTopicPage() {
                       <button
                         type="button"
                         onClick={() => window.open('/learning-paths/create', '_blank')}
-                        className="mt-4 text-sm text-primary hover:text-primary-dark"
+                        className="mt-4 text-sm text-primary hover:text-primary-600"
                       >
                         Create a learning path
                       </button>
@@ -586,7 +586,7 @@ export default function CreateTopicPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Topic'}
                 </button>

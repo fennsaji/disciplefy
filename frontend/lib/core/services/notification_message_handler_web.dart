@@ -12,6 +12,7 @@ import 'dart:js' as js;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import '../utils/logger.dart';
 
 /// Handles notification message processing and user interactions for web
 class NotificationMessageHandlerWeb {
@@ -40,29 +41,12 @@ class NotificationMessageHandlerWeb {
   void setupServiceWorkerMessageListener() {
     if (!kIsWeb) return;
 
-    if (kDebugMode) {
-      print('[FCM Message] Setting up service worker message listener...');
-    }
-
     try {
-      // Listen for messages from the service worker (CSP-safe using dart:html)
-      if (kDebugMode) {
-        print('[FCM Message] 📬 Setting up service worker message listener');
-      }
-
       final serviceWorker = html.window.navigator.serviceWorker;
       if (serviceWorker != null) {
         serviceWorker.onMessage.listen((html.MessageEvent event) {
-          if (kDebugMode) {
-            print('[FCM Message] 📨 Received message from service worker');
-          }
-
           final data = event.data;
           if (data is Map && data['type'] == 'NOTIFICATION_CLICK') {
-            if (kDebugMode) {
-              print('[FCM Message] 🔗 Notification click detected');
-            }
-
             final url = data['url'] as String?;
             if (url != null) {
               final uri = Uri.parse(url);
@@ -70,9 +54,7 @@ class NotificationMessageHandlerWeb {
                   (uri.query.isNotEmpty ? '?${uri.query}' : '') +
                   (uri.hasFragment ? '#${uri.fragment}' : '');
 
-              if (kDebugMode) {
-                print('[FCM Message] 🎯 Extracted path: $path');
-              }
+              Logger.debug('[FCM] 🔗 Notification click → path: $path');
 
               // Dispatch custom event for Flutter
               html.window.dispatchEvent(html.CustomEvent('notificationClick',
@@ -80,126 +62,58 @@ class NotificationMessageHandlerWeb {
             }
           }
         });
-
-        if (kDebugMode) {
-          print('[FCM Message] ✅ Service worker message listener registered');
-        }
       }
 
       // Listen for the custom event in Dart
       js.context['addEventListener'].apply([
         'notificationClick',
         js.allowInterop((event) {
-          if (kDebugMode) {
-            print('[FCM Message] 👆 Notification click event received');
-          }
-
           try {
             final detail = js.JsObject.fromBrowserObject(event)['detail'];
             final path = detail['path'] as String;
-
-            if (kDebugMode) {
-              print('[FCM Message] 🎯 Navigating to path: $path');
-            }
-
-            // Navigate using router
+            Logger.debug('[FCM] 👆 Navigating to: $path');
             _router.go(path);
           } catch (e) {
-            if (kDebugMode) {
-              print('[FCM Message] ❌ Error handling notification click: $e');
-            }
+            Logger.error('[FCM] ❌ Error handling notification click: $e');
           }
         })
       ]);
 
-      if (kDebugMode) {
-        print(
-            '[FCM Message] ✅ Service worker message listener set up successfully');
-      }
+      Logger.debug('[FCM] ✅ Service worker message listener set up');
     } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print(
-            '[FCM Message] ❌ Failed to set up service worker message listener: $e');
-        print('[FCM Message] Stack trace: $stackTrace');
-      }
+      Logger.error('[FCM] ❌ Failed to set up service worker listener: $e',
+          error: e, stackTrace: stackTrace);
     }
   }
 
   /// Set up listener for foreground messages
   void setupForegroundMessageListener() {
-    if (kDebugMode) {
-      print('[FCM Message] Setting up foreground message listener...');
-    }
-
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Message] ⚡⚡⚡ FOREGROUND MESSAGE RECEIVED ⚡⚡⚡');
-        print('[FCM Message] Timestamp: ${DateTime.now().toIso8601String()}');
-        print('[FCM Message] Message ID: ${message.messageId}');
-        print('[FCM Message] From: ${message.from}');
-        print('[FCM Message] Sent time: ${message.sentTime}');
-        print('[FCM Message] Notification:');
-        print(
-            '[FCM Message]    - Title: ${message.notification?.title ?? 'null'}');
-        print(
-            '[FCM Message]    - Body: ${message.notification?.body ?? 'null'}');
-        print('[FCM Message] Data: ${message.data}');
-        print('[FCM Message] Data type: ${message.data['type'] ?? 'none'}');
-        print('=' * 80);
+        Logger.debug(
+            '[FCM] ⚡ Foreground message received | type=${message.data['type'] ?? 'none'} | title=${message.notification?.title}');
       }
 
       // ⚠️ IMPORTANT: Service worker onBackgroundMessage ONLY fires when app is BACKGROUND!
       // For FOREGROUND messages, we MUST show notifications manually using Web Notifications API
-      // Otherwise, users won't see notifications when the app is open
-      if (kDebugMode) {
-        print('[FCM Message] 📝 Processing foreground message...');
-        print(
-            '[FCM Message] 🔔 Showing browser notification (app is in foreground)');
-      }
-
-      // Show browser notification for foreground messages
       _showForegroundNotification(message);
 
       // Emit notification event for in-app handling
-      // (e.g., update badge count, show in-app banner, refresh data)
       _notificationTapController.add({
         'title': message.notification?.title ?? '',
         'body': message.notification?.body ?? '',
         ...message.data,
       });
-
-      if (kDebugMode) {
-        print(
-            '[FCM Message] ✅ ✅ ✅ FOREGROUND MESSAGE PROCESSING COMPLETE ✅ ✅ ✅');
-        print('=' * 80);
-      }
     }, onError: (error) {
-      if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Message] ❌ ❌ ❌ FOREGROUND LISTENER ERROR ❌ ❌ ❌');
-        print('[FCM Message] Error: $error');
-        print('[FCM Message] Error type: ${error.runtimeType}');
-        print('=' * 80);
-      }
+      Logger.error('[FCM] ❌ Foreground listener error: $error');
     }, onDone: () {
-      if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Message] ⚠️  FOREGROUND LISTENER CLOSED ⚠️');
-        print('[FCM Message] Timestamp: ${DateTime.now().toIso8601String()}');
-        print('=' * 80);
-      }
+      Logger.warning('[FCM] ⚠️ Foreground listener closed');
     });
 
     // Handle notification taps when app is in background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Message] 👆👆👆 NOTIFICATION TAPPED (Background) 👆👆👆');
-        print('[FCM Message] Message ID: ${message.messageId}');
-        print('[FCM Message] Notification data: ${message.data}');
-        print('=' * 80);
-      }
+      Logger.info(
+          '[FCM] 👆 Notification tapped (background) | type=${message.data['type']}');
 
       if (message.data.isNotEmpty) {
         _handleMessageNavigation(message.data);
@@ -217,21 +131,12 @@ class NotificationMessageHandlerWeb {
     try {
       if (!kIsWeb) return;
 
-      // Extract notification data
       final title = message.notification?.title ?? '📖 Disciplefy';
       final body = message.notification?.body ?? 'You have a new notification';
       final icon =
           message.notification?.android?.smallIcon ?? '/icons/Icon-192.png';
 
-      if (kDebugMode) {
-        print('[FCM Message] 🔔 Creating browser notification...');
-        print('[FCM Message]    Title: $title');
-        print('[FCM Message]    Body: $body');
-        print('[FCM Message]    Icon: $icon');
-      }
-
       // Create notification using Web Notifications API
-      // This shows a native browser notification
       final notification = html.Notification(
         title,
         body: body,
@@ -242,20 +147,13 @@ class NotificationMessageHandlerWeb {
 
       // Handle notification click
       notification.onClick.listen((_) {
-        if (kDebugMode) {
-          print('[FCM Message] 👆 Foreground notification clicked');
-        }
-
-        // Close the notification
         notification.close();
-
-        // Navigate based on notification data
         if (message.data.isNotEmpty) {
           _handleMessageNavigation(message.data);
         }
       });
 
-      // Auto-close after 10 seconds (browser default)
+      // Auto-close after 10 seconds
       Future.delayed(const Duration(seconds: 10), () {
         try {
           notification.close();
@@ -263,15 +161,9 @@ class NotificationMessageHandlerWeb {
           // Notification might already be closed by user
         }
       });
-
-      if (kDebugMode) {
-        print('[FCM Message] ✅ Browser notification created successfully');
-      }
     } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('[FCM Message] ❌ Error showing foreground notification: $e');
-        print('[FCM Message] Stack trace: $stackTrace');
-      }
+      Logger.error('[FCM] ❌ Error showing foreground notification: $e',
+          error: e, stackTrace: stackTrace);
     }
   }
 
@@ -281,25 +173,15 @@ class NotificationMessageHandlerWeb {
 
   /// Handle navigation based on message data
   void _handleMessageNavigation(Map<String, dynamic> data) {
-    // Input validation: Ensure data is not null and is a Map
-    if (data.isEmpty) {
-      if (kDebugMode) {
-        print('[FCM Message] ⚠️  Empty notification data');
-      }
-      return;
-    }
+    if (data.isEmpty) return;
 
-    // Validate notification type exists and is a string
     final type = data['type'];
     if (type == null || type is! String || type.isEmpty) {
-      if (kDebugMode) {
-        print('[FCM Message] ⚠️  Invalid or missing notification type');
-        print('[FCM Message] Data received: $data');
-      }
+      Logger.warning(
+          '[FCM] ⚠️ Invalid or missing notification type | data: $data');
       return;
     }
 
-    // Validate against known notification types
     const validTypes = {
       'daily_verse',
       'recommended_topic',
@@ -307,28 +189,18 @@ class NotificationMessageHandlerWeb {
       'for_you'
     };
     if (!validTypes.contains(type)) {
-      if (kDebugMode) {
-        print('[FCM Message] ⚠️  Unknown notification type: $type');
-        print('[FCM Message] Valid types: $validTypes');
-      }
-      // Navigate to home as safe fallback
+      Logger.warning('[FCM] ⚠️ Unknown notification type: $type');
       _router.go('/');
       return;
     }
 
-    // Handle navigation based on validated type
     switch (type) {
       case 'daily_verse':
-        // Navigate to home page (has daily verse)
         _router.go('/');
-        if (kDebugMode) {
-          print('[FCM Message] ✅ Navigating to daily verse');
-        }
+        Logger.debug('[FCM] ✅ Navigate → daily verse (home)');
         break;
 
       case 'recommended_topic':
-        // Extract topic information from notification data
-        // Priority: topic_id (for tracking) + topic_title (for generation)
         final topicId = data['topic_id'];
         final topicTitle = data['topic_title'];
         final language = data['language'] ?? 'en';
@@ -336,11 +208,7 @@ class NotificationMessageHandlerWeb {
         if (topicTitle != null &&
             topicTitle is String &&
             topicTitle.isNotEmpty) {
-          // Navigate to study guide V2 with topic information
-          // This will dynamically generate the study guide content
           final encodedTitle = Uri.encodeComponent(topicTitle);
-
-          // Include topic_id if available for tracking/future features
           final topicIdParam =
               (topicId != null && topicId is String && topicId.isNotEmpty)
                   ? '&topic_id=$topicId'
@@ -348,44 +216,28 @@ class NotificationMessageHandlerWeb {
 
           _router.go(
               '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam');
-          if (kDebugMode) {
-            print(
-                '[FCM Message] ✅ Navigating to study guide for topic: $topicTitle (ID: ${topicId ?? 'none'})');
-          }
+          Logger.debug('[FCM] ✅ Navigate → recommended topic: $topicTitle');
         } else {
-          // Fallback to study topics page if no topic title provided
           _router.go('/study-topics');
-          if (kDebugMode) {
-            print(
-                '[FCM Message] ⚠️  No topic title provided, navigating to study topics');
-          }
+          Logger.warning('[FCM] ⚠️ No topic title, navigating to study topics');
         }
         break;
 
       case 'continue_learning':
-        // Continue Learning: Navigate to existing incomplete guide
         final guideId = data['guide_id'];
-        final topicTitle = data['topic_title']; // For debug logging
+        final topicTitle = data['topic_title'];
 
         if (guideId != null && guideId is String && guideId.isNotEmpty) {
-          // Navigate to the specific incomplete study guide
           _router.go('/study-guide/$guideId');
-          if (kDebugMode) {
-            print(
-                '[FCM Message] ✅ Navigating to Continue Learning guide: $guideId (${topicTitle ?? 'unknown'})');
-          }
+          Logger.debug(
+              '[FCM] ✅ Navigate → continue learning: $guideId (${topicTitle ?? 'unknown'})');
         } else {
-          // Fallback to study topics page if no guide ID provided
           _router.go('/study-topics');
-          if (kDebugMode) {
-            print(
-                '[FCM Message] ⚠️  No guide ID provided, navigating to study topics');
-          }
+          Logger.warning('[FCM] ⚠️ No guide ID, navigating to study topics');
         }
         break;
 
       case 'for_you':
-        // For You: Same as recommended_topic, personalized topic recommendation
         final topicId = data['topic_id'];
         final topicTitle = data['topic_title'];
         final topicDescription = data['topic_description'];
@@ -394,14 +246,11 @@ class NotificationMessageHandlerWeb {
         if (topicTitle != null &&
             topicTitle is String &&
             topicTitle.isNotEmpty) {
-          // Navigate to study guide V2 with topic information
           final encodedTitle = Uri.encodeComponent(topicTitle);
-
           final topicIdParam =
               (topicId != null && topicId is String && topicId.isNotEmpty)
                   ? '&topic_id=$topicId'
                   : '';
-
           final descriptionParam = (topicDescription != null &&
                   topicDescription is String &&
                   topicDescription.isNotEmpty)
@@ -410,17 +259,11 @@ class NotificationMessageHandlerWeb {
 
           _router.go(
               '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=for_you_notification$topicIdParam$descriptionParam');
-          if (kDebugMode) {
-            print(
-                '[FCM Message] ✅ Navigating to For You topic: $topicTitle (ID: ${topicId ?? 'none'})');
-          }
+          Logger.debug('[FCM] ✅ Navigate → for_you topic: $topicTitle');
         } else {
-          // Fallback to study topics page if no topic title provided
           _router.go('/study-topics');
-          if (kDebugMode) {
-            print(
-                '[FCM Message] ⚠️  No For You topic title provided, navigating to study topics');
-          }
+          Logger.warning(
+              '[FCM] ⚠️ No for_you topic title, navigating to study topics');
         }
         break;
     }

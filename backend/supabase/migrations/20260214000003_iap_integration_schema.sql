@@ -307,6 +307,90 @@ $$;
 COMMENT ON FUNCTION get_active_iap_subscription IS 'Get the active IAP subscription for a user';
 
 -- ============================================================================
+-- 8. Add Product ID to Subscription Plan Providers
+-- ============================================================================
+
+ALTER TABLE subscription_plan_providers
+  ADD COLUMN IF NOT EXISTS product_id TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_subscription_plan_providers_product_id
+  ON subscription_plan_providers(product_id);
+
+COMMENT ON COLUMN subscription_plan_providers.product_id IS
+  'Standardized IAP product ID format: com.disciplefy.{plan_code}_monthly';
+
+COMMENT ON TABLE subscription_plan_providers IS
+  'Provider-specific pricing and external IDs.
+   provider_plan_id: Provider-specific ID (Razorpay plan_id, Google SKU, Apple product_id)
+   product_id: Standardized IAP format (com.disciplefy.{plan_code}_monthly)';
+
+-- Seed product IDs for existing plans
+UPDATE subscription_plan_providers
+SET product_id = 'com.disciplefy.standard_monthly'
+WHERE plan_id = (SELECT id FROM subscription_plans WHERE plan_code = 'standard')
+  AND product_id IS NULL;
+
+UPDATE subscription_plan_providers
+SET product_id = 'com.disciplefy.plus_monthly'
+WHERE plan_id = (SELECT id FROM subscription_plans WHERE plan_code = 'plus')
+  AND product_id IS NULL;
+
+UPDATE subscription_plan_providers
+SET product_id = 'com.disciplefy.premium_monthly'
+WHERE plan_id = (SELECT id FROM subscription_plans WHERE plan_code = 'premium')
+  AND product_id IS NULL;
+
+UPDATE subscription_plan_providers
+SET product_id = 'com.disciplefy.free_monthly'
+WHERE plan_id = (SELECT id FROM subscription_plans WHERE plan_code = 'free')
+  AND product_id IS NULL;
+
+-- ============================================================================
+-- 9. IAP Price Sync Status Columns
+-- ============================================================================
+
+ALTER TABLE subscription_plan_providers
+  ADD COLUMN IF NOT EXISTS sync_status TEXT
+    CHECK (sync_status IN ('synced', 'pending_manual_update', 'mismatch', 'verification_failed', NULL))
+    DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS last_verified_at TIMESTAMPTZ NULL,
+  ADD COLUMN IF NOT EXISTS provider_price_minor INTEGER NULL,
+  ADD COLUMN IF NOT EXISTS sync_error_message TEXT NULL;
+
+COMMENT ON COLUMN subscription_plan_providers.sync_status IS
+  'Price sync status with external provider console (Google Play/Apple only):
+   - synced: Our price matches provider
+   - pending_manual_update: Admin updated our DB, needs to update external console
+   - mismatch: Verification detected price difference
+   - verification_failed: API call failed, manual check needed';
+COMMENT ON COLUMN subscription_plan_providers.last_verified_at IS
+  'Last time we verified our price against external provider API (IAP only)';
+COMMENT ON COLUMN subscription_plan_providers.provider_price_minor IS
+  'Last known price from provider API (for comparison, IAP only)';
+
+CREATE INDEX IF NOT EXISTS idx_subscription_plan_providers_sync
+  ON subscription_plan_providers(provider, sync_status)
+  WHERE provider IN ('google_play', 'apple_appstore');
+
+-- ============================================================================
+-- 10. Seed IAP Configuration Placeholders
+-- ============================================================================
+
+INSERT INTO iap_config (provider, environment, config_key, config_value, is_active)
+VALUES
+  ('google_play',    'production', 'service_account_email', 'your-service-account@your-project.iam.gserviceaccount.com',  false),
+  ('google_play',    'production', 'service_account_key',   'PLACEHOLDER_ENCRYPTED_KEY_WILL_BE_STORED_HERE',              false),
+  ('google_play',    'production', 'package_name',          'com.disciplefy.app',                                         false),
+  ('google_play',    'sandbox',    'service_account_email', 'your-test-service-account@your-project.iam.gserviceaccount.com', false),
+  ('google_play',    'sandbox',    'service_account_key',   'PLACEHOLDER_ENCRYPTED_TEST_KEY_WILL_BE_STORED_HERE',         false),
+  ('google_play',    'sandbox',    'package_name',          'com.disciplefy.app.test',                                    false),
+  ('apple_appstore', 'production', 'shared_secret',         'PLACEHOLDER_SHARED_SECRET_WILL_BE_STORED_HERE',              false),
+  ('apple_appstore', 'production', 'bundle_id',             'com.disciplefy.app',                                         false),
+  ('apple_appstore', 'sandbox',    'shared_secret',         'PLACEHOLDER_SANDBOX_SHARED_SECRET_WILL_BE_STORED_HERE',      false),
+  ('apple_appstore', 'sandbox',    'bundle_id',             'com.disciplefy.app',                                         false)
+ON CONFLICT (provider, environment, config_key) DO NOTHING;
+
+-- ============================================================================
 -- Migration Complete
 -- ============================================================================
 -- Migration tracking removed: Supabase handles this automatically via supabase_migrations.schema_migrations

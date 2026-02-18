@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query'
 import { searchUsers } from '@/lib/api/admin'
 import { format } from 'date-fns'
 import type { PaymentHistoryResponse } from '@/types/admin'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
 
 export default function UserDetailsPage() {
   const params = useParams()
@@ -58,32 +60,12 @@ export default function UserDetailsPage() {
   )
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading user details...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState label="Loading subscriptions..." />
   }
 
   if (error || !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/20">
-          <p className="font-medium text-red-800 dark:text-red-300">Error loading user details</p>
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-            {error instanceof Error ? error.message : 'User not found'}
-          </p>
-          <button
-            onClick={() => router.push('/subscriptions')}
-            className="mt-4 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
-          >
-            Back to Subscriptions
-          </button>
-        </div>
-      </div>
+      <ErrorState title="Error loading subscriptions" message={error instanceof Error ? error.message : 'User not found'} />
     )
   }
 
@@ -120,7 +102,7 @@ export default function UserDetailsPage() {
         </div>
         <button
           onClick={() => router.push(`/subscriptions/${userId}/edit`)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

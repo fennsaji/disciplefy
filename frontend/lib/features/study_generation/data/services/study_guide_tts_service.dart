@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/entities/study_mode.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Represents a section of the study guide for TTS reading.
 class TtsSection {
@@ -486,7 +487,7 @@ class StudyGuideTTSService {
     StudyGuide guide, {
     StudyMode mode = StudyMode.standard,
   }) async {
-    print(
+    Logger.debug(
         '🔊 [StudyGuideTTS] Starting to read guide: ${guide.input} (mode: ${mode.name})');
 
     // Stop any current playback
@@ -516,7 +517,7 @@ class StudyGuideTTSService {
   Future<void> _readCurrentSection() async {
     if (_currentSectionIndex >= _sections.length) {
       // All sections read
-      print('🔊 [StudyGuideTTS] All sections completed');
+      Logger.debug('🔊 [StudyGuideTTS] All sections completed');
       _resetProgress();
       state.value = state.value.copyWith(
         status: TtsStatus.idle,
@@ -536,7 +537,7 @@ class StudyGuideTTSService {
     // Estimate duration for progress tracking
     _currentSectionDuration = _estimateDuration(section.fullText);
 
-    print(
+    Logger.debug(
         '🔊 [StudyGuideTTS] Reading section ${_currentSectionIndex + 1}/${_sections.length}: ${section.title} (est. ${_currentSectionDuration}s)');
 
     state.value = state.value.copyWith(
@@ -554,11 +555,11 @@ class StudyGuideTTSService {
     try {
       // Define the completion callback
       void onSectionComplete() {
-        print(
+        Logger.debug(
             '🔊 [StudyGuideTTS] ========== COMPLETION CALLBACK FIRED ==========');
-        print(
+        Logger.debug(
             '🔊 [StudyGuideTTS] Section ${_currentSectionIndex + 1} completed');
-        print(
+        Logger.debug(
             '🔊 [StudyGuideTTS] State: ${state.value.status}, intentionalStop: $_isIntentionallyStopping');
 
         // Stop progress timer since section is done
@@ -569,13 +570,15 @@ class StudyGuideTTSService {
         final currentStatus = state.value.status;
         if (currentStatus == TtsStatus.paused ||
             currentStatus == TtsStatus.idle) {
-          print('🔊 [StudyGuideTTS] Status is $currentStatus - not advancing');
+          Logger.debug(
+              '🔊 [StudyGuideTTS] Status is $currentStatus - not advancing');
           return;
         }
 
         // Check if we're intentionally stopping (backup check)
         if (_isIntentionallyStopping) {
-          print('🔊 [StudyGuideTTS] Intentional stop flag set - not advancing');
+          Logger.debug(
+              '🔊 [StudyGuideTTS] Intentional stop flag set - not advancing');
           return;
         }
 
@@ -583,13 +586,13 @@ class StudyGuideTTSService {
         if (currentStatus == TtsStatus.playing) {
           // Move to next section
           _currentSectionIndex++;
-          print(
+          Logger.debug(
               '🔊 [StudyGuideTTS] Advancing to section $_currentSectionIndex');
           _readCurrentSection();
         }
       }
 
-      print(
+      Logger.debug(
           '🔊 [StudyGuideTTS] Calling speakWithSettings for section: ${section.title}');
       await _ttsService.speakWithSettings(
         text: section.fullText,
@@ -597,9 +600,9 @@ class StudyGuideTTSService {
         speakingRate: state.value.speechRate,
         onComplete: onSectionComplete,
       );
-      print('🔊 [StudyGuideTTS] speakWithSettings returned');
+      Logger.error('🔊 [StudyGuideTTS] speakWithSettings returned');
     } catch (e) {
-      print('🔊 [StudyGuideTTS] Error reading section: $e');
+      Logger.debug('🔊 [StudyGuideTTS] Error reading section: $e');
       state.value = state.value.copyWith(
         status: TtsStatus.error,
         error: 'Failed to read study guide. Please try again.',
@@ -623,7 +626,7 @@ class StudyGuideTTSService {
 
   /// Pause playback.
   Future<void> pause() async {
-    print('🔊 [StudyGuideTTS] Pausing');
+    Logger.debug('🔊 [StudyGuideTTS] Pausing');
     // Stop progress timer
     _stopProgressTimer();
     // Set flag and state BEFORE stopping to prevent race conditions
@@ -635,7 +638,8 @@ class StudyGuideTTSService {
 
   /// Resume playback.
   Future<void> resume() async {
-    print('🔊 [StudyGuideTTS] Resuming from section $_currentSectionIndex');
+    Logger.debug(
+        '🔊 [StudyGuideTTS] Resuming from section $_currentSectionIndex');
     // Clear the intentional stop flag since we're intentionally resuming
     _isIntentionallyStopping = false;
     // Note: _readCurrentSection will restart progress from 0
@@ -645,7 +649,7 @@ class StudyGuideTTSService {
 
   /// Stop playback completely.
   Future<void> stop() async {
-    print('🔊 [StudyGuideTTS] Stopping');
+    Logger.debug('🔊 [StudyGuideTTS] Stopping');
     _resetProgress();
     _isIntentionallyStopping = true;
     await _ttsService.stop();
@@ -664,7 +668,7 @@ class StudyGuideTTSService {
   Future<void> skipToSection(int index) async {
     if (index < 0 || index >= _sections.length) return;
 
-    print('🔊 [StudyGuideTTS] Skipping to section $index');
+    Logger.debug('🔊 [StudyGuideTTS] Skipping to section $index');
 
     // Stop current playback and progress
     _stopProgressTimer();
@@ -692,7 +696,7 @@ class StudyGuideTTSService {
   /// Set the speech rate (0.5 to 2.0).
   Future<void> setSpeechRate(double rate) async {
     final double clampedRate = rate.clamp(0.5, 2.0).toDouble();
-    print('🔊 [StudyGuideTTS] Setting speech rate to $clampedRate');
+    Logger.debug('🔊 [StudyGuideTTS] Setting speech rate to $clampedRate');
 
     // Persist to SharedPreferences
     await _prefs.setDouble(_speechRateKey, clampedRate);

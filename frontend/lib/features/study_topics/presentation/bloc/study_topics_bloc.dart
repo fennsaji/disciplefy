@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/logger.dart';
@@ -49,9 +48,7 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     try {
       await operation();
     } catch (e) {
-      if (kDebugMode) {
-        print('💥 [STUDY_TOPICS_BLOC] Error in $operationName: $e');
-      }
+      Logger.error('💥 [STUDY_TOPICS_BLOC] Error in $operationName: $e');
       emit(StudyTopicsError(
         message: 'An unexpected error occurred: $e',
       ));
@@ -75,10 +72,8 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
             await _languagePreferenceService.getStudyContentLanguage();
         languageCode = appLanguage.code;
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '⚠️ [STUDY_TOPICS_BLOC] Failed to get study content language preference, using default: $e');
-        }
+        Logger.warning(
+            '⚠️ [STUDY_TOPICS_BLOC] Failed to get study content language preference, using default: $e');
       }
 
       // Initialize or update filter with study content language preference
@@ -295,10 +290,8 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
           await _languagePreferenceService.getStudyContentLanguage();
       languageCode = appLanguage.code;
     } catch (e) {
-      if (kDebugMode) {
-        print(
-            '⚠️ [STUDY_TOPICS_BLOC] Failed to get study content language preference for categories, using default: $e');
-      }
+      Logger.warning(
+          '⚠️ [STUDY_TOPICS_BLOC] Failed to get study content language preference for categories, using default: $e');
     }
 
     // Fetch categories in study content language for localized filter chips

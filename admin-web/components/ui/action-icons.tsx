@@ -175,7 +175,7 @@ export function ToggleIcon({ className = "h-5 w-5" }: { className?: string }) {
  * Use these className strings for consistent button styling
  */
 export const actionButtonStyles = {
-  edit: "text-primary hover:text-primary-dark disabled:cursor-not-allowed disabled:opacity-50",
+  edit: "text-primary hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50",
   delete: "text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-50",
   manage: "text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50",
   generate: "text-green-600 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-50",

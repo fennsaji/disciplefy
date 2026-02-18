@@ -160,7 +160,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
         appBar: _buildAppBar(),
         body: BlocConsumer<VoiceConversationBloc, VoiceConversationState>(
           listener: (context, state) {
-            // Show monthly limit exceeded dialog
+            // Show monthly limit exceeded dialog (mid-conversation server rejection)
             if (state is VoiceConversationMonthlyLimitExceeded) {
               MonthlyLimitExceededDialog.show(
                 context,
@@ -168,6 +168,21 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                 limit: state.limit,
                 tier: state.tier,
                 month: state.month,
+              );
+            }
+
+            // Show limit dialog when server rejects start (quota was unknown or stale)
+            if (state.status == VoiceConversationStatus.quotaExceeded) {
+              final quota = state.quota;
+              final now = DateTime.now();
+              final month =
+                  '${now.year}-${now.month.toString().padLeft(2, '0')}';
+              MonthlyLimitExceededDialog.show(
+                context,
+                conversationsUsed: quota?.quotaUsed ?? 0,
+                limit: quota?.quotaLimit ?? 0,
+                tier: quota?.tier ?? 'free',
+                month: month,
               );
             }
 
@@ -304,7 +319,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
         return const Center(child: CircularProgressIndicator());
 
       case VoiceConversationStatus.quotaExceeded:
-        return _buildQuotaExceededScreen();
+        return _buildStartScreen(state);
 
       default:
         return _buildConversationView(state);
@@ -368,9 +383,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
           // Start button
           FilledButton.icon(
-            onPressed: state.canStartConversation
-                ? () => _startConversationWithState(state)
-                : null,
+            onPressed: () => _startConversationWithState(state),
             icon: const Icon(Icons.play_arrow),
             label: Text(context.tr('voice_buddy.start_conversation')),
             style: FilledButton.styleFrom(
@@ -386,53 +399,25 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   void _startConversationWithState(VoiceConversationState state) {
+    final quota = state.quota;
+    if (quota != null && !quota.canStart) {
+      final now = DateTime.now();
+      final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      MonthlyLimitExceededDialog.show(
+        context,
+        conversationsUsed: quota.quotaUsed,
+        limit: quota.quotaLimit,
+        tier: quota.tier,
+        month: month,
+      );
+      return;
+    }
     context.read<VoiceConversationBloc>().add(StartConversation(
           languageCode: state.languageCode,
           conversationType: widget.conversationType,
           relatedStudyGuideId: widget.studyGuideId,
           relatedScripture: widget.relatedScripture,
         ));
-  }
-
-  Widget _buildQuotaExceededScreen() {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.hourglass_empty,
-            size: 80,
-            color: theme.colorScheme.error,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            context.tr('voice_buddy.quota_exceeded.title'),
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.tr('voice_buddy.quota_exceeded.message'),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withAlpha((0.7 * 255).round()),
-            ),
-          ),
-          const SizedBox(height: 32),
-          FilledButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/subscription');
-            },
-            child:
-                Text(context.tr('voice_buddy.quota_exceeded.upgrade_button')),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildConversationView(VoiceConversationState state) {

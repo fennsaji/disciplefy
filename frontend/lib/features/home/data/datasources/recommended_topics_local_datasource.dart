@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/recommended_guide_topic_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Local data source for caching recommended topics using Hive.
 ///
@@ -21,13 +21,9 @@ class RecommendedTopicsLocalDataSource {
   Future<void> initialize() async {
     try {
       _cacheBox = await Hive.openBox<String>(_boxName);
-      if (kDebugMode) {
-        print('✅ [TOPICS CACHE] Hive box initialized');
-      }
+      Logger.error('✅ [TOPICS CACHE] Hive box initialized');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPICS CACHE] Failed to initialize Hive box: $e');
-      }
+      Logger.debug('❌ [TOPICS CACHE] Failed to initialize Hive box: $e');
     }
   }
 
@@ -49,9 +45,7 @@ class RecommendedTopicsLocalDataSource {
     try {
       final box = _cacheBox;
       if (box == null) {
-        if (kDebugMode) {
-          print('⚠️ [TOPICS CACHE] Box not initialized');
-        }
+        Logger.warning('⚠️ [TOPICS CACHE] Box not initialized');
         return null;
       }
 
@@ -63,9 +57,7 @@ class RecommendedTopicsLocalDataSource {
       final timestampStr = box.get(timestampKey);
 
       if (cachedJson == null || timestampStr == null) {
-        if (kDebugMode) {
-          print('📭 [TOPICS CACHE] No cached data for key: $cacheKey');
-        }
+        Logger.debug('📭 [TOPICS CACHE] No cached data for key: $cacheKey');
         return null;
       }
 
@@ -74,10 +66,8 @@ class RecommendedTopicsLocalDataSource {
       final cacheAge = DateTime.now().difference(timestamp);
 
       if (cacheAge > cacheExpiry) {
-        if (kDebugMode) {
-          print(
-              '⏰ [TOPICS CACHE] Cache expired for $cacheKey (age: ${cacheAge.inMinutes} minutes)');
-        }
+        Logger.debug(
+            '⏰ [TOPICS CACHE] Cache expired for $cacheKey (age: ${cacheAge.inMinutes} minutes)');
         // Remove expired cache
         await box.delete(fullCacheKey);
         await box.delete(timestampKey);
@@ -90,16 +80,12 @@ class RecommendedTopicsLocalDataSource {
           .map((json) => RecommendedGuideTopicModel.fromJson(json))
           .toList();
 
-      if (kDebugMode) {
-        print(
-            '✅ [TOPICS CACHE] Retrieved ${topics.length} topics from cache (age: ${cacheAge.inMinutes} minutes)');
-      }
+      Logger.debug(
+          '✅ [TOPICS CACHE] Retrieved ${topics.length} topics from cache (age: ${cacheAge.inMinutes} minutes)');
 
       return topics;
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPICS CACHE] Error reading cache: $e');
-      }
+      Logger.debug('❌ [TOPICS CACHE] Error reading cache: $e');
       return null;
     }
   }
@@ -122,9 +108,7 @@ class RecommendedTopicsLocalDataSource {
     try {
       final box = _cacheBox;
       if (box == null) {
-        if (kDebugMode) {
-          print('⚠️ [TOPICS CACHE] Box not initialized, cannot cache');
-        }
+        Logger.debug('⚠️ [TOPICS CACHE] Box not initialized, cannot cache');
         return;
       }
 
@@ -139,14 +123,10 @@ class RecommendedTopicsLocalDataSource {
       await box.put(fullCacheKey, jsonString);
       await box.put(timestampKey, DateTime.now().toIso8601String());
 
-      if (kDebugMode) {
-        print(
-            '💾 [TOPICS CACHE] Cached ${topics.length} topics for key: $cacheKey');
-      }
+      Logger.debug(
+          '💾 [TOPICS CACHE] Cached ${topics.length} topics for key: $cacheKey');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPICS CACHE] Error caching topics: $e');
-      }
+      Logger.debug('❌ [TOPICS CACHE] Error caching topics: $e');
     }
   }
 
@@ -157,13 +137,9 @@ class RecommendedTopicsLocalDataSource {
       if (box == null) return;
 
       await box.clear();
-      if (kDebugMode) {
-        print('🗑️ [TOPICS CACHE] All caches cleared');
-      }
+      Logger.debug('🗑️ [TOPICS CACHE] All caches cleared');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPICS CACHE] Error clearing cache: $e');
-      }
+      Logger.debug('❌ [TOPICS CACHE] Error clearing cache: $e');
     }
   }
 
@@ -184,13 +160,9 @@ class RecommendedTopicsLocalDataSource {
       await box.delete(fullCacheKey);
       await box.delete(timestampKey);
 
-      if (kDebugMode) {
-        print('🗑️ [TOPICS CACHE] Cache cleared for key: $cacheKey');
-      }
+      Logger.debug('🗑️ [TOPICS CACHE] Cache cleared for key: $cacheKey');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPICS CACHE] Error clearing cache for key: $e');
-      }
+      Logger.debug('❌ [TOPICS CACHE] Error clearing cache for key: $e');
     }
   }
 
@@ -220,14 +192,10 @@ class RecommendedTopicsLocalDataSource {
         await box.delete(key);
       }
 
-      if (kDebugMode) {
-        print(
-            '🗑️ [TOPICS CACHE] Cleared ${keysToDelete.length} entries with prefix: $prefix');
-      }
+      Logger.debug(
+          '🗑️ [TOPICS CACHE] Cleared ${keysToDelete.length} entries with prefix: $prefix');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOPICS CACHE] Error clearing cache by prefix: $e');
-      }
+      Logger.debug('❌ [TOPICS CACHE] Error clearing cache by prefix: $e');
     }
   }
 

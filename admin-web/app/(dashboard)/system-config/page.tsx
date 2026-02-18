@@ -14,9 +14,21 @@ import GamificationEditor from '@/components/system-config/gamification-editor'
 import PracticeModesEditor from '@/components/system-config/practice-modes-editor'
 import SpacedRepetitionEditor from '@/components/system-config/spaced-repetition-editor'
 import PricingEditor from '@/components/system-config/pricing-editor'
+import { PageHeader } from '@/components/ui/page-header'
+import { TabNav } from '@/components/ui/tab-nav'
+import { LoadingState } from '@/components/ui/loading-spinner'
+import { ErrorState } from '@/components/ui/empty-state'
+import { EditIcon, ToggleIcon, actionButtonStyles } from '@/components/ui/action-icons'
 
 type TabType = 'system-config' | 'subscription-config' | 'feature-flags'
 type SystemConfigSection = 'token_system' | 'voice_features' | 'maintenance_mode' | 'app_version' | 'trial_config' | 'memory_verses'
+
+
+const TABS = [
+  { value: 'system-config', label: 'System Config', icon: '⚙️' },
+  { value: 'subscription-config', label: 'Subscription Config', icon: '💳' },
+  { value: 'feature-flags', label: 'Feature Flags', icon: '🚩' },
+]
 
 export default function SystemConfigPage() {
   const [activeTab, setActiveTab] = useState<TabType>('system-config')
@@ -91,7 +103,7 @@ export default function SystemConfigPage() {
       if (!res.ok) throw new Error('Failed to fetch pricing data')
       return res.json()
     },
-    enabled: activeTab === 'system-config'
+    enabled: activeTab === 'subscription-config'
   })
 
   // Update System Config
@@ -192,7 +204,7 @@ export default function SystemConfigPage() {
     return (
       <div className="space-y-6">
         {/* Token System */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -235,7 +247,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Voice Features */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -280,7 +292,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Maintenance Mode */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -328,7 +340,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* App Version Control */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -401,7 +413,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Dynamic Trial Configuration */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -470,7 +482,7 @@ export default function SystemConfigPage() {
         </div>
 
         {/* Memory Verses Configuration */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -483,9 +495,7 @@ export default function SystemConfigPage() {
           </div>
 
           {memoryVerseLoading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400">Loading memory verse configuration...</p>
-            </div>
+            <LoadingState label="Loading memory verse configuration..." />
           ) : memoryVerseData?.data ? (
             <div className="space-y-6">
               {/* Practice Mode Unlock Limits */}
@@ -555,36 +565,7 @@ export default function SystemConfigPage() {
               />
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400">Failed to load memory verse configuration</p>
-            </div>
-          )}
-        </div>
-
-        {/* Subscription Pricing Configuration */}
-        <div>
-          {pricingData?.data ? (
-            <PricingEditor
-              initialPricing={pricingData.data}
-              isEditing={isEditingPricing}
-              onEditStart={() => setIsEditingPricing(true)}
-              onCancel={() => setIsEditingPricing(false)}
-              onSaveComplete={() => {
-                queryClient.invalidateQueries({ queryKey: ['pricing-data'] })
-              }}
-            />
-          ) : pricingLoading ? (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
-              <div className="text-center py-8">
-                <p className="text-gray-500 dark:text-gray-400">Loading pricing data...</p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
-              <div className="text-center py-8">
-                <p className="text-gray-500 dark:text-gray-400">Failed to load pricing data</p>
-              </div>
-            </div>
+            <ErrorState message="Failed to load memory verse configuration" />
           )}
         </div>
 
@@ -598,7 +579,6 @@ export default function SystemConfigPage() {
             <li><strong>Voice Conversations:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">subscription_plans.features.voice_conversations_monthly</code></li>
             <li><strong>Maintenance, Versions & Trials:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">system_config</code> table</li>
             <li><strong>Memory Verses:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">system_config</code> table (practice unlock limits, verse quotas, gamification)</li>
-            <li><strong>Subscription Pricing:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">subscription_plan_providers</code> table (pricing for all plans and providers)</li>
           </ul>
         </div>
       </div>
@@ -642,11 +622,9 @@ export default function SystemConfigPage() {
         )}
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
           {subscriptionConfigLoading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Loading...</p>
-            </div>
+            <LoadingState label="Loading subscription plans..." />
           ) : (
             <SubscriptionConfigTable
               configs={subscriptionConfigData?.subscription_config || []}
@@ -655,6 +633,29 @@ export default function SystemConfigPage() {
                 setEditSubscriptionConfigOpen(true)
               }}
             />
+          )}
+        </div>
+
+        {/* Subscription Pricing Configuration */}
+        <div>
+          {pricingData?.data ? (
+            <PricingEditor
+              initialPricing={pricingData.data}
+              isEditing={isEditingPricing}
+              onEditStart={() => setIsEditingPricing(true)}
+              onCancel={() => setIsEditingPricing(false)}
+              onSaveComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['pricing-data'] })
+              }}
+            />
+          ) : pricingLoading ? (
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <LoadingState label="Loading pricing data..." />
+            </div>
+          ) : (
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <ErrorState message="Failed to load pricing data" />
+            </div>
           )}
         </div>
 
@@ -714,7 +715,7 @@ export default function SystemConfigPage() {
         {/* Flags by Category */}
         <div className="space-y-6">
           {Object.entries(flagsByCategory).map(([category, categoryFlags]: [string, any]) => (
-            <div key={category} className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <div key={category} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 capitalize">
                 {category.replace('_', ' ')}
               </h3>
@@ -749,23 +750,23 @@ export default function SystemConfigPage() {
                     </div>
                     <div className="ml-4 flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedFeatureFlag(flag)
                           setEditFeatureFlagOpen(true)
                         }}
-                        className="px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className={actionButtonStyles.edit}
+                        title="Edit"
                       >
-                        Edit
+                        <EditIcon />
                       </button>
                       <button
+                        type="button"
                         onClick={() => toggleFeatureFlag.mutate({ flag_id: flag.id, enabled: !flag.enabled })}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          flag.enabled
-                            ? 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800'
-                        }`}
+                        className={flag.enabled ? actionButtonStyles.toggleActive : actionButtonStyles.toggleInactive}
+                        title={flag.enabled ? 'Disable' : 'Enable'}
                       >
-                        {flag.enabled ? 'Disable' : 'Enable'}
+                        <ToggleIcon />
                       </button>
                     </div>
                   </div>
@@ -792,65 +793,22 @@ export default function SystemConfigPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          System Configuration
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage system settings, subscription plans, and feature flags
-        </p>
-      </div>
+      <PageHeader
+        title="System Configuration"
+        description="Manage system settings, subscription plans, and feature flags"
+      />
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('system-config')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'system-config'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            ⚙️ System Config
-          </button>
-          <button
-            onClick={() => setActiveTab('subscription-config')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'subscription-config'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            💳 Subscription Config
-          </button>
-          <button
-            onClick={() => setActiveTab('feature-flags')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'feature-flags'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            🚩 Feature Flags
-          </button>
-        </nav>
-      </div>
+      <TabNav
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={(v) => setActiveTab(v as TabType)}
+      />
 
       {/* Tab Content */}
-      {systemConfigLoading && activeTab === 'system-config' && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">Loading...</p>
-        </div>
-      )}
+      {systemConfigLoading && activeTab === 'system-config' && <LoadingState label="Loading system configuration..." />}
       {!systemConfigLoading && activeTab === 'system-config' && renderSystemConfigTab()}
       {activeTab === 'subscription-config' && renderSubscriptionConfigTab()}
-      {featureFlagsLoading && activeTab === 'feature-flags' && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">Loading...</p>
-        </div>
-      )}
+      {featureFlagsLoading && activeTab === 'feature-flags' && <LoadingState label="Loading feature flags..." />}
       {!featureFlagsLoading && activeTab === 'feature-flags' && renderFeatureFlagsTab()}
 
       {/* Edit Dialogs */}

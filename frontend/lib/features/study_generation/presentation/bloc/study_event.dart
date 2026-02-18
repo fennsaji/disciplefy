@@ -206,14 +206,19 @@ class MarkStudyGuideCompleteRequested extends StudyEvent {
   /// Whether the user scrolled to the bottom of the study guide.
   final bool scrolledToBottom;
 
+  /// When true, bypasses auto-completion conditions (user tapped Complete Study manually).
+  final bool isManual;
+
   const MarkStudyGuideCompleteRequested({
     required this.guideId,
     required this.timeSpentSeconds,
     required this.scrolledToBottom,
+    this.isManual = false,
   });
 
   @override
-  List<Object?> get props => [guideId, timeSpentSeconds, scrolledToBottom];
+  List<Object?> get props =>
+      [guideId, timeSpentSeconds, scrolledToBottom, isManual];
 }
 
 // ==================== Streaming Events ====================

@@ -6,6 +6,12 @@ interface UpdateSubscriptionRequest {
   new_tier: 'free' | 'standard' | 'plus' | 'premium'
   effective_date?: string
   reason?: string
+  // Extended fields forwarded from admin panel
+  new_status?: string
+  new_start_date?: string
+  new_end_date?: string
+  plan_name?: string
+  billing_cycle?: 'monthly' | 'yearly'
 }
 
 Deno.serve(async (req) => {
@@ -95,19 +101,11 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get the plan details with provider pricing for the new tier by plan_code
+    // Step 1: Get the plan (free plan has no provider rows — must not use INNER join)
     const { data: plan, error: planError } = await adminSupabase
       .from('subscription_plans')
-      .select(`
-        *,
-        subscription_plan_providers!inner (
-          base_price_minor,
-          currency,
-          provider
-        )
-      `)
+      .select('*')
       .eq('plan_code', planCode)
-      .eq('subscription_plan_providers.provider', 'razorpay')
       .maybeSingle()
 
     if (!plan) {
@@ -118,21 +116,35 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Extract pricing from the plan (from the joined subscription_plan_providers)
-    const pricing = Array.isArray(plan.subscription_plan_providers)
-      ? plan.subscription_plan_providers[0]
-      : plan.subscription_plan_providers
+    // Step 2: Get Razorpay pricing separately (optional — free plan has none)
+    const { data: providerRow } = await adminSupabase
+      .from('subscription_plan_providers')
+      .select('base_price_minor, currency')
+      .eq('plan_id', plan.id)
+      .eq('provider', 'razorpay')
+      .maybeSingle()
 
-    const basePriceMinor = pricing?.base_price_minor || null
-    const currency = pricing?.currency || 'INR'
+    // amount_paise has a CHECK (amount_paise > 0) constraint — use NULL for free/zero-price plans
+    const basePriceMinor = (providerRow?.base_price_minor && providerRow.base_price_minor > 0)
+      ? providerRow.base_price_minor
+      : null
+    const currency = providerRow?.currency ?? 'INR'
 
-    // Calculate period end (1 year from start for admin subscriptions)
-    const periodEnd = new Date(effectiveDate)
-    periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+    // Use 'system' provider for free/zero-price plans (no payment provider)
+    const subscriptionProvider = basePriceMinor ? 'razorpay' : 'system'
 
-    // Billing cycle setup (12 months for yearly admin subscriptions)
-    const totalCycles = 12
-    const remainingCycles = 12
+    // Resolve status — honour admin override if provided, else default to 'active'
+    const newStatus = body.new_status || 'active'
+
+    // Resolve period end — honour admin override if provided
+    const periodEnd = body.new_end_date
+      ? new Date(body.new_end_date)
+      : (() => { const d = new Date(effectiveDate); d.setFullYear(d.getFullYear() + 1); return d })()
+
+    // Billing cycle (monthly = 12 cycles, yearly = 1)
+    const isYearly = (body.billing_cycle || 'monthly') === 'yearly'
+    const totalCycles = isYearly ? 1 : 12
+    const remainingCycles = totalCycles
 
     // Metadata for admin-created subscriptions
     const adminMetadata = {
@@ -155,7 +167,7 @@ Deno.serve(async (req) => {
         .update({
           plan_id: plan.id,
           plan_type: `${planCode}_monthly`, // e.g., premium_monthly
-          status: 'active',
+          status: newStatus,
           current_period_start: effectiveDate,
           current_period_end: periodEnd.toISOString(),
           next_billing_at: periodEnd.toISOString(), // Next renewal date
@@ -163,10 +175,10 @@ Deno.serve(async (req) => {
           remaining_count: remainingCycles,
           amount_paise: basePriceMinor,
           currency: currency,
-          provider: 'razorpay', // Use razorpay for admin manual subscriptions
-          provider_subscription_id: `admin_manual_${Date.now()}`, // New provider ID for tracking
-          metadata: adminMetadata, // Track admin creation details
-          cancelled_at: null, // Clear cancellation if previously cancelled
+          provider: subscriptionProvider,
+          provider_subscription_id: `admin_manual_${Date.now()}`,
+          metadata: adminMetadata,
+          cancelled_at: null,
           cancellation_reason: null,
           cancel_at_cycle_end: false
         })
@@ -184,7 +196,7 @@ Deno.serve(async (req) => {
           user_id: body.target_user_id,
           plan_id: plan.id,
           plan_type: `${planCode}_monthly`, // e.g., premium_monthly
-          status: 'active',
+          status: newStatus,
           current_period_start: effectiveDate,
           current_period_end: periodEnd.toISOString(),
           next_billing_at: periodEnd.toISOString(), // Next renewal date
@@ -193,9 +205,9 @@ Deno.serve(async (req) => {
           remaining_count: remainingCycles,
           amount_paise: basePriceMinor,
           currency: currency,
-          provider: 'razorpay', // Use razorpay for admin manual subscriptions
-          provider_subscription_id: `admin_manual_${Date.now()}`, // Prefix with admin_manual to identify
-          metadata: adminMetadata // Track admin creation details
+          provider: subscriptionProvider,
+          provider_subscription_id: `admin_manual_${Date.now()}`,
+          metadata: adminMetadata
         })
         .select()
         .maybeSingle()

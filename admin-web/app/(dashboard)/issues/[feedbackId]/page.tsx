@@ -3,6 +3,7 @@
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
+import { LoadingState } from '@/components/ui/loading-spinner'
 
 interface Feedback {
   id: string
@@ -82,14 +83,7 @@ export default function FeedbackDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading feedback...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState label="Loading feedback..." />
   }
 
   if (!feedback) {

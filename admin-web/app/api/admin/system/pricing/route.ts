@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
         id,
         provider,
         plan_id,
+        provider_plan_id,
+        product_id,
         base_price_minor,
         currency,
         region,
@@ -73,6 +75,8 @@ export async function GET(request: NextRequest) {
       currency: p.currency,
       region: p.region,
       isActive: p.is_active,
+      providerPlanId: p.provider_plan_id,  // For modal (Razorpay plan ID)
+      productId: p.product_id,  // For modal (IAP product ID)
       // Calculate formatted price
       formattedPrice: formatPrice(p.base_price_minor, p.currency)
     })) || []

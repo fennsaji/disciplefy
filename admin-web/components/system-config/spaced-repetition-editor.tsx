@@ -130,7 +130,7 @@ export default function SpacedRepetitionEditor({
     const readOnlySchedule = calculateSampleSchedule(initialSettings)
 
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -142,9 +142,9 @@ export default function SpacedRepetitionEditor({
           </div>
           <button
             onClick={onEditStart}
-            className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
 
@@ -155,7 +155,7 @@ export default function SpacedRepetitionEditor({
             { label: 'Min Ease Factor', value: initialSettings.minEaseFactor.toFixed(1), description: 'Minimum difficulty floor' },
             { label: 'Max Interval', value: `${initialSettings.maxIntervalDays} days`, description: 'Maximum days between reviews' },
           ].map(({ label, value, description }) => (
-            <div key={label} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div key={label} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {label}
               </div>
@@ -191,7 +191,7 @@ export default function SpacedRepetitionEditor({
 
   // Edit mode view
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           🧠 Spaced Repetition Algorithm (SM-2)
