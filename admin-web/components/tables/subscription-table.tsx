@@ -105,7 +105,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                         {format(new Date(activeSub.start_date), 'MMM dd, yyyy')}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-500">
-                        to {format(new Date(activeSub.end_date), 'MMM dd, yyyy')}
+                        to {format(new Date(activeSub.end_date || ''), 'MMM dd, yyyy')}
                       </span>
                     </div>
                   ) : (

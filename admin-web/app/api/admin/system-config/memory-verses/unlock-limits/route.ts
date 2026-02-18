@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
-    await supabase.from('admin_actions').insert({
+    await supabaseAdmin.from('admin_actions').insert({
       admin_user_id: user.id,
       action_type: 'update_unlock_limits',
       target_user_id: null,
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         standard,
         plus,
         premium,
-        admin_email: profile.email,
+        admin_user_id: user.id,
       },
     })
 

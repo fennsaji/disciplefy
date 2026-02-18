@@ -94,24 +94,24 @@ export async function GET(request: NextRequest) {
  * POST /api/admin/system-config/memory-verses
  * Update multiple memory verse configuration entries
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-
-    // Verify admin authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    // Verify user authentication
+    const supabaseUser = await createClient()
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check admin status
-    const { data: profile } = await supabase
+    // Verify admin status
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
-      .select('is_admin, email')
+      .select('is_admin')
       .eq('id', user.id)
       .single()
 
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
 
     // Update each config entry
     const updatePromises = updates.map(async (update: { key: string; value: string }) => {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('system_config')
         .update({
           value: update.value,
@@ -145,14 +145,14 @@ export async function POST(request: Request) {
       }
 
       // Log admin action
-      await supabase.from('admin_actions').insert({
+      await supabaseAdmin.from('admin_actions').insert({
         admin_user_id: user.id,
         action_type: 'update_memory_verse_config',
         target_user_id: null,
         details: {
           config_key: update.key,
           new_value: update.value,
-          admin_email: profile.email,
+          admin_user_id: user.id,
         },
       })
 

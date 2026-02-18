@@ -83,14 +83,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
-    await supabase.from('admin_actions').insert({
+    await supabaseAdmin.from('admin_actions').insert({
       admin_user_id: user.id,
       action_type: 'update_practice_modes',
       target_user_id: null,
       details: {
         free_modes: free,
         paid_modes: paid,
-        admin_email: profile.email,
+        admin_user_id: user.id,
       },
     })
 
