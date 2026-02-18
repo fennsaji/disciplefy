@@ -5,7 +5,7 @@
  * Documentation: https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.subscriptionsv2
  */
 
-import { SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getIAPConfig } from './iap-config-service.ts'
 import * as jose from 'npm:jose@5'
 

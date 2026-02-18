@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
  * Memory Verse Configuration

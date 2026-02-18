@@ -5,7 +5,7 @@
  * Stores receipts and validation results in database.
  */
 
-import { SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { validateGooglePlayReceipt, acknowledgeGooglePlayPurchase, GooglePlayReceipt } from './google-play-validator.ts'
 import { validateAppleReceipt, AppleReceiptData } from './apple-appstore-validator.ts'
 import { IAPProvider, IAPEnvironment } from './iap-config-service.ts'
