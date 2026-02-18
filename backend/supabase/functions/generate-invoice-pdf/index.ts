@@ -13,7 +13,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1'
 
 // ============================================================================
 // Types
