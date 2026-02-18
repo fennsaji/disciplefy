@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/android-deploy-testers.yml'
   workflow_dispatch: # Allow manual triggering
 
 env:
