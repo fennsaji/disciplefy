@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/logger.dart';
 
 /// API service for saving/unsaving study guides
 class SaveGuideApiService {
@@ -22,20 +23,20 @@ class SaveGuideApiService {
     required bool save,
   }) async {
     try {
-      print(
+      Logger.debug(
           '🔍 [SAVE_GUIDE] Starting toggleSaveGuide - guideId: $guideId, save: $save');
 
       final headers = await _getApiHeaders();
-      print('🔍 [SAVE_GUIDE] Got headers: ${headers.keys.join(', ')}');
+      Logger.debug('🔍 [SAVE_GUIDE] Got headers: ${headers.keys.join(', ')}');
 
       final body = json.encode({
         'guide_id': guideId,
         'action': save ? 'save' : 'unsave',
       });
-      print('🔍 [SAVE_GUIDE] Request body: $body');
+      Logger.info('🔍 [SAVE_GUIDE] Request body: $body');
 
       final url = '$_baseUrl$_saveGuideEndpoint';
-      print('🔍 [SAVE_GUIDE] Making POST request to: $url');
+      Logger.debug('🔍 [SAVE_GUIDE] Making POST request to: $url');
 
       final response = await _httpClient
           .post(
@@ -45,8 +46,8 @@ class SaveGuideApiService {
           )
           .timeout(const Duration(seconds: 10));
 
-      print('🔍 [SAVE_GUIDE] Response status: ${response.statusCode}');
-      print('🔍 [SAVE_GUIDE] Response body: ${response.body}');
+      Logger.info('🔍 [SAVE_GUIDE] Response status: ${response.statusCode}');
+      Logger.debug('🔍 [SAVE_GUIDE] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -93,8 +94,8 @@ class SaveGuideApiService {
         );
       }
     } catch (e) {
-      print('🚨 [SAVE_GUIDE] Error caught: $e');
-      print('🚨 [SAVE_GUIDE] Error type: ${e.runtimeType}');
+      Logger.error('🚨 [SAVE_GUIDE] Error caught: $e');
+      Logger.debug('🚨 [SAVE_GUIDE] Error type: ${e.runtimeType}');
 
       if (e is AuthenticationException || e is ServerException) {
         rethrow;
@@ -118,10 +119,10 @@ class SaveGuideApiService {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null && session.accessToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer ${session.accessToken}';
-      print(
+      Logger.debug(
           '🔐 [SAVE_GUIDE] Using Supabase session token for user: ${session.user.id}');
     } else {
-      print('🔐 [SAVE_GUIDE] No valid session found');
+      Logger.debug('🔐 [SAVE_GUIDE] No valid session found');
       throw const AuthenticationException(
         message: 'Authentication required to save guides',
         code: 'UNAUTHORIZED',
@@ -140,25 +141,28 @@ class SaveGuideApiService {
     required String guideId,
     required int timeSpentSeconds,
     required bool scrolledToBottom,
+    bool isManual = false,
   }) async {
     try {
-      print(
+      Logger.debug(
           '📋 [MARK_COMPLETE] Starting markStudyGuideComplete - guideId: $guideId');
-      print(
+      Logger.debug(
           '📋 [MARK_COMPLETE] Time spent: ${timeSpentSeconds}s, Scrolled: $scrolledToBottom');
 
       final headers = await _getApiHeaders();
-      print('📋 [MARK_COMPLETE] Got headers: ${headers.keys.join(', ')}');
+      Logger.debug(
+          '📋 [MARK_COMPLETE] Got headers: ${headers.keys.join(', ')}');
 
       final body = json.encode({
         'study_guide_id': guideId,
         'time_spent_seconds': timeSpentSeconds,
         'scrolled_to_bottom': scrolledToBottom,
+        if (isManual) 'is_manual': true,
       });
-      print('📋 [MARK_COMPLETE] Request body: $body');
+      Logger.info('📋 [MARK_COMPLETE] Request body: $body');
 
       final url = '$_baseUrl/functions/v1/mark-study-guide-complete';
-      print('📋 [MARK_COMPLETE] Making POST request to: $url');
+      Logger.debug('📋 [MARK_COMPLETE] Making POST request to: $url');
 
       final response = await _httpClient
           .post(
@@ -168,12 +172,12 @@ class SaveGuideApiService {
           )
           .timeout(const Duration(seconds: 10));
 
-      print('📋 [MARK_COMPLETE] Response status: ${response.statusCode}');
-      print('📋 [MARK_COMPLETE] Response body: ${response.body}');
+      Logger.info('📋 [MARK_COMPLETE] Response status: ${response.statusCode}');
+      Logger.debug('📋 [MARK_COMPLETE] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
-        print('📋 [MARK_COMPLETE] ✅ Successfully marked as complete');
+        Logger.debug('📋 [MARK_COMPLETE] ✅ Successfully marked as complete');
         return jsonData['success'] == true;
       } else if (response.statusCode == 401) {
         throw const AuthenticationException(
@@ -225,8 +229,8 @@ class SaveGuideApiService {
         );
       }
     } catch (e) {
-      print('🚨 [MARK_COMPLETE] Error caught: $e');
-      print('🚨 [MARK_COMPLETE] Error type: ${e.runtimeType}');
+      Logger.error('🚨 [MARK_COMPLETE] Error caught: $e');
+      Logger.debug('🚨 [MARK_COMPLETE] Error type: ${e.runtimeType}');
 
       if (e is AuthenticationException || e is ServerException) {
         rethrow;

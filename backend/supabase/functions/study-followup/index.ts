@@ -16,7 +16,9 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
+import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Request payload for follow-up questions
@@ -238,8 +240,14 @@ function buildLLMContext(
  */
 async function handleStudyFollowUp(
   req: Request,
-  { llmService, tokenService, analyticsLogger, securityValidator, authService, supabaseServiceClient }: ServiceContainer
+  services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
+  // Destructure services
+  const { llmService, tokenService, analyticsLogger, securityValidator, authService, supabaseServiceClient, usageLoggingService, costTrackingService } = services
+
   console.log('🚀 [FOLLOW-UP] Starting follow-up question handler')
 
   const corsHeaders = getCorsHeaders(req.headers.get('origin'))
@@ -300,19 +308,25 @@ async function handleStudyFollowUp(
 
   // Determine user plan using AuthService (use authReq with proper headers)
   const userPlan = await authService.getUserPlan(authReq)
+  console.log(`👤 [FOLLOW-UP] User plan: ${userPlan}`)
 
-  // Block free plan users from using follow-up feature
-  if (userPlan === 'free') {
-    console.warn('🚫 [FOLLOW-UP] Free plan user attempted to use follow-up feature')
+  // Feature flag validation - Check if study_chat is enabled for user's plan
+  const hasFollowUpAccess = await isFeatureEnabledForPlan('study_chat', userPlan)
+
+  if (!hasFollowUpAccess) {
+    console.warn(`⛔ [FOLLOW-UP] Feature access denied: study_chat not available for plan ${userPlan}`)
     return new Response(
       JSON.stringify({
         error: 'FEATURE_NOT_AVAILABLE',
-        message: 'Follow-up questions are not available for free plan. Please upgrade to Standard or Premium to continue conversations.',
+        message: `Study Chat is not available for your current plan (${userPlan}). Please upgrade to Standard, Plus, or Premium to ask follow-up questions.`,
+        requiredFeature: 'study_chat',
         plan: userPlan
       }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
+
+  console.log(`✅ [FOLLOW-UP] Feature access granted: study_chat available for plan ${userPlan}`)
 
   // Parse request parameters
   let study_guide_id: string
@@ -600,7 +614,7 @@ async function handleStudyFollowUp(
             const userMessage = `Follow-up question: ${question}`
 
             // Generate follow-up response using LLM service
-            const response = await llmService.generateFollowUpResponse(
+            const { response, usage: followUpUsage } = await llmService.generateFollowUpResponse(
               { systemMessage, userMessage },
               targetLanguage
             )
@@ -637,6 +651,34 @@ async function handleStudyFollowUp(
                   }
 
                   console.log('💾 [FOLLOW-UP] Assistant message stored:', assistantMessage.id)
+
+                  // Log usage for profitability tracking (streaming path)
+                  try {
+                    await usageLoggingService.logUsage({
+                      userId: userContext.userId || userContext.sessionId || 'anonymous',
+                      tier: userPlan,
+                      featureName: 'study_followup',
+                      operationType: 'create',
+                      tokensConsumed: 5, // App tokens for follow-up
+                      llmProvider: followUpUsage.provider,
+                      llmModel: followUpUsage.model,
+                      llmInputTokens: followUpUsage.inputTokens,
+                      llmOutputTokens: followUpUsage.outputTokens,
+                      llmCostUsd: followUpUsage.costUsd,
+                      requestMetadata: {
+                        study_guide_id: study_guide_id,
+                        conversation_id: conversation.id,
+                        question_length: question.length
+                      },
+                      responseMetadata: {
+                        success: true,
+                        response_length: response.length
+                      }
+                    })
+                    console.log(`💰 [FOLLOW-UP] Usage logged: ${followUpUsage.totalTokens} tokens, $${followUpUsage.costUsd.toFixed(4)}`)
+                  } catch (logError) {
+                    console.error('⚠️ [FOLLOW-UP] Failed to log usage:', logError)
+                  }
 
                   controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                     type: 'complete',
@@ -691,7 +733,7 @@ async function handleStudyFollowUp(
       const userMessage = `Follow-up question: ${question}`
 
       // Generate follow-up response using LLM service
-      const response = await llmService.generateFollowUpResponse(
+      const { response, usage: followUpUsage } = await llmService.generateFollowUpResponse(
         { systemMessage, userMessage },
         targetLanguage
       )
@@ -717,6 +759,34 @@ async function handleStudyFollowUp(
       }
 
       console.log('💾 [FOLLOW-UP] Assistant message stored (JSON):', assistantMessage.id)
+
+      // Log usage for profitability tracking (JSON path)
+      try {
+        await usageLoggingService.logUsage({
+          userId: userContext.userId || userContext.sessionId || 'anonymous',
+          tier: userPlan,
+          featureName: 'study_followup',
+          operationType: 'create',
+          tokensConsumed: 5, // App tokens for follow-up
+          llmProvider: followUpUsage.provider,
+          llmModel: followUpUsage.model,
+          llmInputTokens: followUpUsage.inputTokens,
+          llmOutputTokens: followUpUsage.outputTokens,
+          llmCostUsd: followUpUsage.costUsd,
+          requestMetadata: {
+            study_guide_id: study_guide_id,
+            conversation_id: conversation.id,
+            question_length: question.length
+          },
+          responseMetadata: {
+            success: true,
+            response_length: response.length
+          }
+        })
+        console.log(`💰 [FOLLOW-UP] Usage logged (JSON): ${followUpUsage.totalTokens} tokens, $${followUpUsage.costUsd.toFixed(4)}`)
+      } catch (usageLogError) {
+        console.error('Usage logging failed (JSON):', usageLogError)
+      }
 
       const responseObj = {
         success: true,

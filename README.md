@@ -22,9 +22,11 @@
 
 ## 🚀 **Quick Start**
 
+> ⚠️ **CRITICAL:** Local development requires **Supabase CLI v2.69.0** specifically. See [Local Development Setup](.github/LOCAL_DEVELOPMENT_SETUP.md) for installation instructions.
+
 ### Prerequisites
 ```bash
-Flutter SDK >=3.16.0 • Node.js >=18.0.0 • Supabase CLI • Docker Desktop
+Flutter SDK >=3.16.0 • Node.js >=18.0.0 • Supabase CLI v2.69.0 • Docker Desktop
 ```
 
 ### Setup

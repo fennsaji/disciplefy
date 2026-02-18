@@ -20,6 +20,8 @@ interface MarkCompleteRequest {
   study_guide_id: string;
   time_spent_seconds: number;
   scrolled_to_bottom: boolean;
+  /** When true, skips auto-completion condition checks (user manually tapped Complete Study) */
+  is_manual?: boolean;
 }
 
 // ============================================================================
@@ -31,7 +33,7 @@ function validateRequest(body: any): MarkCompleteRequest {
     throw new AppError('VALIDATION_ERROR', 'Request body is required', 400);
   }
 
-  const { study_guide_id, time_spent_seconds, scrolled_to_bottom } = body;
+  const { study_guide_id, time_spent_seconds, scrolled_to_bottom, is_manual } = body;
 
   // Validate study_guide_id
   if (!study_guide_id || typeof study_guide_id !== 'string') {
@@ -64,6 +66,7 @@ function validateRequest(body: any): MarkCompleteRequest {
     study_guide_id,
     time_spent_seconds,
     scrolled_to_bottom,
+    is_manual: is_manual === true,
   };
 }
 
@@ -109,17 +112,19 @@ async function handleMarkStudyGuideComplete(
 
   // Parse and validate request body
   const body = await req.json();
-  const { study_guide_id, time_spent_seconds, scrolled_to_bottom } =
+  const { study_guide_id, time_spent_seconds, scrolled_to_bottom, is_manual } =
     validateRequest(body);
 
   console.log(`📋 [MARK_COMPLETE] Study guide: ${study_guide_id}`);
   console.log(`📋 [MARK_COMPLETE] Time spent: ${time_spent_seconds}s`);
-  console.log(
-    `📋 [MARK_COMPLETE] Scrolled to bottom: ${scrolled_to_bottom}`
-  );
+  console.log(`📋 [MARK_COMPLETE] Scrolled to bottom: ${scrolled_to_bottom}`);
+  console.log(`📋 [MARK_COMPLETE] Manual completion: ${is_manual}`);
 
-  // Validate completion conditions
-  validateCompletionConditions(time_spent_seconds, scrolled_to_bottom);
+  // Validate completion conditions only for auto-completion.
+  // Manual taps of "Complete Study" always bypass these checks.
+  if (!is_manual) {
+    validateCompletionConditions(time_spent_seconds, scrolled_to_bottom);
+  }
 
   const supabase = services.supabaseServiceClient;
 

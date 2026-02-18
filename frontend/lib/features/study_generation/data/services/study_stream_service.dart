@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/utils/event_source_bridge.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../domain/entities/study_stream_event.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Service for streaming study guide generation via SSE
 ///
@@ -50,7 +50,7 @@ class StudyStreamService {
     final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
     final url = uri.toString();
 
-    debugPrint('🌊 [STUDY_STREAM] Connecting to: $url');
+    Logger.debug('🌊 [STUDY_STREAM] Connecting to: $url');
 
     // Get auth headers for fetchEventSource (supports custom headers unlike native EventSource)
     final authHeaders = await _getAuthHeaders();
@@ -66,7 +66,7 @@ class StudyStreamService {
     );
 
     await for (final rawData in stream) {
-      debugPrint('🌊 [STUDY_STREAM] Raw: $rawData');
+      Logger.debug('🌊 [STUDY_STREAM] Raw: $rawData');
 
       // fetch-event-source library already parses SSE format and gives us just the data
       // The rawData is the JSON content directly (no "event:" or "data:" prefixes)
@@ -79,7 +79,7 @@ class StudyStreamService {
 
       try {
         final event = StudyStreamEvent.parse(eventType, rawData);
-        debugPrint('🌊 [STUDY_STREAM] Event: $eventType');
+        Logger.debug('🌊 [STUDY_STREAM] Event: $eventType');
         yield event;
 
         // If we got an error or complete event, we're done
@@ -88,7 +88,7 @@ class StudyStreamService {
           break;
         }
       } catch (e) {
-        debugPrint('🌊 [STUDY_STREAM] Parse error: $e');
+        Logger.debug('🌊 [STUDY_STREAM] Parse error: $e');
         yield StudyStreamErrorEvent(
           code: 'PARSE_ERROR',
           message: 'Failed to parse stream event: $e',
@@ -98,7 +98,7 @@ class StudyStreamService {
       }
     }
 
-    debugPrint('🌊 [STUDY_STREAM] Stream ended');
+    Logger.debug('🌊 [STUDY_STREAM] Stream ended');
   }
 
   /// Get authentication headers for fetchEventSource
@@ -114,7 +114,7 @@ class StudyStreamService {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null && session.accessToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer ${session.accessToken}';
-      debugPrint(
+      Logger.debug(
           '🔐 [STUDY_STREAM] Auth header set for user: ${session.user.id}');
     }
 

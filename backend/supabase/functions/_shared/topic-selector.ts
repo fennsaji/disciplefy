@@ -683,7 +683,7 @@ export async function selectTopicsForYouWithLearningPath(
       `)
       .eq('user_id', userId)
       .is('completed_at', null)
-      .not('started_at', 'is', null)
+      .not('enrolled_at', 'is', null)
       .order('last_activity_at', { ascending: false })
       .limit(1);
 

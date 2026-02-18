@@ -11,7 +11,7 @@ import type { StudyMode } from '../services/llm-types.ts'
 /**
  * User subscription plan types
  */
-export type UserPlan = 'free' | 'standard' | 'premium'
+export type UserPlan = 'free' | 'standard' | 'plus' | 'premium'
 
 /**
  * Supported languages with different token costs
@@ -101,7 +101,7 @@ export interface TokenPurchaseResult {
   readonly success: boolean
   readonly tokens_purchased: number
   readonly cost_paid: number            // Amount in rupees
-  readonly tokens_per_rupee: number     // Exchange rate (10 tokens = ₹1)
+  readonly tokens_per_rupee: number     // Exchange rate (4 tokens = ₹1)
   readonly new_token_balance: TokenInfo
   readonly payment_id: string
   readonly error_message?: string
@@ -156,24 +156,31 @@ export interface UserPlanConfig {
 
 /**
  * Default user plan configurations
- * 
+ *
  * Defines the token allocation and features for each plan:
- * - Free: 20 tokens daily (anonymous users)
- * - Standard: 100 tokens daily (authenticated users) 
+ * - Free: 8 tokens daily (anonymous users)
+ * - Standard: 20 tokens daily (authenticated users)
+ * - Plus: 50 tokens daily (subscription users)
  * - Premium: Unlimited tokens (admin/subscription users)
  */
 export const DEFAULT_PLAN_CONFIGS: Record<UserPlan, UserPlanConfig> = {
   free: {
-    dailyLimit: 20,
+    dailyLimit: 8,
     isUnlimited: false,
     canPurchaseTokens: true,     // Free authenticated users can purchase tokens
-    description: 'Free plan users with daily token allocation'
+    description: 'Free plan users with 8 daily tokens'
   },
   standard: {
-    dailyLimit: 100,
+    dailyLimit: 20,
     isUnlimited: false,
     canPurchaseTokens: true,     // Can purchase additional tokens
-    description: 'Authenticated users with increased daily allocation'
+    description: 'Authenticated users with 20 daily tokens + purchase option'
+  },
+  plus: {
+    dailyLimit: 50,
+    isUnlimited: false,
+    canPurchaseTokens: true,     // Can purchase additional tokens
+    description: 'Plus plan users with 50 daily tokens + purchase option'
   },
   premium: {
     dailyLimit: 999999999,       // Effectively unlimited
@@ -230,9 +237,9 @@ export interface TokenServiceConfig {
   readonly tokenCosts: TokenCostConfig
   readonly planConfigs: Record<UserPlan, UserPlanConfig>
   readonly purchaseConfig: {
-    readonly tokensPerRupee: number     // 10 tokens = ₹1
+    readonly tokensPerRupee: number     // 4 tokens = ₹1
     readonly minPurchase: number        // Minimum tokens purchasable
-    readonly maxPurchase: number        // Maximum tokens purchasable  
+    readonly maxPurchase: number        // Maximum tokens purchasable
   }
 }
 
@@ -243,7 +250,7 @@ export const DEFAULT_TOKEN_SERVICE_CONFIG: TokenServiceConfig = {
   tokenCosts: DEFAULT_TOKEN_COSTS,
   planConfigs: DEFAULT_PLAN_CONFIGS,
   purchaseConfig: {
-    tokensPerRupee: 10,
+    tokensPerRupee: 4,
     minPurchase: 1,
     maxPurchase: 10000
   }

@@ -12,12 +12,12 @@ import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { TokenPurchaseRequest } from '../_shared/types/token-types.ts'
 import Razorpay from 'npm:razorpay'
-import { createHmac } from 'node:crypto'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { AuthService } from '../_shared/services/auth-service.ts'
 import type { RateLimiter } from '../_shared/services/rate-limiter.ts'
 import type { TokenService } from '../_shared/services/token-service.ts'
 import type { AnalyticsLogger } from '../_shared/services/analytics-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Token purchase handler - main orchestrator
@@ -25,6 +25,9 @@ import type { AnalyticsLogger } from '../_shared/services/analytics-service.ts'
  * This handler processes token purchases for authenticated users
  */
 async function handleTokenPurchase(req: Request, services: ServiceContainer): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     const userContext = await authenticateAndAuthorize(req, services.authService, services.rateLimiter, services.tokenService)
     const { tokenAmount, paymentId } = await parseAndValidateRequestBody(req)

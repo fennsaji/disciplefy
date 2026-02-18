@@ -8,6 +8,7 @@ import '../../domain/entities/study_topics_filter.dart';
 import '../../domain/repositories/study_topics_repository.dart';
 import '../../domain/utils/topic_search_utils.dart';
 import '../datasources/study_topics_remote_datasource.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Cache entry for storing data with timestamp
 class _CacheEntry<T> {
@@ -65,7 +66,7 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
         if (!cacheEntry.isExpired(_topicsCacheExpiry)) {
           if (kDebugMode) {
             final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
-            print(
+            Logger.debug(
                 '✅ [STUDY_TOPICS_REPO] Returning cached topics (cached ${cacheAge.inMinutes} minutes ago)');
           }
 
@@ -79,10 +80,8 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
         }
       }
 
-      if (kDebugMode) {
-        print(
-            '🚀 [STUDY_TOPICS_REPO] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} topics...');
-      }
+      Logger.debug(
+          '🚀 [STUDY_TOPICS_REPO] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} topics...');
 
       // Create filter without search for API call (search is client-side)
       final apiFilter = filter.copyWith(searchQuery: '');
@@ -94,10 +93,8 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
       _topicsCache[cacheKey] =
           _TopicsCacheEntry(result.topics, result.total, DateTime.now());
 
-      if (kDebugMode) {
-        print(
-            '💾 [STUDY_TOPICS_REPO] Cached ${result.topics.length} topics (total: ${result.total}) for ${_topicsCacheExpiry.inHours} hours');
-      }
+      Logger.debug(
+          '💾 [STUDY_TOPICS_REPO] Cached ${result.topics.length} topics (total: ${result.total}) for ${_topicsCacheExpiry.inHours} hours');
 
       // Apply client-side search filtering
       final filteredTopics =
@@ -105,24 +102,16 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
 
       return Right(filteredTopics);
     } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('🌐 [STUDY_TOPICS_REPO] Network error: ${e.message}');
-      }
+      Logger.error('🌐 [STUDY_TOPICS_REPO] Network error: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('🔥 [STUDY_TOPICS_REPO] Server error: ${e.message}');
-      }
+      Logger.error('🔥 [STUDY_TOPICS_REPO] Server error: ${e.message}');
       return Left(ServerFailure(message: e.message));
     } on ClientException catch (e) {
-      if (kDebugMode) {
-        print('📱 [STUDY_TOPICS_REPO] Client error: ${e.message}');
-      }
+      Logger.error('📱 [STUDY_TOPICS_REPO] Client error: ${e.message}');
       return Left(ClientFailure(message: e.message));
     } catch (e) {
-      if (kDebugMode) {
-        print('💥 [STUDY_TOPICS_REPO] Unexpected error: $e');
-      }
+      Logger.error('💥 [STUDY_TOPICS_REPO] Unexpected error: $e');
       return Left(ClientFailure(message: 'Unexpected error occurred: $e'));
     }
   }
@@ -139,7 +128,7 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
         if (!cacheEntry.isExpired(_categoriesCacheExpiry)) {
           if (kDebugMode) {
             final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
-            print(
+            Logger.debug(
                 '✅ [STUDY_TOPICS_REPO] Returning cached categories for $language (cached ${cacheAge.inMinutes} minutes ago)');
           }
           return Right(cacheEntry.data);
@@ -149,10 +138,8 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
         }
       }
 
-      if (kDebugMode) {
-        print(
-            '🚀 [STUDY_TOPICS_REPO] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} categories for language: $language...');
-      }
+      Logger.debug(
+          '🚀 [STUDY_TOPICS_REPO] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} categories for language: $language...');
 
       // Fetch from remote data source
       final categories =
@@ -161,31 +148,21 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
       // Cache the results
       _categoriesCache[language] = _CacheEntry(categories, DateTime.now());
 
-      if (kDebugMode) {
-        print(
-            '💾 [STUDY_TOPICS_REPO] Cached ${categories.length} categories for $language for ${_categoriesCacheExpiry.inHours} hours');
-      }
+      Logger.debug(
+          '💾 [STUDY_TOPICS_REPO] Cached ${categories.length} categories for $language for ${_categoriesCacheExpiry.inHours} hours');
 
       return Right(categories);
     } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('🌐 [STUDY_TOPICS_REPO] Network error: ${e.message}');
-      }
+      Logger.error('🌐 [STUDY_TOPICS_REPO] Network error: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('🔥 [STUDY_TOPICS_REPO] Server error: ${e.message}');
-      }
+      Logger.error('🔥 [STUDY_TOPICS_REPO] Server error: ${e.message}');
       return Left(ServerFailure(message: e.message));
     } on ClientException catch (e) {
-      if (kDebugMode) {
-        print('📱 [STUDY_TOPICS_REPO] Client error: ${e.message}');
-      }
+      Logger.error('📱 [STUDY_TOPICS_REPO] Client error: ${e.message}');
       return Left(ClientFailure(message: e.message));
     } catch (e) {
-      if (kDebugMode) {
-        print('💥 [STUDY_TOPICS_REPO] Unexpected error: $e');
-      }
+      Logger.error('💥 [STUDY_TOPICS_REPO] Unexpected error: $e');
       return Left(ClientFailure(message: 'Unexpected error occurred: $e'));
     }
   }
@@ -203,10 +180,8 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
       if (_topicsCache.containsKey(cacheKey)) {
         final cacheEntry = _topicsCache[cacheKey]!;
         if (!cacheEntry.isExpired(_topicsCacheExpiry)) {
-          if (kDebugMode) {
-            print(
-                '✅ [STUDY_TOPICS_REPO] Returning cached total count: ${cacheEntry.total}');
-          }
+          Logger.debug(
+              '✅ [STUDY_TOPICS_REPO] Returning cached total count: ${cacheEntry.total}');
           return Right(cacheEntry.total);
         } else {
           // Remove expired cache entry
@@ -214,10 +189,8 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
         }
       }
 
-      if (kDebugMode) {
-        print(
-            '🚀 [STUDY_TOPICS_REPO] Cache miss - fetching topics to get total count...');
-      }
+      Logger.debug(
+          '🚀 [STUDY_TOPICS_REPO] Cache miss - fetching topics to get total count...');
 
       // Create filter without search for API call (search is client-side)
       // Also set a minimal limit since we only need the total count
@@ -230,33 +203,24 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
       _topicsCache[cacheKey] =
           _TopicsCacheEntry(result.topics, result.total, DateTime.now());
 
-      if (kDebugMode) {
-        print('✅ [STUDY_TOPICS_REPO] Fetched total count: ${result.total}');
-      }
+      Logger.info('✅ [STUDY_TOPICS_REPO] Fetched total count: ${result.total}');
 
       return Right(result.total);
     } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print(
-            '🌐 [STUDY_TOPICS_REPO] Network error in getTopicsCount: ${e.message}');
-      }
+      Logger.error(
+          '🌐 [STUDY_TOPICS_REPO] Network error in getTopicsCount: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
-      if (kDebugMode) {
-        print(
-            '🔥 [STUDY_TOPICS_REPO] Server error in getTopicsCount: ${e.message}');
-      }
+      Logger.error(
+          '🔥 [STUDY_TOPICS_REPO] Server error in getTopicsCount: ${e.message}');
       return Left(ServerFailure(message: e.message));
     } on ClientException catch (e) {
-      if (kDebugMode) {
-        print(
-            '📱 [STUDY_TOPICS_REPO] Client error in getTopicsCount: ${e.message}');
-      }
+      Logger.error(
+          '📱 [STUDY_TOPICS_REPO] Client error in getTopicsCount: ${e.message}');
       return Left(ClientFailure(message: e.message));
     } catch (e) {
-      if (kDebugMode) {
-        print('💥 [STUDY_TOPICS_REPO] Unexpected error in getTopicsCount: $e');
-      }
+      Logger.error(
+          '💥 [STUDY_TOPICS_REPO] Unexpected error in getTopicsCount: $e');
       return Left(ClientFailure(message: 'Unexpected error occurred: $e'));
     }
   }
@@ -265,9 +229,7 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
   void clearCache() {
     _topicsCache.clear();
     _categoriesCache.clear();
-    if (kDebugMode) {
-      print('🗑️ [STUDY_TOPICS_REPO] All caches cleared');
-    }
+    Logger.debug('🗑️ [STUDY_TOPICS_REPO] All caches cleared');
   }
 
   /// Generates cache key for topics based on filter criteria (excluding search)

@@ -9,7 +9,10 @@ import '../../data/services/transliteration_service.dart';
 import '../../domain/entities/practice_result_params.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
+import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
+import '../widgets/tier_locked_mode_dialog.dart';
+import '../widgets/unlock_limit_exceeded_dialog.dart';
 
 /// Unified Practice Results Page for all memory verse practice modes.
 ///
@@ -110,59 +113,93 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
     final accuracyColor =
         QualityCalculator.getAccuracyColor(params.accuracyPercentage);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleDone();
+    return BlocListener<MemoryVerseBloc, MemoryVerseState>(
+      listener: (context, state) {
+        // Handle tier-locked error
+        if (state is MemoryVerseError &&
+            state.code == 'PRACTICE_MODE_TIER_LOCKED') {
+          // Show tier-locked dialog
+          // Note: In production, we'd parse the error details from the failure
+          // For now, show a generic dialog
+          TierLockedModeDialog.show(
+            context,
+            mode: params.practiceMode,
+            currentTier: 'free', // TODO: Get from user subscription
+            availableModes: ['flip_card', 'type_it_out'],
+            requiredTier: 'standard',
+            message: state.message,
+          );
+        }
+
+        // Handle unlock limit exceeded error
+        if (state is MemoryVerseError &&
+            state.code == 'PRACTICE_UNLOCK_LIMIT_EXCEEDED') {
+          // Show unlock limit exceeded dialog
+          // Note: In production, we'd parse the error details from the failure
+          UnlockLimitExceededDialog.show(
+            context,
+            unlockedModes: [], // TODO: Parse from error details
+            unlockedCount: 1,
+            limit: 1,
+            tier: 'free', // TODO: Get from user subscription
+            verseReference: params.verseReference,
+          );
+        }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: _handleDone,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleDone();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _handleDone,
+            ),
+            title: Text(context.tr(TranslationKeys.practiceResultsTitle)),
+            centerTitle: true,
           ),
-          title: Text(context.tr(TranslationKeys.practiceResultsTitle)),
-          centerTitle: true,
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
 
-                // Accuracy Circle
-                _buildAccuracyCircle(theme, accuracyColor),
-                const SizedBox(height: 24),
-
-                // Quality Rating
-                _buildQualityRating(theme, qualityColor),
-                const SizedBox(height: 32),
-
-                // Verse Reference
-                _buildVerseReference(theme),
-                const SizedBox(height: 24),
-
-                // Stats Card
-                _buildStatsCard(theme),
-                const SizedBox(height: 24),
-
-                // Blank Comparisons (Fill in the Blanks mode only)
-                if (params.blankComparisons != null &&
-                    params.blankComparisons!.isNotEmpty) ...[
-                  _buildBlankComparisonsCard(theme),
+                  // Accuracy Circle
+                  _buildAccuracyCircle(theme, accuracyColor),
                   const SizedBox(height: 24),
-                ],
 
-                // Action Buttons
-                _buildActionButtons(theme),
-              ],
+                  // Quality Rating
+                  _buildQualityRating(theme, qualityColor),
+                  const SizedBox(height: 32),
+
+                  // Verse Reference
+                  _buildVerseReference(theme),
+                  const SizedBox(height: 24),
+
+                  // Stats Card
+                  _buildStatsCard(theme),
+                  const SizedBox(height: 24),
+
+                  // Blank Comparisons (Fill in the Blanks mode only)
+                  if (params.blankComparisons != null &&
+                      params.blankComparisons!.isNotEmpty) ...[
+                    _buildBlankComparisonsCard(theme),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Action Buttons
+                  _buildActionButtons(theme),
+                ],
+              ),
             ),
           ),
         ),
-      ).withAuthProtection(),
-    );
+      ),
+    ).withAuthProtection();
   }
 
   Widget _buildAccuracyCircle(ThemeData theme, Color accuracyColor) {

@@ -1,9 +1,11 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/constants/plan_constants.dart';
 
 /// Enum representing different user plan types
 enum UserPlan {
   free,
   standard,
+  plus,
   premium;
 
   String get displayName {
@@ -12,24 +14,24 @@ enum UserPlan {
         return 'Free';
       case UserPlan.standard:
         return 'Standard';
+      case UserPlan.plus:
+        return 'Plus';
       case UserPlan.premium:
         return 'Premium';
     }
   }
 
-  String get description {
-    switch (this) {
-      case UserPlan.free:
-        return 'Anonymous users with 20 tokens daily';
-      case UserPlan.standard:
-        return 'Authenticated users with 100 tokens daily';
-      case UserPlan.premium:
-        return 'Premium users with unlimited tokens';
-    }
-  }
+  /// Get plan description from centralized config
+  String get description => PlanConstants.getDescription(this);
 
-  bool get canPurchaseTokens => this == UserPlan.standard;
-  bool get isUnlimited => this == UserPlan.premium;
+  /// Get daily token limit from centralized config
+  int get dailyLimit => PlanConstants.getDailyLimit(this);
+
+  /// Check if can purchase tokens from centralized config
+  bool get canPurchaseTokens => PlanConstants.canPurchaseTokens(this);
+
+  /// Check if unlimited from centralized config
+  bool get isUnlimited => PlanConstants.isUnlimited(this);
 }
 
 /// Enum representing authentication types

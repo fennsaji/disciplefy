@@ -8,6 +8,7 @@ import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
 import '../datasources/study_remote_data_source.dart';
 import '../datasources/study_local_data_source.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Implementation of the StudyRepository interface.
 ///
@@ -44,7 +45,7 @@ class StudyRepositoryImpl implements StudyRepository {
     required String language,
   }) async {
     try {
-      print('🚨 [STUDY_REPO] Starting study generation request');
+      Logger.debug('🚨 [STUDY_REPO] Starting study generation request');
       // Check network connectivity
       if (!await _networkInfo.isConnected) {
         return const Left(NetworkFailure(
@@ -93,7 +94,7 @@ class StudyRepositoryImpl implements StudyRepository {
         context: e.context,
       ));
     } on InsufficientTokensException catch (e) {
-      print('🚨 [STUDY_REPO] InsufficientTokensException caught: $e');
+      Logger.debug('🚨 [STUDY_REPO] InsufficientTokensException caught: $e');
       // SECURITY FIX: Convert to proper InsufficientTokensFailure
       return Left(InsufficientTokensFailure(
         requiredTokens: e.requiredTokens,

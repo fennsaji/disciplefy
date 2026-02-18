@@ -6,6 +6,7 @@ import '../../../../core/services/api_auth_helper.dart';
 import '../../../../core/utils/rate_limiter.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../tokens/domain/entities/token_consumption.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Abstract contract for remote study guide operations.
 abstract class StudyRemoteDataSource {
@@ -50,14 +51,14 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     String? topicDescription,
     required String language,
   }) async {
-    print('🚨 [STUDY_API] Starting study generation request');
+    Logger.info('🚨 [STUDY_API] Starting study generation request');
 
     // SECURITY FIX: Check client-side rate limit before making request
     if (!_rateLimiter.canMakeRequest()) {
       final retryAfter = _rateLimiter.getRetryAfter();
       final waitSeconds = retryAfter.inSeconds;
 
-      print('🚨 [STUDY_API] Rate limited: wait $waitSeconds seconds');
+      Logger.debug('🚨 [STUDY_API] Rate limited: wait $waitSeconds seconds');
 
       throw RateLimitException(
         message:
@@ -75,7 +76,7 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       final headers = await ApiAuthHelper.getAuthHeaders();
 
       // Call Supabase Edge Function for study generation
-      print('🚨 [STUDY_API] Making API call to study-generate');
+      Logger.debug('🚨 [STUDY_API] Making API call to study-generate');
       final response = await _supabaseClient.functions.invoke(
         'study-generate',
         body: {
@@ -87,22 +88,23 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         headers: headers,
       );
 
-      print('🚨 [STUDY_API] Received response status: ${response.status}');
+      Logger.info(
+          '🚨 [STUDY_API] Received response status: ${response.status}');
 
       if (response.status == 200 && response.data != null) {
         return _parseStudyGuideFromResponse(
             response.data, input, inputType, language);
       } else if (response.status == 429) {
         // Debug logging for 429 response
-        print('🚨 [STUDY_API] 429 Response data: ${response.data}');
-        print(
+        Logger.info('🚨 [STUDY_API] 429 Response data: ${response.data}');
+        Logger.debug(
             '🚨 [STUDY_API] Response data type: ${response.data.runtimeType}');
 
         // Handle both old rate limiting and new token exhaustion
         final errorData = response.data as Map<String, dynamic>?;
-        print('🚨 [STUDY_API] Parsed errorData: $errorData');
+        Logger.error('🚨 [STUDY_API] Parsed errorData: $errorData');
         final error = errorData?['error'] as Map<String, dynamic>?;
-        print('🚨 [STUDY_API] Parsed error: $error');
+        Logger.error('🚨 [STUDY_API] Parsed error: $error');
 
         if (error?['code'] == 'INSUFFICIENT_TOKENS') {
           // New token-based error
@@ -145,19 +147,19 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         );
       }
     } on NetworkException catch (e) {
-      print('🚨 [STUDY_API] NetworkException caught: $e');
+      Logger.debug('🚨 [STUDY_API] NetworkException caught: $e');
       rethrow;
     } on ServerException catch (e) {
-      print('🚨 [STUDY_API] ServerException caught: $e');
+      Logger.debug('🚨 [STUDY_API] ServerException caught: $e');
       rethrow;
     } on AuthenticationException catch (e) {
-      print('🚨 [STUDY_API] AuthenticationException caught: $e');
+      Logger.debug('🚨 [STUDY_API] AuthenticationException caught: $e');
       rethrow;
     } on RateLimitException catch (e) {
-      print('🚨 [STUDY_API] RateLimitException caught: $e');
+      Logger.debug('🚨 [STUDY_API] RateLimitException caught: $e');
       rethrow;
     } on InsufficientTokensException catch (e) {
-      print('🚨 [STUDY_API] InsufficientTokensException caught: $e');
+      Logger.debug('🚨 [STUDY_API] InsufficientTokensException caught: $e');
       rethrow;
     } on TokenValidationException {
       // Convert to AuthenticationException for consistency
@@ -166,7 +168,7 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } on FunctionException catch (e) {
-      print(
+      Logger.debug(
           '🚨 [STUDY_API] FunctionException caught: status=${e.status}, details=${e.details}');
 
       // Handle 429 specifically
@@ -221,7 +223,8 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         );
       }
     } catch (e) {
-      print('🚨 [STUDY_API] Generic exception caught: $e (${e.runtimeType})');
+      Logger.error(
+          '🚨 [STUDY_API] Generic exception caught: $e (${e.runtimeType})');
       throw ClientException(
         message: 'We couldn\'t generate a study guide. Please try again later.',
         code: 'GENERATION_FAILED',
@@ -258,15 +261,15 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       try {
         tokenConsumption =
             TokenConsumption.fromJson(data['tokens'] as Map<String, dynamic>);
-        print(
+        Logger.warning(
             '🪙 [STUDY_API] Token consumption parsed: ${tokenConsumption.consumed} tokens');
       } catch (e) {
-        print('⚠️ [STUDY_API] Failed to parse token consumption: $e');
+        Logger.debug('⚠️ [STUDY_API] Failed to parse token consumption: $e');
       }
     }
 
     if (fromCache) {
-      print(
+      Logger.debug(
           '🪙 [STUDY_API] Study guide returned from cache - no tokens consumed');
     }
 
@@ -278,6 +281,8 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       interpretation:
           content['interpretation'] as String? ?? 'No interpretation available',
       context: content['context'] as String? ?? 'No context available',
+      passage: content['passage']
+          as String?, // Optional: LLM-generated Scripture passage for Standard mode
       relatedVerses: (content['relatedVerses'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??

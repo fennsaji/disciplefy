@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/services/auth_state_provider.dart';
@@ -9,6 +8,7 @@ import '../../domain/usecases/delete_user_profile.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import 'user_profile_event.dart';
 import 'user_profile_state.dart';
+import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing user profile state
 /// Handles profile CRUD operations with proper error handling
@@ -126,10 +126,8 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
         // Invalidate profile cache before updating
         final authStateProvider = sl<AuthStateProvider>();
         authStateProvider.invalidateProfileCache();
-        if (kDebugMode) {
-          print(
-              '📄 [USER_PROFILE_BLOC] Profile cache invalidated for language update');
-        }
+        Logger.debug(
+            '📄 [USER_PROFILE_BLOC] Profile cache invalidated for language update');
 
         await _repository.updateLanguagePreference(
           event.userId,
@@ -159,10 +157,8 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
         // Invalidate profile cache before updating
         final authStateProvider = sl<AuthStateProvider>();
         authStateProvider.invalidateProfileCache();
-        if (kDebugMode) {
-          print(
-              '📄 [USER_PROFILE_BLOC] Profile cache invalidated for theme update');
-        }
+        Logger.debug(
+            '📄 [USER_PROFILE_BLOC] Profile cache invalidated for theme update');
 
         await _repository.updateThemePreference(event.userId, event.theme);
         emit(ThemePreferenceUpdated(newTheme: event.theme));
@@ -196,9 +192,7 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
       // Don't emit error for admin check failure, silently ignore
       // This prevents disrupting the main profile loading flow
       // Using shared error handler for consistent logging (silent mode)
-      if (kDebugMode) {
-        print('🚨 [ERROR] check admin status failed: $e');
-      }
+      Logger.error('🚨 [ERROR] check admin status failed: $e');
     }
   }
 }

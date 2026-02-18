@@ -110,9 +110,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final box = Hive.box('app_settings');
     await box.put('onboarding_completed', true);
 
+    // Set flag to auto-activate free plan after authentication
+    await box.put('auto_activate_free_plan', true);
+
     if (mounted) {
-      // Navigate to pricing page to show plans before login
-      context.go(AppRoutes.pricing);
+      // Navigate directly to login instead of pricing page
+      context.go(AppRoutes.login);
     }
   }
 
@@ -121,9 +124,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final box = Hive.box('app_settings');
     await box.put('onboarding_completed', true);
 
+    // Set flag to auto-activate free plan after authentication
+    await box.put('auto_activate_free_plan', true);
+
     if (mounted) {
-      // Navigate to pricing page to show plans before login
-      context.go(AppRoutes.pricing);
+      // Navigate directly to login instead of pricing page
+      context.go(AppRoutes.login);
     }
   }
 
@@ -244,7 +250,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               child: Center(
                                 child: Text(
                                   _currentPage == _slides.length - 1
-                                      ? 'Get Started'
+                                      ? 'Start Free'
                                       : 'Continue',
                                   style: AppFonts.inter(
                                     fontSize: 16,

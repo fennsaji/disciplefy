@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_language.dart';
 import 'language_preference_service.dart';
+import '../utils/logger.dart';
 
 /// Service for managing app locale with change notifications.
 ///
@@ -30,7 +31,7 @@ class LocaleService extends ChangeNotifier {
       // Load initial language preference
       final language = await _languagePreferenceService.getSelectedLanguage();
       _currentLocale = Locale(language.code, '');
-      debugPrint(
+      Logger.debug(
           '🌐 [LOCALE_SERVICE] Initialized with locale: ${language.code}');
 
       // Listen to language changes
@@ -40,7 +41,7 @@ class LocaleService extends ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
-      debugPrint('🌐 [LOCALE_SERVICE] Error initializing: $e');
+      Logger.debug('🌐 [LOCALE_SERVICE] Error initializing: $e');
       // Default to English on error
       _currentLocale = const Locale('en', '');
       _isInitialized = true;
@@ -49,7 +50,7 @@ class LocaleService extends ChangeNotifier {
   }
 
   void _onLanguageChanged(AppLanguage language) {
-    debugPrint(
+    Logger.debug(
         '🌐 [LOCALE_SERVICE] Language changed to: ${language.displayName}');
     _currentLocale = Locale(language.code, '');
     notifyListeners();
@@ -57,7 +58,7 @@ class LocaleService extends ChangeNotifier {
 
   /// Manually update the locale (used when language is changed).
   void updateLocale(AppLanguage language) {
-    debugPrint(
+    Logger.debug(
         '🌐 [LOCALE_SERVICE] Manually updating locale to: ${language.displayName}');
     _currentLocale = Locale(language.code, '');
     notifyListeners();
@@ -69,11 +70,12 @@ class LocaleService extends ChangeNotifier {
       final language = await _languagePreferenceService.getSelectedLanguage();
       if (_currentLocale.languageCode != language.code) {
         _currentLocale = Locale(language.code, '');
-        debugPrint('🌐 [LOCALE_SERVICE] Refreshed locale to: ${language.code}');
+        Logger.debug(
+            '🌐 [LOCALE_SERVICE] Refreshed locale to: ${language.code}');
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('🌐 [LOCALE_SERVICE] Error refreshing locale: $e');
+      Logger.debug('🌐 [LOCALE_SERVICE] Error refreshing locale: $e');
     }
   }
 

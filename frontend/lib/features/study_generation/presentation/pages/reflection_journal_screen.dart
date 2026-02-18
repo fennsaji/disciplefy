@@ -13,6 +13,7 @@ import '../../data/repositories/reflections_repository_impl.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../domain/repositories/reflections_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Screen displaying the user's reflection journal.
 ///
@@ -178,8 +179,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
       }
     } catch (e, stackTrace) {
       // Log error with stack trace (metadata only, no user content)
-      debugPrint('[ReflectionJournal] Failed to load study guide: $e');
-      debugPrint('[ReflectionJournal] Stack trace: $stackTrace');
+      Logger.debug('[ReflectionJournal] Failed to load study guide: $e');
+      Logger.debug('[ReflectionJournal] Stack trace: $stackTrace');
 
       // Show user-friendly error message without raw exception
       if (mounted) {

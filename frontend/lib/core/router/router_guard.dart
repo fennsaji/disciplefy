@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
+import '../services/system_config_service.dart';
 import '../di/injection_container.dart';
 import 'app_routes.dart';
 
@@ -59,6 +60,57 @@ class RouterGuard {
         },
       );
       return AppRoutes.appLoading;
+    }
+
+    // Check maintenance mode first (before any routing logic)
+    try {
+      final systemConfig = sl<SystemConfigService>();
+      if (systemConfig.isMaintenanceModeActive) {
+        // Check if user is admin (admins bypass maintenance mode)
+        final user = Supabase.instance.client.auth.currentUser;
+        bool isAdmin = false;
+
+        if (user != null) {
+          try {
+            final profileResponse = await Supabase.instance.client
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            isAdmin = profileResponse?['is_admin'] == true;
+          } catch (e) {
+            Logger.error('Failed to check admin status',
+                tag: 'ROUTER', error: e);
+          }
+        }
+
+        if (!isAdmin) {
+          // Non-admin user during maintenance - redirect to maintenance screen
+          if (cleanPath == AppRoutes.maintenance) return null;
+
+          Logger.info(
+            'Maintenance mode active - redirecting to maintenance screen',
+            tag: 'ROUTER',
+            context: {
+              'attempted_path': cleanPath,
+              'is_admin': isAdmin,
+            },
+          );
+          return AppRoutes.maintenance;
+        } else {
+          Logger.info(
+            'Admin user bypassing maintenance mode',
+            tag: 'ROUTER',
+            context: {
+              'user_email': user?.email,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      Logger.error('Failed to check maintenance mode', tag: 'ROUTER', error: e);
+      // Don't block routing on maintenance check failure
     }
 
     final authState = await _getAuthenticationState();
@@ -230,6 +282,10 @@ class RouterGuard {
 
     // Check Hive storage for guest/local auth
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        await Hive.openBox(_hiveBboxName);
+      }
       final box = Hive.box(_hiveBboxName);
       final userType = box.get(_userTypeKey);
       final userId = box.get(_userIdKey);
@@ -352,6 +408,15 @@ class RouterGuard {
   /// ANDROID FIX: Checks both SharedPreferences and Hive for redundancy
   static OnboardingState _getOnboardingState() {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        // Box not open - return default state
+        Logger.warning(
+          'Hive box not open, returning default onboarding state',
+          tag: 'ROUTER',
+        );
+        return const OnboardingState(isCompleted: false);
+      }
       final box = Hive.box(_hiveBboxName);
 
       // ANDROID FIX: Check SharedPreferences first (more reliable on Android)
@@ -735,11 +800,17 @@ class RouterGuard {
       return _handleAuthenticatedUserOnAuthRoutes(routeAnalysis, authState);
     }
 
-    // Check for pending premium upgrade from pricing page
+    // Check for auto-free plan activation flag (new user flow)
+    // This should happen BEFORE checking for pending upgrades
+    if (routeAnalysis.currentPath == AppRoutes.home) {
+      await _checkAutoActivateFreePlanAsync();
+    }
+
+    // Check for pending plan upgrade from pricing page
     // This must be checked here because the router may have redirected the user
     // through language selection flow before the login screen could handle it
     if (routeAnalysis.currentPath == AppRoutes.home) {
-      final pendingRedirect = await _checkPendingPremiumUpgradeAsync();
+      final pendingRedirect = await _checkPendingPlanUpgradeAsync();
       if (pendingRedirect != null) {
         return pendingRedirect;
       }
@@ -760,21 +831,164 @@ class RouterGuard {
     return null;
   }
 
-  /// Check for pending premium upgrade flag and return redirect if needed
-  /// PERFORMANCE FIX: Only does database check if flag is actually set (rare case)
-  static Future<String?> _checkPendingPremiumUpgradeAsync() async {
+  /// Check for auto-free plan activation flag and activate if needed
+  /// This runs in the background to avoid delaying user navigation
+  static Future<void> _checkAutoActivateFreePlanAsync() async {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        await Hive.openBox(_hiveBboxName);
+      }
       final box = Hive.box(_hiveBboxName);
-      final pendingPremiumUpgrade =
-          box.get('pending_premium_upgrade', defaultValue: false);
+      final shouldActivate =
+          box.get('auto_activate_free_plan', defaultValue: false) as bool;
+
+      if (!shouldActivate) {
+        return; // No flag set, nothing to do
+      }
+
+      Logger.info(
+        'Auto-free plan activation flag detected',
+        tag: 'ROUTER_FREE_ACTIVATION',
+      );
+
+      // Check if user already has subscription
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        Logger.warning(
+          'Cannot activate free plan - no user ID',
+          tag: 'ROUTER_FREE_ACTIVATION',
+        );
+        await box.delete('auto_activate_free_plan');
+        return;
+      }
+
+      Map<String, dynamic>? existingSub;
+      try {
+        existingSub = await Supabase.instance.client
+            .from('subscriptions')
+            .select('id, status, plan_id, subscription_plans!inner(plan_code)')
+            .eq('user_id', userId)
+            .maybeSingle()
+            .timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            Logger.warning(
+              'Subscription check timed out during free plan activation',
+              tag: 'ROUTER_FREE_ACTIVATION',
+            );
+            return null;
+          },
+        );
+      } catch (e) {
+        Logger.error(
+          'Error checking existing subscription',
+          tag: 'ROUTER_FREE_ACTIVATION',
+          error: e,
+        );
+      }
+
+      if (existingSub != null) {
+        // User already has subscription - clear flag and skip activation
+        Logger.info(
+          'User already has subscription, skipping free plan activation',
+          tag: 'ROUTER_FREE_ACTIVATION',
+          context: {
+            'existing_plan':
+                existingSub['subscription_plans']?['plan_code'] ?? 'unknown',
+            'status': existingSub['status'],
+          },
+        );
+        await box.delete('auto_activate_free_plan');
+        return;
+      }
+
+      // Activate free plan in background (don't await - fire and forget)
+      Logger.info(
+        'Auto-activating free plan for new user',
+        tag: 'ROUTER_FREE_ACTIVATION',
+        context: {'user_id': userId},
+      );
+
+      // Call free plan activation endpoint
+      _activateFreePlanInBackground(userId);
+
+      // Clear flag immediately (activation will happen async)
+      await box.delete('auto_activate_free_plan');
+    } catch (e) {
+      Logger.error(
+        'Error during auto-free plan activation check',
+        tag: 'ROUTER_FREE_ACTIVATION',
+        error: e,
+      );
+    }
+  }
+
+  /// Activate free plan in background (fire and forget)
+  static void _activateFreePlanInBackground(String userId) {
+    Supabase.instance.client.functions.invoke(
+      'create-subscription-v2',
+      body: {
+        'plan_code': 'free',
+        'provider': 'razorpay',
+        'region': 'IN',
+      },
+    ).then((response) {
+      Logger.info(
+        'Free plan activated successfully',
+        tag: 'ROUTER_FREE_ACTIVATION',
+        context: {
+          'user_id': userId,
+          'response_status': response.status,
+        },
+      );
+    }).catchError((e) {
+      Logger.error(
+        'Failed to auto-activate free plan',
+        tag: 'ROUTER_FREE_ACTIVATION',
+        error: e,
+      );
+    });
+  }
+
+  /// Check for pending plan upgrade flag and return redirect if needed
+  /// Handles all plan types (standard, plus, premium, free)
+  /// PERFORMANCE FIX: Only does database check if flag is actually set (rare case)
+  static Future<String?> _checkPendingPlanUpgradeAsync() async {
+    try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        await Hive.openBox(_hiveBboxName);
+      }
+      final box = Hive.box(_hiveBboxName);
+
+      // Check for pending plan upgrade (new system)
+      final hasPendingUpgrade =
+          box.get('pending_plan_upgrade', defaultValue: false) as bool;
+      final selectedPlanCode = box.get('selected_plan_code') as String?;
+      final selectedPlanPrice = box.get('selected_plan_price') as int?;
+
+      // Also check legacy premium flag for backwards compatibility
+      final hasPendingPremium =
+          box.get('pending_premium_upgrade', defaultValue: false) as bool;
 
       // PERFORMANCE FIX: Early return if no pending upgrade (most common case)
-      if (pendingPremiumUpgrade != true) {
+      if (!hasPendingUpgrade && !hasPendingPremium) {
         return null;
       }
 
-      // Only reach here if there's actually a pending upgrade flag (rare)
-      // Check if user already has an active premium subscription
+      Logger.info(
+        'Pending upgrade detected',
+        tag: 'ROUTER',
+        context: {
+          'plan_code': selectedPlanCode,
+          'plan_price': selectedPlanPrice,
+          'has_pending_upgrade': hasPendingUpgrade,
+          'has_pending_premium': hasPendingPremium,
+        },
+      );
+
+      // Check if user already has active subscription
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId != null) {
         Map<String, dynamic>? subscription;
@@ -787,7 +1001,7 @@ class RouterGuard {
                   'status', ['active', 'authenticated', 'pending_cancellation'])
               .maybeSingle()
               .timeout(
-                const Duration(seconds: 5), // Reduced from 10 to 5 seconds
+                const Duration(seconds: 5),
                 onTimeout: () {
                   Logger.warning(
                     'Subscription query timed out',
@@ -806,25 +1020,64 @@ class RouterGuard {
           );
         }
 
-        if (subscription != null &&
-            (subscription['plan_type'] as String?)?.startsWith('premium') ==
-                true) {
-          // User already has premium - clear flag and don't redirect
-          box.delete('pending_premium_upgrade');
+        if (subscription != null) {
+          // User already has subscription - clear flags and don't redirect
+          Logger.info(
+            'User already has subscription, clearing flags',
+            tag: 'ROUTER',
+            context: {
+              'subscription_status': subscription['status'],
+              'plan_type': subscription['plan_type'],
+            },
+          );
+          await box.delete('pending_plan_upgrade');
+          await box.delete('selected_plan_code');
+          await box.delete('selected_plan_price');
+          await box.delete('pending_premium_upgrade');
           return null;
         }
       }
 
-      // Clear the flag and redirect to premium upgrade
-      box.delete('pending_premium_upgrade');
+      // Route to appropriate upgrade page based on plan type
+      String upgradePath;
+
+      if (selectedPlanCode == 'premium' || hasPendingPremium) {
+        upgradePath = AppRoutes.premiumUpgrade;
+      } else if (selectedPlanCode == 'plus') {
+        upgradePath = AppRoutes.plusUpgrade;
+      } else if (selectedPlanCode == 'standard') {
+        upgradePath = AppRoutes.standardUpgrade;
+      } else if (selectedPlanCode == 'free') {
+        // Free plan - activate directly without payment
+        Logger.info(
+          'Free plan selected, clearing flags (activation will happen on upgrade page)',
+          tag: 'ROUTER',
+        );
+        // Don't clear flags yet - let the upgrade page handle free activation
+        // Just stay on home
+        return null;
+      } else {
+        // Unknown plan, default to premium for safety
+        Logger.warning(
+          'Unknown plan code, defaulting to premium upgrade',
+          tag: 'ROUTER',
+          context: {'plan_code': selectedPlanCode},
+        );
+        upgradePath = AppRoutes.premiumUpgrade;
+      }
+
       Logger.info(
-        'Pending premium upgrade detected - redirecting to premium page',
+        'Redirecting to upgrade page',
         tag: 'ROUTER',
+        context: {
+          'upgrade_path': upgradePath,
+          'plan_code': selectedPlanCode,
+        },
       );
-      return AppRoutes.premiumUpgrade;
+      return upgradePath;
     } catch (e) {
       Logger.error(
-        'Error checking pending premium upgrade',
+        'Error checking pending plan upgrade',
         tag: 'ROUTER',
         error: e,
       );
@@ -977,6 +1230,11 @@ class RouterGuard {
   /// SECURITY FIX: Check if the session has expired
   static bool _isSessionExpired() {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        // Box not open - assume session is valid to prevent breaking existing sessions
+        return false;
+      }
       final box = Hive.box(_hiveBboxName);
       final expiresAtStr = box.get(_sessionExpiresAtKey) as String?;
 
@@ -1017,6 +1275,14 @@ class RouterGuard {
   /// SECURITY FIX: Clear expired session data from Hive
   static void _clearExpiredSession() {
     try {
+      // Ensure box is open before accessing
+      if (!Hive.isBoxOpen(_hiveBboxName)) {
+        Logger.warning(
+          'Cannot clear expired session - Hive box not open',
+          tag: 'AUTH_SECURITY',
+        );
+        return;
+      }
       final box = Hive.box(_hiveBboxName);
       box.delete(_userTypeKey);
       box.delete(_userIdKey);

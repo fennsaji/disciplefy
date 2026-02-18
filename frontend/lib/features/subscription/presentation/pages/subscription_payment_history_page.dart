@@ -1,6 +1,14 @@
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Conditional imports for platform-specific PDF download
+import 'pdf_download_stub.dart'
+    if (dart.library.html) 'pdf_download_web.dart'
+    if (dart.library.io) 'pdf_download_mobile.dart' as pdf_download;
 
 import '../../domain/entities/subscription.dart';
 import '../bloc/subscription_bloc.dart';
@@ -181,10 +189,135 @@ class _SubscriptionPaymentHistoryPageState
 }
 
 /// Card widget displaying a single invoice
-class _InvoiceCard extends StatelessWidget {
+class _InvoiceCard extends StatefulWidget {
   final SubscriptionInvoice invoice;
 
   const _InvoiceCard({required this.invoice});
+
+  @override
+  State<_InvoiceCard> createState() => _InvoiceCardState();
+}
+
+class _InvoiceCardState extends State<_InvoiceCard> {
+  bool _isDownloading = false;
+
+  /// Download invoice PDF
+  Future<void> _downloadInvoicePDF() async {
+    if (_isDownloading) return;
+
+    setState(() {
+      _isDownloading = true;
+    });
+
+    try {
+      // Show loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Generating PDF...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // Call Edge Function to generate PDF
+      final supabase = Supabase.instance.client;
+      final response = await supabase.functions.invoke(
+        'generate-invoice-pdf',
+        body: {'invoice_id': widget.invoice.id},
+      );
+
+      if (response.status != 200 || response.data == null) {
+        throw Exception(
+            'Failed to generate PDF: ${response.status} ${response.data}');
+      }
+
+      // Convert response data to Uint8List
+      final bytes = response.data is Uint8List
+          ? response.data as Uint8List
+          : Uint8List.fromList(List<int>.from(response.data));
+
+      // Generate filename
+      final fileName = widget.invoice.invoiceNumber != null
+          ? 'Invoice_${widget.invoice.invoiceNumber}.pdf'
+          : 'Invoice_${widget.invoice.id.substring(0, 8)}.pdf';
+
+      // Platform-specific download using conditional imports
+      if (kIsWeb) {
+        // Web: Trigger browser download
+        await pdf_download.downloadPdfBytes(bytes, fileName);
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invoice downloaded: $fileName'),
+              backgroundColor: Colors.green[700],
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        // Mobile: Save to downloads folder, Web: Browser download
+        final filePath = await pdf_download.downloadPdfBytes(bytes, fileName);
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                kIsWeb
+                    ? 'Invoice downloaded: $filePath'
+                    : 'Invoice saved to:\n$filePath',
+              ),
+              backgroundColor: Colors.green[700],
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download invoice: ${e.toString()}'),
+            backgroundColor: Colors.red[700],
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,8 +327,8 @@ class _InvoiceCard extends StatelessWidget {
     final timeFormat = DateFormat('h:mm a');
 
     // Status color and icon
-    final statusColor = _getStatusColor(invoice.status, isDark);
-    final statusIcon = _getStatusIcon(invoice.status);
+    final statusColor = _getStatusColor(widget.invoice.status, isDark);
+    final statusIcon = _getStatusIcon(widget.invoice.status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -210,7 +343,7 @@ class _InvoiceCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '₹${invoice.amountRupees.toStringAsFixed(0)}',
+                  '₹${widget.invoice.amountRupees.toStringAsFixed(0)}',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface,
@@ -232,7 +365,7 @@ class _InvoiceCard extends StatelessWidget {
                       Icon(statusIcon, size: 14, color: statusColor),
                       const SizedBox(width: 4),
                       Text(
-                        _formatStatus(invoice.status),
+                        _formatStatus(widget.invoice.status),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.w600,
@@ -245,8 +378,8 @@ class _InvoiceCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Invoice number
-            if (invoice.invoiceNumber != null) ...[
+            // Invoice number with download button
+            if (widget.invoice.invoiceNumber != null) ...[
               Row(
                 children: [
                   Icon(
@@ -255,10 +388,64 @@ class _InvoiceCard extends StatelessWidget {
                     color: theme.colorScheme.onSurface.withOpacity(0.5),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Invoice: ${invoice.invoiceNumber}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  Expanded(
+                    child: Text(
+                      'Invoice: ${widget.invoice.invoiceNumber}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Download PDF button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _isDownloading ? null : _downloadInvoicePDF,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_isDownloading)
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    theme.colorScheme.primary,
+                                  ),
+                                ),
+                              )
+                            else
+                              Icon(
+                                Icons.download,
+                                size: 14,
+                                color: theme.colorScheme.primary,
+                              ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isDownloading ? 'Generating...' : 'PDF',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -276,7 +463,7 @@ class _InvoiceCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${dateFormat.format(invoice.billingPeriodStart)} - ${dateFormat.format(invoice.billingPeriodEnd)}',
+                  '${dateFormat.format(widget.invoice.billingPeriodStart)} - ${dateFormat.format(widget.invoice.billingPeriodEnd)}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
@@ -286,7 +473,7 @@ class _InvoiceCard extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Payment date
-            if (invoice.paidAt != null) ...[
+            if (widget.invoice.paidAt != null) ...[
               Row(
                 children: [
                   Icon(
@@ -296,7 +483,7 @@ class _InvoiceCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Paid on ${dateFormat.format(invoice.paidAt!)} at ${timeFormat.format(invoice.paidAt!)}',
+                    'Paid on ${dateFormat.format(widget.invoice.paidAt!)} at ${timeFormat.format(widget.invoice.paidAt!)}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
@@ -307,17 +494,17 @@ class _InvoiceCard extends StatelessWidget {
             ],
 
             // Payment method
-            if (invoice.paymentMethod != null) ...[
+            if (widget.invoice.paymentMethod != null) ...[
               Row(
                 children: [
                   Icon(
-                    _getPaymentMethodIcon(invoice.paymentMethod!),
+                    _getPaymentMethodIcon(widget.invoice.paymentMethod!),
                     size: 16,
                     color: theme.colorScheme.onSurface.withOpacity(0.5),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _formatPaymentMethod(invoice.paymentMethod!),
+                    _formatPaymentMethod(widget.invoice.paymentMethod!),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),

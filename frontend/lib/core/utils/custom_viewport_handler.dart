@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'device_keyboard_handler.dart';
+import 'logger.dart';
 
 /// Custom viewport handler for devices with problematic MediaQuery calculations.
 ///
@@ -23,10 +24,8 @@ class CustomViewportHandler {
     _setupDeviceConfigurations();
     _currentConfiguration = _getConfigurationForCurrentDevice();
 
-    if (kDebugMode) {
-      print(
-          '📐 [VIEWPORT HANDLER] Initialized with: ${_currentConfiguration?.name ?? "default"}');
-    }
+    Logger.debug(
+        '📐 [VIEWPORT HANDLER] Initialized with: ${_currentConfiguration?.name ?? "default"}');
   }
 
   void _setupDeviceConfigurations() {
@@ -130,10 +129,9 @@ class CustomViewportHandler {
         bottom: adjustedKeyboardHeight,
       );
 
-      if (kDebugMode) {
-        print('📐 [VIEWPORT HANDLER] Original: ${originalViewInsets.bottom}, '
-            'Adjusted: $adjustedKeyboardHeight (${config.name})');
-      }
+      Logger.debug(
+          '📐 [VIEWPORT HANDLER] Original: ${originalViewInsets.bottom}, '
+          'Adjusted: $adjustedKeyboardHeight (${config.name})');
     }
 
     return originalData.copyWith(
@@ -250,31 +248,31 @@ class ViewportDebugger {
 
     final tagString = tag != null ? '[$tag] ' : '';
 
-    print(
+    Logger.debug(
         '📐 [VIEWPORT DEBUG] ${tagString}Screen: ${size.width}x${size.height}');
-    print(
+    Logger.debug(
         '📐 [VIEWPORT DEBUG] ${tagString}ViewInsets: ${viewInsets.toString()}');
-    print(
+    Logger.debug(
         '📐 [VIEWPORT DEBUG] ${tagString}ViewPadding: ${viewPadding.toString()}');
-    print(
+    Logger.debug(
         '📐 [VIEWPORT DEBUG] ${tagString}DevicePixelRatio: $devicePixelRatio');
-    print(
+    Logger.debug(
         '📐 [VIEWPORT DEBUG] ${tagString}Keyboard height: ${viewInsets.bottom}');
 
     // Platform view information
     final platformDispatcher = WidgetsBinding.instance.platformDispatcher;
     if (platformDispatcher.views.isNotEmpty) {
       final view = platformDispatcher.views.first;
-      print(
+      Logger.debug(
           '📐 [VIEWPORT DEBUG] ${tagString}Platform viewInsets: ${view.viewInsets.toString()}');
-      print(
+      Logger.debug(
           '📐 [VIEWPORT DEBUG] ${tagString}Platform viewPadding: ${view.viewPadding.toString()}');
     }
 
     // Custom viewport handler info
     final config = CustomViewportHandler.instance.currentConfiguration;
     if (config != null) {
-      print(
+      Logger.debug(
           '📐 [VIEWPORT DEBUG] ${tagString}Custom config: ${config.toString()}');
     }
   }

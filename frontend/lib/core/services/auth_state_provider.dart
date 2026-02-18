@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart' as auth_states;
+import '../utils/logger.dart';
 
 /// Unified authentication state provider that ensures consistent auth state
 /// across all screens and components in the application.
@@ -37,9 +38,10 @@ class AuthStateProvider extends ChangeNotifier {
     // Listen to auth state changes
     _authStateSubscription = _authBloc.stream.listen((state) {
       if (kDebugMode) {
-        print('🔄 [AUTH STATE PROVIDER] State changed: ${state.runtimeType}');
+        Logger.debug(
+            '🔄 [AUTH STATE PROVIDER] State changed: ${state.runtimeType}');
         if (state is auth_states.AuthenticatedState) {
-          print(
+          Logger.debug(
               '🔄 [AUTH STATE PROVIDER] User: ${state.isAnonymous ? 'Anonymous' : state.user.email}');
         }
       }
@@ -59,10 +61,8 @@ class AuthStateProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    if (kDebugMode) {
-      print(
-          '✅ [AUTH STATE PROVIDER] Initialized with state: ${_currentState.runtimeType}');
-    }
+    Logger.debug(
+        '✅ [AUTH STATE PROVIDER] Initialized with state: ${_currentState.runtimeType}');
   }
 
   /// Clean up resources
@@ -70,9 +70,7 @@ class AuthStateProvider extends ChangeNotifier {
   void dispose() {
     _authStateSubscription?.cancel();
     clearCache();
-    if (kDebugMode) {
-      print('🧹 [AUTH STATE PROVIDER] Disposed');
-    }
+    Logger.debug('🧹 [AUTH STATE PROVIDER] Disposed');
     super.dispose();
   }
 
@@ -92,9 +90,7 @@ class AuthStateProvider extends ChangeNotifier {
           user.email?.split('@').first ??
           'User';
 
-      if (kDebugMode) {
-        print('👤 [AUTH STATE PROVIDER] Display name: $displayName');
-      }
+      Logger.debug('👤 [AUTH STATE PROVIDER] Display name: $displayName');
 
       return displayName;
     }
@@ -187,10 +183,8 @@ class AuthStateProvider extends ChangeNotifier {
     if (firstName != null || lastName != null) {
       final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
       if (name.isNotEmpty) {
-        if (kDebugMode) {
-          print(
-              '👤 [AUTH STATE PROVIDER] Using display name from cached profile: $name');
-        }
+        Logger.debug(
+            '👤 [AUTH STATE PROVIDER] Using display name from cached profile: $name');
         return name;
       }
     }
@@ -208,10 +202,8 @@ class AuthStateProvider extends ChangeNotifier {
 
     // Fallback: Existing OAuth-based currentUserName logic
     final fallbackName = currentUserName;
-    if (kDebugMode) {
-      print(
-          '👤 [AUTH STATE PROVIDER] Using fallback display name: $fallbackName');
-    }
+    Logger.debug(
+        '👤 [AUTH STATE PROVIDER] Using fallback display name: $fallbackName');
     return fallbackName;
   }
 
@@ -250,9 +242,7 @@ class AuthStateProvider extends ChangeNotifier {
       _profileCacheTime = DateTime.now();
       _cachedUserId = userId;
 
-      if (kDebugMode) {
-        print('📄 [AUTH STATE PROVIDER] Profile cached for user: $userId');
-      }
+      Logger.debug('📄 [AUTH STATE PROVIDER] Profile cached for user: $userId');
 
       // Notify listeners so UI rebuilds with updated profile
       notifyListeners();
@@ -277,15 +267,13 @@ class AuthStateProvider extends ChangeNotifier {
 
     // Fetch if cache is stale
     if (!_isProfileCacheFresh()) {
-      if (kDebugMode) {
-        print('📄 [AUTH STATE PROVIDER] Profile cache expired, should fetch');
-      }
+      Logger.debug(
+          '📄 [AUTH STATE PROVIDER] Profile cache expired, should fetch');
       return true;
     }
 
-    if (kDebugMode) {
-      print('📄 [AUTH STATE PROVIDER] Profile cache fresh, skipping fetch');
-    }
+    Logger.debug(
+        '📄 [AUTH STATE PROVIDER] Profile cache fresh, skipping fetch');
     return false;
   }
 
@@ -295,18 +283,14 @@ class AuthStateProvider extends ChangeNotifier {
     _profileCacheTime = null;
     _cachedUserId = null;
 
-    if (kDebugMode) {
-      print('📄 [AUTH STATE PROVIDER] Profile cache invalidated');
-    }
+    Logger.debug('📄 [AUTH STATE PROVIDER] Profile cache invalidated');
   }
 
   /// Clear all cached data (call on logout)
   void clearCache() {
     invalidateProfileCache();
 
-    if (kDebugMode) {
-      print('🧹 [AUTH STATE PROVIDER] All cache cleared');
-    }
+    Logger.debug('🧹 [AUTH STATE PROVIDER] All cache cleared');
   }
 
   /// Debug information about current state

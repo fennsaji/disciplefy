@@ -9,6 +9,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { SubscriptionService } from '../_shared/services/subscription-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import type {
   CancelSubscriptionRequest,
   CancelSubscriptionResponse
@@ -21,6 +22,9 @@ async function handleCancelSubscription(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     // 1. Authenticate user
     const userContext = await services.authService.getUserContext(req)

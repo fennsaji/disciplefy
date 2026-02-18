@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/extensions/translation_extension.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/payment_service.dart';
@@ -13,7 +12,6 @@ import '../bloc/token_bloc.dart';
 import '../bloc/token_event.dart';
 import '../bloc/token_state.dart';
 import '../widgets/token_balance_widget.dart';
-import '../widgets/token_purchase_dialog.dart';
 import '../widgets/current_plan_section.dart';
 import '../widgets/token_actions_section.dart';
 import '../widgets/usage_info_section.dart';
@@ -25,6 +23,7 @@ import '../../../subscription/presentation/bloc/subscription_bloc.dart';
 import '../../../subscription/presentation/bloc/subscription_state.dart';
 import '../../../subscription/presentation/bloc/subscription_event.dart';
 import '../../../subscription/domain/entities/subscription.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Token Management Page
 ///
@@ -63,7 +62,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     // Refresh subscription data when returning to this page
     // This ensures we always have the latest subscription status
     if (ModalRoute.of(context)?.isCurrent == true) {
-      debugPrint(
+      Logger.debug(
           '[TokenManagement] Page became visible - refreshing subscription and token status');
       context.read<SubscriptionBloc>().add(const RefreshSubscription());
       context.read<TokenBloc>().add(const RefreshTokenStatus());
@@ -83,7 +82,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
     // When app resumes, refresh token status and subscription status
     if (state == AppLifecycleState.resumed) {
-      debugPrint(
+      Logger.debug(
           '[TokenManagement] App resumed - refreshing token and subscription status');
       context.read<TokenBloc>().add(const RefreshTokenStatus());
       context.read<SubscriptionBloc>().add(const RefreshSubscription());
@@ -98,10 +97,10 @@ class _TokenManagementPageState extends State<TokenManagementPage>
       final email = authState.email ??
           authState.profile?['email'] as String? ??
           'nil@email.com';
-      debugPrint('[TokenManagement] User email: $email');
+      Logger.debug('[TokenManagement] User email: $email');
       return email;
     }
-    debugPrint('[TokenManagement] No auth state - using fallback email');
+    Logger.debug('[TokenManagement] No auth state - using fallback email');
     return 'nil@email.com';
   }
 
@@ -114,108 +113,33 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           authState.user.userMetadata?['phone'] as String? ??
           authState.user.phone ??
           '+1234567890';
-      debugPrint('[TokenManagement] User phone: $phone');
+      Logger.debug('[TokenManagement] User phone: $phone');
       return phone;
     }
-    debugPrint('[TokenManagement] No auth state - using fallback phone');
+    Logger.debug('[TokenManagement] No auth state - using fallback phone');
     return '+1234567890';
   }
 
-  void _showPurchaseDialog(TokenStatus tokenStatus) {
-    showDialog(
-      context: context,
-      builder: (context) => BlocListener<TokenBloc, TokenState>(
-        listener: (context, state) {
-          if (state is TokenPurchaseSuccess) {
-            // Payment confirmed successfully, close dialog
-            debugPrint(
-                '[TokenManagementPage] Payment confirmed, closing dialog');
+  void _showPurchaseDialog(TokenStatus tokenStatus) async {
+    // Navigate to token purchase page
+    Logger.debug('[TokenManagementPage] Navigating to token purchase page');
 
-            // Clean up processing payments set
-            _processingPayments.clear();
-            debugPrint(
-                '[TokenManagementPage] 🧹 Processing payments cleared after success');
+    final result =
+        await context.push(AppRoutes.tokenPurchase, extra: tokenStatus);
 
-            Navigator.of(context).pop();
+    // If purchase was successful (page returned true), refresh token status
+    if (result == true && mounted) {
+      Logger.debug(
+          '[TokenManagementPage] Purchase successful, refreshing token status');
+      context.read<TokenBloc>().add(const RefreshTokenStatus());
 
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    'Successfully purchased ${state.tokensPurchased} tokens!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is TokenError &&
-              state.operation == 'payment_confirmation') {
-            // Payment confirmation failed
-            debugPrint(
-                '[TokenManagementPage] Payment confirmation failed: ${state.failure.message}');
-
-            // Clean up processing payments set on error
-            _processingPayments.clear();
-            debugPrint(
-                '[TokenManagementPage] 🧹 Processing payments cleared after error');
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    'Payment confirmation failed: ${state.failure.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        child: TokenPurchaseDialog(
-          tokenStatus: tokenStatus,
-          // savedPaymentMethods defaults to const []
-          // paymentPreferences defaults to null - TODO: Load payment preferences
-          userEmail: _getUserEmail(), // ✅ Get from authenticated user
-          userPhone: _getUserPhone(), // ✅ Get from authenticated user
-          onCreateOrder: (tokenAmount) {
-            // Create payment order
-            context.read<TokenBloc>().add(
-                  CreatePaymentOrder(
-                    tokenAmount: tokenAmount,
-                  ),
-                );
-          },
-          onOrderCreated: (orderId, tokenAmount, amount) {
-            // Handle order creation success by opening payment gateway
-            debugPrint(
-                '[TokenManagementPage] Order created: $orderId for $tokenAmount tokens (₹$amount)');
-
-            // Get the keyId from current BLoC state
-            final currentState = context.read<TokenBloc>().state;
-            String? keyId;
-            if (currentState is TokenOrderCreated) {
-              keyId = currentState.keyId;
-            }
-
-            // Open payment gateway with the created order
-            _openPaymentGateway(orderId, tokenAmount, amount,
-                keyId ?? 'rzp_test_RFzzBvMdQzOOyA');
-          },
-          onPaymentSuccess: (response) {
-            debugPrint(
-                '[TokenManagementPage] Payment success callback - already handled in _openPaymentGateway');
-            // Payment confirmation is now handled in _openPaymentGateway method
-          },
-          onPaymentFailure: (response) {
-            // Handle payment failure
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Payment failed: ${response.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          },
-          onCancel: () {
-            Navigator.of(context).pop();
-          },
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tokens purchased successfully!'),
+          backgroundColor: Colors.green,
         ),
-      ),
-    );
+      );
+    }
   }
 
   void _upgradeToStandard() {
@@ -232,7 +156,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   Future<void> _openPaymentGateway(
       String orderId, int tokenAmount, double amount, String keyId) async {
     try {
-      debugPrint(
+      Logger.debug(
           '[TokenManagementPage] Opening payment gateway for order: $orderId');
 
       await PaymentService().openCheckout(
@@ -243,7 +167,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         userPhone: _getUserPhone(), // ✅ Get from authenticated user
         keyId: keyId,
         onSuccess: (response) {
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] Payment gateway success - triggering confirmation');
 
           final paymentId = response.paymentId ?? '';
@@ -251,14 +175,14 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
           // Prevent duplicate confirmation calls
           if (_processingPayments.contains(paymentId)) {
-            debugPrint(
+            Logger.debug(
                 '[TokenManagementPage] ⚠️ Payment $paymentId already being processed - ignoring duplicate');
             return;
           }
 
           // Mark payment as being processed
           _processingPayments.add(paymentId);
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] 🔒 Payment $paymentId marked as processing');
 
           // Get current token amount from BLoC state
@@ -270,7 +194,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             tokenAmount = currentState.tokensToPurchase;
           }
 
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] Payment success - confirming with $tokenAmount tokens');
 
           // Confirm payment
@@ -284,7 +208,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               );
         },
         onError: (response) {
-          debugPrint(
+          Logger.debug(
               '[TokenManagementPage] Payment gateway error: ${response.message}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -295,7 +219,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         },
       );
     } catch (e) {
-      debugPrint('[TokenManagementPage] Error opening payment gateway: $e');
+      Logger.debug('[TokenManagementPage] Error opening payment gateway: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error opening payment: $e'),
@@ -334,7 +258,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           listener: (context, state) {
             // Handle purchase success - refresh token status immediately
             if (state is TokenPurchaseSuccess) {
-              debugPrint(
+              Logger.debug(
                   '[TokenManagementPage] TokenPurchaseSuccess received - refreshing token status');
               // Immediately refresh to get the latest balance
               context.read<TokenBloc>().add(const RefreshTokenStatus());

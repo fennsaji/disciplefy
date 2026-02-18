@@ -5,7 +5,7 @@
 // Handles permission status checking and user consent
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 
 /// Handles notification permission requests for web platform
 class NotificationPermissionHandlerWeb {
@@ -23,35 +23,37 @@ class NotificationPermissionHandlerWeb {
   /// Returns true if permission is granted, false otherwise
   Future<bool> requestPermissions() async {
     try {
-      print(
+      Logger.debug(
           '[FCM Permission] 🔔 Requesting notification permission from browser...');
 
       final settings = await _firebaseMessaging.requestPermission();
 
-      print('[FCM Permission] 📋 Permission settings received:');
-      print(
+      Logger.debug('[FCM Permission] 📋 Permission settings received:');
+      Logger.debug(
           '[FCM Permission]    - authorizationStatus: ${settings.authorizationStatus}');
-      print('[FCM Permission]    - alert: ${settings.alert}');
-      print('[FCM Permission]    - announcement: ${settings.announcement}');
-      print('[FCM Permission]    - badge: ${settings.badge}');
-      print('[FCM Permission]    - sound: ${settings.sound}');
+      Logger.debug('[FCM Permission]    - alert: ${settings.alert}');
+      Logger.debug(
+          '[FCM Permission]    - announcement: ${settings.announcement}');
+      Logger.debug('[FCM Permission]    - badge: ${settings.badge}');
+      Logger.debug('[FCM Permission]    - sound: ${settings.sound}');
 
       final granted =
           settings.authorizationStatus == AuthorizationStatus.authorized;
 
       if (granted) {
-        print('[FCM Permission] ✅ Permission GRANTED - notifications enabled');
+        Logger.error(
+            '[FCM Permission] ✅ Permission GRANTED - notifications enabled');
       } else {
-        print(
+        Logger.error(
             '[FCM Permission] ❌ Permission DENIED - status: ${settings.authorizationStatus}');
-        print(
+        Logger.warning(
             '[FCM Permission] ⚠️  User needs to allow notifications in browser settings');
       }
 
       return granted;
     } catch (e, stackTrace) {
-      print('[FCM Permission] ❌ Permission request error: $e');
-      print('[FCM Permission] Stack trace: $stackTrace');
+      Logger.error('[FCM Permission] ❌ Permission request error: $e');
+      Logger.debug('[FCM Permission] Stack trace: $stackTrace');
       return false;
     }
   }
@@ -66,9 +68,7 @@ class NotificationPermissionHandlerWeb {
       final settings = await _firebaseMessaging.getNotificationSettings();
       return settings.authorizationStatus;
     } catch (e) {
-      if (kDebugMode) {
-        print('[FCM Permission] Error getting permission status: $e');
-      }
+      Logger.error('[FCM Permission] Error getting permission status: $e');
       return AuthorizationStatus.notDetermined;
     }
   }

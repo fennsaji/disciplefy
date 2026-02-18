@@ -1,0 +1,591 @@
+import type {
+  UsageAnalyticsRequest,
+  UsageAnalyticsResponse,
+  SearchUsersRequest,
+  SearchUsersResponse,
+  UpdateSubscriptionRequest,
+  UpdateSubscriptionResponse,
+  CreatePaymentRecordRequest,
+  CreatePaymentRecordResponse,
+  ListPromoCodesRequest,
+  ListPromoCodesResponse,
+  CreatePromoCodeRequest,
+  CreatePromoCodeResponse,
+  TogglePromoCodeRequest,
+  TogglePromoCodeResponse,
+  ListLearningPathsResponse,
+  GetLearningPathResponse,
+  CreateLearningPathRequest,
+  CreateLearningPathResponse,
+  UpdateLearningPathRequest,
+  UpdateLearningPathResponse,
+  DeleteLearningPathResponse,
+  ReorderLearningPathRequest,
+  ToggleLearningPathRequest,
+  ListTopicsRequest,
+  ListTopicsResponse,
+  GetTopicResponse,
+  CreateTopicRequest,
+  CreateTopicResponse,
+  UpdateTopicRequest,
+  UpdateTopicResponse,
+  DeleteTopicResponse,
+  BulkImportRequest,
+  BulkImportResult,
+  AddTopicToPathRequest,
+  AddTopicToPathResponse,
+  RemoveTopicFromPathRequest,
+  RemoveTopicFromPathResponse,
+  ReorderTopicsRequest,
+  ReorderTopicsResponse,
+  ToggleMilestoneRequest,
+  ToggleMilestoneResponse,
+  LoadStudyGuideResponse,
+  UpdateStudyGuideRequest,
+  UpdateStudyGuideResponse
+} from '@/types/admin'
+
+export async function fetchUsageAnalytics(
+  params: UsageAnalyticsRequest
+): Promise<UsageAnalyticsResponse> {
+  const response = await fetch('/api/admin/usage-analytics', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to fetch usage analytics')
+  }
+
+  return response.json()
+}
+
+export async function searchUsers(
+  params: SearchUsersRequest
+): Promise<SearchUsersResponse> {
+  const response = await fetch('/api/admin/search-users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to search users')
+  }
+
+  return response.json()
+}
+
+export async function updateSubscription(
+  params: UpdateSubscriptionRequest
+): Promise<UpdateSubscriptionResponse> {
+  const response = await fetch('/api/admin/update-subscription', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for authentication
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update subscription')
+  }
+
+  return response.json()
+}
+
+export async function createPaymentRecord(
+  params: CreatePaymentRecordRequest
+): Promise<CreatePaymentRecordResponse> {
+  const response = await fetch('/api/admin/create-payment-record', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for authentication
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to create payment record')
+  }
+
+  return response.json()
+}
+
+export async function listPromoCodes(
+  params: ListPromoCodesRequest
+): Promise<ListPromoCodesResponse> {
+  const response = await fetch('/api/admin/list-promo-codes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to list promo codes')
+  }
+
+  return response.json()
+}
+
+export async function createPromoCode(
+  params: CreatePromoCodeRequest
+): Promise<CreatePromoCodeResponse> {
+  const response = await fetch('/api/admin/create-promo-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to create promo code')
+  }
+
+  return response.json()
+}
+
+export async function togglePromoCode(
+  params: TogglePromoCodeRequest
+): Promise<TogglePromoCodeResponse> {
+  const response = await fetch('/api/admin/toggle-promo-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to toggle promo code')
+  }
+
+  return response.json()
+}
+
+// ============================================================================
+// Learning Paths API
+// ============================================================================
+
+export async function listLearningPaths(): Promise<ListLearningPathsResponse> {
+  const response = await fetch('/api/admin/learning-paths', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to list learning paths')
+  }
+
+  return response.json()
+}
+
+export async function getLearningPath(id: string): Promise<GetLearningPathResponse> {
+  const response = await fetch(`/api/admin/learning-paths/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to get learning path')
+  }
+
+  return response.json()
+}
+
+export async function createLearningPath(
+  data: CreateLearningPathRequest
+): Promise<CreateLearningPathResponse> {
+  const response = await fetch('/api/admin/learning-paths', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to create learning path')
+  }
+
+  return response.json()
+}
+
+export async function updateLearningPath(
+  id: string,
+  data: UpdateLearningPathRequest
+): Promise<UpdateLearningPathResponse> {
+  const response = await fetch(`/api/admin/learning-paths/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update learning path')
+  }
+
+  return response.json()
+}
+
+export async function deleteLearningPath(id: string): Promise<DeleteLearningPathResponse> {
+  const response = await fetch(`/api/admin/learning-paths/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete learning path')
+  }
+
+  return response.json()
+}
+
+export async function reorderLearningPath(
+  id: string,
+  data: ReorderLearningPathRequest
+): Promise<UpdateLearningPathResponse> {
+  const response = await fetch(`/api/admin/learning-paths/${id}/reorder`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to reorder learning path')
+  }
+
+  return response.json()
+}
+
+export async function toggleLearningPath(
+  id: string,
+  data: ToggleLearningPathRequest
+): Promise<UpdateLearningPathResponse> {
+  const response = await fetch(`/api/admin/learning-paths/${id}/toggle`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to toggle learning path')
+  }
+
+  return response.json()
+}
+
+// ============================================================================
+// Recommended Topics API
+// ============================================================================
+
+export async function listTopics(params?: ListTopicsRequest): Promise<ListTopicsResponse> {
+  const queryParams = new URLSearchParams()
+  if (params?.category) queryParams.append('category', params.category)
+  if (params?.input_type) queryParams.append('input_type', params.input_type)
+  if (params?.is_active !== undefined) queryParams.append('is_active', String(params.is_active))
+
+  const url = `/api/admin/topics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to list topics')
+  }
+
+  return response.json()
+}
+
+export async function listTopicsWithGuides(params?: ListTopicsRequest): Promise<ListTopicsResponse> {
+  const queryParams = new URLSearchParams()
+  if (params?.category) queryParams.append('category', params.category)
+  if (params?.input_type) queryParams.append('input_type', params.input_type)
+  if (params?.is_active !== undefined) queryParams.append('is_active', String(params.is_active))
+
+  const url = `/api/admin/topics-with-guides${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to list topics with guides')
+  }
+
+  return response.json()
+}
+
+export async function getTopic(id: string): Promise<GetTopicResponse> {
+  const response = await fetch(`/api/admin/topics/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to get topic')
+  }
+
+  return response.json()
+}
+
+export async function createTopic(data: CreateTopicRequest): Promise<CreateTopicResponse> {
+  const response = await fetch('/api/admin/topics', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to create topic')
+  }
+
+  return response.json()
+}
+
+export async function updateTopic(
+  id: string,
+  data: UpdateTopicRequest
+): Promise<UpdateTopicResponse> {
+  const response = await fetch(`/api/admin/topics/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update topic')
+  }
+
+  return response.json()
+}
+
+export async function deleteTopic(id: string): Promise<DeleteTopicResponse> {
+  const response = await fetch(`/api/admin/topics/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete topic')
+  }
+
+  return response.json()
+}
+
+export async function bulkImportTopics(data: BulkImportRequest): Promise<BulkImportResult> {
+  const response = await fetch('/api/admin/topics/bulk-import', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to bulk import topics')
+  }
+
+  return response.json()
+}
+
+// ============================================================================
+// Learning Path Topics Association API
+// ============================================================================
+
+export async function addTopicToPath(data: AddTopicToPathRequest): Promise<AddTopicToPathResponse> {
+  const response = await fetch('/api/admin/path-topics', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to add topic to path')
+  }
+
+  return response.json()
+}
+
+export async function removeTopicFromPath(
+  data: RemoveTopicFromPathRequest
+): Promise<RemoveTopicFromPathResponse> {
+  const response = await fetch('/api/admin/path-topics', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to remove topic from path')
+  }
+
+  return response.json()
+}
+
+export async function reorderPathTopics(data: ReorderTopicsRequest): Promise<ReorderTopicsResponse> {
+  const response = await fetch('/api/admin/path-topics/reorder', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to reorder topics')
+  }
+
+  return response.json()
+}
+
+export async function toggleTopicMilestone(
+  pathId: string,
+  topicId: string,
+  data: ToggleMilestoneRequest
+): Promise<ToggleMilestoneResponse> {
+  const response = await fetch(`/api/admin/path-topics/${pathId}/${topicId}/milestone`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to toggle milestone')
+  }
+
+  return response.json()
+}
+
+// ============================================================================
+// Study Guide API
+// ============================================================================
+
+export async function loadStudyGuide(id: string): Promise<LoadStudyGuideResponse> {
+  const response = await fetch(`/api/admin/study-guide/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to load study guide')
+  }
+
+  return response.json()
+}
+
+export async function updateStudyGuide(
+  id: string,
+  data: UpdateStudyGuideRequest
+): Promise<UpdateStudyGuideResponse> {
+  const response = await fetch(`/api/admin/study-guide/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include', // Include cookies for authentication
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update study guide')
+  }
+
+  return response.json()
+}

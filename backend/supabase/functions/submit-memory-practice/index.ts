@@ -19,6 +19,8 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { getIntervalForReviewsSinceMastery } from '../_shared/memory-verse-intervals.ts'
+import { PracticeModeUnlockService } from '../_shared/services/practice-mode-unlock-service.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Practice mode types (aligned with frontend)
@@ -111,11 +113,11 @@ interface SubmitPracticeResponse extends ApiSuccessResponse<SubmitPracticeData> 
  * Implements the SM-2 spaced repetition algorithm
  * Modified for Bible verse memorization with daily cementing period
  */
-function calculateSM2(input: SM2Input): SM2Result {
+function calculateSM2(input: SM2Input, minEaseFactor: number = 1.3, maxIntervalDays: number = 180): SM2Result {
   const { quality, easeFactor, interval, repetitions } = input
 
-  // Constants
-  const MAX_INTERVAL_DAYS = 180 // 6 months maximum
+  // Constants - now using config parameters
+  const MAX_INTERVAL_DAYS = maxIntervalDays
   const DAILY_REVIEW_PERIOD = 14 // First 14 successful reviews are daily
 
   if (quality < 0 || quality > 5) {
@@ -124,7 +126,7 @@ function calculateSM2(input: SM2Input): SM2Result {
 
   // Calculate new ease factor
   let newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-  if (newEaseFactor < 1.3) newEaseFactor = 1.3
+  if (newEaseFactor < minEaseFactor) newEaseFactor = minEaseFactor
   newEaseFactor = Math.round(newEaseFactor * 100) / 100
 
   let newInterval: number
@@ -563,6 +565,10 @@ async function handleSubmitMemoryPractice(
     throw new AppError('AUTHENTICATION_ERROR', 'Authentication required to submit practice', 401)
   }
 
+  // Validate feature access for memory verses
+  const userPlan = await services.authService.getUserPlan(req)
+  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
+
   // Parse request body
   let body: SubmitPracticeRequest
   try {
@@ -629,13 +635,123 @@ async function handleSubmitMemoryPractice(
     throw new AppError('NOT_FOUND', 'Memory verse not found', 404)
   }
 
-  // Calculate new SM-2 state
+  // ========== Check practice mode unlock status ==========
+  // userPlan is already resolved above via authService.getUserPlan(req) — single source of truth
+  const userTier = userPlan
+
+  // Initialize unlock service
+  const unlockService = new PracticeModeUnlockService(services.supabaseServiceClient)
+
+  // 1. Check if mode is available in user's tier (tier-lock check)
+  const tierAvailability = await unlockService.checkModeTierAvailability(userTier, body.practice_mode)
+
+  if (!tierAvailability.available) {
+    console.log(`[SubmitPractice] Mode ${body.practice_mode} is tier-locked for ${userTier} user`)
+
+    // Return tier-locked error
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: {
+          code: 'PRACTICE_MODE_TIER_LOCKED',
+          message: unlockService.getTierLockedMessage(body.practice_mode, userTier),
+          mode: body.practice_mode,
+          tier: userTier,
+          available_modes: tierAvailability.availableModes,
+          required_tier: unlockService.getRecommendedUpgradeTier(userTier)
+        }
+      }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+  }
+
+  // 2. Check daily unlock status for this mode
+  try {
+    const unlockStatus = await unlockService.getModeUnlockStatus(
+      userContext.userId,
+      body.memory_verse_id,
+      body.practice_mode,
+      userTier
+    )
+
+    // If mode is already unlocked, allow practice (unlimited attempts)
+    if (unlockStatus.status === 'unlocked') {
+      console.log(`[SubmitPractice] Mode ${body.practice_mode} already unlocked for verse ${body.memory_verse_id}`)
+      // Continue to SM-2 calculation below
+    }
+    // If mode can be unlocked, unlock it now (must await — Deno terminates on response send)
+    else if (unlockStatus.status === 'can_unlock') {
+      console.log(`[SubmitPractice] Unlocking mode ${body.practice_mode} for verse ${body.memory_verse_id}`)
+
+      try {
+        await unlockService.unlockMode(
+          userContext.userId,
+          body.memory_verse_id,
+          body.practice_mode,
+          userTier
+        )
+        console.log(`[SubmitPractice] Mode ${body.practice_mode} unlocked successfully`)
+      } catch (err) {
+        // Log but don't block practice submission
+        console.error('[SubmitPractice] Failed to unlock mode:', err)
+      }
+
+      // Continue to SM-2 calculation below
+    }
+    // If unlock limit reached, return error
+    else if (unlockStatus.status === 'unlock_limit_reached') {
+      console.log(`[SubmitPractice] Unlock limit reached for verse ${body.memory_verse_id}`)
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'PRACTICE_UNLOCK_LIMIT_EXCEEDED',
+            message: unlockService.getUnlockLimitMessage(
+              unlockStatus.unlockedModes,
+              unlockStatus.unlockLimit || 1,
+              userTier
+            ),
+            details: {
+              unlocked_modes: unlockStatus.unlockedModes,
+              unlocked_count: unlockStatus.unlockedModes.length,
+              unlock_limit: unlockStatus.unlockLimit,
+              unlock_slots_remaining: 0,
+              tier: userTier,
+              verse_id: body.memory_verse_id,
+              date: new Date().toISOString().split('T')[0]
+            }
+          }
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+  } catch (error) {
+    console.error('[SubmitPractice] Unlock status check failed (fail-open):', error)
+    // Continue with practice submission (fail-open pattern for non-critical error)
+  }
+  // ========== END NEW CODE ==========
+
+  // Get SM-2 algorithm parameters from database config
+  const memoryConfig = await services.memoryVerseConfigService.getMemoryVerseConfig()
+  const minEaseFactor = memoryConfig.spacedRepetition.minEaseFactor
+  const maxIntervalDays = memoryConfig.spacedRepetition.maxIntervalDays
+
+  console.log(`[SubmitPractice] Using SM-2 config: minEase=${minEaseFactor}, maxInterval=${maxIntervalDays}`)
+
+  // Calculate new SM-2 state using database config
   const sm2Result = calculateSM2({
     quality: body.quality_rating,
     easeFactor: memoryVerse.ease_factor,
     interval: memoryVerse.interval_days,
     repetitions: memoryVerse.repetitions
-  })
+  }, minEaseFactor, maxIntervalDays)
 
   // Determine if this is a perfect recall
   const isPerfectRecall = body.quality_rating === 5
@@ -810,9 +926,24 @@ async function handleSubmitMemoryPractice(
     data: responseData
   }
 
+  // Log usage for profitability tracking (non-LLM feature)
+  try {
+    await services.usageLoggingService.logMemoryPractice(
+      userContext.userId,
+      userTier,
+      body.practice_mode,
+      body.memory_verse_id,
+      isSuccessfulPractice,
+      body.quality_rating
+    )
+  } catch (usageLogError) {
+    console.error('Usage logging failed:', usageLogError)
+    // Don't fail the request if usage logging fails
+  }
+
   return new Response(JSON.stringify(response), {
     status: 200,
-    headers: { 
+    headers: {
       'Content-Type': 'application/json'
     }
   })

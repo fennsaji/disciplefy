@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/suggested_verse_entity.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Local caching service for suggested verses using Hive
 ///
@@ -30,9 +31,7 @@ class SuggestedVersesCacheService {
       // Clean up old entries
       await _cleanupOldEntries();
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Failed to initialize suggested verses cache: $e');
-      }
+      Logger.debug('⚠️ Failed to initialize suggested verses cache: $e');
       throw Exception('Failed to initialize suggested verses cache: $e');
     }
   }
@@ -59,13 +58,10 @@ class SuggestedVersesCacheService {
 
       await _cacheBox.put(cacheKey, cacheData);
 
-      if (kDebugMode) {
-        print('✅ [CACHE] Cached ${verses.length} suggested verses ($cacheKey)');
-      }
+      Logger.debug(
+          '✅ [CACHE] Cached ${verses.length} suggested verses ($cacheKey)');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [CACHE] Failed to cache suggested verses: $e');
-      }
+      Logger.debug('❌ [CACHE] Failed to cache suggested verses: $e');
     }
   }
 
@@ -81,9 +77,7 @@ class SuggestedVersesCacheService {
       final cacheData = _cacheBox.get(cacheKey);
 
       if (cacheData == null) {
-        if (kDebugMode) {
-          print('📭 [CACHE] No cached verses found ($cacheKey)');
-        }
+        Logger.debug('📭 [CACHE] No cached verses found ($cacheKey)');
         return null;
       }
 
@@ -92,10 +86,8 @@ class SuggestedVersesCacheService {
       final cacheAge = DateTime.now().difference(cachedAt);
 
       if (cacheAge.inDays > _cacheDurationDays) {
-        if (kDebugMode) {
-          print(
-              '⏰ [CACHE] Cache expired (${cacheAge.inDays} days old) ($cacheKey)');
-        }
+        Logger.debug(
+            '⏰ [CACHE] Cache expired (${cacheAge.inDays} days old) ($cacheKey)');
         await _cacheBox.delete(cacheKey);
         return null;
       }
@@ -108,10 +100,8 @@ class SuggestedVersesCacheService {
           .map((c) => SuggestedVerseCategory.fromString(c as String))
           .toList();
 
-      if (kDebugMode) {
-        print(
-            '✅ [CACHE] Using cached verses (${verses.length} verses, ${cacheAge.inHours}h old) ($cacheKey)');
-      }
+      Logger.debug(
+          '✅ [CACHE] Using cached verses (${verses.length} verses, ${cacheAge.inHours}h old) ($cacheKey)');
 
       return CachedSuggestedVersesData(
         verses: verses,
@@ -120,9 +110,7 @@ class SuggestedVersesCacheService {
         cachedAt: cachedAt,
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [CACHE] Error reading cache: $e');
-      }
+      Logger.debug('❌ [CACHE] Error reading cache: $e');
       return null;
     }
   }
@@ -155,13 +143,9 @@ class SuggestedVersesCacheService {
 
     try {
       await _cacheBox.clear();
-      if (kDebugMode) {
-        print('🗑️ [CACHE] Cleared all suggested verses cache');
-      }
+      Logger.debug('🗑️ [CACHE] Cleared all suggested verses cache');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [CACHE] Failed to clear cache: $e');
-      }
+      Logger.debug('❌ [CACHE] Failed to clear cache: $e');
     }
   }
 
@@ -175,13 +159,9 @@ class SuggestedVersesCacheService {
     try {
       final cacheKey = _generateCacheKey(language, category);
       await _cacheBox.delete(cacheKey);
-      if (kDebugMode) {
-        print('🗑️ [CACHE] Cleared cache for $cacheKey');
-      }
+      Logger.debug('🗑️ [CACHE] Cleared cache for $cacheKey');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [CACHE] Failed to clear cache for key: $e');
-      }
+      Logger.debug('❌ [CACHE] Failed to clear cache for key: $e');
     }
   }
 
@@ -257,13 +237,11 @@ class SuggestedVersesCacheService {
       }
 
       if (kDebugMode && keysToDelete.isNotEmpty) {
-        print(
+        Logger.debug(
             '🗑️ [CACHE] Cleaned up ${keysToDelete.length} old cache entries');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ [CACHE] Failed to cleanup old entries: $e');
-      }
+      Logger.debug('⚠️ [CACHE] Failed to cleanup old entries: $e');
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/error/failures.dart';
 import '../datasources/memory_verse_local_datasource.dart';
 import '../datasources/memory_verse_remote_datasource.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Service responsible for synchronizing offline operations with remote server.
 ///
@@ -27,16 +28,12 @@ class MemoryVerseSyncService {
   /// Returns [Right(unit)] if sync successful, [Left(Failure)] otherwise.
   Future<Either<Failure, Unit>> syncWithRemote() async {
     try {
-      if (kDebugMode) {
-        print('🔄 [SYNC] Starting sync...');
-      }
+      Logger.debug('🔄 [SYNC] Starting sync...');
 
       final syncQueue = await _localDataSource.getSyncQueue();
 
       if (syncQueue.isEmpty) {
-        if (kDebugMode) {
-          print('✅ [SYNC] Nothing to sync');
-        }
+        Logger.info('✅ [SYNC] Nothing to sync');
         return const Right(unit);
       }
 
@@ -48,8 +45,9 @@ class MemoryVerseSyncService {
           await _processSyncOperation(operation);
         } catch (e) {
           if (kDebugMode) {
-            print('❌ [SYNC] Failed to sync operation: $e');
-            print('⏸️ [SYNC] Stopping sync to preserve failed operations');
+            Logger.error('❌ [SYNC] Failed to sync operation: $e');
+            Logger.debug(
+                '⏸️ [SYNC] Stopping sync to preserve failed operations');
           }
           hadFailure = true;
           break; // Stop processing to preserve operation order
@@ -61,16 +59,13 @@ class MemoryVerseSyncService {
         await _localDataSource.clearSyncQueue();
         await _localDataSource.updateLastSyncTime();
 
-        if (kDebugMode) {
-          print('✅ [SYNC] Sync completed - all operations synced successfully');
-        }
+        Logger.info(
+            '✅ [SYNC] Sync completed - all operations synced successfully');
 
         return const Right(unit);
       } else {
-        if (kDebugMode) {
-          print(
-              '⚠️ [SYNC] Sync incomplete - failed operations remain queued for retry');
-        }
+        Logger.warning(
+            '⚠️ [SYNC] Sync incomplete - failed operations remain queued for retry');
 
         return const Left(
           ServerFailure(
@@ -80,9 +75,7 @@ class MemoryVerseSyncService {
         );
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [SYNC] Sync failed: $e');
-      }
+      Logger.error('❌ [SYNC] Sync failed: $e');
       return Left(ServerFailure(
           message: 'Sync failed: ${e.toString()}', code: 'SYNC_FAILED'));
     }
@@ -281,12 +274,10 @@ class MemoryVerseSyncService {
     }
 
     if (value is! String) {
-      if (kDebugMode) {
-        print(
-          '⚠️ [SYNC] Optional field "$fieldName" has wrong type '
-          '(expected String, got ${value.runtimeType}). Using null.',
-        );
-      }
+      Logger.warning(
+        '⚠️ [SYNC] Optional field "$fieldName" has wrong type '
+        '(expected String, got ${value.runtimeType}). Using null.',
+      );
       return null;
     }
 
@@ -305,12 +296,10 @@ class MemoryVerseSyncService {
     }
 
     if (value is! int) {
-      if (kDebugMode) {
-        print(
-          '⚠️ [SYNC] Optional field "$fieldName" has wrong type '
-          '(expected int, got ${value.runtimeType}). Using null.',
-        );
-      }
+      Logger.warning(
+        '⚠️ [SYNC] Optional field "$fieldName" has wrong type '
+        '(expected int, got ${value.runtimeType}). Using null.',
+      );
       return null;
     }
 
@@ -325,19 +314,17 @@ class MemoryVerseSyncService {
     StackTrace stackTrace,
   ) {
     if (kDebugMode) {
-      print('❌ [SYNC] Operation failed:');
-      print('   Operation ID: $operationId');
-      print('   Operation Type: $operationType');
-      print('   Error: $error');
-      print('   Stack trace: $stackTrace');
+      Logger.error('❌ [SYNC] Operation failed:');
+      Logger.debug('   Operation ID: $operationId');
+      Logger.debug('   Operation Type: $operationType');
+      Logger.debug('   Error: $error');
+      Logger.debug('   Stack trace: $stackTrace');
     }
   }
 
   /// Adds an operation to the sync queue for later processing.
   Future<void> queueOperation(Map<String, dynamic> operation) async {
     await _localDataSource.addToSyncQueue(operation);
-    if (kDebugMode) {
-      print('📥 [SYNC] Operation queued: ${operation['type']}');
-    }
+    Logger.debug('📥 [SYNC] Operation queued: ${operation['type']}');
   }
 }

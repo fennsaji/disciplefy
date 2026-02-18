@@ -42,10 +42,10 @@ const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
     maxTokens: 4000,
     temperature: 0.2,
     promptModifiers: {
-      languageInstruction: 'Output only in simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)',
-      complexityInstruction: 'Use easy level language that common people can easily understand'
+      languageInstruction: 'Output only in SIMPLE, everyday Hindi that village people can understand. Use CHRISTIAN terminology (not Hindu/Muslim terms). Avoid complex Sanskrit words completely.',
+      complexityInstruction: 'Use 5th-6th grade level Hindi - simple words that anyone can understand. Prefer spoken Hindi over literary Hindi.'
     },
-    culturalContext: 'Indian Christian context with cultural sensitivity to local traditions and practices',
+    culturalContext: 'Indian Christian context - use terms familiar to Protestant Christians in India',
     wordCountTargets: {
       quick: { min: 500, max: 600, display: '500-600' },
       standard: { min: 2000, max: 2500, display: '2000-2500' },
@@ -60,10 +60,10 @@ const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
     maxTokens: 4000,
     temperature: 0.2,
     promptModifiers: {
-      languageInstruction: 'Output only in simple, everyday Malayalam (avoid complex literary words, use common spoken Malayalam)',
-      complexityInstruction: 'Use simple vocabulary accessible to Malayalam speakers across Kerala'
+      languageInstruction: 'Output only in SIMPLE, everyday Malayalam that common people speak at home. Use CHRISTIAN terminology familiar to Kerala Protestant churches. Avoid complex literary Malayalam completely.',
+      complexityInstruction: 'Use 5th-6th grade level Malayalam - simple spoken words, not formal/literary language. Make it easy for anyone to understand.'
     },
-    culturalContext: 'Kerala Christian context with awareness of the strong Protestant Christian heritage in the region',
+    culturalContext: 'Kerala Christian context - use terms familiar to Protestant Christians in Kerala churches',
     // v3.4: Malayalam adjusted targets (70% of English due to 7-8x token inefficiency)
     // Malayalam script requires significantly more tokens per word than English/Hindi
     wordCountTargets: {
@@ -141,44 +141,105 @@ Example Prayer Point: "Ask God to help you trust His love even when circumstance
 Tone: Pastoral, encouraging, and practical with modern language that connects biblical truth to daily life.`,
 
   hi: `हिंदी में उदाहरण और शैली:
-सरल, रोजमर्रा की हिंदी का उपयोग करें। कठिन संस्कृत शब्दों से बचें।
+बिल्कुल सरल, रोजमर्रा की हिंदी का उपयोग करें जो गांव के लोग भी समझ सकें।
 
 उदाहरण सारांश: "यह पद हमें दिखाता है कि परमेश्वर हमसे प्रेम करता है।"
 
-उदाहरण प्रश्न: "आप अपने जीवन में परमेश्वर के प्रेम को कैसे देख सकते हैं?"
+उदाहरण प्रश्न: "आप अपनी जिंदगी में परमेश्वर के प्रेम को कैसे देख सकते हैं?"
 
 उदाहरण प्रार्थना: "हे प्रभु, हमें अपने प्रेम को समझने में मदद करें।"
 
-उदाहरण व्याख्या: "इस पद में पौलुस हमें बताता है कि परमेश्वर का प्रेम कभी खत्म नहीं होता। यह प्रेम हमारे लिए इतना गहरा है कि वह अपने बेटे यीशु को हमारे लिए दे दिया।"
+शैली: 5-6 कक्षा के बच्चे समझ सकें, ऐसी आसान भाषा। रोज बोलने वाले शब्द। बाइबल की बात को रोजमर्रा की जिंदगी से जोड़ें।
 
-शैली: गांव के लोग समझ सकें, ऐसी सरल भाषा। आम बोलचाल के शब्द। बाइबल की सच्चाई को रोजाना की जिंदगी से जोड़ें।
+⚠️ ईसाई शब्दावली - MANDATORY (Hindu/Muslim terms से बचें):
 
-शब्दावली गाइड:
-- "परमेश्वर" (न कि "ईश्वर")
-- "प्रेम" (न कि "प्रीति") 
-- "मदद" (न कि "सहायता")
-- "जिंदगी" (न कि "जीवन")
-- "दिल" (न कि "हृदय")
-- "प्रार्थना" (न कि "प्रार्थना")
-- "आशीर्वाद" (न कि "आशीष")`,
+परमेश्वर के लिए:
+✓ "परमेश्वर" (USE THIS - Christian term)
+✗ "भगवान" (NEVER use - Hindu term)
+✗ "ईश्वर" (NEVER use - Hindu term)
+✗ "अल्लाह" (NEVER use - Muslim term)
+
+यीशु के लिए:
+✓ "यीशु मसीह", "प्रभु यीशु", "उद्धारकर्ता"
+✗ "ईसा" (avoid - formal/Islamic usage)
+
+पवित्र आत्मा के लिए:
+✓ "पवित्र आत्मा" (Holy Spirit)
+✗ "परमात्मा" (avoid - Hindu connotation)
+
+सरल बोलचाल के शब्द (न कि कठिन संस्कृत):
+✓ "प्रेम" (love) - न कि "प्रीति", "स्नेह"
+✓ "मदद" (help) - न कि "सहायता"
+✓ "जिंदगी" (life) - न कि "जीवन"
+✓ "दिल" (heart) - न कि "हृदय"
+✓ "प्रार्थना" (prayer) - सरल रखें
+✓ "आशीर्वाद" (blessing) - न कि "आशीष"
+✓ "विश्वास" (faith) - न कि "श्रद्धा"
+✓ "पाप" (sin) - सरल रखें
+✓ "माफी" (forgiveness) - न कि "क्षमा"
+✓ "कलीसिया" (church) - न कि "गिरजाघर"
+✓ "बाइबल" (Bible) - न कि "पवित्र ग्रंथ"
+
+आम क्रियाएं - सरल बोलचाल:
+✓ "करना" (do) - न कि "संपन्न करना"
+✓ "देखना" (see) - न कि "दृष्टि डालना"
+✓ "कहना" (say) - न कि "कथन करना"
+✓ "समझना" (understand) - न कि "बोध होना"
+✓ "मानना" (believe) - न कि "विश्वास धारण करना"
+
+CRITICAL: हर वाक्य इतना आसान हो कि 10 साल का बच्चा या गांव का कोई भी व्यक्ति बिना किसी परेशानी के समझ सके।`,
 
   ml: `മലയാളത്തിൽ ഉദാഹരണം:
-സാധാരണ മലയാളം ഉപയോഗിക്കുക. സാധുവായ JSON ഔട്ട്‌പുട്ട് ഉറപ്പാക്കാൻ:
+വളരെ ലളിതമായ, വീട്ടിൽ സംസാരിക്കുന്ന മലയാളം ഉപയോഗിക്കുക. എല്ലാവർക്കും മനസ്സിലാകണം.
+
+ഉദാഹരണ സാരാംശം: "ഈ വചനം നമുക്ക് കാണിച്ചുതരുന്നത് ദൈവം നമ്മെ സ്നേഹിക്കുന്നു എന്നാണ്."
+
+ഉദാഹരണ ചോദ്യം: "നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം?"
+
+ഉദാഹരണ പ്രാർത്ഥന: "കർത്താവേ, അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ."
+
+ശൈലി: 5-6 ക്ലാസ്സിലെ കുട്ടികൾക്ക് മനസ്സിലാകുന്ന ലളിതമായ ഭാഷ. എല്ലാ ദിവസവും സംസാരിക്കുന്ന വാക്കുകൾ.
+
+⚠️ ക്രിസ്തീയ പദാവലി - നിർബന്ധമായും ഉപയോഗിക്കേണ്ടത്:
+
+ദൈവത്തിന്:
+✓ "ദൈവം" (God - USE THIS Christian term)
+✓ "കർത്താവ്" (Lord)
+✗ "ഭഗവാൻ" (NEVER use - Hindu term)
+✗ "അല്ലാഹു" (NEVER use - Muslim term)
+
+യേശുവിന്:
+✓ "യേശു", "യേശുക്രിസ്തു", "കർത്താവായ യേശു"
+✓ "രക്ഷകൻ" (Savior)
+
+പരിശുദ്ധാത്മാവിന്:
+✓ "പരിശുദ്ധാത്മാവ്" (Holy Spirit)
+
+ലളിതമായ, സംസാര ഭാഷ (സാഹിത്യ മലയാളമല്ല):
+✓ "സ്നേഹം" (love) - ലളിതം
+✓ "സഹായം" (help) - സാധാരണം
+✓ "ജീവിതം" (life) - എളുപ്പം
+✓ "മനസ്സ്" (heart/mind) - സംസാരം
+✓ "പ്രാർത്ഥന" (prayer) - ലളിതം
+✓ "അനുഗ്രഹം" (blessing)
+✓ "വിശ്വാസം" (faith)
+✓ "പാപം" (sin)
+✓ "ക്ഷമ" (forgiveness)
+✓ "സഭ" (church)
+✓ "ബൈബിൾ" (Bible)
+
+സാധാരണ ക്രിയകൾ - എളുപ്പമുള്ള വാക്കുകൾ:
+✓ "ചെയ്യുക" (do)
+✓ "കാണുക" (see)
+✓ "പറയുക" (say)
+✓ "മനസ്സിലാക്കുക" (understand)
+✓ "വിശ്വസിക്കുക" (believe)
 
 JSON ആവശ്യകതകൾ:
 - എല്ലാ കീകൾക്കും സ്ട്രിംഗ് വാല്യൂകൾക്കും ഡബിൾ ക്വോട്ടുകൾ ഉപയോഗിക്കുക
 - പ്രത്യേക പ്രതീകങ്ങൾ എസ്കേപ് ചെയ്യുക
-- ബാക്ക്‌ടിക്കുകളോ കോട്ടേഷൻ ഇല്ലാതെയുള്ള വിരാമചിഹ്നങ്ങളോ ഒഴിവാക്കുക
 
-ഉദാഹരണ സാരാംശം: ഈ വചനം ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു
-
-ഉദാഹരണ ചോദ്യം: നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം
-
-ഉദാഹരണ പ്രാർത്ഥന: കർത്താവേ അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ
-
-ശൈലി: ലളിതമായ മലയാളം ഉപയോഗിച്ച് ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക
-
-ഉപയോഗിക്കേണ്ട പദങ്ങൾ: ദൈവം സ്നേഹം സഹായം ജീവിതം മനസ്സ് പ്രാർത്ഥന അനുഗ്രഹം`
+CRITICAL: ഓരോ വാക്യവും 10 വയസ്സുള്ള കുട്ടിക്കോ ഗ്രാമത്തിലെ ആർക്കും എളുപ്പത്തിൽ മനസ്സിലാകണം.`
 }
 
 /**

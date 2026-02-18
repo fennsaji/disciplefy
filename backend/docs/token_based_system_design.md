@@ -23,8 +23,8 @@ This document outlines the design and implementation plan for replacing the curr
 
 ### Token Allocation Model
 - **Premium Plan**: Unlimited tokens (no daily limit)
-- **Standard Plan**: 100 tokens daily (authenticated users, resets at midnight UTC)
-- **Free Plan**: 20 tokens daily (guest/anonymous users, resets at midnight UTC)
+- **Standard Plan**: 20 tokens daily (authenticated users, resets at midnight UTC)
+- **Free Plan**: 8 tokens daily (guest/anonymous users, resets at midnight UTC)
 - **Purchasable Tokens**: Additional tokens that users can buy, never reset
 - **Reset Schedule**: Daily at 00:00 UTC for non-premium plans (purchasable tokens persist)
 
@@ -141,11 +141,11 @@ DECLARE
   default_limit INTEGER;
 BEGIN
   -- Set default daily limit based on user plan
-  default_limit := CASE 
+  default_limit := CASE
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
-    WHEN p_user_plan = 'standard' THEN 100
-    WHEN p_user_plan = 'free' THEN 20
-    ELSE 20  -- Fallback to free plan
+    WHEN p_user_plan = 'standard' THEN 20
+    WHEN p_user_plan = 'free' THEN 8
+    ELSE 8  -- Fallback to free plan
   END;
 
   -- Try to get existing record, reset if needed
@@ -219,11 +219,11 @@ BEGIN
   current_identifier := COALESCE(auth.uid()::text, 'anonymous_' || gen_random_uuid()::text);
   
   -- Set default daily limit based on user plan
-  default_limit := CASE 
+  default_limit := CASE
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
-    WHEN p_user_plan = 'standard' THEN 100
-    WHEN p_user_plan = 'free' THEN 20
-    ELSE 20  -- Fallback to free plan
+    WHEN p_user_plan = 'standard' THEN 20
+    WHEN p_user_plan = 'free' THEN 8
+    ELSE 8  -- Fallback to free plan
   END;
 
   -- Try to get existing record, reset if needed
@@ -289,11 +289,11 @@ DECLARE
   needs_reset BOOLEAN;
 BEGIN
   -- Set default daily limit based on user plan
-  default_limit := CASE 
+  default_limit := CASE
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
-    WHEN p_user_plan = 'standard' THEN 100
-    WHEN p_user_plan = 'free' THEN 20
-    ELSE 20  -- Fallback to free plan
+    WHEN p_user_plan = 'standard' THEN 20
+    WHEN p_user_plan = 'free' THEN 8
+    ELSE 8  -- Fallback to free plan
   END;
 
   -- Check if user needs daily reset and get current tokens
@@ -477,11 +477,11 @@ DECLARE
   default_limit INTEGER;
 BEGIN
   -- Set default daily limit based on user plan
-  default_limit := CASE 
+  default_limit := CASE
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
-    WHEN p_user_plan = 'standard' THEN 100
-    WHEN p_user_plan = 'free' THEN 20
-    ELSE 20  -- Fallback to free plan
+    WHEN p_user_plan = 'standard' THEN 20
+    WHEN p_user_plan = 'free' THEN 8
+    ELSE 8  -- Fallback to free plan
   END;
 
   -- Validate token amount

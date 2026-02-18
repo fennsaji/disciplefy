@@ -7,6 +7,7 @@ import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../models/user_profile_model.dart';
 import 'user_profile_api_service.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Service for managing user profile operations
 /// Handles API communication and business logic for user profiles
@@ -231,7 +232,7 @@ class UserProfileService {
         }
         final mode = studyModeFromString(modeString);
         if (mode == null) {
-          print(
+          Logger.warning(
               '⚠️ [USER_PROFILE_SERVICE] Invalid study mode string: $modeString');
         }
         return Right(mode);

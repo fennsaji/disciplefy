@@ -1,8 +1,11 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../navigation/route_observer.dart';
 import '../animations/page_transitions.dart';
+import '../screens/maintenance_screen.dart';
+import '../services/system_config_service.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
@@ -27,14 +30,20 @@ import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
+import '../../features/tokens/presentation/pages/token_purchase_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import '../../features/tokens/presentation/pages/token_usage_history_page.dart';
+import '../../features/tokens/domain/entities/token_status.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
+import '../../features/subscription/presentation/pages/plus_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/standard_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
 import '../../features/subscription/presentation/pages/subscription_payment_history_page.dart';
 import '../../features/subscription/presentation/pages/my_plan_page.dart';
 import '../../features/subscription/presentation/pages/pricing_page.dart';
+import '../../core/services/platform_detection_service.dart';
+import '../../features/subscription/data/datasources/subscription_remote_data_source.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
 import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
@@ -64,6 +73,7 @@ import '../../features/personalization/presentation/pages/personalization_questi
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import '../widgets/locked_feature_wrapper.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../../features/gamification/presentation/pages/stats_dashboard_page.dart';
 import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
@@ -84,6 +94,9 @@ class AppRouter {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
+    observers: [
+      appRouteObserver, // Track navigation events for background API handling
+    ],
     redirect: (context, state) async => await RouterGuard.handleRedirect(
       state.uri.path,
       isAuthInitialized:
@@ -95,6 +108,15 @@ class AppRouter {
         path: AppRoutes.appLoading,
         name: 'app_loading',
         builder: (context, state) => const AppLoadingScreen(),
+      ),
+
+      // SYSTEM CONFIG: Maintenance mode screen
+      GoRoute(
+        path: AppRoutes.maintenance,
+        name: 'maintenance',
+        builder: (context, state) => MaintenanceScreen(
+          configService: sl<SystemConfigService>(),
+        ),
       ),
 
       // Onboarding Flow (outside app shell)
@@ -214,6 +236,23 @@ class AppRouter {
         ),
       ),
       GoRoute(
+        path: AppRoutes.tokenPurchase,
+        name: 'token_purchase',
+        builder: (context, state) {
+          final tokenStatus = state.extra as TokenStatus?;
+          if (tokenStatus == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: Missing token status')),
+            );
+          }
+          return TokenPurchasePage(
+            tokenStatus: tokenStatus,
+            userEmail: Supabase.instance.client.auth.currentUser?.email ?? '',
+            userPhone: Supabase.instance.client.auth.currentUser?.phone ?? '',
+          );
+        },
+      ),
+      GoRoute(
         path: AppRoutes.purchaseHistory,
         name: 'purchase_history',
         builder: (context, state) => const PurchaseHistoryPage(),
@@ -229,6 +268,14 @@ class AppRouter {
         builder: (context, state) => BlocProvider(
           create: (context) => sl<SubscriptionBloc>(),
           child: const PremiumUpgradePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.plusUpgrade,
+        name: 'plus_upgrade',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const PlusUpgradePage(),
         ),
       ),
       GoRoute(
@@ -269,9 +316,12 @@ class AppRouter {
         path: AppRoutes.memoryVerses,
         name: 'memory_verses',
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: const MemoryVersesHomePage(),
+          child: LockedFeatureWrapper(
+            featureKey: 'memory_verses',
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: const MemoryVersesHomePage(),
+            ),
           ),
           state: state,
         ),
@@ -450,10 +500,13 @@ class AppRouter {
               extra['conversationType'] as ConversationType? ??
                   ConversationType.general;
 
-          return VoiceConversationPage(
-            studyGuideId: studyGuideId,
-            relatedScripture: relatedScripture,
-            conversationType: conversationType,
+          return LockedFeatureWrapper(
+            featureKey: 'ai_discipler',
+            child: VoiceConversationPage(
+              studyGuideId: studyGuideId,
+              relatedScripture: relatedScripture,
+              conversationType: conversationType,
+            ),
           );
         },
       ),
@@ -491,9 +544,12 @@ class AppRouter {
         builder: (context, state) {
           final pathId = state.pathParameters['pathId'] ?? '';
           final source = state.uri.queryParameters['source'];
-          return BlocProvider(
-            create: (context) => sl<LearningPathsBloc>(),
-            child: LearningPathDetailPage(pathId: pathId, source: source),
+          return LockedFeatureWrapper(
+            featureKey: 'learning_paths',
+            child: BlocProvider(
+              create: (context) => sl<LearningPathsBloc>(),
+              child: LearningPathDetailPage(pathId: pathId, source: source),
+            ),
           );
         },
       ),
@@ -503,9 +559,12 @@ class AppRouter {
         path: AppRoutes.leaderboard,
         name: 'leaderboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<LeaderboardBloc>(),
-          child: const LeaderboardPage(),
+        builder: (context, state) => LockedFeatureWrapper(
+          featureKey: 'leaderboard',
+          child: BlocProvider(
+            create: (context) => sl<LeaderboardBloc>(),
+            child: const LeaderboardPage(),
+          ),
         ),
       ),
 
@@ -514,9 +573,12 @@ class AppRouter {
         path: AppRoutes.statsDashboard,
         name: 'stats_dashboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => BlocProvider.value(
-          value: sl<GamificationBloc>(),
-          child: const StatsDashboardPage(),
+        builder: (context, state) => LockedFeatureWrapper(
+          featureKey: 'leaderboard',
+          child: BlocProvider.value(
+            value: sl<GamificationBloc>(),
+            child: const StatsDashboardPage(),
+          ),
         ),
       ),
 
@@ -526,7 +588,10 @@ class AppRouter {
         name: 'reflection_journal',
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: const ReflectionJournalScreen(),
+          child: LockedFeatureWrapper(
+            featureKey: 'reflections',
+            child: const ReflectionJournalScreen(),
+          ),
           state: state,
         ),
       ),
@@ -536,7 +601,12 @@ class AppRouter {
         path: AppRoutes.pricing,
         name: 'pricing',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const PricingPage(),
+        builder: (context, state) => PricingPage(
+          platformService: PlatformDetectionService(),
+          dataSource: SubscriptionRemoteDataSourceImpl(
+            supabaseClient: Supabase.instance.client,
+          ),
+        ),
       ),
 
       // Authentication Routes (outside app shell)
@@ -744,6 +814,10 @@ extension AppRouterExtension on GoRouter {
 
   /// Navigates to the token management page where users can view balance, purchase tokens, and manage payment methods.
   void goToTokenManagement() => go(AppRoutes.tokenManagement);
+
+  /// Navigates to the token purchase page where users can purchase additional tokens.
+  void goToTokenPurchase(TokenStatus tokenStatus) =>
+      go(AppRoutes.tokenPurchase, extra: tokenStatus);
 
   /// Navigates to the purchase history page where users can view their past token purchases.
   void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);

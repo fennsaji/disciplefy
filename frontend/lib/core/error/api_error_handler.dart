@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 import 'exceptions.dart';
+import '../utils/logger.dart';
 
 /// Centralized API error handler for remote datasources.
 ///
@@ -34,9 +34,7 @@ class ApiErrorHandler {
       errorMessage = 'Server error: ${response.body}';
     }
 
-    if (kDebugMode) {
-      print('❌ [$feature] Error ($statusCode): $errorMessage');
-    }
+    Logger.error('❌ [$feature] Error ($statusCode): $errorMessage');
 
     throw ServerException(
       message: errorMessage,
@@ -52,9 +50,7 @@ class ApiErrorHandler {
   /// [error] - The caught exception
   /// [operation] - Description of the operation being performed (e.g., 'fetching verses')
   Never handleException(dynamic error, String operation) {
-    if (kDebugMode) {
-      print('❌ [$feature] Exception while $operation: $error');
-    }
+    Logger.error('❌ [$feature] Exception while $operation: $error');
 
     if (error is ServerException) {
       throw error;
@@ -72,22 +68,16 @@ class ApiErrorHandler {
 
   /// Logs a debug message for the feature
   void logDebug(String message) {
-    if (kDebugMode) {
-      print('🚀 [$feature] $message');
-    }
+    Logger.info('🚀 [$feature] $message');
   }
 
   /// Logs a success message for the feature
   void logSuccess(String message) {
-    if (kDebugMode) {
-      print('✅ [$feature] $message');
-    }
+    Logger.debug('✅ [$feature] $message');
   }
 
   /// Logs a warning message for the feature
   void logWarning(String message) {
-    if (kDebugMode) {
-      print('⚠️ [$feature] $message');
-    }
+    Logger.warning('⚠️ [$feature] $message');
   }
 }

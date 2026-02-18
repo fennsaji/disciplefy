@@ -16,14 +16,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:go_router/go_router.dart';
+import '../utils/logger.dart';
 
 /// Background message handler (must be top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   if (kDebugMode) {
-    print('[FCM Background] Message received: ${message.messageId}');
-    print('[FCM Background] Notification: ${message.notification?.title}');
+    Logger.debug('[FCM Background] Message received: ${message.messageId}');
+    Logger.debug(
+        '[FCM Background] Notification: ${message.notification?.title}');
   }
 }
 
@@ -58,12 +60,12 @@ class NotificationService {
   /// Call this during app startup after Firebase.initializeApp()
   Future<void> initialize() async {
     if (_isInitialized) {
-      if (kDebugMode) print('[NotificationService] Already initialized');
+      if (kDebugMode) Logger.debug('[NotificationService] Already initialized');
       return;
     }
 
     try {
-      if (kDebugMode) print('[NotificationService] Initializing...');
+      if (kDebugMode) Logger.debug('[NotificationService] Initializing...');
 
       // Initialize timezone database for scheduled notifications
       tz.initializeTimeZones();
@@ -97,11 +99,13 @@ class NotificationService {
       }
 
       _isInitialized = true;
-      if (kDebugMode) print('[NotificationService] ✅ Initialization complete');
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] ✅ Initialization complete');
+      }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('[NotificationService] ❌ Initialization error: $e');
-        print('[NotificationService] Stack trace: $stackTrace');
+        Logger.error('[NotificationService] ❌ Initialization error: $e');
+        Logger.debug('[NotificationService] Stack trace: $stackTrace');
       }
     }
   }
@@ -129,9 +133,7 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onLocalNotificationTap,
     );
 
-    if (kDebugMode) {
-      print('[NotificationService] Local notifications initialized');
-    }
+    Logger.info('[NotificationService] Local notifications initialized');
   }
 
   // ============================================================================
@@ -148,9 +150,7 @@ class NotificationService {
 
         final granted = messagingPermission?.authorizationStatus ==
             AuthorizationStatus.authorized;
-        if (kDebugMode) {
-          print('[NotificationService] Web permissions: $granted');
-        }
+        Logger.debug('[NotificationService] Web permissions: $granted');
         return granted;
       } else if (Platform.isIOS) {
         // iOS permissions
@@ -159,25 +159,23 @@ class NotificationService {
 
         final granted = messagingPermission?.authorizationStatus ==
             AuthorizationStatus.authorized;
-        if (kDebugMode) {
-          print('[NotificationService] iOS permissions: $granted');
-        }
+        Logger.debug('[NotificationService] iOS permissions: $granted');
         return granted;
       } else {
         // Android 13+ permissions
         if (Platform.isAndroid) {
           final status = await Permission.notification.request();
           final granted = status.isGranted;
-          if (kDebugMode) {
-            print('[NotificationService] Android permissions: $granted');
-          }
+          Logger.debug('[NotificationService] Android permissions: $granted');
           return granted;
         }
       }
 
       return false;
     } catch (e) {
-      if (kDebugMode) print('[NotificationService] Permission error: $e');
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] Permission error: $e');
+      }
       return false;
     }
   }
@@ -192,10 +190,8 @@ class NotificationService {
           try {
             _firebaseMessaging = FirebaseMessaging.instance;
           } catch (e) {
-            if (kDebugMode) {
-              print(
-                  '[NotificationService] Could not initialize Firebase Messaging: $e');
-            }
+            Logger.debug(
+                '[NotificationService] Could not initialize Firebase Messaging: $e');
             return false;
           }
         }
@@ -210,9 +206,7 @@ class NotificationService {
       }
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Check permissions error: $e');
-      }
+      Logger.error('[NotificationService] Check permissions error: $e');
       return false;
     }
   }
@@ -225,10 +219,12 @@ class NotificationService {
   Future<String?> _getFCMToken() async {
     try {
       _fcmToken = await _firebaseMessaging?.getToken();
-      if (kDebugMode) print('[NotificationService] FCM Token: $_fcmToken');
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] FCM Token: $_fcmToken');
+      }
       return _fcmToken;
     } catch (e) {
-      if (kDebugMode) print('[NotificationService] Get token error: $e');
+      if (kDebugMode) Logger.debug('[NotificationService] Get token error: $e');
       return null;
     }
   }
@@ -236,7 +232,9 @@ class NotificationService {
   /// Register FCM token with backend
   Future<void> _registerTokenWithBackend() async {
     if (_fcmToken == null) {
-      if (kDebugMode) print('[NotificationService] No FCM token to register');
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] No FCM token to register');
+      }
       return;
     }
 
@@ -244,10 +242,8 @@ class NotificationService {
       // Check if user is authenticated and not anonymous
       final currentUser = _supabaseClient.auth.currentUser;
       if (currentUser == null) {
-        if (kDebugMode) {
-          print(
-              '[NotificationService] User not authenticated, skipping registration');
-        }
+        Logger.debug(
+            '[NotificationService] User not authenticated, skipping registration');
         return;
       }
 
@@ -255,9 +251,9 @@ class NotificationService {
       final isAnonymous = currentUser.isAnonymous;
       if (isAnonymous) {
         if (kDebugMode) {
-          print(
+          Logger.warning(
               '[NotificationService] ⚠️  User is anonymous (guest), skipping notification registration');
-          print(
+          Logger.debug(
               '[NotificationService] Push notifications are only available for authenticated users');
         }
         return;
@@ -279,9 +275,10 @@ class NotificationService {
       final timezoneOffset = DateTime.now().timeZoneOffset.inMinutes;
 
       if (kDebugMode) {
-        print('[NotificationService] Registering token...');
-        print('[NotificationService] Platform: $platform');
-        print('[NotificationService] Timezone offset: $timezoneOffset minutes');
+        Logger.debug('[NotificationService] Registering token...');
+        Logger.debug('[NotificationService] Platform: $platform');
+        Logger.debug(
+            '[NotificationService] Timezone offset: $timezoneOffset minutes');
       }
 
       // Call backend edge function
@@ -295,27 +292,25 @@ class NotificationService {
       );
 
       if (response.status == 200) {
-        if (kDebugMode) {
-          print('[NotificationService] ✅ Token registered successfully');
-        }
+        Logger.error('[NotificationService] ✅ Token registered successfully');
       } else {
         if (kDebugMode) {
-          print('[NotificationService] ❌ Token registration failed');
-          print('[NotificationService] Status: ${response.status}');
-          print('[NotificationService] Data: ${response.data}');
+          Logger.debug('[NotificationService] ❌ Token registration failed');
+          Logger.debug('[NotificationService] Status: ${response.status}');
+          Logger.debug('[NotificationService] Data: ${response.data}');
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Token registration error: $e');
-      }
+      Logger.error('[NotificationService] Token registration error: $e');
     }
   }
 
   /// Handle token refresh
   void _setupTokenRefreshListener() {
     _firebaseMessaging?.onTokenRefresh.listen((newToken) {
-      if (kDebugMode) print('[NotificationService] Token refreshed: $newToken');
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] Token refreshed: $newToken');
+      }
       _fcmToken = newToken;
       _registerTokenWithBackend();
     });
@@ -336,17 +331,16 @@ class NotificationService {
     // Token refresh
     _setupTokenRefreshListener();
 
-    if (kDebugMode) {
-      print('[NotificationService] Notification listeners set up');
-    }
+    Logger.debug('[NotificationService] Notification listeners set up');
   }
 
   /// Handle notification when app is in foreground
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     if (kDebugMode) {
-      print('[NotificationService] Foreground message received');
-      print('[NotificationService] Title: ${message.notification?.title}');
-      print('[NotificationService] Body: ${message.notification?.body}');
+      Logger.debug('[NotificationService] Foreground message received');
+      Logger.debug(
+          '[NotificationService] Title: ${message.notification?.title}');
+      Logger.debug('[NotificationService] Body: ${message.notification?.body}');
     }
 
     // Show local notification
@@ -356,8 +350,8 @@ class NotificationService {
   /// Handle notification tap (from background or terminated state)
   void _handleNotificationTap(RemoteMessage message) {
     if (kDebugMode) {
-      print('[NotificationService] Notification tapped');
-      print('[NotificationService] Data: ${message.data}');
+      Logger.debug('[NotificationService] Notification tapped');
+      Logger.debug('[NotificationService] Data: ${message.data}');
     }
 
     // Emit notification tap event
@@ -373,8 +367,8 @@ class NotificationService {
 
     if (initialMessage != null) {
       if (kDebugMode) {
-        print('[NotificationService] App opened from notification');
-        print('[NotificationService] Data: ${initialMessage.data}');
+        Logger.debug('[NotificationService] App opened from notification');
+        Logger.debug('[NotificationService] Data: ${initialMessage.data}');
       }
 
       // Delay navigation to ensure app is fully initialized
@@ -419,21 +413,22 @@ class NotificationService {
       payload: jsonEncode(message.data),
     );
 
-    if (kDebugMode) print('[NotificationService] Local notification displayed');
+    if (kDebugMode) {
+      Logger.debug('[NotificationService] Local notification displayed');
+    }
   }
 
   /// Handle local notification tap
   void _onLocalNotificationTap(NotificationResponse response) {
     if (kDebugMode) {
-      print('[NotificationService] Local notification tapped');
-      print('[NotificationService] Payload: ${response.payload}');
+      Logger.debug('[NotificationService] Local notification tapped');
+      Logger.debug('[NotificationService] Payload: ${response.payload}');
     }
 
     // Parse payload and navigate
     if (response.payload == null || response.payload!.isEmpty) {
-      if (kDebugMode) {
-        print('[NotificationService] ⚠️  Empty payload, cannot navigate');
-      }
+      Logger.warning(
+          '[NotificationService] ⚠️  Empty payload, cannot navigate');
       return;
     }
 
@@ -441,9 +436,7 @@ class NotificationService {
       // Decode JSON payload
       final data = jsonDecode(response.payload!) as Map<String, dynamic>;
 
-      if (kDebugMode) {
-        print('[NotificationService] Decoded payload: $data');
-      }
+      Logger.debug('[NotificationService] Decoded payload: $data');
 
       // Emit notification tap event
       _notificationTapController.add(data);
@@ -452,8 +445,8 @@ class NotificationService {
       _navigateFromNotification(data);
     } catch (e) {
       if (kDebugMode) {
-        print('[NotificationService] ❌ Failed to parse payload: $e');
-        print('[NotificationService] Raw payload: ${response.payload}');
+        Logger.error('[NotificationService] ❌ Failed to parse payload: $e');
+        Logger.debug('[NotificationService] Raw payload: ${response.payload}');
       }
     }
   }
@@ -466,9 +459,7 @@ class NotificationService {
   void _navigateFromNotification(Map<String, dynamic> data) {
     // Input validation: Ensure data is not null and is a Map
     if (data.isEmpty) {
-      if (kDebugMode) {
-        print('[NotificationService] ⚠️  Empty notification data');
-      }
+      Logger.warning('[NotificationService] ⚠️  Empty notification data');
       return;
     }
 
@@ -476,8 +467,9 @@ class NotificationService {
     final type = data['type'];
     if (type == null || type is! String || type.isEmpty) {
       if (kDebugMode) {
-        print('[NotificationService] ⚠️  Invalid or missing notification type');
-        print('[NotificationService] Data received: $data');
+        Logger.warning(
+            '[NotificationService] ⚠️  Invalid or missing notification type');
+        Logger.debug('[NotificationService] Data received: $data');
       }
       return;
     }
@@ -491,8 +483,9 @@ class NotificationService {
     };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
-        print('[NotificationService] ⚠️  Unknown notification type: $type');
-        print('[NotificationService] Valid types: $validTypes');
+        Logger.warning(
+            '[NotificationService] ⚠️  Unknown notification type: $type');
+        Logger.debug('[NotificationService] Valid types: $validTypes');
       }
       // Navigate to home as safe fallback
       _router.go('/');
@@ -504,9 +497,7 @@ class NotificationService {
       case 'daily_verse':
         // Navigate to daily verse screen
         _router.go('/daily-verse');
-        if (kDebugMode) {
-          print('[NotificationService] ✅ Navigating to daily verse');
-        }
+        Logger.info('[NotificationService] ✅ Navigating to daily verse');
         break;
 
       case 'recommended_topic':
@@ -539,17 +530,13 @@ class NotificationService {
 
           _router.go(
               '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam$descriptionParam');
-          if (kDebugMode) {
-            print(
-                '[NotificationService] ✅ Navigating to study guide for topic: $topicTitle (ID: ${topicId ?? 'none'})');
-          }
+          Logger.info(
+              '[NotificationService] ✅ Navigating to study guide for topic: $topicTitle (ID: ${topicId ?? 'none'})');
         } else {
           // Fallback to study topics page if no topic title provided
           _router.go('/study-topics');
-          if (kDebugMode) {
-            print(
-                '[NotificationService] ⚠️  No topic title provided, navigating to study topics');
-          }
+          Logger.warning(
+              '[NotificationService] ⚠️  No topic title provided, navigating to study topics');
         }
         break;
 
@@ -561,17 +548,13 @@ class NotificationService {
         if (guideId != null && guideId is String && guideId.isNotEmpty) {
           // Navigate to the specific incomplete study guide
           _router.go('/study-guide/$guideId');
-          if (kDebugMode) {
-            print(
-                '[NotificationService] ✅ Navigating to Continue Learning guide: $guideId (${topicTitle ?? 'unknown'})');
-          }
+          Logger.info(
+              '[NotificationService] ✅ Navigating to Continue Learning guide: $guideId (${topicTitle ?? 'unknown'})');
         } else {
           // Fallback to study topics page if no guide ID provided
           _router.go('/study-topics');
-          if (kDebugMode) {
-            print(
-                '[NotificationService] ⚠️  No guide ID provided, navigating to study topics');
-          }
+          Logger.warning(
+              '[NotificationService] ⚠️  No guide ID provided, navigating to study topics');
         }
         break;
 
@@ -601,17 +584,13 @@ class NotificationService {
 
           _router.go(
               '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=for_you_notification$topicIdParam$descriptionParam');
-          if (kDebugMode) {
-            print(
-                '[NotificationService] ✅ Navigating to For You topic: $topicTitle (ID: ${topicId ?? 'none'})');
-          }
+          Logger.info(
+              '[NotificationService] ✅ Navigating to For You topic: $topicTitle (ID: ${topicId ?? 'none'})');
         } else {
           // Fallback to study topics page if no topic title provided
           _router.go('/study-topics');
-          if (kDebugMode) {
-            print(
-                '[NotificationService] ⚠️  No For You topic title provided, navigating to study topics');
-          }
+          Logger.warning(
+              '[NotificationService] ⚠️  No For You topic title provided, navigating to study topics');
         }
         break;
     }
@@ -638,18 +617,16 @@ class NotificationService {
       );
 
       if (response.status == 200) {
-        if (kDebugMode) print('[NotificationService] ✅ Preferences updated');
+        if (kDebugMode) {
+          Logger.debug('[NotificationService] ✅ Preferences updated');
+        }
         return true;
       } else {
-        if (kDebugMode) {
-          print('[NotificationService] ❌ Preferences update failed');
-        }
+        Logger.error('[NotificationService] ❌ Preferences update failed');
         return false;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Update preferences error: $e');
-      }
+      Logger.error('[NotificationService] Update preferences error: $e');
       return false;
     }
   }
@@ -667,7 +644,9 @@ class NotificationService {
       }
       return null;
     } catch (e) {
-      if (kDebugMode) print('[NotificationService] Get preferences error: $e');
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] Get preferences error: $e');
+      }
       return null;
     }
   }

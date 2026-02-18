@@ -3,6 +3,9 @@ class AppRoutes {
   // ANDROID FIX: Loading screen during session restoration
   static const String appLoading = '/loading';
 
+  // SYSTEM CONFIG: Maintenance mode screen
+  static const String maintenance = '/maintenance';
+
   static const String onboarding = '/onboarding';
   static const String languageSelection = '/language-selection';
   // static const String onboardingLanguage = '/onboarding/language';
@@ -16,9 +19,11 @@ class AppRoutes {
   static const String saved = '/saved';
   static const String studyTopics = '/study-topics';
   static const String tokenManagement = '/token-management';
+  static const String tokenPurchase = '/token-management/purchase';
   static const String purchaseHistory = '/token-management/purchase-history';
   static const String usageHistory = '/token-management/usage-history';
   static const String premiumUpgrade = '/premium-upgrade';
+  static const String plusUpgrade = '/plus-upgrade';
   static const String standardUpgrade = '/standard-upgrade';
   static const String subscriptionManagement = '/subscription-management';
   static const String myPlan = '/my-plan';

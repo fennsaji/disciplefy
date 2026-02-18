@@ -14,6 +14,7 @@ import 'follow_up_chat_event.dart';
 import 'follow_up_chat_state.dart';
 
 import '../../../../core/utils/event_source_bridge.dart';
+import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing follow-up chat conversations with streaming support
 class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
@@ -253,11 +254,11 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
             final jsonData = json.decode(data);
             _handleStreamingData(jsonData, assistantMessageId);
           } catch (e) {
-            print('[FollowUpChat] Error parsing streaming data: $e');
+            Logger.error('[FollowUpChat] Error parsing streaming data: $e');
           }
         },
         onError: (error) {
-          print('[FollowUpChat] EventSource error: $error');
+          Logger.debug('[FollowUpChat] EventSource error: $error');
 
           // Check if it's a token limit error (429)
           if (error.toString().contains('TOKEN_LIMIT_EXCEEDED')) {
@@ -300,7 +301,7 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
           }
         },
         onDone: () {
-          print('[FollowUpChat] EventSource connection closed');
+          Logger.debug('[FollowUpChat] EventSource connection closed');
         },
       );
     } catch (e) {
@@ -359,7 +360,7 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
 
     switch (type) {
       case 'connection':
-        print('[FollowUpChat] Connection established');
+        Logger.debug('[FollowUpChat] Connection established');
         break;
       case 'content':
         final content = data['content'] as String?;

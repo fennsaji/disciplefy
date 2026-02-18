@@ -12,6 +12,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { SubscriptionService } from '../_shared/services/subscription-service.ts'
 import { isStandardTrialActive, isInGracePeriod, getPlanConfig } from '../_shared/config/subscription-config.ts'
 import type { CreateSubscriptionResponse } from '../_shared/types/subscription-types.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Main Standard subscription creation handler
@@ -20,6 +21,9 @@ async function handleCreateStandardSubscription(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     // 1. Authenticate user
     const userContext = await services.authService.getUserContext(req)
@@ -38,7 +42,7 @@ async function handleCreateStandardSubscription(
     await services.rateLimiter.enforceRateLimit(userId, 'authenticated')
 
     // 3. Check if trial is still active (allow subscription during grace period)
-    if (isStandardTrialActive() && !isInGracePeriod()) {
+    if (await isStandardTrialActive() && !await isInGracePeriod()) {
       throw new AppError(
         'TRIAL_STILL_ACTIVE',
         'Standard plan is currently free. Subscription will be required after March 31st, 2025.',
@@ -61,9 +65,9 @@ async function handleCreateStandardSubscription(
     // 5. Check if user already has active standard subscription
     const { data: existingSubscription } = await services.supabaseServiceClient
       .from('subscriptions')
-      .select('id, status, subscription_plan')
+      .select('id, status, plan_id, subscription_plans!inner(plan_code)')
       .eq('user_id', userId)
-      .eq('subscription_plan', 'standard')
+      .eq('subscription_plans.plan_code', 'standard')
       .in('status', ['active', 'authenticated', 'created', 'pending_cancellation'])
       .maybeSingle()
 
@@ -81,7 +85,7 @@ async function handleCreateStandardSubscription(
     // 7. Create Standard subscription
     console.log(`[CreateStandardSubscription] Creating subscription for user ${userId}`)
 
-    const planConfig = getPlanConfig('standard')
+    const planConfig = await getPlanConfig('standard')
 
     const { subscription, shortUrl } = await subscriptionService.createSubscription({
       userId,

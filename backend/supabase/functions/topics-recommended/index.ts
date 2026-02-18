@@ -12,6 +12,7 @@ import { createFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Represents a recommended study guide topic
@@ -82,6 +83,9 @@ async function handleTopicsRecommended(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   // Parse and validate query parameters
   const queryParams = parseQueryParameters(req.url)
 

@@ -113,6 +113,35 @@ class StreamError extends VoiceConversationEvent {
   List<Object?> get props => [message];
 }
 
+/// Monthly conversation limit exceeded.
+class MonthlyLimitExceeded extends VoiceConversationEvent {
+  final int conversationsUsed;
+  final int limit;
+  final int remaining;
+  final String tier;
+  final String month;
+  final String message;
+
+  const MonthlyLimitExceeded({
+    required this.conversationsUsed,
+    required this.limit,
+    required this.remaining,
+    required this.tier,
+    required this.month,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [
+        conversationsUsed,
+        limit,
+        remaining,
+        tier,
+        month,
+        message,
+      ];
+}
+
 /// Play the AI response audio.
 class PlayResponse extends VoiceConversationEvent {
   const PlayResponse();

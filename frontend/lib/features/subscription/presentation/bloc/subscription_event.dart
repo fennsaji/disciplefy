@@ -20,8 +20,14 @@ class GetActiveSubscription extends SubscriptionEvent {
 /// Event to create a new premium subscription
 ///
 /// Creates a Razorpay subscription and returns authorization URL
+/// [promoCode] - Optional promotional code for discount
 class CreateSubscription extends SubscriptionEvent {
-  const CreateSubscription();
+  final String? promoCode;
+
+  const CreateSubscription({this.promoCode});
+
+  @override
+  List<Object?> get props => [promoCode];
 }
 
 /// Event to cancel the user's active subscription
@@ -175,10 +181,28 @@ class LoadSubscriptionStatus extends SubscriptionEvent {
 
 /// Event to create a new Standard subscription
 ///
-/// Creates a Razorpay subscription for Standard plan (₹50/month)
+/// Creates a Razorpay subscription for Standard plan (₹79/month)
 /// Only allowed after trial period ends
 class CreateStandardSubscription extends SubscriptionEvent {
-  const CreateStandardSubscription();
+  final String? promoCode;
+
+  const CreateStandardSubscription({this.promoCode});
+
+  @override
+  List<Object?> get props => [promoCode];
+}
+
+/// Event to create a new Plus subscription
+///
+/// Creates a Razorpay subscription for Plus plan (₹149/month)
+/// Provides enhanced features between Standard and Premium tiers
+class CreatePlusSubscription extends SubscriptionEvent {
+  final String? promoCode;
+
+  const CreatePlusSubscription({this.promoCode});
+
+  @override
+  List<Object?> get props => [promoCode];
 }
 
 /// Event to refresh subscription invoices from the server
@@ -190,8 +214,55 @@ class RefreshSubscriptionInvoices extends SubscriptionEvent {
 
 /// Event to start a 7-day Premium trial
 ///
-/// Only available for new users who signed up after April 1st, 2025
-/// and haven't used their trial yet
+/// UPDATED: Premium trial is now available ON-DEMAND to ALL users.
+/// Offered when user clicks "Subscribe to Premium" or "Try Premium".
+/// No date restrictions - available immediately.
+///
+/// Eligibility: User must NOT have already used their Premium trial
 class StartPremiumTrial extends SubscriptionEvent {
   const StartPremiumTrial();
+}
+
+/// Event to activate a free subscription (₹0 plans)
+///
+/// Skips Razorpay payment flow and directly activates subscription
+/// Used for Free tier or plans with 100% discount via promo code
+class ActivateFreeSubscription extends SubscriptionEvent {
+  final String planCode;
+  final String? promoCode;
+
+  const ActivateFreeSubscription({
+    required this.planCode,
+    this.promoCode,
+  });
+
+  @override
+  List<Object?> get props => [planCode, promoCode];
+}
+
+/// Internal event: IAP purchase completed successfully
+///
+/// INTERNAL USE ONLY - DO NOT USE DIRECTLY
+/// Triggered by IAP service callback when purchase is successful
+/// Validates receipt with backend and creates subscription
+class IAPPurchaseCompleted extends SubscriptionEvent {
+  final dynamic purchaseDetails;
+
+  const IAPPurchaseCompleted(this.purchaseDetails);
+
+  @override
+  List<Object?> get props => [purchaseDetails];
+}
+
+/// Internal event: IAP purchase failed
+///
+/// INTERNAL USE ONLY - DO NOT USE DIRECTLY
+/// Triggered by IAP service callback when purchase encounters an error
+class IAPPurchaseError extends SubscriptionEvent {
+  final String error;
+
+  const IAPPurchaseError(this.error);
+
+  @override
+  List<Object?> get props => [error];
 }

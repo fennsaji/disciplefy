@@ -8,6 +8,7 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 interface FeedbackRequest {
   readonly study_guide_id?: string
@@ -299,6 +300,9 @@ async function handleFeedback(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   const requestBody = await req.json() as FeedbackRequest
 
   // Validate required fields
@@ -313,17 +317,44 @@ async function handleFeedback(
 
   const createdAt = new Date().toISOString()
 
+  // Analyze sentiment if message is provided
+  let sentimentScore: number | null = null
+  if (requestBody.message && requestBody.message.trim().length > 0) {
+    try {
+      sentimentScore = await services.llmService.analyzeSentiment(requestBody.message)
+      console.log(`[FEEDBACK] Sentiment score: ${sentimentScore}`)
+    } catch (error) {
+      console.warn('[FEEDBACK] Sentiment analysis failed, continuing without score:', error)
+      // Continue without sentiment - don't fail the entire feedback submission
+    }
+  }
+
+  // Prepare feedback data with correct schema
+  const feedbackData: any = {
+    was_helpful: requestBody.was_helpful,
+    message: requestBody.message || null,
+    category: requestBody.category || 'general',
+    sentiment_score: sentimentScore,
+    created_at: createdAt
+  }
+
+  // Set user_id if authenticated, otherwise null for anonymous
+  if (requestBody.user_context?.is_authenticated && requestBody.user_context?.user_id) {
+    feedbackData.user_id = requestBody.user_context.user_id
+  } else {
+    feedbackData.user_id = null
+  }
+
+  // Set context if study_guide_id is provided
+  if (requestBody.study_guide_id) {
+    feedbackData.context_type = 'study_guide'
+    feedbackData.context_id = requestBody.study_guide_id
+  }
+
   // Insert feedback
   const { data, error } = await services.supabaseServiceClient
     .from('feedback')
-    .insert({
-      study_guide_id: requestBody.study_guide_id || null,
-      was_helpful: requestBody.was_helpful,
-      message: requestBody.message || null,
-      category: requestBody.category || 'general',
-      user_id: null, // Anonymous feedback
-      created_at: createdAt
-    })
+    .insert(feedbackData)
     .select()
     .single()
 

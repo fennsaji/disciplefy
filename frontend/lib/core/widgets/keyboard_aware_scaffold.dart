@@ -4,6 +4,7 @@ import '../utils/device_keyboard_handler.dart';
 import '../utils/keyboard_animation_sync.dart';
 import '../utils/custom_viewport_handler.dart';
 import '../utils/keyboard_performance_monitor.dart';
+import '../utils/logger.dart';
 
 /// Enhanced Scaffold with device-specific keyboard handling for problematic Android devices.
 ///
@@ -83,7 +84,7 @@ class _KeyboardAwareScaffoldState extends State<KeyboardAwareScaffold>
         DeviceKeyboardHandler.needsCustomKeyboardHandling;
 
     if (kDebugMode && _useCustomHandling) {
-      print(
+      Logger.debug(
           '🔧 [KEYBOARD AWARE SCAFFOLD] Custom handling enabled for: ${DeviceKeyboardHandler.deviceManufacturer}');
     }
   }
@@ -110,10 +111,8 @@ class _KeyboardAwareScaffoldState extends State<KeyboardAwareScaffold>
             .recordKeyboardChange(newKeyboardHeight);
       }
 
-      if (kDebugMode) {
-        print(
-            '🔧 [KEYBOARD AWARE SCAFFOLD] Keyboard height: $_keyboardHeight, visible: $_isKeyboardVisible');
-      }
+      Logger.debug(
+          '🔧 [KEYBOARD AWARE SCAFFOLD] Keyboard height: $_keyboardHeight, visible: $_isKeyboardVisible');
     }
   }
 

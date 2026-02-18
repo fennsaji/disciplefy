@@ -263,6 +263,7 @@ frontend/android/gradlew
 frontend/android/gradlew.bat
 frontend/android/local.properties
 frontend/android/app/src/main/java/io/flutter/plugins/
+frontend/android/app/firebase.json
 
 # ==============================================================================
 # BUILD ARTIFACTS

@@ -1,0 +1,519 @@
+'use client'
+
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import Papa from 'papaparse'
+import { bulkImportTopics } from '@/lib/api/admin'
+import type { BulkImportRequest, CSVTopicRow } from '@/types/admin'
+
+type ImportStage = 'upload' | 'preview' | 'importing' | 'complete'
+
+interface ParsedTopic extends Omit<CSVTopicRow, 'xp_value' | 'tags'> {
+  xp_value: number
+  tags: string[]
+  is_active: boolean
+  errors: string[]
+}
+
+export default function BulkImportPage() {
+  const router = useRouter()
+  const [stage, setStage] = useState<ImportStage>('upload')
+  const [parsedTopics, setParsedTopics] = useState<ParsedTopic[]>([])
+  const [importResults, setImportResults] = useState<{
+    success: number
+    failed: number
+    errors: Array<{ row: number; error: string }>
+  } | null>(null)
+
+  const validateTopic = (topic: any, rowNumber: number): ParsedTopic => {
+    const errors: string[] = []
+
+    if (!topic.title || topic.title.trim() === '') {
+      errors.push('Title is required')
+    }
+    if (!topic.description || topic.description.trim() === '') {
+      errors.push('Description is required')
+    }
+    if (!topic.category || topic.category.trim() === '') {
+      errors.push('Category is required')
+    }
+    if (!['topic', 'verse', 'question'].includes(topic.input_type)) {
+      errors.push('Input type must be "topic", "verse", or "question"')
+    }
+    if (!topic.input_value || topic.input_value.trim() === '') {
+      errors.push('Input value is required')
+    }
+
+    const xpValue = parseInt(topic.xp_value)
+    if (isNaN(xpValue) || xpValue < 1) {
+      errors.push('XP value must be a positive number')
+    }
+
+    const isActive =
+      topic.is_active === 'true' ||
+      topic.is_active === '1' ||
+      topic.is_active === true
+    const tags = topic.tags
+      ? topic.tags.split(',').map((t: string) => t.trim())
+      : []
+
+    return {
+      title: topic.title?.trim() || '',
+      description: topic.description?.trim() || '',
+      category: topic.category?.trim() || '',
+      input_type: topic.input_type?.trim() || 'topic',
+      input_value: topic.input_value?.trim() || '',
+      xp_value: xpValue,
+      tags,
+      is_active: isActive,
+      errors,
+    }
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const topics = results.data.map((row, index) =>
+          validateTopic(row, index + 2)
+        )
+        setParsedTopics(topics)
+        setStage('preview')
+      },
+      error: (error) => {
+        toast.error(`Failed to parse CSV: ${error.message}`)
+      },
+    })
+  }
+
+  const handleImport = async () => {
+    const validTopics = parsedTopics
+      .filter((t) => t.errors.length === 0)
+      .map(({ errors, ...topic }) => topic)
+
+    if (validTopics.length === 0) {
+      toast.error('No valid topics to import')
+      return
+    }
+
+    setStage('importing')
+
+    const csvTopics: CSVTopicRow[] = validTopics.map(t => ({
+      title: t.title,
+      description: t.description,
+      category: t.category,
+      input_type: t.input_type,
+      input_value: t.input_value,
+      xp_value: t.xp_value.toString(),
+      tags: t.tags.join(','),
+      title_hi: t.title_hi,
+      description_hi: t.description_hi,
+      title_ml: t.title_ml,
+      description_ml: t.description_ml,
+    }))
+
+    try {
+      await bulkImportTopics({ topics: csvTopics })
+      setImportResults({
+        success: validTopics.length,
+        failed: parsedTopics.length - validTopics.length,
+        errors: parsedTopics
+          .map((t, i) =>
+            t.errors.length > 0
+              ? { row: i + 2, error: t.errors.join(', ') }
+              : null
+          )
+          .filter((e): e is { row: number; error: string } => e !== null),
+      })
+      setStage('complete')
+    } catch (error) {
+      console.error('Import failed:', error)
+      toast.error('Import failed. Please try again.')
+      setStage('preview')
+    }
+  }
+
+  const handleBack = () => {
+    router.push('/topics')
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={handleBack}
+            className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Topics
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Bulk Import Topics</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Import multiple topics from a CSV file
+          </p>
+        </div>
+
+        {/* Content Container */}
+        <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900">
+          <div className="p-6">
+            {/* Upload Stage */}
+            {stage === 'upload' && (
+              <div className="space-y-6">
+                <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                    Upload CSV File
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Select a CSV file containing topics to import
+                  </p>
+                  <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    Choose CSV File
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      className="sr-only"
+                    />
+                  </label>
+                </div>
+
+                {/* CSV Format Guide */}
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    CSV Format Requirements
+                  </h4>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Your CSV file must include the following columns:
+                  </p>
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="min-w-full text-xs">
+                      <thead className="bg-white dark:bg-gray-800">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium text-gray-900 dark:text-gray-100">
+                            Column
+                          </th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-900 dark:text-gray-100">
+                            Required
+                          </th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-900 dark:text-gray-100">
+                            Format
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">title</td>
+                          <td className="px-3 py-2 text-green-600 dark:text-green-400">Yes</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">Text</td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">description</td>
+                          <td className="px-3 py-2 text-green-600 dark:text-green-400">Yes</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">Text</td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">category</td>
+                          <td className="px-3 py-2 text-green-600 dark:text-green-400">Yes</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">Text</td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">input_type</td>
+                          <td className="px-3 py-2 text-green-600 dark:text-green-400">Yes</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
+                            topic / verse / question
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">input_value</td>
+                          <td className="px-3 py-2 text-green-600 dark:text-green-400">Yes</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">Text</td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">xp_value</td>
+                          <td className="px-3 py-2 text-green-600 dark:text-green-400">Yes</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
+                            Number (1-1000)
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">tags</td>
+                          <td className="px-3 py-2 text-gray-400">No</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
+                            Comma-separated
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">is_active</td>
+                          <td className="px-3 py-2 text-gray-400">No</td>
+                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
+                            true / false (default: true)
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Preview Stage */}
+            {stage === 'preview' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      Import Preview
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {parsedTopics.filter((t) => t.errors.length === 0).length} valid
+                      topics •{' '}
+                      {parsedTopics.filter((t) => t.errors.length > 0).length} with
+                      errors
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStage('upload')}
+                    className="text-sm text-primary hover:text-primary-600"
+                  >
+                    Upload Different File
+                  </button>
+                </div>
+
+                <div className="max-h-96 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                          Row
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                          Title
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                          Category
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                          Type
+                        </th>
+                        <th className="px-3 py-2 text-center text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                          XP
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                      {parsedTopics.map((topic, index) => (
+                        <tr
+                          key={index}
+                          className={
+                            topic.errors.length > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }
+                        >
+                          <td className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                            {index + 2}
+                          </td>
+                          <td className="px-3 py-2">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {topic.title}
+                            </p>
+                            {topic.errors.length > 0 && (
+                              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                {topic.errors.join(', ')}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                            {topic.category}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                            {topic.input_type}
+                          </td>
+                          <td className="px-3 py-2 text-center text-sm text-gray-700 dark:text-gray-300">
+                            {topic.xp_value}
+                          </td>
+                          <td className="px-3 py-2">
+                            {topic.errors.length === 0 ? (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                Valid
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                Error
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Importing Stage */}
+            {stage === 'importing' && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                <p className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Importing topics...
+                </p>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Please wait while we process your import
+                </p>
+              </div>
+            )}
+
+            {/* Complete Stage */}
+            {stage === 'complete' && importResults && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <svg
+                    className="mx-auto h-16 w-16 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                    Import Complete
+                  </h3>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900/30 dark:bg-green-900/20">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-300">
+                      Successfully Imported
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-green-700 dark:text-green-400">
+                      {importResults.success}
+                    </p>
+                  </div>
+
+                  {importResults.failed > 0 && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/30 dark:bg-red-900/20">
+                      <p className="text-sm font-medium text-red-900 dark:text-red-300">Failed</p>
+                      <p className="mt-1 text-2xl font-semibold text-red-700 dark:text-red-400">
+                        {importResults.failed}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {importResults.errors.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Error Details
+                    </h4>
+                    <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
+                      {importResults.errors.map((err, index) => (
+                        <div
+                          key={index}
+                          className="rounded bg-white p-2 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                        >
+                          <span className="font-medium">Row {err.row}:</span>{' '}
+                          {err.error}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-700">
+            <div className="flex justify-end gap-3">
+              {stage === 'preview' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImport}
+                    disabled={
+                      parsedTopics.filter((t) => t.errors.length === 0).length === 0
+                    }
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Import{' '}
+                    {parsedTopics.filter((t) => t.errors.length === 0).length} Topics
+                  </button>
+                </>
+              )}
+
+              {stage === 'complete' && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600"
+                >
+                  Done
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

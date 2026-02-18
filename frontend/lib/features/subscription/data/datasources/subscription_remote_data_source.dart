@@ -3,8 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
 import '../models/subscription_model.dart';
+import '../models/subscription_v2_models.dart';
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Abstract contract for remote subscription operations.
 abstract class SubscriptionRemoteDataSource {
@@ -96,7 +98,7 @@ abstract class SubscriptionRemoteDataSource {
 
   /// Creates a new Standard subscription for the authenticated user.
   ///
-  /// Creates a Razorpay subscription for Standard plan (₹50/month)
+  /// Creates a Razorpay subscription for Standard plan (₹79/month)
   /// and returns authorization URL for the user to complete payment setup.
   ///
   /// Returns [CreateSubscriptionResponseModel] with subscription details and payment URL
@@ -107,6 +109,16 @@ abstract class SubscriptionRemoteDataSource {
   /// Throws [ClientException] if trial is still active or subscription exists.
   Future<CreateSubscriptionResponseModel> createStandardSubscription();
 
+  /// Creates a new Plus subscription (₹149/month) for the authenticated user.
+  ///
+  /// Returns [CreateSubscriptionResponseModel] with subscription details and payment URL
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  /// Throws [ClientException] if user already has Premium or Plus subscription.
+  Future<CreateSubscriptionResponseModel> createPlusSubscription();
+
   /// Starts a 7-day Premium trial for eligible users.
   ///
   /// Returns [StartPremiumTrialResponseModel] with trial details
@@ -116,6 +128,62 @@ abstract class SubscriptionRemoteDataSource {
   /// Throws [AuthenticationException] if authentication fails.
   /// Throws [ClientException] if user is not eligible for trial.
   Future<StartPremiumTrialResponseModel> startPremiumTrial();
+
+  /// Gets available subscription plans with provider-specific pricing.
+  ///
+  /// [provider] - Payment provider ('razorpay', 'google_play', 'apple_appstore')
+  /// [region] - Region code (default: 'IN')
+  /// [promoCode] - Optional promotional code to apply discount
+  ///
+  /// Returns list of available plans with pricing and optional promo details
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [ClientException] if provider is invalid.
+  Future<GetPlansResponseModel> getPlans({
+    required String provider,
+    String? region,
+    String? promoCode,
+  });
+
+  /// Validates a promotional code.
+  ///
+  /// [promoCode] - Promotional code to validate
+  /// [planCode] - Optional plan code to check applicability
+  /// [provider] - Optional payment provider (default: 'razorpay')
+  ///
+  /// Returns validation result with campaign details if valid
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<ValidatePromoCodeResponseModel> validatePromoCode({
+    required String promoCode,
+    String? planCode,
+    String? provider,
+  });
+
+  /// Creates a generic subscription supporting multiple payment providers.
+  ///
+  /// [planCode] - Plan identifier ('standard', 'plus', 'premium')
+  /// [provider] - Payment provider ('razorpay', 'google_play', 'apple_appstore')
+  /// [region] - Region code (default: 'IN')
+  /// [promoCode] - Optional promotional code
+  /// [receipt] - Purchase receipt for IAP (required for Google Play/Apple)
+  ///
+  /// Returns subscription details with authorization URL (Razorpay) or immediate activation (IAP)
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  /// Throws [ClientException] if subscription creation fails.
+  Future<CreateSubscriptionV2ResponseModel> createSubscriptionV2({
+    required String planCode,
+    required String provider,
+    String? region,
+    String? promoCode,
+    String? receipt,
+  });
 }
 
 /// Response model for starting a Premium trial
@@ -161,7 +229,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Creating premium subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Creating premium subscription...');
 
       // Call Supabase Edge Function for subscription creation
       final response = await _supabaseClient.functions.invoke(
@@ -169,8 +237,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -233,7 +301,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected error: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected error: $e');
       throw ClientException(
         message: 'Unable to create subscription. Please try again later.',
         code: 'SUBSCRIPTION_CREATION_FAILED',
@@ -254,7 +322,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Cancelling subscription (cancel_at_cycle_end: $cancelAtCycleEnd)...');
 
       // Call Supabase Edge Function for subscription cancellation
@@ -267,8 +335,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -318,7 +386,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected cancellation error: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected cancellation error: $e');
       throw ClientException(
         message: 'Unable to cancel subscription. Please try again later.',
         code: 'CANCELLATION_FAILED',
@@ -336,7 +404,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Resuming cancelled subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Resuming cancelled subscription...');
 
       // Call Supabase Edge Function for subscription resumption
       final response = await _supabaseClient.functions.invoke(
@@ -344,8 +412,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -402,7 +470,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected resume error: $e');
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected resume error: $e');
       throw ClientException(
         message: 'Unable to resume subscription. Please try again later.',
         code: 'RESUME_FAILED',
@@ -417,7 +485,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💎 [SUBSCRIPTION_API] Fetching active subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching active subscription...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -441,7 +509,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           .limit(1)
           .maybeSingle();
 
-      print('💎 [SUBSCRIPTION_API] Active subscription response: $response');
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Active subscription response: $response');
 
       if (response != null) {
         final subscription = SubscriptionModel.fromJson(response);
@@ -455,16 +524,17 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
 
             // Only return if still within the active period
             if (periodEnd.isAfter(now)) {
-              print(
+              Logger.debug(
                   '💎 [SUBSCRIPTION_API] Cancelled subscription still active until $periodEnd');
               return subscription;
             } else {
-              print('💎 [SUBSCRIPTION_API] Cancelled subscription has expired');
+              Logger.debug(
+                  '💎 [SUBSCRIPTION_API] Cancelled subscription has expired');
               return null;
             }
           } else {
             // Immediate cancellation - not active
-            print(
+            Logger.debug(
                 '💎 [SUBSCRIPTION_API] Subscription was cancelled immediately');
             return null;
           }
@@ -486,7 +556,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting active subscription: $e');
       throw ClientException(
         message: 'Unable to fetch subscription status. Please try again later.',
@@ -502,7 +572,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💎 [SUBSCRIPTION_API] Fetching subscription history...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching subscription history...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -520,7 +590,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Subscription history response: ${response.length} subscriptions');
 
       return response.map((json) => SubscriptionModel.fromJson(json)).toList();
@@ -536,7 +606,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription history: $e');
       throw ClientException(
         message:
@@ -556,7 +626,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('💎 [SUBSCRIPTION_API] Fetching subscription invoices...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching subscription invoices...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
@@ -580,13 +650,13 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         final endRange = startRange + (limit ?? 50) - 1;
         query = query.range(startRange, endRange);
 
-        print(
+        Logger.debug(
             '🔍 [SUBSCRIPTION_API] Using pagination range: $startRange to $endRange');
       }
 
       final response = await query;
 
-      print(
+      Logger.debug(
           '💎 [SUBSCRIPTION_API] Invoices response: ${response.length} invoices');
 
       return response
@@ -604,7 +674,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [SUBSCRIPTION_API] Unexpected error getting invoices: $e');
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error getting invoices: $e');
       throw ClientException(
         message: 'Unable to fetch invoices. Please try again later.',
         code: 'GET_INVOICES_FAILED',
@@ -616,13 +687,13 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   @override
   Future<UserSubscriptionStatus> getSubscriptionStatus() async {
     try {
-      print('💎 [SUBSCRIPTION_API] Fetching subscription status...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Fetching subscription status...');
 
       // Get current user ID
       final user = _supabaseClient.auth.currentUser;
       if (user == null) {
         // Return default status for unauthenticated users
-        print(
+        Logger.debug(
             '💎 [SUBSCRIPTION_API] User not authenticated, returning default status');
         return UserSubscriptionStatus.defaultStatus();
       }
@@ -633,7 +704,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         params: {'p_user_id': user.id},
       );
 
-      print('💎 [SUBSCRIPTION_API] Subscription status response: $response');
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Subscription status response: $response');
 
       if (response != null) {
         return UserSubscriptionStatus.fromJson(
@@ -648,7 +720,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     } on AuthenticationException {
       rethrow;
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription status: $e');
       // Return default status on error instead of throwing
       return UserSubscriptionStatus.defaultStatus();
@@ -664,7 +736,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Creating Standard subscription...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Creating Standard subscription...');
 
       // Call Supabase Edge Function for Standard subscription creation
       final response = await _supabaseClient.functions.invoke(
@@ -672,8 +744,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -750,11 +822,109 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating Standard subscription: $e');
       throw ClientException(
         message:
             'Unable to create Standard subscription. Please try again later.',
+        code: 'SUBSCRIPTION_CREATION_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<CreateSubscriptionResponseModel> createPlusSubscription() async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      Logger.debug('💎 [SUBSCRIPTION_API] Creating Plus subscription...');
+
+      // Call Supabase Edge Function for Plus subscription creation
+      final response = await _supabaseClient.functions.invoke(
+        'create-plus-subscription',
+        headers: headers,
+      );
+
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+
+      if (response.status == 201 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return CreateSubscriptionResponseModel.fromJson(responseData);
+        } else {
+          final error = responseData['error'] as Map<String, dynamic>?;
+          throw ServerException(
+            message: error?['message'] as String? ??
+                'Failed to create Plus subscription',
+            code: error?['code'] as String? ?? 'SUBSCRIPTION_CREATION_FAILED',
+          );
+        }
+      } else if (response.status == 400) {
+        final errorData = response.data as Map<String, dynamic>?;
+        final error = errorData?['error'] as Map<String, dynamic>?;
+        final errorCode = error?['code'] as String?;
+
+        // Handle specific error cases
+        if (errorCode == 'ALREADY_PREMIUM') {
+          throw const ClientException(
+            message: 'You already have Premium access',
+            code: 'ALREADY_PREMIUM',
+          );
+        }
+        if (errorCode == 'SUBSCRIPTION_EXISTS') {
+          throw const ClientException(
+            message: 'You already have an active Plus subscription',
+            code: 'SUBSCRIPTION_EXISTS',
+          );
+        }
+
+        throw ClientException(
+          message:
+              error?['message'] as String? ?? 'Invalid subscription request',
+          code: errorCode ?? 'INVALID_REQUEST',
+        );
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message:
+              'Failed to create Plus subscription. Please try again later.',
+          code: 'SUBSCRIPTION_CREATION_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error creating Plus subscription: $e');
+      throw ClientException(
+        message: 'Unable to create Plus subscription. Please try again later.',
         code: 'SUBSCRIPTION_CREATION_FAILED',
         context: {'originalError': e.toString()},
       );
@@ -770,7 +940,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('💎 [SUBSCRIPTION_API] Starting Premium trial...');
+      Logger.debug('💎 [SUBSCRIPTION_API] Starting Premium trial...');
 
       // Call Supabase Edge Function for Premium trial
       final response = await _supabaseClient.functions.invoke(
@@ -778,8 +948,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         headers: headers,
       );
 
-      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
-      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
 
       if (response.status == 201 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
@@ -867,11 +1037,273 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print(
+      Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error starting Premium trial: $e');
       throw ClientException(
         message: 'Unable to start Premium trial. Please try again later.',
         code: 'TRIAL_START_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<GetPlansResponseModel> getPlans({
+    required String provider,
+    String? region,
+    String? promoCode,
+  }) async {
+    try {
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Fetching plans for provider: $provider, region: $region, promo: $promoCode');
+
+      // Build query parameters
+      final queryParams = {
+        'provider': provider,
+        if (region != null) 'region': region,
+        if (promoCode != null) 'promo_code': promoCode,
+      };
+
+      // Call Supabase Edge Function
+      final response = await _supabaseClient.functions.invoke(
+        'get-plans',
+        queryParameters: queryParams,
+      );
+
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+
+      if (response.status == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return GetPlansResponseModel.fromJson(responseData);
+        } else {
+          throw ServerException(
+            message:
+                responseData['error'] as String? ?? 'Failed to fetch plans',
+            code: 'PLANS_FETCH_FAILED',
+          );
+        }
+      } else if (response.status == 400) {
+        throw const ClientException(
+          message: 'Invalid provider or parameters',
+          code: 'INVALID_PARAMETERS',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to fetch plans. Please try again later.',
+          code: 'PLANS_FETCH_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } catch (e) {
+      Logger.error('🚨 [SUBSCRIPTION_API] Unexpected error fetching plans: $e');
+      throw ClientException(
+        message: 'Unable to fetch subscription plans. Please try again later.',
+        code: 'PLANS_FETCH_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<ValidatePromoCodeResponseModel> validatePromoCode({
+    required String promoCode,
+    String? planCode,
+    String? provider,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      Logger.debug('💎 [SUBSCRIPTION_API] Validating promo code: $promoCode');
+
+      // Call Supabase Edge Function
+      final response = await _supabaseClient.functions.invoke(
+        'validate-promo-code',
+        body: {
+          'promo_code': promoCode,
+          if (planCode != null) 'plan_code': planCode,
+          if (provider != null) 'provider': provider,
+        },
+        headers: headers,
+      );
+
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+
+      if (response.status == 200 && response.data != null) {
+        return ValidatePromoCodeResponseModel.fromJson(
+            response.data as Map<String, dynamic>);
+      } else if (response.status == 400) {
+        throw const ClientException(
+          message: 'Invalid promo code or parameters',
+          code: 'INVALID_PROMO_CODE',
+        );
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to validate promo code. Please try again later.',
+          code: 'PROMO_VALIDATION_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error validating promo code: $e');
+      throw ClientException(
+        message: 'Unable to validate promo code. Please try again later.',
+        code: 'PROMO_VALIDATION_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<CreateSubscriptionV2ResponseModel> createSubscriptionV2({
+    required String planCode,
+    required String provider,
+    String? region,
+    String? promoCode,
+    String? receipt,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Creating subscription V2 - plan: $planCode, provider: $provider');
+
+      // Call Supabase Edge Function
+      final response = await _supabaseClient.functions.invoke(
+        'create-subscription-v2',
+        body: {
+          'plan_code': planCode,
+          'provider': provider,
+          if (region != null) 'region': region,
+          if (promoCode != null) 'promo_code': promoCode,
+          if (receipt != null) 'receipt': receipt,
+        },
+        headers: headers,
+      );
+
+      Logger.info('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      Logger.debug('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+
+      if (response.status == 201 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return CreateSubscriptionV2ResponseModel.fromJson(responseData);
+        } else {
+          final error = responseData['error'] as String?;
+          final code = responseData['code'] as String?;
+          throw ServerException(
+            message: error ?? 'Failed to create subscription',
+            code: code ?? 'SUBSCRIPTION_CREATION_FAILED',
+          );
+        }
+      } else if (response.status == 400) {
+        final errorData = response.data as Map<String, dynamic>?;
+        final error = errorData?['error'] as String?;
+        final code = errorData?['code'] as String?;
+
+        // Handle specific error cases
+        if (code == 'ALREADY_SUBSCRIBED') {
+          throw ClientException(
+            message: error ?? 'You already have an active subscription',
+            code: 'ALREADY_SUBSCRIBED',
+          );
+        }
+        if (code == 'INVALID_RECEIPT') {
+          throw ClientException(
+            message: error ?? 'Invalid purchase receipt',
+            code: 'INVALID_RECEIPT',
+          );
+        }
+
+        throw ClientException(
+          message: error ?? 'Invalid subscription request',
+          code: code ?? 'INVALID_REQUEST',
+        );
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status == 404) {
+        throw const ClientException(
+          message: 'Plan not found or not available for this provider/region',
+          code: 'PLAN_NOT_FOUND',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to create subscription. Please try again later.',
+          code: 'SUBSCRIPTION_CREATION_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error creating subscription V2: $e');
+      throw ClientException(
+        message: 'Unable to create subscription. Please try again later.',
+        code: 'SUBSCRIPTION_CREATION_FAILED',
         context: {'originalError': e.toString()},
       );
     }
