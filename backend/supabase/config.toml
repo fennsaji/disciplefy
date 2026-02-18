@@ -379,9 +379,6 @@ verify_jwt = false
 [functions.subscription-pricing]
 verify_jwt = false
 
-[functions.subscription-status]
-verify_jwt = false
-
 [functions.token-status]
 verify_jwt = false
 
