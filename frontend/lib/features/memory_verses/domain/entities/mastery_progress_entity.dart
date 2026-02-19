@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Sentinel class for copyWith method to distinguish between null and unset values.
 const unsetValue = _CopyWithSentinel();
@@ -177,15 +178,15 @@ class MasteryProgressEntity extends Equatable {
   Color get levelColor {
     switch (masteryLevel) {
       case MasteryLevel.beginner:
-        return Colors.green; // Green for beginners
+        return AppColors.masteryBeginner;
       case MasteryLevel.intermediate:
-        return Colors.blue; // Blue for intermediate
+        return AppColors.masteryIntermediate;
       case MasteryLevel.advanced:
-        return Colors.purple; // Purple for advanced
+        return AppColors.masteryAdvanced;
       case MasteryLevel.expert:
-        return Colors.deepOrange; // Orange for expert
+        return AppColors.masteryExpert;
       case MasteryLevel.master:
-        return Colors.amber; // Gold for master
+        return AppColors.masteryMaster;
     }
   }
 

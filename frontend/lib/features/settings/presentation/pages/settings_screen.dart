@@ -6,8 +6,10 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../../../core/services/font_scale_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../../../core/services/language_preference_service.dart';
@@ -88,6 +90,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             title: Text(
               context.tr(TranslationKeys.settingsTitle),
+              overflow: TextOverflow.ellipsis,
               style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -103,17 +106,21 @@ class _SettingsScreenContent extends StatelessWidget {
                 context.go('/login');
               } else if (authState is auth_states.AuthErrorState) {
                 // Show error message
-                _showSnackBar(context, authState.message,
+                _showSnackBar(
+                    context,
+                    'Something went wrong. Please try again.',
                     Theme.of(context).colorScheme.error);
               }
             },
             child: BlocConsumer<SettingsBloc, SettingsState>(
               listener: (context, state) {
                 if (state is SettingsError) {
-                  _showSnackBar(context, state.message,
+                  _showSnackBar(
+                      context,
+                      'Something went wrong. Please try again.',
                       Theme.of(context).colorScheme.error);
                 } else if (state is SettingsUpdateSuccess) {
-                  _showSnackBar(context, state.message, Colors.green);
+                  _showSnackBar(context, state.message, AppColors.success);
                 }
               },
               builder: (context, state) {
@@ -440,6 +447,27 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             onTap: () =>
                 _showLanguageBottomSheet(context, state.settings.language),
+          ),
+          _buildDivider(),
+          ListenableBuilder(
+            listenable: sl<FontScaleService>(),
+            builder: (context, _) {
+              final fontScaleService = sl<FontScaleService>();
+              return _buildSettingsTile(
+                context: context,
+                icon: Icons.text_fields_outlined,
+                title: context.tr(TranslationKeys.settingsTextSize),
+                subtitle:
+                    _getFontScaleLevelLabel(context, fontScaleService.level),
+                trailing: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                onTap: () => _showTextSizeBottomSheet(context),
+              );
+            },
           ),
         ],
       );
@@ -994,7 +1022,7 @@ class _SettingsScreenContent extends StatelessWidget {
               context.read<AuthBloc>().add(const SignOutRequested());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: AppColors.brandSecondary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -1195,6 +1223,206 @@ class _SettingsScreenContent extends StatelessWidget {
         inactiveTrackColor:
             Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
       );
+
+  void _showTextSizeBottomSheet(BuildContext context) {
+    final fontScaleService = sl<FontScaleService>();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (builderContext) => StatefulBuilder(
+        builder: (sheetContext, setState) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(builderContext).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                context.tr(TranslationKeys.settingsTextSize),
+                style: AppFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(builderContext).colorScheme.onBackground,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.tr(TranslationKeys.settingsTextSizeSubtitle),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color: Theme.of(builderContext)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Preview text
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(builderContext)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.2),
+                  ),
+                ),
+                child: ListenableBuilder(
+                  listenable: fontScaleService,
+                  builder: (ctx, _) => Text(
+                    'For God so loved the world... (John 3:16)',
+                    style: AppFonts.inter(
+                      fontSize: 15 * fontScaleService.scaleFactor,
+                      color: Theme.of(builderContext).colorScheme.onBackground,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ...FontScaleLevel.values.map(
+                (level) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildTextSizeOption(
+                    builderContext,
+                    fontScaleService,
+                    level,
+                    setState,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextSizeOption(
+    BuildContext context,
+    FontScaleService fontScaleService,
+    FontScaleLevel level,
+    void Function(void Function()) setState,
+  ) {
+    final isSelected = fontScaleService.level == level;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          await fontScaleService.updateScale(level);
+          setState(() {});
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                  color: isSelected
+                      ? null
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.text_fields,
+                  size: 20,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _getFontScaleLevelLabel(context, level),
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : Theme.of(context).colorScheme.onBackground,
+                      ),
+                    ),
+                    Text(
+                      context.tr(TranslationKeys.settingsTextSizePercentage, {
+                        'percent': (level.scaleFactor * 100).round().toString()
+                      }),
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showThemeBottomSheet(
       BuildContext context, ThemeModeEntity currentTheme) {
@@ -1757,7 +1985,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   }
                   _showSnackBar(
                     parentContext,
-                    'Failed to update study mode preference: ${failure.message}',
+                    'Something went wrong. Please try again.',
                     Theme.of(parentContext).colorScheme.error,
                   );
                 },
@@ -1787,7 +2015,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     value == null
                         ? 'Study mode preference cleared'
                         : 'Default study mode set to $label',
-                    Colors.green,
+                    AppColors.success,
                   );
                 },
               );
@@ -1954,7 +2182,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     parentContext,
                     parentContext
                         .tr(TranslationKeys.preferenceUpdatedSuccessfully),
-                    Colors.green,
+                    AppColors.success,
                   );
                 },
               );
@@ -2215,6 +2443,19 @@ class _SettingsScreenContent extends StatelessWidget {
         margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  String _getFontScaleLevelLabel(BuildContext context, FontScaleLevel level) {
+    switch (level) {
+      case FontScaleLevel.small:
+        return context.tr(TranslationKeys.settingsTextSizeSmall);
+      case FontScaleLevel.normal:
+        return context.tr(TranslationKeys.settingsTextSizeNormal);
+      case FontScaleLevel.large:
+        return context.tr(TranslationKeys.settingsTextSizeLarge);
+      case FontScaleLevel.extraLarge:
+        return context.tr(TranslationKeys.settingsTextSizeExtraLarge);
+    }
   }
 
   String _getThemeDisplayName(ThemeModeEntity themeMode) {

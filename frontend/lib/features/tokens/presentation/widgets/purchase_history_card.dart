@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../../purchase_issue/presentation/widgets/report_issue_bottom_sheet.dart';
 
@@ -223,17 +224,17 @@ class PurchaseHistoryCard extends StatelessWidget {
                     icon: Icon(
                       Icons.report_problem_outlined,
                       size: 18,
-                      color: Colors.orange.shade700,
+                      color: AppColors.warningDark,
                     ),
                     label: Text(
                       'Report Issue',
                       style: TextStyle(
-                        color: Colors.orange.shade700,
+                        color: AppColors.warningDark,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.orange.shade300),
+                      side: BorderSide(color: AppColors.warning),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -314,18 +315,18 @@ class _StatusChip extends StatelessWidget {
 
     switch (status.toLowerCase()) {
       case 'completed':
-        backgroundColor = Colors.green.withOpacity(0.1);
-        textColor = Colors.green.shade700;
+        backgroundColor = AppColors.success.withOpacity(0.1);
+        textColor = AppColors.successDark;
         icon = Icons.check_circle;
         break;
       case 'pending':
-        backgroundColor = Colors.orange.withOpacity(0.1);
-        textColor = Colors.orange.shade700;
+        backgroundColor = AppColors.warning.withOpacity(0.1);
+        textColor = AppColors.warningDark;
         icon = Icons.schedule;
         break;
       case 'failed':
-        backgroundColor = Colors.red.withOpacity(0.1);
-        textColor = Colors.red.shade700;
+        backgroundColor = AppColors.error.withOpacity(0.1);
+        textColor = AppColors.errorDark;
         icon = Icons.error;
         break;
       default:

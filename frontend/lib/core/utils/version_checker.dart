@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/system_config_service.dart';
+import '../theme/app_colors.dart';
 import '../router/app_router.dart';
 import 'logger.dart';
 
@@ -127,7 +128,7 @@ class VersionChecker {
         child: AlertDialog(
           title: const Row(
             children: [
-              Icon(Icons.system_update_alt, color: Colors.orange),
+              Icon(Icons.system_update_alt, color: AppColors.warning),
               SizedBox(width: 12),
               Text('Update Required'),
             ],
@@ -182,7 +183,7 @@ class VersionChecker {
       builder: (dialogContext) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.new_releases_outlined, color: Colors.blue),
+            Icon(Icons.new_releases_outlined, color: AppColors.info),
             SizedBox(width: 12),
             Text('Update Available'),
           ],

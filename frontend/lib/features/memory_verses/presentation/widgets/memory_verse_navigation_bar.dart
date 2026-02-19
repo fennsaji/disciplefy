@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/router/app_routes.dart';
@@ -16,20 +16,18 @@ class MemoryVerseNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final navigationItems = [
       _NavigationItem(
         icon: Icons.emoji_events_outlined,
         label: context.tr(TranslationKeys.champions),
         route: AppRoutes.memoryChampions,
-        color: isDark ? Colors.amber.shade300 : AppColors.highlightGold,
+        color: AppColors.masteryMaster,
       ),
       _NavigationItem(
         icon: Icons.bar_chart,
         label: context.tr(TranslationKeys.statistics),
         route: AppRoutes.memoryStats,
-        color: isDark ? Colors.green.shade300 : Colors.green,
+        color: AppColors.success,
       ),
     ];
 

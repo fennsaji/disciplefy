@@ -174,7 +174,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           } else if (state is SubscriptionError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage),
+                content: Text('Something went wrong. Please try again.'),
                 backgroundColor: AppTheme.errorColor,
               ),
             );

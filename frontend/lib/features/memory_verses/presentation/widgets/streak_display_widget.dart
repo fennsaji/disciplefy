@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/memory_streak_entity.dart';
 
 /// Streak display widget.
@@ -26,7 +27,8 @@ class StreakDisplayWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isActive = memoryStreak.isPracticedToday;
-    final streakColor = isActive ? Colors.orange : Colors.grey;
+    final streakColor =
+        isActive ? AppColors.streakFlame : AppColors.lightTextSecondary;
 
     return Card(
       elevation: 2,
@@ -54,19 +56,19 @@ class StreakDisplayWidget extends StatelessWidget {
                           gradient: LinearGradient(
                             colors: isActive
                                 ? [
-                                    Colors.orange,
-                                    Colors.deepOrange,
+                                    AppColors.streakFlame,
+                                    AppColors.streakGlow,
                                   ]
                                 : [
-                                    Colors.grey,
-                                    Colors.grey.shade700,
+                                    AppColors.lightTextSecondary,
+                                    AppColors.darkTextTertiary,
                                   ],
                           ),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: isActive
                               ? [
                                   BoxShadow(
-                                    color: Colors.orange
+                                    color: AppColors.streakFlame
                                         .withAlpha((0.3 * 255).round()),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
@@ -110,29 +112,30 @@ class StreakDisplayWidget extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withAlpha((0.1 * 255).round()),
+                        color: AppColors.masteryMaster
+                            .withAlpha((0.1 * 255).round()),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber),
+                        border: Border.all(color: AppColors.masteryMaster),
                       ),
                       child: Column(
                         children: [
                           const Icon(
                             Icons.emoji_events,
-                            color: Colors.amber,
+                            color: AppColors.masteryMaster,
                             size: 20,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${memoryStreak.longestStreak}',
                             style: theme.textTheme.titleSmall?.copyWith(
-                              color: Colors.amber,
+                              color: AppColors.masteryMaster,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
                             'Best',
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.amber.shade700,
+                              color: AppColors.warningDark,
                             ),
                           ),
                         ],
@@ -147,17 +150,17 @@ class StreakDisplayWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.lightBlue.withAlpha((0.1 * 255).round()),
+                    color: AppColors.info.withAlpha((0.1 * 255).round()),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.lightBlue.withAlpha((0.3 * 255).round()),
+                      color: AppColors.info.withAlpha((0.3 * 255).round()),
                     ),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.ac_unit,
-                        color: Colors.lightBlue,
+                        color: AppColors.info,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -165,15 +168,15 @@ class StreakDisplayWidget extends StatelessWidget {
                         child: Text(
                           '${memoryStreak.freezeDaysAvailable} Freeze Day${memoryStreak.freezeDaysAvailable != 1 ? 's' : ''} Available',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.lightBlue.shade700,
+                            color: AppColors.infoLight,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                       if (memoryStreak.canUseFreeze)
-                        Icon(
+                        const Icon(
                           Icons.shield,
-                          color: Colors.lightBlue.shade700,
+                          color: AppColors.infoLight,
                           size: 20,
                         ),
                     ],
@@ -197,15 +200,15 @@ class StreakDisplayWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? Colors.green.withAlpha((0.1 * 255).round())
-                        : Colors.orange.withAlpha((0.1 * 255).round()),
+                        ? AppColors.success.withAlpha((0.1 * 255).round())
+                        : AppColors.warning.withAlpha((0.1 * 255).round()),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         isActive ? Icons.check_circle : Icons.warning,
-                        color: isActive ? Colors.green : Colors.orange,
+                        color: isActive ? AppColors.success : AppColors.warning,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -215,7 +218,9 @@ class StreakDisplayWidget extends StatelessWidget {
                               ? 'Streak active! Keep it up.'
                               : 'Practice today to keep your streak alive!',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isActive ? Colors.green : Colors.orange,
+                            color: isActive
+                                ? AppColors.success
+                                : AppColors.warning,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -276,13 +281,13 @@ class _MilestoneProgress extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.purple.withAlpha((0.1 * 255).round()),
-            Colors.deepPurple.withAlpha((0.1 * 255).round()),
+            AppColors.masteryAdvanced.withAlpha((0.1 * 255).round()),
+            AppColors.brandPrimaryDeep.withAlpha((0.1 * 255).round()),
           ],
         ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.purple.withAlpha((0.3 * 255).round()),
+          color: AppColors.masteryAdvanced.withAlpha((0.3 * 255).round()),
         ),
       ),
       child: Column(
@@ -296,14 +301,14 @@ class _MilestoneProgress extends StatelessWidget {
                 children: [
                   Icon(
                     _getMilestoneIcon(nextMilestone),
-                    color: Colors.purple,
+                    color: AppColors.masteryAdvanced,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '$nextMilestone-Day Milestone',
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: Colors.purple,
+                      color: AppColors.masteryAdvanced,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -316,7 +321,7 @@ class _MilestoneProgress extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withAlpha((0.2 * 255).round()),
+                    color: AppColors.warning.withAlpha((0.2 * 255).round()),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -325,13 +330,13 @@ class _MilestoneProgress extends StatelessWidget {
                       const Icon(
                         Icons.trending_up,
                         size: 14,
-                        color: Colors.orange,
+                        color: AppColors.warning,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Almost there!',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.orange,
+                          color: AppColors.warning,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -347,8 +352,10 @@ class _MilestoneProgress extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
-              backgroundColor: Colors.purple.withAlpha((0.2 * 255).round()),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.purple),
+              backgroundColor:
+                  AppColors.masteryAdvanced.withAlpha((0.2 * 255).round()),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.masteryAdvanced),
               minHeight: 8,
             ),
           ),
@@ -408,9 +415,9 @@ class _MilestoneChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.green.withAlpha((0.1 * 255).round()),
+        color: AppColors.success.withAlpha((0.1 * 255).round()),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.green),
+        border: Border.all(color: AppColors.success),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -418,13 +425,13 @@ class _MilestoneChip extends StatelessWidget {
           const Icon(
             Icons.check_circle,
             size: 14,
-            color: Colors.green,
+            color: AppColors.success,
           ),
           const SizedBox(width: 4),
           Text(
             '$days',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.green,
+              color: AppColors.success,
               fontWeight: FontWeight.bold,
             ),
           ),

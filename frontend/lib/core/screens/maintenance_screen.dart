@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/system_config_service.dart';
+import '../theme/app_colors.dart';
 
 /// Maintenance Screen
 ///
@@ -61,7 +62,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to check status: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }

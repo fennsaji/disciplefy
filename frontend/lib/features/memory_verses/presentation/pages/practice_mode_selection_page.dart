@@ -16,6 +16,7 @@ import '../../domain/repositories/memory_verse_repository.dart';
 import '../widgets/practice_mode_card.dart';
 import '../widgets/unlock_limit_exceeded_dialog.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Practice mode selection page.
 ///
@@ -381,6 +382,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final filteredModes = _filterModes();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth >= 600 ? 3 : 2;
 
     return PopScope(
       canPop: false,
@@ -570,9 +573,9 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                                   childCount: filteredModes.length,
                                 ),
                                 gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 0.88,
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  mainAxisExtent: 260,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 12,
                                 ),
@@ -609,8 +612,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.amber.shade600,
-              Colors.amber.shade400,
+              AppColors.masteryMaster,
+              AppColors.masteryMaster,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -653,7 +656,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
 
     // For non-premium users, show unlock progress
     final slotsRemaining = unlockLimit - unlockedCount;
-    final progressColor = slotsRemaining > 0 ? Colors.blue : Colors.orange;
+    final progressColor =
+        slotsRemaining > 0 ? AppColors.info : AppColors.warning;
     final progressValue = unlockLimit > 0 ? unlockedCount / unlockLimit : 0.0;
 
     return Container(
@@ -748,10 +752,10 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.withAlpha((0.1 * 255).round()),
+                    color: AppColors.success.withAlpha((0.1 * 255).round()),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.green.withAlpha((0.3 * 255).round()),
+                      color: AppColors.success.withAlpha((0.3 * 255).round()),
                     ),
                   ),
                   child: Row(
@@ -759,7 +763,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                     children: [
                       const Icon(
                         Icons.check_circle,
-                        color: Colors.green,
+                        color: AppColors.success,
                         size: 14,
                       ),
                       const SizedBox(width: 6),
@@ -767,7 +771,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                         _getModeName(modeSlug),
                         style: theme.textTheme.labelMedium?.copyWith(
                           color:
-                              _adaptiveTextColor(Colors.green.shade700, theme),
+                              _adaptiveTextColor(AppColors.successDark, theme),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -784,14 +788,14 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blue.withAlpha((0.08 * 255).round()),
+                color: AppColors.info.withAlpha((0.08 * 255).round()),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: Colors.blue.shade700,
+                    color: AppColors.info,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -801,7 +805,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                           ? 'Choose ${unlockLimit == 1 ? 'a' : 'up to $unlockLimit'} mode${unlockLimit > 1 ? 's' : ''} to practice today'
                           : 'You can unlock $slotsRemaining more mode${slotsRemaining > 1 ? 's' : ''} today',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: _adaptiveTextColor(Colors.blue.shade900, theme),
+                        color: _adaptiveTextColor(
+                            AppColors.brandPrimaryDeep, theme),
                       ),
                     ),
                   ),
@@ -814,14 +819,14 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.orange.withAlpha((0.08 * 255).round()),
+                color: AppColors.warning.withAlpha((0.08 * 255).round()),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.schedule,
-                    color: Colors.orange.shade700,
+                    color: AppColors.warningDark,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -829,8 +834,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                     child: Text(
                       'Daily limit reached. Upgrade for more modes!',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            _adaptiveTextColor(Colors.orange.shade900, theme),
+                        color: _adaptiveTextColor(AppColors.warningDark, theme),
                       ),
                     ),
                   ),
@@ -845,7 +849,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                 icon: const Icon(Icons.upgrade, size: 18),
                 label: const Text('Upgrade Plan'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade600,
+                  backgroundColor: AppColors.warning,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(

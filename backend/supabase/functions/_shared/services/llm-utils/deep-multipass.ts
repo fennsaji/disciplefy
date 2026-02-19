@@ -319,7 +319,7 @@ Transform theological truth into life change with COMPREHENSIVE treatment:
 - Theological Integration: Connecting doctrine to devotion
 - [OPTIONAL] Emotional Health: How truth brings healing and wholeness
 - [OPTIONAL] Spiritual Warfare: Resisting lies and living in truth
-- [OPTIONAL] Contemplative Practices: Meditation and reflection methods
+- [OPTIONAL] Prayerful Study: Scripture memory, journaling, and devotional reflection methods
 
 Target: 300-400 words, 8-10 complete sentences with transformative depth.
 
@@ -373,7 +373,7 @@ Provide CONCRETE growth plan with ACTIONABLE steps:
 - Obstacles: Common barriers to application and strategies to overcome them
 - [OPTIONAL] Liturgical Practices: Incorporating this into daily/weekly rhythms
 - [OPTIONAL] Family Devotion: Teaching this truth to spouse and children
-- [OPTIONAL] Spiritual Direction: Guidance for deeper transformation
+- [OPTIONAL] Pastoral Application: Guidance for deeper transformation through Scripture and community
 
 Target: 300-400 words, 8-10 complete sentences that are actionable, not vague.
 

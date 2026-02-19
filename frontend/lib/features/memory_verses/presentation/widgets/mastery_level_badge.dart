@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/mastery_progress_entity.dart';
 
 /// Mastery level badge widget with color-coded visual indicator.
@@ -143,15 +144,15 @@ class MasteryProgressCard extends StatelessWidget {
   Color get _currentLevelColor {
     switch (currentLevel) {
       case MasteryLevel.beginner:
-        return Colors.green;
+        return AppColors.masteryBeginner;
       case MasteryLevel.intermediate:
-        return Colors.blue;
+        return AppColors.masteryIntermediate;
       case MasteryLevel.advanced:
-        return Colors.purple;
+        return AppColors.masteryAdvanced;
       case MasteryLevel.expert:
-        return Colors.orange;
+        return AppColors.masteryExpert;
       case MasteryLevel.master:
-        return Colors.amber;
+        return AppColors.masteryMaster;
     }
   }
 
@@ -197,7 +198,7 @@ class MasteryProgressCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     value: progressPercentage / 100.0,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AppColors.lightBorder,
                     valueColor:
                         AlwaysStoppedAnimation<Color>(_currentLevelColor),
                     minHeight: 8,
@@ -288,15 +289,15 @@ class MasteryDistributionWidget extends StatelessWidget {
   Color _getLevelColor(MasteryLevel level) {
     switch (level) {
       case MasteryLevel.beginner:
-        return Colors.green;
+        return AppColors.masteryBeginner;
       case MasteryLevel.intermediate:
-        return Colors.blue;
+        return AppColors.masteryIntermediate;
       case MasteryLevel.advanced:
-        return Colors.purple;
+        return AppColors.masteryAdvanced;
       case MasteryLevel.expert:
-        return Colors.orange;
+        return AppColors.masteryExpert;
       case MasteryLevel.master:
-        return Colors.amber;
+        return AppColors.masteryMaster;
     }
   }
 
@@ -379,7 +380,7 @@ class MasteryDistributionWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percentage,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColors.lightBorder,
                       valueColor:
                           AlwaysStoppedAnimation<Color>(_getLevelColor(level)),
                       minHeight: 24,

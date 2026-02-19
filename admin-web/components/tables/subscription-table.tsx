@@ -102,10 +102,10 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                   {activeSub ? (
                     <div className="flex flex-col text-sm">
                       <span className="text-gray-600 dark:text-gray-400">
-                        {format(new Date(activeSub.start_date), 'MMM dd, yyyy')}
+                        {activeSub.start_date ? format(new Date(activeSub.start_date), 'MMM dd, yyyy') : '-'}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-500">
-                        to {format(new Date(activeSub.end_date || ''), 'MMM dd, yyyy')}
+                        {activeSub.end_date ? `to ${format(new Date(activeSub.end_date), 'MMM dd, yyyy')}` : ''}
                       </span>
                     </div>
                   ) : (

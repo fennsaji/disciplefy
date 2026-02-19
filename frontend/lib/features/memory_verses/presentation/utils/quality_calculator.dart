@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Utility class to auto-calculate quality and confidence ratings
 /// from practice session performance metrics.
@@ -95,27 +96,27 @@ class QualityCalculator {
   static Color getQualityColor(int rating) {
     switch (rating) {
       case 5:
-        return Colors.green;
+        return AppColors.success;
       case 4:
-        return Colors.lightGreen;
+        return AppColors.successLight;
       case 3:
-        return Colors.orange;
+        return AppColors.warning;
       case 2:
-        return Colors.deepOrange;
+        return AppColors.masteryExpert;
       case 1:
-        return Colors.red;
+        return AppColors.error;
       default:
-        return Colors.grey;
+        return AppColors.lightTextSecondary;
     }
   }
 
   /// Get color for accuracy percentage display.
   static Color getAccuracyColor(double accuracy) {
-    if (accuracy >= 95) return Colors.green;
-    if (accuracy >= 85) return Colors.lightGreen;
-    if (accuracy >= 65) return Colors.orange;
-    if (accuracy >= 45) return Colors.deepOrange;
-    return Colors.red;
+    if (accuracy >= 95) return AppColors.success;
+    if (accuracy >= 85) return AppColors.successLight;
+    if (accuracy >= 65) return AppColors.warning;
+    if (accuracy >= 45) return AppColors.masteryExpert;
+    return AppColors.error;
   }
 
   /// Get display name for practice mode.

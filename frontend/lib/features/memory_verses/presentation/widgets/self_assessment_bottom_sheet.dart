@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Self-assessment rating for passive practice modes (Flip Card, Progressive Reveal).
 ///
@@ -213,13 +214,13 @@ extension SelfAssessmentRatingExtension on SelfAssessmentRating {
       case SelfAssessmentRating.didNotKnow:
         return theme.colorScheme.errorContainer.withAlpha(128);
       case SelfAssessmentRating.knewALittle:
-        return Colors.orange.withAlpha(51);
+        return AppColors.warning.withAlpha(51);
       case SelfAssessmentRating.knewHalf:
-        return Colors.amber.withAlpha(51);
+        return AppColors.masteryMaster.withAlpha(51);
       case SelfAssessmentRating.knewMost:
-        return Colors.lightGreen.withAlpha(51);
+        return AppColors.successLight.withAlpha(51);
       case SelfAssessmentRating.knewPerfectly:
-        return Colors.green.withAlpha(51);
+        return AppColors.success.withAlpha(51);
     }
   }
 
@@ -228,13 +229,13 @@ extension SelfAssessmentRatingExtension on SelfAssessmentRating {
       case SelfAssessmentRating.didNotKnow:
         return theme.colorScheme.error;
       case SelfAssessmentRating.knewALittle:
-        return Colors.orange.shade800;
+        return AppColors.warningDark;
       case SelfAssessmentRating.knewHalf:
-        return Colors.amber.shade800;
+        return AppColors.warningDark;
       case SelfAssessmentRating.knewMost:
-        return Colors.lightGreen.shade800;
+        return AppColors.successDark;
       case SelfAssessmentRating.knewPerfectly:
-        return Colors.green.shade800;
+        return AppColors.successDark;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Utility functions for verse review functionality.
 ///
@@ -32,12 +33,12 @@ class VerseReviewUtils {
   ///
   /// [rating] - Quality rating from 0 to 5.
   /// Returns:
-  /// - Colors.green for ratings >= 4 (excellent recall)
-  /// - Colors.blue for ratings >= 3 (good recall)
-  /// - Colors.orange for ratings < 3 (needs more practice)
+  /// - AppColors.success for ratings >= 4 (excellent recall)
+  /// - AppColors.info for ratings >= 3 (good recall)
+  /// - AppColors.warning for ratings < 3 (needs more practice)
   static Color getQualityColor(int rating) {
-    if (rating >= 4) return Colors.green;
-    if (rating >= 3) return Colors.blue;
-    return Colors.orange;
+    if (rating >= 4) return AppColors.success;
+    if (rating >= 3) return AppColors.info;
+    return AppColors.warning;
   }
 }

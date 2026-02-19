@@ -6,6 +6,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -255,7 +256,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   style: AppFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFFFFFFFF),
+                                    color: AppColors.onGradient,
                                     letterSpacing: 0.5,
                                   ),
                                 ),

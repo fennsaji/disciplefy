@@ -69,7 +69,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
           } else if (state is FeedbackSubmitFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Text('Something went wrong. Please try again.'),
                 backgroundColor: AppTheme.errorColor,
                 behavior: SnackBarBehavior.floating,
               ),

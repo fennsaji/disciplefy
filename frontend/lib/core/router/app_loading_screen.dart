@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
 /// Loading screen shown during app initialization while Supabase restores session
@@ -20,11 +21,11 @@ class AppLoadingScreen extends StatelessWidget {
 
     // Theme-aware background and loader colors
     final backgroundColor = isDarkMode
-        ? const Color(0xFF0F1012) // Dark mode: #0f1012
-        : const Color(0xFFFBEDD9); // Light mode: #FBEDD9
+        ? AppColors.splashBackgroundDark
+        : AppColors.splashBackgroundLight;
 
     final loaderColor = isDarkMode
-        ? Colors.white // White loader for dark mode
+        ? AppColors.onGradient // White loader for dark mode
         : AppTheme.primaryColor; // Vibrant purple for light mode
 
     return Scaffold(

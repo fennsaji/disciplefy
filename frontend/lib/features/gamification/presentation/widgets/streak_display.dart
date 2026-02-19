@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 /// Widget to display study and verse streaks
@@ -57,7 +58,7 @@ class StreakDisplay extends StatelessWidget {
                   label: l10n.progressStudyStreak,
                   value: studyStreak,
                   suffix: l10n.progressDays,
-                  color: Colors.orange,
+                  color: AppColors.streakFlame,
                 ),
               ),
               const SizedBox(width: 16),
@@ -67,7 +68,7 @@ class StreakDisplay extends StatelessWidget {
                   label: l10n.progressVerseStreak,
                   value: verseStreak,
                   suffix: l10n.progressDays,
-                  color: Colors.blue,
+                  color: AppColors.info,
                 ),
               ),
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../theme/app_colors.dart';
 import '../../features/tokens/presentation/bloc/token_bloc.dart';
 import '../../features/tokens/presentation/bloc/token_state.dart';
 import '../services/system_config_service.dart';
@@ -110,18 +111,15 @@ class LockedFeatureWrapper extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.3),
+                      color: AppColors.brandSecondary.withOpacity(0.3),
                       width: 2,
                     ),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.black.withOpacity(0.1),
-                        Colors.black.withOpacity(0.05),
+                        AppColors.shadowMedium,
+                        AppColors.shadowLight,
                       ],
                     ),
                   ),
@@ -133,14 +131,12 @@ class LockedFeatureWrapper extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: AppColors.brandSecondary,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.3),
+                                color:
+                                    AppColors.brandSecondary.withOpacity(0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 1),
                               ),
@@ -148,7 +144,7 @@ class LockedFeatureWrapper extends StatelessWidget {
                           ),
                           child: const Icon(
                             Icons.lock_rounded,
-                            color: Colors.white,
+                            color: AppColors.onGradient,
                             size: 20,
                           ),
                         ),
@@ -159,13 +155,13 @@ class LockedFeatureWrapper extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: AppColors.brandSecondary,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             customLockedMessage ?? 'Tap to Upgrade',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.onGradient,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),

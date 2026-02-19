@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/user_subscription_status.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Banner widget shown on Home screen when user needs to subscribe
 /// to Standard plan after trial ends, when trial is ending soon,
@@ -41,16 +42,15 @@ class StandardSubscriptionBanner extends StatelessWidget {
         gradient: LinearGradient(
           colors: isUrgent
               ? [const Color(0xFFFF6B6B), const Color(0xFFFF8E53)]
-              : [const Color(0xFF6A4FB6), const Color(0xFF8B5CF6)],
+              : [AppColors.brandPrimary, const Color(0xFF8B5CF6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color:
-                (isUrgent ? const Color(0xFFFF6B6B) : const Color(0xFF6A4FB6))
-                    .withValues(alpha: 0.3),
+            color: (isUrgent ? const Color(0xFFFF6B6B) : AppColors.brandPrimary)
+                .withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -132,7 +132,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
                       backgroundColor: Colors.white,
                       foregroundColor: isUrgent
                           ? const Color(0xFFFF6B6B)
-                          : const Color(0xFF6A4FB6),
+                          : AppColors.brandPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -148,7 +148,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: isUrgent
                                 ? const Color(0xFFFF6B6B)
-                                : const Color(0xFF6A4FB6),
+                                : AppColors.brandPrimary,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -158,7 +158,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: (isUrgent
                                     ? const Color(0xFFFF6B6B)
-                                    : const Color(0xFF6A4FB6))
+                                    : AppColors.brandPrimary)
                                 .withValues(alpha: 0.7),
                           ),
                         ),
@@ -295,7 +295,7 @@ class StandardSubscriptionBannerCompact extends StatelessWidget {
                 ? const Color(0xFF388E3C)
                 : isUrgent
                     ? const Color(0xFFE65100)
-                    : const Color(0xFF7C3AED),
+                    : AppColors.tierPlus,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -307,7 +307,7 @@ class StandardSubscriptionBannerCompact extends StatelessWidget {
                     ? const Color(0xFF388E3C)
                     : isUrgent
                         ? const Color(0xFFE65100)
-                        : const Color(0xFF7C3AED),
+                        : AppColors.tierPlus,
               ),
             ),
           ),
@@ -318,7 +318,7 @@ class StandardSubscriptionBannerCompact extends StatelessWidget {
                   ? const Color(0xFF388E3C)
                   : isUrgent
                       ? const Color(0xFFE65100)
-                      : const Color(0xFF7C3AED),
+                      : AppColors.tierPlus,
               padding: const EdgeInsets.symmetric(horizontal: 12),
             ),
             child: Text(isPromo ? 'Upgrade' : 'Subscribe'),

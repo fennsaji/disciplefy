@@ -15,6 +15,7 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// First letter hints practice mode.
 ///
@@ -74,7 +75,7 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {
@@ -291,10 +292,10 @@ class _HintsBadge extends StatelessWidget {
     final percentage = totalWords > 0 ? (hintsUsed / totalWords) * 100 : 0;
 
     final color = percentage <= 20
-        ? Colors.green
+        ? AppColors.success
         : percentage <= 50
-            ? Colors.orange
-            : Colors.red;
+            ? AppColors.warning
+            : AppColors.error;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),

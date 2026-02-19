@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/di/injection_container.dart';
@@ -477,7 +478,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                                     widget.recommendedMode
                                                 ? const Color(
                                                     0xFFF59E0B) // Gold for recommended
-                                                : AppTheme.primaryColor)
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .primary)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
@@ -489,7 +492,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                               ? (_selectedMode ==
                                                       widget.recommendedMode
                                                   ? const Color(0xFFF59E0B)
-                                                  : AppTheme.primaryColor)
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .primary)
                                               : isDark
                                                   ? Colors.white
                                                       .withOpacity(0.3)
@@ -552,7 +557,10 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -579,17 +587,20 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                             size: 20,
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            context
-                                .tr(TranslationKeys.modeSelectionStartButton)
-                                .replaceAll(
-                                    '{mode}',
-                                    _getStudyModeTranslatedName(
-                                        _selectedMode, context)),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                          Flexible(
+                            child: Text(
+                              context
+                                  .tr(TranslationKeys.modeSelectionStartButton)
+                                  .replaceAll(
+                                      '{mode}',
+                                      _getStudyModeTranslatedName(
+                                          _selectedMode, context)),
+                              style: AppFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -686,6 +697,8 @@ class _ModeOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final primary = Theme.of(context).colorScheme.primary;
+
     return GestureDetector(
       onTap: onTap,
       child: Opacity(
@@ -696,7 +709,7 @@ class _ModeOptionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? isDark
-                    ? AppTheme.primaryColor.withOpacity(0.15)
+                    ? primary.withOpacity(0.15)
                     : const Color(0xFFF3F0FF)
                 : isDark
                     ? Colors.white.withOpacity(0.05)
@@ -704,9 +717,9 @@ class _ModeOptionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isLocked
-                  ? Colors.orange.withOpacity(0.5)
+                  ? AppColors.warning.withOpacity(0.5)
                   : isSelected
-                      ? AppTheme.primaryColor
+                      ? primary
                       : isDark
                           ? Colors.white.withOpacity(0.1)
                           : const Color(0xFFE5E7EB),
@@ -715,7 +728,7 @@ class _ModeOptionCard extends StatelessWidget {
             boxShadow: isSelected && !isLocked
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.15),
+                      color: primary.withOpacity(0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -730,7 +743,7 @@ class _ModeOptionCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.primaryColor.withOpacity(0.15)
+                      ? primary.withOpacity(0.15)
                       : isDark
                           ? Colors.white.withOpacity(0.1)
                           : const Color(0xFFE5E7EB),
@@ -740,7 +753,7 @@ class _ModeOptionCard extends StatelessWidget {
                   mode.iconData,
                   size: 24,
                   color: isSelected
-                      ? AppTheme.primaryColor
+                      ? primary
                       : isDark
                           ? Colors.white.withOpacity(0.7)
                           : const Color(0xFF6B7280),
@@ -762,7 +775,7 @@ class _ModeOptionCard extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: isSelected
-                                  ? AppTheme.primaryColor
+                                  ? primary
                                   : isDark
                                       ? Colors.white
                                       : const Color(0xFF1F2937),
@@ -846,11 +859,11 @@ class _ModeOptionCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.orange.withOpacity(0.15)
-                        : Colors.orange.withOpacity(0.1),
+                        ? AppColors.warning.withOpacity(0.15)
+                        : AppColors.warning.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.orange,
+                      color: AppColors.warning,
                       width: 1.5,
                     ),
                   ),
@@ -860,7 +873,7 @@ class _ModeOptionCard extends StatelessWidget {
                       const Icon(
                         Icons.lock_rounded,
                         size: 16,
-                        color: Colors.orange,
+                        color: AppColors.warning,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -868,7 +881,7 @@ class _ModeOptionCard extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: Colors.orange,
+                          color: AppColors.warning,
                         ),
                       ),
                     ],
@@ -888,7 +901,7 @@ class _ModeOptionCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? primary
                             : isDark
                                 ? Colors.white.withOpacity(0.1)
                                 : const Color(0xFFE5E7EB),
@@ -918,7 +931,7 @@ class _ModeOptionCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppTheme.primaryColor.withOpacity(0.2)
+                              ? primary.withOpacity(0.2)
                               : isDark
                                   ? Colors.white.withOpacity(0.1)
                                   : const Color(0xFFF3F4F6),
@@ -931,7 +944,7 @@ class _ModeOptionCard extends StatelessWidget {
                               Icons.token,
                               size: 12,
                               color: isSelected
-                                  ? AppTheme.primaryColor
+                                  ? primary
                                   : isDark
                                       ? Colors.white.withOpacity(0.7)
                                       : const Color(0xFF6B7280),
@@ -943,7 +956,7 @@ class _ModeOptionCard extends StatelessWidget {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: isSelected
-                                    ? AppTheme.primaryColor
+                                    ? primary
                                     : isDark
                                         ? Colors.white.withOpacity(0.7)
                                         : const Color(0xFF6B7280),
@@ -965,11 +978,10 @@ class _ModeOptionCard extends StatelessWidget {
                 height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color:
-                      isSelected ? AppTheme.primaryColor : Colors.transparent,
+                  color: isSelected ? primary : Colors.transparent,
                   border: Border.all(
                     color: isSelected
-                        ? AppTheme.primaryColor
+                        ? primary
                         : isDark
                             ? Colors.white.withOpacity(0.3)
                             : const Color(0xFFD1D5DB),
