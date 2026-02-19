@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/usage_statistics.dart';
 
@@ -104,7 +105,7 @@ class UsageStatisticsCard extends StatelessWidget {
                     label: context.tr('tokens.stats.avg_per_operation'),
                     value:
                         statistics.averageTokensPerOperation.toStringAsFixed(1),
-                    color: Colors.orange,
+                    color: AppColors.warning,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -115,7 +116,7 @@ class UsageStatisticsCard extends StatelessWidget {
                     label: context.tr('tokens.stats.purchased_percentage'),
                     value:
                         '${statistics.purchasedTokensPercentage.toStringAsFixed(0)}%',
-                    color: Colors.green,
+                    color: AppColors.success,
                   ),
                 ),
               ],

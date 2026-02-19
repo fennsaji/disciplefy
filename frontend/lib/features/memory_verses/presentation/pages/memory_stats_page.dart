@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/di/injection_container.dart';
@@ -83,11 +83,12 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.error_outline,
-                          size: 64, color: Colors.grey[400]),
+                          size: 64, color: AppColors.lightTextSecondary),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load statistics',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        style: TextStyle(
+                            fontSize: 16, color: AppColors.lightTextSecondary),
                       ),
                       const SizedBox(height: 8),
                       TextButton.icon(
@@ -188,8 +189,6 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
   }
 
   Widget _buildMasteryDistribution(Map<String, dynamic> masteryDistribution) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     // Extract mastery counts from backend data
     final masteryData = {
       'Beginner': masteryDistribution['beginner'] as int? ?? 0,
@@ -200,11 +199,11 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
     };
 
     final masteryColors = {
-      'Beginner': isDark ? Colors.green.shade300 : Colors.green,
-      'Intermediate': isDark ? Colors.blue.shade300 : Colors.blue,
-      'Advanced': isDark ? Colors.orange.shade300 : Colors.orange,
-      'Expert': isDark ? Colors.purple.shade300 : Colors.purple,
-      'Master': isDark ? Colors.amber.shade300 : AppColors.highlightGold,
+      'Beginner': AppColors.masteryBeginner,
+      'Intermediate': AppColors.masteryIntermediate,
+      'Advanced': AppColors.masteryAdvanced,
+      'Expert': AppColors.masteryExpert,
+      'Master': AppColors.masteryMaster,
     };
 
     return Card(
@@ -262,10 +261,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
   }
 
   Widget _buildPracticeModeStats(List<dynamic> practiceModes) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark
-        ? AppColors.primaryPurple.withOpacity(0.8)
-        : AppColors.primaryPurple;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     // Map backend data to UI format
     final modeIconMap = {
@@ -297,7 +293,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
           child: Center(
             child: Text(
               'No practice mode data yet',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: AppColors.lightTextSecondary),
             ),
           ),
         ),
@@ -372,10 +368,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
   }
 
   Widget _buildOverallStats(Map<String, dynamic> statistics) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark
-        ? AppColors.primaryPurple.withOpacity(0.8)
-        : AppColors.primaryPurple;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     // Extract overall statistics from backend data
     final overallStats = [
@@ -408,7 +401,6 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.5,
       ),
       itemCount: overallStats.length,
       itemBuilder: (context, index) {
@@ -440,6 +432,8 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
                 Text(
                   stat['label'] as String,
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context)

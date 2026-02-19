@@ -10,6 +10,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../../data/models/subscription_v2_models.dart';
@@ -346,8 +347,7 @@ class _PricingPageState extends State<PricingPage> {
         break;
       case 2: // Plus
         badge = 'Recommended';
-        badgeColor =
-            const Color(0xFF7C3AED); // Violet — matches plus-upgrade page
+        badgeColor = AppColors.tierPlus; // Violet — matches plus-upgrade page
         isHighlighted = true;
         break;
       case 3: // Premium
@@ -393,7 +393,7 @@ class _PricingPageState extends State<PricingPage> {
       isHighlighted: isHighlighted,
       isPremium: isPremium,
       isMobile: isMobile,
-      accentColor: plan.tier == 2 ? const Color(0xFF7C3AED) : null,
+      accentColor: plan.tier == 2 ? AppColors.tierPlus : null,
     );
   }
 

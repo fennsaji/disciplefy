@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -175,12 +176,16 @@ class DailyVerseCard extends StatelessWidget {
                       color: Colors.white.withOpacity(0.6),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      context.tr(TranslationKeys.dailyVerseTapToGenerate),
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontStyle: FontStyle.italic,
-                        fontSize: 13,
+                    Flexible(
+                      child: Text(
+                        context.tr(TranslationKeys.dailyVerseTapToGenerate),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontStyle: FontStyle.italic,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -699,7 +704,7 @@ class DailyVerseCard extends StatelessWidget {
             ),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'Review Now',
@@ -714,8 +719,8 @@ class DailyVerseCard extends StatelessWidget {
   void _showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        content: Text('Something went wrong. Please try again.'),
+        backgroundColor: AppColors.error,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -732,7 +737,7 @@ class DailyVerseCard extends StatelessWidget {
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Colors.orange,
+        backgroundColor: AppColors.warning,
         duration: const Duration(seconds: 3),
       ),
     );

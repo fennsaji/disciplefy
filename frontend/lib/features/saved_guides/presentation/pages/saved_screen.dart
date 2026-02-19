@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/animations/app_animations.dart';
@@ -273,7 +274,8 @@ class _SavedScreenContent extends StatelessWidget {
                     if (state is SavedGuidesError) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(state.message),
+                          content:
+                              Text('Something went wrong. Please try again.'),
                           backgroundColor: Theme.of(context).colorScheme.error,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -282,7 +284,7 @@ class _SavedScreenContent extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(state.message),
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.success,
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -308,7 +310,8 @@ class _SavedScreenContent extends StatelessWidget {
                     }
 
                     if (state is SavedGuidesError) {
-                      return _buildErrorState(context, state.message);
+                      return _buildErrorState(
+                          context, 'Something went wrong. Please try again.');
                     }
 
                     return _buildLoadingIndicator(context, false);
@@ -349,13 +352,13 @@ class _SavedScreenContent extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(
                   Icons.error_outline,
                   size: 40,
-                  color: Colors.red,
+                  color: AppColors.error,
                 ),
               ),
               const SizedBox(height: 20),

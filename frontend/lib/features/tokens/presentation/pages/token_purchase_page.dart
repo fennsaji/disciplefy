@@ -5,6 +5,7 @@ import '../../../../core/models/payment_responses.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/token_pricing.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/payment_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../data/datasources/token_remote_data_source.dart';
@@ -144,7 +145,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           const SnackBar(
             content: Text(
                 'Payment successful! Tokens have been credited to your account.'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: Duration(seconds: 3),
           ),
         );
@@ -163,7 +164,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           SnackBar(
             content: Text(
                 'Payment received but confirmation failed: ${e.toString()}'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
             duration: const Duration(seconds: 5),
           ),
         );
@@ -184,8 +185,8 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Payment failed: ${response.message}'),
-          backgroundColor: Colors.red,
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -271,8 +272,8 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to create order: ${state.failure.message}'),
-              backgroundColor: Colors.red,
+              content: Text('Something went wrong. Please try again.'),
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -314,7 +315,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             SizedBox(height: 16),
             Text(
               _pricingError!,
@@ -348,7 +349,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.block, size: 64, color: Colors.orange),
+              Icon(Icons.block, size: 64, color: AppColors.warning),
               SizedBox(height: 16),
               Text(
                 'Premium users have unlimited tokens',
@@ -494,7 +495,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                               padding: EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.orange,
+                                color: AppColors.warning,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -525,7 +526,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                             Text(
                               '${package.discount}% OFF',
                               style: TextStyle(
-                                color: Colors.green,
+                                color: AppColors.success,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -633,7 +634,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                   '💡 Tip: Choose a package above for better discounts!',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.orange,
+                    color: AppColors.warning,
                     fontStyle: FontStyle.italic,
                   ),
                 ),

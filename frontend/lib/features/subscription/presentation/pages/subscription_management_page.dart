@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
@@ -103,7 +104,7 @@ class _SubscriptionManagementPageState
                 // Show error message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.errorMessage),
+                    content: Text('Something went wrong. Please try again.'),
                     backgroundColor: AppTheme.errorColor,
                   ),
                 );
@@ -205,7 +206,7 @@ class _SubscriptionManagementPageState
 
   /// Build view for Standard plan users in trial period (no subscription yet)
   Widget _buildStandardTrialView(DateTime trialEndDate) {
-    const standardColor = Color(0xFF6A4FB6);
+    const standardColor = AppColors.brandPrimary;
     const standardColorLight =
         Color(0xFFB794F4); // Lighter purple for dark mode
     final daysRemaining = trialEndDate.difference(DateTime.now()).inDays;
@@ -715,14 +716,14 @@ class _SubscriptionManagementPageState
               ];
 
     // Plan icon and color based on type
-    const plusColor = Color(0xFFFF9800); // Orange for Plus
+    const plusColor = AppColors.warning; // Orange/amber for Plus
     final planIcon = isStandardPlan
         ? Icons.auto_awesome
         : isPlusPlan
             ? Icons.star_rounded
             : Icons.workspace_premium_rounded;
     final planColor = isStandardPlan
-        ? const Color(0xFF6A4FB6)
+        ? AppColors.brandPrimary
         : isPlusPlan
             ? plusColor
             : AppTheme.primaryColor;

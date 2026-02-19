@@ -16,6 +16,7 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Phrase scramble practice mode for memory verses.
 ///
@@ -83,7 +84,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {
@@ -400,7 +401,8 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.help, size: 20, color: Colors.orange),
+                        const Icon(Icons.help,
+                            size: 20, color: AppColors.warning),
                         const SizedBox(width: 4),
                         Text(
                           '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
@@ -589,7 +591,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                   ? theme.colorScheme.primary
                   : (placedPhrase != null
                       ? theme.colorScheme.outline
-                      : Colors.grey.shade300),
+                      : AppColors.lightBorder),
               width: 2,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -622,14 +624,14 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: AppColors.lightBorder,
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Text(
                           '${index + 1}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: AppColors.lightTextSecondary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -639,7 +641,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                     Text(
                       context.tr(TranslationKeys.wordScrambleDropHere),
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey.shade400,
+                        color: AppColors.lightTextSecondary,
                         fontStyle: FontStyle.italic,
                       ),
                     ),

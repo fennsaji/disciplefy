@@ -17,6 +17,7 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import 'cloze_models.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Cloze deletion practice mode with progressive difficulty.
 ///
@@ -87,7 +88,7 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {

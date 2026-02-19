@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
@@ -296,25 +297,62 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   void _handleTopicDeepLink(String topicId) async {
     Logger.debug('[StudyTopics] Deep link detected for topic ID: $topicId');
 
-    // Show mode selection sheet before navigating
-    if (mounted) {
+    if (!mounted) return;
+
+    // For topics, the recommended mode is standard
+    const recommendedMode = StudyMode.standard;
+
+    // Check saved default_study_mode preference before showing sheet
+    final savedModeRaw =
+        await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
+
+    if (!mounted) return;
+
+    final encodedTopicId = Uri.encodeComponent(topicId);
+
+    void navigateWithMode(StudyMode mode) {
+      context.go(
+          '/study-guide-v2?input=&type=topic&language=${widget.currentLanguage}&mode=${mode.name}&source=deepLink&topic_id=$encodedTopicId');
+    }
+
+    if (StudyModePreferences.isRecommended(savedModeRaw)) {
+      Logger.debug(
+          '✅ [DEEP_LINK] Using recommended mode for topic: ${recommendedMode.name}');
+      navigateWithMode(recommendedMode);
+    } else if (savedModeRaw != null) {
+      final savedMode = _parseStudyMode(savedModeRaw);
+      if (savedMode != null) {
+        Logger.debug('✅ [DEEP_LINK] Using saved study mode: ${savedMode.name}');
+        navigateWithMode(savedMode);
+      } else {
+        // Invalid mode string — fall back to sheet
+        final result = await ModeSelectionSheet.show(
+          context: context,
+          languageCode: widget.currentLanguage,
+          recommendedMode: recommendedMode,
+        );
+        if (result != null && mounted) {
+          final mode = result['mode'] as StudyMode;
+          if (result['rememberChoice'] as bool) {
+            sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+          }
+          navigateWithMode(mode);
+        }
+      }
+    } else {
+      // No saved preference → show mode selection sheet
+      Logger.debug('[StudyTopics] No saved preference - showing mode sheet');
       final result = await ModeSelectionSheet.show(
         context: context,
         languageCode: widget.currentLanguage,
+        recommendedMode: recommendedMode,
       );
-
       if (result != null && mounted) {
         final mode = result['mode'] as StudyMode;
-        final rememberChoice = result['rememberChoice'] as bool;
-
-        // Save user's mode preference if they chose to remember
-        if (rememberChoice) {
+        if (result['rememberChoice'] as bool) {
           sl<LanguagePreferenceService>().saveStudyModePreference(mode);
         }
-
-        final encodedTopicId = Uri.encodeComponent(topicId);
-        context.go(
-            '/study-guide-v2?input=&type=topic&language=${widget.currentLanguage}&mode=${mode.name}&source=deepLink&topic_id=$encodedTopicId');
+        navigateWithMode(mode);
       }
     }
   }
@@ -452,12 +490,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  color: AppColors.brandSecondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.route_outlined,
-                  color: theme.colorScheme.primary,
+                  color: AppColors.brandSecondary,
                   size: 18,
                 ),
               ),
@@ -473,6 +511,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       context.tr(TranslationKeys.learningPathsSubtitle),
@@ -481,6 +521,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -562,10 +604,21 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         topic.isFromLearningPath &&
         recommendedMode != null) {
       Logger.debug(
-          '✅ [CONTINUE_LEARNING] Auto-using recommended mode: ${recommendedMode.displayName}');
+          '✅ [CONTINUE_LEARNING] Auto-using recommended mode (learning path): ${recommendedMode.displayName}');
       _isNavigating = true;
       await _navigateToStudyGuideWithMode(
           topic, recommendedMode, false); // No need to save again
+      return;
+    }
+
+    // For general topics with 'recommended', auto-select standard (topic type default)
+    if (StudyModePreferences.isRecommended(savedModeRaw) &&
+        !topic.isFromLearningPath) {
+      final autoMode = recommendedMode ?? StudyMode.standard;
+      Logger.debug(
+          '✅ [CONTINUE_LEARNING] Auto-using recommended mode (general topic): ${autoMode.displayName}');
+      _isNavigating = true;
+      await _navigateToStudyGuideWithMode(topic, autoMode, false);
       return;
     }
 
@@ -760,8 +813,10 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: Theme.of(context).colorScheme.onSurface,
               )
             : null,
+        centerTitle: true,
         title: Text(
           context.tr(TranslationKeys.studyTopicsTitle),
+          overflow: TextOverflow.ellipsis,
           style: AppFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -862,7 +917,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               trailing: isDefault
-                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  ? Icon(Icons.check, color: AppColors.brandSecondary)
                   : null,
               onTap: () async {
                 // Set to default (use app language)
@@ -883,7 +938,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               return ListTile(
                 title: Text(language.displayName),
                 trailing: isSelected
-                    ? Icon(Icons.check, color: theme.colorScheme.primary)
+                    ? Icon(Icons.check, color: AppColors.brandSecondary)
                     : null,
                 onTap: () async {
                   // Save study content language (does NOT affect app UI)
@@ -917,7 +972,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
           content: Text(
             context.tr(TranslationKeys.settingsSignInToSavePreferences),
           ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: AppColors.brandSecondary,
           action: SnackBarAction(
             label: context.tr(TranslationKeys.settingsSignIn),
             textColor: Theme.of(context).colorScheme.onPrimary,
@@ -1134,8 +1189,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                         parentContext
                             .tr(TranslationKeys.preferenceUpdatedSuccessfully),
                       ),
-                      backgroundColor:
-                          Theme.of(parentContext).colorScheme.primary,
+                      backgroundColor: AppColors.brandSecondary,
                     ),
                   );
                 },
@@ -1220,6 +1274,8 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                             ? AppTheme.primaryColor
                             : Theme.of(sheetContext).colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1231,6 +1287,8 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                             .onSurface
                             .withOpacity(0.6),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/token_status.dart';
 import '../extensions/duration_extensions.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -325,11 +326,11 @@ Color _getStatusColor(TokenStatus tokenStatus) {
       : 0.0;
 
   if (percentage < 0.25) {
-    return Colors.red[600]!;
+    return AppColors.errorDark;
   } else if (percentage < 0.5) {
-    return Colors.orange[600]!;
+    return AppColors.warningDark;
   } else {
-    return Colors.green[600]!;
+    return AppColors.successDark;
   }
 }
 
@@ -356,7 +357,7 @@ Color _getPlanColor(UserPlan plan) {
     case UserPlan.free:
       return Colors.grey[600]!;
     case UserPlan.standard:
-      return Colors.blue[600]!;
+      return AppColors.info;
     case UserPlan.plus:
       return Colors.purple[600]!;
     case UserPlan.premium:

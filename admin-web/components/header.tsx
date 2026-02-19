@@ -28,31 +28,47 @@ export default function Header({ user }: HeaderProps) {
     }
   }
 
+  const initials = user.name
+    .split(' ')
+    .map((n) => n.charAt(0))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
   return (
-    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-center">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Dashboard</h2>
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200/80 bg-white px-6 shadow-sm dark:border-white/5 dark:bg-[#0f0e1a]">
+      {/* Left — wordmark echo */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-gray-400 dark:text-indigo-300/50">Dashboard</span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
-            {user.name.charAt(0).toUpperCase()}
+      {/* Right */}
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-gray-200 dark:bg-white/10" />
+
+        {/* User */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-xs font-bold text-white shadow shadow-indigo-500/30">
+            {initials}
           </div>
-          <div className="text-sm">
-            <p className="font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Admin</p>
+          <div className="hidden text-sm sm:block">
+            <p className="font-medium leading-none text-gray-900 dark:text-gray-100">{user.name}</p>
+            <p className="mt-0.5 text-[11px] leading-none text-amber-500 dark:text-amber-400">Admin</p>
           </div>
         </div>
 
-        <ThemeToggle />
+        {/* Divider */}
+        <div className="h-6 w-px bg-gray-200 dark:bg-white/10" />
 
         <button
           onClick={handleLogout}
           disabled={isLoading}
-          className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
         >
-          {isLoading ? 'Signing out...' : 'Sign Out'}
+          {isLoading ? 'Signing out…' : 'Sign out'}
         </button>
       </div>
     </header>

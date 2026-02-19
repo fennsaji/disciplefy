@@ -1,156 +1,128 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 // Note: Using bundled fonts directly from pubspec.yaml instead of GoogleFonts
 // to avoid AssetManifest.json issues when allowRuntimeFetching = false
 
 /// Application theme following Disciplefy brand guidelines.
 ///
-/// Based on Figma design specifications with colors, typography,
-/// and component styling that reflects the spiritual nature of the app.
-///
-/// Primary color (#4F46E5) meets WCAG AA contrast ratio (4.63:1) against white.
-/// Verified at: https://webaim.org/resources/contrastchecker/
+/// All color values are sourced exclusively from [AppColors].
+/// To change a color, edit [AppColors] — never add inline hex values here.
 class AppTheme {
-  // Disciplefy Brand Colors
-  static const Color primaryColor = Color(0xFF4F46E5); // Indigo-600 (WCAG AA)
-  static const Color primaryLightColor =
-      Color(0xFF818CF8); // Indigo-400 (lighter, for dark surfaces)
-  static const Color secondaryPurple =
-      Color(0xFF8B5CF6); // Violet-500 (for gradients)
+  // ── Legacy aliases (kept for backward compatibility during migration) ──────
+  // New code should reference AppColors directly.
+  static const Color primaryColor = AppColors.brandPrimary;
+  static const Color primaryLightColor = AppColors.brandPrimaryLight;
+  static const Color secondaryPurple = AppColors.brandSecondary;
+  static const Color secondaryColor = AppColors.brandHighlight;
+  static const Color accentColor = AppColors.brandAccent;
+  static const Color backgroundColor = AppColors.lightBackground;
+  static const Color textPrimary = AppColors.lightTextPrimary;
+  static const Color errorColor = AppColors.error;
+  static const Color warningColor = AppColors.warning;
+  static const Color successColor = AppColors.success;
+  static const Color surfaceColor = AppColors.lightSurface;
+  static const Color onSurfaceVariant = AppColors.lightTextSecondary;
+  static const Color highlightColor = AppColors.brandHighlight;
+  static const Color textSecondary = AppColors.lightTextSecondary;
+  static const Color textSecondaryDark = AppColors.darkTextSecondary;
+  static const Color usageHistoryColor = Color(0xFF14B8A6); // Teal-500
 
-  /// Primary gradient for UI elements (Purple → Indigo)
-  /// Use this for consistent gradient styling across the app
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primaryColor, secondaryPurple],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-  static const Color secondaryColor = Color(0xFFFFEFC0); // Golden Glow
-  static const Color accentColor = Color(0xFFFF6B6B); // Action/Alert
-  static const Color backgroundColor = Color(0xFFFFFFFF); // Background
-  static const Color textPrimary = Color(0xFF1E1E1E); // Text Primary
+  /// Primary gradient — references AppColors so it stays in sync.
+  static LinearGradient get primaryGradient => AppColors.primaryGradient;
 
-  // Supporting Colors
-  static const Color errorColor = Color(0xFFEF4444); // Red
-  static const Color warningColor = Color(0xFFF59E0B); // Amber
-  static const Color successColor = Color(0xFF10B981); // Emerald
-  static const Color usageHistoryColor =
-      Color(0xFF14B8A6); // Teal-500 (WCAG AA)
-  static const Color surfaceColor = Color(0xFFFFFFFF); // White
-  static const Color onSurfaceVariant = Color(0xFF6B7280); // Gray text
-
-  // Additional theme properties that widgets expect
-  static const Color highlightColor =
-      secondaryColor; // Golden Glow for highlights
-  static const Color textSecondary =
-      Color(0xFF6B7280); // Secondary text color (light theme)
-  static const Color textSecondaryDark = Color(
-      0xFFB0B0B0); // Secondary text color (dark theme - WCAG AA compliant)
+  // ── Light Theme ──────────────────────────────────────────────────────────
 
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-          primary: primaryColor, // Indigo-600 (#4F46E5) - WCAG AA compliant
-          onPrimary: Colors.white,
-          error: errorColor,
-          // Override specific colors to ensure proper contrast
-          secondary: secondaryColor,
-          onSecondary: textPrimary,
-          tertiary: secondaryPurple, // Violet-500 for gradients (#8B5CF6)
-          onTertiary: Colors.white, // White text on violet tertiary
-          surface: surfaceColor,
-          onSurface: textPrimary,
-          background: backgroundColor,
-          onBackground: textPrimary,
+          seedColor: AppColors.brandPrimary,
+          primary: AppColors.brandPrimary,
+          onPrimary: AppColors.onGradient,
+          error: AppColors.error,
+          secondary: AppColors.brandHighlight,
+          onSecondary: AppColors.lightTextPrimary,
+          tertiary: AppColors.brandSecondary,
+          onTertiary: AppColors.onGradient,
+          surface: AppColors.lightSurface,
+          onSurface: AppColors.lightTextPrimary,
+          onSurfaceVariant: AppColors.lightTextSecondary,
         ),
-        scaffoldBackgroundColor: backgroundColor,
-
-        // Typography following Disciplefy brand guidelines
-        // Using bundled fonts from pubspec.yaml (Inter, Poppins)
-        textTheme: const TextTheme(
-          // Headings use Poppins
+        scaffoldBackgroundColor: AppColors.lightScaffold,
+        textTheme: TextTheme(
           displayLarge: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: primaryColor,
+            color: AppColors.brandPrimary,
           ),
           displayMedium: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: primaryColor,
+            color: AppColors.brandPrimary,
           ),
           headlineLarge: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: primaryColor,
+            color: AppColors.brandPrimary,
           ),
           headlineMedium: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: primaryColor,
+            color: AppColors.brandPrimary,
           ),
-
-          // Titles use Inter for better readability
-          titleLarge: TextStyle(
+          titleLarge: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             height: 1.4,
           ),
-          titleMedium: TextStyle(
+          titleMedium: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w500,
             height: 1.4,
           ),
-
-          // Body text uses Inter
-          bodyLarge: TextStyle(
+          bodyLarge: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 18,
             height: 1.5,
           ),
-          bodyMedium: TextStyle(
+          bodyMedium: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
             height: 1.5,
           ),
-          bodySmall: TextStyle(
+          bodySmall: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 14,
             height: 1.4,
           ),
-
-          // Labels and buttons use Inter
-          labelLarge: TextStyle(
+          labelLarge: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
           ),
-          labelMedium: TextStyle(
+          labelMedium: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),
-          labelSmall: TextStyle(
+          labelSmall: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 11,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),
         ),
-
-        // Component themes
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -160,7 +132,6 @@ class AppTheme {
             minimumSize: const Size(120, 48),
           ),
         ),
-
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -168,140 +139,125 @@ class AppTheme {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-
-        // Card theme handled individually in widgets
-
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           elevation: 0,
-          centerTitle: true,
-          backgroundColor: surfaceColor, // White background
-          foregroundColor: textPrimary, // Dark text/icons for contrast
+          centerTitle: false,
+          titleSpacing: NavigationToolbar.kMiddleSpacing,
+          backgroundColor: AppColors.lightSurface,
+          foregroundColor: AppColors.lightTextPrimary,
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: textPrimary, // Dark text for readability
+            color: AppColors.lightTextPrimary,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       );
 
+  // ── Dark Theme ───────────────────────────────────────────────────────────
+
   static ThemeData get darkTheme => ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
+          seedColor: AppColors.brandPrimary,
           brightness: Brightness.dark,
-          // Improved dark theme colors
-          primary: primaryColor, // Indigo-600 (#4F46E5) - WCAG AA compliant
-          onPrimary: Colors.white,
-          secondary:
-              secondaryColor, // Golden Glow (consistent with light theme)
-          tertiary: secondaryPurple, // Violet-500 for gradients (#8B5CF6)
-          surface: const Color(0xFF1A1A1A), // Dark gray instead of brown
-          onSurface: const Color(0xFFE0E0E0), // Light gray text
-          onSurfaceVariant:
-              textSecondaryDark, // WCAG AA compliant secondary text
-          background: const Color(0xFF121212), // True dark background
-          onBackground:
-              const Color(0xFFE0E0E0), // Light text on dark background
-          onSecondary: textPrimary, // Dark text on golden secondary
-          onTertiary: Colors.white, // White text on indigo tertiary
-          error: errorColor,
+          primary: AppColors
+              .brandPrimaryLight, // #A78BFA — 6.5:1 on dark (was #6A4FB6, 2.7:1)
+          onPrimary: AppColors.onGradient,
+          secondary: AppColors.brandHighlight,
+          onSecondary: AppColors.lightTextPrimary,
+          tertiary: AppColors
+              .brandPrimaryLight, // lighter purple for gradient pairs in dark
+          onTertiary: AppColors.onGradient,
+          surface: AppColors.darkSurface,
+          onSurface: AppColors.darkTextPrimary,
+          onSurfaceVariant: AppColors.darkTextSecondary,
+          error: AppColors.error,
         ),
-        scaffoldBackgroundColor: const Color(0xFF121212),
-
-        // Typography with improved dark theme colors
-        // Using bundled fonts from pubspec.yaml (Inter, Poppins)
-        textTheme: const TextTheme(
-          // Headings use Inter with vibrant purple for dark theme
+        scaffoldBackgroundColor: AppColors.darkScaffold,
+        textTheme: TextTheme(
           displayLarge: TextStyle(
             fontFamily: 'Inter',
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: primaryColor, // Vibrant Purple (#7C3AED)
+            color: AppColors.brandPrimaryLight,
           ),
           displayMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: primaryColor,
+            color: AppColors.brandPrimaryLight,
           ),
           headlineLarge: TextStyle(
             fontFamily: 'Inter',
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: primaryColor,
+            color: AppColors.brandPrimaryLight,
           ),
           headlineMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: primaryColor,
+            color: AppColors.brandPrimaryLight,
           ),
-
-          // Titles use Inter for better readability in dark theme
           titleLarge: TextStyle(
             fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             height: 1.4,
-            color: Color(0xFFE0E0E0),
+            color: AppColors.darkTextPrimary,
           ),
           titleMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w500,
             height: 1.4,
-            color: Color(0xFFE0E0E0),
+            color: AppColors.darkTextPrimary,
           ),
-
-          // Body text uses Inter with proper dark theme colors
           bodyLarge: TextStyle(
             fontFamily: 'Inter',
             fontSize: 18,
             height: 1.5,
-            color: Color(0xFFE0E0E0),
+            color: AppColors.darkTextPrimary,
           ),
           bodyMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
             height: 1.5,
-            color: Color(0xFFE0E0E0),
+            color: AppColors.darkTextPrimary,
           ),
           bodySmall: TextStyle(
             fontFamily: 'Inter',
             fontSize: 14,
             height: 1.4,
-            color: Color(0xFFB0B0B0),
+            color: AppColors.darkTextSecondary,
           ),
-
-          // Labels and buttons use Inter with appropriate contrast
           labelLarge: TextStyle(
             fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
-            color: Color(0xFFE0E0E0),
+            color: AppColors.darkTextPrimary,
           ),
           labelMedium: TextStyle(
             fontFamily: 'Inter',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
-            color: Color(0xFFB0B0B0),
+            color: AppColors.darkTextSecondary,
           ),
           labelSmall: TextStyle(
             fontFamily: 'Inter',
             fontSize: 11,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
-            color: Color(0xFFB0B0B0),
+            color: AppColors.darkTextSecondary,
           ),
         ),
-
-        // Component themes with dark theme adjustments
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -309,41 +265,41 @@ class AppTheme {
               borderRadius: BorderRadius.circular(8),
             ),
             minimumSize: const Size(120, 48),
-            backgroundColor: primaryColor, // Vibrant Purple (#7C3AED)
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.brandPrimary,
+            foregroundColor: AppColors.onGradient,
           ),
         ),
-
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF404040)),
+            borderSide: BorderSide(color: AppColors.darkBorder),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF404040)),
+            borderSide: BorderSide(color: AppColors.darkBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: primaryColor),
+            borderSide: BorderSide(color: AppColors.brandPrimary),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          fillColor: const Color(0xFF2A2A2A),
+          fillColor: AppColors.darkInputFill,
           filled: true,
-          labelStyle: const TextStyle(color: Color(0xFFB0B0B0)),
-          hintStyle: const TextStyle(color: Color(0xFF808080)),
+          labelStyle: TextStyle(color: AppColors.darkTextSecondary),
+          hintStyle: TextStyle(color: AppColors.darkHintText),
         ),
-
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           elevation: 0,
-          centerTitle: true,
-          backgroundColor: Color(0xFF1A1A1A),
-          foregroundColor: Color(0xFFE0E0E0),
+          centerTitle: false,
+          titleSpacing: NavigationToolbar.kMiddleSpacing,
+          backgroundColor: AppColors.darkSurface,
+          foregroundColor: AppColors.darkTextPrimary,
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFE0E0E0),
+            color: AppColors.darkTextPrimary,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       );

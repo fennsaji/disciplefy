@@ -114,6 +114,7 @@ import '../../features/study_topics/domain/repositories/leaderboard_repository.d
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/locale_service.dart';
+import '../services/font_scale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/system_config_service.dart';
 import '../services/pricing_service.dart';
@@ -252,6 +253,9 @@ Future<void> initializeDependencies() async {
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
+
+  // Register FontScaleService
+  sl.registerLazySingleton(() => FontScaleService());
 
   // Register SystemConfigService (for maintenance mode, feature flags, app version)
   sl.registerLazySingleton(() => SystemConfigService());

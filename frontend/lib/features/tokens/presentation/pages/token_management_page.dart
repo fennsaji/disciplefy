@@ -7,6 +7,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/extensions/translation_extension.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/payment_service.dart';
 import '../bloc/token_bloc.dart';
 import '../bloc/token_event.dart';
@@ -136,7 +137,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Tokens purchased successfully!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
     }
@@ -212,8 +213,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               '[TokenManagementPage] Payment gateway error: ${response.message}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Payment failed: ${response.message}'),
-              backgroundColor: Colors.red,
+              content: Text('Something went wrong. Please try again.'),
+              backgroundColor: AppColors.error,
             ),
           );
         },
@@ -222,8 +223,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
       Logger.debug('[TokenManagementPage] Error opening payment gateway: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error opening payment: $e'),
-          backgroundColor: Colors.red,
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -273,7 +274,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.result.message),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                 ),
               );
               // Refresh token status to update UI
@@ -286,8 +287,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                 state.operation == 'resuming') {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.failure.message),
-                  backgroundColor: Colors.red,
+                  content: Text('Something went wrong. Please try again.'),
+                  backgroundColor: AppColors.error,
                 ),
               );
             }
@@ -397,7 +398,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        state.errorMessage,
+                        'Something went wrong. Please try again.',
                         style: AppFonts.inter(
                           fontSize: 14,
                           color: Theme.of(context)

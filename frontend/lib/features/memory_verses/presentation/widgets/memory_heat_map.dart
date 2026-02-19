@@ -76,10 +76,11 @@ class MemoryHeatMap extends StatelessWidget {
   }
 
   Widget _buildStreakBadge(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.primaryPurple.withOpacity(0.15),
+        color: primaryColor.withOpacity(0.15),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -87,14 +88,14 @@ class MemoryHeatMap extends StatelessWidget {
         children: [
           Icon(
             Icons.local_fire_department,
-            color: AppColors.primaryPurple,
+            color: primaryColor,
             size: 16,
           ),
           const SizedBox(width: 4),
           Text(
             '$currentStreak day streak',
             style: TextStyle(
-              color: AppColors.primaryPurple,
+              color: primaryColor,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),

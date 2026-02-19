@@ -156,7 +156,7 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                     child: ElevatedButton(
                       onPressed: _savePaymentMethod,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
+                        backgroundColor: AppColors.brandPrimary,
                         foregroundColor: Colors.white,
                       ),
                       child: const Text('Save'),
@@ -206,8 +206,8 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                   });
                 }
               },
-              selectedColor: AppColors.primaryColor.withOpacity(0.2),
-              checkmarkColor: AppColors.primaryColor,
+              selectedColor: AppColors.brandPrimary.withOpacity(0.2),
+              checkmarkColor: AppColors.brandPrimary,
             );
           }).toList(),
         ),
@@ -540,7 +540,7 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
       },
       controlAffinity: ListTileControlAffinity.leading,
       contentPadding: EdgeInsets.zero,
-      activeColor: AppColors.primaryColor,
+      activeColor: AppColors.brandPrimary,
     );
   }
 

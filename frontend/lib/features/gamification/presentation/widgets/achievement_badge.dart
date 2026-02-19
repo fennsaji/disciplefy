@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/achievement.dart';
 
@@ -204,11 +205,11 @@ class AchievementBadge extends StatelessWidget {
       case AchievementCategory.study:
         return Colors.purple;
       case AchievementCategory.streak:
-        return Colors.orange;
+        return AppColors.warning;
       case AchievementCategory.memory:
-        return Colors.blue;
+        return AppColors.info;
       case AchievementCategory.voice:
-        return Colors.green;
+        return AppColors.success;
       case AchievementCategory.saved:
         return Colors.teal;
     }

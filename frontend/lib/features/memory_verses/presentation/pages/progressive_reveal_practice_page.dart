@@ -16,6 +16,7 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../widgets/self_assessment_bottom_sheet.dart';
 import '../widgets/timer_badge.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Progressive reveal practice mode for memory verses.
 ///
@@ -85,7 +86,7 @@ class _ProgressiveRevealPracticePageState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {
@@ -347,7 +348,7 @@ class _ProgressiveRevealPracticePageState
                       value: chunks.isEmpty
                           ? 0
                           : (currentRevealIndex + 1) / chunks.length,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColors.lightBorder,
                       minHeight: 8,
                     ),
                     const SizedBox(height: 8),
@@ -435,7 +436,7 @@ class _ProgressiveRevealPracticePageState
                                 context.tr(TranslationKeys.practiceSubmit)),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Colors.green,
+                              backgroundColor: AppColors.success,
                               foregroundColor: Colors.white,
                             ),
                           ),

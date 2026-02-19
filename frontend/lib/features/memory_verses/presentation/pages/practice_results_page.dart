@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../data/services/transliteration_service.dart';
 import '../../domain/entities/practice_result_params.dart';
@@ -127,7 +128,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             currentTier: 'free', // TODO: Get from user subscription
             availableModes: ['flip_card', 'type_it_out'],
             requiredTier: 'standard',
-            message: state.message,
+            message: 'Something went wrong. Please try again.',
           );
         }
 
@@ -250,7 +251,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             final isFilled = index < rating;
             return Icon(
               isFilled ? Icons.star : Icons.star_border,
-              color: isFilled ? qualityColor : Colors.grey.shade300,
+              color: isFilled ? qualityColor : AppColors.lightBorder,
               size: 32,
             );
           }),
@@ -341,7 +342,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                 Icons.visibility,
                 context.tr(TranslationKeys.practiceResultsAnswerShown),
                 context.tr(TranslationKeys.practiceResultsPenaltyApplied),
-                valueColor: Colors.orange,
+                valueColor: AppColors.warning,
               ),
             ],
           ],
@@ -439,7 +440,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
     int blankNumber,
   ) {
     final isCorrect = comparison.isCorrect;
-    final statusColor = isCorrect ? Colors.green : Colors.red;
+    final statusColor = isCorrect ? AppColors.success : AppColors.error;
     final statusIcon = isCorrect ? Icons.check_circle : Icons.cancel;
 
     // Detect language and transliterate correct answer for Fill-in-the-Blanks only
@@ -484,7 +485,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isExtraWord
-                    ? Colors.orange.withAlpha((0.2 * 255).round())
+                    ? AppColors.warning.withAlpha((0.2 * 255).round())
                     : theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -494,7 +495,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                     : '${context.tr(labelKey)} $blankNumber',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: isExtraWord
-                      ? Colors.orange.shade800
+                      ? AppColors.warningDark
                       : theme.colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.bold,
                 ),
@@ -530,20 +531,20 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isCorrect
-                      ? Colors.green.withAlpha((0.1 * 255).round())
-                      : Colors.red.withAlpha((0.1 * 255).round()),
+                      ? AppColors.success.withAlpha((0.1 * 255).round())
+                      : AppColors.error.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isCorrect
-                        ? Colors.green.withAlpha((0.3 * 255).round())
-                        : Colors.red.withAlpha((0.3 * 255).round()),
+                        ? AppColors.success.withAlpha((0.3 * 255).round())
+                        : AppColors.error.withAlpha((0.3 * 255).round()),
                   ),
                 ),
                 child: Text(
                   comparison.userInput,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color:
-                        isCorrect ? Colors.green.shade700 : Colors.red.shade700,
+                        isCorrect ? AppColors.successDark : AppColors.errorDark,
                     fontWeight: FontWeight.w600,
                     fontStyle: comparison.userInput == '(missing)'
                         ? FontStyle.italic
@@ -580,13 +581,13 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: isExtraWord
-                        ? Colors.orange.withAlpha((0.1 * 255).round())
-                        : Colors.green.withAlpha((0.1 * 255).round()),
+                        ? AppColors.warning.withAlpha((0.1 * 255).round())
+                        : AppColors.success.withAlpha((0.1 * 255).round()),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isExtraWord
-                          ? Colors.orange.withAlpha((0.3 * 255).round())
-                          : Colors.green.withAlpha((0.3 * 255).round()),
+                          ? AppColors.warning.withAlpha((0.3 * 255).round())
+                          : AppColors.success.withAlpha((0.3 * 255).round()),
                     ),
                   ),
                   child: Text(
@@ -595,8 +596,8 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                         : correctAnswerDisplay,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: isExtraWord
-                          ? Colors.orange.shade800
-                          : Colors.green.shade700,
+                          ? AppColors.warningDark
+                          : AppColors.successDark,
                       fontWeight: FontWeight.w600,
                       fontStyle: isExtraWord ? FontStyle.italic : null,
                     ),

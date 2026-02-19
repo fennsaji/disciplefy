@@ -121,9 +121,8 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
     final isDark = theme.brightness == Brightness.dark;
     final baseStyle = widget.style ?? theme.textTheme.bodyMedium;
 
-    // Use tertiary color for dark mode (lighter purple), primary for light mode
-    final scriptureColor =
-        isDark ? theme.colorScheme.tertiary : theme.colorScheme.primary;
+    // Full-opacity primary so links match the AppBar title brightness exactly.
+    final scriptureColor = theme.colorScheme.primary;
 
     // Split text into lines to handle block-level markdown
     final lines = widget.text.split('\n');
@@ -289,12 +288,16 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
           ..onTap = () => _onScriptureTap(context, reference);
         _recognizers.add(recognizer);
 
+        final dark = Theme.of(context).brightness == Brightness.dark;
         final scriptureStyle = (baseStyle ?? const TextStyle()).copyWith(
           color: scriptureColor,
           fontWeight: FontWeight.w600,
           decoration: TextDecoration.underline,
-          decorationColor: scriptureColor.withOpacity(0.5),
-          decorationStyle: TextDecorationStyle.dotted,
+          decorationColor: dark
+              ? scriptureColor.withOpacity(0.6)
+              : scriptureColor.withOpacity(0.5),
+          decorationStyle:
+              dark ? TextDecorationStyle.solid : TextDecorationStyle.dotted,
         );
 
         spans.add(TextSpan(

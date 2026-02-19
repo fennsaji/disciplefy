@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// A card that prompts users to take the personalization questionnaire
 class PersonalizationPromptCard extends StatelessWidget {
@@ -107,6 +108,10 @@ class PersonalizationPromptCard extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: onGetStarted,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brandPrimary,
+                      foregroundColor: AppColors.onGradient,
+                    ),
                     icon: const Icon(Icons.arrow_forward, size: 18),
                     label: Text(
                         context.tr(TranslationKeys.homePersonalizeGetStarted)),
