@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/app_routes.dart';
 
 /// Reusable dialog for features that require a plan upgrade.
@@ -116,7 +117,7 @@ class UpgradeRequiredDialog extends StatelessWidget {
                     child: Icon(
                       Icons.lock_outline,
                       size: 20,
-                      color: Colors.orange[700],
+                      color: AppColors.warningDark,
                     ),
                   ),
                 ),
@@ -230,7 +231,7 @@ class UpgradeRequiredDialog extends StatelessWidget {
                 ElevatedButton(
                   onPressed: onUpgrade,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

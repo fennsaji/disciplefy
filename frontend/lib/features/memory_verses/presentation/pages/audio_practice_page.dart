@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -216,7 +217,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Speech recognition error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -567,7 +568,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
             height: 2,
             color: _currentPhase.index >= 1
                 ? theme.colorScheme.primary
-                : Colors.grey.shade300,
+                : AppColors.lightBorder,
           ),
           _buildPhaseChip(
             theme,
@@ -581,7 +582,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
             height: 2,
             color: _currentPhase.index >= 2
                 ? theme.colorScheme.primary
-                : Colors.grey.shade300,
+                : AppColors.lightBorder,
           ),
           _buildPhaseChip(
             theme,
@@ -612,19 +613,23 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 ? theme.colorScheme.primary
                 : isCompleted
                     ? theme.colorScheme.primary.withAlpha(100)
-                    : Colors.grey.shade300,
+                    : AppColors.lightBorder,
             shape: BoxShape.circle,
           ),
           child: Icon(
             icon,
-            color: isActive || isCompleted ? Colors.white : Colors.grey,
+            color: isActive || isCompleted
+                ? Colors.white
+                : AppColors.lightTextSecondary,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: isActive ? theme.colorScheme.primary : Colors.grey,
+            color: isActive
+                ? theme.colorScheme.primary
+                : AppColors.lightTextSecondary,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -680,7 +685,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 ? '${context.tr(TranslationKeys.audioPlayed)} $_timesPlayed ${_timesPlayed > 1 ? context.tr(TranslationKeys.audioTimes) : context.tr(TranslationKeys.audioTime)}'
                 : context.tr(TranslationKeys.audioTapToPlay),
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
+              color: AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -728,14 +733,15 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color:
-                isSelected ? theme.colorScheme.primary : Colors.grey.shade300,
+                isSelected ? theme.colorScheme.primary : AppColors.lightBorder,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color:
-                isSelected ? theme.colorScheme.primary : Colors.grey.shade600,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : AppColors.lightTextSecondary,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -780,7 +786,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                       color: _isRecording
                           ? theme.colorScheme.primary
                               .withAlpha((150 + (index / 20 * 105)).toInt())
-                          : Colors.grey.shade300,
+                          : AppColors.lightBorder,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   );
@@ -795,13 +801,15 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: _isRecording ? Colors.red : theme.colorScheme.primary,
+                color:
+                    _isRecording ? AppColors.error : theme.colorScheme.primary,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        (_isRecording ? Colors.red : theme.colorScheme.primary)
-                            .withAlpha(60),
+                    color: (_isRecording
+                            ? AppColors.error
+                            : theme.colorScheme.primary)
+                        .withAlpha(60),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -830,7 +838,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                   Text(
                     '${context.tr(TranslationKeys.audioRecognized)}:',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.grey,
+                      color: AppColors.lightTextSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -905,9 +913,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.withAlpha(20),
+              color: AppColors.success.withAlpha(20),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.withAlpha(50)),
+              border: Border.all(color: AppColors.success.withAlpha(50)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -915,7 +923,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 Text(
                   '${context.tr(TranslationKeys.audioExpected)}:',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.green,
+                    color: AppColors.success,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -925,7 +933,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                       ? '${currentVerse!.verseText} ${currentVerse!.verseReference}'
                       : '',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.green.shade300,
+                    color: AppColors.successDark,
                   ),
                 ),
               ],
@@ -961,7 +969,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                       : _recognizedText,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: _recognizedText.isEmpty
-                        ? Colors.grey
+                        ? AppColors.lightTextSecondary
                         : theme.colorScheme.onSurface,
                     fontStyle: _recognizedText.isEmpty
                         ? FontStyle.italic
@@ -1001,11 +1009,13 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: comparison.isMatch
-                        ? Colors.green.withAlpha(30)
-                        : Colors.red.withAlpha(30),
+                        ? AppColors.success.withAlpha(30)
+                        : AppColors.error.withAlpha(30),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: comparison.isMatch ? Colors.green : Colors.red,
+                      color: comparison.isMatch
+                          ? AppColors.success
+                          : AppColors.error,
                     ),
                   ),
                   child: Column(
@@ -1015,8 +1025,8 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                         // Show expected word with strikethrough
                         Text(
                           comparison.originalWord,
-                          style: TextStyle(
-                            color: Colors.red.shade300,
+                          style: const TextStyle(
+                            color: AppColors.errorDark,
                             fontWeight: FontWeight.w500,
                             fontSize: 12,
                             decoration: TextDecoration.lineThrough,
@@ -1026,7 +1036,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                           Text(
                             comparison.recognizedWord,
                             style: const TextStyle(
-                              color: Colors.orange,
+                              color: AppColors.warning,
                               fontWeight: FontWeight.w500,
                               fontSize: 14,
                             ),
@@ -1037,8 +1047,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                               ? '+${comparison.recognizedWord}'
                               : comparison.originalWord,
                           style: TextStyle(
-                            color:
-                                comparison.isMatch ? Colors.green : Colors.red,
+                            color: comparison.isMatch
+                                ? AppColors.success
+                                : AppColors.error,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1076,9 +1087,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   }
 
   Color _getAccuracyColor() {
-    if (_accuracyPercentage >= 80) return Colors.green;
-    if (_accuracyPercentage >= 50) return Colors.orange;
-    return Colors.red;
+    if (_accuracyPercentage >= 80) return AppColors.success;
+    if (_accuracyPercentage >= 50) return AppColors.warning;
+    return AppColors.error;
   }
 }
 

@@ -17,6 +17,7 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Word item representing a word in the word bank.
 class WordItem {
@@ -103,7 +104,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {
@@ -465,7 +466,8 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.help, size: 20, color: Colors.orange),
+                        const Icon(Icons.help,
+                            size: 20, color: AppColors.warning),
                         const SizedBox(width: 4),
                         Text(
                           '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
@@ -635,17 +637,17 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
               ? theme.colorScheme.surfaceContainerHighest
                   .withAlpha((0.5 * 255).round())
               : (isCorrect
-                  ? Colors.green.withAlpha((0.15 * 255).round())
+                  ? AppColors.success.withAlpha((0.15 * 255).round())
                   : (isWrong
-                      ? Colors.red.withAlpha((0.15 * 255).round())
+                      ? AppColors.error.withAlpha((0.15 * 255).round())
                       : theme.colorScheme.primaryContainer)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: word == null
                 ? theme.colorScheme.outline.withAlpha((0.3 * 255).round())
                 : (isCorrect
-                    ? Colors.green
-                    : (isWrong ? Colors.red : theme.colorScheme.primary)),
+                    ? AppColors.success
+                    : (isWrong ? AppColors.error : theme.colorScheme.primary)),
             width: word == null ? 1 : 2,
             style: word == null ? BorderStyle.solid : BorderStyle.solid,
           ),
@@ -659,9 +661,9 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isCorrect
-                          ? Colors.green.shade700
+                          ? AppColors.successDark
                           : (isWrong
-                              ? Colors.red.shade700
+                              ? AppColors.errorDark
                               : theme.colorScheme.onPrimaryContainer),
                     ),
                   ),

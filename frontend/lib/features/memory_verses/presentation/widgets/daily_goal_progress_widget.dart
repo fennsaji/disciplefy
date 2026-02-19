@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/daily_goal_entity.dart';
 
 /// Daily goal progress widget.
@@ -33,8 +34,8 @@ class DailyGoalProgressWidget extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isCompleted
-            ? BorderSide(
-                color: Colors.green,
+            ? const BorderSide(
+                color: AppColors.success,
                 width: 2,
               )
             : BorderSide.none,
@@ -64,11 +65,12 @@ class DailyGoalProgressWidget extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green,
+                        color: AppColors.success,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withAlpha((0.3 * 255).round()),
+                            color: AppColors.success
+                                .withAlpha((0.3 * 255).round()),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -108,7 +110,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                       target: dailyGoal.targetReviews,
                       label: 'Reviews',
                       icon: Icons.replay,
-                      color: Colors.blue,
+                      color: AppColors.info,
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -120,7 +122,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                       target: dailyGoal.targetNewVerses,
                       label: 'New Verses',
                       icon: Icons.add_circle_outline,
-                      color: Colors.purple,
+                      color: AppColors.masteryAdvanced,
                     ),
                   ),
                 ],
@@ -160,7 +162,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                             .withAlpha((0.2 * 255).round()),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isCompleted
-                              ? Colors.green
+                              ? AppColors.success
                               : theme.colorScheme.primary,
                         ),
                         minHeight: 10,
@@ -177,8 +179,9 @@ class DailyGoalProgressWidget extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: isCompleted
                           ? [
-                              Colors.green.withAlpha((0.1 * 255).round()),
-                              Colors.lightGreen.withAlpha((0.1 * 255).round()),
+                              AppColors.success.withAlpha((0.1 * 255).round()),
+                              AppColors.successLight
+                                  .withAlpha((0.1 * 255).round()),
                             ]
                           : [
                               theme.colorScheme.primaryContainer
@@ -190,7 +193,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isCompleted
-                          ? Colors.green.withAlpha((0.3 * 255).round())
+                          ? AppColors.success.withAlpha((0.3 * 255).round())
                           : theme.colorScheme.primary
                               .withAlpha((0.2 * 255).round()),
                     ),
@@ -200,7 +203,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                       Icon(
                         isCompleted ? Icons.celebration : Icons.emoji_events,
                         color: isCompleted
-                            ? Colors.green
+                            ? AppColors.success
                             : theme.colorScheme.primary,
                         size: 24,
                       ),
@@ -213,7 +216,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                               Text(
                                 dailyGoal.motivationalMessage,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.green.shade700,
+                                  color: AppColors.successDark,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -221,17 +224,17 @@ class DailyGoalProgressWidget extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.star,
                                       size: 16,
-                                      color: Colors.amber.shade700,
+                                      color: AppColors.warningDark,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '+${dailyGoal.bonusXpAwarded} XP Bonus',
                                       style:
                                           theme.textTheme.bodySmall?.copyWith(
-                                        color: Colors.amber.shade700,
+                                        color: AppColors.warningDark,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -310,14 +313,14 @@ class _CircularProgressIndicator extends StatelessWidget {
                 children: [
                   Icon(
                     icon,
-                    color: isComplete ? Colors.green : color,
+                    color: isComplete ? AppColors.success : color,
                     size: 28,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '$completed/$target',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: isComplete ? Colors.green : color,
+                      color: isComplete ? AppColors.success : color,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -331,11 +334,12 @@ class _CircularProgressIndicator extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: AppColors.success,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.green.withAlpha((0.3 * 255).round()),
+                          color:
+                              AppColors.success.withAlpha((0.3 * 255).round()),
                           blurRadius: 4,
                         ),
                       ],

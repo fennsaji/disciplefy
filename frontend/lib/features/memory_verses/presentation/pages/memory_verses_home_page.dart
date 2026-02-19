@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -129,12 +130,12 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new,
-                color: AppTheme.primaryColor,
+                color: Theme.of(context).colorScheme.primary,
                 size: 18,
               ),
             ),
@@ -234,7 +235,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppColors.info,
                 ),
               );
               // Reload streak to show updated freeze days
@@ -254,8 +255,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
+                    content: Text('Something went wrong. Please try again.'),
+                    backgroundColor: AppColors.error,
                     action: SnackBarAction(
                       label: context.tr(TranslationKeys.commonRetry),
                       textColor: Colors.white,
@@ -268,7 +269,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                 ),
               );
               _loadVerses();
@@ -286,7 +287,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                       Expanded(child: Text(state.message)),
                     ],
                   ),
-                  backgroundColor: Colors.orange,
+                  backgroundColor: AppColors.warning,
                 ),
               );
             } else if (state is VerseDeleted) {
@@ -294,7 +295,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 SnackBar(
                   content:
                       Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                 ),
               );
               _loadVerses();
@@ -507,8 +508,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.orange.shade400,
-                          Colors.deepOrange.shade400,
+                          AppColors.streakFlame,
+                          AppColors.streakGlow,
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -546,7 +547,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     Icons.star_outline,
                     '${state.statistics.masteredVerses}',
                     context.tr(TranslationKeys.memoryHomeMastered),
-                    color: Colors.amber,
+                    color: AppColors.masteryMaster,
                   ),
                 ],
               ),
@@ -571,7 +572,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   icon: Icons.emoji_events_outlined,
                   label: context.tr(TranslationKeys.memoryHomeChampions),
                   onTap: () => context.push('/memory-verses/champions'),
-                  color: Colors.amber,
+                  color: AppColors.masteryMaster,
                 ),
               ),
               const SizedBox(width: 12),
@@ -580,7 +581,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   icon: Icons.bar_chart_outlined,
                   label: context.tr(TranslationKeys.memoryHomeStatistics),
                   onTap: () => context.push('/memory-verses/stats'),
-                  color: AppTheme.primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
@@ -609,12 +610,16 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             children: [
               Icon(icon, size: 18, color: color),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -672,15 +677,14 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             Row(
               children: [
                 if (isComplete)
-                  Icon(Icons.check_circle,
-                      size: 14, color: Colors.green.shade400),
+                  Icon(Icons.check_circle, size: 14, color: AppColors.success),
                 const SizedBox(width: 4),
                 Text(
                   '$current/$target',
                   style: AppFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isComplete ? Colors.green.shade400 : color,
+                    color: isComplete ? AppColors.success : color,
                   ),
                 ),
               ],
@@ -693,8 +697,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           child: LinearProgressIndicator(
             value: progress,
             backgroundColor: color.withOpacity(0.15),
-            valueColor: AlwaysStoppedAnimation(
-                isComplete ? Colors.green.shade400 : color),
+            valueColor:
+                AlwaysStoppedAnimation(isComplete ? AppColors.success : color),
             minHeight: 6,
           ),
         ),
@@ -776,7 +780,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                       vertical: 16,
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
                           Icons.add,
@@ -784,12 +788,16 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                           size: 22,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          context.tr(TranslationKeys.memoryHomeAddFirstVerse),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                        Flexible(
+                          child: Text(
+                            context.tr(TranslationKeys.memoryHomeAddFirstVerse),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -882,7 +890,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr(TranslationKeys.memoryDailyVerseNotLoaded)),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
     }
@@ -942,7 +950,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: Theme.of(context).colorScheme.primary,
             letterSpacing: 0.5,
           ),
         ),
@@ -1059,7 +1067,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr(TranslationKeys.memoryNoVersesToReview)),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -1106,7 +1114,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               context.read<MemoryVerseBloc>().add(DeleteVerse(verse.id));
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
             child: Text(context.tr(TranslationKeys.memoryDeleteConfirm)),

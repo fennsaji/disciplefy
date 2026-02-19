@@ -126,10 +126,6 @@ class StudyStreamingHandler {
     final sectionEvent = event.sectionEvent as StudyStreamSectionEvent;
     final updatedState = currentState.withSection(sectionEvent);
 
-    Logger.debug(
-        '🌊 [STREAMING_HANDLER] Updating state with section: ${sectionEvent.sectionType}');
-    Logger.debug('🌊 [STREAMING_HANDLER] Progress: ${updatedState.progress}');
-
     emit(updatedState);
   }
 

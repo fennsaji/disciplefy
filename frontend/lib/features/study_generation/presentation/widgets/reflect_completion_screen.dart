@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_mode.dart';
 
@@ -197,8 +198,8 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
                     AppTheme.primaryColor,
                     AppTheme.secondaryColor,
                     Colors.pink,
-                    Colors.orange,
-                    Colors.green,
+                    AppColors.warning,
+                    AppColors.success,
                   ],
                 ),
                 size: Size.infinite,

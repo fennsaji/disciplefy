@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../../features/home/domain/entities/recommended_guide_topic.dart';
 
@@ -41,14 +42,14 @@ class CategoryUtils {
 
   /// Category color mappings
   static const Map<String, Color> _categoryColors = {
-    'apologetics & defense of faith': Color(0xFF1565C0), // Deep Blue
-    'christian life': Color(0xFF2E7D32), // Green
-    'church & community': Color(0xFFE65100), // Orange
-    'discipleship & growth': Color(0xFF7B1FA2), // Purple
-    'family & relationships': Color(0xFFD32F2F), // Red
-    'foundations of faith': Color(0xFF5D4037), // Brown
-    'mission & service': Color(0xFF455A64), // Blue Grey
-    'spiritual disciplines': Color(0xFF00695C), // Teal
+    'apologetics & defense of faith': AppColors.categoryApologetics,
+    'christian life': AppColors.categoryChristianLife,
+    'church & community': AppColors.categoryChurch,
+    'discipleship & growth': AppColors.categoryDiscipleship,
+    'family & relationships': AppColors.categoryFamily,
+    'foundations of faith': AppColors.categoryFoundations,
+    'mission & service': AppColors.categoryMission,
+    'spiritual disciplines': AppColors.categorySpiritualDisciplines,
   };
 
   /// Category icon mappings

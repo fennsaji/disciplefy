@@ -77,6 +77,8 @@ class ContinueLearningSection extends StatelessWidget {
                     fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
             ],
           ),
@@ -129,11 +131,13 @@ class ContinueLearningSection extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              errorMessage ?? 'Failed to load',
+              'Something went wrong. Please try again.',
               style: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.error,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (onRetry != null)
@@ -257,6 +261,8 @@ class _ContinueLearningCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: Colors.amber.shade600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const Spacer(),
                 Container(
@@ -285,6 +291,8 @@ class _ContinueLearningCard extends StatelessWidget {
                               ? theme.colorScheme.primary
                               : color,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: 4),
                       Icon(
@@ -422,6 +430,7 @@ class _ContinueLearningCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: color,
             ),
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -442,6 +451,8 @@ class _ContinueLearningCard extends StatelessWidget {
                   fontSize: 10,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

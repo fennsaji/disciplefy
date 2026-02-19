@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/onboarding_state_entity.dart';
 import '../bloc/onboarding_bloc.dart';
 import '../bloc/onboarding_event.dart';
@@ -62,14 +63,14 @@ class _OnboardingPurposeContent extends StatelessWidget {
             const SnackBar(
               content: Text(
                   'Setup complete! Please sign in to start your spiritual journey.'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
               duration: Duration(seconds: 3),
             ),
           );
         } else if (state is OnboardingError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text('Something went wrong. Please try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );

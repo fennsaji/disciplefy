@@ -19,6 +19,7 @@ import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { THEOLOGICAL_FOUNDATION } from '../_shared/services/llm-utils/prompt-builder.ts'
 
 /**
  * Request payload for follow-up questions
@@ -203,6 +204,8 @@ function buildLLMContext(
   const systemMessage = `You are a Bible study assistant helping users explore Scripture deeper.
   Provide thoughtful, theologically sound responses to follow-up questions about this study guide.
   Keep responses pastoral, accessible, and grounded in orthodox Christian theology.
+
+${THEOLOGICAL_FOUNDATION}
 
   **CRITICAL LANGUAGE REQUIREMENT:**
   ${languageInstruction}

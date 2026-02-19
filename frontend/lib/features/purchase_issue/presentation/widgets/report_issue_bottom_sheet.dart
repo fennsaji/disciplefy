@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../tokens/domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_issue_entity.dart';
@@ -72,7 +73,7 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
           } else if (state is PurchaseIssueSubmitFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Text('Something went wrong. Please try again.'),
                 backgroundColor: AppTheme.errorColor,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -139,7 +140,7 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
             children: [
               Icon(
                 Icons.report_problem_outlined,
-                color: Colors.orange.shade700,
+                color: AppColors.warningDark,
                 size: 28,
               ),
               const SizedBox(width: 12),

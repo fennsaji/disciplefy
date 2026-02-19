@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/personalization_entity.dart';
 import '../bloc/personalization_bloc.dart';
 import '../bloc/personalization_event.dart';
@@ -132,6 +133,10 @@ class _QuestionnaireContent extends StatelessWidget {
                                     }
                                   }
                                 : null,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.brandSecondary,
+                              foregroundColor: Colors.white,
+                            ),
                             child: Text(state.isLastQuestion
                                 ? context.tr(TranslationKeys.questionnaireDone)
                                 : context
@@ -226,6 +231,10 @@ class _QuestionnaireContent extends StatelessWidget {
                   .read<PersonalizationBloc>()
                   .add(const SkipQuestionnaire());
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brandSecondary,
+              foregroundColor: Colors.white,
+            ),
             child: Text(context.tr(TranslationKeys.questionnaireSkip)),
           ),
         ],

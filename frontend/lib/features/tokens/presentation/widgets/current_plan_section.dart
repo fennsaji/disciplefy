@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -117,13 +118,13 @@ class CurrentPlanSection extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.orange.withOpacity(0.15)
-                      : Colors.orange[50],
+                      ? AppColors.warning.withOpacity(0.15)
+                      : AppColors.warningLight,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isDark
-                        ? Colors.orange.withOpacity(0.4)
-                        : Colors.orange[300]!,
+                        ? AppColors.warning.withOpacity(0.4)
+                        : AppColors.warning,
                   ),
                 ),
                 child: Row(
@@ -131,15 +132,16 @@ class CurrentPlanSection extends StatelessWidget {
                     Icon(Icons.info_outline,
                         size: 16,
                         color:
-                            isDark ? Colors.orange[300] : Colors.orange[700]),
+                            isDark ? AppColors.warning : AppColors.warningDark),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         context.tr(TranslationKeys.plansCancelledNotice),
                         style: AppFonts.inter(
                           fontSize: 12,
-                          color:
-                              isDark ? Colors.orange[200] : Colors.orange[900],
+                          color: isDark
+                              ? AppColors.warning
+                              : AppColors.warningDark,
                         ),
                       ),
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Dialog shown when user exceeds their monthly voice conversation limit.
 /// Displays current usage, upgrade options, and navigation to pricing page.
@@ -167,7 +168,7 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          const Icon(Icons.check_circle, color: Colors.green, size: 16),
+          const Icon(Icons.check_circle, color: AppColors.success, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: RichText(

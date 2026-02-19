@@ -304,6 +304,7 @@ class StreamingStudyContent extends StatelessWidget {
                   title: context.tr(TranslationKeys.studyGuideKeyInsight),
                   content: content.summary,
                   index: 0,
+                  icon: Icons.lightbulb_outline,
                   isHighlight: true,
                 ),
 
@@ -315,6 +316,7 @@ class StreamingStudyContent extends StatelessWidget {
                   title: context.tr(TranslationKeys.studyGuideContext),
                   content: content.context,
                   index: 1,
+                  icon: Icons.history_edu_outlined,
                 ),
 
                 const SizedBox(height: 16),
@@ -326,6 +328,7 @@ class StreamingStudyContent extends StatelessWidget {
                     title: context.tr(TranslationKeys.studyGuidePassageReading),
                     content: content.passage,
                     index: 2,
+                    icon: Icons.menu_book_outlined,
                   ),
 
                 if (content.passage != null) const SizedBox(height: 16),
@@ -336,6 +339,7 @@ class StreamingStudyContent extends StatelessWidget {
                   title: context.tr(TranslationKeys.studyGuideKeyVerse),
                   content: content.interpretation,
                   index: 3,
+                  icon: Icons.auto_stories_outlined,
                 ),
 
                 const SizedBox(height: 16),
@@ -346,6 +350,7 @@ class StreamingStudyContent extends StatelessWidget {
                   title: context.tr(TranslationKeys.studyGuideRelatedVerses),
                   content: content.relatedVerses?.join('\n\n'),
                   index: 4,
+                  icon: Icons.format_list_bulleted,
                 ),
 
                 const SizedBox(height: 16),
@@ -363,6 +368,7 @@ class StreamingStudyContent extends StatelessWidget {
                           .join('\n\n')
                       : null,
                   index: 5,
+                  icon: Icons.forum_outlined,
                 ),
 
                 const SizedBox(height: 16),
@@ -379,6 +385,7 @@ class StreamingStudyContent extends StatelessWidget {
                           .join('\n')
                       : null,
                   index: 6,
+                  icon: Icons.volunteer_activism_outlined,
                 ),
 
                 const SizedBox(height: 24),
@@ -425,6 +432,7 @@ class StreamingStudyContent extends StatelessWidget {
     required String title,
     required String? content,
     required int index,
+    required IconData icon,
     bool isHighlight = false,
   }) {
     final hasContent = content != null && content.isNotEmpty;
@@ -441,6 +449,7 @@ class StreamingStudyContent extends StatelessWidget {
     return _QuickSection(
       title: title,
       content: content,
+      icon: icon,
       isHighlight: isHighlight,
       isNew: this.content.sectionsLoaded == index + 1,
     );
@@ -1566,12 +1575,14 @@ class _ShimmerSection extends StatelessWidget {
 class _QuickSection extends StatefulWidget {
   final String title;
   final String content;
+  final IconData icon;
   final bool isHighlight;
   final bool isNew;
 
   const _QuickSection({
     required this.title,
     required this.content,
+    required this.icon,
     this.isHighlight = false,
     this.isNew = false,
   });
@@ -1630,44 +1641,36 @@ class _QuickSectionState extends State<_QuickSection>
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: widget.isHighlight
-                ? highlightColor.withOpacity(0.15)
-                : Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: widget.isHighlight
-                  ? highlightColor.withOpacity(0.4)
-                  : primaryColor.withOpacity(0.1),
-              width: widget.isHighlight ? 1.5 : 1,
+              color: primaryColor.withOpacity(0.1),
             ),
-            boxShadow: widget.isHighlight
-                ? [
-                    BoxShadow(
-                      color: highlightColor.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Compact title
+              // Title row with icon box
               Row(
                 children: [
+                  // Icon box
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(widget.icon, color: primaryColor, size: 22),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       widget.title,
                       style: AppFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: widget.isHighlight
-                            ? primaryColor
-                            : Theme.of(context)
-                                .colorScheme
-                                .onBackground
-                                .withOpacity(0.8),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),

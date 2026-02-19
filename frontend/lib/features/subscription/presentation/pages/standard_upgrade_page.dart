@@ -7,6 +7,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../../data/models/subscription_v2_models.dart';
@@ -32,7 +33,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   List<String> _features = [];
   List<PlanComparisonRow> _comparisonRows = [];
 
-  static const Color _standardPurple = Color(0xFF6A4FB6);
+  static const Color _standardPurple = AppColors.brandPrimary;
 
   @override
   void initState() {
@@ -164,7 +165,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
           } else if (state is SubscriptionError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage),
+                content: Text('Something went wrong. Please try again.'),
                 backgroundColor: AppTheme.errorColor,
               ),
             );

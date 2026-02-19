@@ -7,6 +7,7 @@ import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../widgets/language_selection_card.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 
 /// Screen for selecting preferred language during onboarding
@@ -89,7 +90,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               'Failed to save language preference: ${e.toString()}',
               style: AppFonts.inter(),
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -125,7 +126,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               context.tr(TranslationKeys.onboardingDefaultLanguageSet),
               style: AppFonts.inter(),
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
           ),
         );
         context.go('/');
@@ -219,7 +220,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                       ? _continueWithSelection
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
+                    backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor:
                         theme.colorScheme.onSurface.withOpacity(0.12),

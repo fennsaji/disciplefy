@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../router/app_routes.dart';
+import '../theme/app_colors.dart';
 
 /// Upgrade dialog shown when users tap locked features
 ///
@@ -94,10 +95,10 @@ class UpgradeDialog extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.orange.withOpacity(0.3),
+                    color: AppColors.warning.withOpacity(0.3),
                     width: 1.5,
                   ),
                 ),
@@ -106,7 +107,7 @@ class UpgradeDialog extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.lock_rounded,
-                      color: Colors.orange,
+                      color: AppColors.warning,
                       size: 18,
                     ),
                     const SizedBox(width: 8),
@@ -114,7 +115,7 @@ class UpgradeDialog extends StatelessWidget {
                       child: Text(
                         'Locked on your plan',
                         style: TextStyle(
-                          color: Colors.orange.shade800,
+                          color: AppColors.warningDark,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -276,7 +277,7 @@ class UpgradeDialog extends StatelessWidget {
                         _navigateToSubscription(context, upgradePlan);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
+                        backgroundColor: AppColors.brandSecondary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(

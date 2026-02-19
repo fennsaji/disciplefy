@@ -22,10 +22,14 @@ class StudyModePreferences {
   // General Study Mode (default_study_mode in user_profiles)
   // ============================================================================
 
-  /// For general study guides: null means "ask every time"
-  /// This is stored as NULL in the database default_study_mode column
+  /// Explicit "ask every time" value for general study mode.
+  /// Users who actively choose "Ask me every time" in settings get this stored.
+  /// NULL also means "ask every time" (no preference set yet).
   ///
-  /// Database constraint: default_study_mode IS NULL OR IN ('quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended')
+  /// Database constraint: default_study_mode IN ('quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended', 'ask')
+  static const String generalAsk = 'ask';
+
+  /// @deprecated Use generalAsk or check isGeneralAskEveryTime() instead.
   static const String? generalAskEveryTime = null;
 
   // ============================================================================
@@ -42,9 +46,10 @@ class StudyModePreferences {
   // Helper Methods
   // ============================================================================
 
-  /// Check if a general mode preference means "ask every time"
+  /// Check if a general mode preference means "ask every time".
+  /// Covers both null (no preference set) and the explicit 'ask' value.
   static bool isGeneralAskEveryTime(String? value) {
-    return value == null;
+    return value == null || value == generalAsk;
   }
 
   /// Check if a learning path mode preference means "ask every time"
@@ -61,6 +66,7 @@ class StudyModePreferences {
   static bool isSpecificMode(String? value, {required bool isLearningPath}) {
     if (value == null) return false;
     if (value == recommended) return false;
+    if (value == generalAsk) return false;
     if (isLearningPath && value == learningPathDefault) return false;
 
     // Must be one of the actual study modes

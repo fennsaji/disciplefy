@@ -8,6 +8,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../data/datasources/reflections_remote_data_source.dart';
 import '../../data/repositories/reflections_repository_impl.dart';
 import '../../domain/entities/reflection_response.dart';
@@ -207,7 +208,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: Text(context.tr(TranslationKeys.reflectionJournalDelete)),
           ),
         ],
@@ -303,7 +304,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: 16),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -656,7 +657,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                       icon: const Icon(Icons.delete_outline, size: 18),
                       label: Text(
                           context.tr(TranslationKeys.reflectionJournalDelete)),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppColors.error),
                     ),
                   ],
                 ),
@@ -788,7 +790,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                 Icon(
                   isYes ? Icons.check_circle : Icons.cancel,
                   size: 18,
-                  color: isYes ? Colors.green : Colors.red[300],
+                  color: isYes ? AppColors.success : AppColors.error,
                 ),
                 const SizedBox(width: 4),
                 Text(

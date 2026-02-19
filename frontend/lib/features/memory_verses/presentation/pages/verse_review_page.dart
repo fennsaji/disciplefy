@@ -16,6 +16,7 @@ import '../bloc/memory_verse_state.dart';
 import '../widgets/self_assessment_bottom_sheet.dart';
 import '../widgets/timer_badge.dart';
 import '../widgets/verse_flip_card.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class VerseReviewPage extends StatefulWidget {
   final String verseId;
@@ -67,7 +68,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {

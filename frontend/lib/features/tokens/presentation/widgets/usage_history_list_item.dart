@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/token_usage_history.dart';
 
@@ -96,7 +97,7 @@ class UsageHistoryListItem extends StatelessWidget {
                     _DetailChip(
                       icon: Icons.book,
                       label: _getStudyModeLabel(usage.studyMode!),
-                      color: Colors.blue,
+                      color: AppColors.info,
                     ),
                   if (usage.language.isNotEmpty)
                     _DetailChip(

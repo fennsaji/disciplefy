@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
 import '../bloc/voice_conversation_bloc.dart';
@@ -191,8 +192,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                 state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.errorMessage!),
-                  backgroundColor: Colors.red,
+                  content: Text('Something went wrong. Please try again.'),
+                  backgroundColor: AppColors.error,
                 ),
               );
             }
@@ -387,6 +388,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             icon: const Icon(Icons.play_arrow),
             label: Text(context.tr('voice_buddy.start_conversation')),
             style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brandSecondary,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
                 vertical: 16,
@@ -818,6 +821,10 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
               _wasHelpful,
             );
           },
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.brandSecondary,
+            foregroundColor: Colors.white,
+          ),
           child: Text(context.tr('voice_buddy.conversation.end_button')),
         ),
       ],

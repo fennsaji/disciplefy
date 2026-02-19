@@ -1,11 +1,18 @@
 /**
- * Multi-Pass Lectio Divina Generation
+ * Multi-Pass Meditative Reading Generation
  *
- * Breaks Lectio Divina generation into 2 passes to work within model token limits:
- * - Pass 1: Summary + Context + Lectio (Reading) + Meditatio (Meditation)
- * - Pass 2: Oratio (Prayer) + Contemplatio (Contemplation) + Supporting Fields
+ * Protestant meditative Scripture reading — a prayerful, text-anchored approach
+ * to reading and applying God's Word. Grounded in Scripture-interprets-Scripture
+ * hermeneutics and Reformed spiritual disciplines (not Catholic contemplative mysticism).
  *
- * This allows Hindi/Malayalam Lectio studies to achieve better word counts
+ * Replaces the former "Lectio Divina" mode which promoted Catholic contemplative
+ * practices incompatible with the platform's Protestant Evangelical doctrinal framework.
+ *
+ * Breaks generation into 2 passes to work within model token limits:
+ * - Pass 1: Summary + Context + Reading (Careful Reading) + Reflection (Biblical Reflection)
+ * - Pass 2: Prayer Response + Application & Commitment + Supporting Fields
+ *
+ * This allows Hindi/Malayalam studies to achieve better word counts
  * despite token inefficiency (Hindi: 0.28 words/token, Malayalam: 0.09 words/token)
  */
 
@@ -25,7 +32,7 @@ export interface LectioPassResult {
 }
 
 /**
- * Creates the first pass prompt: Summary + Context + Lectio + Meditatio
+ * Creates the first pass prompt: Summary + Context + Careful Reading + Biblical Reflection
  */
 export function createLectioPass1Prompt(
   params: LLMGenerationParams,
@@ -34,12 +41,12 @@ export function createLectioPass1Prompt(
   const { inputType, inputValue, topicDescription, language } = params
 
   const taskDescription = inputType === 'scripture'
-    ? `Create a LECTIO DIVINA guide for: \"${inputValue}\"`
+    ? `Create a MEDITATIVE READING guide for: \"${inputValue}\"`
     : inputType === 'topic'
-    ? `Create a LECTIO DIVINA guide on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}`
-    : `Create a LECTIO DIVINA guide addressing: \"${inputValue}\"`
+    ? `Create a MEDITATIVE READING guide on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}`
+    : `Create a MEDITATIVE READING guide addressing: \"${inputValue}\"`
 
-  const systemMessage = `You are a spiritual director guiding contemplative prayer through Lectio Divina.
+  const systemMessage = `You are a Bible study guide leading prayerful Scripture reading and personal application.
 
 ${THEOLOGICAL_FOUNDATION}
 
@@ -47,54 +54,61 @@ ${JSON_OUTPUT_RULES}
 
 ${createLanguageBlock(languageConfig, language)}
 
-STUDY MODE: LECTIO DIVINA - PASS 1/2 (Reading + Meditation)
-This is part 1 of a multi-pass Lectio Divina generation. Focus on sacred reading and meditation.
+STUDY MODE: MEDITATIVE READING - PASS 1/2 (Careful Reading + Biblical Reflection)
+This is part 1 of a multi-pass Meditative Reading generation. Focus on slow, careful reading of the biblical text and deep reflection on what Scripture itself says.
 Target output: ~1,600 words for this pass.
-Tone: Contemplative, gentle, invitational, spiritually formative.`
+Tone: Prayerful, warm, Scripture-anchored, clear. All spiritual insight must flow FROM the text, not from feelings, impressions, or inner experiences.
+
+PROTESTANT DISTINCTIVES (MANDATORY):
+- All discernment is anchored to the biblical text — never to feelings, visions, or subjective impressions alone
+- "God speaking" means God speaking through His written Word (2 Timothy 3:16-17), not mystical inner voices
+- Prayer is a believer's response to what Scripture reveals, not a technique for achieving spiritual states
+- Silence and stillness are valid postures for reflection, but never as emptying techniques or centering practices
+- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text`
 
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(language)}
 
 ═══════════════════════════════════════════════════════════════════════════
-PASS 1: LECTIO DIVINA FOUNDATION (Reading + Meditation)
+PASS 1: MEDITATIVE READING FOUNDATION (Careful Reading + Biblical Reflection)
 ═══════════════════════════════════════════════════════════════════════════
 
 Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 
 {
-  "summary": "[250-300 words: Title, scripture text (if applicable), central spiritual message, contemplative focus, invitation to encounter God]",
-  "context": "[50-80 words: MINIMAL - gentle introduction to the contemplative practice]",
-  "passage": "⚠️ MANDATORY - Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused contemplation (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
-  "interpretationPart1": "[1200-1500 words: LECTIO (Sacred Reading) + MEDITATIO (Meditation) with slow reading guidance, word-by-word reflection, personal encounter prompts, Holy Spirit listening]"
+  "summary": "[250-300 words: Title, scripture text (if applicable), central biblical message, what God reveals about Himself, invitation to read His Word carefully]",
+  "context": "[50-80 words: MINIMAL - gentle introduction to prayerful Scripture reading as a Protestant spiritual discipline]",
+  "passage": "⚠️ MANDATORY - Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused reading (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
+  "interpretationPart1": "[1200-1500 words: CAREFUL READING (First + Second + Third Reading) + BIBLICAL REFLECTION (Verse Study + Personal Encounter)]"
 }
 
 CRITICAL INSTRUCTIONS FOR PASS 1:
 
 **SUMMARY (250-300 words):**
 
-Write an INVITATIONAL contemplative overview as CONTINUOUS NARRATIVE PROSE (NOT separate bullets).
+Write an INVITATIONAL overview as CONTINUOUS NARRATIVE PROSE (NOT separate bullets).
 This must be 8-12 complete sentences flowing together as a single paragraph.
 
 Include these elements in flowing prose:
-1. Begin with an invitational 4-6 word title as the opening phrase
-2. [IF SCRIPTURE]: Include the full passage text for slow, meditative reading
-3. Central Spiritual Message: 2-3 sentences on the spiritual truth God reveals
-4. Contemplative Focus: 2-3 sentences on what God wants to say through this passage to your heart
-5. Invitation to Encounter: 2-3 sentences inviting deeper communion and intimacy with God
+1. Begin with a clear, Scripture-grounded 4-6 word title as the opening phrase
+2. [IF SCRIPTURE]: Include the full passage text for slow, careful reading
+3. Central Biblical Message: 2-3 sentences on the core theological truth God reveals in this text
+4. What this reveals about God: 2-3 sentences on God's character, promises, or commands here
+5. Invitation to read: 2-3 sentences inviting prayerful, attentive engagement with God's Word
 
 Structure for Scripture Input (NOT literal text - write entirely in ${languageConfig.name}):
-- Sentence 1: [Contemplative title] + [invites into spiritual message]
+- Sentence 1: [Title grounded in what the text says] + [invites into the biblical message]
 - Sentences 2-5: [FULL scripture passage text in ${languageConfig.name}]
-- Sentences 6-8: [Contemplative meditation on what God speaks through these words]
-- Sentences 9-10: [What this passage reveals about God's heart]
-- Sentences 11-12: [Invitation to deeper intimacy and encounter with God]
+- Sentences 6-8: [What God is saying to His people through these words]
+- Sentences 9-10: [What this passage reveals about God's nature and purposes]
+- Sentences 11-12: [Invitation to read carefully and respond in prayer]
 
 Structure for Topic Input (NOT literal text - write entirely in ${languageConfig.name}):
-- Sentence 1: [Contemplative title] + [draws into spiritual message]
-- Sentences 2-4: [Central spiritual truth God reveals through this topic]
-- Sentences 5-8: [Contemplative focus on what God wants to say to the heart]
-- Sentences 9-12: [Invitation to prayerful reflection and deeper communion]
+- Sentence 1: [Title grounded in biblical truth] + [draws into the biblical message]
+- Sentences 2-4: [Central biblical truth God reveals through this topic]
+- Sentences 5-8: [What Scripture says about this topic — grounded in specific texts]
+- Sentences 9-12: [Invitation to engage God's Word and respond in prayer]
 
 CRITICAL:
 - Write ENTIRELY in ${languageConfig.name} - NO English words mixed in
@@ -103,117 +117,98 @@ CRITICAL:
 - If scripture input, include the FULL passage text within the narrative flow
 
 **CONTEXT (50-80 words):**
-Write MINIMAL gentle introduction to the contemplative practice (1 concise paragraph covering):
-• Brief explanation of Lectio Divina as prayerful Scripture reading
-• Heart preparation: silence, openness, Holy Spirit dependence
-Keep it SHORT and FOCUSED - only what's essential for entering the practice.
+Write MINIMAL introduction to prayerful Scripture reading as a Protestant spiritual discipline (1 concise paragraph):
+• Brief explanation of meditative Bible reading as an act of faith — coming to God's Word expectantly
+• Heart preparation: quieting distractions, praying for understanding, Holy Spirit dependence (1 Corinthians 2:12-14)
+Keep it SHORT and FOCUSED - only what's essential for entering the study.
 
-**INTERPRETATION PART 1 - LECTIO & MEDITATIO (1200-1500 words):**
+**INTERPRETATION PART 1 - CAREFUL READING & BIBLICAL REFLECTION (1200-1500 words):**
 
-This section MUST contain EXACTLY 3 or 4 contemplative sections of flowing spiritual prose.
-EACH section MUST have 7-9 sentences with GENTLE, INVITATIONAL guidance.
+This section MUST contain EXACTLY 3 or 4 sections of flowing prayerful prose.
+EACH section MUST have 7-9 sentences with CLEAR, SCRIPTURE-ANCHORED guidance.
 
-⚠️ CONTEMPLATIVE DEPTH REQUIREMENTS (MANDATORY):
-- MAINTAIN gentle, invitational tone throughout (never rushed or prescriptive)
-- INVITE personal encounter with God through Scripture (not just information)
-- GUIDE the reader into listening prayer and spiritual awareness
-- EMPHASIZE the Holy Spirit's role in illumination and transformation
-- BALANCE structured guidance with freedom for personal response
+⚠️ TEXTUAL GROUNDING REQUIREMENTS (MANDATORY):
+- ALL spiritual insights MUST be drawn from and tested by the biblical text
+- Do NOT instruct readers to "listen to God" in ways separate from Scripture
+- INVITE careful observation of what the text actually says (not what they feel about it)
+- EMPHASIZE the Holy Spirit's role in illuminating the written Word (John 16:13)
+- BALANCE structured study with personal, prayerful response to what Scripture reveals
 
 ⚠️ SENTENCE COUNTING IS MANDATORY:
 - A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
 - Count each sentence as you write: "1. [sentence]. 2. [sentence]... 7. [sentence]."
 - If you reach 6 sentences, ADD 1-3 MORE SENTENCES to reach 7-9
-- Each section should be 300-400 words of contemplative guidance
+- Each section should be 300-400 words of prayerful, text-grounded guidance
 
-## LECTIO: Sacred Reading (900-1100 words)
+## CAREFUL READING: First, Second, and Third Pass Through the Text (900-1100 words)
 
-Guide the reader through slow, prayerful reading:
+Guide the reader through slow, prayerful reading of Scripture:
 
-**Section 1 - First Reading: Listening (7-9 sentences, 300-400 words):**
-- Invitation to silence: Quiet your heart and prepare to receive God's word
-- Posture of listening: Come expectantly, open to the Holy Spirit
-- Slow reading guidance: Read the passage at half your normal speed
-- Noticing prompts: What word or phrase catches your attention? What draws you?
-- Initial impressions: What stands out? What surprises you? What disturbs you?
-- Spiritual marking: Circle, underline, or mark words that resonate
-- Invitation to trust: God will speak through His word today
-- [OPTIONAL] Physical posture: How your body can support prayerful reading
-- [OPTIONAL] Breath prayer: Using breath to center yourself in God's presence
+**Section 1 - First Reading: Observation (7-9 sentences, 300-400 words):**
+- Invitation to pray first: Ask the Holy Spirit to open your eyes (Psalm 119:18)
+- Slow reading guidance: Read the passage aloud at half your normal speed
+- Observation prompts: What does the text actually SAY? (Not what it means yet — just what it says)
+- Key words: What words are repeated, emphasized, or striking?
+- Who/what/when/where: Identify the main characters, actions, setting, and context
+- First impressions: What stands out? What surprises you? What do you not fully understand?
+- Initial response: What is your honest reaction to what you have just read?
+- [OPTIONAL] Write it down: Note words or phrases that catch your attention
 
-Target: 300-400 words, 7-9 complete sentences with gentle invitation.
+Target: 300-400 words, 7-9 complete sentences with observational focus.
 
-**Section 2 - Second Reading: Noticing (7-9 sentences, 300-400 words):**
-- Return to the text: Read again, even more slowly this time
-- Sensory engagement: What do you see, hear, smell, taste, feel in this passage?
-- Imaginative prayer: Place yourself in the scene (if narrative)
-- Character identification: Where do you find yourself in the story?
-- Emotional resonance: What emotions arise as you read? Welcome them.
-- Holy Spirit sensitivity: Notice what the Spirit highlights or repeats
-- Questions arise: What questions does this stir in your heart?
-- [OPTIONAL] Hebrew/Greek meditation: If key words are available, linger on them
-- [OPTIONAL] Memory connections: What biblical echoes do you hear?
+**Section 2 - Second Reading: Understanding (7-9 sentences, 300-400 words):**
+- Read again: Slowly, with the question "What does this mean?"
+- Immediate context: What comes before and after this passage? How does that shape its meaning?
+- Biblical context: How does this fit within the book, the Testament, and the whole Bible story?
+- Scripture cross-references: What other passages use similar language or address the same truth?
+- Theological content: What does this passage teach about God, humanity, sin, salvation, or the Christian life?
+- Original audience: What would this have meant to the original hearers? What was God saying to them?
+- Questions from the text: What questions does a careful reading raise that you need to investigate further?
+- [OPTIONAL] Word study: If a key word is unclear, consider its biblical usage elsewhere
 
-Target: 300-400 words, 7-9 complete sentences with contemplative depth.
+Target: 300-400 words, 7-9 complete sentences with interpretive focus.
 
-**Section 3 - Third Reading: Receiving (7-9 sentences, 300-300 words):**
-- Read once more: Slowly, receptively, expectantly
-- Personal message: Listen for God's personal word to you today
-- Heart-level hearing: What is God saying to YOUR heart right now?
-- Hidden invitation: What invitation is wrapped in these words?
-- Allow reversal: Let the text read you (expose, convict, comfort, challenge)
-- One word/phrase: What single word or phrase is God's gift to you?
-- Gratitude: Thank God for speaking through His word
-- [OPTIONAL] Write it down: Journal the word or phrase God gave you
-- [OPTIONAL] Commitment: How will you carry this word with you today?
+**Section 3 - Third Reading: Personalizing (7-9 sentences, 300-300 words):**
+- Read once more: With the question "What does this mean for MY life?"
+- Direct address: Which commands, promises, warnings, or examples apply directly to you?
+- Personal alignment: Where does your life align with this truth? Where does it fall short?
+- Promise to claim: Is there a specific promise of God here you need to believe today?
+- Command to obey: Is there a specific instruction here you need to follow this week?
+- Warning to heed: Is there a specific danger here you need to avoid?
+- One response: What is ONE specific, concrete way you will respond to this passage?
+- [OPTIONAL] Write it down: Record your personal response for accountability
 
-Target: 300-300 words, 7-9 complete sentences with spiritual receptivity.
+Target: 300-300 words, 7-9 complete sentences with applicational focus.
 
-## MEDITATIO: Meditation (900-1100 words)
+## BIBLICAL REFLECTION: Deeper Engagement With What the Text Reveals (900-1100 words)
 
-Guide deep reflection and personal encounter:
+Guide thoughtful engagement with the theological content of the passage:
 
-**Section 4 - Verse-by-Verse Meditation (7-9 sentences, 300-400 words):**
-Break down the passage meditatively with contemplative questions:
-- God-centered focus: For each verse, what does this reveal about God's nature, character, heart?
-- Human condition: What does this reveal about humanity, our need, our brokenness, our hope?
-- Personal mirror: What does this reveal about YOU personally (not others)? Be specific.
-- Grace location: Where is the grace in this verse? Where is God's kindness?
-- Challenge identification: Where is the challenge? What makes you uncomfortable?
-- Cross-references: What other Scripture comes to mind? How do they connect?
-- Theological depth: What doctrine or biblical theme does this touch?
-- [OPTIONAL] Historical context: How does original setting illuminate meaning?
-- [OPTIONAL] Literary beauty: What poetic or literary features enhance the message?
+**Section 4 - What God Reveals (7-9 sentences, 300-400 words):**
+Work through the passage focusing on what it reveals about God:
+- God's nature: What does this passage teach about who God is (His attributes, character, ways)?
+- God's purposes: What is God doing or intending in this text? What are His redemptive goals?
+- God's relationship with people: How does God engage, respond to, or address humanity here?
+- Christ-centered reading: How does this passage point to, prefigure, or find fulfillment in Jesus Christ?
+- Grace and truth: Where is the grace of God visible? Where is the demand of God visible?
+- Covenant connections: How does this passage connect to God's covenant promises and redemptive history?
+- Doxological response: What about God in this passage moves you to worship, trust, or obedience?
+- [OPTIONAL] Systematic connections: Which doctrine (God, humanity, Christ, salvation, church, last things) is most prominent here?
 
-Target: 300-400 words, 7-9 complete sentences with meditative depth.
+Target: 300-400 words, 7-9 complete sentences with theological depth.
 
-**Section 5 - Personal Encounter Prompts (7-9 sentences, 300-400 words):**
-Guide the reader into personal application and self-examination:
-- Life parallels: How is your life like this passage? Be honest with yourself.
-- Memory stirring: What memories does this bring up (joy, pain, longing)?
-- Emotional response: What hopes does this awaken? What fears does it touch?
-- Experience reflection: Where have you experienced this truth in your own story?
-- Resistance awareness: Where are you resisting this truth? What do you want to avoid?
-- Desire awakening: What do you long for as you sit with this passage?
-- Conviction and comfort: Where do you feel conviction? Where do you feel comfort?
-- [OPTIONAL] Relationships: How does this affect how you see others?
-- [OPTIONAL] Calling: Does this speak to your vocation or purpose?
+**Section 5 - Personal Encounter With the Text (7-9 sentences, 300-400 words):**
+Guide the reader into honest self-examination in light of what Scripture says:
+- Self-examination: What does this passage reveal about your own heart, beliefs, or behaviors?
+- Where you need grace: Where does this text expose your need for forgiveness or transformation?
+- Where you need faith: What promise or truth in this passage requires faith for you to believe right now?
+- Repentance prompted: Is there anything this passage calls you to repent of and turn from?
+- Encouragement received: What encouragement or comfort does this passage provide for your current situation?
+- Conviction and confidence: Where do you feel conviction? Where do you feel confidence in Christ?
+- Honest prayer: What is your honest prayer to God based on what you have just read?
+- [OPTIONAL] Relationships: How does this passage affect how you should treat or view others?
 
-Target: 300-400 words, 7-9 complete sentences with personal honesty.
-
-**Section 6 - Holy Spirit Listening (7-9 sentences, 300-400 words):**
-Guide into deeper spiritual listening and discernment:
-- Silence invitation: Quiet your heart and simply listen to the Holy Spirit
-- Spirit's highlighting: What is the Spirit emphasizing or repeating to you?
-- Returning word: What word or phrase keeps coming back to you?
-- Gentle nudge: What gentle prompting do you feel from the Lord?
-- Emerging invitation: What invitation is God extending to you through this text?
-- Discernment prayer: Ask God to clarify what He is saying
-- Confirmation seeking: Does this align with Scripture, bring peace, and build up?
-- [OPTIONAL] Journaling: Write down what you sense God is saying
-- [OPTIONAL] Testing: How can you test this word in community or through time?
-
-Target: 300-400 words, 7-9 complete sentences with spiritual attentiveness.
+Target: 300-400 words, 7-9 complete sentences with honest self-examination.
 
 ⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 1:
 
@@ -224,8 +219,8 @@ Before completing your response, COUNT and verify:
 4. Does "interpretationPart1" have EXACTLY 3 or 4 sections? [Count: ___]
 5. Does EACH section have 7-9 sentences? [Count each: ___ ___ ___ ___]
 6. Is "interpretationPart1" 1200-1500 words total? [Estimated count: ___]
-7. Is the tone contemplative, gentle, and invitational (not rushed or prescriptive)? [Check: Yes/No]
-8. Does each section guide into personal encounter with God? [Check: Yes/No]
+7. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Check: Yes/No]
+8. Does each section draw insights FROM the text rather than from feelings or impressions? [Check: Yes/No]
 9. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
 10. Is total Pass 1 output ~1,600 words? [Estimated: ___]
 
@@ -247,7 +242,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 }
 
 /**
- * Creates the second pass prompt: Oratio + Contemplatio + Supporting Fields
+ * Creates the second pass prompt: Prayer Response + Application & Commitment + Supporting Fields
  */
 export function createLectioPass2Prompt(
   params: LLMGenerationParams,
@@ -256,7 +251,7 @@ export function createLectioPass2Prompt(
 ): PromptPair {
   const { language } = params
 
-  const systemMessage = `You are a spiritual director completing a Lectio Divina guide.
+  const systemMessage = `You are a Bible study guide completing a Meditative Reading guide.
 
 ${THEOLOGICAL_FOUNDATION}
 
@@ -264,130 +259,118 @@ ${JSON_OUTPUT_RULES}
 
 ${createLanguageBlock(languageConfig, language)}
 
-STUDY MODE: LECTIO DIVINA - PASS 2/2 (Prayer + Contemplation)
-This is part 2 of a 2-part Lectio Divina generation. Focus on prayer and rest in God.
+STUDY MODE: MEDITATIVE READING - PASS 2/2 (Prayer Response + Application & Commitment)
+This is part 2 of a 2-part Meditative Reading generation. Focus on prayerful response to Scripture and concrete life application.
 Target output: ~500 words for this pass.
-Continue the contemplative, invitational tone.`
+Continue the prayerful, Scripture-anchored tone. All prayer and application must flow from the biblical text studied in Pass 1.
+
+PROTESTANT DISTINCTIVES (MANDATORY):
+- Prayer is response to what Scripture reveals — always grounded in the text
+- Application must be specific, concrete, and measurable — not vague spiritual feelings
+- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word`
 
   const userMessage = `═══════════════════════════════════════════════════════════════════════════
-PASS 2: LECTIO DIVINA RESPONSE (Prayer + Contemplation + Resources)
+PASS 2: MEDITATIVE READING RESPONSE (Prayer + Application & Commitment + Resources)
 ═══════════════════════════════════════════════════════════════════════════
 
 CONTEXT FROM PASS 1:
-- Contemplative Summary: ${pass1Result.summary.substring(0, 200)}...
-- You already wrote: Sacred Reading (Lectio) and Meditation (Meditatio) in Pass 1
+- Summary: ${pass1Result.summary.substring(0, 200)}...
+- You already wrote: Careful Reading (Observation, Understanding, Personalizing) and Biblical Reflection in Pass 1
 
-NOW COMPLETE THE LECTIO DIVINA with Prayer (Oratio), Contemplation (Contemplatio), and resources.
+NOW COMPLETE THE MEDITATIVE READING with Prayer Response, Application & Commitment, and resources.
 
 Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for optimal streaming):
 
 {
-  "interpretationPart2": "[400-500 words: ORATIO (Prayer Response) + CONTEMPLATIO (Contemplative Rest) with prayer guidance, surrender prompts, silence practices, and abiding in God]",
-  "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for meditation (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
-  "reflectionQuestions": [5-7 gentle reflection questions for continued prayer],
-  "prayerPoints": [4-5 prayer themes for ongoing contemplation - each 50-70 words],
-  "summaryInsights": [4-5 spiritual truths - 15-20 words each],
-  "interpretationInsights": [4-5 God-revelations - 15-20 words each],
-  "reflectionAnswers": [4-5 life responses - 15-20 words each],
-  "contextQuestion": "[Yes/no question connecting spiritual tradition to personal life]",
-  "summaryQuestion": "[Question about the spiritual message - 12-18 words]",
-  "relatedVersesQuestion": "[Question encouraging contemplative scripture reading - 12-18 words]",
-  "reflectionQuestion": "[Question inviting personal reflection - 12-18 words]",
-  "prayerQuestion": "[Invitation to continued prayer - 10-15 words]"
+  "interpretationPart2": "[400-500 words: PRAYER RESPONSE (responding to God in prayer based on the text) + APPLICATION & COMMITMENT (concrete, specific obedience to what Scripture taught) with prayer guidance, application steps, and accountability prompts]",
+  "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support or expand the passage studied (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
+  "reflectionQuestions": [5-7 reflection questions grounded in the text studied],
+  "prayerPoints": [4-5 specific prayer topics arising directly from the passage - each 50-70 words],
+  "summaryInsights": [4-5 key biblical truths from the passage - 15-20 words each],
+  "interpretationInsights": [4-5 theological insights revealed by the text - 15-20 words each],
+  "reflectionAnswers": [4-5 concrete life applications - 15-20 words each],
+  "contextQuestion": "[Yes/no question connecting the passage's original context to personal life]",
+  "summaryQuestion": "[Question about the central biblical message of the passage - 12-18 words]",
+  "relatedVersesQuestion": "[Question encouraging further Bible reading on this theme - 12-18 words]",
+  "reflectionQuestion": "[Question inviting personal reflection on the text - 12-18 words]",
+  "prayerQuestion": "[Invitation to respond in prayer based on what Scripture taught - 10-15 words]"
 }
 
-**INTERPRETATION PART 2 - ORATIO & CONTEMPLATIO (200-300 words):**
+**INTERPRETATION PART 2 - PRAYER RESPONSE & APPLICATION (400-500 words):**
 
-This section MUST contain EXACTLY 1 contemplative section of flowing prayerful prose.
-This section MUST have 7-9 sentences with GENTLE, INVITATIONAL prayer guidance.
+This section MUST contain EXACTLY 2 focused sections of flowing prayerful prose.
+Each section MUST have 7-9 sentences with CLEAR, TEXT-GROUNDED guidance.
 
-⚠️ PRAYER DEPTH REQUIREMENTS (MANDATORY):
-- MAINTAIN contemplative, prayerful tone (intimate conversation with God)
-- INVITE authentic, vulnerable dialogue with God (not scripted or formal)
-- GUIDE into silence, rest, and abiding in God's presence
-- EMPHASIZE receptivity, surrender, and spiritual intimacy
-- BALANCE structure with spontaneous, Spirit-led prayer
+⚠️ SCRIPTURE-ANCHORED PRAYER REQUIREMENTS (MANDATORY):
+- All prayer topics MUST arise from what the passage actually teaches
+- Prayer is honest dialogue with God — thanksgiving, confession, petition, and praise rooted in the text
+- Do NOT instruct readers to empty their minds or wait for inner voices — prayer is speaking and listening through Scripture
+- GUIDE into authentic, specific prayer about real-life situations in light of God's Word
+- BALANCE structured prayer prompts with freedom for personal, Spirit-led prayer
 
 ⚠️ SENTENCE COUNTING IS MANDATORY:
 - A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
 - Count each sentence as you write: "1. [sentence]. 2. [sentence]... 7. [sentence]."
 - If you reach 6 sentences, ADD 1-3 MORE SENTENCES to reach 7-9
-- Each section should be 300-450 words of prayerful contemplative guidance
+- Each section should be 200-260 words of prayerful, grounded guidance
 
-## ORATIO: Prayer Response (500-650 words)
+## PRAYER RESPONSE: Responding to God Based on the Text (400-500 words)
 
-Guide prayerful response to God with authenticity and vulnerability:
+Guide prayerful response to what Scripture revealed:
 
-**Section 1 - Conversational Prayer (7-9 sentences, 250-300 words):**
-- Invitation to dialogue: Now speak to God about what you've heard in His word
-- Honest response: Share your authentic reaction (gratitude, confession, questions, resistance, joy)
-- Friend-to-friend conversation: Talk to God like your closest friend, with complete honesty
-- No editing: Don't sanitize your prayers or make them sound religious - be real
-- Example prayers: Model prayers the reader might pray based on the passage
-- Multiple prayer forms: Include thanksgiving, confession, lament, petition, praise
-- Personal specificity: Pray about your actual life, not abstract concepts
-- [OPTIONAL] Body engagement: How physical posture can support prayer (kneeling, open hands, etc.)
-- [OPTIONAL] Emotional honesty: Welcoming all emotions in prayer (anger, doubt, joy, fear)
+**Section 1 - Prayer of Response (7-9 sentences, 200-260 words):**
+- Begin with thanksgiving: Thank God specifically for what this passage reveals about Him
+- Confession: If the passage exposed sin or unbelief, pray honestly for forgiveness (1 John 1:9)
+- Trust and faith: Pray to believe the promises the passage declared — name them specifically
+- Petition: Ask God for what the passage calls you to — strength, obedience, faith, wisdom
+- Intercession: Who comes to mind as you read this passage? Pray for them in light of its truth
+- Surrender: What are you submitting to God in response to His Word? Name it specifically
+- Closing praise: End with worship of God for who He is as revealed in this passage
 
-Target: 250-300 words, 7-9 complete sentences with prayerful intimacy.
+Target: 200-260 words, 7-9 complete sentences with textually-grounded prayer.
 
-**Section 2 - Intercessory & Surrender Prayer (7-9 sentences, 250-350 words):**
-- Intercessory invitation: Who comes to mind as you pray this passage? Bring them before God.
-- Others' needs: Pray for family, friends, neighbors, enemies in light of this truth
-- World's brokenness: Bring the world's needs before God (injustice, suffering, lostness)
-- Church intercession: Pray for your local church, pastors, global body of Christ
-- Surrender question: What is God asking you to surrender based on this passage?
-- Change needed: What needs to transform in your life for this truth to take root?
-- Death and life: What old patterns need to die? What new life is God offering?
-- Prayer of yielding: Model a prayer of complete surrender and trust in God
-- [OPTIONAL] Fasting: When fasting might support this surrender
+## APPLICATION & COMMITMENT: Concrete Obedience to What Scripture Taught (400-500 words)
 
-Target: 250-350 words, 7-9 complete sentences with intercessory and surrendering depth.
+Guide specific, measurable life application:
 
-## CONTEMPLATIO: Contemplative Rest (500-650 words)
+**Section 2 - Commitment to Obey (7-9 sentences, 200-260 words):**
+- One truth to believe: What specific biblical truth will you commit to trusting this week? Name it.
+- One sin to repent of: What specific sin or attitude does this passage call you to turn from? Be honest.
+- One action to take: What concrete, observable step of obedience will you take in the next 7 days? Be specific (who, what, when, where).
+- One person to serve: Who specifically can you serve or encourage this week based on what you studied?
+- Accountability: Who will you tell about this commitment so they can encourage and check in?
+- Scripture to memorize: Which single verse from this passage will you memorize to carry with you?
+- Closing prayer of commitment: Pray aloud your specific commitment to God — a simple, sincere prayer of intention
 
-Guide silent abiding in God's presence with practical contemplative practices:
-
-**Section 3 - Silence, Abiding, and Carrying (7-9 sentences, 500-650 words):**
-- Silence invitation: Move now into 5-10 minutes of complete silence before God
-- Resting posture: Simply rest in God's presence without words, thoughts, or analysis
-- Non-doing: Practice being with God, not doing anything for God
-- Distraction guidance: When your mind wanders (and it will), gently return to God
-- One word practice: Choose one word from the passage and hold it gently in your heart
-- Word as anchor: Return to this word when your mind drifts; let it pray in you
-- Loving attentiveness: Remain in simple, loving awareness of God's presence
-- Carrying forward: How will you carry this word through your day, week, month?
-- Contemplative living: Practice returning to God's presence every hour (set phone reminders, breathe prayers, pause practices)
-
-Target: 500-650 words, 7-9 complete sentences with contemplative rest and integration.
+Target: 200-260 words, 7-9 complete sentences with specific, accountable application.
 
 **SUPPORTING MATERIALS:**
-- relatedVerses: 5-7 additional contemplative verses in ${languageConfig.name}
-- reflectionQuestions: 5-7 gentle questions (not analytical, but prayerful)
-- prayerPoints: 4-5 prayer themes (50-70 words each)
-- summaryInsights: 4-5 spiritual truths (15-20 words each)
-- interpretationInsights: 4-5 God-revelations (15-20 words each)
-- reflectionAnswers: 4-5 life responses (15-20 words each)
-- 5 yes/no questions for continued contemplation
+- relatedVerses: 5-7 additional verses that support the passage's themes in ${languageConfig.name}
+- reflectionQuestions: 5-7 questions grounded in the text (not abstract or mystical)
+- prayerPoints: 4-5 specific prayer topics (50-70 words each), arising from the passage
+- summaryInsights: 4-5 key biblical truths (15-20 words each)
+- interpretationInsights: 4-5 theological insights (15-20 words each)
+- reflectionAnswers: 4-5 concrete life applications (15-20 words each)
+- 5 yes/no questions connecting the text to personal life
 
 ⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 2:
 
 Before completing your response, COUNT and verify:
-1. Does "interpretationPart2" have EXACTLY 3 sections? [Count: ___]
-2. Does EACH section have 7-9 sentences? [Count each: ___ ___ ___]
-3. Is "interpretationPart2" 1000-1300 words total? [Estimated count: ___]
-4. Does "relatedVerses" contain 5-7 contemplative verses? [Count: ___]
+1. Does "interpretationPart2" have EXACTLY 2 sections? [Count: ___]
+2. Does EACH section have 7-9 sentences? [Count each: ___ ___]
+3. Is "interpretationPart2" 400-500 words total? [Estimated count: ___]
+4. Does "relatedVerses" contain 5-7 verses? [Count: ___]
 5. Are all verses in ${languageConfig.name}? [Check: Yes/No]
 6. Does "reflectionQuestions" contain 5-7 questions? [Count: ___]
-7. Are questions gentle and prayerful (not analytical)? [Check: Yes/No]
-8. Does "prayerPoints" contain 4-5 prayer themes? [Count: ___]
+7. Are questions grounded in the text (not abstract or mystical)? [Check: Yes/No]
+8. Does "prayerPoints" contain 4-5 prayer topics? [Count: ___]
 9. Is each prayer point 50-70 words? [Check: Yes/No]
 10. Are "summaryInsights" 4-5 items at 15-20 words each? [Count: ___]
 11. Are "interpretationInsights" 4-5 items at 15-20 words each? [Count: ___]
 12. Are "reflectionAnswers" 4-5 items at 15-20 words each? [Count: ___]
 13. Are all 5 yes/no questions present? [Check: Yes/No]
-14. Is the tone contemplative, gentle, and invitational? [Check: Yes/No]
-15. Is total Pass 2 output ~1,500 words? [Estimated: ___]
+14. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Check: Yes/No]
+15. Is total Pass 2 output ~500 words? [Estimated: ___]
 
 IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 
@@ -414,7 +397,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 }
 
 /**
- * Combines results from both passes into complete Lectio Divina structure
+ * Combines results from both passes into complete Meditative Reading structure
  */
 export function combineLectioPasses(
   pass1: { summary: string; context: string; passage: string; interpretationPart1: string },
