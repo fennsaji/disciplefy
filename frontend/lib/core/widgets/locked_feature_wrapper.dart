@@ -111,10 +111,7 @@ class LockedFeatureWrapper extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.3),
+                      color: AppColors.brandSecondary.withOpacity(0.3),
                       width: 2,
                     ),
                     gradient: LinearGradient(
@@ -134,14 +131,12 @@ class LockedFeatureWrapper extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: AppColors.brandSecondary,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.3),
+                                color:
+                                    AppColors.brandSecondary.withOpacity(0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 1),
                               ),

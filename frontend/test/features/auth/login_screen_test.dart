@@ -186,8 +186,9 @@ void main() {
       await tester.pumpAndSettle(); // Wait for localization
       await tester.pump(); // Trigger the stream emission
 
-      // Assert
-      expect(find.text(errorMessage), findsOneWidget);
+      // Assert — login screen shows generic error message, not raw state.message
+      expect(
+          find.text('Something went wrong. Please try again.'), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
@@ -207,8 +208,8 @@ void main() {
       await tester.pumpAndSettle(); // Wait for localization
       await tester.pump(); // Trigger the stream emission
 
-      // Assert
-      expect(find.text(cancelMessage), findsOneWidget);
+      // Assert — login screen shows generic cancelled message, not raw state.message
+      expect(find.text('Sign-in was cancelled.'), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
@@ -355,8 +356,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pump();
 
-      // Assert
-      expect(find.text(rateLimitMessage), findsOneWidget);
+      // Assert — login screen shows generic error message, not raw state.message
+      expect(
+          find.text('Something went wrong. Please try again.'), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
@@ -377,8 +379,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pump();
 
-      // Assert
-      expect(find.text(csrfMessage), findsOneWidget);
+      // Assert — login screen shows generic error message, not raw state.message
+      expect(
+          find.text('Something went wrong. Please try again.'), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
@@ -398,8 +401,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pump();
 
-      // Assert
-      expect(find.text(networkMessage), findsOneWidget);
+      // Assert — login screen shows generic error message, not raw state.message
+      expect(
+          find.text('Something went wrong. Please try again.'), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
     });
   });
