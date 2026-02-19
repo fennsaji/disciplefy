@@ -331,10 +331,10 @@ SELECT public._seed_suggested_verse(
 );
 
 SELECT public._seed_suggested_verse(
-  'Mark 11:24','Mark',11,24,NULL,'faith',ARRAY['prayer','believe'],5,
-  'Therefore I tell you, whatever you ask for in prayer, believe that you have received it, and it will be yours.',
-  'मरकुस 11:24','इसलिये मैं तुम से कहता हूँ, कि जो कुछ तुम प्रार्थना करके माँगो, विश्वास कर लो कि मिल गया, और तुम्हारे लिये हो जाएगा।',
-  'മർക്കൊസ് 11:24','ആകയാൽ ഞാൻ നിങ്ങളോടു പറയുന്നു: നിങ്ങൾ പ്രാർത്ഥിക്കുകയും ഇരക്കുകയും ചെയ്യുന്നതൊക്കെ ലഭിച്ചുവെന്നു വിശ്വസിപ്പിൻ; അങ്ങനെ നിങ്ങൾക്കു ലഭിക്കും.'
+  '1 John 5:14','1 John',5,14,NULL,'faith',ARRAY['prayer','confidence','will-of-god'],5,
+  'This is the confidence we have in approaching God: that if we ask anything according to his will, he hears us.',
+  '1 यूहन्ना 5:14','और जो हम उसके सामने हियाव रखते हैं, वह यह है, कि यदि हम उसकी इच्छा के अनुसार कुछ माँगते हैं, तो वह हमारी सुनता है।',
+  '1 യോഹന്നാൻ 5:14','അവന്റെ ഇഷ്ടപ്രകാരം നാം ഇരക്കുന്നതൊക്കെ അവൻ കേൾക്കുന്നു എന്നതത്രേ അവനോടു നമുക്കുള്ള പ്രത്യാശ.'
 );
 
 -- =============================================================================
