@@ -106,7 +106,11 @@ jobs:
             --scope ${{ secrets.VERCEL_ORG_ID }} \
             --project ${{ secrets.VERCEL_ADMIN_PROJECT_ID }} \
             --yes
-          echo "✅ Vercel project linked"
+          vercel pull \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --yes \
+            --environment=production
+          echo "✅ Vercel project linked and settings pulled"
 
       - name: 🏗️ Build with Vercel
         if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
