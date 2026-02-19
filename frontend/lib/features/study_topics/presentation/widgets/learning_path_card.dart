@@ -100,8 +100,9 @@ class LearningPathCard extends StatelessWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: _getDiscipleLevelColor(path.discipleLevel)
-                              .withValues(alpha: 0.1),
+                          color: _getDiscipleLevelColor(
+                                  context, path.discipleLevel)
+                              .withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -110,7 +111,8 @@ class LearningPathCard extends StatelessWidget {
                           style: AppFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: _getDiscipleLevelColor(path.discipleLevel),
+                            color: _getDiscipleLevelColor(
+                                context, path.discipleLevel),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -434,18 +436,23 @@ class LearningPathCard extends StatelessWidget {
     return CategoryUtils.getIconForCategory(iconName);
   }
 
-  Color _getDiscipleLevelColor(String level) {
+  Color _getDiscipleLevelColor(BuildContext context, String level) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (level.toLowerCase()) {
       case 'seeker':
-        return AppColors.info;
+        return isDark ? AppColors.infoLighter : AppColors.infoDark;
       case 'believer':
-        return AppColors.success;
+        return isDark ? AppColors.successLighter : AppColors.successDark;
       case 'disciple':
-        return AppColors.warning;
+        return isDark ? AppColors.warningLighter : AppColors.warningDark;
       case 'leader':
-        return AppColors.brandSecondary;
+        return isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+      case 'follower':
+        return isDark
+            ? AppColors.brandPrimaryLight
+            : AppColors.brandPrimaryDeep;
       default:
-        return AppColors.lightTextSecondary;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
