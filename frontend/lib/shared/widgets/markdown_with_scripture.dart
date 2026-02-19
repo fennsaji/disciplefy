@@ -81,7 +81,7 @@ class MarkdownWithScripture extends StatelessWidget {
         _convertScriptureReferencesToLinks(withMarkdownBullets);
 
     // Create a unique key based on content and theme to force rebuilds when colors change
-    final linkColor = Theme.of(context).colorScheme.primary.withOpacity(0.7);
+    final linkColor = Theme.of(context).colorScheme.primary;
     final uniqueKey = ValueKey('${data.hashCode}-${linkColor.value}');
 
     return MarkdownBody(
@@ -115,9 +115,9 @@ class MarkdownWithScripture extends StatelessWidget {
   MarkdownStyleSheet _buildStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
     final baseStyle = textStyle ?? theme.textTheme.bodyLarge;
-    // Use primary color with 70% opacity for better readability
-    // Matches study guide title styling for consistency
-    final linkColor = theme.colorScheme.primary.withOpacity(0.7);
+    // Full-opacity primary so links match the AppBar title brightness exactly.
+    final isDark = theme.brightness == Brightness.dark;
+    final linkColor = theme.colorScheme.primary;
 
     return MarkdownStyleSheet(
       p: baseStyle?.copyWith(
@@ -171,8 +171,10 @@ class MarkdownWithScripture extends StatelessWidget {
       // Style for scripture reference links
       a: baseStyle?.copyWith(
         color: linkColor,
+        fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
-        decorationColor: linkColor,
+        decorationColor:
+            isDark ? linkColor.withOpacity(0.6) : linkColor.withOpacity(0.5),
       ),
     );
   }

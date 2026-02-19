@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Milestone celebration dialog.
 ///
@@ -84,15 +85,15 @@ class MilestoneCelebrationDialog extends StatelessWidget {
   Color _getMilestoneColor() {
     switch (milestoneDays) {
       case 10:
-        return Colors.blue;
+        return AppColors.info;
       case 30:
-        return Colors.purple;
+        return AppColors.masteryAdvanced;
       case 100:
-        return Colors.orange;
+        return AppColors.warning;
       case 365:
-        return Colors.amber;
+        return AppColors.masteryMaster;
       default:
-        return Colors.green;
+        return AppColors.success;
     }
   }
 
@@ -158,10 +159,10 @@ class MilestoneCelebrationDialog extends StatelessWidget {
                 vertical: 12,
               ),
               decoration: BoxDecoration(
-                color: Colors.green.withAlpha((0.1 * 255).round()),
+                color: AppColors.success.withAlpha((0.1 * 255).round()),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.green,
+                  color: AppColors.success,
                   width: 2,
                 ),
               ),
@@ -170,14 +171,14 @@ class MilestoneCelebrationDialog extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.stars,
-                    color: Colors.green,
+                    color: AppColors.success,
                     size: 24,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '+$xpEarned XP',
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: Colors.green,
+                      color: AppColors.success,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

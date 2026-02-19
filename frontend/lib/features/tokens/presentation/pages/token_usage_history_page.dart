@@ -207,7 +207,7 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        state.errorMessage,
+                        'Something went wrong. Please try again.',
                         style: theme.textTheme.bodySmall,
                         textAlign: TextAlign.center,
                       ),
@@ -375,7 +375,7 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                state.errorMessage,
+                'Something went wrong. Please try again.',
                 style: theme.textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),

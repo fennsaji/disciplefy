@@ -12,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/navigation/route_observer.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../../../shared/widgets/scripture_verse_sheet.dart';
 import '../../../../shared/widgets/markdown_with_scripture.dart';
@@ -452,7 +453,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               const SnackBar(
                 content:
                     Text('Study generation completed while you were away!'),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
                 behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 3),
               ),
@@ -717,7 +718,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     setState(() {
       _isLoading = false;
       _hasError = true;
-      _errorMessage = state.failure.message;
+      _errorMessage = 'Something went wrong. Please try again.';
       // Check for token-related errors by type or error code
       _isInsufficientTokensError = state.failure is InsufficientTokensFailure ||
           state.failure is TokenFailure ||
@@ -840,37 +841,20 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Returns true when scroll position is at 80% or more of max scroll extent
   bool _isScrolledNearBottom() {
     if (!_scrollController.hasClients) {
-      Logger.debug('📊 [SCROLL] No scroll clients attached yet');
       return false;
     }
 
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
 
-    if (kDebugMode) {
-      Logger.debug('📊 [SCROLL] Position check:');
-      Logger.debug('   Current: ${currentScroll.toStringAsFixed(1)}px');
-      Logger.debug('   Max: ${maxScroll.toStringAsFixed(1)}px');
-    }
-
     // Handle case where content doesn't scroll (fits on screen)
     if (maxScroll <= 0) {
-      Logger.debug(
-          '   → Content fits on screen, marking as scrolled to bottom');
       return true;
     }
 
     // Check if scrolled to at least 80% of content (more forgiving threshold)
     final scrollPercentage = currentScroll / maxScroll;
-    final isNearBottom = scrollPercentage >= 0.80;
-
-    if (kDebugMode) {
-      Logger.debug(
-          '   Percentage: ${(scrollPercentage * 100).toStringAsFixed(1)}%');
-      Logger.debug('   Is near bottom (≥80%): ${isNearBottom ? "✓" : "✗"}');
-    }
-
-    return isNearBottom;
+    return scrollPercentage >= 0.80;
   }
 
   /// Checks if AI Discipler feature is enabled based on feature flags and user's plan
@@ -1072,7 +1056,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _showXpEarnedFeedback(int xpEarned) {
     _showSnackBar(
       '+$xpEarned XP earned!',
-      Colors.green,
+      AppColors.success,
       icon: Icons.star,
     );
   }
@@ -1126,7 +1110,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             });
             _showSnackBar(
               state.message,
-              Colors.green,
+              AppColors.success,
               icon: Icons.check_circle,
             );
             if (state.guideSaved) {
@@ -1155,7 +1139,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             if (!state.isAutoSave) {
               _showSnackBar(
                 state.message ?? 'Personal notes saved!',
-                Colors.green,
+                AppColors.success,
                 icon: Icons.note_add,
               );
             }
@@ -1166,7 +1150,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           } else if (state is StudyPersonalNotesFailure) {
             if (!state.isAutoSave) {
               _showSnackBar(
-                'Failed to save personal notes: ${state.failure.message}',
+                'Something went wrong. Please try again.',
                 Theme.of(context).colorScheme.error,
                 icon: Icons.error_outline,
               );
@@ -1199,9 +1183,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   PreferredSizeWidget _buildAppBar() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     return AppBar(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -1216,6 +1199,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       ),
       title: Text(
         context.tr('study_guide.page_title'),
+        overflow: TextOverflow.ellipsis,
         style: AppFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.w600,
@@ -1305,7 +1289,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         Icon(
                           _isSaved ? Icons.bookmark : Icons.bookmark_border,
                           size: 20,
-                          color: _isSaved ? Colors.green : accentColor,
+                          color: _isSaved ? AppColors.success : accentColor,
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -1313,7 +1297,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                           style: AppFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: _isSaved ? Colors.green : null,
+                            color: _isSaved ? AppColors.success : null,
                           ),
                         ),
                       ],
@@ -1329,7 +1313,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                               ? Icons.check_circle
                               : Icons.check_circle_outlined,
                           size: 20,
-                          color: _completionMarked ? Colors.green : accentColor,
+                          color: _completionMarked
+                              ? AppColors.success
+                              : accentColor,
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -1337,7 +1323,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                           style: AppFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: _completionMarked ? Colors.green : null,
+                            color: _completionMarked ? AppColors.success : null,
                           ),
                         ),
                       ],
@@ -1565,85 +1551,95 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   final theme = Theme.of(context);
                   final isDark = theme.brightness == Brightness.dark;
                   final accentColor = isDark
-                      ? _lightenColor(theme.colorScheme.primary, 0.10)
+                      ? theme.colorScheme.primary
                       : theme.colorScheme.primary;
 
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: _handleBackNavigation,
-                        icon: const Icon(Icons.arrow_back),
-                        label: Text(
-                          context.tr(TranslationKeys.studyGuideErrorGoBack),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: OutlinedButton.icon(
+                          onPressed: _handleBackNavigation,
+                          icon: const Icon(Icons.arrow_back),
+                          label: Text(
+                            context.tr(TranslationKeys.studyGuideErrorGoBack),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: accentColor,
-                          side: BorderSide(
-                            color: accentColor,
-                            width: 2,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: accentColor,
+                            side: BorderSide(
+                              color: accentColor,
+                              width: 2,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       // Show different button based on error type
                       if (_isInsufficientTokensError)
-                        ElevatedButton.icon(
-                          onPressed: () => context.push('/token-management'),
-                          icon: const Icon(Icons.token),
-                          label: Text(
-                            context.tr(TranslationKeys.studyGuideErrorMyPlan),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.push('/token-management'),
+                            icon: const Icon(Icons.token),
+                            label: Text(
+                              context.tr(TranslationKeys.studyGuideErrorMyPlan),
+                              style: AppFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 16,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accentColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
                           ),
                         )
                       else
-                        ElevatedButton.icon(
-                          onPressed: _retryGeneration,
-                          icon: const Icon(Icons.refresh),
-                          label: Text(
-                            context.tr(TranslationKeys.studyGuideErrorTryAgain),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: ElevatedButton.icon(
+                            onPressed: _retryGeneration,
+                            icon: const Icon(Icons.refresh),
+                            label: Text(
+                              context
+                                  .tr(TranslationKeys.studyGuideErrorTryAgain),
+                              style: AppFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 16,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accentColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
                           ),
                         ),
                     ],
@@ -1783,7 +1779,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (_currentStudyGuide == null) {
       _showSnackBar(
         'Cannot save reflection: Study guide not loaded',
-        Colors.red,
+        AppColors.error,
         icon: Icons.error,
       );
       return;
@@ -1820,7 +1816,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
       _showSnackBar(
         'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
-        Colors.green,
+        AppColors.success,
         icon: Icons.check_circle,
       );
     } catch (e) {
@@ -1835,7 +1831,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
       _showSnackBar(
         'Failed to save reflection. Please try again.',
-        Colors.red,
+        AppColors.error,
         icon: Icons.error,
       );
     }
@@ -1845,9 +1841,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildTopicTitle() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor = theme.colorScheme.primary;
 
     return Container(
       width: double.infinity,
@@ -1876,7 +1870,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: accentColor.withOpacity(0.7),
+              color: accentColor,
               letterSpacing: 1.2,
             ),
           ),
@@ -1886,7 +1880,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             style: AppFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onBackground,
+              color: theme.colorScheme.onSurface,
               height: 1.3,
             ),
           ),
@@ -2185,9 +2179,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildQuickReadBadge() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -2323,9 +2316,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildDeepDiveBadge() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -2438,9 +2430,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildLectioDivinaBadge() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -2574,9 +2565,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildNotesSection() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2634,9 +2624,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildBottomActions() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
     final ttsService = sl<StudyGuideTTSService>();
 
     return Container(
@@ -2697,12 +2686,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                                         size: 22,
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        isPlaying ? 'Pause' : 'Resume',
-                                        style: AppFonts.inter(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: accentColor,
+                                      Flexible(
+                                        child: Text(
+                                          isPlaying ? 'Pause' : 'Resume',
+                                          style: AppFonts.inter(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: accentColor,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -2803,7 +2795,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withOpacity(0.3),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -2844,12 +2839,15 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                             size: 22,
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            context.tr(TranslationKeys.studyGuideAskAi),
-                            style: AppFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                          Flexible(
+                            child: Text(
+                              context.tr(TranslationKeys.studyGuideAskAi),
+                              style: AppFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -2937,7 +2935,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         }
         _setupAutoSave();
       } else {
-        message = state.primaryFailure.message;
+        message = 'Something went wrong. Please try again.';
       }
     }
 
@@ -2999,7 +2997,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               final theme = Theme.of(context);
               final isDark = theme.brightness == Brightness.dark;
               final accentColor = isDark
-                  ? _lightenColor(theme.colorScheme.primary, 0.10)
+                  ? theme.colorScheme.primary
                   : theme.colorScheme.primary;
 
               return ElevatedButton(
@@ -3189,7 +3187,7 @@ Generated by Disciplefy - Bible Study App
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to export PDF: ${e.toString()}'),
+            content: Text('Something went wrong. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -3243,6 +3241,10 @@ Generated by Disciplefy - Bible Study App
               Navigator.of(context).pop();
               _shareStudyGuide();
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brandSecondary,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Share as Text'),
           ),
         ],
@@ -3269,9 +3271,8 @@ class _StudySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -3488,9 +3489,8 @@ class _QuickStudySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
     final highlightColor = theme.colorScheme.secondary;
 
     return Container(
@@ -3566,9 +3566,8 @@ class _QuickStudySection extends StatelessWidget {
   void _copyToClipboard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     Clipboard.setData(ClipboardData(text: content));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -3603,9 +3602,8 @@ class _LectioStudySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     // Softer, more meditative colors
     final backgroundColor =
@@ -3712,9 +3710,8 @@ class _LectioStudySection extends StatelessWidget {
   void _copyToClipboard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accentColor = isDark
-        ? _lightenColor(theme.colorScheme.primary, 0.10)
-        : theme.colorScheme.primary;
+    final accentColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.primary;
 
     Clipboard.setData(ClipboardData(text: content));
     ScaffoldMessenger.of(context).showSnackBar(

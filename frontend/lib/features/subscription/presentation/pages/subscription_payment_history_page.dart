@@ -11,6 +11,7 @@ import 'pdf_download_stub.dart'
     if (dart.library.io) 'pdf_download_mobile.dart' as pdf_download;
 
 import '../../domain/entities/subscription.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -160,7 +161,7 @@ class _SubscriptionPaymentHistoryPageState
             ),
             const SizedBox(height: 8),
             Text(
-              state.errorMessage,
+              'Something went wrong. Please try again.',
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -266,7 +267,7 @@ class _InvoiceCardState extends State<_InvoiceCard> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Invoice downloaded: $fileName'),
-              backgroundColor: Colors.green[700],
+              backgroundColor: AppColors.successDark,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -285,7 +286,7 @@ class _InvoiceCardState extends State<_InvoiceCard> {
                     ? 'Invoice downloaded: $filePath'
                     : 'Invoice saved to:\n$filePath',
               ),
-              backgroundColor: Colors.green[700],
+              backgroundColor: AppColors.successDark,
               duration: const Duration(seconds: 5),
               action: SnackBarAction(
                 label: 'OK',
@@ -304,8 +305,8 @@ class _InvoiceCardState extends State<_InvoiceCard> {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to download invoice: ${e.toString()}'),
-            backgroundColor: Colors.red[700],
+            content: Text('Something went wrong. Please try again.'),
+            backgroundColor: AppColors.errorDark,
             duration: const Duration(seconds: 5),
           ),
         );
@@ -521,11 +522,11 @@ class _InvoiceCardState extends State<_InvoiceCard> {
   Color _getStatusColor(String status, bool isDark) {
     switch (status.toLowerCase()) {
       case 'paid':
-        return isDark ? Colors.green[300]! : Colors.green[700]!;
+        return isDark ? AppColors.success : AppColors.successDark;
       case 'pending':
-        return isDark ? Colors.orange[300]! : Colors.orange[700]!;
+        return isDark ? AppColors.warning : AppColors.warningDark;
       case 'failed':
-        return isDark ? Colors.red[300]! : Colors.red[700]!;
+        return isDark ? AppColors.error : AppColors.errorDark;
       default:
         return isDark ? Colors.grey[300]! : Colors.grey[700]!;
     }

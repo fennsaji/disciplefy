@@ -192,6 +192,8 @@ class TranslationKeys {
   static const generateStudyTalkToAiBuddy = 'generate_study.talk_to_ai_buddy';
   static const generateStudyTalkToAiBuddySubtitle =
       'generate_study.talk_to_ai_buddy_subtitle';
+  static const generateStudyAiDisciplerBadgeNew =
+      'generate_study.ai_discipler_badge_new';
   static const generateStudyInProgress = 'generate_study.in_progress';
   static const generateStudyGenerationFailed =
       'generate_study.generation_failed';
@@ -356,6 +358,15 @@ class TranslationKeys {
   static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
   static const settingsTakeQuestionnaireSubtitle =
       'settings.take_questionnaire_subtitle';
+
+  // Settings - Text Size
+  static const settingsTextSize = 'settings.text_size';
+  static const settingsTextSizeSubtitle = 'settings.text_size_subtitle';
+  static const settingsTextSizeSmall = 'settings.text_size_small';
+  static const settingsTextSizeNormal = 'settings.text_size_normal';
+  static const settingsTextSizeLarge = 'settings.text_size_large';
+  static const settingsTextSizeExtraLarge = 'settings.text_size_extra_large';
+  static const settingsTextSizePercentage = 'settings.text_size_percentage';
 
   // Settings - Help & Support
   static const settingsHelpSupport = 'settings.help_support';

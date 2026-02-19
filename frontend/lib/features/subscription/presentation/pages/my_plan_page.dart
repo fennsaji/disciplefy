@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
@@ -140,7 +141,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
               } else if (state is SubscriptionError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.errorMessage),
+                    content: Text('Something went wrong. Please try again.'),
                     backgroundColor: AppTheme.errorColor,
                   ),
                 );
@@ -265,7 +266,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
         statusIcon = Icons.timer;
       } else {
         statusText = context.tr(TranslationKeys.myPlanPremiumTrialActive);
-        statusColor = const Color(0xFF7C4DFF);
+        statusColor = AppColors.tierPremium;
         statusIcon = Icons.workspace_premium;
       }
     } else if (subscription != null && subscription.isActive) {
@@ -295,7 +296,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
       statusIcon = Icons.person;
     } else if (userPlan == UserPlan.standard && isTrialActive) {
       statusText = context.tr(TranslationKeys.myPlanTrialActive);
-      statusColor = const Color(0xFF6A4FB6);
+      statusColor = AppColors.brandPrimary;
       statusIcon = Icons.auto_awesome;
     } else if (userPlan == UserPlan.free) {
       statusText = context.tr(TranslationKeys.myPlanFreePlan);
@@ -423,7 +424,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
   }
 
   Widget _buildTrialInfoBanner(DateTime trialEndDate, bool isDark) {
-    const standardColor = Color(0xFF6A4FB6);
+    const standardColor = AppColors.brandPrimary;
     final daysRemaining = trialEndDate.difference(DateTime.now()).inDays;
 
     return Container(
@@ -476,7 +477,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
 
   Widget _buildGracePeriodBanner(UserSubscriptionStatus status, bool isDark) {
     final isUrgent = status.graceDaysRemaining <= 3;
-    final bannerColor = isUrgent ? Colors.orange : const Color(0xFF6A4FB6);
+    final bannerColor = isUrgent ? AppColors.warning : AppColors.brandPrimary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -484,14 +485,14 @@ class _MyPlanPageState extends State<MyPlanPage> {
         color: isDark
             ? bannerColor.withOpacity(0.15)
             : isUrgent
-                ? Colors.orange[50]
+                ? AppColors.warningLight
                 : const Color(0xFFF3E8FF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
               ? bannerColor.withOpacity(0.4)
               : isUrgent
-                  ? Colors.orange[300]!
+                  ? AppColors.warning
                   : const Color(0xFFD8B4FE),
         ),
       ),
@@ -502,8 +503,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
             color: isDark
                 ? bannerColor.withOpacity(0.8)
                 : isUrgent
-                    ? Colors.orange[700]
-                    : const Color(0xFF6A4FB6),
+                    ? AppColors.warningDark
+                    : AppColors.brandPrimary,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -521,8 +522,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     color: isDark
                         ? bannerColor.withOpacity(0.9)
                         : isUrgent
-                            ? Colors.orange[900]
-                            : const Color(0xFF6A4FB6),
+                            ? AppColors.warningDark
+                            : AppColors.brandPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -536,8 +537,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     color: isDark
                         ? bannerColor.withOpacity(0.8)
                         : (isUrgent
-                                ? Colors.orange[700]!
-                                : const Color(0xFF6A4FB6))
+                                ? AppColors.warningDark
+                                : AppColors.brandPrimary)
                             .withOpacity(0.8),
                   ),
                 ),
@@ -553,17 +554,18 @@ class _MyPlanPageState extends State<MyPlanPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.red.withOpacity(0.15) : Colors.red[50],
+        color:
+            isDark ? AppColors.error.withOpacity(0.15) : AppColors.errorLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.red.withOpacity(0.4) : Colors.red[300]!,
+          color: isDark ? AppColors.error.withOpacity(0.4) : AppColors.error,
         ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.warning_amber_rounded,
-            color: isDark ? Colors.red[300] : Colors.red[700],
+            color: isDark ? AppColors.error : AppColors.errorDark,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -576,7 +578,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.red[200] : Colors.red[900],
+                    color: isDark ? AppColors.error : AppColors.errorDark,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -584,7 +586,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   context.tr(TranslationKeys.myPlanSubscribeToContinue),
                   style: AppFonts.inter(
                     fontSize: 13,
-                    color: isDark ? Colors.red[300] : Colors.red[700],
+                    color: isDark ? AppColors.error : AppColors.errorDark,
                   ),
                 ),
               ],
@@ -599,17 +601,20 @@ class _MyPlanPageState extends State<MyPlanPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.green.withOpacity(0.15) : Colors.green[50],
+        color: isDark
+            ? AppColors.success.withOpacity(0.15)
+            : AppColors.successLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.green.withOpacity(0.4) : Colors.green[300]!,
+          color:
+              isDark ? AppColors.success.withOpacity(0.4) : AppColors.success,
         ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.auto_awesome,
-            color: isDark ? Colors.green[300] : Colors.green[700],
+            color: isDark ? AppColors.success : AppColors.successDark,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -622,7 +627,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.green[200] : Colors.green[900],
+                    color: isDark ? AppColors.success : AppColors.successDark,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -630,7 +635,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   context.tr(TranslationKeys.myPlanGetTokensDaily),
                   style: AppFonts.inter(
                     fontSize: 13,
-                    color: isDark ? Colors.green[300] : Colors.green[700],
+                    color: isDark ? AppColors.success : AppColors.successDark,
                   ),
                 ),
               ],
@@ -644,7 +649,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
   Widget _buildPremiumTrialInfoBanner(
       UserSubscriptionStatus status, bool isDark) {
     final isUrgent = status.premiumTrialDaysRemaining <= 2;
-    final bannerColor = isUrgent ? Colors.orange : const Color(0xFF7C4DFF);
+    final bannerColor = isUrgent ? AppColors.warning : AppColors.tierPremium;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -652,14 +657,14 @@ class _MyPlanPageState extends State<MyPlanPage> {
         color: isDark
             ? bannerColor.withOpacity(0.15)
             : isUrgent
-                ? Colors.orange[50]
+                ? AppColors.warningLight
                 : const Color(0xFFF3E5F5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
               ? bannerColor.withOpacity(0.4)
               : isUrgent
-                  ? Colors.orange[300]!
+                  ? AppColors.warning
                   : const Color(0xFFCE93D8),
         ),
       ),
@@ -670,7 +675,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
             color: isDark
                 ? bannerColor.withOpacity(0.8)
                 : isUrgent
-                    ? Colors.orange[700]
+                    ? AppColors.warningDark
                     : const Color(0xFF7B1FA2),
             size: 24,
           ),
@@ -689,7 +694,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     color: isDark
                         ? bannerColor.withOpacity(0.9)
                         : isUrgent
-                            ? Colors.orange[900]
+                            ? AppColors.warningDark
                             : const Color(0xFF7B1FA2),
                   ),
                 ),
@@ -704,7 +709,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     color: isDark
                         ? bannerColor.withOpacity(0.8)
                         : (isUrgent
-                                ? Colors.orange[700]!
+                                ? AppColors.warningDark
                                 : const Color(0xFF7B1FA2))
                             .withOpacity(0.8),
                   ),
@@ -718,7 +723,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
   }
 
   Widget _buildPremiumTrialPromoBanner(bool isDark) {
-    const bannerColor = Color(0xFF7C4DFF);
+    const bannerColor = AppColors.tierPremium;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -727,11 +732,11 @@ class _MyPlanPageState extends State<MyPlanPage> {
           colors: isDark
               ? [
                   const Color(0xFFE040FB).withOpacity(0.2),
-                  const Color(0xFF7C4DFF).withOpacity(0.2)
+                  AppColors.tierPremium.withOpacity(0.2)
                 ]
               : [
                   const Color(0xFFE040FB).withOpacity(0.1),
-                  const Color(0xFF7C4DFF).withOpacity(0.1)
+                  AppColors.tierPremium.withOpacity(0.1)
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -795,17 +800,20 @@ class _MyPlanPageState extends State<MyPlanPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.orange.withOpacity(0.15) : Colors.orange[50],
+        color: isDark
+            ? AppColors.warning.withOpacity(0.15)
+            : AppColors.warningLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.orange.withOpacity(0.4) : Colors.orange[300]!,
+          color:
+              isDark ? AppColors.warning.withOpacity(0.4) : AppColors.warning,
         ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.info_outline,
-            color: isDark ? Colors.orange[300] : Colors.orange[700],
+            color: isDark ? AppColors.warning : AppColors.warningDark,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -818,7 +826,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.orange[200] : Colors.orange[900],
+                    color: isDark ? AppColors.warning : AppColors.warningDark,
                   ),
                 ),
                 if (subscription.currentPeriodEnd != null) ...[
@@ -827,7 +835,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     '${context.tr(TranslationKeys.myPlanAccessUntil)} ${_formatDate(subscription.currentPeriodEnd!)}',
                     style: AppFonts.inter(
                       fontSize: 13,
-                      color: isDark ? Colors.orange[300] : Colors.orange[700],
+                      color: isDark ? AppColors.warning : AppColors.warningDark,
                     ),
                   ),
                 ],
@@ -1353,7 +1361,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to open payment page: $e'),
+            content: Text('Something went wrong. Please try again.'),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -1422,7 +1430,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
       case UserPlan.free:
         return Colors.grey[600]!;
       case UserPlan.standard:
-        return const Color(0xFF6A4FB6);
+        return AppColors.brandPrimary;
       case UserPlan.plus:
         return Colors.purple[600]!;
       case UserPlan.premium:

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../domain/entities/suggested_verse_entity.dart';
@@ -137,7 +138,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(state.message),
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppColors.success,
                       ),
                     );
                     // Reload verses to update "Already Added" status
@@ -159,8 +160,9 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(state.message),
-                          backgroundColor: Colors.red,
+                          content:
+                              Text('Something went wrong. Please try again.'),
+                          backgroundColor: AppColors.error,
                         ),
                       );
                     }
@@ -179,7 +181,8 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                   }
 
                   if (state is SuggestedVersesError) {
-                    return _buildErrorState(context, theme, state.message);
+                    return _buildErrorState(context, theme,
+                        'Something went wrong. Please try again.');
                   }
 
                   if (state is SuggestedVersesLoaded) {
@@ -486,9 +489,9 @@ class _SuggestedVerseCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withAlpha((0.1 * 255).round()),
+                      color: AppColors.success.withAlpha((0.1 * 255).round()),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green),
+                      border: Border.all(color: AppColors.success),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -496,13 +499,13 @@ class _SuggestedVerseCard extends StatelessWidget {
                         const Icon(
                           Icons.check,
                           size: 16,
-                          color: Colors.green,
+                          color: AppColors.success,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           context.tr(TranslationKeys.alreadyAdded),
                           style: theme.textTheme.labelMedium?.copyWith(
-                            color: Colors.green,
+                            color: AppColors.success,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -555,21 +558,21 @@ class _CategoryBadge extends StatelessWidget {
   Color _getCategoryColor() {
     switch (category) {
       case SuggestedVerseCategory.salvation:
-        return Colors.purple;
+        return AppColors.masteryAdvanced;
       case SuggestedVerseCategory.comfort:
-        return Colors.blue;
+        return AppColors.info;
       case SuggestedVerseCategory.strength:
-        return Colors.orange;
+        return AppColors.warning;
       case SuggestedVerseCategory.wisdom:
-        return Colors.teal;
+        return AppColors.categorySpiritualDisciplines;
       case SuggestedVerseCategory.promise:
-        return Colors.amber;
+        return AppColors.masteryMaster;
       case SuggestedVerseCategory.guidance:
-        return Colors.indigo;
+        return AppColors.brandPrimaryDeep;
       case SuggestedVerseCategory.faith:
-        return Colors.green;
+        return AppColors.success;
       case SuggestedVerseCategory.love:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 

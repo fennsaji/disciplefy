@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -234,7 +235,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 SnackBar(
                   content: Text(
                       context.tr(TranslationKeys.learningPathsEnrolledSuccess)),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                 ),
               );
               // Reload details to show updated enrollment status
@@ -357,7 +358,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  state.message,
+                  'Something went wrong. Please try again.',
                   style: AppFonts.inter(
                     fontSize: 14,
                     color: theme.colorScheme.error,
@@ -513,6 +514,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 12),
@@ -531,6 +534,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     fontWeight: FontWeight.w600,
                     color: _getDiscipleLevelColor(path.discipleLevel),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -546,6 +551,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               height: 1.5,
             ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
 
           const SizedBox(height: 20),
@@ -582,7 +589,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   Icons.schedule_outlined,
                   '${path.estimatedDays}',
                   context.tr(TranslationKeys.learningPathsDays),
-                  Colors.blue,
+                  AppColors.info,
                 ),
               ],
             ),
@@ -612,6 +619,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         Text(
           label,
@@ -619,6 +628,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             fontSize: 12,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -658,11 +669,14 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           children: [
             const Icon(Icons.play_circle_fill, size: 20),
             const SizedBox(width: 8),
-            Text(
-              context.tr(TranslationKeys.learningPathsStartPath),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                context.tr(TranslationKeys.learningPathsStartPath),
+                style: AppFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -700,6 +714,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   '${path.topicsCompleted}/${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}',
@@ -707,6 +723,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     fontSize: 13,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -718,7 +736,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 backgroundColor:
                     theme.colorScheme.outline.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation(
-                  path.isCompleted ? Colors.green : color,
+                  path.isCompleted ? AppColors.success : color,
                 ),
                 minHeight: 8,
               ),
@@ -735,8 +753,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   style: AppFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: path.isCompleted ? Colors.green : color,
+                    color: path.isCompleted ? AppColors.success : color,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (path.isCompleted)
                   Row(
@@ -744,7 +764,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                       const Icon(
                         Icons.check_circle,
                         size: 16,
-                        color: Colors.green,
+                        color: AppColors.success,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -752,8 +772,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                         style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.green,
+                          color: AppColors.success,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -852,7 +874,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: topic.isCompleted
-                    ? Colors.green.withValues(alpha: 0.4)
+                    ? AppColors.success.withOpacity(0.4)
                     : (isNext
                         ? color.withValues(alpha: 0.5)
                         : theme.colorScheme.outline.withValues(alpha: 0.2)),
@@ -876,7 +898,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   height: 36,
                   decoration: BoxDecoration(
                     color: topic.isCompleted
-                        ? Colors.green
+                        ? AppColors.success
                         : (isNext
                             ? color
                             : theme.colorScheme.outline.withValues(alpha: 0.2)),
@@ -958,6 +980,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                                       fontWeight: FontWeight.w600,
                                       color: Colors.amber.shade700,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -967,21 +991,25 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              topic.category,
-                              style: AppFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: color,
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                topic.category,
+                                style: AppFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: color,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),
@@ -1013,7 +1041,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                     Icons.arrow_forward_ios,
                     size: 14,
                     color: topic.isCompleted
-                        ? Colors.green
+                        ? AppColors.success
                         : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
               ],
@@ -1029,22 +1057,22 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       final hex = colorHex.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return const Color(0xFF6A4FB6);
+      return AppColors.brandPrimary;
     }
   }
 
   Color _getDiscipleLevelColor(String level) {
     switch (level.toLowerCase()) {
       case 'seeker':
-        return Colors.blue;
+        return AppColors.info;
       case 'believer':
-        return Colors.green;
+        return AppColors.success;
       case 'disciple':
-        return Colors.orange;
+        return AppColors.warning;
       case 'leader':
-        return Colors.purple;
+        return AppColors.brandSecondary;
       default:
-        return Colors.grey;
+        return AppColors.lightTextSecondary;
     }
   }
 

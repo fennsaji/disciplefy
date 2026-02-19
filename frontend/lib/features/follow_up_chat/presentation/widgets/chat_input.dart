@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -453,7 +454,7 @@ class _ChatInputState extends State<ChatInput>
           gradient: isEnabled
               ? LinearGradient(
                   colors: isActive
-                      ? [Colors.red.shade400, Colors.red.shade600]
+                      ? [AppColors.error, AppColors.errorDark]
                       : [
                           theme.colorScheme.primary,
                           theme.colorScheme.secondary
@@ -468,8 +469,9 @@ class _ChatInputState extends State<ChatInput>
           boxShadow: isEnabled
               ? [
                   BoxShadow(
-                    color: (isActive ? Colors.red : theme.colorScheme.primary)
-                        .withOpacity(0.3),
+                    color:
+                        (isActive ? AppColors.error : theme.colorScheme.primary)
+                            .withOpacity(0.3),
                     blurRadius: isActive ? 12 : 8,
                     offset: const Offset(0, 2),
                   ),

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/notification_preferences.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
@@ -347,9 +348,9 @@ class _NotificationEnableSheet extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                _getErrorText(languageCode, state.message),
+                                _getErrorText(languageCode),
                               ),
-                              backgroundColor: Colors.red.shade700,
+                              backgroundColor: AppColors.errorDark,
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -451,14 +452,14 @@ class _NotificationEnableSheet extends StatelessWidget {
     }
   }
 
-  String _getErrorText(String languageCode, String errorMessage) {
+  String _getErrorText(String languageCode) {
     switch (languageCode) {
       case 'hi':
-        return 'सूचनाएं सक्षम करने में विफल: $errorMessage';
+        return 'कुछ गलत हो गया। कृपया पुनः प्रयास करें।';
       case 'ml':
-        return 'അറിയിപ്പുകൾ പ്രവർത്തനക്ഷമമാക്കുന്നതിൽ പരാജയപ്പെട്ടു: $errorMessage';
+        return 'എന്തോ തകരാറു സംഭവിച്ചു. ദയവായി വീണ്ടും ശ്രമിക്കുക.';
       default:
-        return 'Failed to enable notifications: $errorMessage';
+        return 'Something went wrong. Please try again.';
     }
   }
 }

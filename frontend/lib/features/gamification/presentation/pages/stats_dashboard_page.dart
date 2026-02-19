@@ -6,6 +6,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../domain/entities/achievement.dart';
@@ -416,7 +417,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               Expanded(
                 child: _StatCard(
                   icon: Icons.access_time,
-                  iconColor: Colors.blue,
+                  iconColor: AppColors.info,
                   label: AppLocalizations.of(context)!.progressTimeSpent,
                   value: stats.formattedTimeSpent,
                 ),
@@ -451,7 +452,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               Expanded(
                 child: _StatCard(
                   icon: Icons.bookmark,
-                  iconColor: Colors.orange,
+                  iconColor: AppColors.warning,
                   label: AppLocalizations.of(context)!.progressSavedGuides,
                   value: '${stats.totalSavedGuides}',
                 ),
@@ -460,7 +461,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               Expanded(
                 child: _StatCard(
                   icon: Icons.calendar_today,
-                  iconColor: Colors.green,
+                  iconColor: AppColors.success,
                   label: AppLocalizations.of(context)!.progressStudyDays,
                   value: '${stats.totalStudyDays}',
                 ),
@@ -527,7 +528,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              errorMessage ?? AppLocalizations.of(context)!.progressTryAgain,
+              'Something went wrong. Please try again.',
               style: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.onSurface.withOpacity(0.6),

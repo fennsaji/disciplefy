@@ -76,7 +76,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text('Something went wrong. Please try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
               action: state.errorType == PhoneAuthErrorType.networkError

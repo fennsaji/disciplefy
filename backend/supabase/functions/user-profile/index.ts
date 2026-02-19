@@ -112,9 +112,9 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
     if (body.default_study_mode === null || body.default_study_mode === '') {
       updateData.default_study_mode = null
     } else {
-      const validModes = ['quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended']
+      const validModes = ['quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended', 'ask']
       if (!validModes.includes(body.default_study_mode)) {
-        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio, sermon, recommended', 400)
+        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio, sermon, recommended, ask', 400)
       }
       updateData.default_study_mode = body.default_study_mode
     }

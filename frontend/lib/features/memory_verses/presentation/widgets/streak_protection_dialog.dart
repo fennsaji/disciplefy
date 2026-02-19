@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Streak protection dialog.
 ///
@@ -53,12 +54,12 @@ class StreakProtectionDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withAlpha((0.1 * 255).round()),
+              color: AppColors.info.withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.ac_unit,
-              color: Colors.blue,
+              color: AppColors.info,
               size: 28,
             ),
           ),
@@ -79,17 +80,17 @@ class StreakProtectionDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withAlpha((0.1 * 255).round()),
+              color: AppColors.warning.withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.orange,
+                color: AppColors.warning,
               ),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.warning,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -97,7 +98,7 @@ class StreakProtectionDialog extends StatelessWidget {
                   child: Text(
                     'Your $currentStreak-day streak is at risk!',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.orange.shade800,
+                      color: AppColors.warningDark,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -120,7 +121,7 @@ class StreakProtectionDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.withAlpha((0.05 * 255).round()),
+              color: AppColors.info.withAlpha((0.05 * 255).round()),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -136,14 +137,14 @@ class StreakProtectionDialog extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.ac_unit,
-                      color: Colors.blue,
+                      color: AppColors.info,
                       size: 20,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '$freezeDaysAvailable',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.blue,
+                        color: AppColors.info,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -179,9 +180,9 @@ class StreakProtectionDialog extends StatelessWidget {
           icon: const Icon(Icons.ac_unit),
           label: const Text('Use Freeze Day'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.info,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.grey.shade300,
+            disabledBackgroundColor: AppColors.lightBorder,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

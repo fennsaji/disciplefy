@@ -11,6 +11,7 @@ import '../bloc/notification_state.dart';
 import '../utils/time_of_day_extensions.dart';
 import '../widgets/notification_preference_card.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 
 /// Screen that displays and manages user notification preferences.
@@ -57,9 +58,8 @@ class _NotificationSettingsView extends StatelessWidget {
             if (state is NotificationError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content:
-                      Text(state.message), // Error message already from backend
-                  backgroundColor: Colors.red,
+                  content: Text('Something went wrong. Please try again.'),
+                  backgroundColor: AppColors.error,
                 ),
               );
             } else if (state is NotificationPreferencesUpdated) {
@@ -67,7 +67,7 @@ class _NotificationSettingsView extends StatelessWidget {
                 SnackBar(
                   content: Text(context.tr(
                       TranslationKeys.notificationsSettingsPreferencesUpdated)),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -81,7 +81,7 @@ class _NotificationSettingsView extends StatelessWidget {
                   SnackBar(
                     content: Text(context.tr(TranslationKeys
                         .notificationsSettingsPermissionsGranted)),
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppColors.success,
                   ),
                 );
               } else {
@@ -89,7 +89,7 @@ class _NotificationSettingsView extends StatelessWidget {
                   SnackBar(
                     content: Text(context.tr(TranslationKeys
                         .notificationsSettingsPermissionsDenied)),
-                    backgroundColor: Colors.orange,
+                    backgroundColor: AppColors.warning,
                   ),
                 );
               }
@@ -111,7 +111,8 @@ class _NotificationSettingsView extends StatelessWidget {
             }
 
             if (state is NotificationError) {
-              return _buildErrorView(context, state.message);
+              return _buildErrorView(
+                  context, 'Something went wrong. Please try again.');
             }
 
             return Center(
@@ -349,7 +350,9 @@ class _NotificationSettingsView extends StatelessWidget {
               children: [
                 Icon(
                   permissionsGranted ? Icons.check_circle : Icons.warning_amber,
-                  color: permissionsGranted ? Colors.green : Colors.orange,
+                  color: permissionsGranted
+                      ? AppColors.success
+                      : AppColors.warning,
                   size: 32,
                 ),
                 const SizedBox(width: 12),
@@ -373,7 +376,7 @@ class _NotificationSettingsView extends StatelessWidget {
                             : context.tr(TranslationKeys
                                 .notificationsSettingsPermissionDisabled),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
+                              color: AppColors.lightTextSecondary,
                             ),
                       ),
                     ],
@@ -413,19 +416,19 @@ class _NotificationSettingsView extends StatelessWidget {
     final backgroundColor = isDark
         ? const Color(0xFF2196F3)
             .withOpacity(0.15) // Brighter blue with 15% opacity
-        : Colors.blue.withOpacity(0.1);
+        : AppColors.info.withOpacity(0.1);
 
     final borderColor = isDark
         ? const Color(0xFF64B5F6).withOpacity(0.4) // Light blue border
-        : Colors.blue.withOpacity(0.3);
+        : AppColors.info.withOpacity(0.3);
 
     final iconColor = isDark
         ? const Color(0xFF90CAF9) // Light blue for dark mode
-        : Colors.blue;
+        : AppColors.info;
 
     final textColor = isDark
         ? const Color(0xFFE3F2FD) // Very light blue for dark mode
-        : Colors.blue[900];
+        : AppColors.info;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -473,7 +476,7 @@ class _NotificationSettingsView extends StatelessWidget {
             const Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red,
+              color: AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(

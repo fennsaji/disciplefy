@@ -200,7 +200,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
             // Error - show message and redirect to login
             Logger.error(
                 '🔍 [AUTH CALLBACK] ❌ Authentication failed: ${state.message}');
-            _showErrorAndRedirect(state.message);
+            _showErrorAndRedirect('Something went wrong. Please try again.');
           }
         },
         child: Scaffold(

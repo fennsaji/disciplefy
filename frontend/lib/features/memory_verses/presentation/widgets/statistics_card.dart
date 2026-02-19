@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/review_statistics_entity.dart';
 
 /// Widget displaying memory verse statistics.
@@ -53,8 +54,9 @@ class StatisticsCard extends StatelessWidget {
                     icon: Icons.schedule,
                     label: context.tr('memory.dueToday'),
                     value: statistics.dueVerses.toString(),
-                    color:
-                        statistics.dueVerses > 0 ? Colors.orange : Colors.green,
+                    color: statistics.dueVerses > 0
+                        ? AppColors.warning
+                        : AppColors.success,
                   ),
                 ),
               ],
@@ -70,7 +72,7 @@ class StatisticsCard extends StatelessWidget {
                     icon: Icons.check_circle,
                     label: context.tr('memory.reviewedToday'),
                     value: statistics.reviewedToday.toString(),
-                    color: Colors.blue,
+                    color: AppColors.info,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -80,7 +82,7 @@ class StatisticsCard extends StatelessWidget {
                     icon: Icons.upcoming,
                     label: context.tr('memory.upcoming'),
                     value: statistics.upcomingReviews.toString(),
-                    color: Colors.purple,
+                    color: AppColors.masteryAdvanced,
                   ),
                 ),
               ],
@@ -96,7 +98,7 @@ class StatisticsCard extends StatelessWidget {
                     icon: Icons.star,
                     label: context.tr('memory.reviewMilestones'),
                     value: statistics.masteredVerses.toString(),
-                    color: Colors.grey,
+                    color: AppColors.lightTextSecondary,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -106,7 +108,7 @@ class StatisticsCard extends StatelessWidget {
                     icon: Icons.emoji_events,
                     label: context.tr('memory.fullyMastered'),
                     value: statistics.fullyMasteredVerses.toString(),
-                    color: Colors.amber,
+                    color: AppColors.masteryMaster,
                   ),
                 ),
               ],
@@ -233,10 +235,10 @@ class StatisticsCard extends StatelessWidget {
   }
 
   Color _getMasteryColor(double percentage) {
-    if (percentage >= 75) return Colors.green;
-    if (percentage >= 50) return Colors.blue;
-    if (percentage >= 25) return Colors.orange;
-    return Colors.red;
+    if (percentage >= 75) return AppColors.success;
+    if (percentage >= 50) return AppColors.info;
+    if (percentage >= 25) return AppColors.warning;
+    return AppColors.error;
   }
 
   String _getMasteryMessage(BuildContext context, double percentage) {

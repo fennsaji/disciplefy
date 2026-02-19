@@ -26,7 +26,7 @@ class PaymentMethodCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: paymentMethod.isDefault
-              ? BorderSide(color: AppColors.primaryColor, width: 2)
+              ? BorderSide(color: AppColors.brandPrimary, width: 2)
               : BorderSide.none,
         ),
         child: Padding(
@@ -60,7 +60,7 @@ class PaymentMethodCard extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor,
+                                  color: AppColors.brandPrimary,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -112,10 +112,10 @@ class PaymentMethodCard extends StatelessWidget {
                         child: Row(
                           children: [
                             Icon(Icons.delete_outline,
-                                size: 20, color: AppColors.errorColor),
+                                size: 20, color: AppColors.error),
                             SizedBox(width: 8),
                             Text('Delete',
-                                style: TextStyle(color: AppColors.errorColor)),
+                                style: TextStyle(color: AppColors.error)),
                           ],
                         ),
                       ),
@@ -130,10 +130,10 @@ class PaymentMethodCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.errorColor.withOpacity(0.1),
+                    color: AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppColors.errorColor.withOpacity(0.3),
+                      color: AppColors.error.withOpacity(0.3),
                     ),
                   ),
                   child: Row(
@@ -142,13 +142,13 @@ class PaymentMethodCard extends StatelessWidget {
                       Icon(
                         Icons.warning_outlined,
                         size: 16,
-                        color: AppColors.errorColor,
+                        color: AppColors.error,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         'Card Expired',
                         style: AppTextStyles.captionSmall.copyWith(
-                          color: AppColors.errorColor,
+                          color: AppColors.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -161,7 +161,7 @@ class PaymentMethodCard extends StatelessWidget {
                 Text(
                   'Last used: ${_formatLastUsed(context)}',
                   style: AppTextStyles.captionSmall.copyWith(
-                    color: AppColors.textTertiary,
+                    color: AppColors.lightTextTertiary,
                   ),
                 ),
               ],
@@ -174,7 +174,7 @@ class PaymentMethodCard extends StatelessWidget {
 
   Widget _buildMethodIcon() {
     IconData iconData;
-    Color iconColor = AppColors.primaryColor;
+    Color iconColor = AppColors.brandPrimary;
 
     switch (paymentMethod.methodType) {
       case 'card':
@@ -194,7 +194,7 @@ class PaymentMethodCard extends StatelessWidget {
     }
 
     if (paymentMethod.methodType == 'card' && paymentMethod.isExpired) {
-      iconColor = AppColors.errorColor;
+      iconColor = AppColors.error;
     }
 
     return Container(

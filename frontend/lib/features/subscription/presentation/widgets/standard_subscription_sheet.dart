@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../domain/entities/user_subscription_status.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Bottom sheet for Standard subscription showing benefits and subscribe button.
 /// Opens Razorpay hosted checkout when user taps subscribe.
@@ -160,7 +161,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                         sl<PricingService>().getFormattedPrice('standard'),
                         style: theme.textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF6A4FB6),
+                          color: AppColors.brandPrimary,
                         ),
                       ),
                       Padding(
@@ -169,7 +170,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                           '/month',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color:
-                                const Color(0xFF6A4FB6).withValues(alpha: 0.7),
+                                AppColors.brandPrimary.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -245,7 +246,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                 ElevatedButton(
                   onPressed: isLoading ? null : _handleSubscribe,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6A4FB6),
+                    backgroundColor: AppColors.brandPrimary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -320,7 +321,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
             ),
             child: Icon(
               icon,
-              color: const Color(0xFF6A4FB6),
+              color: AppColors.brandPrimary,
               size: 20,
             ),
           ),

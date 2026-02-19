@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { EditIcon, DeleteIcon, ViewIcon, actionButtonStyles } from '@/components/ui/action-icons'
 import { EmptyState } from '@/components/ui/empty-state'
 
@@ -79,8 +79,8 @@ export default function StudyGuidesTable({
         </thead>
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {guides.map((guide) => (
-            <>
-              <tr key={guide.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <Fragment key={guide.id}>
+              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-6 py-4">
                   <div className="flex flex-col gap-1">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getInputTypeColor(guide.input_type)} w-fit`}>
@@ -165,7 +165,7 @@ export default function StudyGuidesTable({
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>

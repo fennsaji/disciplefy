@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -189,7 +190,7 @@ class PlanCard extends StatelessWidget {
       case UserPlan.free:
         return Colors.grey[600]!;
       case UserPlan.standard:
-        return Colors.blue[600]!;
+        return AppColors.info;
       case UserPlan.plus:
         return Colors.purple[600]!;
       case UserPlan.premium:

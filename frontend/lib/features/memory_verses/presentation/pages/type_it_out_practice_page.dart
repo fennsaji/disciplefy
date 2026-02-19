@@ -16,6 +16,7 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Helper class to store word alignment results
 class _WordMatch {
@@ -103,7 +104,7 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/learning_path.dart';
@@ -116,6 +117,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       context.tr(TranslationKeys.learningPathsSubtitle),
@@ -124,6 +127,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -135,6 +140,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                     fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 )
               else if (showSeeAll && widget.onSeeAllTap != null)
                 TextButton(
@@ -210,11 +217,13 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                state.message,
+                'Something went wrong. Please try again.',
                 style: AppFonts.inter(
                   fontSize: 14,
                   color: theme.colorScheme.error,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (widget.onRetry != null)
@@ -266,6 +275,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
@@ -275,6 +286,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -385,6 +398,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.primary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -403,15 +418,15 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.green.withValues(alpha: 0.1),
-              Colors.green.withValues(alpha: 0.05),
+              AppColors.success.withOpacity(0.1),
+              AppColors.success.withOpacity(0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.green.withValues(alpha: 0.3),
+            color: AppColors.success.withOpacity(0.3),
           ),
         ),
         child: Column(
@@ -420,13 +435,13 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.15),
+                color: AppColors.success.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.emoji_events,
                 size: 32,
-                color: Colors.green,
+                color: AppColors.success,
               ),
             ),
             const SizedBox(height: 16),
@@ -435,8 +450,10 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
               style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.green.shade700,
+                color: AppColors.successDark,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
             Text(
@@ -446,6 +463,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
@@ -455,6 +474,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
