@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { DeleteIcon, ViewIcon, ToggleIcon, actionButtonStyles } from '@/components/ui/action-icons'
 import { EmptyState } from '@/components/ui/empty-state'
 
@@ -56,6 +56,55 @@ export default function DailyVersesTable({
     return 'Current'
   }
 
+  const LANG_LABELS: Record<string, string> = {
+    en: 'English', hi: 'Hindi', ml: 'Malayalam', esv: 'English (ESV)',
+    ta: 'Tamil', te: 'Telugu', kn: 'Kannada',
+  }
+
+  const getLanguageDisplay = (verse: DailyVerse) => {
+    if (verse.language) return verse.language.toUpperCase()
+    // Derive from translation keys when language column is null
+    const keys = Object.keys(verse.verse_data?.translations ?? {})
+    if (keys.length > 0) return keys.map(k => k.toUpperCase()).join(' · ')
+    return 'Multi'
+  }
+
+  const renderVerseData = (verse_data: Record<string, any>) => {
+    const { reference, text, date, translations, referenceTranslations, ...rest } = verse_data
+
+    return (
+      <div className="space-y-5">
+        {/* Translations */}
+        {translations && Object.keys(translations).length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(translations).map(([lang, txt]) => (
+              <div key={lang} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                  {LANG_LABELS[lang] ?? lang}
+                </p>
+                <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 italic">
+                  "{txt as string}"
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Reference Translations */}
+        {referenceTranslations && Object.keys(referenceTranslations).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(referenceTranslations).map(([lang, ref]) => (
+              <div key={lang} className="rounded-lg bg-amber-50 dark:bg-amber-400/10 border border-amber-200 dark:border-amber-400/20 px-3 py-1.5">
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{LANG_LABELS[lang] ?? lang}: </span>
+                <span className="text-xs text-amber-900 dark:text-amber-300">{ref as string}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -80,8 +129,8 @@ export default function DailyVersesTable({
         </thead>
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {verses.map((verse) => (
-            <>
-              <tr key={verse.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <Fragment key={verse.id}>
+              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                   {new Date(verse.date_key).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -93,7 +142,7 @@ export default function DailyVersesTable({
                   {verse.verse_data?.reference || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                  {verse.language?.toUpperCase() || 'N/A'}
+                  {getLanguageDisplay(verse)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(verse.is_active, verse.date_key)}`}>
@@ -135,41 +184,33 @@ export default function DailyVersesTable({
               </tr>
               {expandedId === verse.id && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                    <div className="space-y-3">
+                  <td colSpan={5} className="px-6 py-5 bg-gray-50 dark:bg-gray-800/60">
+                    <div className="space-y-4 max-w-3xl">
+                      {/* Reference + ESV text */}
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
                           {verse.verse_data?.reference}
-                        </h4>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 italic">
-                          "{verse.verse_data?.text || 'N/A'}"
                         </p>
+                        {verse.verse_data?.translations?.esv && (
+                          <p className="mt-1 text-sm italic text-gray-600 dark:text-gray-400">
+                            "{verse.verse_data.translations.esv}"
+                          </p>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600 dark:text-gray-400">
-                        <div>
-                          <span className="font-semibold">Created:</span>{' '}
-                          {new Date(verse.created_at).toLocaleString()}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Updated:</span>{' '}
-                          {new Date(verse.updated_at).toLocaleString()}
-                        </div>
+
+                      {/* Structured verse_data */}
+                      {renderVerseData(verse.verse_data)}
+
+                      {/* Timestamps */}
+                      <div className="flex gap-6 text-xs text-gray-400 dark:text-gray-500 pt-1 border-t border-gray-200 dark:border-gray-700">
+                        <span><span className="font-semibold">Created:</span> {new Date(verse.created_at).toLocaleString()}</span>
+                        <span><span className="font-semibold">Updated:</span> {new Date(verse.updated_at).toLocaleString()}</span>
                       </div>
-                      {Object.keys(verse.verse_data).length > 2 && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                            Additional Data
-                          </h4>
-                          <pre className="text-xs bg-gray-100 dark:bg-gray-900 p-3 rounded overflow-x-auto">
-                            {JSON.stringify(verse.verse_data, null, 2)}
-                          </pre>
-                        </div>
-                      )}
                     </div>
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>

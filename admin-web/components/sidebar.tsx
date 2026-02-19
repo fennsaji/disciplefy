@@ -19,7 +19,7 @@ const navGroups = [
       { name: 'Learning Paths', href: '/learning-paths', emoji: '🎓' },
       { name: 'Study Guides', href: '/topics', emoji: '📚' },
       { name: 'Memory Verses', href: '/memory-verses', emoji: '📖' },
-      { name: 'Content Mgmt', href: '/content-management', emoji: '📝' },
+      { name: 'Daily Verses', href: '/content-management', emoji: '📅' },
       { name: 'Study Generator', href: '/study-generator', emoji: '✨' },
     ],
   },
