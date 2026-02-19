@@ -122,6 +122,16 @@ additional_redirect_urls = [
   "https://www.disciplefy.in", # Production Flutter app
   "https://www.disciplefy.in/", # Production Flutter app with trailing slash
 
+  # Production Admin Web
+  "https://admin.disciplefy.in/auth/callback",  # Admin web OAuth callback - REQUIRED!
+  "https://admin.disciplefy.in",                 # Admin web base URL
+
+
+  # Production Admin Web
+  "https://admin-dev.disciplefy.in/auth/callback",  # Admin web OAuth callback - REQUIRED!
+  "https://admin-dev.disciplefy.in",                 # Admin web base URL
+
+
   # Mobile deep link
   "com.disciplefy.bible_study_app://auth/callback",
 ]
