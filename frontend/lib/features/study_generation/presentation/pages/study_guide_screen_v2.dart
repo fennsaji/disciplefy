@@ -2106,6 +2106,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _QuickStudySection(
           title: context.tr(TranslationKeys.studyGuideKeyInsight),
           content: _currentStudyGuide!.summary,
+          icon: Icons.lightbulb_outline,
           isHighlight: true,
         ),
 
@@ -2115,6 +2116,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _QuickStudySection(
           title: context.tr(TranslationKeys.studyGuideContext),
           content: _currentStudyGuide!.context,
+          icon: Icons.history_edu_outlined,
         ),
 
         const SizedBox(height: 16),
@@ -2125,6 +2127,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           _QuickStudySection(
             title: context.tr(TranslationKeys.studyGuidePassageReading),
             content: _currentStudyGuide!.passage!,
+            icon: Icons.menu_book_outlined,
           ),
 
         if (_currentStudyGuide!.passage != null &&
@@ -2135,6 +2138,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _QuickStudySection(
           title: context.tr(TranslationKeys.studyGuideKeyVerse),
           content: _currentStudyGuide!.interpretation,
+          icon: Icons.auto_stories_outlined,
         ),
 
         const SizedBox(height: 16),
@@ -2144,6 +2148,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           _QuickStudySection(
             title: context.tr(TranslationKeys.studyGuideRelatedVerses),
             content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+            icon: Icons.format_list_bulleted,
           ),
 
         const SizedBox(height: 16),
@@ -2157,6 +2162,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 .entries
                 .map((entry) => '${entry.key + 1}. ${entry.value}')
                 .join('\n\n'),
+            icon: Icons.forum_outlined,
           ),
 
         const SizedBox(height: 16),
@@ -2170,6 +2176,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 .entries
                 .map((entry) => '• ${entry.value}')
                 .join('\n'),
+            icon: Icons.volunteer_activism_outlined,
           ),
       ],
     );
@@ -3477,11 +3484,13 @@ class _PulsingIconState extends State<_PulsingIcon>
 class _QuickStudySection extends StatelessWidget {
   final String title;
   final String content;
+  final IconData icon;
   final bool isHighlight;
 
   const _QuickStudySection({
     required this.title,
     required this.content,
+    required this.icon,
     this.isHighlight = false,
   });
 
@@ -3496,41 +3505,36 @@ class _QuickStudySection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isHighlight
-            ? highlightColor.withOpacity(0.15)
-            : theme.colorScheme.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isHighlight
-              ? highlightColor.withOpacity(0.4)
-              : accentColor.withOpacity(0.1),
-          width: isHighlight ? 1.5 : 1,
+          color: accentColor.withOpacity(0.1),
         ),
-        boxShadow: isHighlight
-            ? [
-                BoxShadow(
-                  color: highlightColor.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row with copy button
+          // Title row with icon box and copy button
           Row(
             children: [
+              // Icon box
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: accentColor, size: 22),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: AppFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: isHighlight
-                        ? accentColor
-                        : theme.colorScheme.onBackground.withOpacity(0.8),
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
