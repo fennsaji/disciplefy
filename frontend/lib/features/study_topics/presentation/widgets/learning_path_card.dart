@@ -161,7 +161,7 @@ class LearningPathCard extends StatelessWidget {
               path.description,
               style: AppFonts.inter(
                 fontSize: 13,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
                 height: 1.3,
               ),
               maxLines: compact ? 2 : 3,
