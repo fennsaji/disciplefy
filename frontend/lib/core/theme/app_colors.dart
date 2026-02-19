@@ -109,22 +109,30 @@ class AppColors {
 
   static const Color success = Color(0xFF10B981); // Emerald-500
   static const Color successLight = Color(0xFFD1FAE5); // Emerald-100
+  static const Color successLighter =
+      Color(0xFF6EE7B7); // Emerald-300 — dark mode badge text
   static const Color successDark =
       Color(0xFF047857); // Emerald-700 — 5.0:1 on white (was #059669, 3.4:1)
 
   static const Color error = Color(0xFFEF4444); // Red-500
   static const Color errorLight = Color(0xFFFEE2E2); // Red-100
+  static const Color errorLighter =
+      Color(0xFFFCA5A5); // Red-300 — dark mode badge text
   static const Color errorDark =
       Color(0xFFB91C1C); // Red-700 — 6.6:1 on white (was #DC2626, 4.7:1)
 
   static const Color warning = Color(0xFFF59E0B); // Amber-500
   static const Color warningLight = Color(0xFFFEF3C7); // Amber-100
+  static const Color warningLighter =
+      Color(0xFFFCD34D); // Amber-300 — dark mode badge text
   static const Color warningDark =
       Color(0xFFB45309); // Amber-700 — 4.8:1 on white (was #D97706, 3.1:1)
 
   static const Color info =
       Color(0xFF3B82F6); // Blue-500 — 3.9:1 on white (icon/bg use)
   static const Color infoLight = Color(0xFFDBEAFE); // Blue-100
+  static const Color infoLighter =
+      Color(0xFF93C5FD); // Blue-300 — dark mode badge text
   static const Color infoDark =
       Color(0xFF1D4ED8); // Blue-700 — 7.5:1 on white (text on light bg)
 
