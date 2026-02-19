@@ -7,7 +7,7 @@ interface EditSystemConfigDialogProps {
   onClose: () => void
   onSave: (config: any) => void
   config: any
-  section: 'token_system' | 'voice_features' | 'maintenance_mode' | 'app_version' | 'trial_config'
+  section: 'token_system' | 'voice_features' | 'maintenance_mode' | 'app_version' | 'trial_config' | 'memory_verses'
 }
 
 export default function EditSystemConfigDialog({
