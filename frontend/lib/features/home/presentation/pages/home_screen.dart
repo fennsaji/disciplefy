@@ -8,6 +8,7 @@ import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
@@ -320,7 +321,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr(TranslationKeys.homeVerseNotLoaded)),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -977,9 +978,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           horizontal: 12, vertical: 6),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      backgroundColor: isDark
-                          ? AppTheme.primaryColor.withOpacity(0.15)
-                          : const Color(0xFFF3F0FF),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -989,7 +991,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
@@ -1371,17 +1373,60 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final selectedLanguage =
         await sl<LanguagePreferenceService>().getStudyContentLanguage();
 
-    // Show mode selection sheet before navigating
-    final result = await ModeSelectionSheet.show(
-      context: context,
-      languageCode: selectedLanguage.code,
-    );
-    if (result != null && mounted) {
-      _navigateToStudyGuideWithMode(
-        topic,
-        result['mode'] as StudyMode,
-        result['rememberChoice'] as bool,
+    // Check saved default_study_mode preference before showing sheet
+    final savedModeRaw =
+        await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
+
+    // For topics, the recommended mode is standard
+    const recommendedMode = StudyMode.standard;
+
+    if (!mounted) return;
+
+    if (StudyModePreferences.isRecommended(savedModeRaw)) {
+      // User prefers recommended → auto-select standard for topic type
+      Logger.debug(
+          '✅ [HOME] Using recommended mode for topic: ${recommendedMode.name}');
+      _navigateToStudyGuideWithMode(topic, recommendedMode, false);
+    } else if (savedModeRaw != null) {
+      // User has a specific saved mode → use it directly
+      final savedMode = studyModeFromString(savedModeRaw);
+      if (savedMode != null) {
+        Logger.debug(
+            '✅ [HOME] Using saved study mode for topic: ${savedMode.name}');
+        _navigateToStudyGuideWithMode(topic, savedMode, false);
+      } else {
+        // Invalid mode string — fall back to sheet
+        Logger.debug(
+            '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
+        final result = await ModeSelectionSheet.show(
+          context: context,
+          languageCode: selectedLanguage.code,
+          recommendedMode: recommendedMode,
+        );
+        if (result != null && mounted) {
+          _navigateToStudyGuideWithMode(
+            topic,
+            result['mode'] as StudyMode,
+            result['rememberChoice'] as bool,
+          );
+        }
+      }
+    } else {
+      // No saved preference → show mode selection sheet
+      Logger.debug(
+          '🔍 [HOME] No saved preference - showing mode selection sheet for topic');
+      final result = await ModeSelectionSheet.show(
+        context: context,
+        languageCode: selectedLanguage.code,
+        recommendedMode: recommendedMode,
       );
+      if (result != null && mounted) {
+        _navigateToStudyGuideWithMode(
+          topic,
+          result['mode'] as StudyMode,
+          result['rememberChoice'] as bool,
+        );
+      }
     }
   }
 

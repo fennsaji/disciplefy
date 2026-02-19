@@ -187,7 +187,7 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
           });
         } else if (state is FetchVerseTextError) {
           setState(() {
-            _errorMessage = state.message;
+            _errorMessage = 'Something went wrong. Please try again.';
             _isFetchingVerse = false;
           });
         }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -48,7 +49,7 @@ class TokenActionsSection extends StatelessWidget {
                   icon: const Icon(Icons.add_shopping_cart),
                   label: Text(context.tr('tokens.purchase.title')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
                   ),
@@ -64,7 +65,7 @@ class TokenActionsSection extends StatelessWidget {
                   icon: const Icon(Icons.upgrade),
                   label: Text(context.tr('tokens.plans.upgrade_to_standard')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
+                    backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
                   ),
@@ -78,7 +79,7 @@ class TokenActionsSection extends StatelessWidget {
                   icon: const Icon(Icons.star),
                   label: Text(context.tr('tokens.plans.upgrade_to_premium')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber[700],
+                    backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
                   ),
@@ -115,8 +116,7 @@ class TokenActionsSection extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onViewUsageHistory,
-                  icon: const Icon(Icons.history,
-                      color: AppTheme.usageHistoryColor),
+                  icon: Icon(Icons.history, color: AppTheme.usageHistoryColor),
                   label:
                       Text(context.tr('tokens.management.view_usage_history')),
                   style: OutlinedButton.styleFrom(

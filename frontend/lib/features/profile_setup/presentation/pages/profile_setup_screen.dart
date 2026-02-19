@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../../../core/services/http_service.dart';
 import '../../../../core/di/injection_container.dart';
@@ -485,7 +486,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to select image. Please try again.'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -587,8 +588,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload image: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text('Something went wrong. Please try again.'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -675,8 +676,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to setup profile: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text('Something went wrong. Please try again.'),
+            backgroundColor: AppColors.error,
           ),
         );
       }

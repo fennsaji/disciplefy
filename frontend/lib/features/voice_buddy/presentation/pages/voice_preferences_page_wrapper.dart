@@ -57,7 +57,7 @@ class _VoicePreferencesPageWrapperState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Error: ${state.message}'),
+                    Text('Something went wrong. Please try again.'),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {

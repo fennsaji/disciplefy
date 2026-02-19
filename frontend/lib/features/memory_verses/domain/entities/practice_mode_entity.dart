@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Enum representing available practice modes for memory verse review.
 ///
@@ -272,11 +273,11 @@ class PracticeModeEntity extends Equatable {
   Color get difficultyColor {
     switch (difficulty) {
       case Difficulty.easy:
-        return Colors.green;
+        return AppColors.success;
       case Difficulty.medium:
-        return Colors.orange;
+        return AppColors.warning;
       case Difficulty.hard:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 

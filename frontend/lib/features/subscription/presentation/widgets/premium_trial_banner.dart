@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Banner widget shown to promote Premium trial or display trial status.
 /// Used for users who can start a 7-day free Premium trial
@@ -39,7 +40,7 @@ class PremiumTrialBanner extends StatelessWidget {
               ? [const Color(0xFFFF9800), const Color(0xFFFFC107)]
               : isInTrial
                   ? [const Color(0xFF43A047), const Color(0xFF66BB6A)]
-                  : [const Color(0xFFE040FB), const Color(0xFF7C4DFF)],
+                  : [const Color(0xFFE040FB), AppColors.tierPremium],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -50,7 +51,7 @@ class PremiumTrialBanner extends StatelessWidget {
                     ? const Color(0xFFFF9800)
                     : isInTrial
                         ? const Color(0xFF43A047)
-                        : const Color(0xFF7C4DFF))
+                        : AppColors.tierPremium)
                 .withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -139,7 +140,7 @@ class PremiumTrialBanner extends StatelessWidget {
                           ? const Color(0xFFFF9800)
                           : isInTrial
                               ? const Color(0xFF43A047)
-                              : const Color(0xFF7C4DFF),
+                              : AppColors.tierPremium,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -157,7 +158,7 @@ class PremiumTrialBanner extends StatelessWidget {
                                 ? const Color(0xFFFF9800)
                                 : isInTrial
                                     ? const Color(0xFF43A047)
-                                    : const Color(0xFF7C4DFF),
+                                    : AppColors.tierPremium,
                           ),
                         ),
                         if (!isInTrial) ...[
@@ -168,15 +169,15 @@ class PremiumTrialBanner extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF7C4DFF)
-                                  .withValues(alpha: 0.1),
+                              color:
+                                  AppColors.tierPremium.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               'FREE',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF7C4DFF),
+                                color: AppColors.tierPremium,
                               ),
                             ),
                           ),
@@ -357,7 +358,7 @@ class PremiumTrialCard extends StatelessWidget {
                       ]
                     : [
                         const Color(0xFFE040FB).withValues(alpha: 0.1),
-                        const Color(0xFF7C4DFF).withValues(alpha: 0.1)
+                        AppColors.tierPremium.withValues(alpha: 0.1)
                       ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -377,7 +378,7 @@ class PremiumTrialCard extends StatelessWidget {
                           ? const Color(0xFFFF9800).withValues(alpha: 0.2)
                           : isInTrial
                               ? const Color(0xFF43A047).withValues(alpha: 0.2)
-                              : const Color(0xFF7C4DFF).withValues(alpha: 0.2),
+                              : AppColors.tierPremium.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -452,7 +453,7 @@ class PremiumTrialCard extends StatelessWidget {
                         ? const Color(0xFFFF9800)
                         : isInTrial
                             ? const Color(0xFF43A047)
-                            : const Color(0xFF7C4DFF),
+                            : AppColors.tierPremium,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -499,7 +500,7 @@ class PremiumTrialCard extends StatelessWidget {
         Icon(
           icon,
           size: 18,
-          color: const Color(0xFF7C4DFF),
+          color: AppColors.tierPremium,
         ),
         const SizedBox(width: 12),
         Text(

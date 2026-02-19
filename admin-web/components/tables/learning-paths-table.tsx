@@ -268,6 +268,11 @@ export function LearningPathsTable({
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -303,28 +308,22 @@ export function LearningPathsTable({
             </tr>
           </thead>
           <tbody>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+            <SortableContext
+              items={paths.map((path) => path.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={paths.map((path) => path.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {paths.map((path) => (
-                  <SortableRow
-                    key={path.id}
-                    path={path}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onToggle={onToggle}
-                    router={router}
-                    disabled={disabled}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+              {paths.map((path) => (
+                <SortableRow
+                  key={path.id}
+                  path={path}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onToggle={onToggle}
+                  router={router}
+                  disabled={disabled}
+                />
+              ))}
+            </SortableContext>
           </tbody>
         </table>
       </div>
@@ -339,5 +338,6 @@ export function LearningPathsTable({
         </div>
       )}
     </div>
+    </DndContext>
   )
 }

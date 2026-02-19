@@ -13,6 +13,7 @@ import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import 'features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_colors.dart';
 import 'core/localization/app_localizations.dart';
 import 'features/study_generation/presentation/bloc/study_bloc.dart';
 import 'features/saved_guides/data/models/saved_guide_model.dart';
@@ -36,6 +37,7 @@ import 'features/gamification/presentation/widgets/achievement_unlock_dialog.dar
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/locale_service.dart';
+import 'core/services/font_scale_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/system_config_service.dart';
 import 'core/services/pricing_service.dart';
@@ -205,6 +207,13 @@ void main() async {
     await sl<LocaleService>().initialize();
     if (kDebugMode) Logger.debug('✅ [MAIN] Locale service completed');
 
+    // Initialize font scale service
+    if (kDebugMode) {
+      Logger.debug('🔧 [MAIN] Initializing font scale service...');
+    }
+    await sl<FontScaleService>().initialize();
+    if (kDebugMode) Logger.debug('✅ [MAIN] Font scale service completed');
+
     // Initialize system config service (maintenance mode, feature flags, version control)
     if (kDebugMode) {
       Logger.debug('🔧 [MAIN] Initializing system config service...');
@@ -372,6 +381,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
   Widget build(BuildContext context) {
     final themeService = sl<ThemeService>();
     final localeService = sl<LocaleService>();
+    final fontScaleService = sl<FontScaleService>();
 
     return MultiBlocProvider(
       providers: [
@@ -429,7 +439,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
             }
           },
           child: ListenableBuilder(
-            listenable: Listenable.merge([themeService, localeService]),
+            listenable: Listenable.merge(
+                [themeService, localeService, fontScaleService]),
             builder: (context, child) => MaterialApp.router(
               title: 'Disciplefy | Bible Study App',
               debugShowCheckedModeBanner: false,
@@ -446,6 +457,14 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
 
               // Navigation
               routerConfig: AppRouter.router,
+
+              // Font scaling — applies user's preferred text size app-wide
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(fontScaleService.scaleFactor),
+                ),
+                child: child!,
+              ),
             ),
           ),
         ),
@@ -463,7 +482,7 @@ class ErrorApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.red,
+            seedColor: AppColors.error,
           ),
         ),
         home: Scaffold(

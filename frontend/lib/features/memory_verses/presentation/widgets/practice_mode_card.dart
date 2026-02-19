@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/practice_mode_entity.dart';
 
@@ -59,155 +60,160 @@ class PracticeModeCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with icon and proficiency/favorite indicators
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Mode icon with optional proficiency overlay
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: _getDifficultyColor()
-                                  .withAlpha((0.1 * 255).round()),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              mode.icon,
-                              color: _getDifficultyColor(),
-                              size: 24,
-                            ),
-                          ),
-                          // Proficiency/Mastery badge overlay
-                          if (mode.isMastered)
-                            Positioned(
-                              right: -4,
-                              bottom: -4,
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: theme.colorScheme.surface,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.star,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
+              child: ClipRect(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with icon and proficiency/favorite indicators
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Mode icon with optional proficiency overlay
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: _getDifficultyColor()
+                                    .withAlpha((0.1 * 255).round()),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            )
-                          else if (mode.isProficient)
-                            Positioned(
-                              right: -4,
-                              bottom: -4,
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: theme.colorScheme.surface,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
+                              child: Icon(
+                                mode.icon,
+                                color: _getDifficultyColor(),
+                                size: 24,
                               ),
                             ),
-                        ],
-                      ),
-                      // Favorite indicator
-                      if (mode.isFavorite)
-                        const Icon(
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 20,
+                            // Proficiency/Mastery badge overlay
+                            if (mode.isMastered)
+                              Positioned(
+                                right: -4,
+                                bottom: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.masteryMaster,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: theme.colorScheme.surface,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.star,
+                                    color: Colors.white,
+                                    size: 12,
+                                  ),
+                                ),
+                              )
+                            else if (mode.isProficient)
+                              Positioned(
+                                right: -4,
+                                bottom: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: theme.colorScheme.surface,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Mode name
-                  Text(
-                    _getModeName(context, mode.modeType),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-
-                  // Description with flexible spacing
-                  Text(
-                    _getModeDescription(context, mode.modeType),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-
-                  // Stats and badges
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      // Success rate or proficiency badge
-                      if (mode.timesPracticed > 0) _SuccessBadge(mode: mode),
-                      // Difficulty badge
-                      _DifficultyBadge(difficulty: mode.difficulty),
-                    ],
-                  ),
-
-                  // Recommended badge
-                  if (isRecommended) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+                        // Favorite indicator
+                        if (mode.isFavorite)
                           const Icon(
-                            Icons.star,
-                            color: Colors.white,
-                            size: 14,
+                            Icons.favorite,
+                            color: AppColors.error,
+                            size: 20,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            context.tr(isFirstRecommended
-                                ? TranslationKeys
-                                    .practiceSelectionMasterThisFirst
-                                : TranslationKeys
-                                    .practiceSelectionMasterThisNext),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+
+                    // Mode name
+                    Text(
+                      _getModeName(context, mode.modeType),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Description with flexible spacing
+                    Text(
+                      _getModeDescription(context, mode.modeType),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Stats and badges
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        // Success rate or proficiency badge
+                        if (mode.timesPracticed > 0) _SuccessBadge(mode: mode),
+                        // Difficulty badge
+                        _DifficultyBadge(difficulty: mode.difficulty),
+                      ],
+                    ),
+
+                    // Recommended badge
+                    if (isRecommended) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandSecondary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                context.tr(isFirstRecommended
+                                    ? TranslationKeys
+                                        .practiceSelectionMasterThisFirst
+                                    : TranslationKeys
+                                        .practiceSelectionMasterThisNext),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -281,11 +287,11 @@ class PracticeModeCard extends StatelessWidget {
   Color _getDifficultyColor() {
     switch (mode.difficulty) {
       case Difficulty.easy:
-        return Colors.green;
+        return AppColors.success;
       case Difficulty.medium:
-        return Colors.orange;
+        return AppColors.warning;
       case Difficulty.hard:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 
@@ -405,15 +411,15 @@ class _SuccessBadge extends StatelessWidget {
   Color _getSuccessColor() {
     // Mastered = gold/amber, Proficient = green, Learning = orange
     if (mode.isMastered) {
-      return Colors.amber;
+      return AppColors.masteryMaster;
     }
     if (mode.isProficient) {
-      return Colors.green;
+      return AppColors.success;
     }
     if (mode.successRate >= PracticeModeProgression.proficiencyThreshold) {
-      return Colors.blue;
+      return AppColors.info;
     }
-    return Colors.orange;
+    return AppColors.warning;
   }
 }
 
@@ -459,11 +465,11 @@ class _DifficultyBadge extends StatelessWidget {
   Color _getDifficultyColor() {
     switch (difficulty) {
       case Difficulty.easy:
-        return Colors.green;
+        return AppColors.success;
       case Difficulty.medium:
-        return Colors.orange;
+        return AppColors.warning;
       case Difficulty.hard:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 }

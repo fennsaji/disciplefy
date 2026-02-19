@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/mastery_progress_entity.dart';
 import 'mastery_level_badge.dart';
@@ -133,22 +134,22 @@ class MemoryVerseListItem extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: AppColors.error.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.warning_amber_rounded,
                             size: 16,
-                            color: Colors.red[700],
+                            color: AppColors.errorDark,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${verse.daysOverdue}${context.tr(TranslationKeys.memoryDaysOverdue)}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.red[700],
+                              color: AppColors.errorDark,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -179,10 +180,10 @@ class MemoryVerseListItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              leading: const Icon(Icons.delete_outline, color: AppColors.error),
               title: Text(
                 context.tr(TranslationKeys.memoryDeleteTitle),
-                style: const TextStyle(color: Colors.red),
+                style: const TextStyle(color: AppColors.error),
               ),
               onTap: () {
                 Navigator.pop(sheetContext);
@@ -208,22 +209,22 @@ class MemoryVerseListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.amber.withOpacity(0.3),
+          color: AppColors.masteryMaster.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.emoji_events,
               size: 16,
-              color: Colors.amber[800],
+              color: AppColors.warningDark,
             ),
             const SizedBox(width: 4),
             Text(
               'Fully Mastered',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.amber[800],
+                color: AppColors.warningDark,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -232,28 +233,32 @@ class MemoryVerseListItem extends StatelessWidget {
       );
     }
 
-    // Review Milestone - Silver star (basic mastery: 5+ repetitions)
+    // Review Milestone - Gold star (basic mastery: 5+ repetitions)
     if (verse.isMastered) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.2),
+          color: AppColors.masteryMaster.withOpacity(0.15),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.star,
               size: 16,
-              color: Colors.grey[700],
+              color: AppColors.masteryMaster,
             ),
             const SizedBox(width: 4),
-            Text(
-              'Review Milestone',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey[700],
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                'Review Milestone',
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.masteryMaster,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -265,22 +270,22 @@ class MemoryVerseListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.2),
+          color: AppColors.info.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.fiber_new,
               size: 16,
-              color: Colors.blue[700],
+              color: AppColors.infoLight,
             ),
             const SizedBox(width: 4),
             Text(
               'New',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.blue[700],
+                color: AppColors.infoLight,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -293,22 +298,22 @@ class MemoryVerseListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.2),
+          color: AppColors.success.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.check_circle,
               size: 16,
-              color: Colors.green[700],
+              color: AppColors.successDark,
             ),
             const SizedBox(width: 4),
             Text(
               context.tr(TranslationKeys.memoryReview),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.green[700],
+                color: AppColors.successDark,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -328,18 +333,18 @@ class MemoryVerseListItem extends StatelessWidget {
 
     switch (verse.difficultyLevel) {
       case 'hard':
-        chipColor = Colors.red;
+        chipColor = AppColors.error;
         chipIcon = Icons.trending_up;
         label = context.tr(TranslationKeys.memoryHard);
         break;
       case 'medium':
-        chipColor = Colors.orange;
+        chipColor = AppColors.warning;
         chipIcon = Icons.trending_flat;
         label = context.tr(TranslationKeys.memoryGood);
         break;
       case 'easy':
       default:
-        chipColor = Colors.green;
+        chipColor = AppColors.success;
         chipIcon = Icons.trending_down;
         label = context.tr(TranslationKeys.memoryEasy);
     }

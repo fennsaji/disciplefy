@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Show neutral snackbar for cancelled operations
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.message),
+                  content: Text('Sign-in was cancelled.'),
                   backgroundColor: theme.colorScheme.onSurface.withOpacity(0.8),
                   behavior: SnackBarBehavior.floating,
                   duration: const Duration(seconds: 2),
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Show error message for actual errors
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.message),
+                  content: Text('Something went wrong. Please try again.'),
                   backgroundColor: theme.colorScheme.error,
                   behavior: SnackBarBehavior.floating,
                 ),

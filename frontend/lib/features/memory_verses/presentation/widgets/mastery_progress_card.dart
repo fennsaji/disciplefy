@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/mastery_progress_entity.dart';
 
 /// Extension to add display name to MasteryLevel enum
@@ -98,9 +99,10 @@ class MasteryProgressCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.withAlpha((0.1 * 255).round()),
+                            color: AppColors.success
+                                .withAlpha((0.1 * 255).round()),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green),
+                            border: Border.all(color: AppColors.success),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -108,13 +110,13 @@ class MasteryProgressCard extends StatelessWidget {
                               const Icon(
                                 Icons.arrow_upward,
                                 size: 14,
-                                color: Colors.green,
+                                color: AppColors.success,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Ready',
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: Colors.green,
+                                  color: AppColors.success,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -147,7 +149,7 @@ class MasteryProgressCard extends StatelessWidget {
                       icon: Icons.grade,
                       label: 'Modes',
                       value: '${masteryProgress.modesMastered}/8',
-                      color: Colors.blue,
+                      color: AppColors.info,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -157,7 +159,7 @@ class MasteryProgressCard extends StatelessWidget {
                       icon: Icons.star,
                       label: 'Perfect',
                       value: '${masteryProgress.perfectRecalls}',
-                      color: Colors.amber,
+                      color: AppColors.masteryMaster,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -169,7 +171,7 @@ class MasteryProgressCard extends StatelessWidget {
                       value: masteryProgress.confidenceRating != null
                           ? masteryProgress.confidenceRating!.toStringAsFixed(1)
                           : 'N/A',
-                      color: Colors.purple,
+                      color: AppColors.masteryAdvanced,
                     ),
                   ),
                 ],

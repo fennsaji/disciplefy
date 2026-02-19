@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// Usage meter widget that displays token consumption and upgrade prompt
@@ -39,13 +40,13 @@ class UsageMeterWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: isWarning
             ? (isDark
-                ? Colors.orange.shade900.withOpacity(0.2)
-                : Colors.orange.shade50)
+                ? AppColors.warning.withOpacity(0.2)
+                : AppColors.warningLight)
             : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isWarning
-              ? (isDark ? Colors.orange.shade700 : Colors.orange)
+              ? (isDark ? AppColors.warningDark : AppColors.warning)
               : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300),
         ),
       ),
@@ -68,9 +69,7 @@ class UsageMeterWidget extends StatelessWidget {
                 '$tokensUsed / $tokensTotal',
                 style: AppFonts.inter(
                   color: isWarning
-                      ? (isDark
-                          ? Colors.orange.shade300
-                          : Colors.orange.shade900)
+                      ? (isDark ? AppColors.warning : AppColors.warningDark)
                       : (isDark
                           ? Colors.white.withOpacity(0.7)
                           : Colors.grey.shade700),
@@ -89,7 +88,7 @@ class UsageMeterWidget extends StatelessWidget {
                   isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300,
               valueColor: AlwaysStoppedAnimation(
                 isWarning
-                    ? (isDark ? Colors.orange.shade400 : Colors.orange)
+                    ? (isDark ? AppColors.warning : AppColors.warning)
                     : AppTheme.primaryColor,
               ),
               minHeight: 6,
@@ -100,7 +99,7 @@ class UsageMeterWidget extends StatelessWidget {
             Text(
               '⚠️ Running low! Upgrade for unlimited access',
               style: AppFonts.inter(
-                color: isDark ? Colors.orange.shade300 : Colors.orange.shade900,
+                color: isDark ? AppColors.warning : AppColors.warningDark,
                 fontSize: 12,
               ),
             ),

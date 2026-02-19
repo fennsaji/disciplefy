@@ -113,7 +113,7 @@ interface SubmitPracticeResponse extends ApiSuccessResponse<SubmitPracticeData> 
  * Implements the SM-2 spaced repetition algorithm
  * Modified for Bible verse memorization with daily cementing period
  */
-function calculateSM2(input: SM2Input, minEaseFactor: number = 1.3, maxIntervalDays: number = 180): SM2Result {
+function calculateSM2(input: SM2Input, minEaseFactor: number = 1.3, maxIntervalDays: number = 180, maxEaseFactor: number = 3.0): SM2Result {
   const { quality, easeFactor, interval, repetitions } = input
 
   // Constants - now using config parameters
@@ -124,9 +124,10 @@ function calculateSM2(input: SM2Input, minEaseFactor: number = 1.3, maxIntervalD
     throw new AppError('VALIDATION_ERROR', 'quality_rating must be between 0 and 5', 400)
   }
 
-  // Calculate new ease factor
+  // Calculate new ease factor, clamped within [minEaseFactor, maxEaseFactor]
   let newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
   if (newEaseFactor < minEaseFactor) newEaseFactor = minEaseFactor
+  if (newEaseFactor > maxEaseFactor) newEaseFactor = maxEaseFactor
   newEaseFactor = Math.round(newEaseFactor * 100) / 100
 
   let newInterval: number
@@ -742,8 +743,10 @@ async function handleSubmitMemoryPractice(
   const memoryConfig = await services.memoryVerseConfigService.getMemoryVerseConfig()
   const minEaseFactor = memoryConfig.spacedRepetition.minEaseFactor
   const maxIntervalDays = memoryConfig.spacedRepetition.maxIntervalDays
+  // Max ease factor matches DB CHECK constraint (ease_factor <= 3.0)
+  const maxEaseFactor = (memoryConfig.spacedRepetition as any).maxEaseFactor ?? 3.0
 
-  console.log(`[SubmitPractice] Using SM-2 config: minEase=${minEaseFactor}, maxInterval=${maxIntervalDays}`)
+  console.log(`[SubmitPractice] Using SM-2 config: minEase=${minEaseFactor}, maxEase=${maxEaseFactor}, maxInterval=${maxIntervalDays}`)
 
   // Calculate new SM-2 state using database config
   const sm2Result = calculateSM2({
@@ -751,7 +754,7 @@ async function handleSubmitMemoryPractice(
     easeFactor: memoryVerse.ease_factor,
     interval: memoryVerse.interval_days,
     repetitions: memoryVerse.repetitions
-  }, minEaseFactor, maxIntervalDays)
+  }, minEaseFactor, maxIntervalDays, maxEaseFactor)
 
   // Determine if this is a perfect recall
   const isPerfectRecall = body.quality_rating === 5

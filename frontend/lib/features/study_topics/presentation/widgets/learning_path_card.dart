@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../domain/entities/learning_path.dart';
 
@@ -45,14 +46,14 @@ class LearningPathCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isCompleted
-                ? Colors.green.withValues(alpha: 0.4)
+                ? AppColors.success.withOpacity(0.4)
                 : color.withValues(alpha: 0.3),
             width: isCompleted ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color: isCompleted
-                  ? Colors.green.withValues(alpha: 0.1)
+                  ? AppColors.success.withOpacity(0.1)
                   : color.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -111,6 +112,8 @@ class LearningPathCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: _getDiscipleLevelColor(path.discipleLevel),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -122,6 +125,8 @@ class LearningPathCard extends StatelessWidget {
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.6),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -172,37 +177,53 @@ class LearningPathCard extends StatelessWidget {
             // Footer with XP and duration
             Row(
               children: [
-                // XP indicator
-                Icon(
-                  isCompleted ? Icons.star : Icons.star_outline,
-                  size: 16,
-                  color: isCompleted ? Colors.green : color,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${path.totalXp} XP',
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isCompleted ? Colors.green : color,
+                // Left side: XP + duration — expands to push action button right
+                Expanded(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCompleted ? Icons.star : Icons.star_outline,
+                        size: 16,
+                        color: isCompleted ? AppColors.success : color,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '${path.totalXp} XP',
+                          style: AppFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isCompleted ? AppColors.success : color,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.schedule_outlined,
+                        size: 14,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '${path.estimatedDays} ${context.tr(TranslationKeys.learningPathsDays)}',
+                          style: AppFonts.inter(
+                            fontSize: 11,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                // Duration estimate
-                Icon(
-                  Icons.schedule_outlined,
-                  size: 14,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${path.estimatedDays} ${context.tr(TranslationKeys.learningPathsDays)}',
-                  style: AppFonts.inter(
-                    fontSize: 11,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 // Action button
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -211,7 +232,7 @@ class LearningPathCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isCompleted
-                        ? Colors.green.withValues(alpha: 0.1)
+                        ? AppColors.success.withOpacity(0.1)
                         : color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -229,14 +250,16 @@ class LearningPathCard extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isCompleted ? Colors.green : color,
+                          color: isCompleted ? AppColors.success : color,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: 4),
                       Icon(
                         Icons.arrow_forward_ios,
                         size: 10,
-                        color: isCompleted ? Colors.green : color,
+                        color: isCompleted ? AppColors.success : color,
                       ),
                     ],
                   ),
@@ -259,7 +282,7 @@ class LearningPathCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.1),
+          color: AppColors.success.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -268,7 +291,7 @@ class LearningPathCard extends StatelessWidget {
             const Icon(
               Icons.check_circle,
               size: 14,
-              color: Colors.green,
+              color: AppColors.success,
             ),
             const SizedBox(width: 4),
             Text(
@@ -276,8 +299,10 @@ class LearningPathCard extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Colors.green,
+                color: AppColors.success,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -288,16 +313,16 @@ class LearningPathCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.orange.withValues(alpha: 0.1),
+          color: AppColors.warning.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.play_circle_filled,
               size: 14,
-              color: Colors.orange.shade700,
+              color: AppColors.warningDark,
             ),
             const SizedBox(width: 4),
             Text(
@@ -305,8 +330,10 @@ class LearningPathCard extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Colors.orange.shade700,
+                color: AppColors.warningDark,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -336,6 +363,8 @@ class LearningPathCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: Colors.amber.shade700,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -361,14 +390,18 @@ class LearningPathCard extends StatelessWidget {
                 fontSize: 11,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             Text(
               '${path.progressPercentage}%',
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: path.isCompleted ? Colors.green : color,
+                color: path.isCompleted ? AppColors.success : color,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -379,7 +412,7 @@ class LearningPathCard extends StatelessWidget {
             value: progress,
             backgroundColor: theme.colorScheme.outline.withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation(
-              path.isCompleted ? Colors.green : color,
+              path.isCompleted ? AppColors.success : color,
             ),
             minHeight: 6,
           ),
@@ -393,7 +426,7 @@ class LearningPathCard extends StatelessWidget {
       final hex = colorHex.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return const Color(0xFF6A4FB6); // Default purple
+      return AppColors.brandPrimary; // Default purple
     }
   }
 
@@ -404,15 +437,15 @@ class LearningPathCard extends StatelessWidget {
   Color _getDiscipleLevelColor(String level) {
     switch (level.toLowerCase()) {
       case 'seeker':
-        return Colors.blue;
+        return AppColors.info;
       case 'believer':
-        return Colors.green;
+        return AppColors.success;
       case 'disciple':
-        return Colors.orange;
+        return AppColors.warning;
       case 'leader':
-        return Colors.purple;
+        return AppColors.brandSecondary;
       default:
-        return Colors.grey;
+        return AppColors.lightTextSecondary;
     }
   }
 

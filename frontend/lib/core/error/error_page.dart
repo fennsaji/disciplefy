@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../localization/app_localizations.dart';
+import '../theme/app_colors.dart';
 
 class ErrorPage extends StatelessWidget {
   final String? error;
@@ -31,7 +32,7 @@ class ErrorPage extends StatelessWidget {
                 const Icon(
                   Icons.error_outline,
                   size: 80,
-                  color: Colors.red,
+                  color: AppColors.error,
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -39,7 +40,7 @@ class ErrorPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: AppColors.error,
                   ),
                 ),
                 const SizedBox(height: 16),

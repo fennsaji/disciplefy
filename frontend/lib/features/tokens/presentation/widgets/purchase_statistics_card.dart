@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
@@ -77,7 +78,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     icon: Icons.shopping_cart,
                     label: context.tr('tokens.stats.total_purchases'),
                     value: statistics.totalPurchases.toString(),
-                    color: Colors.blue,
+                    color: AppColors.info,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -103,7 +104,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     icon: Icons.currency_rupee,
                     label: context.tr('tokens.stats.total_spent'),
                     value: '₹${statistics.totalSpent.toStringAsFixed(2)}',
-                    color: Colors.green,
+                    color: AppColors.success,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -115,7 +116,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     value: statistics.totalTokens > 0
                         ? '₹${(statistics.totalSpent / statistics.totalTokens).toStringAsFixed(3)}'
                         : '₹0.000',
-                    color: Colors.orange,
+                    color: AppColors.warning,
                   ),
                 ),
               ],
