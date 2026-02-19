@@ -158,53 +158,30 @@ export default function GamificationPage() {
         )}
 
         {/* Charts */}
-        {stats && (Object.keys(stats.by_category).length > 0 || Object.keys(stats.by_tier).length > 0) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Category Distribution */}
-            {Object.keys(stats.by_category).length > 0 && (
-              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Achievements by Category
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={Object.entries(stats.by_category).map(([name, value]) => ({ name, value }))}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {Object.keys(stats.by_category).map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Tier Distribution */}
-            {Object.keys(stats.by_tier).length > 0 && (
-              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Achievements by Tier
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={Object.entries(stats.by_tier).map(([name, value]) => ({ name, value }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
-                    <XAxis dataKey="name" stroke={getAxisStroke(isDark)} />
-                    <YAxis stroke={getAxisStroke(isDark)} />
-                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
-                    <Bar dataKey="value" fill="#8B5CF6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+        {stats && Object.keys(stats.by_category || {}).length > 0 && (
+          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Achievements by Category
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={Object.entries(stats.by_category).map(([name, value]) => ({ name, value }))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {Object.keys(stats.by_category).map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={getTooltipStyle(isDark)} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         )}
 
@@ -294,53 +271,30 @@ export default function GamificationPage() {
         )}
 
         {/* Charts */}
-        {stats && (Object.keys(stats.by_category || {}).length > 0 || Object.keys(stats.by_tier || {}).length > 0) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Category Distribution */}
-            {Object.keys(stats.by_category || {}).length > 0 && (
-              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Unlocks by Category
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={Object.entries(stats.by_category).map(([name, value]) => ({ name, value }))}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {Object.keys(stats.by_category).map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Tier Distribution */}
-            {Object.keys(stats.by_tier || {}).length > 0 && (
-              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Unlocks by Tier
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={Object.entries(stats.by_tier).map(([name, value]) => ({ name, value }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
-                    <XAxis dataKey="name" stroke={getAxisStroke(isDark)} />
-                    <YAxis stroke={getAxisStroke(isDark)} />
-                    <Tooltip contentStyle={getTooltipStyle(isDark)} />
-                    <Bar dataKey="value" fill="#3B82F6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+        {stats && Object.keys(stats.by_category || {}).length > 0 && (
+          <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Unlocks by Category
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={Object.entries(stats.by_category).map(([name, value]) => ({ name, value }))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {Object.keys(stats.by_category).map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={getTooltipStyle(isDark)} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         )}
 
