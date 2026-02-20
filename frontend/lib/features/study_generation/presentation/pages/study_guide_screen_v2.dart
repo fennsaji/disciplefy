@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/services/font_scale_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:uuid/uuid.dart';
@@ -322,11 +324,204 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   double? _savedScrollPosition;
   bool _isTransitioningFromStreaming = false;
 
+  // Study guide content font size (persisted, overrides app-level setting)
+  static const String _fontSizePrefsKey = 'study_guide_content_font_size';
+  static const double _fontSizeMin = 14.0;
+  static const double _fontSizeMax = 26.0;
+  static const double _fontSizeStep = 2.0;
+  double _contentFontSize = 18.0;
+
   @override
   void initState() {
     super.initState();
     _pageOpenedAt = DateTime.now();
+    _loadContentFontSize();
     _initializeStudyGuide();
+  }
+
+  Future<void> _loadContentFontSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getDouble(_fontSizePrefsKey);
+    if (saved != null) {
+      if (mounted) setState(() => _contentFontSize = saved);
+    } else {
+      // Default: base 18px scaled by the app-wide font scale setting
+      final scale = sl<FontScaleService>().scaleFactor;
+      final defaultSize = (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+      if (mounted) setState(() => _contentFontSize = defaultSize);
+    }
+  }
+
+  Future<void> _changeContentFontSize(double delta) async {
+    final newSize =
+        (_contentFontSize + delta).clamp(_fontSizeMin, _fontSizeMax);
+    if (newSize == _contentFontSize) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_fontSizePrefsKey, newSize);
+    if (mounted) setState(() => _contentFontSize = newSize);
+  }
+
+  void _showFontSizeSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final accentColor = Theme.of(ctx).colorScheme.primary;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Text Size',
+                  style: AppFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(ctx).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Decrease button
+                    IconButton(
+                      onPressed: _contentFontSize > _fontSizeMin
+                          ? () async {
+                              await _changeContentFontSize(-_fontSizeStep);
+                              setSheetState(() {});
+                            }
+                          : null,
+                      icon: Text(
+                        'A',
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: _contentFontSize > _fontSizeMin
+                              ? accentColor
+                              : Theme.of(ctx)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.3),
+                        ),
+                      ),
+                      style: IconButton.styleFrom(
+                        side: BorderSide(
+                          color: _contentFontSize > _fontSizeMin
+                              ? accentColor
+                              : Theme.of(ctx)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.2),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        minimumSize: const Size(52, 52),
+                      ),
+                      tooltip: 'Decrease font size',
+                    ),
+                    const SizedBox(width: 20),
+                    // Current size display
+                    Container(
+                      width: 72,
+                      height: 52,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${_contentFontSize.toInt()}',
+                        style: AppFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: accentColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    // Increase button
+                    IconButton(
+                      onPressed: _contentFontSize < _fontSizeMax
+                          ? () async {
+                              await _changeContentFontSize(_fontSizeStep);
+                              setSheetState(() {});
+                            }
+                          : null,
+                      icon: Text(
+                        'A',
+                        style: AppFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: _contentFontSize < _fontSizeMax
+                              ? accentColor
+                              : Theme.of(ctx)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.3),
+                        ),
+                      ),
+                      style: IconButton.styleFrom(
+                        side: BorderSide(
+                          color: _contentFontSize < _fontSizeMax
+                              ? accentColor
+                              : Theme.of(ctx)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.2),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        minimumSize: const Size(52, 52),
+                      ),
+                      tooltip: 'Increase font size',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Reset to app default
+                TextButton(
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove(_fontSizePrefsKey);
+                    final scale = sl<FontScaleService>().scaleFactor;
+                    final defaultSize =
+                        (18.0 * scale).clamp(_fontSizeMin, _fontSizeMax);
+                    await _changeContentFontSize(
+                        defaultSize - _contentFontSize);
+                    setSheetState(() {});
+                  },
+                  child: Text(
+                    'Reset to default',
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      color:
+                          Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -1217,6 +1412,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 tooltip: 'More options',
                 onSelected: (value) {
                   switch (value) {
+                    case 'font_size':
+                      _showFontSizeSheet();
+                      break;
                     case 'share':
                       _shareStudyGuide();
                       break;
@@ -1232,6 +1430,36 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   }
                 },
                 itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'font_size',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.text_fields,
+                          size: 20,
+                          color: accentColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Text Size',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${_contentFontSize.toInt()}px',
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: accentColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
                   PopupMenuItem(
                     value: 'share',
                     child: Row(
@@ -1919,6 +2147,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.studyGuideSummary),
               icon: Icons.summarize,
               content: _currentStudyGuide!.summary,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 0,
             ),
 
@@ -1929,6 +2158,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.studyGuideContext),
               icon: Icons.history_edu,
               content: _currentStudyGuide!.context,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 1,
             ),
 
@@ -1941,6 +2171,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 title: context.tr(TranslationKeys.studyGuidePassageReading),
                 icon: Icons.auto_stories,
                 content: _currentStudyGuide!.passage!,
+                contentFontSize: _contentFontSize,
                 isBeingRead: isReading && currentSection == 2,
               ),
 
@@ -1953,6 +2184,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.studyGuideInterpretation),
               icon: Icons.lightbulb_outline,
               content: _currentStudyGuide!.interpretation,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 3,
             ),
 
@@ -1963,6 +2195,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.studyGuideRelatedVerses),
               icon: Icons.menu_book,
               content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 4,
             ),
 
@@ -1977,6 +2210,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   .entries
                   .map((entry) => '${entry.key + 1}. ${entry.value}')
                   .join('\n\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 5,
             ),
 
@@ -1991,6 +2225,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   .entries
                   .map((entry) => '• ${entry.value}')
                   .join('\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 6,
             ),
           ],
@@ -2017,6 +2252,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.sermonThesis),
               icon: Icons.lightbulb_outline,
               content: _currentStudyGuide!.summary,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 0,
             ),
 
@@ -2027,6 +2263,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.sermonContext),
               icon: Icons.history_edu,
               content: _currentStudyGuide!.context,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 1,
             ),
 
@@ -2039,6 +2276,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 title: context.tr(TranslationKeys.studyGuidePassageReading),
                 icon: Icons.auto_stories,
                 content: _currentStudyGuide!.passage!,
+                contentFontSize: _contentFontSize,
                 isBeingRead: isReading && currentSection == 2,
               ),
 
@@ -2051,6 +2289,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.sermonBody),
               icon: Icons.menu_book,
               content: _currentStudyGuide!.interpretation,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 3,
             ),
 
@@ -2061,6 +2300,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.sermonSupportingVerses),
               icon: Icons.bookmark_border,
               content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 4,
             ),
 
@@ -2075,6 +2315,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   .entries
                   .map((entry) => '${entry.key + 1}. ${entry.value}')
                   .join('\n\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 5,
             ),
 
@@ -2108,6 +2349,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           content: _currentStudyGuide!.summary,
           icon: Icons.lightbulb_outline,
           isHighlight: true,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 16),
@@ -2117,6 +2359,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           title: context.tr(TranslationKeys.studyGuideContext),
           content: _currentStudyGuide!.context,
           icon: Icons.history_edu_outlined,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 16),
@@ -2128,6 +2371,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             title: context.tr(TranslationKeys.studyGuidePassageReading),
             content: _currentStudyGuide!.passage!,
             icon: Icons.menu_book_outlined,
+            contentFontSize: _contentFontSize,
           ),
 
         if (_currentStudyGuide!.passage != null &&
@@ -2139,6 +2383,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           title: context.tr(TranslationKeys.studyGuideKeyVerse),
           content: _currentStudyGuide!.interpretation,
           icon: Icons.auto_stories_outlined,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 16),
@@ -2149,6 +2394,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             title: context.tr(TranslationKeys.studyGuideRelatedVerses),
             content: _currentStudyGuide!.relatedVerses.join('\n\n'),
             icon: Icons.format_list_bulleted,
+            contentFontSize: _contentFontSize,
           ),
 
         const SizedBox(height: 16),
@@ -2163,6 +2409,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 .map((entry) => '${entry.key + 1}. ${entry.value}')
                 .join('\n\n'),
             icon: Icons.forum_outlined,
+            contentFontSize: _contentFontSize,
           ),
 
         const SizedBox(height: 16),
@@ -2177,6 +2424,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 .map((entry) => '• ${entry.value}')
                 .join('\n'),
             icon: Icons.volunteer_activism_outlined,
+            contentFontSize: _contentFontSize,
           ),
       ],
     );
@@ -2238,6 +2486,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   context.tr(TranslationKeys.studyGuideComprehensiveOverview),
               icon: Icons.summarize,
               content: _currentStudyGuide!.summary,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 0,
             ),
 
@@ -2248,6 +2497,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.studyGuideHistoricalContext),
               icon: Icons.history_edu,
               content: _currentStudyGuide!.context,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 1,
             ),
 
@@ -2260,6 +2510,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 title: context.tr(TranslationKeys.studyGuidePassageReading),
                 icon: Icons.auto_stories,
                 content: _currentStudyGuide!.passage!,
+                contentFontSize: _contentFontSize,
                 isBeingRead: isReading && currentSection == 2,
               ),
 
@@ -2273,6 +2524,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   context.tr(TranslationKeys.studyGuideInDepthInterpretation),
               icon: Icons.lightbulb_outline,
               content: _currentStudyGuide!.interpretation,
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 3,
             ),
 
@@ -2283,6 +2535,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               title: context.tr(TranslationKeys.studyGuideScriptureConnections),
               icon: Icons.menu_book,
               content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 4,
             ),
 
@@ -2297,6 +2550,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   .entries
                   .map((entry) => '${entry.key + 1}. ${entry.value}')
                   .join('\n\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 5,
             ),
 
@@ -2311,6 +2565,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   .entries
                   .map((entry) => '• ${entry.value}')
                   .join('\n'),
+              contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 6,
             ),
           ],
@@ -2366,6 +2621,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           title: context.tr(TranslationKeys.lectioScriptureForMeditation),
           content: _currentStudyGuide!.summary,
           icon: Icons.menu_book,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 24),
@@ -2375,6 +2631,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           title: context.tr(TranslationKeys.lectioAboutPracticeEmoji),
           content: _currentStudyGuide!.context,
           icon: Icons.info_outline,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 24),
@@ -2386,6 +2643,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             title: context.tr(TranslationKeys.studyGuidePassageReading),
             content: _currentStudyGuide!.passage!,
             icon: Icons.auto_stories,
+            contentFontSize: _contentFontSize,
           ),
 
         if (_currentStudyGuide!.passage != null &&
@@ -2398,6 +2656,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           subtitle: context.tr(TranslationKeys.lectioReadMeditate),
           content: _currentStudyGuide!.interpretation,
           icon: Icons.auto_stories,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 24),
@@ -2408,6 +2667,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             title: context.tr(TranslationKeys.lectioFocusWordsEmoji),
             content: _currentStudyGuide!.relatedVerses.join('\n• '),
             icon: Icons.highlight,
+            contentFontSize: _contentFontSize,
           ),
 
         const SizedBox(height: 24),
@@ -2418,6 +2678,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           subtitle: context.tr(TranslationKeys.lectioPrayRest),
           content: _currentStudyGuide!.reflectionQuestions.join('\n\n'),
           icon: Icons.self_improvement,
+          contentFontSize: _contentFontSize,
         ),
 
         const SizedBox(height: 24),
@@ -2428,6 +2689,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
             content: _currentStudyGuide!.prayerPoints.join('\n\n'),
             icon: Icons.wb_sunny_outlined,
+            contentFontSize: _contentFontSize,
           ),
       ],
     );
@@ -2559,7 +2821,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           MarkdownWithScripture(
             data: content,
             textStyle: AppFonts.inter(
-              fontSize: 18,
+              fontSize: _contentFontSize,
               height: 1.6,
               color: theme.colorScheme.onPrimaryContainer,
             ),
@@ -3266,12 +3528,14 @@ class _StudySection extends StatelessWidget {
   final IconData icon;
   final String content;
   final bool isBeingRead;
+  final double contentFontSize;
 
   const _StudySection({
     required this.title,
     required this.icon,
     required this.content,
     this.isBeingRead = false,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -3399,7 +3663,7 @@ class _StudySection extends StatelessWidget {
           MarkdownWithScripture(
             data: _cleanDuplicateTitle(content, title),
             textStyle: AppFonts.inter(
-              fontSize: 18,
+              fontSize: contentFontSize,
               height: 1.6,
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -3487,12 +3751,14 @@ class _QuickStudySection extends StatelessWidget {
   final String content;
   final IconData icon;
   final bool isHighlight;
+  final double contentFontSize;
 
   const _QuickStudySection({
     required this.title,
     required this.content,
     required this.icon,
     this.isHighlight = false,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -3558,7 +3824,7 @@ class _QuickStudySection extends StatelessWidget {
           MarkdownWithScripture(
             data: _cleanDuplicateTitle(content, title),
             textStyle: AppFonts.inter(
-              fontSize: 18,
+              fontSize: contentFontSize,
               fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
               height: 1.6,
               color: Theme.of(context).colorScheme.onSurface,
@@ -3596,12 +3862,14 @@ class _LectioStudySection extends StatelessWidget {
   final String? subtitle;
   final String content;
   final IconData icon;
+  final double contentFontSize;
 
   const _LectioStudySection({
     required this.title,
     this.subtitle,
     required this.content,
     required this.icon,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -3703,7 +3971,7 @@ class _LectioStudySection extends StatelessWidget {
           MarkdownWithScripture(
             data: _cleanDuplicateTitle(content, title),
             textStyle: AppFonts.inter(
-              fontSize: 18,
+              fontSize: contentFontSize,
               fontWeight: FontWeight.w400,
               height: 1.7, // Extra line height for meditative reading
               color: Theme.of(context).colorScheme.onSurface,
