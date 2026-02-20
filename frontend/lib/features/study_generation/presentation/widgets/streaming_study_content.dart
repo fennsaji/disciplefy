@@ -1451,10 +1451,11 @@ class _StreamingSectionState extends State<_StreamingSection>
               // Section Content with markdown formatting AND clickable scripture
               MarkdownWithScripture(
                 data: _cleanDuplicateTitle(widget.content, widget.title),
-                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onBackground,
-                      height: 1.6,
-                    ),
+                textStyle: AppFonts.inter(
+                  fontSize: 18,
+                  height: 1.6,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -1696,13 +1697,13 @@ class _QuickSectionState extends State<_QuickSection>
               // Content with markdown formatting AND clickable scripture
               MarkdownWithScripture(
                 data: _cleanDuplicateTitle(widget.content, widget.title),
-                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: widget.isHighlight
-                          ? FontWeight.w500
-                          : FontWeight.w400,
-                      color: Theme.of(context).colorScheme.onBackground,
-                      height: 1.6,
-                    ),
+                textStyle: AppFonts.inter(
+                  fontSize: 18,
+                  fontWeight:
+                      widget.isHighlight ? FontWeight.w500 : FontWeight.w400,
+                  height: 1.6,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -1957,11 +1958,12 @@ class _LectioSectionState extends State<_LectioSection>
               // Content with meditative typography and markdown formatting
               MarkdownWithScripture(
                 data: _cleanDuplicateTitle(widget.content, widget.title),
-                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: Theme.of(context).colorScheme.onBackground,
-                      height: 1.7, // Extra line height for meditative reading
-                    ),
+                textStyle: AppFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                  height: 1.7, // Extra line height for meditative reading
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ],
           ),
