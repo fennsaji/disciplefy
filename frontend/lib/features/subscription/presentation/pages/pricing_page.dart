@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
@@ -60,10 +61,12 @@ class _PricingPageState extends State<PricingPage> {
       final provider = widget.platformService.getPreferredProvider();
       final providerString = widget.platformService.providerToString(provider);
 
+      final locale = sl<TranslationService>().currentLanguage.code;
       final response = await widget.dataSource.getPlans(
         provider: providerString,
         region: 'IN',
         promoCode: promoCode,
+        locale: locale,
       );
 
       setState(() {
@@ -670,11 +673,17 @@ class _PricingPageState extends State<PricingPage> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             const SizedBox(width: 6),
-            Text(
-              context.tr(TranslationKeys.pricingSecurePayments),
-              style: AppFonts.inter(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            Flexible(
+              child: Text(
+                context.tr(TranslationKeys.pricingSecurePayments),
+                style: AppFonts.inter(
+                  fontSize: 12,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
               ),
             ),
           ],

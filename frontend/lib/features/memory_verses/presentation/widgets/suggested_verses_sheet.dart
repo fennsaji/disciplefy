@@ -515,6 +515,10 @@ class _SuggestedVerseCard extends StatelessWidget {
                 else
                   FilledButton.icon(
                     onPressed: onAdd,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brandSecondary,
+                      foregroundColor: Colors.white,
+                    ),
                     icon: const Icon(Icons.add, size: 18),
                     label: Text(context.tr(TranslationKeys.addToMemoryDeck)),
                   ),

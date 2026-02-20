@@ -40,6 +40,8 @@ import '../../../subscription/presentation/bloc/usage_stats_state.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_banner.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_sheet.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
+import '../../../study_generation/data/repositories/token_cost_repository.dart';
 import '../../../subscription/presentation/services/usage_threshold_service.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
@@ -250,13 +252,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
         Logger.debug(
             '✅ [HOME] Using recommended mode for scripture: Deep Dive');
-        _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
+        await _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
         final savedMode = studyModeFromString(savedModeRaw);
         if (savedMode != null) {
           Logger.debug('✅ [HOME] Using saved study mode: ${savedMode.name}');
-          _navigateToDailyVerseStudy(currentState, savedMode, false);
+          await _navigateToDailyVerseStudy(currentState, savedMode, false);
         } else {
           // Invalid mode string - fallback to mode selection sheet
           Logger.debug(
@@ -276,7 +278,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             recommendedMode: recommendedMode,
           );
           if (result != null && mounted) {
-            _navigateToDailyVerseStudy(
+            await _navigateToDailyVerseStudy(
               currentState,
               result['mode'] as StudyMode,
               result['rememberChoice'] as bool,
@@ -307,7 +309,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           recommendedMode: recommendedMode,
         );
         if (result != null && mounted) {
-          _navigateToDailyVerseStudy(
+          await _navigateToDailyVerseStudy(
             currentState,
             result['mode'] as StudyMode,
             result['rememberChoice'] as bool,
@@ -328,12 +330,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Navigate to daily verse study guide with selected mode
-  void _navigateToDailyVerseStudy(
+  Future<void> _navigateToDailyVerseStudy(
     DailyVerseState currentState,
     StudyMode mode,
     bool rememberChoice, {
     StudyMode? recommendedMode,
-  }) {
+  }) async {
     _isNavigating = true;
 
     // Save user's mode preference if they chose to remember
@@ -363,6 +365,25 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     } else {
       _isNavigating = false;
       return;
+    }
+
+    // Check if user has sufficient tokens for this mode
+    final tokenState = context.read<TokenBloc>().state;
+    if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
+      final costResult = await sl<TokenCostRepository>()
+          .getTokenCost(languageCode, mode.value);
+      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
+      if (requiredCost > 0 &&
+          tokenState.tokenStatus.totalTokens < requiredCost &&
+          mounted) {
+        setState(() => _isNavigating = false);
+        await InsufficientTokensDialog.show(
+          context,
+          tokenStatus: tokenState.tokenStatus,
+          requiredTokens: requiredCost,
+        );
+        return;
+      }
     }
 
     final encodedReference = Uri.encodeComponent(verseReference);
@@ -574,9 +595,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   Widget _buildMemoryVersesIconButton() {
     return IconButton(
       onPressed: () => _handleMemoryVersesTap(),
-      icon: const Icon(
+      icon: Icon(
         Icons.psychology_outlined,
-        color: AppTheme.onSurfaceVariant,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         size: 24,
       ),
       tooltip: context.tr(TranslationKeys.homeMemoryVerses),
@@ -701,9 +722,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       onPressed: () {
         context.go('/settings');
       },
-      icon: const Icon(
+      icon: Icon(
         Icons.settings_outlined,
-        color: AppTheme.onSurfaceVariant,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         size: 24,
       ),
     );
@@ -1386,14 +1407,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       // User prefers recommended → auto-select standard for topic type
       Logger.debug(
           '✅ [HOME] Using recommended mode for topic: ${recommendedMode.name}');
-      _navigateToStudyGuideWithMode(topic, recommendedMode, false);
+      await _navigateToStudyGuideWithMode(topic, recommendedMode, false);
     } else if (savedModeRaw != null) {
       // User has a specific saved mode → use it directly
       final savedMode = studyModeFromString(savedModeRaw);
       if (savedMode != null) {
         Logger.debug(
             '✅ [HOME] Using saved study mode for topic: ${savedMode.name}');
-        _navigateToStudyGuideWithMode(topic, savedMode, false);
+        await _navigateToStudyGuideWithMode(topic, savedMode, false);
       } else {
         // Invalid mode string — fall back to sheet
         Logger.debug(
@@ -1404,7 +1425,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           recommendedMode: recommendedMode,
         );
         if (result != null && mounted) {
-          _navigateToStudyGuideWithMode(
+          await _navigateToStudyGuideWithMode(
             topic,
             result['mode'] as StudyMode,
             result['rememberChoice'] as bool,
@@ -1421,7 +1442,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         recommendedMode: recommendedMode,
       );
       if (result != null && mounted) {
-        _navigateToStudyGuideWithMode(
+        await _navigateToStudyGuideWithMode(
           topic,
           result['mode'] as StudyMode,
           result['rememberChoice'] as bool,
@@ -1431,11 +1452,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Navigate to study guide with selected mode
-  void _navigateToStudyGuideWithMode(
+  Future<void> _navigateToStudyGuideWithMode(
     RecommendedGuideTopic topic,
     StudyMode mode,
     bool rememberChoice,
-  ) {
+  ) async {
     _isNavigating = true;
 
     // Save user's mode preference if they chose to remember
@@ -1447,15 +1468,35 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
 
-    VerseLanguage selectedLanguage =
+    VerseLanguage selectedVerseLanguage =
         VerseLanguage.english; // Default to English
     if (currentState is DailyVerseLoaded) {
-      selectedLanguage = currentState.currentLanguage;
+      selectedVerseLanguage = currentState.currentLanguage;
     } else if (currentState is DailyVerseOffline) {
-      selectedLanguage = currentState.currentLanguage;
+      selectedVerseLanguage = currentState.currentLanguage;
     }
 
-    final languageCode = _getLanguageCode(selectedLanguage);
+    final languageCode = _getLanguageCode(selectedVerseLanguage);
+
+    // Check if user has sufficient tokens for this mode
+    final tokenState = context.read<TokenBloc>().state;
+    if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
+      final costResult = await sl<TokenCostRepository>()
+          .getTokenCost(languageCode, mode.value);
+      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
+      if (requiredCost > 0 &&
+          tokenState.tokenStatus.totalTokens < requiredCost &&
+          mounted) {
+        setState(() => _isNavigating = false);
+        await InsufficientTokensDialog.show(
+          context,
+          tokenStatus: tokenState.tokenStatus,
+          requiredTokens: requiredCost,
+        );
+        return;
+      }
+    }
+
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
     final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';

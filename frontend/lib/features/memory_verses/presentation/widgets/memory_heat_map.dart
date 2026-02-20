@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Memory Heat Map Calendar Widget - GitHub-style contribution calendar.
 class MemoryHeatMap extends StatelessWidget {
@@ -43,14 +45,14 @@ class MemoryHeatMap extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Practice Activity',
+                      context.tr(TranslationKeys.heatMapTitle),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Last 12 weeks',
+                      context.tr(TranslationKeys.heatMapSubtitle),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[500],
@@ -68,7 +70,7 @@ class MemoryHeatMap extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Legend
-            _buildLegend(isDark),
+            _buildLegend(context, isDark),
           ],
         ),
       ),
@@ -93,7 +95,8 @@ class MemoryHeatMap extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            '$currentStreak day streak',
+            context.tr(
+                TranslationKeys.heatMapDayStreak, {'count': '$currentStreak'}),
             style: TextStyle(
               color: primaryColor,
               fontWeight: FontWeight.w600,
@@ -139,7 +142,7 @@ class MemoryHeatMap extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Day labels
-              _buildDayColumn(),
+              _buildDayColumn(context),
               const SizedBox(width: 8),
 
               // Week columns
@@ -213,8 +216,16 @@ class MemoryHeatMap extends StatelessWidget {
     );
   }
 
-  Widget _buildDayColumn() {
-    const days = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+  Widget _buildDayColumn(BuildContext context) {
+    final days = [
+      '',
+      context.tr(TranslationKeys.heatMapMon),
+      '',
+      context.tr(TranslationKeys.heatMapWed),
+      '',
+      context.tr(TranslationKeys.heatMapFri),
+      ''
+    ];
 
     return Column(
       children: days.map((day) {
@@ -278,12 +289,13 @@ class MemoryHeatMap extends StatelessWidget {
     );
   }
 
-  Widget _buildLegend(bool isDark) {
+  Widget _buildLegend(BuildContext context, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Longest streak: $longestStreak days',
+          context.tr(
+              TranslationKeys.heatMapLongestStreak, {'days': '$longestStreak'}),
           style: TextStyle(
             fontSize: 11,
             color: Colors.grey[500],
@@ -293,7 +305,7 @@ class MemoryHeatMap extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Less',
+              context.tr(TranslationKeys.heatMapLess),
               style: TextStyle(fontSize: 10, color: Colors.grey[500]),
             ),
             const SizedBox(width: 4),
@@ -303,7 +315,7 @@ class MemoryHeatMap extends StatelessWidget {
             _legendBox(_getCellColor(6, isDark)),
             const SizedBox(width: 4),
             Text(
-              'More',
+              context.tr(TranslationKeys.heatMapMore),
               style: TextStyle(fontSize: 10, color: Colors.grey[500]),
             ),
           ],

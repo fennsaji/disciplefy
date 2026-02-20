@@ -436,7 +436,7 @@ class _ProgressiveRevealPracticePageState
                                 context.tr(TranslationKeys.practiceSubmit)),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: AppColors.success,
+                              backgroundColor: AppColors.brandSecondary,
                               foregroundColor: Colors.white,
                             ),
                           ),

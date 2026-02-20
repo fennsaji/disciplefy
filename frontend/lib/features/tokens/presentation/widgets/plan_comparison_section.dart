@@ -117,12 +117,16 @@ class PlanCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      title,
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                     if (isCurrentPlan) ...[
@@ -153,6 +157,8 @@ class PlanCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: _getPlanColor(plan),
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
                 Text(
                   description,
@@ -163,6 +169,8 @@ class PlanCard extends StatelessWidget {
                         .onSurface
                         .withOpacity(0.6),
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ],
             ),
