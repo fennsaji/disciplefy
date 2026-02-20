@@ -219,9 +219,9 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
-                    'Rank',
-                    style: TextStyle(
+                  Text(
+                    context.tr(TranslationKeys.memoryChampionsRank),
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 10,
                     ),
@@ -237,9 +237,9 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Your Progress',
-                  style: TextStyle(
+                Text(
+                  context.tr(TranslationKeys.memoryChampionsYourProgress),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -250,13 +250,13 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
                   children: [
                     _buildStatBadge(
                       icon: Icons.emoji_events,
-                      label: 'Master',
+                      label: context.tr(TranslationKeys.memoryChampionsMaster),
                       value: '$userMasterVerses',
                     ),
                     const SizedBox(width: 12),
                     _buildStatBadge(
                       icon: Icons.local_fire_department,
-                      label: 'Streak',
+                      label: context.tr(TranslationKeys.memoryChampionsStreak),
                       value: '$userStreak',
                     ),
                   ],

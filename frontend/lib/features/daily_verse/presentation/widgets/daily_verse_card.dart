@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -709,7 +710,7 @@ class DailyVerseCard extends StatelessWidget {
         action: SnackBarAction(
           label: 'Review Now',
           textColor: Colors.white,
-          onPressed: () => Navigator.pushNamed(context, '/memory-verses'),
+          onPressed: () => GoRouter.of(context).go('/memory-verses'),
         ),
       ),
     );

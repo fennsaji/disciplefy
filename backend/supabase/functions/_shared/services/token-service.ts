@@ -243,7 +243,7 @@ export class TokenService {
             user_plan: userPlan,
             tokens_added: tokenAmount,
             source: 'purchase',
-            new_purchased_balance: data.new_purchased_balance
+            new_purchased_balance: data.new_balance
           },
           context
         )
@@ -251,7 +251,7 @@ export class TokenService {
 
       return {
         success: true,
-        newPurchasedBalance: data.new_purchased_balance
+        newPurchasedBalance: data.new_balance
       }
 
     } catch (error) {

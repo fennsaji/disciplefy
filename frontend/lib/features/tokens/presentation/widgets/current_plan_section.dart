@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -85,7 +86,7 @@ class CurrentPlanSection extends StatelessWidget {
                       color: isDark
                           ? Theme.of(context).colorScheme.onSurface
                           : planColor),
-                  label: const Text('My Plan'),
+                  label: Text(context.tr(TranslationKeys.settingsMyPlan)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: isDark
                         ? Theme.of(context).colorScheme.onSurface
@@ -183,7 +184,7 @@ class CurrentPlanSection extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Free until ${_formatDate(trialEndDate!)}',
+              '${context.tr(TranslationKeys.myPlanFreeUntil)} ${_formatDate(trialEndDate!, context)}',
               style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -235,21 +236,8 @@ class CurrentPlanSection extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  String _formatDate(DateTime date, BuildContext context) {
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat('MMMM d, y', locale).format(date);
   }
 }

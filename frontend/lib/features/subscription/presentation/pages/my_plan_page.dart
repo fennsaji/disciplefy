@@ -9,6 +9,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/i18n/translation_service.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../utils/plan_features_extractor.dart';
 import '../bloc/subscription_bloc.dart';
@@ -56,8 +57,9 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ? tokenState.tokenStatus.userPlan
           : UserPlan.free;
 
+      final locale = sl<TranslationService>().currentLanguage.code;
       final response = await sl<SubscriptionRemoteDataSource>()
-          .getPlans(provider: 'razorpay');
+          .getPlans(provider: 'razorpay', locale: locale);
 
       final plan = response.plans.firstWhere(
         (p) => p.planCode == userPlan.name,
@@ -296,7 +298,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
       statusIcon = Icons.person;
     } else if (userPlan == UserPlan.standard && isTrialActive) {
       statusText = context.tr(TranslationKeys.myPlanTrialActive);
-      statusColor = AppColors.brandPrimary;
+      statusColor =
+          isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
       statusIcon = Icons.auto_awesome;
     } else if (userPlan == UserPlan.free) {
       statusText = context.tr(TranslationKeys.myPlanFreePlan);

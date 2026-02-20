@@ -59,8 +59,10 @@ class OptionsMenuSheet extends StatelessWidget {
           if (onViewChampions != null)
             ListTile(
               leading: const Icon(Icons.emoji_events_outlined),
-              title: const Text('Champions'),
-              subtitle: const Text('View top memorizers'),
+              title:
+                  Text(context.tr(TranslationKeys.optionsMenuChampionsTitle)),
+              subtitle: Text(
+                  context.tr(TranslationKeys.optionsMenuChampionsSubtitle)),
               onTap: onViewChampions,
             ),
           // Statistics
