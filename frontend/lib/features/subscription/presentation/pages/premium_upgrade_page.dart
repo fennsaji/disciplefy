@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/platform_detection_service.dart';
@@ -49,8 +50,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       final provider = platformService
           .providerToString(platformService.getPreferredProvider());
 
-      final response =
-          await dataSource.getPlans(provider: provider, region: 'IN');
+      final locale = sl<TranslationService>().currentLanguage.code;
+      final response = await dataSource.getPlans(
+          provider: provider, region: 'IN', locale: locale);
 
       SubscriptionPlanModel? premium;
       SubscriptionPlanModel? plus;

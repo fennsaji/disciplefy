@@ -8,9 +8,12 @@
  * - provider: Payment provider (razorpay, google_play, apple_appstore)
  * - region: Region code (default: IN)
  * - promo_code: Optional promotional code to apply discount
+ * - locale: BCP-47 language code for marketing feature translations (default: en)
+ *           Supported: en, hi, ml
  *
  * Returns:
  * - plans: Array of available plans with pricing
+ *          marketing_features is returned in the requested locale (falls back to English)
  * - promotional_campaign: Applied promo details (if any)
  */
 
@@ -40,6 +43,29 @@ interface Plan {
   }
 }
 
+/** Supported locale codes for marketing feature translations. */
+const SUPPORTED_LOCALES = ['en', 'hi', 'ml'] as const
+type SupportedLocale = typeof SUPPORTED_LOCALES[number]
+
+/**
+ * Resolves the localised marketing features for a plan.
+ * Returns the translated array for non-English locales when available,
+ * otherwise falls back to the English marketing_features.
+ */
+function resolveMarketingFeatures(
+  englishFeatures: string[],
+  i18n: Record<string, string[]> | null | undefined,
+  locale: SupportedLocale,
+): string[] {
+  if (locale === 'en' || !i18n) return englishFeatures
+  const translated = i18n[locale]
+  // Only use translation if it exists and has the same length as the source
+  if (Array.isArray(translated) && translated.length === englishFeatures.length) {
+    return translated
+  }
+  return englishFeatures
+}
+
 interface PromoCampaign {
   id: string
   code: string
@@ -61,8 +87,12 @@ serve(async (req) => {
     const provider = url.searchParams.get('provider') || 'razorpay'
     const region = url.searchParams.get('region') || 'IN'
     const promoCode = url.searchParams.get('promo_code')
+    const rawLocale = url.searchParams.get('locale') || 'en'
+    const locale: SupportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(rawLocale)
+      ? rawLocale as SupportedLocale
+      : 'en'
 
-    console.log('[get-plans] Request:', { provider, region, promo_code: promoCode })
+    console.log('[get-plans] Request:', { provider, region, promo_code: promoCode, locale })
 
     // Validate provider
     const validProviders = ['razorpay', 'google_play', 'apple_appstore']
@@ -96,6 +126,7 @@ serve(async (req) => {
         interval,
         features,
         marketing_features,
+        marketing_features_i18n,
         description,
         sort_order,
         subscription_plan_providers!left (
@@ -173,6 +204,7 @@ serve(async (req) => {
       .map((plan: any) => {
         // For Free plan, use default pricing values
         if (plan.plan_code === 'free') {
+          const englishFeatures: string[] = plan.marketing_features ?? []
           return {
             plan_id: plan.id,
             plan_code: plan.plan_code,
@@ -180,7 +212,11 @@ serve(async (req) => {
             tier: plan.tier,
             interval: plan.interval,
             features: plan.features,
-            marketing_features: plan.marketing_features ?? [],
+            marketing_features: resolveMarketingFeatures(
+              englishFeatures,
+              plan.marketing_features_i18n,
+              locale,
+            ),
             description: plan.description,
             sort_order: plan.sort_order,
             pricing: {
@@ -229,6 +265,7 @@ serve(async (req) => {
           }
         }
 
+        const englishFeatures: string[] = plan.marketing_features ?? []
         return {
           plan_id: plan.id,
           plan_code: plan.plan_code,
@@ -236,7 +273,11 @@ serve(async (req) => {
           tier: plan.tier,
           interval: plan.interval,
           features: plan.features,
-          marketing_features: plan.marketing_features ?? [],
+          marketing_features: resolveMarketingFeatures(
+            englishFeatures,
+            plan.marketing_features_i18n,
+            locale,
+          ),
           description: plan.description,
           sort_order: plan.sort_order,
           pricing: {

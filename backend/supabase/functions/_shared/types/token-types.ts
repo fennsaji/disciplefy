@@ -292,7 +292,7 @@ export interface DatabaseUserTokensResult {
  */
 export interface DatabasePurchaseResult {
   readonly success: boolean
-  readonly new_purchased_balance: number
+  readonly new_balance: number
   readonly error_message?: string
 }
 

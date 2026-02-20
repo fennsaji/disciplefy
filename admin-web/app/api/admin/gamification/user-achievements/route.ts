@@ -97,7 +97,16 @@ export async function GET(request: NextRequest) {
       (achievements || []).map(a => [a.id, a])
     )
 
-    // Combine data
+    // Derive tier from xp_reward since the DB has no tier column
+    const getTierFromXP = (xp: number): string => {
+      if (xp <= 25) return 'bronze'
+      if (xp <= 75) return 'silver'
+      if (xp <= 200) return 'gold'
+      if (xp <= 500) return 'platinum'
+      return 'diamond'
+    }
+
+    // Combine data — DB uses name_en (not title) and has no tier column
     const userAchievementsWithDetails = (userAchievements || []).map(ua => {
       const profile = profilesMap[ua.user_id]
       const achievement = achievementsMap[ua.achievement_id]
@@ -108,9 +117,9 @@ export async function GET(request: NextRequest) {
         user_name: profile
           ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'N/A'
           : 'N/A',
-        achievement_title: achievement?.title || 'N/A',
+        achievement_title: achievement?.name_en || 'N/A',
         achievement_category: achievement?.category || 'N/A',
-        achievement_tier: achievement?.tier || 'N/A',
+        achievement_tier: achievement ? getTierFromXP(achievement.xp_reward || 0) : 'N/A',
         achievement_icon: achievement?.icon || '🏆',
         xp_reward: achievement?.xp_reward || 0,
       }

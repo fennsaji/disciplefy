@@ -144,6 +144,7 @@ abstract class SubscriptionRemoteDataSource {
     required String provider,
     String? region,
     String? promoCode,
+    String? locale,
   });
 
   /// Validates a promotional code.
@@ -1052,16 +1053,18 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     required String provider,
     String? region,
     String? promoCode,
+    String? locale,
   }) async {
     try {
       Logger.debug(
-          '💎 [SUBSCRIPTION_API] Fetching plans for provider: $provider, region: $region, promo: $promoCode');
+          '💎 [SUBSCRIPTION_API] Fetching plans for provider: $provider, region: $region, promo: $promoCode, locale: $locale');
 
       // Build query parameters
       final queryParams = {
         'provider': provider,
         if (region != null) 'region': region,
         if (promoCode != null) 'promo_code': promoCode,
+        if (locale != null) 'locale': locale,
       };
 
       // Call Supabase Edge Function

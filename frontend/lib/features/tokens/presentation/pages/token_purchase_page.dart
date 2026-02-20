@@ -383,11 +383,11 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           tabs: [
             Tab(
               icon: Icon(Icons.loyalty),
-              text: 'Packages',
+              text: context.tr(TranslationKeys.tokenPurchasePackages),
             ),
             Tab(
               icon: Icon(Icons.edit),
-              text: 'Custom',
+              text: context.tr(TranslationKeys.tokenPurchaseCustom),
             ),
           ],
         ),
@@ -423,7 +423,8 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary),
           SizedBox(width: 12),
           Text(
-            'Current Balance: ${widget.tokenStatus.availableTokens} tokens',
+            context.tr(TranslationKeys.tokenPurchaseCurrentBalance,
+                {'tokens': widget.tokenStatus.availableTokens.toString()}),
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
@@ -667,7 +668,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         child: ElevatedButton(
           onPressed: isValid && !_isLoading ? _handlePurchase : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
+            backgroundColor: AppColors.brandSecondary,
             foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
@@ -685,7 +686,8 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                   ),
                 )
               : Text(
-                  'Purchase $tokenAmount Tokens',
+                  context.tr(TranslationKeys.tokenPurchaseButton,
+                      {'amount': tokenAmount.toString()}),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
         ),

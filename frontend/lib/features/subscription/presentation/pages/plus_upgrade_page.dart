@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -50,8 +53,9 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
       final provider = platformService
           .providerToString(platformService.getPreferredProvider());
 
-      final response =
-          await dataSource.getPlans(provider: provider, region: 'IN');
+      final locale = sl<TranslationService>().currentLanguage.code;
+      final response = await dataSource.getPlans(
+          provider: provider, region: 'IN', locale: locale);
 
       SubscriptionPlanModel? plus;
       SubscriptionPlanModel? standard;
@@ -115,7 +119,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Upgrade to Plus',
+          context.tr(TranslationKeys.upgradeToPlus),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: _plusColor,
@@ -130,7 +134,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
             onPressed: () => context
                 .read<SubscriptionBloc>()
                 .add(const GetActiveSubscription()),
-            tooltip: 'Check Status',
+            tooltip: context.tr(TranslationKeys.premiumCheckStatus),
           ),
         ],
       ),
@@ -272,7 +276,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                'Most Popular',
+                context.tr(TranslationKeys.pricingMostPopular),
                 style: AppFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -317,7 +321,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    '/month',
+                    context.tr(TranslationKeys.pricingPerMonth),
                     style: AppFonts.inter(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
@@ -334,7 +338,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'Cancel anytime • Billed monthly',
+                context.tr(TranslationKeys.premiumCancelAnytime),
                 style: AppFonts.inter(
                   fontSize: 12,
                   color: Colors.white.withOpacity(0.95),
@@ -352,7 +356,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'What you get with Plus',
+          context.tr(TranslationKeys.whatYouGetPlus),
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -523,7 +527,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 const Icon(Icons.diamond_rounded),
                 const SizedBox(width: 8),
                 Text(
-                  'Upgrade to Plus',
+                  context.tr(TranslationKeys.upgradeToPlus),
                   style:
                       AppFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
                 ),

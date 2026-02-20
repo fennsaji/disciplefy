@@ -26,7 +26,7 @@ class PersonalizationPromptCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: colorScheme.primary.withValues(alpha: 0.3),
+          color: colorScheme.primary.withValues(alpha: 0.6),
         ),
       ),
       child: Container(
@@ -36,8 +36,8 @@ class PersonalizationPromptCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              colorScheme.primaryContainer.withValues(alpha: 0.3),
-              colorScheme.secondaryContainer.withValues(alpha: 0.2),
+              colorScheme.primaryContainer.withValues(alpha: 0.55),
+              colorScheme.secondaryContainer.withValues(alpha: 0.4),
             ],
           ),
         ),
@@ -50,7 +50,7 @@ class PersonalizationPromptCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -76,7 +76,7 @@ class PersonalizationPromptCard extends StatelessWidget {
                         context
                             .tr(TranslationKeys.homePersonalizePromptSubtitle),
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                          color: colorScheme.onSurface.withValues(alpha: 0.75),
                         ),
                       ),
                     ],
@@ -88,7 +88,7 @@ class PersonalizationPromptCard extends StatelessWidget {
             Text(
               context.tr(TranslationKeys.homePersonalizePromptDescription),
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 16),
@@ -98,7 +98,8 @@ class PersonalizationPromptCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onSkip,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.onSurfaceVariant,
+                      foregroundColor: colorScheme.onSurface,
+                      side: BorderSide(color: colorScheme.outline),
                     ),
                     child: Text(
                         context.tr(TranslationKeys.homePersonalizeMaybeLater)),

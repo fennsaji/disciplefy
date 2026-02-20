@@ -45,8 +45,8 @@ export default function AchievementsTable({
       study: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       memory: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
       streak: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      learning_path: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      engagement: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+      voice: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      saved: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
     }
     return colors[category] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
   }

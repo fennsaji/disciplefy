@@ -30,7 +30,6 @@ export default function GamificationPage() {
   // Filters
   const [achievementsFilters, setAchievementsFilters] = useState({
     category: '',
-    type: '',
   })
 
   const [userAchievementsFilters, setUserAchievementsFilters] = useState({
@@ -46,7 +45,6 @@ export default function GamificationPage() {
     queryFn: async () => {
       const params = new URLSearchParams()
       if (achievementsFilters.category) params.set('category', achievementsFilters.category)
-      if (achievementsFilters.type) params.set('type', achievementsFilters.type)
 
       const res = await fetch(`/api/admin/gamification/achievements?${params}`)
       if (!res.ok) throw new Error('Failed to fetch achievements')
@@ -196,20 +194,8 @@ export default function GamificationPage() {
             <option value="study">Study</option>
             <option value="memory">Memory</option>
             <option value="streak">Streak</option>
-            <option value="learning_path">Learning Path</option>
-            <option value="engagement">Engagement</option>
-          </select>
-
-          <select
-            value={achievementsFilters.type}
-            onChange={(e) => setAchievementsFilters({ ...achievementsFilters, type: e.target.value })}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            <option value="">All Types</option>
-            <option value="milestone">Milestone</option>
-            <option value="streak">Streak</option>
-            <option value="completion">Completion</option>
-            <option value="proficiency">Proficiency</option>
+            <option value="voice">Voice</option>
+            <option value="saved">Saved</option>
           </select>
         </div>
 
@@ -332,15 +318,15 @@ export default function GamificationPage() {
               trend={undefined}
             />
             <StatsCard
-              title="Active Streakers"
-              value={stats.active_streakers}
+              title="Active Study Streakers"
+              value={`${stats.active_streakers} / ${stats.users_with_study_streak}`}
               icon="🔥"
               trend={undefined}
             />
             <StatsCard
-              title="Avg Current Streak"
-              value={`${stats.avg_current_streak} days`}
-              icon="📊"
+              title="Active Verse Streakers"
+              value={`${stats.active_verse_streakers} / ${stats.users_with_verse_streak}`}
+              icon="📖"
               trend={undefined}
             />
             <StatsCard
@@ -356,11 +342,11 @@ export default function GamificationPage() {
         {stats && (
           <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              Streak Distribution
+              Study Streak Distribution
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={Object.entries(stats.streak_distribution).map(([name, value]) => ({
-                name: name.replace('_', ' '),
+                name,
                 value
               }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke(isDark)} />
@@ -375,52 +361,79 @@ export default function GamificationPage() {
 
         {/* Leaderboards */}
         {leaderboards && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Top Current Streaks */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Top Current Study Streaks */}
             <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                🔥 Top Current Streaks
+                🔥 Top Study Streaks
               </h3>
               <div className="space-y-3">
-                {leaderboards.top_current_streaks?.slice(0, 5).map((streak: any, index: number) => (
-                  <div key={streak.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-primary">#{index + 1}</span>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                {leaderboards.top_current_streaks?.length > 0
+                  ? leaderboards.top_current_streaks.slice(0, 5).map((streak: any, index: number) => (
+                    <div key={streak.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {streak.user_name}
                         </div>
                       </div>
+                      <span className="text-lg font-bold text-primary">
+                        {streak.current_streak}d
+                      </span>
                     </div>
-                    <span className="text-lg font-bold text-primary">
-                      {streak.current_streak} days
-                    </span>
-                  </div>
-                ))}
+                  ))
+                  : <p className="text-sm text-gray-400">No study streaks yet</p>
+                }
               </div>
             </div>
 
             {/* Top Longest Streaks */}
             <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                🏅 Top Longest Streaks
+                🏅 Best Ever Streaks
               </h3>
               <div className="space-y-3">
-                {leaderboards.top_longest_streaks?.slice(0, 5).map((streak: any, index: number) => (
-                  <div key={streak.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-yellow-600">#{index + 1}</span>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                {leaderboards.top_longest_streaks?.length > 0
+                  ? leaderboards.top_longest_streaks.slice(0, 5).map((streak: any, index: number) => (
+                    <div key={streak.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-yellow-600">#{index + 1}</span>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {streak.user_name}
                         </div>
                       </div>
+                      <span className="text-lg font-bold text-yellow-600">
+                        {streak.longest_streak}d
+                      </span>
                     </div>
-                    <span className="text-lg font-bold text-yellow-600">
-                      {streak.longest_streak} days
-                    </span>
-                  </div>
-                ))}
+                  ))
+                  : <p className="text-sm text-gray-400">No data yet</p>
+                }
+              </div>
+            </div>
+
+            {/* Top Daily Verse Streaks */}
+            <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                📖 Top Verse Streaks
+              </h3>
+              <div className="space-y-3">
+                {leaderboards.top_verse_streaks?.length > 0
+                  ? leaderboards.top_verse_streaks.slice(0, 5).map((streak: any, index: number) => (
+                    <div key={streak.user_id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-blue-600">#{index + 1}</span>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {streak.user_name}
+                        </div>
+                      </div>
+                      <span className="text-lg font-bold text-blue-600">
+                        {streak.current_streak}d
+                      </span>
+                    </div>
+                  ))
+                  : <p className="text-sm text-gray-400">No verse streaks yet</p>
+                }
               </div>
             </div>
 
@@ -430,21 +443,22 @@ export default function GamificationPage() {
                 ⭐ Top XP Earners
               </h3>
               <div className="space-y-3">
-                {leaderboards.top_xp_earners?.slice(0, 5).map((streak: any, index: number) => (
-                  <div key={streak.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-purple-600">#{index + 1}</span>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
-                          {streak.user_name}
+                {leaderboards.top_xp_earners?.length > 0
+                  ? leaderboards.top_xp_earners.slice(0, 5).map((entry: any, index: number) => (
+                    <div key={entry.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-purple-600">#{index + 1}</span>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {entry.user_name}
                         </div>
                       </div>
+                      <span className="text-sm font-bold text-purple-600">
+                        {entry.total_xp_earned?.toLocaleString() || 0} XP
+                      </span>
                     </div>
-                    <span className="text-sm font-bold text-purple-600">
-                      {streak.total_xp_earned?.toLocaleString() || 0} XP
-                    </span>
-                  </div>
-                ))}
+                  ))
+                  : <p className="text-sm text-gray-400">No XP earned yet</p>
+                }
               </div>
             </div>
           </div>
@@ -453,7 +467,7 @@ export default function GamificationPage() {
         {/* Sort Control */}
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Sort by:
+            Sort study streaks by:
           </label>
           <select
             value={streaksSort}
@@ -462,7 +476,7 @@ export default function GamificationPage() {
           >
             <option value="current_streak">Current Streak</option>
             <option value="longest_streak">Longest Streak</option>
-            <option value="total_xp_earned">Total XP</option>
+            <option value="total_study_days">Total Study Days</option>
             <option value="last_study_date">Last Study Date</option>
           </select>
         </div>

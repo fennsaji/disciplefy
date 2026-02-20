@@ -142,24 +142,18 @@ serve(async (req) => {
 
     const subscriptionPlan = planTypeToBasePlan(subscription?.plan_type);
 
-    // 2. Get user plan from user_tokens table (check ALL rows for this user)
-    const { data: userTokens, error: tokensError } = await supabase
+    // 2. Get user plan from user_tokens table (one row per user)
+    const { data: userTokenRow, error: tokensError } = await supabase
       .from('user_tokens')
       .select('user_plan')
       .eq('identifier', user.id)
-      .order('user_plan', { ascending: false }); // Order by plan (premium first)
+      .maybeSingle();
 
     if (tokensError) {
       console.error('[get-user-usage-stats] Error fetching user_tokens:', tokensError);
     }
 
-    // Get the highest plan from user_tokens (could have multiple rows)
-    let userTokensPlan = 'free';
-    if (userTokens && userTokens.length > 0) {
-      // Find the highest priority plan among all user_tokens rows
-      userTokensPlan = userTokens.reduce((highest, row) =>
-        getHigherPlan(highest, row.user_plan), 'free');
-    }
+    const userTokensPlan = userTokenRow?.user_plan || 'free';
 
     // 3. MERGE: Use the highest plan between subscriptions and user_tokens
     const currentPlan = getHigherPlan(subscriptionPlan, userTokensPlan);

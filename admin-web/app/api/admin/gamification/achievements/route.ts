@@ -66,11 +66,26 @@ export async function GET(request: NextRequest) {
       .from('user_achievements')
       .select('achievement_id, user_id')
 
-    // Map unlock counts to achievements
+    // Derive a tier label from xp_reward since the DB has no tier column
+    const getTierFromXP = (xp: number): string => {
+      if (xp <= 25) return 'bronze'
+      if (xp <= 75) return 'silver'
+      if (xp <= 200) return 'gold'
+      if (xp <= 500) return 'platinum'
+      return 'diamond'
+    }
+
+    // Map unlock counts to achievements and normalize field names for the frontend
+    // DB uses name_en/description_en/threshold; the table component expects title/description/requirement_value/tier/type
     const achievementsWithStats = (achievements || []).map(achievement => {
       const unlocks = (userAchievements || []).filter(ua => ua.achievement_id === achievement.id)
       return {
         ...achievement,
+        title: achievement.name_en,
+        description: achievement.description_en,
+        tier: getTierFromXP(achievement.xp_reward),
+        type: achievement.category,
+        requirement_value: achievement.threshold,
         total_unlocks: unlocks.length,
         unique_users: new Set(unlocks.map(ua => ua.user_id)).size,
       }
