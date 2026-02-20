@@ -34,6 +34,7 @@ class AppTheme {
 
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
+        fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.brandPrimary,
           primary: AppColors.brandPrimary,
@@ -146,6 +147,7 @@ class AppTheme {
           backgroundColor: AppColors.lightSurface,
           foregroundColor: AppColors.lightTextPrimary,
           titleTextStyle: TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: AppColors.lightTextPrimary,
@@ -158,6 +160,7 @@ class AppTheme {
 
   static ThemeData get darkTheme => ThemeData(
         useMaterial3: true,
+        fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.brandPrimary,
           brightness: Brightness.dark,
@@ -296,6 +299,7 @@ class AppTheme {
           backgroundColor: AppColors.darkSurface,
           foregroundColor: AppColors.darkTextPrimary,
           titleTextStyle: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: AppColors.darkTextPrimary,

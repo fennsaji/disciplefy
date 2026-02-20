@@ -2559,8 +2559,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           MarkdownWithScripture(
             data: content,
             textStyle: AppFonts.inter(
-              fontSize: 16,
-              height: 1.7,
+              fontSize: 18,
+              height: 1.6,
               color: theme.colorScheme.onPrimaryContainer,
             ),
           ),
@@ -3398,10 +3398,11 @@ class _StudySection extends StatelessWidget {
           // Section Content with markdown formatting AND clickable scripture
           MarkdownWithScripture(
             data: _cleanDuplicateTitle(content, title),
-            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onBackground,
-                  height: 1.6,
-                ),
+            textStyle: AppFonts.inter(
+              fontSize: 18,
+              height: 1.6,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ],
       ),
@@ -3556,11 +3557,12 @@ class _QuickStudySection extends StatelessWidget {
           // Content
           MarkdownWithScripture(
             data: _cleanDuplicateTitle(content, title),
-            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
-                  color: Theme.of(context).colorScheme.onBackground,
-                  height: 1.6,
-                ),
+            textStyle: AppFonts.inter(
+              fontSize: 18,
+              fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
+              height: 1.6,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ],
       ),
@@ -3700,11 +3702,12 @@ class _LectioStudySection extends StatelessWidget {
           // Content with meditative typography
           MarkdownWithScripture(
             data: _cleanDuplicateTitle(content, title),
-            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: Theme.of(context).colorScheme.onBackground,
-                  height: 1.7, // Extra line height for meditative reading
-                ),
+            textStyle: AppFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w400,
+              height: 1.7, // Extra line height for meditative reading
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ],
       ),
