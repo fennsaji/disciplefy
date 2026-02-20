@@ -14,6 +14,10 @@ import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
+import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
+import '../../../study_generation/data/repositories/token_cost_repository.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../domain/entities/learning_path.dart';
@@ -173,6 +177,24 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     StudyMode mode,
     bool rememberChoice,
   ) async {
+    // Check if user has sufficient tokens for this mode
+    final tokenState = context.read<TokenBloc>().state;
+    if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
+      final costResult = await sl<TokenCostRepository>()
+          .getTokenCost(_currentLanguage, mode.value);
+      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
+      if (requiredCost > 0 &&
+          tokenState.tokenStatus.totalTokens < requiredCost &&
+          mounted) {
+        await InsufficientTokensDialog.show(
+          context,
+          tokenStatus: tokenState.tokenStatus,
+          requiredTokens: requiredCost,
+        );
+        return;
+      }
+    }
+
     final languageService = sl<LanguagePreferenceService>();
 
     // Save user's mode preference if they chose to remember

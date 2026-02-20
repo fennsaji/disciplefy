@@ -954,6 +954,9 @@ class TranslationKeys {
   static const optionsMenuSyncSubtitle = 'memory.optionsMenu.syncSubtitle';
   static const optionsMenuStatsTitle = 'memory.optionsMenu.statsTitle';
   static const optionsMenuStatsSubtitle = 'memory.optionsMenu.statsSubtitle';
+  static const optionsMenuChampionsTitle = 'memory.optionsMenu.championsTitle';
+  static const optionsMenuChampionsSubtitle =
+      'memory.optionsMenu.championsSubtitle';
 
   // Statistics Dialog
   static const statsDialogTitle = 'memory.statsDialog.title';
@@ -1515,7 +1518,19 @@ class TranslationKeys {
   static const memoryChampionsMaster = 'memory_champions.master';
   static const memoryChampionsStreak = 'memory_champions.streak';
 
+  // Memory Heat Map
+  static const heatMapTitle = 'memory.heatMap.title';
+  static const heatMapSubtitle = 'memory.heatMap.subtitle';
+  static const heatMapDayStreak = 'memory.heatMap.dayStreak';
+  static const heatMapLongestStreak = 'memory.heatMap.longestStreak';
+  static const heatMapLess = 'memory.heatMap.less';
+  static const heatMapMore = 'memory.heatMap.more';
+  static const heatMapMon = 'memory.heatMap.mon';
+  static const heatMapWed = 'memory.heatMap.wed';
+  static const heatMapFri = 'memory.heatMap.fri';
+
   // Memory Stats Page
+  static const noPracticeModeData = 'memory.stats.noPracticeModeData';
   static const memoryStatsTitle = 'memory_stats_page.title';
   static const memoryStatsLoadFailed = 'memory_stats_page.load_failed';
   static const memoryStatsNoData = 'memory_stats_page.no_data';
@@ -2031,4 +2046,33 @@ class TranslationKeys {
   /// Completed in recommended mode message
   static const learningPathCompletedInRecommended =
       'learning_path.completed_in_recommended';
+
+  // Upgrade Pages (Plus / Standard)
+  static const upgradeToPlus = 'upgrade.to_plus';
+  static const upgradeToStandard = 'upgrade.to_standard';
+  static const whatYouGetPlus = 'upgrade.what_you_get_plus';
+  static const whatYouGetStandard = 'upgrade.what_you_get_standard';
+
+  // Promo Code Widget
+  static const promoCodeHave = 'promo_code.have';
+  static const promoCodeEnter = 'promo_code.enter';
+  static const promoCodeApply = 'promo_code.apply';
+  static const promoCodeApplied = 'promo_code.applied';
+  static const promoCodeRemove = 'promo_code.remove';
+  static const promoCodeInvalid = 'promo_code.invalid';
+  static const promoCodeError = 'promo_code.error';
+  static const promoCodeEmpty = 'promo_code.empty';
+
+  // Token Purchase Page
+  static const tokenPurchasePackages = 'tokens.purchase.packages';
+  static const tokenPurchaseCurrentBalance = 'tokens.purchase.current_balance';
+  static const tokenPurchaseButton = 'tokens.purchase.button';
+
+  // Memory Stats Page — mastery levels & stat labels
+  static const memoryStatsMaster = 'memory_stats_page.master';
+  static const memoryStatsTotalVerses = 'memory_stats_page.total_verses';
+  static const memoryStatsTotalReviews = 'memory_stats_page.total_reviews';
+  static const memoryStatsPerfectRecalls = 'memory_stats_page.perfect_recalls';
+  static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
+  static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
 }

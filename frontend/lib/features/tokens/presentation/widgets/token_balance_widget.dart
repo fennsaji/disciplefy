@@ -250,14 +250,21 @@ class _Details extends StatelessWidget {
         if (!tokenStatus.isPremium) ...[
           Row(
             children: [
-              Text(
-                '${context.tr('tokens.balance.daily')}: ${tokenStatus.availableTokens}',
-                style: textTheme.bodySmall,
+              Flexible(
+                child: Text(
+                  '${context.tr('tokens.balance.daily')}: ${tokenStatus.availableTokens}',
+                  style: textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Spacer(),
-              Text(
-                '${context.tr('tokens.balance.limit')}: ${tokenStatus.dailyLimit}',
-                style: textTheme.bodySmall,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '${context.tr('tokens.balance.limit')}: ${tokenStatus.dailyLimit}',
+                  style: textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                ),
               ),
             ],
           ),
@@ -265,11 +272,14 @@ class _Details extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Text(
-                  '${context.tr('tokens.balance.purchased')}: ${tokenStatus.purchasedTokens}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: Colors.purple[600],
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    '${context.tr('tokens.balance.purchased')}: ${tokenStatus.purchasedTokens}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: Colors.purple[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -278,15 +288,22 @@ class _Details extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              Text(
-                '${context.tr('tokens.balance.used_today')}: ${tokenStatus.totalConsumedToday}',
-                style: textTheme.bodySmall,
+              Flexible(
+                child: Text(
+                  '${context.tr('tokens.balance.used_today')}: ${tokenStatus.totalConsumedToday}',
+                  style: textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Spacer(),
-              Text(
-                '${context.tr('tokens.balance.resets')}: ${tokenStatus.timeUntilReset.toShortLabel()}',
-                style: textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '${context.tr('tokens.balance.resets')}: ${tokenStatus.timeUntilReset.toShortLabel()}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
                 ),
               ),
             ],

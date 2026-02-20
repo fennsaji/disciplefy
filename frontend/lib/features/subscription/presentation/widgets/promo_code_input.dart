@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/subscription_v2_models.dart';
 
@@ -64,7 +66,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
 
     if (code.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter a promo code';
+        _errorMessage = context.tr(TranslationKeys.promoCodeEmpty);
       });
       return;
     }
@@ -90,13 +92,13 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
         // Invalid promo code
         setState(() {
           _isValidating = false;
-          _errorMessage = 'Invalid or expired promo code';
+          _errorMessage = context.tr(TranslationKeys.promoCodeInvalid);
         });
       }
     } catch (e) {
       setState(() {
         _isValidating = false;
-        _errorMessage = 'Failed to validate promo code. Please try again.';
+        _errorMessage = context.tr(TranslationKeys.promoCodeError);
       });
     }
   }
@@ -125,7 +127,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Have a promo code?',
+          context.tr(TranslationKeys.promoCodeHave),
           style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -140,7 +142,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                 controller: _controller,
                 enabled: !_isValidating,
                 decoration: InputDecoration(
-                  hintText: 'Enter promo code',
+                  hintText: context.tr(TranslationKeys.promoCodeEnter),
                   hintStyle: AppFonts.inter(
                     fontSize: 14,
                     color: Theme.of(context)
@@ -219,7 +221,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                       ),
                     )
                   : Text(
-                      'Apply',
+                      context.tr(TranslationKeys.promoCodeApply),
                       style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -277,7 +279,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Promo code applied!',
+                  context.tr(TranslationKeys.promoCodeApplied),
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -295,7 +297,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                tooltip: 'Remove promo code',
+                tooltip: context.tr(TranslationKeys.promoCodeRemove),
                 splashRadius: 20,
               ),
             ],

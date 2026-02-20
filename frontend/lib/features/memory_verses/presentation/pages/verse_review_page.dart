@@ -161,8 +161,8 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                         label: Text(context.tr(TranslationKeys.practiceSubmit)),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          foregroundColor: theme.colorScheme.onPrimaryContainer,
+                          backgroundColor: AppColors.brandSecondary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

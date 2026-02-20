@@ -191,19 +191,27 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
   Widget _buildMasteryDistribution(Map<String, dynamic> masteryDistribution) {
     // Extract mastery counts from backend data
     final masteryData = {
-      'Beginner': masteryDistribution['beginner'] as int? ?? 0,
-      'Intermediate': masteryDistribution['intermediate'] as int? ?? 0,
-      'Advanced': masteryDistribution['advanced'] as int? ?? 0,
-      'Expert': masteryDistribution['expert'] as int? ?? 0,
-      'Master': masteryDistribution['master'] as int? ?? 0,
+      context.tr(TranslationKeys.memoryStatsBeginner):
+          masteryDistribution['beginner'] as int? ?? 0,
+      context.tr(TranslationKeys.memoryStatsIntermediate):
+          masteryDistribution['intermediate'] as int? ?? 0,
+      context.tr(TranslationKeys.memoryStatsAdvanced):
+          masteryDistribution['advanced'] as int? ?? 0,
+      context.tr(TranslationKeys.memoryStatsExpert):
+          masteryDistribution['expert'] as int? ?? 0,
+      context.tr(TranslationKeys.memoryStatsMaster):
+          masteryDistribution['master'] as int? ?? 0,
     };
 
     final masteryColors = {
-      'Beginner': AppColors.masteryBeginner,
-      'Intermediate': AppColors.masteryIntermediate,
-      'Advanced': AppColors.masteryAdvanced,
-      'Expert': AppColors.masteryExpert,
-      'Master': AppColors.masteryMaster,
+      context.tr(TranslationKeys.memoryStatsBeginner):
+          AppColors.masteryBeginner,
+      context.tr(TranslationKeys.memoryStatsIntermediate):
+          AppColors.masteryIntermediate,
+      context.tr(TranslationKeys.memoryStatsAdvanced):
+          AppColors.masteryAdvanced,
+      context.tr(TranslationKeys.memoryStatsExpert): AppColors.masteryExpert,
+      context.tr(TranslationKeys.memoryStatsMaster): AppColors.masteryMaster,
     };
 
     return Card(
@@ -240,7 +248,8 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
                     ),
                   ),
                   Text(
-                    '$count verses',
+                    context.tr(TranslationKeys.memoryStatsVerseCount,
+                        {'count': count.toString()}),
                     style: TextStyle(
                       fontSize: 14,
                       color: Theme.of(context)
@@ -287,13 +296,13 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
     }).toList();
 
     if (modeStats.isEmpty) {
-      return const Card(
+      return Card(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Center(
             child: Text(
-              'No practice mode data yet',
-              style: TextStyle(color: AppColors.lightTextSecondary),
+              context.tr(TranslationKeys.noPracticeModeData),
+              style: const TextStyle(color: AppColors.lightTextSecondary),
             ),
           ),
         ),
@@ -373,22 +382,22 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
     // Extract overall statistics from backend data
     final overallStats = [
       {
-        'label': 'Total Verses',
+        'label': context.tr(TranslationKeys.memoryStatsTotalVerses),
         'value': '${statistics['total_verses'] ?? 0}',
         'icon': Icons.book
       },
       {
-        'label': 'Total Reviews',
+        'label': context.tr(TranslationKeys.memoryStatsTotalReviews),
         'value': '${statistics['total_reviews'] ?? 0}',
         'icon': Icons.replay
       },
       {
-        'label': 'Perfect Recalls',
+        'label': context.tr(TranslationKeys.memoryStatsPerfectRecalls),
         'value': '${statistics['perfect_recalls'] ?? 0}',
         'icon': Icons.star
       },
       {
-        'label': 'Practice Days',
+        'label': context.tr(TranslationKeys.memoryStatsPracticeDays),
         'value': '${statistics['total_practice_days'] ?? 0}',
         'icon': Icons.calendar_today
       },

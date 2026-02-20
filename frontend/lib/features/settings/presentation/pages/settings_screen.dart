@@ -1166,7 +1166,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.6),
+                            .withOpacity(0.85),
                         height: 1.3,
                       ),
                     ),
@@ -1405,7 +1405,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.6),
+                            .withOpacity(0.85),
                       ),
                     ),
                   ],
@@ -1840,7 +1840,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.6),
+                            .withOpacity(0.85),
                       ),
                     ),
                   ],
