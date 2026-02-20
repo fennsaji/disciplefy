@@ -383,9 +383,9 @@ id_rsa.pub
 # ANALYTICS & MONITORING
 # ==============================================================================
 
-# Analytics data
-analytics/
-metrics/
+# Analytics data (root-level data directories only)
+/analytics/
+/metrics/
 
 # Monitoring configuration
 monitoring.json
