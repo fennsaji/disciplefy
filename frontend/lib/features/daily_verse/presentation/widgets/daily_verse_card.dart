@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
@@ -781,8 +783,13 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _shareVerse(DailyVerseLoaded state) {
+    final appLink = kIsWeb
+        ? '🌐 https://www.disciplefy.in/'
+        : Platform.isAndroid
+            ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
+            : '🌐 https://www.disciplefy.in/';
     final text =
-        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
+        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n— Shared from Disciplefy App\n$appLink';
     Share.share(text);
   }
 }
