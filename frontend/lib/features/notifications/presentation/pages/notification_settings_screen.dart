@@ -376,7 +376,10 @@ class _NotificationSettingsView extends StatelessWidget {
                             : context.tr(TranslationKeys
                                 .notificationsSettingsPermissionDisabled),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.lightTextSecondary,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.85),
                             ),
                       ),
                     ],

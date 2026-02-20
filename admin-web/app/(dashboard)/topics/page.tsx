@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
@@ -27,6 +27,35 @@ export default function StudyGuidesPage() {
   const [studyModeFilter, setStudyModeFilter] = useState<StudyModeFilter>('all')
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Inline preview expand
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedData, setExpandedData] = useState<Record<string, { summary?: string; interpretation?: string; loading: boolean }>>({})
+
+  const handleToggleExpand = async (guideId: string) => {
+    if (expandedId === guideId) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(guideId)
+    if (expandedData[guideId]) return // already loaded
+    setExpandedData((prev) => ({ ...prev, [guideId]: { loading: true } }))
+    try {
+      const res = await fetch(`/api/admin/study-guide/${guideId}`, { credentials: 'include' })
+      const data = await res.json()
+      const g = data.study_guide
+      setExpandedData((prev) => ({
+        ...prev,
+        [guideId]: {
+          loading: false,
+          summary: g?.content?.summary ?? g?.summary ?? '',
+          interpretation: g?.content?.interpretation ?? g?.interpretation ?? '',
+        },
+      }))
+    } catch {
+      setExpandedData((prev) => ({ ...prev, [guideId]: { loading: false } }))
+    }
+  }
 
   // Stats
   const [stats, setStats] = useState({
@@ -489,9 +518,6 @@ export default function StudyGuidesPage() {
                     Language
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Topic
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Usage
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -500,6 +526,7 @@ export default function StudyGuidesPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Actions
                   </th>
+                  {/* spacer keeps col count correct */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
@@ -513,10 +540,21 @@ export default function StudyGuidesPage() {
                   </tr>
                 ) : (
                   filteredGuides.map((guide) => (
-                    <tr key={guide.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <Fragment key={guide.id}>
+                    <tr className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${expandedId === guide.id ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''}`}>
                       <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <span className="mr-2 text-xl">{getInputTypeIcon(guide.input_type)}</span>
+                        <div className="flex items-center gap-2">
+                          {/* Expand toggle */}
+                          <button
+                            onClick={() => handleToggleExpand(guide.id)}
+                            className={`shrink-0 rounded p-0.5 transition-colors ${expandedId === guide.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                            title={expandedId === guide.id ? 'Collapse preview' : 'Expand preview'}
+                          >
+                            <svg className={`h-4 w-4 transition-transform ${expandedId === guide.id ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                          <span className="text-xl">{getInputTypeIcon(guide.input_type)}</span>
                           <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                               {guide.input_value.length > 50
@@ -547,11 +585,6 @@ export default function StudyGuidesPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {guide.topic_title || '-'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
                           {guide.usage_count || 0} users
                         </span>
@@ -563,6 +596,33 @@ export default function StudyGuidesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
+                          {/* View / Edit guide content */}
+                          <button
+                            onClick={() => router.push(`/topics/guide/${guide.id}`)}
+                            className="rounded p-1 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
+                            title="View & Edit Guide"
+                          >
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
+                          </button>
+                          {/* Regenerate in study generator */}
                           <button
                             onClick={() => handleEdit(guide)}
                             className="rounded p-1 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -604,6 +664,48 @@ export default function StudyGuidesPage() {
                         </div>
                       </td>
                     </tr>
+                    {/* Inline preview row */}
+                    {expandedId === guide.id && (
+                      <tr className="bg-indigo-50/60 dark:bg-indigo-900/10">
+                        <td colSpan={8} className="px-8 pb-5 pt-3">
+                          {expandedData[guide.id]?.loading ? (
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              Loading preview…
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {expandedData[guide.id]?.summary && (
+                                <div>
+                                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">Summary</p>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                    {expandedData[guide.id].summary}
+                                  </p>
+                                </div>
+                              )}
+                              {expandedData[guide.id]?.interpretation && (
+                                <div>
+                                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">Interpretation</p>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                    {expandedData[guide.id].interpretation}
+                                  </p>
+                                </div>
+                              )}
+                              {!expandedData[guide.id]?.summary && !expandedData[guide.id]?.interpretation && (
+                                <p className="text-sm text-gray-400 dark:text-gray-500">No preview content available.</p>
+                              )}
+                              <button
+                                onClick={() => router.push(`/topics/guide/${guide.id}`)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 dark:border-indigo-400/20 dark:bg-transparent dark:text-indigo-300 dark:hover:bg-indigo-400/10"
+                              >
+                                Open full guide →
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   ))
                 )}
               </tbody>

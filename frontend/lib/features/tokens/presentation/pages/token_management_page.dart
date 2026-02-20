@@ -144,13 +144,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   }
 
   void _upgradeToStandard() {
-    // TODO: Implement upgrade to standard plan
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Plan upgrade coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    context.push(AppRoutes.pricing);
   }
 
   /// Opens payment gateway for the given order
@@ -231,8 +225,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
   }
 
   void _upgradeToPremium() {
-    // Navigate to premium upgrade page
-    context.push(AppRoutes.premiumUpgrade);
+    context.push(AppRoutes.pricing);
   }
 
   void _manageSubscription() {

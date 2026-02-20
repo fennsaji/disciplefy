@@ -531,53 +531,77 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                           else
                             SliverPadding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              sliver: SliverGrid(
+                              sliver: SliverList(
                                 delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    final mode = filteredModes[index];
-                                    final isRecommended =
-                                        mode.modeType == recommendedMode;
-                                    final isTierLocked =
-                                        _isModeTierLocked(mode.modeType);
-                                    final isUnlockLimitReached =
-                                        _isModeUnlockLimitReached(
-                                            mode.modeType);
-
-                                    return PracticeModeCard(
-                                      mode: mode,
-                                      isRecommended: isRecommended,
-                                      isFirstRecommended: isRecommended &&
-                                          _isFirstRecommendation,
-                                      isTierLocked: isTierLocked,
-                                      isUnlockLimitReached:
-                                          isUnlockLimitReached,
-                                      onTap: () => _selectMode(mode.modeType),
-                                      onLockedTap: isTierLocked
-                                          ? () =>
-                                              context.push(AppRoutes.pricing)
-                                          : () =>
-                                              UnlockLimitExceededDialog.show(
-                                                context,
-                                                unlockedModes:
-                                                    _unlockedModesToday,
-                                                unlockedCount:
-                                                    _unlockedModesToday.length,
-                                                limit: _getUnlockLimit(),
-                                                tier: _userTier,
-                                                verseReference: currentVerse
-                                                        ?.verseReference ??
-                                                    '',
-                                              ),
+                                  (context, rowIndex) {
+                                    final startIndex =
+                                        rowIndex * crossAxisCount;
+                                    final rowItems = <Widget>[];
+                                    for (int i = 0; i < crossAxisCount; i++) {
+                                      final index = startIndex + i;
+                                      if (index < filteredModes.length) {
+                                        final mode = filteredModes[index];
+                                        final isRecommended =
+                                            mode.modeType == recommendedMode;
+                                        final isTierLocked =
+                                            _isModeTierLocked(mode.modeType);
+                                        final isUnlockLimitReached =
+                                            _isModeUnlockLimitReached(
+                                                mode.modeType);
+                                        rowItems.add(Expanded(
+                                          child: PracticeModeCard(
+                                            mode: mode,
+                                            isRecommended: isRecommended,
+                                            isFirstRecommended: isRecommended &&
+                                                _isFirstRecommendation,
+                                            isTierLocked: isTierLocked,
+                                            isUnlockLimitReached:
+                                                isUnlockLimitReached,
+                                            onTap: () =>
+                                                _selectMode(mode.modeType),
+                                            onLockedTap: isTierLocked
+                                                ? () => context
+                                                    .push(AppRoutes.pricing)
+                                                : () =>
+                                                    UnlockLimitExceededDialog
+                                                        .show(
+                                                      context,
+                                                      unlockedModes:
+                                                          _unlockedModesToday,
+                                                      unlockedCount:
+                                                          _unlockedModesToday
+                                                              .length,
+                                                      limit: _getUnlockLimit(),
+                                                      tier: _userTier,
+                                                      verseReference: currentVerse
+                                                              ?.verseReference ??
+                                                          '',
+                                                    ),
+                                          ),
+                                        ));
+                                      } else {
+                                        rowItems.add(const Expanded(
+                                            child: SizedBox.shrink()));
+                                      }
+                                      if (i < crossAxisCount - 1) {
+                                        rowItems.add(const SizedBox(width: 12));
+                                      }
+                                    }
+                                    return Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 12),
+                                      child: IntrinsicHeight(
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: rowItems,
+                                        ),
+                                      ),
                                     );
                                   },
-                                  childCount: filteredModes.length,
-                                ),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  mainAxisExtent: 260,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
+                                  childCount:
+                                      (filteredModes.length / crossAxisCount)
+                                          .ceil(),
                                 ),
                               ),
                             ),
@@ -697,8 +721,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                     Text(
                       'Unlocked Modes Today',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -788,14 +812,16 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.info.withAlpha((0.08 * 255).round()),
+                color: AppColors.info.withAlpha((0.15 * 255).round()),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: AppColors.info,
+                    color: theme.brightness == Brightness.dark
+                        ? AppColors.infoLighter
+                        : AppColors.infoDark,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -805,8 +831,10 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                           ? 'Choose ${unlockLimit == 1 ? 'a' : 'up to $unlockLimit'} mode${unlockLimit > 1 ? 's' : ''} to practice today'
                           : 'You can unlock $slotsRemaining more mode${slotsRemaining > 1 ? 's' : ''} today',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: _adaptiveTextColor(
-                            AppColors.brandPrimaryDeep, theme),
+                        color: theme.brightness == Brightness.dark
+                            ? AppColors.infoLighter
+                            : AppColors.infoDark,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),

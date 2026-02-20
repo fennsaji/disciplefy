@@ -40,7 +40,7 @@ class StudyModePreferences {
   /// This is stored as 'ask' in the database learning_path_study_mode column
   ///
   /// Database constraint: learning_path_study_mode IN ('ask', 'recommended', 'quick', 'standard', 'deep', 'lectio', 'sermon')
-  static const String learningPathDefault = 'recommended';
+  static const String learningPathDefault = 'ask';
 
   // ============================================================================
   // Helper Methods

@@ -35,6 +35,7 @@ import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import '../../data/repositories/token_cost_repository.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -2476,14 +2477,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
       Logger.info(
           '✅ [GENERATE_STUDY] Using recommended mode for $inputType: ${recommendedMode.displayName}');
-      _navigateToStudyGuide(recommendedMode, false, true);
+      await _navigateToStudyGuide(recommendedMode, false, true);
     } else if (savedModeString != null) {
       // User has specific saved preference - use it directly
       final savedMode = studyModeFromString(savedModeString);
       if (savedMode != null) {
         Logger.info(
             '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
-        _navigateToStudyGuide(savedMode, false, false);
+        await _navigateToStudyGuide(savedMode, false, false);
       } else {
         // Invalid mode string - show mode selection sheet
         Logger.warning(
@@ -2495,7 +2496,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         if (result != null && mounted) {
           final selectedMode = result['mode'] as StudyMode;
           final rememberChoice = result['rememberChoice'] as bool;
-          _navigateToStudyGuide(selectedMode, rememberChoice, false);
+          await _navigateToStudyGuide(selectedMode, rememberChoice, false);
         }
       }
     } else {
@@ -2516,7 +2517,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         final recommendedMode =
             inputType == 'scripture' ? StudyMode.deep : StudyMode.standard;
 
-        _navigateToStudyGuide(
+        await _navigateToStudyGuide(
           selectedMode,
           rememberChoice,
           selectedMode == recommendedMode,
@@ -2526,11 +2527,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   /// Navigate to study guide with selected mode.
-  void _navigateToStudyGuide(
+  Future<void> _navigateToStudyGuide(
     StudyMode mode,
     bool rememberChoice,
     bool isRecommendedMode,
-  ) {
+  ) async {
     _isNavigating = true;
 
     final input = _inputController.text.trim();
@@ -2540,6 +2541,24 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             ? 'topic'
             : 'question';
     final languageCode = _selectedLanguage.code;
+
+    // Check if user has sufficient tokens for this mode
+    if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
+      final costResult =
+          await _tokenCostRepository.getTokenCost(languageCode, mode.value);
+      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
+      if (requiredCost > 0 &&
+          _currentTokenStatus!.totalTokens < requiredCost &&
+          mounted) {
+        setState(() => _isNavigating = false);
+        await InsufficientTokensDialog.show(
+          context,
+          tokenStatus: _currentTokenStatus!,
+          requiredTokens: requiredCost,
+        );
+        return;
+      }
+    }
 
     // Backend will handle actual token consumption
     // UI feedback token consumption removed - backend API is single source of truth

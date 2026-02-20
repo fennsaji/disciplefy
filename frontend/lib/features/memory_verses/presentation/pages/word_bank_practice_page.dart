@@ -604,6 +604,8 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                         label: Text(context.tr(TranslationKeys.practiceSubmit)),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: AppColors.brandSecondary,
+                          foregroundColor: Colors.white,
                         ),
                       ),
                     ),

@@ -31,6 +31,7 @@ class LearningPathCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final color = _parseColor(path.color);
     final isEnrolled = path.isEnrolled;
     final isCompleted = path.isCompleted;
@@ -125,7 +126,7 @@ class LearningPathCard extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 11,
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                              .withValues(alpha: isDark ? 0.85 : 0.6),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -161,8 +162,10 @@ class LearningPathCard extends StatelessWidget {
               path.description,
               style: AppFonts.inter(
                 fontSize: 13,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
-                height: 1.3,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.85)
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                height: 1.4,
               ),
               maxLines: compact ? 2 : 3,
               overflow: TextOverflow.ellipsis,
@@ -206,8 +209,8 @@ class LearningPathCard extends StatelessWidget {
                       Icon(
                         Icons.schedule_outlined,
                         size: 14,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: isDark ? 0.8 : 0.5),
                       ),
                       const SizedBox(width: 4),
                       Flexible(
@@ -216,7 +219,7 @@ class LearningPathCard extends StatelessWidget {
                           style: AppFonts.inter(
                             fontSize: 11,
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5),
+                                .withValues(alpha: isDark ? 0.8 : 0.5),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -312,19 +315,22 @@ class LearningPathCard extends StatelessWidget {
     }
 
     if (isInProgress) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final badgeColor =
+          isDark ? AppColors.warningLighter : AppColors.warningDark;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.warning.withOpacity(0.1),
+          color: AppColors.warning.withOpacity(isDark ? 0.25 : 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.play_circle_filled,
               size: 14,
-              color: AppColors.warningDark,
+              color: badgeColor,
             ),
             const SizedBox(width: 4),
             Text(
@@ -332,7 +338,7 @@ class LearningPathCard extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.warningDark,
+                color: badgeColor,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

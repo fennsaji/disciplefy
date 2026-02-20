@@ -736,6 +736,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.memoryHomeNoVersesTitle),
+              textAlign: TextAlign.center,
               style: AppFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,

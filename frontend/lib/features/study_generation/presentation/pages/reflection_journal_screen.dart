@@ -14,6 +14,7 @@ import '../../data/repositories/reflections_repository_impl.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../domain/repositories/reflections_repository.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Screen displaying the user's reflection journal.
@@ -394,7 +395,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => context.go('/study'),
+              onPressed: () => context.go(AppRoutes.generateStudy),
               icon: const Icon(Icons.add),
               label:
                   Text(context.tr(TranslationKeys.reflectionJournalStartStudy)),

@@ -1077,6 +1077,8 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 style: ElevatedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  backgroundColor: AppColors.brandSecondary,
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],

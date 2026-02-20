@@ -42,8 +42,8 @@ CREATE TABLE user_tokens (
 -- Performance Indexes
 -- =====================================================
 
--- Primary lookup index (most critical)
-CREATE UNIQUE INDEX idx_user_tokens_identifier ON user_tokens(identifier, user_plan);
+-- Primary lookup index (most critical) - one row per user
+CREATE UNIQUE INDEX idx_user_tokens_identifier ON user_tokens(identifier);
 
 -- Daily reset cleanup
 CREATE INDEX idx_user_tokens_reset ON user_tokens(last_reset);
@@ -185,12 +185,14 @@ DECLARE
   default_limit INTEGER;
   record_exists BOOLEAN;
   current_date_utc DATE;
+  stored_plan TEXT;
+  stored_consumed_today INTEGER;
+  stored_last_reset DATE;
 BEGIN
   -- Use UTC timezone for consistent date comparisons
   current_date_utc := (NOW() AT TIME ZONE 'UTC')::date;
 
-  -- Read daily limit from subscription_plans.features
-  -- Updated: 2026-02-13 - Now reads from database instead of hardcoded values
+  -- Read daily limit from subscription_plans.features (database-driven)
   -- This allows admin web updates to be reflected in client apps
   SELECT COALESCE((sp.features->>'daily_tokens')::INTEGER, 8) INTO default_limit
   FROM subscription_plans sp
@@ -206,10 +208,10 @@ BEGIN
     default_limit := 999999999;
   END IF;
 
-  -- Check if record exists
+  -- Check if record exists (one row per user, keyed by identifier only)
   SELECT EXISTS(
     SELECT 1 FROM user_tokens ut
-    WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan
+    WHERE ut.identifier = p_identifier
   ) INTO record_exists;
 
   -- If no record exists, create one
@@ -231,27 +233,57 @@ BEGIN
       current_date_utc
     );
   ELSE
-    -- CRITICAL FIX: Persist daily reset BEFORE SELECT to avoid virtual reset issues
-    UPDATE user_tokens ut
-    SET
-      available_tokens = CASE
-        WHEN default_limit = 999999999 THEN 999999999
-        WHEN ut.last_reset < current_date_utc THEN default_limit
-        ELSE ut.available_tokens
-      END,
-      last_reset = CASE
-        WHEN ut.last_reset < current_date_utc THEN current_date_utc
-        ELSE ut.last_reset
-      END,
-      total_consumed_today = CASE
-        WHEN default_limit = 999999999 THEN 0
-        WHEN ut.last_reset < current_date_utc THEN 0
-        ELSE ut.total_consumed_today
-      END,
-      daily_limit = default_limit,  -- Update daily_limit to match database
-      updated_at = NOW()
-    WHERE ut.identifier = p_identifier
-      AND ut.user_plan = p_user_plan;
+    -- Read current stored values to detect plan changes
+    SELECT ut.user_plan, ut.total_consumed_today, ut.last_reset
+    INTO stored_plan, stored_consumed_today, stored_last_reset
+    FROM user_tokens ut
+    WHERE ut.identifier = p_identifier;
+
+    IF stored_plan IS DISTINCT FROM p_user_plan THEN
+      -- Plan changed: update plan and recalculate available_tokens for today
+      -- If reset is also needed (new day), consumed_today becomes 0
+      UPDATE user_tokens ut
+      SET
+        user_plan = p_user_plan,
+        daily_limit = default_limit,
+        available_tokens = CASE
+          WHEN default_limit = 999999999 THEN 999999999
+          WHEN stored_last_reset < current_date_utc THEN default_limit  -- new day resets
+          ELSE GREATEST(0, default_limit - ut.total_consumed_today)     -- recalc for today
+        END,
+        last_reset = CASE
+          WHEN stored_last_reset < current_date_utc THEN current_date_utc
+          ELSE ut.last_reset
+        END,
+        total_consumed_today = CASE
+          WHEN default_limit = 999999999 THEN 0
+          WHEN stored_last_reset < current_date_utc THEN 0
+          ELSE ut.total_consumed_today
+        END,
+        updated_at = NOW()
+      WHERE ut.identifier = p_identifier;
+    ELSE
+      -- Same plan: CRITICAL FIX: Persist daily reset BEFORE SELECT to avoid virtual reset issues
+      UPDATE user_tokens ut
+      SET
+        available_tokens = CASE
+          WHEN default_limit = 999999999 THEN 999999999
+          WHEN ut.last_reset < current_date_utc THEN default_limit
+          ELSE ut.available_tokens
+        END,
+        last_reset = CASE
+          WHEN ut.last_reset < current_date_utc THEN current_date_utc
+          ELSE ut.last_reset
+        END,
+        total_consumed_today = CASE
+          WHEN default_limit = 999999999 THEN 0
+          WHEN ut.last_reset < current_date_utc THEN 0
+          ELSE ut.total_consumed_today
+        END,
+        daily_limit = default_limit,  -- Update daily_limit to match database
+        updated_at = NOW()
+      WHERE ut.identifier = p_identifier;
+    END IF;
   END IF;
 
   -- Return the record (existing or newly created), now with persisted reset
@@ -266,13 +298,14 @@ BEGIN
     ut.last_reset,
     ut.total_consumed_today
   FROM user_tokens ut
-  WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan;
+  WHERE ut.identifier = p_identifier;
 END;
 $$;
 
 COMMENT ON FUNCTION get_or_create_user_tokens(TEXT, TEXT) IS
-  'Get or create user tokens record with automatic daily reset logic.
+  'Get or create user tokens record (one row per user) with automatic daily reset and plan-change detection.
    Reads daily_tokens from subscription_plans.features (database-driven).
+   On plan change: recalculates available_tokens = MAX(0, new_limit - consumed_today).
    Admin web updates are reflected automatically.';
 
 -- -----------------------------------------------------
@@ -324,27 +357,27 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Set default daily limit based on subscription plan
-  default_limit := CASE
-    WHEN p_user_plan = 'premium' THEN 999999999
-    WHEN p_user_plan = 'plus' THEN 50
-    WHEN p_user_plan = 'standard' THEN 20
-    WHEN p_user_plan = 'free' THEN 8
-    ELSE 8
-  END;
+  -- Read daily limit from subscription_plans (database-driven, not hardcoded)
+  SELECT COALESCE((sp.features->>'daily_tokens')::INTEGER, 8) INTO default_limit
+  FROM subscription_plans sp
+  WHERE sp.plan_code = p_user_plan;
+
+  IF default_limit IS NULL THEN default_limit := 8; END IF;
+  IF default_limit = -1 THEN default_limit := 999999999; END IF;
 
   -- Check if user needs daily reset and get current tokens WITH ROW LOCK
+  -- One row per user: WHERE uses identifier only
   SELECT
     CASE
-      WHEN ut.user_plan = 'premium' THEN default_limit
+      WHEN default_limit = 999999999 THEN default_limit
       WHEN ut.last_reset < CURRENT_DATE THEN default_limit
       ELSE ut.available_tokens
     END,
     ut.purchased_tokens,
-    ut.last_reset < CURRENT_DATE AND ut.user_plan != 'premium'
+    ut.last_reset < CURRENT_DATE AND default_limit != 999999999
   INTO current_daily_tokens, current_purchased_tokens, needs_reset
   FROM user_tokens ut
-  WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan
+  WHERE ut.identifier = p_identifier
   FOR UPDATE;  -- CRITICAL: Lock row to prevent race conditions
 
   -- Calculate total available tokens (daily + purchased)
@@ -372,8 +405,8 @@ BEGIN
     needs_reset := false;
   END IF;
 
-  -- Check if user has enough tokens (skip for premium)
-  IF p_user_plan != 'premium' AND total_available < p_token_cost THEN
+  -- Check if user has enough tokens (skip for unlimited plans)
+  IF default_limit != 999999999 AND total_available < p_token_cost THEN
     RETURN QUERY SELECT
       false::BOOLEAN,
       current_daily_tokens,
@@ -387,11 +420,11 @@ BEGIN
 
   -- Consume tokens with atomic update
   -- Strategy: Prioritize daily tokens first, then purchased tokens
-  IF p_user_plan = 'premium' THEN
-    -- Premium users don't consume tokens, just update timestamp
+  IF default_limit = 999999999 THEN
+    -- Unlimited plan users don't consume tokens, just update timestamp
     UPDATE user_tokens
     SET updated_at = NOW()
-    WHERE identifier = p_identifier AND user_plan = p_user_plan;
+    WHERE identifier = p_identifier;
 
     RETURN QUERY SELECT
       true::BOOLEAN,
@@ -415,7 +448,7 @@ BEGIN
     tokens_from_purchased := p_token_cost - current_daily_tokens;
   END IF;
 
-  -- Apply reset if needed and consume tokens atomically
+  -- Apply reset if needed and consume tokens atomically (one row per user)
   IF needs_reset THEN
     UPDATE user_tokens
     SET
@@ -425,7 +458,6 @@ BEGIN
       last_reset = CURRENT_DATE,
       updated_at = NOW()
     WHERE identifier = p_identifier
-      AND user_plan = p_user_plan
       AND user_tokens.purchased_tokens >= tokens_from_purchased;  -- ATOMIC: Verify sufficient tokens
 
     GET DIAGNOSTICS updated_rows = ROW_COUNT;
@@ -449,7 +481,6 @@ BEGIN
       total_consumed_today = user_tokens.total_consumed_today + p_token_cost,
       updated_at = NOW()
     WHERE identifier = p_identifier
-      AND user_plan = p_user_plan
       AND user_tokens.available_tokens >= tokens_from_daily
       AND user_tokens.purchased_tokens >= tokens_from_purchased;  -- ATOMIC: Verify sufficient tokens
 
@@ -481,7 +512,9 @@ END;
 $$;
 
 COMMENT ON FUNCTION consume_user_tokens(TEXT, TEXT, INTEGER) IS
-  'Atomically consume tokens with SELECT FOR UPDATE row-level locking and token breakdown response (FIXED: race conditions, ambiguous columns, transaction isolation)';
+  'Atomically consume tokens (one row per user) with SELECT FOR UPDATE locking and token breakdown response.
+   Reads daily_limit from subscription_plans (database-driven, not hardcoded).
+   FIXED: race conditions, ambiguous columns, transaction isolation, hardcoded plan limits.';
 
 -- -----------------------------------------------------
 -- Function: add_purchased_tokens
@@ -504,6 +537,7 @@ SET search_path TO public, pg_catalog
 AS $$
 DECLARE
   current_balance INTEGER;
+  plan_daily_limit INTEGER;
 BEGIN
   -- INPUT VALIDATION
   IF p_token_amount IS NULL OR p_token_amount <= 0 THEN
@@ -514,13 +548,19 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Update purchased tokens atomically
+  -- Read daily limit from subscription_plans (database-driven)
+  SELECT COALESCE((sp.features->>'daily_tokens')::INTEGER, 8) INTO plan_daily_limit
+  FROM subscription_plans sp
+  WHERE sp.plan_code = p_user_plan;
+  IF plan_daily_limit IS NULL THEN plan_daily_limit := 8; END IF;
+  IF plan_daily_limit = -1 THEN plan_daily_limit := 999999999; END IF;
+
+  -- Update purchased tokens atomically (one row per user)
   UPDATE user_tokens
   SET
     purchased_tokens = user_tokens.purchased_tokens + p_token_amount,
     updated_at = NOW()
   WHERE identifier = p_identifier
-    AND user_plan = p_user_plan
   RETURNING user_tokens.purchased_tokens INTO current_balance;
 
   -- If no record found, create one
@@ -535,18 +575,8 @@ BEGIN
       p_identifier,
       p_user_plan,
       p_token_amount,
-      CASE
-        WHEN p_user_plan = 'premium' THEN 999999999
-        WHEN p_user_plan = 'plus' THEN 50
-        WHEN p_user_plan = 'standard' THEN 20
-        ELSE 8
-      END,
-      CASE
-        WHEN p_user_plan = 'premium' THEN 999999999
-        WHEN p_user_plan = 'plus' THEN 50
-        WHEN p_user_plan = 'standard' THEN 20
-        ELSE 8
-      END
+      plan_daily_limit,
+      plan_daily_limit
     )
     RETURNING user_tokens.purchased_tokens INTO current_balance;
   END IF;
@@ -860,7 +890,7 @@ COMMIT;
 -- Migration Complete: Token System
 -- =====================================================
 -- Tables created: 2
---   1. user_tokens (balance tracking per user per plan)
+--   1. user_tokens (balance tracking - one row per user)
 --   2. token_usage_history (consumption audit trail)
 --
 -- Functions created: 5
@@ -871,7 +901,8 @@ COMMIT;
 --   5. get_user_token_usage_history() - Query paginated history
 --
 -- Features:
---   ✅ Daily token limits per plan (free: 8, standard: 20, plus: 50, premium: unlimited)
+--   ✅ One row per user (UNIQUE on identifier only - plan-change aware)
+--   ✅ Daily token limits per plan (database-driven from subscription_plans)
 --   ✅ Purchased tokens never reset
 --   ✅ Automatic daily reset at UTC midnight
 --   ✅ Atomic token consumption with row-level locking

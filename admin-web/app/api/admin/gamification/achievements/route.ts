@@ -45,13 +45,10 @@ export async function GET(request: NextRequest) {
       .from('achievements')
       .select('*')
       .order('category', { ascending: true })
-      .order('tier', { ascending: true })
+      .order('sort_order', { ascending: true })
 
     if (category) {
       query = query.eq('category', category)
-    }
-    if (type) {
-      query = query.eq('type', type)
     }
 
     const { data: achievements, error: achievementsError } = await query
@@ -69,11 +66,26 @@ export async function GET(request: NextRequest) {
       .from('user_achievements')
       .select('achievement_id, user_id')
 
-    // Map unlock counts to achievements
+    // Derive a tier label from xp_reward since the DB has no tier column
+    const getTierFromXP = (xp: number): string => {
+      if (xp <= 25) return 'bronze'
+      if (xp <= 75) return 'silver'
+      if (xp <= 200) return 'gold'
+      if (xp <= 500) return 'platinum'
+      return 'diamond'
+    }
+
+    // Map unlock counts to achievements and normalize field names for the frontend
+    // DB uses name_en/description_en/threshold; the table component expects title/description/requirement_value/tier/type
     const achievementsWithStats = (achievements || []).map(achievement => {
       const unlocks = (userAchievements || []).filter(ua => ua.achievement_id === achievement.id)
       return {
         ...achievement,
+        title: achievement.name_en,
+        description: achievement.description_en,
+        tier: getTierFromXP(achievement.xp_reward),
+        type: achievement.category,
+        requirement_value: achievement.threshold,
         total_unlocks: unlocks.length,
         unique_users: new Set(unlocks.map(ua => ua.user_id)).size,
       }
@@ -83,15 +95,11 @@ export async function GET(request: NextRequest) {
     const stats = {
       total: achievementsWithStats.length,
       by_category: {} as Record<string, number>,
-      by_type: {} as Record<string, number>,
-      by_tier: {} as Record<string, number>,
       total_unlocks: userAchievements?.length || 0,
     }
 
     achievementsWithStats.forEach(achievement => {
       stats.by_category[achievement.category] = (stats.by_category[achievement.category] || 0) + 1
-      stats.by_type[achievement.type] = (stats.by_type[achievement.type] || 0) + 1
-      stats.by_tier[achievement.tier] = (stats.by_tier[achievement.tier] || 0) + 1
     })
 
     return NextResponse.json({
@@ -114,19 +122,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
-      title,
-      description,
+      name_en,
+      name_hi,
+      name_ml,
+      description_en,
+      description_hi,
+      description_ml,
       category,
-      type,
-      tier,
       icon,
       xp_reward,
-      requirement_value
+      threshold,
+      sort_order,
     } = body
 
-    if (!title || !category || !type) {
+    if (!name_en || !category) {
       return NextResponse.json(
-        { error: 'title, category, and type are required' },
+        { error: 'name_en and category are required' },
         { status: 400 }
       )
     }
@@ -164,14 +175,17 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('achievements')
       .insert({
-        title,
-        description,
+        name_en,
+        name_hi: name_hi || name_en,
+        name_ml: name_ml || name_en,
+        description_en: description_en || '',
+        description_hi: description_hi || description_en || '',
+        description_ml: description_ml || description_en || '',
         category,
-        type,
-        tier: tier || 'bronze',
         icon: icon || '🏆',
         xp_reward: xp_reward || 0,
-        requirement_value: requirement_value || 0
+        threshold: threshold || null,
+        sort_order: sort_order || 0,
       })
       .select()
       .single()
