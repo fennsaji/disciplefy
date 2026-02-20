@@ -789,7 +789,7 @@ class DailyVerseCard extends StatelessWidget {
             ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
             : '🌐 https://www.disciplefy.in/';
     final text =
-        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n— Shared from Disciplefy App\n$appLink';
+        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
     Share.share(text);
   }
 }
