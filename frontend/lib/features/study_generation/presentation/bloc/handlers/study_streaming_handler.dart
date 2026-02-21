@@ -156,15 +156,16 @@ class StudyStreamingHandler {
     // The UI can detect isComplete and render accordingly
     final content = currentState.content;
 
-    // Create a new streaming state with completion info
-    // Preserve actual sections loaded count to maintain progress accuracy
-    // The UI layer will convert this to the full study guide when needed
+    // Create a new streaming state with completion info.
+    // Set sectionsLoaded = totalSections so isComplete flips to true.
+    // The backend complete event is authoritative — trust it even if a section
+    // was skipped (e.g. an optional passage section with no content).
     emit(StudyGenerationStreaming(
       content: content.copyWith(
         studyGuideId: event.studyGuideId,
         isFromCache: event.fromCache,
         sectionsLoaded:
-            content.sectionsLoaded, // Use actual count from streaming
+            content.totalSections, // Mark complete: trust the backend
       ),
       inputType: currentState.inputType,
       inputValue: currentState.inputValue,
