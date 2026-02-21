@@ -337,7 +337,7 @@ async function handleListPaths(
     estimated_days: row.estimated_days as number,
     disciple_level: row.disciple_level as string,
     is_featured: row.is_featured as boolean,
-    topics_count: row.topics_count as number,
+    topics_count: row.total_topics as number,
     is_enrolled: row.is_enrolled as boolean,
     progress_percentage: row.progress_percentage as number,
   }));
