@@ -1730,10 +1730,48 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  Widget _buildLoadingScreen() => EngagingLoadingScreen(
-        topic: widget.input,
-        language: _selectedLanguage,
-      );
+  Widget _buildLoadingScreen() {
+    final isSermon = widget.studyMode == StudyMode.sermon;
+    return Stack(
+      children: [
+        EngagingLoadingScreen(
+          topic: widget.input,
+          language: _selectedLanguage,
+        ),
+        if (isSermon)
+          Positioned(
+            bottom: 32,
+            left: 24,
+            right: 24,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                border: Border.all(color: Colors.orange.shade200),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule_rounded,
+                      color: Colors.orange.shade700, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Sermon Outline uses 4 AI passes and takes longer than other modes — usually 60–90 seconds. Please wait.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange.shade800,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
   Widget _buildErrorScreen() => Center(
         child: Padding(

@@ -166,11 +166,11 @@ class SavedGuideEntity extends Equatable {
       case 'quick':
         return '3 min';
       case 'standard':
-        return '10 min';
+        return '8 min';
       case 'deep':
-        return '25 min';
+        return '12 min';
       case 'lectio':
-        return '15 min';
+        return '9 min';
       case 'sermon':
         return '55 min';
       default:

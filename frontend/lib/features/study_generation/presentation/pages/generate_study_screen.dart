@@ -1986,7 +1986,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeStandardDescription),
                           icon: Icons.library_books,
                           currentModeRaw: currentModeRaw,
-                          duration: '10 min',
+                          duration: '8 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(
@@ -1997,7 +1997,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeDeepDescription),
                           icon: Icons.search,
                           currentModeRaw: currentModeRaw,
-                          duration: '15 min',
+                          duration: '12 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(
@@ -2009,7 +2009,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeLectioDescription),
                           icon: Icons.self_improvement,
                           currentModeRaw: currentModeRaw,
-                          duration: '10 min',
+                          duration: '9 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(
