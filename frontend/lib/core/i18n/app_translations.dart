@@ -1728,17 +1728,17 @@ class AppTranslations {
       'standard': {
         'name': 'Standard Study',
         'description': 'Full guide with 6 sections',
-        'duration_label': '10-Minute Study',
+        'duration_label': '8-Minute Study',
       },
       'deep': {
         'name': 'Deep Dive',
         'description': '+ Word studies + Extended context',
-        'duration_label': '25-Minute Deep Dive',
+        'duration_label': '12-Minute Deep Dive',
       },
       'lectio': {
         'name': 'Lectio Divina',
         'description': 'Meditative reading with silence',
-        'duration_label': '15-Minute Lectio',
+        'duration_label': '9-Minute Lectio',
       },
       'sermon': {
         'name': 'Sermon Outline',
@@ -1773,7 +1773,7 @@ class AppTranslations {
       'pray_rest': 'Pray & Rest',
       'closing_blessing': 'Closing Blessing',
       'closing_blessing_emoji': '🌟 Closing Blessing',
-      'duration_label': 'Lectio Divina • 15 Minutes',
+      'duration_label': 'Lectio Divina • 9 Minutes',
     },
     'sermon': {
       'thesis': 'Sermon Thesis',
@@ -3626,17 +3626,17 @@ class AppTranslations {
       'standard': {
         'name': 'सामान्य पढ़ाई',
         'description': '6 हिस्सों के साथ पूरा गाइड',
-        'duration_label': '10 मिनट की पढ़ाई',
+        'duration_label': '8 मिनट की पढ़ाई',
       },
       'deep': {
         'name': 'गहरी पढ़ाई',
         'description': '+ शब्द पढ़ाई + अधिक जानकारी',
-        'duration_label': '25 मिनट की गहरी पढ़ाई',
+        'duration_label': '12 मिनट की गहरी पढ़ाई',
       },
       'lectio': {
         'name': 'लेक्टियो डिविना',
         'description': 'चुपचाप ध्यान से पढ़ना',
-        'duration_label': '15 मिनट की ध्यान पढ़ाई',
+        'duration_label': '9 मिनट की ध्यान पढ़ाई',
       },
       'sermon': {
         'name': 'उपदेश रूपरेखा',
@@ -5604,17 +5604,17 @@ class AppTranslations {
       'standard': {
         'name': 'സ്റ്റാൻഡർഡ് പഠനം',
         'description': '6 ഭാഗങ്ങളുള്ള പൂർണ്ണ ഗൈഡ്',
-        'duration_label': '10 മിനിറ്റ് പഠനം',
+        'duration_label': '8 മിനിറ്റ് പഠനം',
       },
       'deep': {
         'name': 'ആഴത്തിലുള്ള പഠനം',
         'description': '+ വാക്ക് പഠനം + വിസ്തൃത സന്ദർഭം',
-        'duration_label': '25 മിനിറ്റ് ആഴത്തിലുള്ള പഠനം',
+        'duration_label': '12 മിനിറ്റ് ആഴത്തിലുള്ള പഠനം',
       },
       'lectio': {
         'name': 'ലെക്‌ഷ്യോ ഡിവൈന',
         'description': 'മൌനത്തോടെ ധ്യാനപൂർവം വായന',
-        'duration_label': '15 മിനിറ്റ് ധ്യാന വായന',
+        'duration_label': '9 മിനിറ്റ് ധ്യാന വായന',
       },
       'sermon': {
         'name': 'പ്രഭാഷണ രൂപരേഖ',
@@ -5649,7 +5649,7 @@ class AppTranslations {
       'pray_rest': 'പ്രാർത്ഥിച്ച് വിശ്രമിക്കുക',
       'closing_blessing': 'സമാപന അനുഗ്രഹം',
       'closing_blessing_emoji': '🌟 സമാപന അനുഗ്രഹം',
-      'duration_label': 'ലെക്‌ഷ്യോ ഡിവൈന • 15 മിനിറ്റ്',
+      'duration_label': 'ലെക്‌ഷ്യോ ഡിവൈന • 9 മിനിറ്റ്',
     },
     'sermon': {
       'thesis': 'പ്രഭാഷണ തീസിസ്',
