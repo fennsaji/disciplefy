@@ -636,8 +636,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.masteryMaster,
-              AppColors.masteryMaster,
+              AppColors.warningDark,
+              AppColors.warning,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,

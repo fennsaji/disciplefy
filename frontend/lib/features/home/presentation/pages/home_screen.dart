@@ -928,10 +928,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         final homeState =
             state is HomeCombinedState ? state : const HomeCombinedState();
 
-        // Determine section title based on personalization state
-        final sectionTitle = homeState.isPersonalized
-            ? context.tr(TranslationKeys.homeForYou)
-            : context.tr(TranslationKeys.homeExploreTopics);
+        final sectionTitle = context.tr(TranslationKeys.homeForYou);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
