@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'scripture_verse_sheet.dart';
+import '../../core/constants/bible_books.dart';
 
 /// A widget that renders text with clickable scripture references.
 ///
@@ -40,50 +41,10 @@ class ClickableScriptureText extends StatefulWidget {
 
   /// Regex pattern to match scripture references in English, Hindi, and Malayalam.
   ///
-  /// **Design Note**: Uses a whitelist approach with explicit book names to avoid
-  /// false positives like "Section 3:16" or "Room 1:30". This is intentionally
-  /// stricter than [InputValidationService.isValidScripture] which uses a generic
-  /// Unicode pattern for input validation (more lenient to accept user input).
-  ///
-  /// Multi-word book names (भजन संहिता, प्रेरितों के काम) are listed explicitly
-  /// before single-word patterns to ensure correct matching.
-  static final RegExp scripturePattern = RegExp(
-    r'('
-    r'(?:\d\s?)?' // Optional number prefix like "1 " or "1" for numbered books
-    r'(?:'
-    // English: Genesis, Song of Solomon, 1 John
-    r'[A-Z][a-z]{2,}(?:\s(?:of\s)?[A-Z][a-z]+)?'
-    r'|'
-    // Hindi multi-word book names (must be listed before single-word pattern)
-    r'भजन संहिता|प्रेरितों के काम|श्रेष्ठगीत'
-    r'|'
-    // Hindi single-word book names - common Bible books
-    r'(?:उत्पत्ति|निर्गमन|लैव्यव्यवस्था|गिनती|व्यवस्थाविवरण|'
-    r'यहोशू|न्यायियों|रूत|शमूएल|राजा|इतिहास|एज्रा|नहेम्याह|एस्तेर|अय्यूब|'
-    r'भजन|नीतिवचन|सभोपदेशक|यशायाह|यिर्मयाह|विलापगीत|यहेजकेल|दानिय्येल|'
-    r'होशे|योएल|आमोस|ओबद्याह|योना|मीका|नहूम|हबक्कूक|सपन्याह|हाग्गै|जकर्याह|मलाकी|'
-    r'मत्ती|मरकुस|लूका|यूहन्ना|प्रेरितों|रोमियों|कुरिन्थियों|गलातियों|इफिसियों|'
-    r'फिलिप्पियों|कुलुस्सियों|थिस्सलुनीकियों|तीमुथियुस|तीतुस|फिलेमोन|इब्रानियों|'
-    r'याकूब|पतरस|यहूदा|प्रकाशितवाक्य)'
-    r'|'
-    // Malayalam multi-word book names
-    r'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ|ഉത്തമഗീതം'
-    r'|'
-    // Malayalam single-word book names - common Bible books
-    r'(?:ഉല്പത്തി|പുറപ്പാട്|ലേവ്യപുസ്തകം|സംഖ്യ|ആവർത്തനം|'
-    r'യോശുവ|ന്യായാധിപന്മാർ|രൂത്ത്|ശമൂവേൽ|രാജാക്കന്മാർ|ദിനവൃത്താന്തം|'
-    r'എസ്രാ|നെഹെമ്യാവ്|എസ്ഥേർ|ഇയ്യോബ്|സങ്കീർത്തനങ്ങൾ|സദൃശ്യവാക്യങ്ങൾ|'
-    r'സഭാപ്രസംഗി|യെശയ്യാവ്|യിരെമ്യാവ്|വിലാപങ്ങൾ|യെഹെസ്കേൽ|ദാനിയേൽ|'
-    r'ഹോശേയ|യോവേൽ|ആമോസ്|ഓബദ്യാവ്|യോനാ|മീഖാ|നഹൂം|ഹബക്കൂക്ക്|സെഫന്യാവ്|'
-    r'ഹഗ്ഗായി|സെഖര്യാവ്|മലാഖി|മത്തായി|മർക്കൊസ്|ലൂക്കൊസ്|യോഹന്നാൻ|'
-    r'റോമർ|കൊരിന്ത്യർ|ഗലാത്യർ|എഫെസ്യർ|ഫിലിപ്പിയർ|കൊലൊസ്സ്യർ|'
-    r'തെസ്സലൊനീക്യർ|തിമൊഥെയൊസ്|തീത്തൊസ്|ഫിലേമോൻ|എബ്രായർ|യാക്കോബ്|'
-    r'പത്രൊസ്|യൂദാ|വെളിപ്പാട്)'
-    r')'
-    r')'
-    r'\s+(\d+)(?::(\d+)(?:-(\d+))?)?', // Matches "Book 23" or "Book 23:1" or "Book 23:1-6"
-    unicode: true,
-  );
+  /// Uses [BibleBooks.createScriptureRegex()] as the single source of truth,
+  /// matching all canonical names and alternates maintained in [BibleBooks].
+  /// This stays in sync with [MarkdownWithScripture] and the backend normalizer.
+  static final RegExp scripturePattern = BibleBooks.createScriptureRegex();
 
   @override
   State<ClickableScriptureText> createState() => _ClickableScriptureTextState();

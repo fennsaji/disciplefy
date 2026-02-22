@@ -41,6 +41,7 @@ import 'core/services/font_scale_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/system_config_service.dart';
 import 'core/services/pricing_service.dart';
+import 'core/services/bible_books_service.dart';
 import 'core/utils/version_checker.dart';
 import 'core/services/auth_session_validator.dart';
 import 'core/services/notification_service.dart';
@@ -225,6 +226,13 @@ void main() async {
     if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing pricing service...');
     await sl<PricingService>().initialize();
     if (kDebugMode) Logger.debug('✅ [MAIN] Pricing service completed');
+
+    // Initialize Bible books service (remote book name config with 30-day cache)
+    if (kDebugMode) {
+      Logger.debug('🔧 [MAIN] Initializing Bible books service...');
+    }
+    await sl<BibleBooksService>().initialize();
+    if (kDebugMode) Logger.debug('✅ [MAIN] Bible books service completed');
 
     // Check app version requirements
     if (kDebugMode) Logger.debug('🔧 [MAIN] Checking app version...');

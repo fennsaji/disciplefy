@@ -16,6 +16,7 @@ import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { fetchWithTimeout } from '../_shared/services/bible-api-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { HINDI_BOOK_NAMES, MALAYALAM_BOOK_NAMES, LOCALIZED_VARIANTS_TO_ENGLISH } from '../_shared/utils/bible-book-normalizer.ts'
 
 /**
  * Request payload structure
@@ -61,43 +62,9 @@ const BOOK_CODES: Record<string, string> = {
   '1 John': '1JN', '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV',
 }
 
-// Hindi book names for localization
-const HINDI_BOOK_NAMES: Record<string, string> = {
-  'Genesis': 'उत्पत्ति', 'Exodus': 'निर्गमन', 'Leviticus': 'लैव्यव्यवस्था', 'Numbers': 'गिनती', 'Deuteronomy': 'व्यवस्थाविवरण',
-  'Joshua': 'यहोशू', 'Judges': 'न्यायियों', 'Ruth': 'रूत', '1 Samuel': '1 शमूएल', '2 Samuel': '2 शमूएल',
-  '1 Kings': '1 राजा', '2 Kings': '2 राजा', '1 Chronicles': '1 इतिहास', '2 Chronicles': '2 इतिहास',
-  'Ezra': 'एज्रा', 'Nehemiah': 'नहेमायाह', 'Esther': 'एस्तेर', 'Job': 'अय्यूब', 'Psalms': 'भजन संहिता',
-  'Proverbs': 'नीतिवचन', 'Ecclesiastes': 'सभोपदेशक', 'Song of Solomon': 'श्रेष्ठगीत', 'Isaiah': 'यशायाह',
-  'Jeremiah': 'यिर्मयाह', 'Lamentations': 'विलापगीत', 'Ezekiel': 'यहेजकेल', 'Daniel': 'दानिय्येल',
-  'Hosea': 'होशे', 'Joel': 'योएल', 'Amos': 'आमोस', 'Obadiah': 'ओबद्याह', 'Jonah': 'योना',
-  'Micah': 'मीका', 'Nahum': 'नहूम', 'Habakkuk': 'हबक्कूक', 'Zephaniah': 'सपन्याह', 'Haggai': 'हाग्गै',
-  'Zechariah': 'जकर्याह', 'Malachi': 'मलाकी',
-  'Matthew': 'मत्ती', 'Mark': 'मरकुस', 'Luke': 'लूका', 'John': 'यूहन्ना', 'Acts': 'प्रेरितों के काम',
-  'Romans': 'रोमियों', '1 Corinthians': '1 कुरिन्थियों', '2 Corinthians': '2 कुरिन्थियों', 'Galatians': 'गलातियों',
-  'Ephesians': 'इफिसियों', 'Philippians': 'फिलिप्पियों', 'Colossians': 'कुलुस्सियों', '1 Thessalonians': '1 थिस्सलुनीकियों',
-  '2 Thessalonians': '2 थिस्सलुनीकियों', '1 Timothy': '1 तीमुथियुस', '2 Timothy': '2 तीमुथियुस', 'Titus': 'तीतुस',
-  'Philemon': 'फिलेमोन', 'Hebrews': 'इब्रानियों', 'James': 'याकूब', '1 Peter': '1 पतरस', '2 Peter': '2 पतरस',
-  '1 John': '1 यूहन्ना', '2 John': '2 यूहन्ना', '3 John': '3 यूहन्ना', 'Jude': 'यहूदा', 'Revelation': 'प्रकाशितवाक्य',
-}
 
-// Malayalam book names for localization
-const MALAYALAM_BOOK_NAMES: Record<string, string> = {
-  'Genesis': 'ഉല്പത്തി', 'Exodus': 'പുറപ്പാട്', 'Leviticus': 'ലേവ്യപുസ്തകം', 'Numbers': 'സംഖ്യാപുസ്തകം', 'Deuteronomy': 'ആവര്‍ത്തനം',
-  'Joshua': 'യോശുവ', 'Judges': 'ന്യായാധിപന്മാര്‍', 'Ruth': 'രൂത്ത്', '1 Samuel': '1 ശമൂവേല്‍', '2 Samuel': '2 ശമൂവേല്‍',
-  '1 Kings': '1 രാജാക്കന്മാര്‍', '2 Kings': '2 രാജാക്കന്മാര്‍', '1 Chronicles': '1 ദിനവൃത്താന്തം', '2 Chronicles': '2 ദിനവൃത്താന്തം',
-  'Ezra': 'എസ്രാ', 'Nehemiah': 'നെഹെമ്യാവ്', 'Esther': 'എസ്ഥേര്‍', 'Job': 'ഇയ്യോബ്', 'Psalms': 'സങ്കീര്‍ത്തനങ്ങള്‍',
-  'Proverbs': 'സദൃശവാക്യങ്ങള്‍', 'Ecclesiastes': 'സഭാപ്രസംഗി', 'Song of Solomon': 'ഉത്തമഗീതം', 'Isaiah': 'യശായാ',
-  'Jeremiah': 'യിരെമ്യാവ്', 'Lamentations': 'വിലാപങ്ങള്‍', 'Ezekiel': 'യെഹെസ്കേല്‍', 'Daniel': 'ദാനീയേല്‍',
-  'Hosea': 'ഹോശേയ', 'Joel': 'യോവേല്‍', 'Amos': 'ആമോസ്', 'Obadiah': 'ഓബദ്യാവ്', 'Jonah': 'യോനാ',
-  'Micah': 'മീഖാ', 'Nahum': 'നഹൂം', 'Habakkuk': 'ഹബക്കൂക്ക്', 'Zephaniah': 'സെഫന്യാവ്', 'Haggai': 'ഹഗ്ഗായി',
-  'Zechariah': 'സെഖര്യാവ്', 'Malachi': 'മലാഖി',
-  'Matthew': 'മത്തായി', 'Mark': 'മര്‍ക്കൊസ്', 'Luke': 'ലൂക്കൊസ്', 'John': 'യോഹന്നാന്‍', 'Acts': 'അപ്പൊസ്തലപ്രവൃത്തികള്‍',
-  'Romans': 'റോമാക്കാര്‍', '1 Corinthians': '1 കൊരിന്ത്യര്‍', '2 Corinthians': '2 കൊരിന്ത്യര്‍', 'Galatians': 'ഗലാത്യര്‍',
-  'Ephesians': 'എഫെസ്യര്‍', 'Philippians': 'ഫിലിപ്പിയര്‍', 'Colossians': 'കൊലൊസ്സ്യര്‍', '1 Thessalonians': '1 തെസ്സലൊനീക്യര്‍',
-  '2 Thessalonians': '2 തെസ്സലൊനീക്യര്‍', '1 Timothy': '1 തിമൊഥെയൊസ്', '2 Timothy': '2 തിമൊഥെയൊസ്', 'Titus': 'തീത്തൊസ്',
-  'Philemon': 'ഫിലേമോന്‍', 'Hebrews': 'എബ്രായര്‍', 'James': 'യാക്കോബ്', '1 Peter': '1 പത്രൊസ്', '2 Peter': '2 പത്രൊസ്',
-  '1 John': '1 യോഹന്നാന്‍', '2 John': '2 യോഹന്നാന്‍', '3 John': '3 യോഹന്നാന്‍', 'Jude': 'യൂദാ', 'Revelation': 'വെളിപ്പാട്',
-}
+// HINDI_BOOK_NAMES and MALAYALAM_BOOK_NAMES are imported from bible-book-normalizer.ts.
+// They are the shared canonical source for localized book name display and reverse lookup.
 
 // Bible version IDs from API.Bible
 const BIBLE_VERSIONS = {
@@ -105,6 +72,7 @@ const BIBLE_VERSIONS = {
   hi: '1e8ab327edbce67f-01', // Indian Revised Version Hindi 2019
   ml: '3ea0147e32eebe47-01', // Indian Revised Version Malayalam 2025
 } as const
+
 
 // Reverse mappings: Hindi/Malayalam book names -> English
 const HINDI_TO_ENGLISH: Record<string, string> = Object.fromEntries(
@@ -115,44 +83,9 @@ const MALAYALAM_TO_ENGLISH: Record<string, string> = Object.fromEntries(
   Object.entries(MALAYALAM_BOOK_NAMES).map(([en, ml]) => [ml, en])
 )
 
-// Alternate spellings for book names (common variations from LLM output)
-const ALTERNATE_SPELLINGS: Record<string, string> = {
-  // Malayalam alternates
-  'റോമർ': 'Romans',
-  'റോമര്‍': 'Romans',
-  'കൊരിന്ത്യർ': 'Corinthians',
-  '1 കൊരിന്ത്യർ': '1 Corinthians',
-  '2 കൊരിന്ത്യർ': '2 Corinthians',
-  'ഗലാത്യർ': 'Galatians',
-  'എഫെസ്യർ': 'Ephesians',
-  'ഫിലിപ്പിയർ': 'Philippians',
-  'കൊലൊസ്സ്യർ': 'Colossians',
-  'തെസ്സലൊനീക്യർ': 'Thessalonians',
-  '1 തെസ്സലൊനീക്യർ': '1 Thessalonians',
-  '2 തെസ്സലൊനീക്യർ': '2 Thessalonians',
-  'എബ്രായർ': 'Hebrews',
-  'യോഹന്നാൻ': 'John',
-  '1 യോഹന്നാൻ': '1 John',
-  '2 യോഹന്നാൻ': '2 John',
-  '3 യോഹന്നാൻ': '3 John',
-  '1 പത്രോസ്': '1 Peter',
-  '2 പത്രോസ്': '2 Peter',
-  'സങ്കീർത്തനം': 'Psalms',
-  'സങ്കീര്‍ത്തനം': 'Psalms',
-  'സങ്കീർത്തനങ്ങൾ': 'Psalms',
-  'ലൂക്കാ': 'Luke',
-  'ലൂക്കോസ്': 'Luke',
-  'മത്തായി': 'Matthew',
-  'മർക്കോസ്': 'Mark',
-  'എഫേസ്യർ': 'Ephesians',
-  'ജോൺ': 'John',
-  // Hindi alternates
-  'रोमियो': 'Romans',
-  'यूहन्ना': 'John',
-  '1 यूहन्ना': '1 John',
-  '2 यूहन्ना': '2 John',
-  '3 यूहन्ना': '3 John',
-}
+// LOCALIZED_VARIANTS_TO_ENGLISH is imported from bible-book-normalizer.ts.
+// It maps common LLM-generated and user-input variants to English canonical names.
+// Add new variants there to fix them everywhere at once.
 
 /**
  * Normalize book name to English for API lookup
@@ -174,9 +107,9 @@ function normalizeBookName(book: string): string {
     return MALAYALAM_TO_ENGLISH[book]
   }
 
-  // Try alternate spellings (common variations from LLM output)
-  if (ALTERNATE_SPELLINGS[book]) {
-    return ALTERNATE_SPELLINGS[book]
+  // Try localized variant spellings (common variations from LLM output)
+  if (LOCALIZED_VARIANTS_TO_ENGLISH[book]) {
+    return LOCALIZED_VARIANTS_TO_ENGLISH[book]
   }
 
   // Return as-is (will fail validation later)

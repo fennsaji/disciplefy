@@ -1,11 +1,37 @@
 // Canonical Bible book names for scripture reference detection
-// Mirrors backend: supabase/functions/_shared/utils/bible-book-normalizer.ts
 //
-// This file should be kept in sync with the backend canonical book names.
-// These are the official book names used by API.Bible service.
+// Single source of truth (canonical data): DB table `bible_book_config` (id = 1).
+// - Frontend fetches via `get-bible-books` Edge Function and caches for 30 days.
+// - Call [BibleBooks.loadRemoteData] after [BibleBooksService.initialize] to activate.
+// - Static const lists below are fallback only (used on first launch / no network).
+//
+// Backend normalizer (bible-book-normalizer.ts) keeps its own hardcoded copy
+// to avoid DB round-trips during LLM processing at cold-start.
 
-/// Provides canonical Bible book names and utilities for scripture reference detection
+import '../models/bible_books_config.dart';
+
+/// Provides canonical Bible book names and utilities for scripture reference detection.
+///
+/// Supports remote data injection via [loadRemoteData]. Falls back to static
+/// const lists when no remote config has been loaded.
 class BibleBooks {
+  // ---------------------------------------------------------------------------
+  // Remote data support
+  // ---------------------------------------------------------------------------
+
+  static BibleBooksConfig? _remote;
+
+  /// Called by [BibleBooksService] after loading from API or cache.
+  /// Clears the cached regex so it rebuilds on the next call.
+  static void loadRemoteData(BibleBooksConfig config) {
+    _remote = config;
+    _cachedPattern = null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Static fallback data (used when remote config is not yet loaded)
+  // ---------------------------------------------------------------------------
+
   /// English Bible book names (API.Bible - KJV/ESV)
   static const List<String> english = [
     // Old Testament
@@ -128,28 +154,29 @@ class BibleBooks {
     'मर्कुस', // Common misspelling of मरकुस
     'नहेमायाह', // Alternative spelling of नहेम्याह
     '1 राजा', '2 राजा', // Singular vs plural
+    'रोमियो', 'भजन-संहिता',
   ];
 
   /// Malayalam full forms and alternates (API uses abbreviated forms)
   static const List<String> malayalamAlternates = [
-    // Full forms to abbreviated forms
+    // Full forms → abbreviated API forms
     'ഉല്പത്തി', 'പുറപ്പാട്', 'ലേവ്യപുസ്തകം', 'സംഖ്യാപുസ്തകം',
-    'ആവർത്തനം', 'ന്യായാധിപന്മാർ',
+    'ആവർത്തനം', 'ആവർത്തനപുസ്തകം', 'ന്യായാധിപന്മാർ',
     '1 ശമൂവേൽ', '2 ശമൂവേൽ',
     '1 രാജാക്കന്മാർ', '2 രാജാക്കന്മാർ',
     '1 ദിനവൃത്താന്തം', '2 ദിനവൃത്താന്തം',
     'നെഹെമ്യാവ്', 'എസ്ഥേർ', 'ഇയ്യോബ്',
     'സങ്കീർത്തനങ്ങൾ', 'സദൃശവാക്യങ്ങൾ', 'സഭാപ്രസംഗി', 'ഉത്തമഗീതം',
-    'യശായാ', 'യിരെമ്യാവ്', 'വിലാപങ്ങൾ', 'യെഹെസ്കേൽ', 'ദാനിയേൽ',
+    'യശായാ', 'യെശയ്യാവ്', 'യിരെമ്യാവ്', 'വിലാപങ്ങൾ', 'യെഹെസ്കേൽ', 'ദാനിയേൽ',
     'ഹോശേയ', 'യോവേൽ', 'ആമോസ്', 'ഓബദ്യാവ്',
     'ഹബക്കൂക്ക്', 'സെഫന്യാവ്', 'ഹഗ്ഗായി', 'സെഖര്യാവ്', 'മലാഖി',
     // New Testament full forms
     'മത്തായി', 'മർക്കൊസ്', 'ലൂക്കൊസ്', 'യോഹന്നാൻ',
     'അപ്പൊസ്തലപ്രവൃത്തികൾ', 'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ',
-    'റോമാക്കാർ',
+    'റോമാക്കാർ', 'റോമർ', 'റോമര്‍',
     '1 കൊരിന്ത്യർ', '2 കൊരിന്ത്യർ',
     'ഗലാത്യർ', 'എഫെസ്യർ', 'ഫിലിപ്പിയർ', 'കൊലൊസ്സ്യർ',
-    '1 തെസ്സലൊനീക്യർ', '2 തെസ്സലൊനീക്യർ',
+    'തെസ്സലൊനീക്യർ', '1 തെസ്സലൊനീക്യർ', '2 തെസ്സലൊനീക്യർ',
     '1 തിമൊഥെയൊസ്', '2 തിമൊഥെയൊസ്',
     'തീത്തൊസ്', 'ഫിലേമോൻ', 'എബ്രായർ', 'യാക്കോബ്',
     '1 പത്രൊസ്', '2 പത്രൊസ്',
@@ -163,17 +190,35 @@ class BibleBooks {
     'ഒന്നാം തിമൊഥെയൊസ്', 'രണ്ടാം തിമൊഥെയൊസ്',
     'ഒന്നാം പത്രൊസ്', 'രണ്ടാം പത്രൊസ്',
     'ഒന്നാം യോഹന്നാൻ', 'രണ്ടാം യോഹന്നാൻ', 'മൂന്നാം യോഹന്നാൻ',
+    // Additional spelling variants (from LOCALIZED_VARIANTS_TO_ENGLISH)
+    'ലൂക്കാ', 'ലൂക്കോസ്', 'മർക്കോസ്', 'ജോൺ',
+    'എഫേസ്യർ',
+    'സങ്കീർത്തനം', 'സങ്കീര്‍ത്തനം',
+    '1 പത്രോസ്', '2 പത്രോസ്',
   ];
 
-  /// Get all Bible book names for all languages combined (including alternates)
-  static List<String> get all => [
-        ...english,
-        ...englishAbbreviations,
-        ...hindi,
-        ...hindiAlternates,
-        ...malayalam,
-        ...malayalamAlternates,
+  /// All Bible book names for all languages combined (including alternates).
+  /// Uses remote data when loaded; falls back to static const lists.
+  static List<String> get all {
+    if (_remote != null) {
+      return [
+        ..._remote!.english,
+        ..._remote!.englishAbbreviations,
+        ..._remote!.hindi,
+        ..._remote!.hindiAlternates,
+        ..._remote!.malayalam,
+        ..._remote!.malayalamAlternates,
       ];
+    }
+    return [
+      ...english,
+      ...englishAbbreviations,
+      ...hindi,
+      ...hindiAlternates,
+      ...malayalam,
+      ...malayalamAlternates,
+    ];
+  }
 
   /// Generate regex pattern for scripture reference detection
   /// Requires chapter number to avoid false matches
@@ -200,9 +245,12 @@ class BibleBooks {
     );
   }
 
-  /// Create RegExp for scripture reference detection
+  static RegExp? _cachedPattern;
+
+  /// Create RegExp for scripture reference detection.
+  /// Result is cached after first call.
   static RegExp createScriptureRegex() {
-    return RegExp(
+    return _cachedPattern ??= RegExp(
       getScripturePattern(),
       unicode: true,
       caseSensitive: false, // Allow "john" or "John"

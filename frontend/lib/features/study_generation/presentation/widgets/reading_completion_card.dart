@@ -161,6 +161,7 @@ class ReadingCompletionCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
                               Icons.edit_note_rounded,
@@ -168,13 +169,17 @@ class ReadingCompletionCard extends StatelessWidget {
                               size: 22,
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              context.tr(
-                                  TranslationKeys.readingCompleteReflectNow),
-                              style: AppFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                            Flexible(
+                              child: Text(
+                                context.tr(
+                                    TranslationKeys.readingCompleteReflectNow),
+                                style: AppFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
                           ],

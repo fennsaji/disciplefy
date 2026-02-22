@@ -69,6 +69,234 @@ export const CANONICAL_BIBLE_BOOKS = {
   ]
 } as const
 
+// ==================== LOCALIZED DISPLAY NAMES ====================
+
+/**
+ * Maps English book names to their canonical Hindi full names.
+ * Used for localized display and reverse lookup (e.g., in fetch-verse).
+ * Source of truth for Hindi display names shared across all backend functions.
+ */
+export const HINDI_BOOK_NAMES: Record<string, string> = {
+  // Old Testament
+  'Genesis': 'उत्पत्ति', 'Exodus': 'निर्गमन', 'Leviticus': 'लैव्यव्यवस्था', 'Numbers': 'गिनती', 'Deuteronomy': 'व्यवस्थाविवरण',
+  'Joshua': 'यहोशू', 'Judges': 'न्यायियों', 'Ruth': 'रूत', '1 Samuel': '1 शमूएल', '2 Samuel': '2 शमूएल',
+  '1 Kings': '1 राजा', '2 Kings': '2 राजा', '1 Chronicles': '1 इतिहास', '2 Chronicles': '2 इतिहास',
+  'Ezra': 'एज्रा', 'Nehemiah': 'नहेमायाह', 'Esther': 'एस्तेर', 'Job': 'अय्यूब', 'Psalms': 'भजन संहिता',
+  'Proverbs': 'नीतिवचन', 'Ecclesiastes': 'सभोपदेशक', 'Song of Solomon': 'श्रेष्ठगीत', 'Isaiah': 'यशायाह',
+  'Jeremiah': 'यिर्मयाह', 'Lamentations': 'विलापगीत', 'Ezekiel': 'यहेजकेल', 'Daniel': 'दानिय्येल',
+  'Hosea': 'होशे', 'Joel': 'योएल', 'Amos': 'आमोस', 'Obadiah': 'ओबद्याह', 'Jonah': 'योना',
+  'Micah': 'मीका', 'Nahum': 'नहूम', 'Habakkuk': 'हबक्कूक', 'Zephaniah': 'सपन्याह', 'Haggai': 'हाग्गै',
+  'Zechariah': 'जकर्याह', 'Malachi': 'मलाकी',
+  // New Testament
+  'Matthew': 'मत्ती', 'Mark': 'मरकुस', 'Luke': 'लूका', 'John': 'यूहन्ना', 'Acts': 'प्रेरितों के काम',
+  'Romans': 'रोमियों', '1 Corinthians': '1 कुरिन्थियों', '2 Corinthians': '2 कुरिन्थियों', 'Galatians': 'गलातियों',
+  'Ephesians': 'इफिसियों', 'Philippians': 'फिलिप्पियों', 'Colossians': 'कुलुस्सियों', '1 Thessalonians': '1 थिस्सलुनीकियों',
+  '2 Thessalonians': '2 थिस्सलुनीकियों', '1 Timothy': '1 तीमुथियुस', '2 Timothy': '2 तीमुथियुस', 'Titus': 'तीतुस',
+  'Philemon': 'फिलेमोन', 'Hebrews': 'इब्रानियों', 'James': 'याकूब', '1 Peter': '1 पतरस', '2 Peter': '2 पतरस',
+  '1 John': '1 यूहन्ना', '2 John': '2 यूहन्ना', '3 John': '3 यूहन्ना', 'Jude': 'यहूदा', 'Revelation': 'प्रकाशितवाक्य',
+}
+
+/**
+ * Maps English book names to their canonical Malayalam full names (for display).
+ * Note: CANONICAL_BIBLE_BOOKS['ml-IN'] uses abbreviated API forms (e.g., 'ഉല്പ.');
+ * these are full-form display names used for user-facing localization.
+ * Source of truth for Malayalam display names shared across all backend functions.
+ */
+export const MALAYALAM_BOOK_NAMES: Record<string, string> = {
+  // Old Testament
+  'Genesis': 'ഉല്പത്തി', 'Exodus': 'പുറപ്പാട്', 'Leviticus': 'ലേവ്യപുസ്തകം', 'Numbers': 'സംഖ്യാപുസ്തകം', 'Deuteronomy': 'ആവര്‍ത്തനം',
+  'Joshua': 'യോശുവ', 'Judges': 'ന്യായാധിപന്മാര്‍', 'Ruth': 'രൂത്ത്', '1 Samuel': '1 ശമൂവേല്‍', '2 Samuel': '2 ശമൂവേല്‍',
+  '1 Kings': '1 രാജാക്കന്മാര്‍', '2 Kings': '2 രാജാക്കന്മാര്‍', '1 Chronicles': '1 ദിനവൃത്താന്തം', '2 Chronicles': '2 ദിനവൃത്താന്തം',
+  'Ezra': 'എസ്രാ', 'Nehemiah': 'നെഹെമ്യാവ്', 'Esther': 'എസ്ഥേര്‍', 'Job': 'ഇയ്യോബ്', 'Psalms': 'സങ്കീര്‍ത്തനങ്ങള്‍',
+  'Proverbs': 'സദൃശവാക്യങ്ങള്‍', 'Ecclesiastes': 'സഭാപ്രസംഗി', 'Song of Solomon': 'ഉത്തമഗീതം', 'Isaiah': 'യശായാ',
+  'Jeremiah': 'യിരെമ്യാവ്', 'Lamentations': 'വിലാപങ്ങള്‍', 'Ezekiel': 'യെഹെസ്കേല്‍', 'Daniel': 'ദാനീയേല്‍',
+  'Hosea': 'ഹോശേയ', 'Joel': 'യോവേല്‍', 'Amos': 'ആമോസ്', 'Obadiah': 'ഓബദ്യാവ്', 'Jonah': 'യോനാ',
+  'Micah': 'മീഖാ', 'Nahum': 'നഹൂം', 'Habakkuk': 'ഹബക്കൂക്ക്', 'Zephaniah': 'സെഫന്യാവ്', 'Haggai': 'ഹഗ്ഗായി',
+  'Zechariah': 'സെഖര്യാവ്', 'Malachi': 'മലാഖി',
+  // New Testament
+  'Matthew': 'മത്തായി', 'Mark': 'മര്‍ക്കൊസ്', 'Luke': 'ലൂക്കൊസ്', 'John': 'യോഹന്നാന്‍', 'Acts': 'അപ്പൊസ്തലപ്രവൃത്തികള്‍',
+  'Romans': 'റോമാക്കാര്‍', '1 Corinthians': '1 കൊരിന്ത്യര്‍', '2 Corinthians': '2 കൊരിന്ത്യര്‍', 'Galatians': 'ഗലാത്യര്‍',
+  'Ephesians': 'എഫെസ്യര്‍', 'Philippians': 'ഫിലിപ്പിയര്‍', 'Colossians': 'കൊലൊസ്സ്യര്‍', '1 Thessalonians': '1 തെസ്സലൊനീക്യര,‍',
+  '2 Thessalonians': '2 തെസ്സലൊനീക്യര്‍', '1 Timothy': '1 തിമൊഥെയൊസ്', '2 Timothy': '2 തിമൊഥെയൊസ്', 'Titus': 'തീത്തൊസ്',
+  'Philemon': 'ഫിലേമോന്‍', 'Hebrews': 'എബ്രായര്‍', 'James': 'യാക്കോബ്', '1 Peter': '1 പത്രൊസ്', '2 Peter': '2 പത്രൊസ്',
+  '1 John': '1 യോഹന്നാന്‍', '2 John': '2 യോഹന്നാന്‍', '3 John': '3 യോഹന്നാന്‍', 'Jude': 'യൂദാ', 'Revelation': 'വെളിപ്പാട്',
+}
+
+/**
+ * Maps common LLM-generated and user-input book name variants to their English canonical names.
+ * Includes Malayalam and Hindi alternate spellings not covered by the canonical display name maps.
+ *
+ * This is the single source of truth for variant → English mappings used across all
+ * backend functions (fetch-verse, future functions, etc.).
+ *
+ * Add new LLM-generated variants here when discovered to fix them everywhere at once.
+ */
+export const LOCALIZED_VARIANTS_TO_ENGLISH: Record<string, string> = {
+  // Malayalam API abbreviated forms (CANONICAL_BIBLE_BOOKS['ml-IN']) → English
+  // These are sent verbatim by the frontend passage section when tapping a reference.
+  'ഉല്പ.': 'Genesis',
+  'പുറ.': 'Exodus',
+  'ലേവ്യ.': 'Leviticus',
+  'സംഖ്യ.': 'Numbers',
+  'ആവർ.': 'Deuteronomy',
+  'ന്യായാ.': 'Judges',
+  'രൂത്ത്': 'Ruth',
+  '1 ശമു.': '1 Samuel',
+  '2 ശമു.': '2 Samuel',
+  '1 രാജാ.': '1 Kings',
+  '2 രാജാ.': '2 Kings',
+  '1 ദിന.': '1 Chronicles',
+  '2 ദിന.': '2 Chronicles',
+  'നെഹെ.': 'Nehemiah',
+  'എസ്ഥേ.': 'Esther',
+  'ഇയ്യോ.': 'Job',
+  'സങ്കീ.': 'Psalms',
+  'സദൃ.': 'Proverbs',
+  'സഭാ.': 'Ecclesiastes',
+  'ഉത്ത.': 'Song of Solomon',
+  'യെശ.': 'Isaiah',
+  'യിരെ.': 'Jeremiah',
+  'വിലാ.': 'Lamentations',
+  'യെഹെ.': 'Ezekiel',
+  'ദാനീ.': 'Daniel',
+  'ഹോശേ.': 'Hosea',
+  'യോവേ.': 'Joel',
+  'ആമോ.': 'Amos',
+  'ഓബ.': 'Obadiah',
+  'യോനാ': 'Jonah',
+  'മീഖാ': 'Micah',
+  'നഹൂം': 'Nahum',
+  'ഹബ.': 'Habakkuk',
+  'സെഫ.': 'Zephaniah',
+  'ഹഗ്ഗാ.': 'Haggai',
+  'സെഖ.': 'Zechariah',
+  'മലാ.': 'Malachi',
+  'മത്താ.': 'Matthew',
+  'മർക്കൊ.': 'Mark',
+  'ലൂക്കൊ.': 'Luke',
+  'യോഹ.': 'John',
+  'പ്രവൃത്തികൾ': 'Acts',
+  'റോമ.': 'Romans',
+  '1 കൊരി.': '1 Corinthians',
+  '2 കൊരി.': '2 Corinthians',
+  'ഗലാ.': 'Galatians',
+  'എഫെ.': 'Ephesians',
+  'ഫിലി.': 'Philippians',
+  'കൊലൊ.': 'Colossians',
+  '1 തെസ്സ.': '1 Thessalonians',
+  '2 തെസ്സ.': '2 Thessalonians',
+  '1 തിമൊ.': '1 Timothy',
+  '2 തിമൊ.': '2 Timothy',
+  'തീത്തൊ.': 'Titus',
+  'ഫിലേ.': 'Philemon',
+  'എബ്രാ.': 'Hebrews',
+  'യാക്കോ.': 'James',
+  '1 പത്രൊ.': '1 Peter',
+  '2 പത്രൊ.': '2 Peter',
+  '1 യോഹ.': '1 John',
+  '2 യോഹ.': '2 John',
+  '3 യോഹ.': '3 John',
+  'യൂദാ': 'Jude',
+  'വെളി.': 'Revelation',
+  // Malayalam full forms → English (covers all entries in INCORRECT_TO_CORRECT['ml-IN'])
+  // Duplicating here so fetch-verse can resolve them without going through the abbreviated API form.
+  'ഉല്പത്തി': 'Genesis',
+  'പുറപ്പാട്': 'Exodus',
+  'ലേവ്യപുസ്തകം': 'Leviticus',
+  'സംഖ്യാപുസ്തകം': 'Numbers',
+  'ആവർത്തനം': 'Deuteronomy',
+  'ആവർത്തനപുസ്തകം': 'Deuteronomy',
+  'ന്യായാധിപന്മാർ': 'Judges',
+  '1 ശമൂവേൽ': '1 Samuel',
+  '2 ശമൂവേൽ': '2 Samuel',
+  '1 രാജാക്കന്മാർ': '1 Kings',
+  '2 രാജാക്കന്മാർ': '2 Kings',
+  '1 ദിനവൃത്താന്തം': '1 Chronicles',
+  '2 ദിനവൃത്താന്തം': '2 Chronicles',
+  'നെഹെമ്യാവ്': 'Nehemiah',
+  'എസ്ഥേർ': 'Esther',
+  'ഇയ്യോബ്': 'Job',
+  'സദൃശവാക്യങ്ങൾ': 'Proverbs',
+  'സഭാപ്രസംഗി': 'Ecclesiastes',
+  'ഉത്തമഗീതം': 'Song of Solomon',
+  'യശായാ': 'Isaiah',
+  'യെശയ്യാവ്': 'Isaiah',
+  'യിരെമ്യാവ്': 'Jeremiah',
+  'വിലാപങ്ങൾ': 'Lamentations',
+  'യെഹെസ്കേൽ': 'Ezekiel',
+  'ദാനിയേൽ': 'Daniel',
+  'ഹോശേയ': 'Hosea',
+  'യോവേൽ': 'Joel',
+  'ആമോസ്': 'Amos',
+  'ഓബദ്യാവ്': 'Obadiah',
+  'ഹബക്കൂക്ക്': 'Habakkuk',
+  'സെഫന്യാവ്': 'Zephaniah',
+  'ഹഗ്ഗായി': 'Haggai',
+  'സെഖര്യാവ്': 'Zechariah',
+  'മലാഖി': 'Malachi',
+  'മത്തായി': 'Matthew',
+  'മർക്കൊസ്': 'Mark',
+  'ലൂക്കൊസ്': 'Luke',
+  'യോഹന്നാൻ': 'John',
+  'അപ്പൊസ്തലപ്രവൃത്തികൾ': 'Acts',
+  'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ': 'Acts',
+  'റോമാക്കാർ': 'Romans',
+  '1 കൊരിന്ത്യർ': '1 Corinthians',
+  '2 കൊരിന്ത്യർ': '2 Corinthians',
+  '1 തിമൊഥെയൊസ്': '1 Timothy',
+  '2 തിമൊഥെയൊസ്': '2 Timothy',
+  'തീത്തൊസ്': 'Titus',
+  'ഫിലേമോൻ': 'Philemon',
+  'യാക്കോബ്': 'James',
+  '1 പത്രൊസ്': '1 Peter',
+  '2 പത്രൊസ്': '2 Peter',
+  'വെളിപ്പാട്': 'Revelation',
+  // Malayalam word-based number variants
+  'ഒന്നാം ശമൂവേൽ': '1 Samuel',
+  'രണ്ടാം ശമൂവേൽ': '2 Samuel',
+  'ഒന്നാം രാജാക്കന്മാർ': '1 Kings',
+  'രണ്ടാം രാജാക്കന്മാർ': '2 Kings',
+  'ഒന്നാം കൊരിന്ത്യർ': '1 Corinthians',
+  'രണ്ടാം കൊരിന്ത്യർ': '2 Corinthians',
+  'ഒന്നാം തെസ്സലൊനീക്യർ': '1 Thessalonians',
+  'രണ്ടാം തെസ്സലൊനീക്യർ': '2 Thessalonians',
+  'ഒന്നാം തിമൊഥെയൊസ്': '1 Timothy',
+  'രണ്ടാം തിമൊഥെയൊസ്': '2 Timothy',
+  'ഒന്നാം പത്രൊസ്': '1 Peter',
+  'രണ്ടാം പത്രൊസ്': '2 Peter',
+  'ഒന്നാം യോഹന്നാൻ': '1 John',
+  'രണ്ടാം യോഹന്നാൻ': '2 John',
+  'മൂന്നാം യോഹന്നാൻ': '3 John',
+  // Malayalam alternate spellings
+  'റോമർ': 'Romans',
+  'റോമര്‍': 'Romans',
+  'ഗലാത്യർ': 'Galatians',
+  'എഫെസ്യർ': 'Ephesians',
+  'എഫേസ്യർ': 'Ephesians',
+  'ഫിലിപ്പിയർ': 'Philippians',
+  'കൊലൊസ്സ്യർ': 'Colossians',
+  'തെസ്സലൊനീക്യർ': 'Thessalonians',
+  '1 തെസ്സലൊനീക്യർ': '1 Thessalonians',
+  '2 തെസ്സലൊനീക്യർ': '2 Thessalonians',
+  'എബ്രായർ': 'Hebrews',
+  '1 യോഹന്നാൻ': '1 John',
+  '2 യോഹന്നാൻ': '2 John',
+  '3 യോഹന്നാൻ': '3 John',
+  '1 പത്രോസ്': '1 Peter',
+  '2 പത്രോസ്': '2 Peter',
+  'സങ്കീർത്തനം': 'Psalms',
+  'സങ്കീര്‍ത്തനം': 'Psalms',
+  'സങ്കീർത്തനങ്ങൾ': 'Psalms',
+  'ലൂക്കാ': 'Luke',
+  'ലൂക്കോസ്': 'Luke',
+  'മർക്കോസ്': 'Mark',
+  'ജോൺ': 'John',
+  // Hindi alternates (variant spellings not in canonical hi-IN list)
+  'रोमियो': 'Romans',
+  'भजन-संहिता': 'Psalms',
+}
+
+
 // ==================== COMMON INCORRECT MAPPINGS ====================
 
 /**
@@ -209,6 +437,7 @@ export const INCORRECT_TO_CORRECT: Record<string, Record<string, string>> = {
     'ലേവ്യപുസ്തകം': 'ലേവ്യ.',
     'സംഖ്യാപുസ്തകം': 'സംഖ്യ.',
     'ആവർത്തനം': 'ആവർ.',
+    'ആവർത്തനപുസ്തകം': 'ആവർ.',
     'ന്യായാധിപന്മാർ': 'ന്യായാ.',
     '1 ശമൂവേൽ': '1 ശമു.',
     '2 ശമൂവേൽ': '2 ശമു.',
@@ -224,6 +453,7 @@ export const INCORRECT_TO_CORRECT: Record<string, Record<string, string>> = {
     'സഭാപ്രസംഗി': 'സഭാ.',
     'ഉത്തമഗീതം': 'ഉത്ത.',
     'യശായാ': 'യെശ.',
+    'യെശയ്യാവ്': 'യെശ.',
     'യിരെമ്യാവ്': 'യിരെ.',
     'വിലാപങ്ങൾ': 'വിലാ.',
     'യെഹെസ്കേൽ': 'യെഹെ.',
@@ -245,6 +475,7 @@ export const INCORRECT_TO_CORRECT: Record<string, Record<string, string>> = {
     'അപ്പൊസ്തലപ്രവൃത്തികൾ': 'പ്രവൃത്തികൾ',
     'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ': 'പ്രവൃത്തികൾ',
     'റോമാക്കാർ': 'റോമ.',
+    'റോമർ': 'റോമ.',
     '1 കൊരിന്ത്യർ': '1 കൊരി.',
     '2 കൊരിന്ത്യർ': '2 കൊരി.',
     'ഗലാത്യർ': 'ഗലാ.',
