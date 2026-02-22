@@ -625,6 +625,7 @@ async function handleGetPathDetails(
     disciple_level: row.disciple_level,
     recommended_mode: row.recommended_mode,
     allow_non_sequential_access: row.allow_non_sequential_access,
+    category: (row.category as string) || '',
     is_featured: false,
     topics_count: row.topics?.length || 0,
     is_enrolled: row.is_enrolled,
