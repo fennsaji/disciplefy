@@ -8,7 +8,7 @@
  * - Automatic error handling
  */
 
-import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
+import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
@@ -61,6 +61,18 @@ async function handleFCMToken(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
+  // DELETE by specific token is allowed without a valid session — this is
+  // called on sign-out when the auth session is already gone. The FCM token
+  // value is unique, so deleting by value alone (via service role) is safe.
+  if (req.method === 'DELETE') {
+    const body = await req.json().catch(() => ({})) as { fcmToken?: string }
+    if (body.fcmToken) {
+      return handleUnregisterTokenByValue(services, body.fcmToken)
+    }
+    // Deleting all tokens requires knowing the user — fall through to auth check
+  }
+
+  // All other methods require an authenticated user
   if (!userContext || userContext.type !== 'authenticated') {
     throw new AppError('UNAUTHORIZED', 'Authentication required', 401)
   }
@@ -70,16 +82,17 @@ async function handleFCMToken(
   switch (req.method) {
     case 'POST':
       return handleRegisterToken(req, services, userId)
-    
+
     case 'PUT':
       return handleUpdatePreferences(req, services, userId)
-    
+
     case 'GET':
       return handleGetPreferences(req, services, userId)
-    
+
     case 'DELETE':
+      // Reached only when no specific token was provided (delete-all)
       return handleUnregisterToken(req, services, userId)
-    
+
     default:
       throw new AppError('METHOD_NOT_ALLOWED', `Method ${req.method} not allowed`, 405)
   }
@@ -379,63 +392,67 @@ async function handleGetPreferences(
 }
 
 // ============================================================================
-// DELETE - Unregister Token
+// DELETE - Unregister specific token by value (no auth required)
+// Used on sign-out when the session is already invalidated.
 // ============================================================================
 
-async function handleUnregisterToken(
-  req: Request,
+async function handleUnregisterTokenByValue(
   services: ServiceContainer,
-  userId: string
+  fcmToken: string
 ): Promise<Response> {
-  console.log(`[Unregister Token] User: ${userId}`)
+  console.log('[Unregister Token] Deleting by token value (unauthenticated sign-out)')
 
-  // Option 1: Delete specific token (if fcmToken provided in body)
-  // Option 2: Delete all tokens for user (if no token specified)
+  const { error } = await services.supabaseServiceClient
+    .from('user_notification_tokens')
+    .delete()
+    .eq('fcm_token', fcmToken)
 
-  const body = await req.json().catch(() => ({})) as { fcmToken?: string }
-
-  if (body.fcmToken) {
-    // Delete specific token
-    const { error: tokenError } = await services.supabaseServiceClient
-      .from('user_notification_tokens')
-      .delete()
-      .eq('user_id', userId)
-      .eq('fcm_token', body.fcmToken)
-
-    if (tokenError) {
-      console.error('[Unregister Token] Token deletion error:', tokenError)
-      throw new AppError('DATABASE_ERROR', tokenError.message, 500)
-    }
-
-    console.log('[Unregister Token] Specific token unregistered successfully')
-  } else {
-    // Delete all tokens for this user
-    const { error: tokensError } = await services.supabaseServiceClient
-      .from('user_notification_tokens')
-      .delete()
-      .eq('user_id', userId)
-
-    if (tokensError) {
-      console.error('[Unregister Token] All tokens deletion error:', tokensError)
-      throw new AppError('DATABASE_ERROR', tokensError.message, 500)
-    }
-
-    // Optionally delete preferences too (or keep them for when user re-registers)
-    // For now, we'll keep preferences intact
-    console.log('[Unregister Token] All tokens unregistered successfully')
+  if (error) {
+    console.error('[Unregister Token] Token deletion error:', error)
+    throw new AppError('DATABASE_ERROR', error.message, 500)
   }
+
+  console.log('[Unregister Token] Token unregistered successfully')
 
   return new Response(
     JSON.stringify({
       success: true,
-      message: body.fcmToken
-        ? 'FCM token unregistered successfully'
-        : 'All FCM tokens unregistered successfully',
+      message: 'FCM token unregistered successfully',
     }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    }
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ============================================================================
+// DELETE - Unregister Token (authenticated — delete specific or all)
+// ============================================================================
+
+async function handleUnregisterToken(
+  _req: Request,
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  // Reached only when no specific fcmToken was provided — delete all tokens
+  console.log(`[Unregister Token] Deleting all tokens for user: ${userId}`)
+
+  const { error: tokensError } = await services.supabaseServiceClient
+    .from('user_notification_tokens')
+    .delete()
+    .eq('user_id', userId)
+
+  if (tokensError) {
+    console.error('[Unregister Token] All tokens deletion error:', tokensError)
+    throw new AppError('DATABASE_ERROR', tokensError.message, 500)
+  }
+
+  console.log('[Unregister Token] All tokens unregistered successfully')
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: 'All FCM tokens unregistered successfully',
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
   )
 }
 
@@ -443,8 +460,11 @@ async function handleUnregisterToken(
 // Create Function with Factory (Handles CORS, Auth, Errors automatically)
 // ============================================================================
 
-createAuthenticatedFunction(handleFCMToken, {
+// requireAuth: false so DELETE (sign-out token cleanup) reaches the handler
+// even when the session is already invalidated. Auth is enforced per-method.
+createFunction(handleFCMToken, {
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+  requireAuth: false,
   enableAnalytics: true,
   timeout: 15000
 })
