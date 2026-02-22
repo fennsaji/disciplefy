@@ -76,3 +76,27 @@ class RefreshLearningPaths extends LearningPathsEvent {
 class ClearLearningPathsCache extends LearningPathsEvent {
   const ClearLearningPathsCache();
 }
+
+/// Load the next page of categories.
+class LoadMoreCategories extends LearningPathsEvent {
+  final String language;
+
+  const LoadMoreCategories({this.language = 'en'});
+
+  @override
+  List<Object?> get props => [language];
+}
+
+/// Load more paths for a specific category (per-category pagination).
+class LoadMorePathsForCategory extends LearningPathsEvent {
+  final String category;
+  final String language;
+
+  const LoadMorePathsForCategory({
+    required this.category,
+    this.language = 'en',
+  });
+
+  @override
+  List<Object?> get props => [category, language];
+}

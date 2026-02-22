@@ -40,7 +40,7 @@ class LearningPathCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: compact ? 260 : null,
+        width: compact ? 300 : null,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
@@ -63,7 +63,7 @@ class LearningPathCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
           children: [
             // Header with icon and status
             Row(
@@ -167,7 +167,7 @@ class LearningPathCard extends StatelessWidget {
                     : theme.colorScheme.onSurface.withValues(alpha: 0.75),
                 height: 1.4,
               ),
-              maxLines: compact ? 2 : 3,
+              maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
 
@@ -178,6 +178,8 @@ class LearningPathCard extends StatelessWidget {
               _buildProgressBar(context, color),
               const SizedBox(height: 12),
             ],
+
+            if (compact) const Spacer(),
 
             // Footer with XP and duration
             Row(
@@ -498,7 +500,7 @@ class LearningPathCardSkeleton extends StatelessWidget {
     final shimmerColor = theme.colorScheme.onSurface.withValues(alpha: 0.08);
 
     return Container(
-      width: compact ? 260 : null,
+      width: compact ? 300 : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,

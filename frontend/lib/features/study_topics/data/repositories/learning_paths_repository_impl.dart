@@ -11,7 +11,11 @@ import '../../../../core/utils/logger.dart';
 class LearningPathsRepositoryImpl implements LearningPathsRepository {
   final LearningPathsRemoteDataSource _remoteDataSource;
 
-  // Cache for learning paths
+  // Cache for category-grouped paths
+  LearningPathCategoriesResult? _cachedCategories;
+  DateTime? _categoriesCacheTimestamp;
+
+  // Cache for learning paths (flat, used for enrolled paths / recommended)
   LearningPathsResult? _cachedPaths;
   DateTime? _cacheTimestamp;
   static const _cacheDuration = Duration(minutes: 5);
@@ -33,9 +37,11 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     String language = 'en',
     bool includeEnrolled = true,
     bool forceRefresh = false,
+    int limit = 10,
+    int offset = 0,
   }) async {
-    // Check cache
-    if (!forceRefresh && _isCacheValid()) {
+    // Only use cache for first page without force-refresh
+    if (!forceRefresh && offset == 0 && _isCacheValid()) {
       return Right(_cachedPaths!);
     }
 
@@ -43,22 +49,98 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       final response = await _remoteDataSource.getLearningPaths(
         language: language,
         includeEnrolled: includeEnrolled,
+        limit: limit,
+        offset: offset,
       );
 
       final result = response.toEntity();
 
-      // Update cache
-      _cachedPaths = result;
-      _cacheTimestamp = DateTime.now();
+      // Cache only the first page
+      if (offset == 0) {
+        _cachedPaths = result;
+        _cacheTimestamp = DateTime.now();
+      }
 
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      // Return cached data if available
-      if (_cachedPaths != null) {
+      // Return cached data if available (first page only)
+      if (_cachedPaths != null && offset == 0) {
         return Right(_cachedPaths!);
       }
+      return Left(NetworkFailure(message: e.message));
+    } catch (e) {
+      return Left(ClientFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, LearningPathCategoriesResult>>
+      getLearningPathCategories({
+    String language = 'en',
+    bool includeEnrolled = true,
+    int categoryLimit = 4,
+    int categoryOffset = 0,
+    bool forceRefresh = false,
+  }) async {
+    // Only cache the first page
+    if (!forceRefresh && categoryOffset == 0 && _isCategoriesCacheValid()) {
+      return Right(_cachedCategories!);
+    }
+
+    try {
+      final response = await _remoteDataSource.getLearningPathCategories(
+        language: language,
+        includeEnrolled: includeEnrolled,
+        categoryLimit: categoryLimit,
+        categoryOffset: categoryOffset,
+      );
+
+      final result = response.toEntity();
+
+      if (categoryOffset == 0) {
+        _cachedCategories = result;
+        _categoriesCacheTimestamp = DateTime.now();
+      }
+
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException catch (e) {
+      if (_cachedCategories != null && categoryOffset == 0) {
+        return Right(_cachedCategories!);
+      }
+      return Left(NetworkFailure(message: e.message));
+    } catch (e) {
+      return Left(ClientFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, LearningPathCategory>> getLearningPathsForCategory({
+    required String category,
+    String language = 'en',
+    int limit = 3,
+    int offset = 0,
+  }) async {
+    try {
+      final response = await _remoteDataSource.getLearningPathsForCategory(
+        category: category,
+        language: language,
+        limit: limit,
+        offset: offset,
+      );
+
+      return Right(LearningPathCategory(
+        name: response.category,
+        paths: response.paths,
+        hasMoreInCategory: response.hasMore,
+        nextPathOffset: offset + response.paths.length,
+      ));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
       return Left(ClientFailure(message: e.toString()));
@@ -150,12 +232,22 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
 
   @override
   void clearCache() {
+    _cachedCategories = null;
+    _categoriesCacheTimestamp = null;
     _cachedPaths = null;
     _cacheTimestamp = null;
     _detailsCache.clear();
     _detailsCacheTimestamps.clear();
     _cachedRecommendedPath = null;
     _recommendedPathCacheTimestamp = null;
+  }
+
+  bool _isCategoriesCacheValid() {
+    if (_cachedCategories == null || _categoriesCacheTimestamp == null) {
+      return false;
+    }
+    return DateTime.now().difference(_categoriesCacheTimestamp!) <
+        _cacheDuration;
   }
 
   bool _isCacheValid() {
