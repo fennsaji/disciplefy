@@ -18,6 +18,7 @@ class LearningPath extends Equatable {
   final int topicsCount;
   final bool isEnrolled;
   final int progressPercentage;
+  final String category;
 
   const LearningPath({
     required this.id,
@@ -35,6 +36,7 @@ class LearningPath extends Equatable {
     this.topicsCount = 0,
     this.isEnrolled = false,
     this.progressPercentage = 0,
+    this.category = '',
   });
 
   @override
@@ -54,6 +56,7 @@ class LearningPath extends Equatable {
         topicsCount,
         isEnrolled,
         progressPercentage,
+        category,
       ];
 
   /// Whether the path is completed
@@ -154,10 +157,73 @@ class LearningPathDetail extends LearningPath {
 class LearningPathsResult {
   final List<LearningPath> paths;
   final int total;
+  final bool hasMore;
 
   const LearningPathsResult({
     required this.paths,
     required this.total,
+    this.hasMore = false,
+  });
+}
+
+/// A named category grouping of learning paths.
+class LearningPathCategory extends Equatable {
+  final String name;
+  final List<LearningPath> paths;
+  final int totalInCategory;
+  final bool hasMoreInCategory;
+  final bool isCompleted;
+
+  /// Offset to use for the next per-category "load more" request.
+  final int nextPathOffset;
+
+  const LearningPathCategory({
+    required this.name,
+    this.paths = const [],
+    this.totalInCategory = 0,
+    this.hasMoreInCategory = false,
+    this.isCompleted = false,
+    this.nextPathOffset = 3,
+  });
+
+  @override
+  List<Object?> get props => [
+        name,
+        paths,
+        totalInCategory,
+        hasMoreInCategory,
+        isCompleted,
+        nextPathOffset
+      ];
+
+  LearningPathCategory copyWith({
+    List<LearningPath>? paths,
+    int? totalInCategory,
+    bool? hasMoreInCategory,
+    bool? isCompleted,
+    int? nextPathOffset,
+  }) {
+    return LearningPathCategory(
+      name: name,
+      paths: paths ?? this.paths,
+      totalInCategory: totalInCategory ?? this.totalInCategory,
+      hasMoreInCategory: hasMoreInCategory ?? this.hasMoreInCategory,
+      isCompleted: isCompleted ?? this.isCompleted,
+      nextPathOffset: nextPathOffset ?? this.nextPathOffset,
+    );
+  }
+}
+
+/// Result container for category-grouped learning paths.
+class LearningPathCategoriesResult {
+  final List<LearningPathCategory> categories;
+  final bool hasMoreCategories;
+  final int nextCategoryOffset;
+
+  const LearningPathCategoriesResult({
+    required this.categories,
+    this.hasMoreCategories = false,
+    this.nextCategoryOffset = 4,
   });
 }
 

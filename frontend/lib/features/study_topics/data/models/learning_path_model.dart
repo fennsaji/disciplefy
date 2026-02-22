@@ -18,6 +18,7 @@ class LearningPathModel extends LearningPath {
     super.topicsCount,
     super.isEnrolled,
     super.progressPercentage,
+    super.category,
   });
 
   factory LearningPathModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +39,7 @@ class LearningPathModel extends LearningPath {
       topicsCount: json['topics_count'] as int? ?? 0,
       isEnrolled: json['is_enrolled'] as bool? ?? false,
       progressPercentage: json['progress_percentage'] as int? ?? 0,
+      category: json['category'] as String? ?? '',
     );
   }
 
@@ -174,10 +176,12 @@ class EnrollmentResultModel extends EnrollmentResult {
 class LearningPathsResponseModel {
   final List<LearningPathModel> paths;
   final int total;
+  final bool hasMore;
 
   const LearningPathsResponseModel({
     required this.paths,
     required this.total,
+    this.hasMore = false,
   });
 
   factory LearningPathsResponseModel.fromJson(Map<String, dynamic> json) {
@@ -189,6 +193,7 @@ class LearningPathsResponseModel {
           .map((p) => LearningPathModel.fromJson(p as Map<String, dynamic>))
           .toList(),
       total: data['total'] as int? ?? 0,
+      hasMore: data['has_more'] as bool? ?? false,
     );
   }
 
@@ -196,6 +201,128 @@ class LearningPathsResponseModel {
     return LearningPathsResult(
       paths: paths,
       total: total,
+      hasMore: hasMore,
+    );
+  }
+}
+
+/// Model for parsing a single category entry from the category-grouped API.
+class LearningPathCategoryModel {
+  final String name;
+  final List<LearningPathModel> paths;
+  final int totalInCategory;
+  final bool hasMoreInCategory;
+  final bool isCompleted;
+
+  const LearningPathCategoryModel({
+    required this.name,
+    required this.paths,
+    required this.totalInCategory,
+    required this.hasMoreInCategory,
+    this.isCompleted = false,
+  });
+
+  factory LearningPathCategoryModel.fromJson(Map<String, dynamic> json) {
+    final pathsJson = json['paths'] as List<dynamic>? ?? [];
+    final rawPaths = pathsJson
+        .map((p) => LearningPathModel.fromJson(p as Map<String, dynamic>))
+        .toList();
+
+    // Sort: completed paths sink to the bottom within the category
+    final sortedPaths = List<LearningPathModel>.from(rawPaths)
+      ..sort((a, b) {
+        if (a.isCompleted == b.isCompleted) return 0;
+        return a.isCompleted ? 1 : -1;
+      });
+
+    return LearningPathCategoryModel(
+      name: json['name'] as String? ?? '',
+      paths: sortedPaths,
+      totalInCategory: json['total_in_category'] as int? ?? sortedPaths.length,
+      hasMoreInCategory: json['has_more_in_category'] as bool? ?? false,
+      isCompleted: json['is_completed'] as bool? ?? false,
+    );
+  }
+
+  LearningPathCategory toEntity() {
+    return LearningPathCategory(
+      name: name,
+      paths: paths,
+      totalInCategory: totalInCategory,
+      hasMoreInCategory: hasMoreInCategory,
+      isCompleted: isCompleted,
+      nextPathOffset: paths.length,
+    );
+  }
+}
+
+/// Model for parsing the category-grouped learning paths response from API.
+class LearningPathCategoriesResponseModel {
+  final List<LearningPathCategoryModel> categories;
+  final bool hasMoreCategories;
+  final int nextCategoryOffset;
+
+  const LearningPathCategoriesResponseModel({
+    required this.categories,
+    this.hasMoreCategories = false,
+    this.nextCategoryOffset = 0,
+  });
+
+  factory LearningPathCategoriesResponseModel.fromJson(
+      Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>;
+    final catsJson = data['categories'] as List<dynamic>? ?? [];
+    return LearningPathCategoriesResponseModel(
+      categories: catsJson
+          .map((c) =>
+              LearningPathCategoryModel.fromJson(c as Map<String, dynamic>))
+          .toList(),
+      hasMoreCategories: data['has_more_categories'] as bool? ?? false,
+      nextCategoryOffset: data['next_category_offset'] as int? ?? 0,
+    );
+  }
+
+  LearningPathCategoriesResult toEntity() {
+    return LearningPathCategoriesResult(
+      categories: categories.map((c) => c.toEntity()).toList(),
+      hasMoreCategories: hasMoreCategories,
+      nextCategoryOffset: nextCategoryOffset,
+    );
+  }
+}
+
+/// Model for parsing the per-category paths response from API.
+class LearningPathCategoryPathsResponseModel {
+  final List<LearningPathModel> paths;
+  final bool hasMore;
+  final String category;
+  final int offset;
+
+  const LearningPathCategoryPathsResponseModel({
+    required this.paths,
+    required this.hasMore,
+    required this.category,
+    required this.offset,
+  });
+
+  factory LearningPathCategoryPathsResponseModel.fromJson(
+      Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>;
+    final pathsJson = data['paths'] as List<dynamic>? ?? [];
+    final rawPaths = pathsJson
+        .map((p) => LearningPathModel.fromJson(p as Map<String, dynamic>))
+        .toList();
+    // Completed paths sink to the bottom
+    final sortedPaths = List<LearningPathModel>.from(rawPaths)
+      ..sort((a, b) {
+        if (a.isCompleted == b.isCompleted) return 0;
+        return a.isCompleted ? 1 : -1;
+      });
+    return LearningPathCategoryPathsResponseModel(
+      paths: sortedPaths,
+      hasMore: data['has_more'] as bool? ?? false,
+      category: data['category'] as String? ?? '',
+      offset: data['offset'] as int? ?? 0,
     );
   }
 }

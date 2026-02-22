@@ -10,10 +10,28 @@ import '../../../../core/utils/logger.dart';
 
 /// Remote data source for learning paths operations.
 abstract class LearningPathsRemoteDataSource {
-  /// Get available learning paths.
+  /// Get available learning paths (flat list, used for enrolled paths etc.).
   Future<LearningPathsResponseModel> getLearningPaths({
     String language = 'en',
     bool includeEnrolled = true,
+    int limit = 10,
+    int offset = 0,
+  });
+
+  /// Get learning paths grouped by category (primary listing endpoint).
+  Future<LearningPathCategoriesResponseModel> getLearningPathCategories({
+    String language = 'en',
+    bool includeEnrolled = true,
+    int categoryLimit = 4,
+    int categoryOffset = 0,
+  });
+
+  /// Get more paths for a single category (per-category load more).
+  Future<LearningPathCategoryPathsResponseModel> getLearningPathsForCategory({
+    required String category,
+    String language = 'en',
+    int limit = 3,
+    int offset = 0,
   });
 
   /// Get learning path details with topics.
@@ -50,14 +68,20 @@ class LearningPathsRemoteDataSourceImpl
   Future<LearningPathsResponseModel> getLearningPaths({
     String language = 'en',
     bool includeEnrolled = true,
+    int limit = 10,
+    int offset = 0,
   }) async {
     try {
-      _logDebug('Fetching learning paths (language: $language)');
+      _logDebug(
+          'Fetching learning paths (language: $language, limit: $limit, offset: $offset)');
 
       final headers = await _httpService.createHeaders();
       final body = jsonEncode({
         'language': language,
         'includeEnrolled': includeEnrolled,
+        'limit': limit,
+        'offset': offset,
+        'format': 'flat', // ensures the flat-list endpoint is used
       });
 
       final response = await _httpService.post(
@@ -87,6 +111,108 @@ class LearningPathsRemoteDataSourceImpl
       throw NetworkException(
         message: 'Failed to connect to learning paths service',
         code: 'LEARNING_PATHS_NETWORK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<LearningPathCategoriesResponseModel> getLearningPathCategories({
+    String language = 'en',
+    bool includeEnrolled = true,
+    int categoryLimit = 4,
+    int categoryOffset = 0,
+  }) async {
+    try {
+      _logDebug(
+          'Fetching learning path categories (language: $language, categoryLimit: $categoryLimit, categoryOffset: $categoryOffset)');
+
+      final headers = await _httpService.createHeaders();
+      final body = jsonEncode({
+        'language': language,
+        'includeEnrolled': includeEnrolled,
+        'categoryLimit': categoryLimit,
+        'categoryOffset': categoryOffset,
+      });
+
+      final response = await _httpService.post(
+        '$_baseUrl$_endpoint',
+        headers: headers,
+        body: body,
+      );
+
+      _logDebug(
+          'Learning path categories API response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return _parseCategoriesResponse(response.body);
+      } else {
+        _logDebug('API error: ${response.statusCode} - ${response.body}');
+        throw ServerException(
+          message:
+              'Failed to fetch learning path categories: ${response.statusCode}',
+          code: 'LEARNING_PATH_CATEGORIES_API_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } catch (e) {
+      _logDebug('Exception in getLearningPathCategories: $e');
+      throw NetworkException(
+        message: 'Failed to connect to learning paths service',
+        code: 'LEARNING_PATH_CATEGORIES_NETWORK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<LearningPathCategoryPathsResponseModel> getLearningPathsForCategory({
+    required String category,
+    String language = 'en',
+    int limit = 3,
+    int offset = 0,
+  }) async {
+    try {
+      _logDebug(
+          'Fetching paths for category "$category" (language: $language, limit: $limit, offset: $offset)');
+
+      final headers = await _httpService.createHeaders();
+      final body = jsonEncode({
+        'action': 'category_paths',
+        'category': category,
+        'language': language,
+        'limit': limit,
+        'offset': offset,
+      });
+
+      final response = await _httpService.post(
+        '$_baseUrl$_endpoint',
+        headers: headers,
+        body: body,
+      );
+
+      _logDebug(
+          'Category paths API response for "$category": ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return _parseCategoryPathsResponse(response.body);
+      } else {
+        _logDebug('API error: ${response.statusCode} - ${response.body}');
+        throw ServerException(
+          message: 'Failed to fetch category paths: ${response.statusCode}',
+          code: 'CATEGORY_PATHS_API_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } catch (e) {
+      _logDebug('Exception in getLearningPathsForCategory: $e');
+      throw NetworkException(
+        message: 'Failed to connect to learning paths service',
+        code: 'CATEGORY_PATHS_NETWORK_ERROR',
       );
     }
   }
@@ -315,6 +441,54 @@ class LearningPathsRemoteDataSourceImpl
       throw ClientException(
         message: 'Failed to parse recommended path response: $e',
         code: 'RECOMMENDED_PATH_PARSE_ERROR',
+      );
+    }
+  }
+
+  LearningPathCategoriesResponseModel _parseCategoriesResponse(
+      String responseBody) {
+    try {
+      final jsonData = json.decode(responseBody) as Map<String, dynamic>;
+
+      if (jsonData['success'] != true) {
+        throw const ClientException(
+          message: 'API returned unsuccessful response',
+          code: 'LEARNING_PATH_CATEGORIES_API_FAILURE',
+        );
+      }
+
+      return LearningPathCategoriesResponseModel.fromJson(jsonData);
+    } catch (e) {
+      _logDebug('JSON parsing error: $e');
+      if (e is ClientException) rethrow;
+
+      throw ClientException(
+        message: 'Failed to parse learning path categories response: $e',
+        code: 'LEARNING_PATH_CATEGORIES_PARSE_ERROR',
+      );
+    }
+  }
+
+  LearningPathCategoryPathsResponseModel _parseCategoryPathsResponse(
+      String responseBody) {
+    try {
+      final jsonData = json.decode(responseBody) as Map<String, dynamic>;
+
+      if (jsonData['success'] != true) {
+        throw const ClientException(
+          message: 'API returned unsuccessful response',
+          code: 'CATEGORY_PATHS_API_FAILURE',
+        );
+      }
+
+      return LearningPathCategoryPathsResponseModel.fromJson(jsonData);
+    } catch (e) {
+      _logDebug('JSON parsing error: $e');
+      if (e is ClientException) rethrow;
+
+      throw ClientException(
+        message: 'Failed to parse category paths response: $e',
+        code: 'CATEGORY_PATHS_PARSE_ERROR',
       );
     }
   }
