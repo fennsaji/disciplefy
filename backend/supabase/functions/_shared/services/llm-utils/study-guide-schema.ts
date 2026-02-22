@@ -1,8 +1,14 @@
 /**
  * JSON Schema for Study Guide Structured Outputs
- * 
- * This schema enforces that the LLM MUST generate all 14 required fields.
+ *
+ * This schema enforces that the LLM MUST generate all 15 required fields.
  * Uses OpenAI's Structured Outputs feature for 100% schema compliance.
+ *
+ * IMPORTANT: Every field that the prompt instructs the LLM to produce MUST be
+ * declared here. OpenAI enforces strict: true + additionalProperties: false,
+ * which silently strips any field absent from this schema — regardless of
+ * what the prompt says. 'passage' was previously missing, causing it to be
+ * dropped in production (OpenAI) while working locally (Anthropic, no schema).
  */
 
 export const studyGuideSchema = {
@@ -22,6 +28,10 @@ export const studyGuideSchema = {
       context: {
         type: "string",
         description: "Historical and cultural background"
+      },
+      passage: {
+        type: "string",
+        description: "Relevant Bible passage text for reading and meditation"
       },
       relatedVerses: {
         type: "array",
@@ -90,6 +100,7 @@ export const studyGuideSchema = {
       "summary",
       "interpretation",
       "context",
+      "passage",
       "relatedVerses",
       "reflectionQuestions",
       "prayerPoints",

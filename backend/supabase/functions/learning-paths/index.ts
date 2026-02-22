@@ -28,6 +28,28 @@ import {
 interface LearningPathsRequest {
   language?: string;
   includeEnrolled?: boolean;
+  limit?: number;
+  offset?: number;
+  /** New category-grouped list params */
+  categoryLimit?: number;
+  categoryOffset?: number;
+  /** format='flat' keeps the legacy flat-list response for internal use */
+  format?: 'flat' | 'categories';
+}
+
+interface CategoryPathsRequest {
+  action: 'category_paths';
+  category: string;
+  language?: string;
+  limit?: number;
+  offset?: number;
+}
+
+interface LearningPathCategoryResult {
+  name: string;
+  paths: LearningPath[];
+  total_in_category: number;
+  has_more_in_category: boolean;
 }
 
 interface LearningPathDetailRequest {
@@ -54,6 +76,7 @@ interface LearningPath {
   topics_count: number;
   is_enrolled: boolean;
   progress_percentage: number;
+  category: string;
 }
 
 interface LearningPathDetail extends LearningPath {
@@ -187,6 +210,7 @@ function buildLearningPathResponse(
     topics_count: topicsCount,
     is_enrolled: isEnrolled,
     progress_percentage: progressPercentage,
+    category: (pathData as Record<string, unknown>).category as string || '',
   };
 }
 
@@ -263,7 +287,7 @@ async function handleLearningPaths(
       return handleGetPathDetails(req, services, userContext, pathIdFromQuery);
     }
 
-    // For POST, also check the body for pathId (frontend sends it in body)
+    // For POST, also check the body for routing
     if (method === 'POST') {
       try {
         const clonedReq = req.clone();
@@ -271,12 +295,18 @@ async function handleLearningPaths(
         if (body.pathId) {
           return handleGetPathDetails(req, services, userContext, body.pathId, body.language);
         }
+        if (body.action === 'category_paths') {
+          return handleListPathsByCategory(req, services, userContext);
+        }
+        if (body.format === 'flat') {
+          return handleListPathsFlat(req, services, userContext);
+        }
       } catch {
-        // If body parsing fails, continue to list paths
+        // If body parsing fails, continue to category-grouped list
       }
     }
 
-    // Otherwise list all paths
+    // Otherwise return category-grouped paths (primary endpoint)
     return handleListPaths(req, services, userContext);
   }
 
@@ -284,49 +314,11 @@ async function handleLearningPaths(
 }
 
 // ============================================================================
-// List Learning Paths
+// Shared helper
 // ============================================================================
 
-async function handleListPaths(
-  req: Request,
-  services: ServiceContainer,
-  userContext?: UserContext
-): Promise<Response> {
-  const { supabaseServiceClient } = services;
-
-  // Parse request body or query params
-  let language = 'en';
-  let includeEnrolled = true;
-
-  if (req.method === 'POST') {
-    try {
-      const body: LearningPathsRequest = await req.json();
-      language = body.language || 'en';
-      includeEnrolled = body.includeEnrolled ?? true;
-    } catch {
-      // Use defaults if body parsing fails
-    }
-  } else {
-    const url = new URL(req.url);
-    language = url.searchParams.get('language') || 'en';
-    includeEnrolled = url.searchParams.get('includeEnrolled') !== 'false';
-  }
-
-  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
-
-  // Call the database function
-  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', {
-    p_user_id: userId,
-    p_language: language,
-    p_include_enrolled: includeEnrolled,
-  });
-
-  if (error) {
-    console.error('Error fetching learning paths:', error);
-    throw new AppError('DATABASE_ERROR', 'Failed to fetch learning paths', 500);
-  }
-
-  const paths: LearningPath[] = (data || []).map((row: Record<string, unknown>) => ({
+function mapPathRow(row: Record<string, unknown>): LearningPath {
+  return {
     id: row.path_id as string,
     slug: row.slug as string,
     title: row.title as string,
@@ -337,23 +329,241 @@ async function handleListPaths(
     estimated_days: row.estimated_days as number,
     disciple_level: row.disciple_level as string,
     is_featured: row.is_featured as boolean,
-    topics_count: row.topics_count as number,
+    topics_count: row.total_topics as number,
     is_enrolled: row.is_enrolled as boolean,
     progress_percentage: row.progress_percentage as number,
-  }));
+    category: row.category as string,
+  };
+}
+
+// ============================================================================
+// List Learning Paths — category-grouped (primary) + flat (legacy)
+// ============================================================================
+
+/**
+ * Category-grouped list (new primary endpoint).
+ *
+ * Returns N categories (default 4) each with up to PATHS_PER_CATEGORY (3) paths.
+ * One extra category is fetched to detect hasMoreCategories.
+ * One extra path per category is fetched to detect hasMoreInCategory.
+ * All per-category path queries run in parallel via Promise.all.
+ */
+async function handleListPaths(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  const { supabaseServiceClient } = services;
+  const PATHS_PER_CATEGORY = 3;
+  const DEFAULT_CATEGORY_LIMIT = 4;
+
+  let language = 'en';
+  let includeEnrolled = true;
+  let categoryLimit = DEFAULT_CATEGORY_LIMIT;
+  let categoryOffset = 0;
+
+  if (req.method === 'POST') {
+    try {
+      const body: LearningPathsRequest = await req.json();
+      language = body.language || 'en';
+      includeEnrolled = body.includeEnrolled ?? true;
+      categoryLimit = typeof body.categoryLimit === 'number' ? body.categoryLimit : DEFAULT_CATEGORY_LIMIT;
+      categoryOffset = typeof body.categoryOffset === 'number' ? body.categoryOffset : 0;
+    } catch {
+      // Use defaults
+    }
+  } else {
+    const url = new URL(req.url);
+    language = url.searchParams.get('language') || 'en';
+    includeEnrolled = url.searchParams.get('includeEnrolled') !== 'false';
+    categoryLimit = parseInt(url.searchParams.get('categoryLimit') || String(DEFAULT_CATEGORY_LIMIT), 10) || DEFAULT_CATEGORY_LIMIT;
+    categoryOffset = parseInt(url.searchParams.get('categoryOffset') || '0', 10) || 0;
+  }
+
+  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
+
+  // Step 1: fetch categories in priority order (limit+1 for hasMore detection)
+  const { data: catData, error: catError } = await supabaseServiceClient.rpc(
+    'get_learning_path_categories',
+    { p_user_id: userId, p_limit: categoryLimit + 1, p_offset: categoryOffset }
+  );
+
+  if (catError) {
+    console.error('Error fetching categories:', catError);
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch learning path categories', 500);
+  }
+
+  const allCats = catData || [];
+  const hasMoreCategories = allCats.length > categoryLimit;
+  const pageCategories = hasMoreCategories ? allCats.slice(0, categoryLimit) : allCats;
+
+  if (pageCategories.length === 0) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: { categories: [], has_more_categories: false, next_category_offset: categoryOffset },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Step 2: fetch paths for every category in parallel
+  const pathResults = await Promise.all(
+    pageCategories.map((cat: Record<string, unknown>) =>
+      supabaseServiceClient.rpc('get_available_learning_paths', {
+        p_user_id: userId,
+        p_language: language,
+        p_include_enrolled: includeEnrolled,
+        p_limit: PATHS_PER_CATEGORY + 1,
+        p_offset: 0,
+        p_category: cat.category as string,
+      })
+    )
+  );
+
+  // Step 3: build response
+  const categories: LearningPathCategoryResult[] = pageCategories.map(
+    (cat: Record<string, unknown>, i: number) => {
+      const { data: pathRows, error: pathErr } = pathResults[i];
+      if (pathErr) {
+        console.error(`Error fetching paths for category ${cat.category}:`, pathErr);
+      }
+      const rows: Record<string, unknown>[] = pathRows || [];
+      const hasMoreInCategory = rows.length > PATHS_PER_CATEGORY;
+      const paths = (hasMoreInCategory ? rows.slice(0, PATHS_PER_CATEGORY) : rows).map(mapPathRow);
+
+      return {
+        name: cat.category as string,
+        paths,
+        total_in_category: cat.total_paths as number,
+        has_more_in_category: hasMoreInCategory,
+      };
+    }
+  );
 
   return new Response(
     JSON.stringify({
       success: true,
       data: {
-        paths,
-        total: paths.length,
+        categories,
+        has_more_categories: hasMoreCategories,
+        next_category_offset: categoryOffset + pageCategories.length,
       },
     }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    }
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+
+/**
+ * Flat-list variant kept for internal use (getEnrolledPaths, etc.).
+ * Triggered by body.format === 'flat'.
+ */
+async function handleListPathsFlat(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  const { supabaseServiceClient } = services;
+  const PAGE_SIZE = 50;
+
+  let language = 'en';
+  let includeEnrolled = true;
+  let limit = PAGE_SIZE;
+  let offset = 0;
+
+  try {
+    const body: LearningPathsRequest = await req.json();
+    language = body.language || 'en';
+    includeEnrolled = body.includeEnrolled ?? true;
+    limit = typeof body.limit === 'number' ? body.limit : PAGE_SIZE;
+    offset = typeof body.offset === 'number' ? body.offset : 0;
+  } catch {
+    // Use defaults
+  }
+
+  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
+
+  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', {
+    p_user_id: userId,
+    p_language: language,
+    p_include_enrolled: includeEnrolled,
+    p_limit: limit + 1,
+    p_offset: offset,
+  });
+
+  if (error) {
+    console.error('Error fetching learning paths (flat):', error);
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch learning paths', 500);
+  }
+
+  const rows = data || [];
+  const hasMore = rows.length > limit;
+  const paths = (hasMore ? rows.slice(0, limit) : rows).map(mapPathRow);
+
+  return new Response(
+    JSON.stringify({ success: true, data: { paths, total: paths.length, has_more: hasMore, offset } }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+
+// ============================================================================
+// Load more paths for a specific category
+// ============================================================================
+
+/**
+ * Returns the next page of paths for a single category.
+ * Body: { action: 'category_paths', category, language, offset, limit }
+ */
+async function handleListPathsByCategory(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  const { supabaseServiceClient } = services;
+  const DEFAULT_LIMIT = 3;
+
+  let language = 'en';
+  let category = '';
+  let offset = 0;
+  let limit = DEFAULT_LIMIT;
+
+  try {
+    const body: CategoryPathsRequest = await req.json();
+    language = body.language || 'en';
+    category = body.category || '';
+    offset = typeof body.offset === 'number' ? body.offset : 0;
+    limit = typeof body.limit === 'number' ? body.limit : DEFAULT_LIMIT;
+  } catch {
+    // Use defaults
+  }
+
+  if (!category) {
+    throw new AppError('VALIDATION_ERROR', 'category is required', 400);
+  }
+
+  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
+
+  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', {
+    p_user_id: userId,
+    p_language: language,
+    p_include_enrolled: true,
+    p_limit: limit + 1,
+    p_offset: offset,
+    p_category: category,
+  });
+
+  if (error) {
+    console.error(`Error fetching paths for category ${category}:`, error);
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch category paths', 500);
+  }
+
+  const rows = data || [];
+  const hasMore = rows.length > limit;
+  const paths = (hasMore ? rows.slice(0, limit) : rows).map(mapPathRow);
+
+  return new Response(
+    JSON.stringify({ success: true, data: { paths, has_more: hasMore, category, offset } }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
 

@@ -225,17 +225,20 @@ extension SelfAssessmentRatingExtension on SelfAssessmentRating {
   }
 
   Color textColor(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     switch (this) {
       case SelfAssessmentRating.didNotKnow:
-        return theme.colorScheme.error;
+        return isDark
+            ? theme.colorScheme.errorContainer
+            : theme.colorScheme.error;
       case SelfAssessmentRating.knewALittle:
-        return AppColors.warningDark;
+        return isDark ? AppColors.warningLighter : AppColors.warningDark;
       case SelfAssessmentRating.knewHalf:
-        return AppColors.warningDark;
+        return isDark ? AppColors.warningLighter : AppColors.warningDark;
       case SelfAssessmentRating.knewMost:
-        return AppColors.successDark;
+        return isDark ? AppColors.successLighter : AppColors.successDark;
       case SelfAssessmentRating.knewPerfectly:
-        return AppColors.successDark;
+        return isDark ? AppColors.successLighter : AppColors.successDark;
     }
   }
 

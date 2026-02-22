@@ -1580,9 +1580,9 @@ export function getWordCountTarget(languageConfig: LanguageConfig, studyMode: St
   // Optimized for comprehension at 110-160 wpm (vs previous 200 wpm)
   const defaultTargets: Record<StudyMode, string> = {
     quick: '450-600',       // 3 min @ 140-160 wpm (understanding-focused)
-    standard: '1500-1800',  // 10 min @ 140-150 wpm (thoughtful reading)
-    deep: '1800-2100',      // 15 min @ 120-140 wpm (comprehensive depth)
-    lectio: '1300-1600',    // 10 min @ 110-130 wpm (contemplative)
+    standard: '1200-1500',  // 8 min @ 140-150 wpm (thoughtful reading)
+    deep: '1500-1800',      // 12 min @ 120-140 wpm (comprehensive depth)
+    lectio: '1000-1200',    // 9 min @ 110-130 wpm (contemplative)
     sermon: '4500-5350'     // 30 min read | 50-60 min preach (preacher-facing explanation)
   }
 

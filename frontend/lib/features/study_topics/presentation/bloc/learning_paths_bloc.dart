@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
 import 'learning_paths_event.dart';
 import 'learning_paths_state.dart';
@@ -11,6 +12,9 @@ import 'learning_paths_state.dart';
 class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
   final LearningPathsRepository _repository;
 
+  static const _categoryPageSize = 4;
+  static const _pathsPerCategory = 3;
+
   LearningPathsBloc({
     required LearningPathsRepository repository,
   })  : _repository = repository,
@@ -20,39 +24,41 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<EnrollInLearningPath>(_onEnrollInLearningPath);
     on<RefreshLearningPaths>(_onRefreshLearningPaths);
     on<ClearLearningPathsCache>(_onClearCache);
+    on<LoadMoreCategories>(_onLoadMoreCategories);
+    on<LoadMorePathsForCategory>(_onLoadMorePathsForCategory);
   }
 
   Future<void> _onLoadLearningPaths(
     LoadLearningPaths event,
     Emitter<LearningPathsState> emit,
   ) async {
-    // Don't reload if already loaded (unless force refresh)
     if (state is LearningPathsLoaded && !event.forceRefresh) {
       return;
     }
 
     emit(const LearningPathsLoading());
 
-    final result = await _repository.getLearningPaths(
+    final result = await _repository.getLearningPathCategories(
       language: event.language,
       includeEnrolled: event.includeEnrolled,
       forceRefresh: event.forceRefresh,
     );
 
     result.fold(
-      (failure) => emit(LearningPathsError(
-        message: failure.message,
-      )),
-      (pathsResult) {
-        if (pathsResult.paths.isEmpty) {
+      (failure) => emit(LearningPathsError(message: failure.message)),
+      (categoriesResult) {
+        if (!categoriesResult.categories.any((c) => c.paths.isNotEmpty)) {
           emit(const LearningPathsEmpty());
         } else {
-          final enrolledPaths =
-              pathsResult.paths.where((p) => p.isEnrolled).toList();
+          final enrolledPaths = categoriesResult.categories
+              .expand((c) => c.paths)
+              .where((p) => p.isEnrolled)
+              .toList();
           emit(LearningPathsLoaded(
-            paths: pathsResult.paths,
+            categories: categoriesResult.categories,
             enrolledPaths: enrolledPaths,
-            total: pathsResult.total,
+            hasMoreCategories: categoriesResult.hasMoreCategories,
+            nextCategoryOffset: categoriesResult.nextCategoryOffset,
           ));
         }
       },
@@ -72,9 +78,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     );
 
     result.fold(
-      (failure) => emit(LearningPathsError(
-        message: failure.message,
-      )),
+      (failure) => emit(LearningPathsError(message: failure.message)),
       (pathDetail) => emit(LearningPathDetailLoaded(pathDetail: pathDetail)),
     );
   }
@@ -100,42 +104,36 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     RefreshLearningPaths event,
     Emitter<LearningPathsState> emit,
   ) async {
-    // Keep current state while refreshing if we have data
-    final previousState = state;
-    final hadData = previousState is LearningPathsLoaded;
-
+    final hadData = state is LearningPathsLoaded;
     if (!hadData) {
       emit(const LearningPathsLoading());
     }
 
-    final result = await _repository.getLearningPaths(
+    final result = await _repository.getLearningPathCategories(
       language: event.language,
       forceRefresh: true,
     );
 
     result.fold(
       (failure) {
-        if (hadData) {
-          emit(LearningPathsError(
-            message: failure.message,
-            isInitialLoadError: false,
-          ));
-        } else {
-          emit(LearningPathsError(
-            message: failure.message,
-          ));
-        }
+        emit(LearningPathsError(
+          message: failure.message,
+          isInitialLoadError: !hadData,
+        ));
       },
-      (pathsResult) {
-        if (pathsResult.paths.isEmpty) {
+      (categoriesResult) {
+        if (!categoriesResult.categories.any((c) => c.paths.isNotEmpty)) {
           emit(const LearningPathsEmpty());
         } else {
-          final enrolledPaths =
-              pathsResult.paths.where((p) => p.isEnrolled).toList();
+          final enrolledPaths = categoriesResult.categories
+              .expand((c) => c.paths)
+              .where((p) => p.isEnrolled)
+              .toList();
           emit(LearningPathsLoaded(
-            paths: pathsResult.paths,
+            categories: categoriesResult.categories,
             enrolledPaths: enrolledPaths,
-            total: pathsResult.total,
+            hasMoreCategories: categoriesResult.hasMoreCategories,
+            nextCategoryOffset: categoriesResult.nextCategoryOffset,
           ));
         }
       },
@@ -148,5 +146,113 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
   ) {
     _repository.clearCache();
     emit(const LearningPathsInitial());
+  }
+
+  Future<void> _onLoadMoreCategories(
+    LoadMoreCategories event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    final current = state;
+    if (current is! LearningPathsLoaded ||
+        !current.hasMoreCategories ||
+        current.isFetchingMoreCategories) {
+      return;
+    }
+
+    emit(current.copyWith(isFetchingMoreCategories: true));
+
+    final result = await _repository.getLearningPathCategories(
+      language: event.language,
+      categoryOffset: current.nextCategoryOffset,
+      forceRefresh: true,
+    );
+
+    result.fold(
+      (failure) => emit(current.copyWith(isFetchingMoreCategories: false)),
+      (categoriesResult) {
+        final combined = [
+          ...current.categories,
+          ...categoriesResult.categories,
+        ];
+        final enrolledPaths =
+            combined.expand((c) => c.paths).where((p) => p.isEnrolled).toList();
+        emit(LearningPathsLoaded(
+          categories: combined,
+          enrolledPaths: enrolledPaths,
+          hasMoreCategories: categoriesResult.hasMoreCategories,
+          nextCategoryOffset: categoriesResult.nextCategoryOffset,
+        ));
+      },
+    );
+  }
+
+  Future<void> _onLoadMorePathsForCategory(
+    LoadMorePathsForCategory event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    final current = state;
+    if (current is! LearningPathsLoaded) return;
+
+    final catIndex =
+        current.categories.indexWhere((c) => c.name == event.category);
+    if (catIndex == -1) return;
+
+    final cat = current.categories[catIndex];
+    if (!cat.hasMoreInCategory ||
+        current.loadingCategories.contains(event.category)) {
+      return;
+    }
+
+    // Mark category as loading
+    emit(current.copyWith(
+      loadingCategories: [...current.loadingCategories, event.category],
+    ));
+
+    final result = await _repository.getLearningPathsForCategory(
+      category: event.category,
+      language: event.language,
+      offset: cat.nextPathOffset,
+    );
+
+    final updated = state;
+    if (updated is! LearningPathsLoaded) return;
+
+    result.fold(
+      (failure) {
+        // Remove loading indicator on failure
+        emit(updated.copyWith(
+          loadingCategories: updated.loadingCategories
+              .where((c) => c != event.category)
+              .toList(),
+        ));
+      },
+      (newCatData) {
+        final updatedCategories =
+            List<LearningPathCategory>.from(updated.categories);
+        final idx =
+            updatedCategories.indexWhere((c) => c.name == event.category);
+        if (idx != -1) {
+          final existing = updatedCategories[idx];
+          updatedCategories[idx] = existing.copyWith(
+            paths: [...existing.paths, ...newCatData.paths],
+            hasMoreInCategory: newCatData.hasMoreInCategory,
+            nextPathOffset: newCatData.nextPathOffset,
+          );
+        }
+        final enrolledPaths = updatedCategories
+            .expand((c) => c.paths)
+            .where((p) => p.isEnrolled)
+            .toList();
+        emit(LearningPathsLoaded(
+          categories: updatedCategories,
+          enrolledPaths: enrolledPaths,
+          hasMoreCategories: updated.hasMoreCategories,
+          nextCategoryOffset: updated.nextCategoryOffset,
+          loadingCategories: updated.loadingCategories
+              .where((c) => c != event.category)
+              .toList(),
+        ));
+      },
+    );
   }
 }

@@ -20,38 +20,85 @@ class LearningPathsLoading extends LearningPathsState {
   const LearningPathsLoading();
 }
 
-/// Loaded state with learning paths.
+/// Loaded state with category-grouped learning paths.
 class LearningPathsLoaded extends LearningPathsState {
-  /// List of available learning paths
-  final List<LearningPath> paths;
+  /// Learning paths grouped by category (accumulated across pages)
+  final List<LearningPathCategory> categories;
 
-  /// List of enrolled paths (filtered from all paths)
+  /// Enrolled paths (derived from categories for quick access)
   final List<LearningPath> enrolledPaths;
 
-  /// Total number of paths available
-  final int total;
+  /// Whether more category pages are available from the server
+  final bool hasMoreCategories;
+
+  /// Whether a load-more-categories request is in flight
+  final bool isFetchingMoreCategories;
+
+  /// Offset to use for the next category page fetch
+  final int nextCategoryOffset;
+
+  /// Category names currently loading more paths (per-category load more)
+  final List<String> loadingCategories;
 
   const LearningPathsLoaded({
-    required this.paths,
+    required this.categories,
     this.enrolledPaths = const [],
-    this.total = 0,
+    this.hasMoreCategories = false,
+    this.isFetchingMoreCategories = false,
+    this.nextCategoryOffset = 4,
+    this.loadingCategories = const [],
   });
 
   @override
-  List<Object?> get props => [paths, enrolledPaths, total];
+  List<Object?> get props => [
+        categories,
+        enrolledPaths,
+        hasMoreCategories,
+        isFetchingMoreCategories,
+        nextCategoryOffset,
+        loadingCategories,
+      ];
 
-  /// Whether there are paths to display
-  bool get hasPaths => paths.isNotEmpty;
+  /// Whether there are any paths to display
+  bool get hasPaths => categories.any((c) => c.paths.isNotEmpty);
 
-  /// Featured paths (first 2 or ones marked as featured)
+  /// All paths flattened across categories
+  List<LearningPath> get allPaths => categories.expand((c) => c.paths).toList();
+
+  /// Featured paths (first 2 marked as featured, or first 2 overall)
   List<LearningPath> get featuredPaths {
-    final featured = paths.where((p) => p.isFeatured).toList();
+    final featured = allPaths.where((p) => p.isFeatured).toList();
     if (featured.isNotEmpty) return featured.take(2).toList();
-    return paths.take(2).toList();
+    return allPaths.take(2).toList();
   }
 
   /// Whether the user has any enrolled paths
   bool get hasEnrolledPaths => enrolledPaths.isNotEmpty;
+
+  /// Convenience: old flat `paths` accessor for backward compatibility
+  List<LearningPath> get paths => allPaths;
+
+  /// Whether more pages (categories or paths) are loading
+  bool get hasMore => hasMoreCategories;
+
+  LearningPathsLoaded copyWith({
+    List<LearningPathCategory>? categories,
+    List<LearningPath>? enrolledPaths,
+    bool? hasMoreCategories,
+    bool? isFetchingMoreCategories,
+    int? nextCategoryOffset,
+    List<String>? loadingCategories,
+  }) {
+    return LearningPathsLoaded(
+      categories: categories ?? this.categories,
+      enrolledPaths: enrolledPaths ?? this.enrolledPaths,
+      hasMoreCategories: hasMoreCategories ?? this.hasMoreCategories,
+      isFetchingMoreCategories:
+          isFetchingMoreCategories ?? this.isFetchingMoreCategories,
+      nextCategoryOffset: nextCategoryOffset ?? this.nextCategoryOffset,
+      loadingCategories: loadingCategories ?? this.loadingCategories,
+    );
+  }
 }
 
 /// Loading state for learning path details.

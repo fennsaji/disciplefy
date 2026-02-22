@@ -87,56 +87,6 @@ String _cleanDuplicateTitle(String content, String title) {
   return content;
 }
 
-/// Converts scripture references in text to markdown links for tap handling
-/// Uses the same regex pattern as ClickableScriptureText to detect references
-String _convertScriptureReferencesToLinks(String text) {
-  // Use the same scripture pattern from ClickableScriptureText
-  final scripturePattern = RegExp(
-    r'('
-    r'(?:\d\s?)?' // Optional number prefix
-    r'(?:'
-    // English book names
-    r'[A-Z][a-z]{2,}(?:\s(?:of\s)?[A-Z][a-z]+)?'
-    r'|'
-    // Hindi multi-word book names
-    r'भजन संहिता|प्रेरितों के काम|श्रेष्ठगीत'
-    r'|'
-    // Hindi single-word book names
-    r'(?:उत्पत्ति|निर्गमन|लैव्यव्यवस्था|गिनती|व्यवस्थाविवरण|'
-    r'यहोशू|न्यायियों|रूत|शमूएल|राजा|इतिहास|एज्रा|नहेम्याह|एस्तेर|अय्यूब|'
-    r'भजन|नीतिवचन|सभोपदेशक|यशायाह|यिर्मयाह|विलापगीत|यहेजकेल|दानिय्येल|'
-    r'होशे|योएल|आमोस|ओबद्याह|योना|मीका|नहूम|हबक्कूक|सपन्याह|हाग्गै|जकर्याह|मलाकी|'
-    r'मत्ती|मरकुस|लूका|यूहन्ना|प्रेरितों|रोमियों|कुरिन्थियों|गलातियों|इफिसियों|'
-    r'फिलिप्पियों|कुलुस्सियों|थिस्सलुनीकियों|तीमुथियुस|तीतुस|फिलेमोन|इब्रानियों|'
-    r'याकूब|पतरस|यहूदा|प्रकाशितवाक्य)'
-    r'|'
-    // Malayalam multi-word book names
-    r'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ|ഉത്തമഗീതം'
-    r'|'
-    // Malayalam single-word book names
-    r'(?:ഉല്പത്തി|പുറപ്പാട്|ലേവ്യപുസ്തകം|സംഖ്യ|ആവർത്തനം|'
-    r'യോശുവ|ന്യായാധിപന്മാർ|രൂത്ത്|ശമൂവേൽ|രാജാക്കന്മാർ|ദിനവൃത്താന്തം|'
-    r'എസ്രാ|നെഹെമ്യാവ്|എസ്ഥേർ|ഇയ്യോബ്|സങ്കീർത്തനങ്ങൾ|സദൃശ്യവാക്യങ്ങൾ|'
-    r'സഭാപ്രസംഗി|യെശയ്യാവ്|യിരെമ്യാവ്|വിലാപങ്ങൾ|യെഹെസ്കേൽ|ദാനിയേൽ|'
-    r'ഹോശേയ|യോവേൽ|ആമോസ്|ഓബദ്യാവ്|യോനാ|മീഖാ|നഹൂം|ഹബക്കൂക്ക്|സെഫന്യാവ്|'
-    r'ഹഗ്ഗായി|സെഖര്യാവ്|മലാഖി|മത്തായി|മർക്കൊസ്|ലൂക്കൊസ്|യോഹന്നാൻ|'
-    r'റോമർ|കൊരിന്ത്യർ|ഗലാത്യർ|എഫെസ്യർ|ഫിലിപ്പിയർ|കൊലൊസ്സ്യർ|'
-    r'തെസ്സലൊനീക്യർ|തിമൊഥെയൊസ്|തീത്തൊസ്|ഫിലേമോൻ|എബ്രായർ|യാക്കോബ്|'
-    r'പത്രൊസ്|യൂദാ|വെളിപ്പാട്)'
-    r')'
-    r')'
-    r'\s+(\d+)(?::(\d+)(?:-(\d+))?)?', // Matches chapter:verse patterns
-    unicode: true,
-  );
-
-  // Replace scripture references with markdown links
-  return text.replaceAllMapped(scripturePattern, (match) {
-    final reference = match.group(0)!;
-    // Use a custom URL scheme to identify scripture references
-    return '[$reference](scripture://$reference)';
-  });
-}
-
 /// Lightens a color for better contrast in dark mode
 Color _lightenColor(Color color, [double amount = 0.2]) {
   final hsl = HSLColor.fromColor(color);
@@ -1730,10 +1680,48 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  Widget _buildLoadingScreen() => EngagingLoadingScreen(
-        topic: widget.input,
-        language: _selectedLanguage,
-      );
+  Widget _buildLoadingScreen() {
+    final isSermon = widget.studyMode == StudyMode.sermon;
+    return Stack(
+      children: [
+        EngagingLoadingScreen(
+          topic: widget.input,
+          language: _selectedLanguage,
+        ),
+        if (isSermon)
+          Positioned(
+            bottom: 32,
+            left: 24,
+            right: 24,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                border: Border.all(color: Colors.orange.shade200),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule_rounded,
+                      color: Colors.orange.shade700, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Sermon Outline uses 4 AI passes and takes longer than other modes — usually 60–90 seconds. Please wait.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange.shade800,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
   Widget _buildErrorScreen() => Center(
         child: Padding(
