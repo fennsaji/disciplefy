@@ -23,7 +23,6 @@ import { VoiceStreamingService } from '../services/voice-streaming-service.ts'
 import { VoiceQuotaService } from '../services/voice-quota-service.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
 import { AppError } from '../utils/error-handler.ts'
-import { DailyVerseService } from '../../daily-verse/daily-verse-service.ts'
 import { UsageLoggingService } from '../services/usage-logging-service.ts'
 import { CostTrackingService } from '../services/cost-tracking-service.ts'
 import { RateLimitService } from '../services/rate-limit-service.ts'
@@ -58,7 +57,6 @@ export interface ServiceContainer {
   readonly tokenService: TokenService
   readonly analyticsLogger: AnalyticsLogger
   readonly securityValidator: SecurityValidator
-  readonly dailyVerseService: DailyVerseService
   readonly voiceStreamingService: VoiceStreamingService
   readonly voiceQuotaService: VoiceQuotaService
   readonly usageLoggingService: UsageLoggingService
@@ -137,7 +135,6 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const tokenService = new TokenService(supabaseServiceClient)
     const analyticsLogger = new AnalyticsLogger(supabaseServiceClient)
     const securityValidator = new SecurityValidator()
-    const dailyVerseService = new DailyVerseService(supabaseServiceClient, llmService)
     const voiceStreamingService = new VoiceStreamingService({
       openaiApiKey: config.openaiApiKey || '',
       anthropicApiKey: config.anthropicApiKey
@@ -175,7 +172,6 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       tokenService,
       analyticsLogger,
       securityValidator,
-      dailyVerseService,
       voiceStreamingService,
       voiceQuotaService,
       usageLoggingService,
