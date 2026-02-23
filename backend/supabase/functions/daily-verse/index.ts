@@ -12,6 +12,16 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { DailyVerseService } from './daily-verse-service.ts'
+
+// Lazy singleton — created once per worker lifetime, not at module load
+let _dailyVerseService: DailyVerseService | null = null
+function getDailyVerseService(services: ServiceContainer): DailyVerseService {
+  if (!_dailyVerseService) {
+    _dailyVerseService = new DailyVerseService(services.supabaseServiceClient, services.llmService)
+  }
+  return _dailyVerseService
+}
 
 /**
  * Daily verse data structure
@@ -60,8 +70,8 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
   const allowedLanguages = ['en', 'hi', 'ml']
   const language = allowedLanguages.includes(requestLanguage || '') ? requestLanguage! : 'en'
 
-  // Get daily verse data using injected service with language preference
-  const verseData = await services.dailyVerseService.getDailyVerse(requestDate, language)
+  // Get daily verse data using locally-scoped service (not in shared container)
+  const verseData = await getDailyVerseService(services).getDailyVerse(requestDate, language)
 
   // Validate that referenceTranslations exists
   if (!verseData.referenceTranslations) {

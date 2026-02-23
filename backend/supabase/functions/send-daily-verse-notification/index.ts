@@ -6,6 +6,16 @@
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { DailyVerseService } from '../daily-verse/daily-verse-service.ts'
+
+// Lazy singleton — created once per worker lifetime
+let _dailyVerseService: DailyVerseService | null = null
+function getDailyVerseService(services: ServiceContainer): DailyVerseService {
+  if (!_dailyVerseService) {
+    _dailyVerseService = new DailyVerseService(services.supabaseServiceClient, services.llmService)
+  }
+  return _dailyVerseService
+}
 import {
   createNotificationHelper,
   NotificationUser,
@@ -128,7 +138,7 @@ async function handleDailyVerseNotification(
   let dailyVerse: DailyVerseData
 
   try {
-    const verseData = await services.dailyVerseService.getDailyVerse(today, 'en')
+    const verseData = await getDailyVerseService(services).getDailyVerse(today, 'en')
     dailyVerse = {
       reference: verseData.reference,
       referenceTranslations: verseData.referenceTranslations,
