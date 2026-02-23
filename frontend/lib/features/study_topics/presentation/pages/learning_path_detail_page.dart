@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
@@ -16,6 +17,7 @@ import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import '../../../study_generation/data/repositories/token_cost_repository.dart';
+import '../../../study_generation/data/datasources/study_local_data_source.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
@@ -170,6 +172,41 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Persistent "accessed topics" helpers
+  // -------------------------------------------------------------------------
+  static const String _accessedTopicsPrefsKey = 'lp_accessed_topic_keys';
+
+  /// Returns a stable key for a topic used in the accessed-topics store.
+  String _topicKey(LearningPathTopic topic) => topic.topicId.isNotEmpty
+      ? topic.topicId
+      : '${topic.title.toLowerCase()}_${topic.inputType}';
+
+  /// Returns true if this topic was previously navigated to (persisted across sessions).
+  Future<bool> _hasBeenAccessedBefore(LearningPathTopic topic) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getStringList(_accessedTopicsPrefsKey) ?? [];
+      return keys.contains(_topicKey(topic));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Marks this topic as accessed in SharedPreferences (fire-and-forget).
+  void _markTopicAsAccessed(LearningPathTopic topic) {
+    SharedPreferences.getInstance().then((prefs) {
+      final keys = prefs.getStringList(_accessedTopicsPrefsKey) ?? [];
+      final key = _topicKey(topic);
+      if (!keys.contains(key)) {
+        keys.add(key);
+        // Cap at 500 entries to avoid unbounded growth
+        if (keys.length > 500) keys.removeRange(0, keys.length - 500);
+        prefs.setStringList(_accessedTopicsPrefsKey, keys);
+      }
+    }).catchError((_) {});
+  }
+
   /// Navigate to topic with the selected study mode
   Future<void> _navigateToTopicWithMode(
     LearningPathTopic topic,
@@ -177,21 +214,41 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     StudyMode mode,
     bool rememberChoice,
   ) async {
-    // Check if user has sufficient tokens for this mode
-    final tokenState = context.read<TokenBloc>().state;
-    if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
-      final costResult = await sl<TokenCostRepository>()
-          .getTokenCost(_currentLanguage, mode.value);
-      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
-      if (requiredCost > 0 &&
-          tokenState.tokenStatus.totalTokens < requiredCost &&
-          mounted) {
-        await InsufficientTokensDialog.show(
-          context,
-          tokenStatus: tokenState.tokenStatus,
-          requiredTokens: requiredCost,
-        );
-        return;
+    // --- Bypass token check if guide was previously accessed ---
+    // Layer 1: backend-confirmed progress flags
+    final alreadyGenerated = topic.isCompleted || topic.isInProgress;
+    // Layer 2: persistent local "accessed topics" store (survives sessions)
+    final wasAccessedBefore =
+        alreadyGenerated ? true : await _hasBeenAccessedBefore(topic);
+    // Layer 3: local Hive study-guide cache
+    final hasCached = wasAccessedBefore
+        ? true
+        : await _hasCachedStudyGuide(
+            topic.title, topic.inputType, _currentLanguage);
+
+    if (hasCached) {
+      Logger.info(
+          '📦 [LEARNING_PATH_DETAIL] Skipping token check for "${topic.title}" '
+          '(completed=${topic.isCompleted}, inProgress=${topic.isInProgress}, '
+          'accessedBefore=$wasAccessedBefore, hiveCached=$hasCached)');
+      // Fall through to navigation; study screen will load from cache
+    } else {
+      // First-time generation — check if user has sufficient tokens
+      final tokenState = context.read<TokenBloc>().state;
+      if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
+        final costResult = await sl<TokenCostRepository>()
+            .getTokenCost(_currentLanguage, mode.value);
+        final requiredCost = costResult.fold((f) => 0, (cost) => cost);
+        if (requiredCost > 0 &&
+            tokenState.tokenStatus.totalTokens < requiredCost &&
+            mounted) {
+          await InsufficientTokensDialog.show(
+            context,
+            tokenStatus: tokenState.tokenStatus,
+            requiredTokens: requiredCost,
+          );
+          return;
+        }
       }
     }
 
@@ -219,11 +276,35 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
     );
 
+    // Persist that this topic was accessed so future visits bypass the token check
+    _markTopicAsAccessed(topic);
+
     // Refresh data when returning from the study guide - force refresh to bypass cache
     if (mounted) {
       Logger.debug(
           '[LEARNING_PATH_DETAIL] Returned from study guide, refreshing with forceRefresh: true');
       _loadPathDetails(forceRefresh: true);
+    }
+  }
+
+  /// Returns true if a study guide matching [input]/[inputType]/[language]
+  /// exists in the local Hive cache.
+  Future<bool> _hasCachedStudyGuide(
+    String input,
+    String inputType,
+    String language,
+  ) async {
+    try {
+      final cached = await sl<StudyLocalDataSource>().getCachedStudyGuides();
+      final normalizedInput = input.trim().toLowerCase();
+      return cached.any(
+        (g) =>
+            g.input.trim().toLowerCase() == normalizedInput &&
+            g.inputType == inputType &&
+            g.language == language,
+      );
+    } catch (_) {
+      return false;
     }
   }
 

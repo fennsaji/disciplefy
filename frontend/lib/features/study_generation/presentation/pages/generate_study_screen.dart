@@ -37,6 +37,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
 import '../../data/repositories/token_cost_repository.dart';
+import '../../data/datasources/study_local_data_source.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
@@ -2542,6 +2543,22 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             : 'question';
     final languageCode = _selectedLanguage.code;
 
+    // Check local cache first — cached guides bypass the token check entirely
+    final hasCached =
+        await _hasCachedStudyGuide(input, inputType, languageCode);
+    if (hasCached && mounted) {
+      Logger.info('📦 [GENERATE_STUDY] Cache hit — bypassing token check');
+      _hasNavigatedAway = true;
+      final encodedInput = Uri.encodeComponent(input);
+      context.go(
+        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate',
+      );
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) setState(() => _isNavigating = false);
+      });
+      return;
+    }
+
     // Check if user has sufficient tokens for this mode
     if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
       final costResult =
@@ -2595,6 +2612,28 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         });
       }
     });
+  }
+
+  /// Returns true if a study guide matching [input]/[inputType]/[language]
+  /// already exists in the local Hive cache.
+  Future<bool> _hasCachedStudyGuide(
+    String input,
+    String inputType,
+    String language,
+  ) async {
+    try {
+      final cached =
+          await GetIt.instance<StudyLocalDataSource>().getCachedStudyGuides();
+      final normalizedInput = input.trim().toLowerCase();
+      return cached.any(
+        (g) =>
+            g.input.trim().toLowerCase() == normalizedInput &&
+            g.inputType == inputType &&
+            g.language == language,
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
   void _showErrorDialog(

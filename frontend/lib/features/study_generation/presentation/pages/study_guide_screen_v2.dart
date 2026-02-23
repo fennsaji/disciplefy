@@ -23,6 +23,7 @@ import '../../../../shared/widgets/markdown_with_scripture.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../data/datasources/study_local_data_source.dart';
 import '../../../study_topics/domain/repositories/topic_progress_repository.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -676,6 +677,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       _selectedLanguage = normalizedLanguageCode;
     });
 
+    // Check local cache before making any API call or token check
+    final cached = await _findCachedStudyGuide(
+      input: widget.input!,
+      inputType: widget.type!,
+      language: normalizedLanguageCode,
+    );
+    if (cached != null && mounted) {
+      Logger.info('📦 [STUDY_GUIDE_V2] Cache hit — skipping API call');
+      _startTopicProgress();
+      _loadFromCachedStudyGuide(cached);
+      return;
+    }
+
     // Track topic progress start if we have a topic ID
     _startTopicProgress();
 
@@ -756,6 +770,55 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
   }
 
+  /// Find a matching study guide in local Hive cache.
+  Future<StudyGuide?> _findCachedStudyGuide({
+    required String input,
+    required String inputType,
+    required String language,
+  }) async {
+    try {
+      final cached = await sl<StudyLocalDataSource>().getCachedStudyGuides();
+      final normalizedInput = input.trim().toLowerCase();
+      return cached.firstWhere(
+        (g) =>
+            g.input.trim().toLowerCase() == normalizedInput &&
+            g.inputType == inputType &&
+            g.language == language,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Load a study guide from local cache and asynchronously fetch fresh notes.
+  void _loadFromCachedStudyGuide(StudyGuide guide) {
+    Logger.info('✅ [STUDY_GUIDE_V2] Loaded from local cache: ${guide.input}');
+
+    setState(() {
+      _currentStudyGuide = guide;
+      _isLoading = false;
+      _hasError = false;
+      _isGenerationComplete = true;
+      _isSaved = guide.isSaved ?? false;
+
+      if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty) {
+        _notesController.text = guide.personalNotes!;
+        _loadedNotes = guide.personalNotes;
+        _notesLoaded = true;
+      }
+    });
+
+    _setupAutoSave();
+    _startCompletionTracking();
+
+    // Always fetch fresh notes from backend in case they've changed
+    if (!_notesLoaded) {
+      context
+          .read<StudyBloc>()
+          .add(LoadPersonalNotesRequested(guideId: guide.id));
+    }
+  }
+
   /// Start tracking topic progress when user opens a study guide from a topic.
   ///
   /// This is called at the beginning of study guide generation when a topicId
@@ -817,13 +880,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _isSaved = studyGuide.isSaved!;
       }
 
-      // Load personal notes if available
+      // Load personal notes if bundled with guide data
       if (studyGuide.personalNotes != null) {
         _loadedNotes = studyGuide.personalNotes;
         _notesController.text = studyGuide.personalNotes!;
         _notesLoaded = true;
-      } else if (_isSaved) {
-        _loadPersonalNotesIfSaved();
       }
     });
 
@@ -832,6 +893,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     // Start completion tracking
     _startCompletionTracking();
+
+    // Cache the generated guide for cache-first loading next time
+    sl<StudyLocalDataSource>().cacheStudyGuide(studyGuide);
+
+    // Always load notes from backend — notes are saved independently of save status
+    // Backend may return same guide ID on repeat generation (cache hit), so notes may exist
+    if (!_notesLoaded) {
+      context
+          .read<StudyBloc>()
+          .add(LoadPersonalNotesRequested(guideId: studyGuide.id));
+    }
   }
 
   /// Handle study guide generation failure
@@ -1282,18 +1354,33 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             });
             // Always setup auto-save when notes are loaded
             _setupAutoSave();
-          } else if (state is StudyPersonalNotesSuccess) {
-            if (!state.isAutoSave) {
-              _showSnackBar(
-                state.message ?? 'Personal notes saved!',
-                AppColors.success,
-                icon: Icons.note_add,
+            // Update Hive cache with loaded notes
+            if (_currentStudyGuide != null && state.notes != null) {
+              sl<StudyLocalDataSource>().cacheStudyGuide(
+                _currentStudyGuide!.copyWith(personalNotes: state.notes),
               );
             }
+          } else if (state is StudyPersonalNotesSuccess) {
+            _showSnackBar(
+              state.isAutoSave
+                  ? 'Notes saved'
+                  : (state.message ?? 'Personal notes saved!'),
+              AppColors.success,
+              icon: state.isAutoSave ? Icons.check : Icons.note_add,
+              duration: state.isAutoSave
+                  ? const Duration(milliseconds: 1500)
+                  : const Duration(seconds: 3),
+            );
             if (!mounted) return;
             setState(() {
               _loadedNotes = state.savedNotes;
             });
+            // Update Hive cache with saved notes
+            if (_currentStudyGuide != null) {
+              sl<StudyLocalDataSource>().cacheStudyGuide(
+                _currentStudyGuide!.copyWith(personalNotes: state.savedNotes),
+              );
+            }
           } else if (state is StudyPersonalNotesFailure) {
             if (!state.isAutoSave) {
               _showSnackBar(
@@ -3290,7 +3377,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   /// Show snackbar with consistent styling
-  void _showSnackBar(String message, Color backgroundColor, {IconData? icon}) {
+  void _showSnackBar(String message, Color backgroundColor,
+      {IconData? icon, Duration duration = const Duration(seconds: 3)}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -3312,7 +3400,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         ),
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        duration: duration,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
