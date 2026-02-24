@@ -113,6 +113,8 @@ class StudyGuidePdfService {
           _buildTitleSection(guide),
           pw.SizedBox(height: 20),
           ..._buildSection('Summary', guide.summary),
+          if (guide.passage != null && guide.passage!.isNotEmpty)
+            ..._buildSection('Passage', guide.passage!),
           ..._buildSection('Interpretation', guide.interpretation),
           ..._buildSection('Historical Context', guide.context),
           ..._buildListSection('Related Scriptures', guide.relatedVerses),
@@ -163,6 +165,8 @@ class StudyGuidePdfService {
     // Build and capture content sections
     final sections = [
       (_getLocalizedTitle('Summary', guide.language), guide.summary),
+      if (guide.passage != null && guide.passage!.isNotEmpty)
+        (_getLocalizedTitle('Passage', guide.language), guide.passage!),
       (
         _getLocalizedTitle('Interpretation', guide.language),
         guide.interpretation
@@ -725,6 +729,8 @@ class StudyGuidePdfService {
           service._buildTitleSection(guide),
           pw.SizedBox(height: 20),
           ...service._buildSection('Summary', guide.summary),
+          if (guide.passage != null && guide.passage!.isNotEmpty)
+            ...service._buildSection('Passage', guide.passage!),
           ...service._buildSection('Interpretation', guide.interpretation),
           ...service._buildSection('Historical Context', guide.context),
           ...service._buildListSection(
@@ -936,6 +942,7 @@ class StudyGuidePdfService {
     // Map English titles to translation keys
     const titleToKey = {
       'Summary': 'summary',
+      'Passage': 'passage_reading',
       'Interpretation': 'interpretation',
       'Historical Context': 'context',
       'Related Scriptures': 'related_verses',

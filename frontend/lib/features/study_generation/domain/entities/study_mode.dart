@@ -116,6 +116,23 @@ extension StudyModeExtension on StudyMode {
     }
   }
 
+  /// Minimum seconds the user must spend reading before the guide can be
+  /// auto-marked complete. Scaled to roughly 50 % of the expected read time.
+  int get minCompletionSeconds {
+    switch (this) {
+      case StudyMode.quick:
+        return 90; // 3-min guide  → 1.5 min minimum
+      case StudyMode.standard:
+        return 240; // 8-min guide  → 4 min minimum
+      case StudyMode.deep:
+        return 420; // 12-min guide → 7 min minimum
+      case StudyMode.lectio:
+        return 300; // 9-min guide  → 5 min minimum (meditative)
+      case StudyMode.sermon:
+        return 600; // 55-min guide → 10 min minimum (reference use)
+    }
+  }
+
   /// Returns whether this mode supports Reflect Mode interactive cards.
   bool get supportsReflectMode {
     switch (this) {
