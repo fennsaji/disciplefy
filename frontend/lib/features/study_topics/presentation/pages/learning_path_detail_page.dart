@@ -214,23 +214,17 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     StudyMode mode,
     bool rememberChoice,
   ) async {
-    // --- Bypass token check if guide was previously accessed ---
-    // Layer 1: backend-confirmed progress flags
-    final alreadyGenerated = topic.isCompleted || topic.isInProgress;
-    // Layer 2: persistent local "accessed topics" store (survives sessions)
-    final wasAccessedBefore =
-        alreadyGenerated ? true : await _hasBeenAccessedBefore(topic);
-    // Layer 3: local Hive study-guide cache
-    final hasCached = wasAccessedBefore
-        ? true
-        : await _hasCachedStudyGuide(
+    // Skip token check if: topic is completed (backend-confirmed) OR guide
+    // is already in Hive cache. isInProgress is not sufficient — the guide
+    // may not be cached and a new generation (costing tokens) may be needed.
+    final hiveCached = topic.isCompleted ||
+        await _hasCachedStudyGuide(
             topic.title, topic.inputType, _currentLanguage);
 
-    if (hasCached) {
+    if (hiveCached) {
       Logger.info(
           '📦 [LEARNING_PATH_DETAIL] Skipping token check for "${topic.title}" '
-          '(completed=${topic.isCompleted}, inProgress=${topic.isInProgress}, '
-          'accessedBefore=$wasAccessedBefore, hiveCached=$hasCached)');
+          '(completed=${topic.isCompleted}, hiveCached=$hiveCached)');
       // Fall through to navigation; study screen will load from cache
     } else {
       // First-time generation — check if user has sufficient tokens

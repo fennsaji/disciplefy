@@ -120,9 +120,9 @@ class LearningPathCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      // Topics count
+                      // Topics count — always "X/Y Topics"
                       Text(
-                        '${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}',
+                        '${path.topicsCompleted}/${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}',
                         style: AppFonts.inter(
                           fontSize: 11,
                           color: theme.colorScheme.onSurface
