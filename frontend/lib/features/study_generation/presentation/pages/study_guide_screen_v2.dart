@@ -211,6 +211,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
 
+  // Learning-path completion state
+  bool _isTopicCompletedFromPath = false;
+
   // View mode state for Read/Reflect toggle
   StudyViewMode _viewMode = StudyViewMode.read;
 
@@ -1045,6 +1048,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Setup scroll listener to detect when user reaches bottom of content
   void _startScrollListener() {
     _scrollController.addListener(() {
+      // Completion tracking: 80% threshold
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
           _isScrolledNearBottom()) {
@@ -1052,6 +1056,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           _hasScrolledToBottom = true;
         });
         _checkCompletionConditions();
+      }
+
+      // Learning-path sheet: show when user reaches absolute bottom (97%)
+      if (!_isTopicCompletedFromPath &&
+          widget.navigationSource == StudyNavigationSource.learningPath &&
+          _isScrolledToAbsoluteBottom()) {
+        _showLearningPathCompletionSheet();
       }
     });
   }
@@ -1074,6 +1085,19 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Check if scrolled to at least 80% of content (more forgiving threshold)
     final scrollPercentage = currentScroll / maxScroll;
     return scrollPercentage >= 0.80;
+  }
+
+  /// Check if user has scrolled to the absolute bottom of the content.
+  /// Returns true when scroll position is at 97% or more of max scroll extent.
+  bool _isScrolledToAbsoluteBottom() {
+    if (!_scrollController.hasClients) return false;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+
+    if (maxScroll <= 0) return true;
+
+    return (currentScroll / maxScroll) >= 0.97;
   }
 
   /// Checks if AI Discipler feature is enabled based on feature flags and user's plan
@@ -1164,7 +1188,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void _checkCompletionConditions() {
     if (_completionMarked || _currentStudyGuide == null) return;
 
-    const minTimeSeconds = 60; // 1 minute
+    final minTimeSeconds = widget.studyMode.minCompletionSeconds;
     final timeConditionMet = _timeSpentSeconds >= minTimeSeconds;
 
     // In Reflect Mode, there's no scrolling, so auto-satisfy scroll condition
@@ -1277,6 +1301,132 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       '+$xpEarned XP earned!',
       AppColors.success,
       icon: Icons.star,
+    );
+  }
+
+  /// Shows a bottom sheet prompting the user to return to their learning path
+  /// after scrolling to the absolute bottom of the guide.
+  void _showLearningPathCompletionSheet() {
+    if (!mounted) return;
+    // Guard: only show once
+    if (_isTopicCompletedFromPath) return;
+    setState(() => _isTopicCompletedFromPath = true);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final accentColor = theme.colorScheme.primary;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withOpacity(0.12),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurface.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Icon + title
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.success,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(
+                "You've reached the end!",
+                style: AppFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+
+              Text(
+                'Ready to continue your learning path?',
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface
+                      .withOpacity(isDark ? 0.75 : 0.6),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+
+              // Primary CTA – back to path
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop(); // close sheet
+                    _handleBackNavigation(); // go back to learning path
+                  },
+                  icon: const Icon(Icons.route_rounded, size: 20),
+                  label: const Text('Continue Learning Path'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: AppFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Secondary – stay on screen
+              TextButton(
+                onPressed: () => Navigator.of(sheetContext).pop(),
+                child: Text(
+                  'Stay Here',
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurface
+                        .withOpacity(isDark ? 0.6 : 0.5),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1395,7 +1545,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             // Invalidate the "For You" cache so completed topics don't show again
             sl<RecommendedGuidesService>().clearForYouCache();
 
-            // Track topic progress completion if we have a topic ID
+            // Track topic progress completion (XP, first-completion badge, etc.)
             _completeTopicProgress();
 
             // Update study streak and check achievements
@@ -3435,10 +3585,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
             : '🌐 https://www.disciplefy.in/';
 
+    final passage = _currentStudyGuide!.passage;
     final shareText = '''
 ${context.tr(TranslationKeys.studyGuideSummary)}:
 ${_currentStudyGuide!.summary}
-
+${passage != null && passage.isNotEmpty ? '\n${context.tr(TranslationKeys.studyGuidePassageReading)}:\n$passage' : ''}
 ${context.tr(TranslationKeys.studyGuideInterpretation)}:
 ${_currentStudyGuide!.interpretation}
 

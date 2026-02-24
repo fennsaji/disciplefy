@@ -59,6 +59,10 @@ class LearningPath extends Equatable {
         category,
       ];
 
+  /// Number of topics completed, derived from progress percentage.
+  int get topicsCompleted =>
+      topicsCount > 0 ? (progressPercentage / 100 * topicsCount).round() : 0;
+
   /// Whether the path is completed
   bool get isCompleted => progressPercentage >= 100;
 
@@ -109,6 +113,7 @@ class LearningPathTopic extends Equatable {
 
 /// Learning path with detailed information including topics.
 class LearningPathDetail extends LearningPath {
+  @override
   final int topicsCompleted;
   final DateTime? enrolledAt;
   final List<LearningPathTopic> topics;
