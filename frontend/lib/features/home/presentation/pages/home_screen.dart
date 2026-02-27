@@ -1047,7 +1047,22 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 16),
             // Show Learning Path card if available with lock support
-            if (homeState.activeLearningPath != null)
+            if (homeState.activeLearningPath != null) ...[
+              // "You're ready for..." label when proactively recommending a new path
+              if (homeState.learningPathReason ==
+                  LearningPathRecommendationReason.personalized) ...[
+                Text(
+                  "You're ready for your next step",
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark
+                        ? AppColors.brandPrimaryLight.withOpacity(0.85)
+                        : AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
                 child: LearningPathCard(
@@ -1056,7 +1071,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   onTap: () =>
                       _navigateToLearningPath(homeState.activeLearningPath!.id),
                 ),
-              )
+              ),
+            ]
             // Check if learning_paths is locked even when no data
             else if (_isLearningPathsLocked())
               LockedFeatureWrapper(

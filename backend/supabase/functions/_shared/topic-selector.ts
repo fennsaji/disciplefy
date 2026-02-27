@@ -82,14 +82,31 @@ interface ScoredTopic extends Topic {
 // Category Scoring Maps
 // ============================================================================
 
-// Maps faith journey stage to preferred categories
+// Maps new schema faith_stage values to preferred topic categories
+const FAITH_STAGE_CATEGORIES: Record<string, string[]> = {
+  new_believer:       ['Foundations of Faith', 'Spiritual Disciplines'],
+  growing_believer:   ['Christian Life', 'Discipleship & Growth', 'Church & Community'],
+  committed_disciple: ['Apologetics & Defense of Faith', 'Mission & Service', 'Discipleship & Growth'],
+};
+
+// Maps new schema spiritual_goals values to preferred topic categories
+const SPIRITUAL_GOALS_CATEGORIES: Record<string, string[]> = {
+  foundational_faith: ['Foundations of Faith', 'Spiritual Disciplines'],
+  spiritual_depth:    ['Discipleship & Growth', 'Spiritual Disciplines'],
+  relationships:      ['Family & Relationships', 'Church & Community'],
+  apologetics:        ['Apologetics & Defense of Faith'],
+  service:            ['Mission & Service'],
+  theology:           ['Apologetics & Defense of Faith', 'Foundations of Faith'],
+};
+
+// Legacy: old schema faith_journey → category maps (kept for backward compat)
 const FAITH_JOURNEY_CATEGORIES: Record<string, string[]> = {
   new: ['Foundations of Faith', 'Spiritual Disciplines'],
   growing: ['Christian Life', 'Discipleship & Growth', 'Church & Community'],
   mature: ['Apologetics & Defense of Faith', 'Mission & Service', 'Discipleship & Growth'],
 };
 
-// Maps "seeking" values to preferred categories
+// Legacy: old schema seeking → category maps (kept for backward compat)
 const SEEKING_CATEGORIES: Record<string, string[]> = {
   peace: ['Spiritual Disciplines', 'Foundations of Faith'],
   guidance: ['Christian Life', 'Discipleship & Growth'],
@@ -108,6 +125,21 @@ const FAITH_JOURNEY_LEARNING_PATHS: Record<string, string[]> = {
 
 // Default learning path if no personalization (first in display order)
 const DEFAULT_LEARNING_PATH_SLUG = 'new-believer-essentials';
+
+// Maps profile interests (user_profiles.interests) to recommended_topics categories
+// Used to apply a +10 pt score bonus to topics whose category aligns with declared interests
+const INTEREST_TOPIC_CATEGORY_MAP: Record<string, string[]> = {
+  prayer:         ['Spiritual Disciplines'],
+  worship:        ['Spiritual Disciplines'],
+  community:      ['Church & Community', 'Family & Relationships'],
+  bible_study:    ['Foundations of Faith'],
+  theology:       ['Apologetics & Defense of Faith'],
+  missions:       ['Mission & Service'],
+  youth_ministry: ['Discipleship & Growth', 'Church & Community'],
+  family:         ['Family & Relationships'],
+  leadership:     ['Discipleship & Growth', 'Mission & Service'],
+  evangelism:     ['Mission & Service'],
+};
 
 // ============================================================================
 // Topic Selection Logic
@@ -423,26 +455,58 @@ export async function getLocalizedTopicContent(
 
 /**
  * Calculates a personalization score for a topic based on user questionnaire answers
+ * and declared profile interests.
  * Higher scores = better match for user
+ *
+ * @param interests - Values from user_profiles.interests (e.g. ['theology', 'missions'])
  */
-function calculateTopicScore(topic: Topic, personalization: UserPersonalization): number {
+function calculateTopicScore(
+  topic: Topic,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  personalization: UserPersonalization | Record<string, any>,
+  interests: string[] = []
+): number {
   let score = 0;
+  const p = personalization as Record<string, any>;
 
-  // Score based on faith journey (0-30 points)
-  if (personalization.faith_journey) {
-    const preferredCategories = FAITH_JOURNEY_CATEGORIES[personalization.faith_journey] || [];
-    if (preferredCategories.includes(topic.category)) {
-      score += 30;
+  // Score based on faith stage / faith journey (0-30 points)
+  // New schema: faith_stage ('new_believer' | 'growing_believer' | 'committed_disciple')
+  // Legacy schema: faith_journey ('new' | 'growing' | 'mature')
+  const faithStage: string | undefined = p.faith_stage;
+  const faithJourney: string | undefined = p.faith_journey;
+
+  if (faithStage) {
+    const preferredCategories = FAITH_STAGE_CATEGORIES[faithStage] || [];
+    if (preferredCategories.includes(topic.category)) score += 30;
+  } else if (faithJourney) {
+    const preferredCategories = FAITH_JOURNEY_CATEGORIES[faithJourney] || [];
+    if (preferredCategories.includes(topic.category)) score += 30;
+  }
+
+  // Score based on spiritual goals / seeking (0-50 points total, 10 per match)
+  // New schema: spiritual_goals string[]
+  // Legacy schema: seeking string[]
+  const spiritualGoals: string[] | undefined = p.spiritual_goals;
+  const seeking: string[] | undefined = p.seeking;
+
+  if (spiritualGoals && spiritualGoals.length > 0) {
+    for (const goal of spiritualGoals) {
+      const preferredCategories = SPIRITUAL_GOALS_CATEGORIES[goal] || [];
+      if (preferredCategories.includes(topic.category)) score += 10;
+    }
+  } else if (seeking && seeking.length > 0) {
+    for (const s of seeking) {
+      const preferredCategories = SEEKING_CATEGORIES[s] || [];
+      if (preferredCategories.includes(topic.category)) score += 10;
     }
   }
 
-  // Score based on seeking (0-50 points total, 10 per match)
-  if (personalization.seeking && personalization.seeking.length > 0) {
-    for (const seeking of personalization.seeking) {
-      const preferredCategories = SEEKING_CATEGORIES[seeking] || [];
-      if (preferredCategories.includes(topic.category)) {
-        score += 10;
-      }
+  // Score based on profile interests (+10 per matching category, GAP-05)
+  for (const interest of interests) {
+    const preferredCategories = INTEREST_TOPIC_CATEGORY_MAP[interest] || [];
+    if (preferredCategories.includes(topic.category)) {
+      score += 10;
+      break; // Cap at one +10 bonus per topic regardless of how many interests match the same category
     }
   }
 
@@ -455,10 +519,16 @@ function calculateTopicScore(topic: Topic, personalization: UserPersonalization)
 }
 
 /**
- * Scores and sorts topics based on user personalization
+ * Scores and sorts topics based on user personalization and profile interests
  */
-function scoreAndSortTopics(topics: Topic[], personalization: UserPersonalization | null): Topic[] {
-  if (!personalization || !personalization.questionnaire_completed) {
+function scoreAndSortTopics(
+  topics: Topic[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  personalization: UserPersonalization | Record<string, any> | null,
+  interests: string[] = []
+): Topic[] {
+  const p = personalization as Record<string, any> | null;
+  if (!p || !p.questionnaire_completed) {
     // No personalization: sort by display_order only
     return topics.sort((a, b) => a.display_order - b.display_order);
   }
@@ -466,7 +536,7 @@ function scoreAndSortTopics(topics: Topic[], personalization: UserPersonalizatio
   // Calculate scores and sort
   const scoredTopics: ScoredTopic[] = topics.map((topic) => ({
     ...topic,
-    score: calculateTopicScore(topic, personalization),
+    score: calculateTopicScore(topic, personalization, interests),
   }));
 
   // Sort by score descending, then by display_order ascending
@@ -624,8 +694,16 @@ export async function selectTopicsForYou(
       console.log(`After title filtering (including translations): ${filteredTopics.length} topics remaining`);
     }
 
-    // Score and sort topics based on personalization
-    const sortedTopics = scoreAndSortTopics(filteredTopics, personalization);
+    // Fetch user's declared interests from profile (GAP-05)
+    const { data: profileData } = await supabase
+      .from('user_profiles')
+      .select('interests')
+      .eq('id', userId)
+      .single();
+    const userInterests: string[] = profileData?.interests || [];
+
+    // Score and sort topics based on personalization + interests
+    const sortedTopics = scoreAndSortTopics(filteredTopics, personalization, userInterests);
 
     // Return top N topics
     return {
@@ -729,29 +807,58 @@ export async function selectTopicsForYouWithLearningPath(
       }
     }
 
-    // Priority 2: Personalization-based path suggestion
-    if (!suggestedPath && personalization?.questionnaire_completed && personalization?.faith_journey) {
-      const recommendedSlugs = FAITH_JOURNEY_LEARNING_PATHS[personalization.faith_journey] || [];
-      
-      for (const slug of recommendedSlugs) {
-        const { data: pathData } = await supabase
-          .from('learning_paths')
-          .select('id, title, slug')
-          .eq('slug', slug)
-          .eq('is_active', true)
-          .single();
+    // Priority 2: Personalization-based path suggestion (GAP-05 fix)
+    // Uses scoring_results from the v1.2 algorithm stored in user_personalization.
+    // Falls back to faith_stage mapping and then legacy faith_journey mapping.
+    if (!suggestedPath && personalization?.questionnaire_completed) {
+      const scoringResults = (personalization as any).scoring_results;
+      const faithStage = (personalization as any).faith_stage as string | undefined;
 
-        if (pathData) {
-          // Check if user hasn't completed this path
-          const { data: existingProgress } = await supabase
-            .from('user_learning_path_progress')
-            .select('completed_at')
-            .eq('user_id', userId)
-            .eq('learning_path_id', pathData.id)
+      let candidateSlugs: string[] = [];
+
+      if (scoringResults?.allScores && Array.isArray(scoringResults.allScores) && scoringResults.allScores.length > 0) {
+        // Best path: use pre-computed scores from the personalization algorithm (all 29 paths, sorted highest first)
+        candidateSlugs = scoringResults.allScores.map((s: { pathSlug: string }) => s.pathSlug);
+        console.log(`[TOPICS_FOR_YOU] Priority 2: using scoring_results (${candidateSlugs.length} candidates)`);
+      } else if (faithStage) {
+        // Fallback: faith_stage → hardcoded slug list (covers users with no scoring_results yet)
+        const faithStageSlugs: Record<string, string[]> = {
+          new_believer:      ['new-believer-essentials', 'rooted-in-christ', 'understanding-the-bible'],
+          growing_believer:  ['growing-in-discipleship', 'deepening-your-walk'],
+          committed_disciple:['serving-and-mission', 'defending-your-faith', 'heart-for-the-world'],
+        };
+        candidateSlugs = faithStageSlugs[faithStage] || [];
+        console.log(`[TOPICS_FOR_YOU] Priority 2: using faith_stage fallback (${candidateSlugs.length} candidates)`);
+      } else if (personalization?.faith_journey) {
+        // Legacy fallback for old schema
+        candidateSlugs = FAITH_JOURNEY_LEARNING_PATHS[personalization.faith_journey] || [];
+        console.log(`[TOPICS_FOR_YOU] Priority 2: using legacy faith_journey fallback (${candidateSlugs.length} candidates)`);
+      }
+
+      if (candidateSlugs.length > 0) {
+        // Fetch completed path slugs in one query to avoid N DB round-trips
+        const { data: completedPaths } = await supabase
+          .from('user_learning_path_progress')
+          .select('learning_path_id, learning_paths!inner(slug)')
+          .eq('user_id', userId)
+          .not('completed_at', 'is', null);
+
+        const completedSlugs = new Set<string>(
+          (completedPaths || []).map((p: any) => p.learning_paths?.slug).filter(Boolean)
+        );
+
+        // Pick the top-scored slug not yet completed
+        const topSlug = candidateSlugs.find((slug) => !completedSlugs.has(slug));
+
+        if (topSlug) {
+          const { data: pathData } = await supabase
+            .from('learning_paths')
+            .select('id, title, slug')
+            .eq('slug', topSlug)
+            .eq('is_active', true)
             .single();
 
-          // Use this path if not completed
-          if (!existingProgress?.completed_at) {
+          if (pathData) {
             suggestedPath = {
               id: pathData.id,
               name: pathData.title,
@@ -765,7 +872,7 @@ export async function selectTopicsForYouWithLearningPath(
               pathData.title,
               limit
             );
-            break;
+            console.log(`[TOPICS_FOR_YOU] Priority 2: suggested path "${pathData.title}" (slug: ${topSlug})`);
           }
         }
       }
