@@ -69,12 +69,17 @@ if [ -d "backend" ] && (has_changes_since_push "backend" || git diff --name-only
     else
         echo "🔧 Using: $(deno --version | head -n1)"
 
-        # TEMPORARY: Skip comprehensive TypeScript check due to 7 known non-critical errors
-        # These errors are runtime-safe (Skypack CDN imports + Node.js types)
-        # Full validation: ./backend/scripts/check-compilation.sh (96.1% pass rate)
+        # Run full TypeScript compilation check across all Edge Functions
         echo "🔍 Backend TypeScript validation..."
-        echo -e "${GREEN}✅ Backend TypeScript: SKIPPED${NC}"
-        echo -e "${BLUE}ℹ️  (Comprehensive check temporarily disabled - 7 non-critical errors documented)${NC}"
+        if sh scripts/check-compilation.sh >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Backend TypeScript: PASSED${NC}"
+        else
+            echo -e "${RED}❌ Backend TypeScript: FAILED${NC}"
+            echo ""
+            echo -e "${RED}TypeScript errors:${NC}"
+            sh scripts/check-compilation.sh 2>&1 | grep -E "error|Error" | sed 's/^/   /' | head -20
+            OVERALL_SUCCESS=false
+        fi
         
         # Check for potential security issues in Edge Functions
         echo "🔒 Checking for security patterns..."
@@ -274,7 +279,7 @@ if [ "$OVERALL_SUCCESS" = true ]; then
     echo -e "${GREEN}🎉 Pre-push validation PASSED! Proceeding with push...${NC}"
     echo ""
     echo -e "${CYAN}📋 Push Summary:${NC}"
-    echo "   • Backend compilation: ✅"
+    echo "   • Backend TypeScript: ✅"
     echo "   • Frontend analysis: ✅"
     echo "   • Security checks: ✅"
     echo "   • Repository health: ✅"
@@ -285,7 +290,7 @@ else
     echo -e "${RED}Critical issues must be resolved before pushing.${NC}"
     echo ""
     echo -e "${YELLOW}💡 Troubleshooting:${NC}"
-    echo -e "${YELLOW}   • Backend: Run './backend/scripts/check-compilation.sh'${NC}"
+    echo -e "${YELLOW}   • Backend: Run 'cd backend && sh scripts/check-compilation.sh'${NC}"
     echo -e "${YELLOW}   • Frontend: Run 'flutter analyze' and 'flutter test'${NC}"
     echo -e "${YELLOW}   • Skip validation (NOT recommended): git push --no-verify${NC}"
     echo ""
