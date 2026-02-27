@@ -14,6 +14,12 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
+import {
+  calculatePathScores,
+  getScoringResultsSummary,
+  type QuestionnaireResponses,
+  type LearningPath as ScoringLearningPath,
+} from '../_shared/personalization/scoring-algorithm.ts';
 
 // ============================================================================
 // Types
@@ -199,6 +205,131 @@ async function handleUpdateTime(
 }
 
 // ============================================================================
+// Score Recalculation (GAP-03)
+// ============================================================================
+
+/**
+ * Recalculates personalization scores after a topic is completed.
+ *
+ * Triggered when:
+ *   1. A learning path was just completed (completed_at set in the last 10 seconds)
+ *   2. The user's total completed topic count reaches a multiple of 10
+ *
+ * Non-fatal: errors are logged and swallowed so topic completion always succeeds.
+ */
+async function maybeTriggerScoreRecalculation(
+  services: ServiceContainer,
+  userId: string,
+  isFirstCompletion: boolean
+): Promise<void> {
+  // Only recalculate on genuine first completions; repeat completions earn no XP
+  // and don't change path progress, so they can't trigger path completion either.
+  if (!isFirstCompletion) return;
+
+  try {
+    // Check 1: Was a learning path just completed (within the last 10 s)?
+    // The DB trigger fires synchronously inside the complete_topic_progress RPC transaction,
+    // so completed_at is already set by the time we reach this point.
+    const { data: justCompletedPaths } = await services.supabaseServiceClient
+      .from('user_learning_path_progress')
+      .select('learning_path_id')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null)
+      .gte('completed_at', new Date(Date.now() - 10_000).toISOString());
+
+    const pathJustCompleted = (justCompletedPaths || []).length > 0;
+
+    // Check 2: Total completed topics is a multiple of 10 (milestone recalculation)
+    const { count: completedCount } = await services.supabaseServiceClient
+      .from('user_topic_progress')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null);
+
+    const isMilestone =
+      typeof completedCount === 'number' && completedCount > 0 && completedCount % 10 === 0;
+
+    if (!pathJustCompleted && !isMilestone) return;
+
+    const triggerReason = pathJustCompleted ? 'path_completion' : 'topic_milestone';
+    console.log(
+      `[topic-progress] Score recalculation triggered (${triggerReason}) for user ${userId}`
+    );
+
+    // Fetch questionnaire answers
+    const { data: personalization } = await services.supabaseServiceClient
+      .from('user_personalization')
+      .select(
+        'faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed'
+      )
+      .eq('user_id', userId)
+      .single();
+
+    if (!personalization?.questionnaire_completed || !personalization.faith_stage) {
+      console.log('[topic-progress] No questionnaire data — skipping recalculation');
+      return;
+    }
+
+    // Fetch all active learning paths
+    const { data: allPaths } = await services.supabaseServiceClient
+      .from('learning_paths')
+      .select('id, slug, title, disciple_level, recommended_mode, is_featured, display_order')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (!allPaths || allPaths.length === 0) return;
+
+    // Fetch all completed path IDs (the trigger has already set completed_at on any newly finished path)
+    const { data: completedPaths } = await services.supabaseServiceClient
+      .from('user_learning_path_progress')
+      .select('learning_path_id')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null);
+
+    const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
+
+    const responses: QuestionnaireResponses = {
+      faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
+      spiritual_goals: personalization.spiritual_goals || [],
+      time_availability:
+        personalization.time_availability as QuestionnaireResponses['time_availability'],
+      learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
+      life_stage_focus:
+        personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
+      biggest_challenge:
+        personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
+    };
+
+    const scoredPaths = calculatePathScores(
+      responses,
+      allPaths as ScoringLearningPath[],
+      completedPathIds
+    );
+
+    if (!scoredPaths || scoredPaths.length === 0) return;
+
+    const topPath = scoredPaths[0];
+    const scoringSummary = getScoringResultsSummary(topPath, scoredPaths);
+
+    const { error: updateError } = await services.supabaseServiceClient
+      .from('user_personalization')
+      .update({ scoring_results: scoringSummary, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.warn('[topic-progress] Failed to update scoring_results:', updateError);
+    } else {
+      console.log(
+        `[topic-progress] Score recalculation complete (${triggerReason}): top = ${topPath.pathTitle} (score: ${topPath.score})`
+      );
+    }
+  } catch (err) {
+    // Non-fatal — topic completion must always succeed
+    console.warn('[topic-progress] Score recalculation error (non-fatal):', err);
+  }
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -243,6 +374,12 @@ async function handleTopicProgress(
         userId,
         request.topic_id,
         request.time_spent_seconds
+      );
+      // Trigger non-fatal score recalculation after topic is marked complete
+      await maybeTriggerScoreRecalculation(
+        services,
+        userId,
+        (result as CompleteProgressResponse).is_first_completion
       );
       break;
 

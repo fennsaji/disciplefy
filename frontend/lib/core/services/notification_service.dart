@@ -75,8 +75,8 @@ class NotificationService {
     AndroidNotificationChannel(
       'streak_milestones',
       'Milestone Achievements',
-      description: 'Celebrate when you reach streak milestones (7, 30, 100, 365 days)',
-      importance: Importance.defaultImportance,
+      description:
+          'Celebrate when you reach streak milestones (7, 30, 100, 365 days)',
     ),
     AndroidNotificationChannel(
       'streak_reset_motivation',
@@ -203,8 +203,8 @@ class NotificationService {
     // appear in System Settings > App > Notifications even before any
     // notification has been sent.
     if (!kIsWeb && Platform.isAndroid) {
-      final androidPlugin = _localNotifications
-          .resolvePlatformSpecificImplementation<
+      final androidPlugin =
+          _localNotifications.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
         for (final channel in _allAndroidChannels) {
@@ -686,7 +686,8 @@ class NotificationService {
       case 'streak_lost':
         // Navigate to daily verse page where streak info is visible
         _router.go('/daily-verse');
-        Logger.info('[NotificationService] ✅ Navigating to daily verse (streak notification)');
+        Logger.info(
+            '[NotificationService] ✅ Navigating to daily verse (streak notification)');
         break;
     }
   }
@@ -803,7 +804,8 @@ class NotificationService {
     final token = _fcmToken;
     if (token == null) {
       if (kDebugMode) {
-        Logger.debug('[NotificationService] unregisterToken: no token stored, skipping');
+        Logger.debug(
+            '[NotificationService] unregisterToken: no token stored, skipping');
       }
       return;
     }
@@ -816,12 +818,14 @@ class NotificationService {
         body: {'fcmToken': token},
       );
       if (kDebugMode) {
-        Logger.debug('[NotificationService] ✅ FCM token unregistered from backend');
+        Logger.debug(
+            '[NotificationService] ✅ FCM token unregistered from backend');
       }
     } catch (e) {
       // Non-fatal — token will be cleaned up by the nightly cleanup job
       if (kDebugMode) {
-        Logger.warning('[NotificationService] ⚠️ Backend token unregister failed: $e');
+        Logger.warning(
+            '[NotificationService] ⚠️ Backend token unregister failed: $e');
       }
     }
 
@@ -833,7 +837,8 @@ class NotificationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.warning('[NotificationService] ⚠️ Firebase token delete failed: $e');
+        Logger.warning(
+            '[NotificationService] ⚠️ Firebase token delete failed: $e');
       }
     }
 

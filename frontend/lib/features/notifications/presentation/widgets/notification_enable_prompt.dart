@@ -444,7 +444,8 @@ class _NotificationEnableSheet extends StatelessWidget {
             const UpdateNotificationPreferences(streakReminderEnabled: true));
         break;
       case NotificationPromptType.streakMilestone:
-        bloc.add(const UpdateNotificationPreferences(streakMilestoneEnabled: true));
+        bloc.add(
+            const UpdateNotificationPreferences(streakMilestoneEnabled: true));
         break;
       case NotificationPromptType.streakLost:
         bloc.add(const UpdateNotificationPreferences(streakLostEnabled: true));

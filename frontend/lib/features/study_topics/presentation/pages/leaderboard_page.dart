@@ -41,7 +41,13 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.studyTopics),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.studyTopics);
+            }
+          },
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
