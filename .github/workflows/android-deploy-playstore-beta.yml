@@ -10,9 +10,8 @@ on:
   workflow_dispatch:
     inputs:
       release_notes:
-        description: 'Release notes for this build'
-        required: false
-        default: 'Bug fixes and performance improvements'
+        description: "What's new in this release? (shown to testers, max 500 chars)"
+        required: true
 
 env:
   FLUTTER_VERSION: '3.32.8'
@@ -23,57 +22,107 @@ permissions:
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy to Play Store Internal Track
+    name: Build AAB & Deploy to Play Store Internal Track
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout code
+      - name: 🔄 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: Setup Java
+      - name: ✅ Validate release notes
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            NOTES="${{ github.event.inputs.release_notes }}"
+          else
+            # Push trigger: require whatsnew file update when frontend files changed
+            FRONTEND_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "^frontend/" || true)
+            if [ "$FRONTEND_CHANGED" -gt 0 ]; then
+              if ! git diff --name-only HEAD~1 HEAD | grep -q "distribution/whatsnew/"; then
+                echo "❌ Release notes not updated for this release."
+                echo "   Update distribution/whatsnew/whatsnew-en-IN with what changed before merging to main."
+                exit 1
+              fi
+            fi
+            NOTES=$(cat distribution/whatsnew/whatsnew-en-IN 2>/dev/null || echo "")
+          fi
+
+          TRIMMED=$(echo "$NOTES" | tr -d '[:space:]')
+          if [ -z "$TRIMMED" ]; then
+            echo "❌ Release notes are empty."
+            exit 1
+          fi
+          if [ ${#NOTES} -lt 10 ]; then
+            echo "❌ Release notes are too short (min 10 chars). Describe what changed."
+            exit 1
+          fi
+          if echo "$NOTES" | grep -qi "bug fixes and performance improvements"; then
+            echo "❌ Release notes still contain the default placeholder. Write real notes."
+            exit 1
+          fi
+          echo "✅ Release notes accepted: $NOTES"
+
+      - name: ☕ Setup Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'gradle'
 
-      - name: Setup Flutter
+      - name: 🐦 Setup Flutter ${{ env.FLUTTER_VERSION }}
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
 
-      - name: Get Flutter dependencies
+      - name: 📦 Get Flutter dependencies
         run: |
           cd frontend
           flutter pub get
 
-      - name: Run Flutter analyze
+      - name: 🔍 Run Flutter analyze
         run: |
           cd frontend
-          flutter analyze --no-fatal-infos
-        continue-on-error: true
+          flutter analyze --fatal-infos
 
-      - name: Decode Android keystore
+      - name: 🔑 Decode Android keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/upload-keystore.jks
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > frontend/android/app/upload-keystore.jks
 
-      - name: Create key.properties
+      - name: 📝 Create key.properties
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          cd frontend/android
-          cat > key.properties << EOF
-          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=upload-keystore.jks
+          cat > frontend/android/key.properties << EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=app/upload-keystore.jks
           EOF
 
-      - name: Create google-services.json
+      - name: 📝 Create google-services.json
         run: |
           echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > frontend/android/app/google-services.json
 
-      - name: Build Android App Bundle (Production)
+      - name: 📝 Write release notes
+        run: |
+          mkdir -p distribution/whatsnew
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            NOTES="${{ github.event.inputs.release_notes }}"
+            NOTES="${NOTES:0:500}"
+            echo "$NOTES" > distribution/whatsnew/whatsnew-en-IN
+            echo "$NOTES" > distribution/whatsnew/whatsnew-en-US
+          fi
+          # For push: whatsnew files are already committed in the repo — nothing to write
+
+      - name: 🔨 Build Android App Bundle
         run: |
           cd frontend
           flutter build appbundle --release \
@@ -87,11 +136,13 @@ jobs:
             --build-name=1.0.${{ github.run_number }} \
             --build-number=${{ github.run_number }}
 
-      - name: Setup Google Play credentials
+      - name: 🔑 Write Play Store service account
+        env:
+          PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
         run: |
-          echo '${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}' > play-store-service-account.json
+          echo "$PLAY_STORE_SERVICE_ACCOUNT_JSON" > play-store-service-account.json
 
-      - name: Upload to Play Store (Internal Testing)
+      - name: 🚀 Upload to Play Store Internal Testing
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: play-store-service-account.json
@@ -101,7 +152,7 @@ jobs:
           status: completed
           whatsNewDirectory: distribution/whatsnew
 
-      - name: Cleanup sensitive files
+      - name: 🧹 Security cleanup
         if: always()
         run: |
           rm -f frontend/android/app/upload-keystore.jks
@@ -109,35 +160,35 @@ jobs:
           rm -f frontend/android/app/google-services.json
           rm -f play-store-service-account.json
 
-      - name: Upload build artifacts
+      - name: 📦 Upload AAB as workflow artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-aab-beta-${{ github.run_number }}
+          name: disciplefy-aab-${{ github.run_number }}
           path: frontend/build/app/outputs/bundle/release/app-release.aab
           retention-days: 90
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: 🏷️ Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}-beta
           name: Beta v1.0.${{ github.run_number }}
+          prerelease: true
           body: |
-            ## 🧪 Beta Release v1.0.${{ github.run_number }}
+            ## 🧪 Disciplefy Beta v1.0.${{ github.run_number }}
 
             **Track:** Internal Testing (Play Store)
 
             ### What's New
-            ${{ github.event.inputs.release_notes || 'Bug fixes and performance improvements' }}
+            ${{ github.event.inputs.release_notes || 'See distribution/whatsnew/whatsnew-en-IN' }}
 
-            ### Commit Details
+            ### Build Details
+            - **Version code:** ${{ github.run_number }}
             - **Commit:** ${{ github.sha }}
             - **Author:** ${{ github.event.head_commit.author.name }}
             - **Message:** ${{ github.event.head_commit.message }}
 
             ---
             📱 Available to internal testers via Play Store
-          draft: false
-          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
