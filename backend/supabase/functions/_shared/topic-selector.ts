@@ -533,10 +533,10 @@ function scoreAndSortTopics(
     return topics.sort((a, b) => a.display_order - b.display_order);
   }
 
-  // Calculate scores and sort
+  // Calculate scores and sort (p is non-null — guarded by early return above)
   const scoredTopics: ScoredTopic[] = topics.map((topic) => ({
     ...topic,
-    score: calculateTopicScore(topic, personalization, interests),
+    score: calculateTopicScore(topic, p!, interests),
   }));
 
   // Sort by score descending, then by display_order ascending
