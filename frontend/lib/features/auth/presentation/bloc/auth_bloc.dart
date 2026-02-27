@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/http_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/router/router_guard.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
@@ -32,6 +33,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   final AuthService _authService;
   final UserProfileService _userProfileService;
   final ClearUserDataUseCase _clearUserDataUseCase;
+  final NotificationService _notificationService;
   late final StreamSubscription<AuthState> _authStateSubscription;
   late final StreamSubscription<String> _httpAuthFailureSubscription;
   Timer? _tokenValidationTimer;
@@ -45,10 +47,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     required AuthService authService,
     UserProfileService? userProfileService,
     ClearUserDataUseCase? clearUserDataUseCase,
+    NotificationService? notificationService,
   })  : _authService = authService,
         _userProfileService = userProfileService ?? sl<UserProfileService>(),
         _clearUserDataUseCase =
             clearUserDataUseCase ?? sl<ClearUserDataUseCase>(),
+        _notificationService =
+            notificationService ?? sl<NotificationService>(),
         super(const auth_states.AuthInitialState()) {
     // Register event handlers
     on<AuthInitializeRequested>(_onAuthInitialize);
@@ -556,6 +561,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Stop token validation when signing out
       _stopTokenValidationTimer();
 
+      // Unregister FCM token BEFORE clearing the auth session.
+      // The backend DELETE endpoint requires a valid auth session, so this
+      // must happen before _clearUserDataUseCase.execute() calls signOut().
+      await _notificationService.unregisterToken();
+
       // Invalidate all caches on sign out
       try {
         final languageService = sl<LanguagePreferenceService>();
@@ -654,6 +664,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       emit(const auth_states.AuthLoadingState());
+
+      // Unregister FCM token before deleting the account
+      await _notificationService.unregisterToken();
 
       // Delete account and all associated data
       await _authService.deleteAccount();
@@ -999,6 +1012,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       // Stop token validation during force logout
       _stopTokenValidationTimer();
+
+      // Unregister FCM token before clearing session
+      await _notificationService.unregisterToken();
 
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
