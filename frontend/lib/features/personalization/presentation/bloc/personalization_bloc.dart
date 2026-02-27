@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/personalization_entity.dart';
 import '../../domain/repositories/personalization_repository.dart';
@@ -187,6 +189,21 @@ class PersonalizationBloc
   // Submission
   // =========================================================================
 
+  /// Mirrors the backend deriveStudyMode logic in scoring-algorithm.ts.
+  /// Priority: reflection_meditation → lectio; 5–10 min → quick;
+  ///           20+ min + deep_understanding → deep; otherwise → standard.
+  String _deriveStudyMode(TimeAvailability? time, LearningStyle? style) {
+    if (style == LearningStyle.reflectionMeditation) return 'lectio';
+    switch (time) {
+      case TimeAvailability.fiveToTenMin:
+        return 'quick';
+      case TimeAvailability.twentyPlusMin:
+        return style == LearningStyle.deepUnderstanding ? 'deep' : 'standard';
+      default:
+        return 'standard';
+    }
+  }
+
   Future<void> _onSubmitQuestionnaire(
     SubmitQuestionnaire event,
     Emitter<PersonalizationState> emit,
@@ -206,6 +223,13 @@ class PersonalizationBloc
         biggestChallenge: currentState.biggestChallenge,
       );
 
+      // Immediately update the in-memory profile cache with the derived study mode
+      // so getStudyModePreferenceRaw() returns the correct value in the current session
+      // without requiring a full profile refresh from the server.
+      final derivedMode = _deriveStudyMode(
+          currentState.timeAvailability, currentState.learningStyle);
+      _patchProfileStudyMode(derivedMode);
+
       Logger.info(
         'Questionnaire submitted successfully (6 questions)',
         tag: 'PERSONALIZATION',
@@ -217,6 +241,7 @@ class PersonalizationBloc
           'learning_style': currentState.learningStyle?.value,
           'life_stage_focus': currentState.lifeStageFocus?.value,
           'biggest_challenge': currentState.biggestChallenge?.value,
+          'derived_study_mode': derivedMode,
         },
       );
 
@@ -225,6 +250,35 @@ class PersonalizationBloc
       Logger.error('Failed to submit questionnaire',
           tag: 'PERSONALIZATION', error: e);
       emit(PersonalizationError(e.toString()));
+    }
+  }
+
+  /// Patches the AuthStateProvider's cached profile with the derived study mode.
+  /// Non-fatal: any error is silently logged so it doesn't block the submission flow.
+  void _patchProfileStudyMode(String mode) {
+    try {
+      final authProvider = sl<AuthStateProvider>();
+      final userId = authProvider.userId;
+      if (userId == null) return;
+
+      final currentProfile =
+          Map<String, dynamic>.from(authProvider.userProfile ?? {});
+
+      // Only patch if not already explicitly set by the user
+      final existing = currentProfile['default_study_mode'] as String?;
+      if (existing == null || existing == 'recommended' || existing == 'ask') {
+        currentProfile['default_study_mode'] = mode;
+        authProvider.cacheProfile(userId, currentProfile);
+        Logger.info(
+          'Patched cached profile default_study_mode=$mode',
+          tag: 'PERSONALIZATION',
+        );
+      }
+    } catch (e) {
+      Logger.debug(
+        'Could not patch profile study mode (non-fatal): $e',
+        tag: 'PERSONALIZATION',
+      );
     }
   }
 

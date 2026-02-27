@@ -40,6 +40,39 @@ interface PersonalizationData {
 }
 
 // ============================================================================
+// Study Mode Derivation
+// ============================================================================
+
+/**
+ * Derives the optimal default study mode from questionnaire answers.
+ *
+ * Priority order:
+ * 1. reflection_meditation learning style → always lectio (contemplative users need this regardless of time)
+ * 2. 5_to_10_min → quick (time-constrained users; depth is unachievable)
+ * 3. 20_plus_min + deep_understanding → deep (time + preference align)
+ * 4. Everything else → standard (safe default for growing believers, balanced styles)
+ */
+function deriveStudyMode(
+  timeAvailability: string,
+  learningStyle: string
+): string {
+  // Contemplative style overrides time — lectio can be done in any length
+  if (learningStyle === 'reflection_meditation') {
+    return 'lectio';
+  }
+
+  switch (timeAvailability) {
+    case '5_to_10_min':
+      return 'quick';
+    case '20_plus_min':
+      return learningStyle === 'deep_understanding' ? 'deep' : 'standard';
+    case '10_to_20_min':
+    default:
+      return 'standard';
+  }
+}
+
+// ============================================================================
 // Validation
 // ============================================================================
 
@@ -52,6 +85,71 @@ function validatePersonalizationData(data: PersonalizationRequest['data']): void
   const validationResult = validateQuestionnaireResponses(data);
   if (!validationResult.isValid) {
     throw new AppError('VALIDATION_ERROR', validationResult.errors.join(', '), 400);
+  }
+}
+
+// ============================================================================
+// Notification Preferences Defaults (GAP-07)
+// ============================================================================
+
+/**
+ * Derives and applies notification preference updates from questionnaire answers.
+ *
+ * Rules:
+ * - biggest_challenge = staying_consistent → enable streak_reminder + streak_lost
+ * - spiritual_goals includes foundational_faith → ensure recommended_topic_enabled
+ * - time_availability = 5_to_10_min → shift streak reminder to morning (08:00)
+ *
+ * Non-fatal: errors are swallowed so questionnaire save always succeeds.
+ */
+async function maybeUpdateNotificationPreferences(
+  data: QuestionnaireResponses,
+  services: ServiceContainer,
+  userId: string
+): Promise<void> {
+  const updates: Record<string, unknown> = {};
+
+  // Consistency-focused users get streak motivation enabled
+  if (data.biggest_challenge === 'staying_consistent') {
+    updates.streak_reminder_enabled = true;
+    updates.streak_lost_enabled = true;
+  }
+
+  // Foundational faith seekers benefit from personalized topic recommendations
+  if (data.spiritual_goals?.includes('foundational_faith')) {
+    updates.recommended_topic_enabled = true;
+  }
+
+  // Short-session users likely study in the morning — shift reminder to AM
+  if (data.time_availability === '5_to_10_min') {
+    updates.streak_reminder_time = '08:00:00';
+  }
+
+  if (Object.keys(updates).length === 0) return;
+
+  try {
+    const { error } = await services.supabaseServiceClient
+      .from('user_notification_preferences')
+      .upsert(
+        {
+          user_id: userId,
+          ...updates,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (error) {
+      console.warn('[save-personalization] Failed to update notification preferences:', error);
+    } else {
+      console.log(
+        `[save-personalization] Notification preferences updated for user ${userId}:`,
+        Object.keys(updates).join(', ')
+      );
+    }
+  } catch (err) {
+    // Non-fatal — questionnaire save must always succeed
+    console.warn('[save-personalization] Notification preferences update error (non-fatal):', err);
   }
 }
 
@@ -136,6 +234,76 @@ async function savePersonalization(
     throw new AppError('DATABASE_ERROR', 'Failed to save personalization', 500);
   }
 
+  // Derive and persist the optimal study mode based on questionnaire answers.
+  // Only set if user hasn't already made an explicit choice (default is 'recommended').
+  const derivedMode = deriveStudyMode(data!.time_availability, data!.learning_style);
+
+  // Fetch both profile and preferences in parallel to avoid sequential round-trips
+  const [profileResult, preferencesResult] = await Promise.all([
+    services.supabaseServiceClient
+      .from('user_profiles')
+      .select('default_study_mode')
+      .eq('id', userId)
+      .single(),
+    services.supabaseServiceClient
+      .from('user_preferences')
+      .select('learning_path_study_mode')
+      .eq('user_id', userId)
+      .single(),
+  ]);
+
+  // Set user_profiles.default_study_mode (free-form topics)
+  const shouldSetDefaultMode =
+    !profileResult.data?.default_study_mode ||
+    profileResult.data.default_study_mode === 'recommended' ||
+    profileResult.data.default_study_mode === 'ask';
+
+  if (shouldSetDefaultMode) {
+    const { error: profileError } = await services.supabaseServiceClient
+      .from('user_profiles')
+      .update({
+        default_study_mode: derivedMode,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    if (profileError) {
+      console.warn('Failed to set default_study_mode from personalization:', profileError);
+    } else {
+      console.log(`[save-personalization] Set default_study_mode=${derivedMode} for user ${userId}`);
+    }
+  }
+
+  // Set user_preferences.learning_path_study_mode (learning path topics)
+  // Same derivation — ensures path topics also use the personalized mode
+  const currentPathMode = preferencesResult.data?.learning_path_study_mode;
+  const shouldSetPathMode =
+    !currentPathMode ||
+    currentPathMode === 'recommended' ||
+    currentPathMode === 'ask';
+
+  if (shouldSetPathMode) {
+    const { error: prefError } = await services.supabaseServiceClient
+      .from('user_preferences')
+      .upsert(
+        {
+          user_id: userId,
+          learning_path_study_mode: derivedMode,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (prefError) {
+      console.warn('Failed to set learning_path_study_mode from personalization:', prefError);
+    } else {
+      console.log(`[save-personalization] Set learning_path_study_mode=${derivedMode} for user ${userId} (time=${data!.time_availability}, style=${data!.learning_style})`);
+    }
+  }
+
+  // Apply personalization-derived notification preference defaults (GAP-07)
+  await maybeUpdateNotificationPreferences(data as QuestionnaireResponses, services, userId);
+
   // Return response with top recommendation
   return new Response(
     JSON.stringify({
@@ -143,6 +311,7 @@ async function savePersonalization(
       message: 'Personalization saved successfully',
       data: result,
       recommendation: scoredPaths.length > 0 ? scoredPaths[0] : null,
+      derivedStudyMode: derivedMode,
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );

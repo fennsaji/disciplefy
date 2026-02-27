@@ -1058,11 +1058,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _checkCompletionConditions();
       }
 
-      // Learning-path sheet: show when user reaches absolute bottom (97%)
-      if (!_isTopicCompletedFromPath &&
-          widget.navigationSource == StudyNavigationSource.learningPath &&
-          _isScrolledToAbsoluteBottom()) {
-        _showLearningPathCompletionSheet();
+      // Learning-path sheet: show only when guide is fully completed (time
+      // condition met + 80% scroll) AND user reaches the absolute bottom (97%).
+      if (_completionMarked && _isScrolledToAbsoluteBottom()) {
+        _maybeShowLearningPathSheet();
       }
     });
   }
@@ -1222,6 +1221,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       _completionMarked = true;
     });
 
+    // If user is already at the absolute bottom when completion triggers,
+    // show the learning path sheet immediately without waiting for another scroll.
+    _maybeShowLearningPathSheet();
+
     if (kDebugMode) {
       Logger.info('✅ [COMPLETION] Marking guide as complete:');
       Logger.debug('   Guide ID: ${_currentStudyGuide!.id}');
@@ -1304,8 +1307,18 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
+  /// Guards the learning path sheet: both completion AND absolute-bottom scroll
+  /// must be satisfied before the sheet is shown.
+  void _maybeShowLearningPathSheet() {
+    if (_isTopicCompletedFromPath) return;
+    if (widget.navigationSource != StudyNavigationSource.learningPath) return;
+    if (!_completionMarked) return;
+    if (!_isScrolledToAbsoluteBottom()) return;
+    _showLearningPathCompletionSheet();
+  }
+
   /// Shows a bottom sheet prompting the user to return to their learning path
-  /// after scrolling to the absolute bottom of the guide.
+  /// after the guide is completed and the user has scrolled to the very bottom.
   void _showLearningPathCompletionSheet() {
     if (!mounted) return;
     // Guard: only show once
@@ -1397,7 +1410,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   icon: const Icon(Icons.route_rounded, size: 20),
                   label: const Text('Continue Learning Path'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: accentColor,
+                    backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

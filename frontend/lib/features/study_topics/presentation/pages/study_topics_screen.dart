@@ -28,21 +28,17 @@ import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../domain/entities/learning_path.dart';
-import '../../domain/entities/topic_progress.dart';
-import '../bloc/continue_learning_bloc.dart';
-import '../bloc/continue_learning_event.dart';
-import '../bloc/continue_learning_state.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
-import '../widgets/continue_learning_section.dart';
+import '../widgets/for_you_learning_paths_section.dart';
 import '../widgets/learning_path_card.dart';
 import '../widgets/learning_paths_section.dart';
 
-/// Screen for browsing study topics with Continue Learning and Learning Paths.
+/// Screen for browsing study topics with For You and Learning Paths sections.
 ///
 /// Layout (top to bottom):
-/// 1. Continue Learning - In-progress topics (primary focus)
-/// 2. Learning Paths - Structured learning journeys
+/// 1. For You — personalised paths (in-progress → featured → any)
+/// 2. Learning Paths — all curated journeys
 class StudyTopicsScreen extends StatefulWidget {
   /// Optional topic ID from deep link (e.g., from notification)
   final String? topicId;
@@ -57,7 +53,6 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   String _currentLanguage = 'en';
   bool _languageLoaded = false;
   bool _dataLoadingStarted = false; // Track if BLoC events have been dispatched
-  late ContinueLearningBloc _continueLearningBloc;
   late LearningPathsBloc _learningPathsBloc;
   late LanguagePreferenceService _languageService;
   late SystemConfigService _systemConfigService;
@@ -71,7 +66,6 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   void initState() {
     super.initState();
     // Create BLoCs without dispatching events yet
-    _continueLearningBloc = sl<ContinueLearningBloc>();
     _learningPathsBloc = sl<LearningPathsBloc>();
     _languageService = sl<LanguagePreferenceService>();
     _systemConfigService = sl<SystemConfigService>();
@@ -184,19 +178,6 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         _currentLanguage = language.code;
       });
 
-      // Check if user is authenticated (not anonymous/guest)
-      // Guest users don't have continue learning data stored
-      final authProvider = sl<AuthStateProvider>();
-      final isGuest = authProvider.isAnonymous;
-
-      // Only load continue learning for authenticated users
-      if (!isGuest) {
-        _continueLearningBloc.add(LoadContinueLearning(
-          language: _currentLanguage,
-          forceRefresh: true,
-        ));
-      }
-
       // Always load learning paths (available for all users)
       _learningPathsBloc.add(LoadLearningPaths(
         language: _currentLanguage,
@@ -215,7 +196,6 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   @override
   void dispose() {
     _languageSubscription?.cancel();
-    _continueLearningBloc.close();
     _learningPathsBloc.close();
     super.dispose();
   }
@@ -223,9 +203,6 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
         providers: [
-          BlocProvider.value(
-            value: _continueLearningBloc,
-          ),
           BlocProvider.value(
             value: _learningPathsBloc,
           ),
@@ -365,9 +342,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       body: RefreshIndicator(
         onRefresh: () async {
           context
-              .read<ContinueLearningBloc>()
-              .add(RefreshContinueLearning(language: widget.currentLanguage));
-          context
               .read<LearningPathsBloc>()
               .add(RefreshLearningPaths(language: widget.currentLanguage));
           // Wait for the refresh to complete
@@ -393,10 +367,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final newLanguage = await languageService.getStudyContentLanguage();
 
     if (mounted) {
-      // Refresh all content with new language using BLoC from context
-      context
-          .read<ContinueLearningBloc>()
-          .add(RefreshContinueLearning(language: newLanguage.code));
       context
           .read<LearningPathsBloc>()
           .add(RefreshLearningPaths(language: newLanguage.code));
@@ -407,58 +377,22 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     // Show loading state while waiting for language to load and BLoC events to be dispatched
     final showInitialLoading = !widget.dataLoadingStarted;
 
-    // Check if user is a guest (anonymous) - don't show Continue Learning for guests
-    final authProvider = sl<AuthStateProvider>();
-    final isGuest = authProvider.isAnonymous;
-
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Section 1: Continue Learning (Primary Focus)
-        // Hidden for guest users since we don't store their progress
-        if (!isGuest)
-          BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
-            builder: (context, state) {
-              // Show loading if initial loading or BLoC is loading
-              if (showInitialLoading || state is ContinueLearningLoading) {
-                return ContinueLearningSection(
-                  topics: const [],
-                  onTopicTap: _navigateToStudyGuideFromContinueLearning,
-                  isLoading: true,
-                );
-              } else if (state is ContinueLearningError) {
-                return ContinueLearningSection(
-                  topics: const [],
-                  onTopicTap: _navigateToStudyGuideFromContinueLearning,
-                  errorMessage: state.message,
-                  onRetry: () => context.read<ContinueLearningBloc>().add(
-                      RefreshContinueLearning(
-                          language: widget.currentLanguage)),
-                );
-              } else if (state is ContinueLearningLoaded) {
-                return ContinueLearningSection(
-                  topics: state.topics,
-                  onTopicTap: _navigateToStudyGuideFromContinueLearning,
-                );
-              }
-              // ContinueLearningEmpty or Initial - section hides itself
-              return ContinueLearningSection(
-                topics: const [],
-                onTopicTap: _navigateToStudyGuideFromContinueLearning,
-              );
-            },
-          ),
+        // Section 1: For You — in-progress paths first, then recommended
+        ForYouLearningPathsSection(
+          onPathTap: _navigateToLearningPath,
+        ),
 
-        if (!isGuest) const SizedBox(height: 24),
+        const SizedBox(height: 24),
 
         // Section 2: Learning Paths (Curated Learning Journeys)
-        // Wrapped with LockedFeatureWrapper to support lock overlay
         LockedFeatureWrapper(
           featureKey: 'learning_paths',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Show loading state if initial loading hasn't completed
               if (showInitialLoading)
                 _buildLearningPathsLoadingState(context)
               else
@@ -546,165 +480,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     );
   }
 
-  /// Navigate to study guide from Continue Learning section
-  Future<void> _navigateToStudyGuideFromContinueLearning(
-      InProgressTopic topic) async {
-    // Prevent multiple clicks during navigation
-    if (_isNavigating) {
-      return;
-    }
-
-    Logger.debug('🔍 [CONTINUE_LEARNING] Starting navigation...');
-    Logger.debug('🔍 Topic: ${topic.title}');
-    Logger.debug('🔍 Is from learning path: ${topic.isFromLearningPath}');
-    Logger.debug('🔍 Learning path name: ${topic.learningPathName}');
-    Logger.debug('🔍 Recommended mode raw: ${topic.recommendedMode}');
-
-    // Parse recommended mode from topic if it's from a learning path
-    StudyMode? recommendedMode;
-    if (topic.recommendedMode != null) {
-      recommendedMode = _parseStudyMode(topic.recommendedMode!);
-      if (recommendedMode == null) {
-        Logger.debug(
-            '⚠️ Invalid recommended mode: ${topic.recommendedMode}, defaulting to null');
-      } else {
-        Logger.debug(
-            '✅ Parsed recommended mode: ${recommendedMode.displayName}');
-      }
-    }
-
-    // Check if user has a saved study mode preference
-    // For learning path topics, check learning_path_study_mode
-    // For general topics, check default_study_mode
-    String? savedModeRaw;
-
-    if (topic.isFromLearningPath) {
-      // Check learning path specific preference
-      final authProvider = sl<AuthStateProvider>();
-      savedModeRaw =
-          authProvider.userProfile?['learning_path_study_mode'] as String?;
-      Logger.debug(
-          '🔍 [CONTINUE_LEARNING] Learning path mode preference: "$savedModeRaw"');
-    } else {
-      // Check general preference for non-learning-path topics
-      final languageService = sl<LanguagePreferenceService>();
-      savedModeRaw = await languageService.getStudyModePreferenceRaw();
-      Logger.debug(
-          '🔍 [CONTINUE_LEARNING] General mode preference: "$savedModeRaw"');
-    }
-
-    // If user selected "always use recommended" and topic has a recommended mode, use it directly
-    Logger.debug('🔍 Checking auto-use recommended conditions:');
-    Logger.debug(
-        '   - savedModeRaw == "recommended": ${StudyModePreferences.isRecommended(savedModeRaw)}');
-    Logger.debug('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
-    Logger.debug('   - recommendedMode != null: ${recommendedMode != null}');
-
-    if (StudyModePreferences.isRecommended(savedModeRaw) &&
-        topic.isFromLearningPath &&
-        recommendedMode != null) {
-      Logger.debug(
-          '✅ [CONTINUE_LEARNING] Auto-using recommended mode (learning path): ${recommendedMode.displayName}');
-      _isNavigating = true;
-      await _navigateToStudyGuideWithMode(
-          topic, recommendedMode, false); // No need to save again
-      return;
-    }
-
-    // For general topics with 'recommended', auto-select standard (topic type default)
-    if (StudyModePreferences.isRecommended(savedModeRaw) &&
-        !topic.isFromLearningPath) {
-      final autoMode = recommendedMode ?? StudyMode.standard;
-      Logger.debug(
-          '✅ [CONTINUE_LEARNING] Auto-using recommended mode (general topic): ${autoMode.displayName}');
-      _isNavigating = true;
-      await _navigateToStudyGuideWithMode(topic, autoMode, false);
-      return;
-    }
-
-    // If user has a specific saved mode preference (not "ask every time" or "recommended"), use it
-    if (StudyModePreferences.isSpecificMode(savedModeRaw,
-        isLearningPath: topic.isFromLearningPath)) {
-      final savedMode = _parseStudyMode(
-          savedModeRaw!); // Safe: isSpecificMode guarantees non-null
-      if (savedMode != null) {
-        Logger.debug(
-            '✅ [CONTINUE_LEARNING] Using saved mode preference: ${savedMode.displayName}');
-        _isNavigating = true;
-        await _navigateToStudyGuideWithMode(
-            topic, savedMode, false); // No need to save again
-        return;
-      }
-    }
-
-    // No saved preference or couldn't parse - show mode selection sheet
-    Logger.debug('📋 [CONTINUE_LEARNING] Showing mode selection sheet');
-    final result = await ModeSelectionSheet.show(
-      context: context,
-      languageCode: widget.currentLanguage,
-      recommendedMode: recommendedMode,
-      isFromLearningPath: topic.isFromLearningPath,
-      learningPathTitle: topic.learningPathName,
-    );
-
-    if (result != null && mounted) {
-      final mode = result['mode'] as StudyMode;
-      final rememberChoice = result['rememberChoice'] as bool? ?? false;
-      final alwaysUseRecommended =
-          result['alwaysUseRecommended'] as bool? ?? false;
-
-      // Save preference if user checked a checkbox
-      if (topic.isFromLearningPath) {
-        // For learning path topics, save to learning_path_study_mode field
-        if (alwaysUseRecommended) {
-          final userProfileService = sl<UserProfileService>();
-          final authProvider = sl<AuthStateProvider>();
-          await userProfileService.updateLearningPathStudyModePreference(
-              StudyModePreferences.recommended);
-
-          // Update cache
-          final userId = authProvider.userId;
-          if (userId != null) {
-            final currentProfile = authProvider.userProfile ?? {};
-            currentProfile['learning_path_study_mode'] =
-                StudyModePreferences.recommended;
-            authProvider.cacheProfile(userId, currentProfile);
-          }
-          Logger.debug(
-              '[CONTINUE_LEARNING] Saved "always use recommended" to learning path preference');
-        } else if (rememberChoice) {
-          final userProfileService = sl<UserProfileService>();
-          final authProvider = sl<AuthStateProvider>();
-          await userProfileService
-              .updateLearningPathStudyModePreference(mode.value);
-
-          // Update cache
-          final userId = authProvider.userId;
-          if (userId != null) {
-            final currentProfile = authProvider.userProfile ?? {};
-            currentProfile['learning_path_study_mode'] = mode.value;
-            authProvider.cacheProfile(userId, currentProfile);
-          }
-          Logger.debug(
-              '[CONTINUE_LEARNING] Saved "${mode.displayName}" to learning path preference');
-        }
-      } else {
-        // For general topics, save to default_study_mode field
-        final languageService = sl<LanguagePreferenceService>();
-        if (rememberChoice) {
-          await languageService.saveStudyModePreference(mode);
-        } else if (alwaysUseRecommended) {
-          await languageService
-              .saveStudyModePreferenceRaw(StudyModePreferences.recommended);
-        }
-      }
-
-      // Set navigation flag only when user actually selects a mode
-      _isNavigating = true;
-      await _navigateToStudyGuideWithMode(topic, mode, false);
-    }
-  }
-
   /// Parse study mode string to StudyMode enum
   StudyMode? _parseStudyMode(String modeString) {
     switch (modeString.toLowerCase()) {
@@ -720,48 +495,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         return StudyMode.sermon;
       default:
         return null;
-    }
-  }
-
-  /// Navigate to study guide with the selected mode
-  Future<void> _navigateToStudyGuideWithMode(
-    InProgressTopic topic,
-    StudyMode mode,
-    bool savePreference,
-  ) async {
-    // Save user's mode preference if they chose to remember or always use recommended
-    if (savePreference) {
-      sl<LanguagePreferenceService>().saveStudyModePreference(mode);
-    }
-
-    // Use the current language from the screen's state
-    final languageCode = widget.currentLanguage;
-
-    final encodedTitle = Uri.encodeComponent(topic.title);
-    final encodedDescription = Uri.encodeComponent(topic.description);
-    final topicIdParam =
-        topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
-    final descriptionParam =
-        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
-    final pathIdParam =
-        topic.learningPathId != null ? '&path_id=${topic.learningPathId}' : '';
-
-    Logger.debug(
-        '[CONTINUE_LEARNING] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
-
-    // Use push() and await - when user returns, refresh the data
-    await context.push(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&mode=${mode.name}&source=continueLearning$topicIdParam$descriptionParam$pathIdParam');
-
-    // Refresh data when returning from the study guide
-    if (mounted) {
-      context
-          .read<ContinueLearningBloc>()
-          .add(RefreshContinueLearning(language: widget.currentLanguage));
-      context
-          .read<LearningPathsBloc>()
-          .add(RefreshLearningPaths(language: widget.currentLanguage));
-      _isNavigating = false;
     }
   }
 

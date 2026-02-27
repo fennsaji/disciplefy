@@ -126,18 +126,52 @@ function applyFaithStageScoring(
   const mappings: Record<string, ScoringMapping[]> = {
     new_believer: [
       { path: 'new-believer-essentials', points: 30, reason: 'Perfect for new believers' },
-      { path: 'faith-and-family', points: 30, reason: 'Great foundation for relationships' }
+      { path: 'faith-and-family', points: 30, reason: 'Great foundation for relationships' },
+      { path: 'rooted-in-christ', points: 25, reason: 'Builds identity and grace foundation' },
+      { path: 'understanding-the-bible', points: 25, reason: 'Essential foundation: how to read the Bible' },
+      { path: 'sin-repentance-and-grace', points: 25, reason: 'Core gospel truth for new believers' },
+      { path: 'who-is-the-holy-spirit', points: 20, reason: 'Foundational for every believer' },
+      { path: 'baptism-and-lords-supper', points: 20, reason: 'First steps in church life' },
+      { path: 'mental-health-emotions-gospel', points: 15, reason: 'Emotional health for the new walk' },
+      { path: 'friendship-and-christian-community', points: 15, reason: 'Finding community as a new believer' }
     ],
     growing_believer: [
       { path: 'growing-in-discipleship', points: 30, reason: 'Designed for growing believers' },
       { path: 'deepening-your-walk', points: 30, reason: 'Deepens spiritual disciplines' },
-      { path: 'faith-and-family', points: 25, reason: 'Strengthens family faith' }
+      { path: 'faith-and-family', points: 25, reason: 'Strengthens family faith' },
+      { path: 'rooted-in-christ', points: 20, reason: 'Strengthens foundation in Christ' },
+      { path: 'eternal-perspective', points: 20, reason: 'Deepens hope and eternal purpose' },
+      { path: 'understanding-the-bible', points: 20, reason: 'Deepens Bible literacy' },
+      { path: 'theology-of-suffering', points: 20, reason: 'Addresses real-life struggles with faith' },
+      { path: 'money-generosity-gospel', points: 20, reason: 'Biblical finances for daily life' },
+      { path: 'spiritual-warfare', points: 20, reason: 'Equips growing believers for spiritual battle' },
+      { path: 'the-local-church', points: 20, reason: 'Grounds believers in church community' },
+      { path: 'evangelism-everyday-life', points: 20, reason: 'Sharing faith in daily contexts' },
+      { path: 'work-and-vocation-as-worship', points: 20, reason: 'Integrates faith and work' },
+      { path: 'singleness-dating-marriage', points: 20, reason: 'Biblical relationships guidance' },
+      { path: 'mental-health-emotions-gospel', points: 20, reason: 'Gospel applied to emotional life' },
+      { path: 'friendship-and-christian-community', points: 20, reason: 'Building deep Christian community' },
+      { path: 'attributes-of-god', points: 20, reason: 'Knowing God more deeply' },
+      { path: 'historical-reliability-bible', points: 15, reason: 'Strengthens confidence in Scripture' },
+      { path: 'sin-repentance-and-grace', points: 15, reason: 'Deepens understanding of grace' },
+      { path: 'law-grace-and-covenants', points: 15, reason: 'Understanding the big story of Scripture' },
+      { path: 'who-is-the-holy-spirit', points: 15, reason: 'Deepens relationship with the Spirit' },
+      { path: 'baptism-and-lords-supper', points: 15, reason: 'Understanding the sacraments more deeply' }
     ],
     committed_disciple: [
       { path: 'serving-and-mission', points: 30, reason: 'For committed disciples ready to serve' },
       { path: 'defending-your-faith', points: 30, reason: 'Advanced apologetics training' },
       { path: 'heart-for-the-world', points: 30, reason: 'Mission-focused discipleship' },
-      { path: 'faith-and-reason', points: 30, reason: 'Deep theological exploration' }
+      { path: 'faith-and-reason', points: 30, reason: 'Deep theological exploration' },
+      { path: 'eternal-perspective', points: 25, reason: 'Eschatology and eternal perspective' },
+      { path: 'responding-to-cults', points: 30, reason: 'Advanced discernment and apologetics' },
+      { path: 'christianity-and-culture', points: 30, reason: 'Engaging culture with wisdom' },
+      { path: 'theology-of-suffering', points: 25, reason: 'Deep theological response to suffering' },
+      { path: 'spiritual-warfare', points: 25, reason: 'Advanced spiritual battle training' },
+      { path: 'historical-reliability-bible', points: 25, reason: 'Defending Scripture historically' },
+      { path: 'attributes-of-god', points: 25, reason: 'Deep theological study of God' },
+      { path: 'law-grace-and-covenants', points: 30, reason: 'Theological depth of covenant theology' },
+      { path: 'evangelism-everyday-life', points: 25, reason: 'Multiplying as a committed disciple' }
     ]
   };
 
@@ -162,27 +196,55 @@ function applySpiritualGoalScoring(
   const mappings: Record<string, ScoringMapping[]> = {
     foundational_faith: [
       { path: 'new-believer-essentials', points: 20, reason: 'Covers faith foundations' },
-      { path: 'faith-and-family', points: 10, reason: 'Includes basic teachings' }
+      { path: 'faith-and-family', points: 10, reason: 'Includes basic teachings' },
+      { path: 'rooted-in-christ', points: 20, reason: 'Identity and grace essentials' },
+      { path: 'understanding-the-bible', points: 20, reason: 'Essential Bible literacy foundation' },
+      { path: 'sin-repentance-and-grace', points: 20, reason: 'Core gospel: sin, repentance, grace' },
+      { path: 'who-is-the-holy-spirit', points: 15, reason: 'Foundational Spirit knowledge' },
+      { path: 'baptism-and-lords-supper', points: 15, reason: 'Foundational church ordinances' }
     ],
     spiritual_depth: [
       { path: 'deepening-your-walk', points: 20, reason: 'Focuses on spiritual depth' },
-      { path: 'growing-in-discipleship', points: 15, reason: 'Deepens spiritual life' }
+      { path: 'growing-in-discipleship', points: 15, reason: 'Deepens spiritual life' },
+      { path: 'eternal-perspective', points: 15, reason: 'Eternal hope deepens spiritual life' },
+      { path: 'theology-of-suffering', points: 15, reason: 'Wrestles deeply with faith and suffering' },
+      { path: 'spiritual-warfare', points: 20, reason: 'Deep spiritual battle and victory' },
+      { path: 'who-is-the-holy-spirit', points: 15, reason: 'Depth on the person of the Spirit' },
+      { path: 'attributes-of-god', points: 20, reason: 'Deep knowledge of who God is' },
+      { path: 'mental-health-emotions-gospel', points: 10, reason: 'Inner life and spiritual health' }
     ],
     relationships: [
       { path: 'faith-and-family', points: 20, reason: 'Directly addresses relationships' },
-      { path: 'heart-for-the-world', points: 10, reason: 'Includes community relationships' }
+      { path: 'heart-for-the-world', points: 10, reason: 'Includes community relationships' },
+      { path: 'singleness-dating-marriage', points: 20, reason: 'Biblical relationships and marriage' },
+      { path: 'friendship-and-christian-community', points: 20, reason: 'Deep Christian friendships' },
+      { path: 'mental-health-emotions-gospel', points: 10, reason: 'Healthy emotional relationships' }
     ],
     apologetics: [
       { path: 'defending-your-faith', points: 20, reason: 'Pure apologetics training' },
-      { path: 'faith-and-reason', points: 15, reason: 'Addresses tough questions' }
+      { path: 'faith-and-reason', points: 15, reason: 'Addresses tough questions' },
+      { path: 'historical-reliability-bible', points: 20, reason: 'Evidence-based Bible defence' },
+      { path: 'responding-to-cults', points: 20, reason: 'Discerning false teaching' },
+      { path: 'christianity-and-culture', points: 20, reason: 'Engaging cultural objections' },
+      { path: 'the-big-questions', points: 15, reason: 'Answering foundational objections' }
     ],
     service: [
       { path: 'serving-and-mission', points: 20, reason: 'Centered on service' },
-      { path: 'heart-for-the-world', points: 20, reason: 'Global service perspective' }
+      { path: 'heart-for-the-world', points: 20, reason: 'Global service perspective' },
+      { path: 'evangelism-everyday-life', points: 20, reason: 'Everyday evangelism and service' },
+      { path: 'the-local-church', points: 15, reason: 'Serving in local church context' },
+      { path: 'work-and-vocation-as-worship', points: 20, reason: 'Vocation as Kingdom service' },
+      { path: 'money-generosity-gospel', points: 10, reason: 'Generous giving as service' }
     ],
     theology: [
       { path: 'faith-and-reason', points: 20, reason: 'Deep theological study' },
-      { path: 'defending-your-faith', points: 10, reason: 'Includes doctrinal defense' }
+      { path: 'defending-your-faith', points: 10, reason: 'Includes doctrinal defense' },
+      { path: 'eternal-perspective', points: 20, reason: 'Eschatology and eternal theology' },
+      { path: 'attributes-of-god', points: 20, reason: 'Systematic theology of God\'s character' },
+      { path: 'law-grace-and-covenants', points: 20, reason: 'Covenant theology and redemptive history' },
+      { path: 'sin-repentance-and-grace', points: 15, reason: 'Theology of sin and atonement' },
+      { path: 'the-big-questions', points: 20, reason: 'Theological answers to hard questions' },
+      { path: 'theology-of-suffering', points: 15, reason: 'Theodicy and suffering theology' }
     ]
   };
 
@@ -274,19 +336,45 @@ function applyLifeStageFocusScoring(
     personal_foundation: [
       { path: 'new-believer-essentials', points: 25, reason: 'Builds personal foundation' },
       { path: 'growing-in-discipleship', points: 20, reason: 'Strengthens relationship with God' },
-      { path: 'deepening-your-walk', points: 20, reason: 'Personal spiritual growth' }
+      { path: 'deepening-your-walk', points: 20, reason: 'Personal spiritual growth' },
+      { path: 'rooted-in-christ', points: 20, reason: 'Anchors identity and grace in Christ' },
+      { path: 'eternal-perspective', points: 10, reason: 'Eternal hope anchors personal faith' },
+      { path: 'understanding-the-bible', points: 20, reason: 'Personal foundation in Scripture' },
+      { path: 'sin-repentance-and-grace', points: 20, reason: 'Personal transformation through grace' },
+      { path: 'who-is-the-holy-spirit', points: 15, reason: 'Personal relationship with the Spirit' },
+      { path: 'mental-health-emotions-gospel', points: 20, reason: 'Personal emotional and spiritual health' },
+      { path: 'money-generosity-gospel', points: 10, reason: 'Personal stewardship foundation' },
+      { path: 'work-and-vocation-as-worship', points: 10, reason: 'Personal calling and purpose' }
     ],
     family_relationships: [
       { path: 'faith-and-family', points: 25, reason: 'Directly addresses family relationships' },
-      { path: 'new-believer-essentials', points: 10, reason: 'Foundation for family faith' }
+      { path: 'new-believer-essentials', points: 10, reason: 'Foundation for family faith' },
+      { path: 'singleness-dating-marriage', points: 25, reason: 'Biblical guidance on relationships and marriage' },
+      { path: 'friendship-and-christian-community', points: 15, reason: 'Deep relational community' },
+      { path: 'mental-health-emotions-gospel', points: 15, reason: 'Emotional health in relationships' }
     ],
     community_impact: [
       { path: 'serving-and-mission', points: 25, reason: 'Focused on community service' },
-      { path: 'heart-for-the-world', points: 25, reason: 'Global and local impact' }
+      { path: 'heart-for-the-world', points: 25, reason: 'Global and local impact' },
+      { path: 'evangelism-everyday-life', points: 20, reason: 'Everyday community impact through evangelism' },
+      { path: 'the-local-church', points: 25, reason: 'Being planted in local church community' },
+      { path: 'work-and-vocation-as-worship', points: 20, reason: 'Workplace as mission field' },
+      { path: 'friendship-and-christian-community', points: 15, reason: 'Community through deep friendship' },
+      { path: 'christianity-and-culture', points: 20, reason: 'Engaging and transforming culture' },
+      { path: 'money-generosity-gospel', points: 15, reason: 'Generosity impacts community' }
     ],
     intellectual_growth: [
       { path: 'faith-and-reason', points: 25, reason: 'Explores deep theological questions' },
-      { path: 'defending-your-faith', points: 20, reason: 'Intellectual apologetics' }
+      { path: 'defending-your-faith', points: 20, reason: 'Intellectual apologetics' },
+      { path: 'eternal-perspective', points: 20, reason: 'Eschatology and eternal theology' },
+      { path: 'attributes-of-god', points: 25, reason: 'Deep intellectual study of God\'s nature' },
+      { path: 'law-grace-and-covenants', points: 20, reason: 'Covenant theology and biblical-theological study' },
+      { path: 'historical-reliability-bible', points: 25, reason: 'Historical and evidential study of Scripture' },
+      { path: 'responding-to-cults', points: 20, reason: 'Critical thinking and doctrinal discernment' },
+      { path: 'christianity-and-culture', points: 20, reason: 'Intellectual engagement with culture' },
+      { path: 'theology-of-suffering', points: 20, reason: 'Intellectual wrestling with theodicy' },
+      { path: 'the-big-questions', points: 20, reason: 'Tackling the hardest intellectual questions' },
+      { path: 'understanding-the-bible', points: 15, reason: 'Intellectual Bible study methods' }
     ]
   };
 
@@ -311,23 +399,52 @@ function applyBiggestChallengeScoring(
   const mappings: Record<string, ScoringMapping[]> = {
     starting_basics: [
       { path: 'new-believer-essentials', points: 25, reason: 'Perfect starting point for basics' },
-      { path: 'faith-and-family', points: 10, reason: 'Foundational teachings' }
+      { path: 'faith-and-family', points: 10, reason: 'Foundational teachings' },
+      { path: 'rooted-in-christ', points: 15, reason: 'Establishes identity in Christ from scratch' },
+      { path: 'understanding-the-bible', points: 20, reason: 'How to read and understand the Bible' },
+      { path: 'sin-repentance-and-grace', points: 15, reason: 'Core gospel basics' },
+      { path: 'baptism-and-lords-supper', points: 10, reason: 'First steps in church practice' },
+      { path: 'who-is-the-holy-spirit', points: 10, reason: 'Who is the Spirit? A basics starter' }
     ],
     staying_consistent: [
       { path: 'deepening-your-walk', points: 25, reason: 'Builds consistent spiritual habits' },
-      { path: 'growing-in-discipleship', points: 20, reason: 'Develops daily disciplines' }
+      { path: 'growing-in-discipleship', points: 20, reason: 'Develops daily disciplines' },
+      { path: 'the-local-church', points: 20, reason: 'Community accountability helps consistency' },
+      { path: 'friendship-and-christian-community', points: 20, reason: 'Spiritual friendship builds consistency' },
+      { path: 'money-generosity-gospel', points: 15, reason: 'Faithful stewardship habits' },
+      { path: 'mental-health-emotions-gospel', points: 15, reason: 'Emotional resilience for consistency' },
+      { path: 'work-and-vocation-as-worship', points: 15, reason: 'Integrating faith into daily routine' }
     ],
     handling_doubts: [
       { path: 'defending-your-faith', points: 25, reason: 'Addresses doubts with apologetics' },
-      { path: 'faith-and-reason', points: 20, reason: 'Explores difficult questions' }
+      { path: 'faith-and-reason', points: 20, reason: 'Explores difficult questions' },
+      { path: 'rooted-in-christ', points: 20, reason: 'Covers Dealing with Doubt and Fear directly' },
+      { path: 'eternal-perspective', points: 15, reason: 'Standing firm in persecution and uncertainty' },
+      { path: 'historical-reliability-bible', points: 25, reason: 'Evidence-based confidence in Scripture' },
+      { path: 'responding-to-cults', points: 20, reason: 'Discerning truth from error' },
+      { path: 'the-big-questions', points: 25, reason: 'Directly tackles biggest doubts and questions' },
+      { path: 'theology-of-suffering', points: 20, reason: 'Answers "why does God allow suffering?"' },
+      { path: 'spiritual-warfare', points: 15, reason: 'Understanding the enemy dispels fear and doubt' },
+      { path: 'attributes-of-god', points: 15, reason: 'Knowing God deeply resolves doubts' }
     ],
     sharing_faith: [
       { path: 'serving-and-mission', points: 25, reason: 'Equips you to share the Gospel' },
-      { path: 'heart-for-the-world', points: 20, reason: 'Mission and evangelism focus' }
+      { path: 'heart-for-the-world', points: 20, reason: 'Mission and evangelism focus' },
+      { path: 'evangelism-everyday-life', points: 25, reason: 'Practical everyday evangelism' },
+      { path: 'the-local-church', points: 15, reason: 'Sharing faith through church community' },
+      { path: 'christianity-and-culture', points: 20, reason: 'Engaging cultural conversations about faith' },
+      { path: 'responding-to-cults', points: 15, reason: 'Defending truth when sharing faith' },
+      { path: 'work-and-vocation-as-worship', points: 15, reason: 'Being a witness in the workplace' }
     ],
     growing_stagnant: [
       { path: 'deepening-your-walk', points: 25, reason: 'Breaks spiritual stagnation' },
-      { path: 'growing-in-discipleship', points: 20, reason: 'Reignites spiritual growth' }
+      { path: 'growing-in-discipleship', points: 20, reason: 'Reignites spiritual growth' },
+      { path: 'eternal-perspective', points: 20, reason: 'Eternal hope reinvigorates stagnant faith' },
+      { path: 'attributes-of-god', points: 20, reason: 'Fresh vision of God reignites passion' },
+      { path: 'theology-of-suffering', points: 15, reason: 'Perspective shift breaks stagnation' },
+      { path: 'work-and-vocation-as-worship', points: 20, reason: 'Rediscovering purpose in daily life' },
+      { path: 'mental-health-emotions-gospel', points: 15, reason: 'Addressing spiritual dryness emotionally' },
+      { path: 'law-grace-and-covenants', points: 15, reason: 'Fresh grace perspective renews motivation' }
     ]
   };
 
@@ -459,7 +576,7 @@ export function getScoringResultsSummary(
 } {
   return {
     scoredAt: new Date().toISOString(),
-    algorithmVersion: '1.0',
+    algorithmVersion: '1.2',
     topMatch: {
       pathId: topPath.pathId,
       pathSlug: topPath.pathSlug,
