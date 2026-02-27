@@ -108,12 +108,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
         }
 
         // Return default preferences if data structure is unexpected
+        // Defaults match DB column defaults (all true) so new users get notifications
         return Right(NotificationPreferencesModel(
           userId: currentUser.id,
-          dailyVerseEnabled: false,
-          recommendedTopicEnabled: false,
-          streakReminderEnabled: false,
-          streakMilestoneEnabled: false,
+          dailyVerseEnabled: true,
+          recommendedTopicEnabled: true,
+          streakReminderEnabled: true,
+          streakMilestoneEnabled: true,
           streakLostEnabled: false,
           streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
           memoryVerseReminderEnabled: false,
@@ -127,13 +128,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // This ensures the UI doesn't get stuck loading
       return Right(NotificationPreferencesModel(
         userId: currentUser.id,
-        dailyVerseEnabled: false,
-        recommendedTopicEnabled: false,
-        streakReminderEnabled: false,
-        streakMilestoneEnabled: false,
-        streakLostEnabled: false,
+        dailyVerseEnabled: true,
+        recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-        memoryVerseReminderEnabled: false,
+        memoryVerseReminderEnabled: true,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -142,13 +143,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // Even on auth errors, return default preferences to prevent UI blocking
       return Right(NotificationPreferencesModel(
         userId: supabaseClient.auth.currentUser?.id ?? '',
-        dailyVerseEnabled: false,
-        recommendedTopicEnabled: false,
-        streakReminderEnabled: false,
-        streakMilestoneEnabled: false,
-        streakLostEnabled: false,
+        dailyVerseEnabled: true,
+        recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-        memoryVerseReminderEnabled: false,
+        memoryVerseReminderEnabled: true,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -158,13 +159,13 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // This ensures the notification settings screen always loads
       return Right(NotificationPreferencesModel(
         userId: supabaseClient.auth.currentUser?.id ?? '',
-        dailyVerseEnabled: false,
-        recommendedTopicEnabled: false,
-        streakReminderEnabled: false,
-        streakMilestoneEnabled: false,
-        streakLostEnabled: false,
+        dailyVerseEnabled: true,
+        recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-        memoryVerseReminderEnabled: false,
+        memoryVerseReminderEnabled: true,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),

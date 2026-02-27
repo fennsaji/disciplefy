@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -87,6 +88,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   // Track if we've already triggered the notification prompts this session
   bool _hasTriggeredDailyVersePrompt = false;
   bool _hasTriggeredStreakPrompt = false;
+  bool _hasTriggeredStreakLostPrompt = false;
 
   // Stream subscriptions for language changes (to be cancelled in dispose)
   StreamSubscription<AppLanguage>? _languageSubscription;
@@ -194,13 +196,21 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Shows streak notification prompts based on streak milestone
-  /// - After 3+ day streak: Show streak reminder prompt
-  /// - After 7+ day streak: Show streak milestone prompt
+  /// - streak == 0: Show streak lost / reset motivation prompt
+  /// - streak 3+: Show streak reminder prompt
+  /// - streak 7+: Show streak milestone prompt
   Future<void> _showStreakNotificationPrompt(
       String languageCode, int currentStreak) async {
-    if (_hasTriggeredStreakPrompt) return;
+    if (currentStreak == 0) {
+      await _showStreakLostNotificationPrompt(languageCode);
+      return;
+    }
 
-    // Only show streak prompts for meaningful streaks
+    // Mark that this user has had a streak — gates the streak lost prompt
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('had_streak_before', true);
+
+    if (_hasTriggeredStreakPrompt) return;
     if (currentStreak < 3) return;
 
     _hasTriggeredStreakPrompt = true;
@@ -210,8 +220,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     if (!mounted) return;
 
-    // Show streak reminder prompt at 3+ days
-    // Show milestone prompt at 7+ days (includes streak lost notifications)
     final promptType = currentStreak >= 7
         ? NotificationPromptType.streakMilestone
         : NotificationPromptType.streakReminder;
@@ -219,6 +227,28 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     await showNotificationEnablePrompt(
       context: context,
       type: promptType,
+      languageCode: languageCode,
+    );
+  }
+
+  /// Shows streak reset motivation prompt when user's streak has reset to 0.
+  /// Only shown if the user has previously had a streak — avoids confusing
+  /// brand new users who have never built a streak.
+  Future<void> _showStreakLostNotificationPrompt(String languageCode) async {
+    if (_hasTriggeredStreakLostPrompt) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('had_streak_before') != true) return;
+
+    _hasTriggeredStreakLostPrompt = true;
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.streakLost,
       languageCode: languageCode,
     );
   }
@@ -448,7 +478,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
             // Also check for streak and show streak notification prompt
             final streak = state.streak;
-            if (streak != null && streak.currentStreak > 0) {
+            if (streak != null) {
               _showStreakNotificationPrompt(languageCode, streak.currentStreak);
             }
           }

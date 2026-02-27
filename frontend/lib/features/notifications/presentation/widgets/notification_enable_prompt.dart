@@ -20,6 +20,7 @@ enum NotificationPromptType {
   recommendedTopic,
   streakReminder,
   streakMilestone,
+  streakLost,
   memoryVerseReminder,
 }
 
@@ -68,6 +69,13 @@ class NotificationPromptConfig {
           icon: Icons.emoji_events_rounded,
           sharedPrefsKey: 'notification_prompt_shown_streak_milestone',
         );
+      case NotificationPromptType.streakLost:
+        return NotificationPromptConfig(
+          title: _getLocalizedTitle(type, languageCode),
+          description: _getLocalizedDescription(type, languageCode),
+          icon: Icons.favorite_border_rounded,
+          sharedPrefsKey: 'notification_prompt_shown_streak_lost',
+        );
       case NotificationPromptType.memoryVerseReminder:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
@@ -100,6 +108,11 @@ class NotificationPromptConfig {
         'en': 'Milestone Celebrations',
         'hi': 'उपलब्धि सूचनाएं',
         'ml': 'നാഴികക്കല്ല് ആഘോഷങ്ങൾ',
+      },
+      NotificationPromptType.streakLost: {
+        'en': 'Streak Reset Motivation',
+        'hi': 'स्ट्रीक रीसेट प्रेरणा',
+        'ml': 'സ്ട്രീക് റീസെറ്റ് പ്രചോദനം',
       },
       NotificationPromptType.memoryVerseReminder: {
         'en': 'Memory Verse Reminders',
@@ -145,6 +158,14 @@ class NotificationPromptConfig {
         'ml':
             'നിങ്ങളുടെ സ്ഥിരത ആഘോഷിക്കൂ! സ്ട്രീക് നാഴികക്കല്ലുകളിൽ എത്തുമ്പോൾ അറിയിപ്പ് ലഭിക്കുക.',
       },
+      NotificationPromptType.streakLost: {
+        'en':
+            'Receive a gentle nudge of encouragement when your streak resets — every new day is a fresh start.',
+        'hi':
+            'जब आपकी स्ट्रीक रीसेट हो तो प्रोत्साहन का एक कोमल संदेश प्राप्त करें — हर नया दिन एक नई शुरुआत है।',
+        'ml':
+            'നിങ്ങളുടെ സ്ട്രീക് റീസെറ്റ് ആകുമ്പോൾ ഒരു സൗമ്യമായ പ്രോത്സാഹന സന്ദേശം ലഭിക്കുക — ഓരോ പുതിയ ദിവസവും ഒരു പുതിയ തുടക്കമാണ്.',
+      },
       NotificationPromptType.memoryVerseReminder: {
         'en':
             'Get daily reminders when your memory verses are ready for review.',
@@ -166,7 +187,9 @@ Future<bool?> showNotificationEnablePrompt({
   String languageCode = 'en',
   bool forceShow = false,
 }) async {
-  // Check if the notification is already enabled in user preferences
+  // Check if the notification is already enabled in user preferences.
+  // If preferences are not yet loaded, skip the prompt — we must not show it
+  // until we know the actual preference state (avoids prompting when ON by default).
   if (!forceShow && context.mounted) {
     final bloc = context.read<NotificationBloc>();
     final currentState = bloc.state;
@@ -177,11 +200,12 @@ Future<bool?> showNotificationEnablePrompt({
           ? currentState.preferences
           : (currentState as NotificationPreferencesUpdated).preferences;
 
-      // Check if the specific notification type is already enabled
-      final isAlreadyEnabled = _isNotificationEnabled(type, preferences);
-      if (isAlreadyEnabled) {
-        return null; // Already enabled, no need to show prompt
+      if (_isNotificationEnabled(type, preferences)) {
+        return null; // Already enabled — no need to prompt
       }
+    } else {
+      // Preferences not loaded yet — skip to avoid false positives
+      return null;
     }
   }
 
@@ -225,6 +249,8 @@ bool _isNotificationEnabled(
       return preferences.streakReminderEnabled;
     case NotificationPromptType.streakMilestone:
       return preferences.streakMilestoneEnabled;
+    case NotificationPromptType.streakLost:
+      return preferences.streakLostEnabled;
     case NotificationPromptType.memoryVerseReminder:
       return preferences.memoryVerseReminderEnabled;
   }
@@ -418,10 +444,10 @@ class _NotificationEnableSheet extends StatelessWidget {
             const UpdateNotificationPreferences(streakReminderEnabled: true));
         break;
       case NotificationPromptType.streakMilestone:
-        bloc.add(const UpdateNotificationPreferences(
-          streakMilestoneEnabled: true,
-          streakLostEnabled: true, // Enable both together
-        ));
+        bloc.add(const UpdateNotificationPreferences(streakMilestoneEnabled: true));
+        break;
+      case NotificationPromptType.streakLost:
+        bloc.add(const UpdateNotificationPreferences(streakLostEnabled: true));
         break;
       case NotificationPromptType.memoryVerseReminder:
         bloc.add(const UpdateNotificationPreferences(

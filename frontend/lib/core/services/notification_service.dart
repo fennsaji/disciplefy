@@ -46,6 +46,72 @@ class NotificationService {
   Stream<Map<String, dynamic>> get onNotificationTap =>
       _notificationTapController.stream;
 
+  // ============================================================================
+  // Android Notification Channel Definitions
+  // ============================================================================
+  // One channel per user-visible notification category so that Android shows
+  // each as a separate entry under Settings > App > Notifications.
+
+  // These 6 channels map 1-to-1 with the 6 toggles shown in Notification Settings.
+  static const _allAndroidChannels = [
+    AndroidNotificationChannel(
+      'daily_verse',
+      'Daily Verse',
+      description: 'Receive inspirational Bible verses every morning',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'recommended_topics',
+      'Recommended Topics',
+      description: 'Get personalized study topic suggestions',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'streak_reminders',
+      'Streak Reminder',
+      description: 'Get reminded to maintain your daily verse reading streak',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'streak_milestones',
+      'Milestone Achievements',
+      description: 'Celebrate when you reach streak milestones (7, 30, 100, 365 days)',
+      importance: Importance.defaultImportance,
+    ),
+    AndroidNotificationChannel(
+      'streak_reset_motivation',
+      'Streak Reset Motivation',
+      description: 'Receive encouragement to start a new streak after a break',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'memory_verse_reminders',
+      'Daily Review Reminder',
+      description: 'Get reminded daily when you have verses due for review',
+      importance: Importance.high,
+    ),
+  ];
+
+  /// Returns the Android channel ID for a given FCM notification type.
+  static String _channelIdForType(String? type) {
+    switch (type) {
+      case 'daily_verse':
+        return 'daily_verse';
+      case 'recommended_topic':
+      case 'for_you':
+      case 'continue_learning':
+        return 'recommended_topics';
+      case 'streak_reminder':
+        return 'streak_reminders';
+      case 'streak_milestone':
+        return 'streak_milestones';
+      case 'streak_lost':
+        return 'streak_reset_motivation';
+      default:
+        return 'daily_verse'; // fallback
+    }
+  }
+
   NotificationService({
     required SupabaseClient supabaseClient,
     required GoRouter router,
@@ -132,6 +198,20 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: _onLocalNotificationTap,
     );
+
+    // Explicitly register Android notification channels at startup so they
+    // appear in System Settings > App > Notifications even before any
+    // notification has been sent.
+    if (!kIsWeb && Platform.isAndroid) {
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        for (final channel in _allAndroidChannels) {
+          await androidPlugin.createNotificationChannel(channel);
+        }
+      }
+    }
 
     Logger.info('[NotificationService] Local notifications initialized');
   }
@@ -386,10 +466,16 @@ class NotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
-    const androidDetails = AndroidNotificationDetails(
-      'daily_notifications',
-      'Daily Notifications',
-      channelDescription: 'Daily verse and study topic notifications',
+    final channelId = _channelIdForType(message.data['type'] as String?);
+    final channel = _allAndroidChannels.firstWhere(
+      (c) => c.id == channelId,
+      orElse: () => _allAndroidChannels.first,
+    );
+
+    final androidDetails = AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      channelDescription: channel.description,
       importance: Importance.high,
       priority: Priority.high,
     );
@@ -400,7 +486,7 @@ class NotificationService {
       presentSound: true,
     );
 
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -479,7 +565,9 @@ class NotificationService {
       'daily_verse',
       'recommended_topic',
       'continue_learning',
-      'for_you'
+      'for_you',
+      'streak_milestone',
+      'streak_lost',
     };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
@@ -593,6 +681,13 @@ class NotificationService {
               '[NotificationService] ⚠️  No For You topic title provided, navigating to study topics');
         }
         break;
+
+      case 'streak_milestone':
+      case 'streak_lost':
+        // Navigate to daily verse page where streak info is visible
+        _router.go('/daily-verse');
+        Logger.info('[NotificationService] ✅ Navigating to daily verse (streak notification)');
+        break;
     }
   }
 
@@ -690,6 +785,62 @@ class NotificationService {
 
   /// Check if service is initialized
   bool get isInitialized => _isInitialized;
+
+  // ============================================================================
+  // Token Unregistration (called on logout — BEFORE auth session is cleared)
+  // ============================================================================
+
+  /// Unregisters the current FCM token from the backend and deletes it from
+  /// Firebase so this device stops receiving push notifications for the
+  /// signed-out user.
+  ///
+  /// Must be called BEFORE the Supabase auth session is cleared (i.e. before
+  /// [supabase.auth.signOut]) because the backend endpoint requires a valid
+  /// auth session.
+  Future<void> unregisterToken() async {
+    if (kIsWeb) return; // Web platform manages its own token lifecycle
+
+    final token = _fcmToken;
+    if (token == null) {
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] unregisterToken: no token stored, skipping');
+      }
+      return;
+    }
+
+    // 1. Remove from backend — requires active auth session (call before signOut)
+    try {
+      await _supabaseClient.functions.invoke(
+        'register-fcm-token',
+        method: HttpMethod.delete,
+        body: {'fcmToken': token},
+      );
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] ✅ FCM token unregistered from backend');
+      }
+    } catch (e) {
+      // Non-fatal — token will be cleaned up by the nightly cleanup job
+      if (kDebugMode) {
+        Logger.warning('[NotificationService] ⚠️ Backend token unregister failed: $e');
+      }
+    }
+
+    // 2. Delete from Firebase so this device gets a fresh token on next login
+    try {
+      await _firebaseMessaging?.deleteToken();
+      if (kDebugMode) {
+        Logger.debug('[NotificationService] ✅ Firebase FCM token deleted');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        Logger.warning('[NotificationService] ⚠️ Firebase token delete failed: $e');
+      }
+    }
+
+    // 3. Clear local reference
+    _fcmToken = null;
+    _isInitialized = false;
+  }
 
   // ============================================================================
   // Cleanup

@@ -190,7 +190,7 @@ async function handleStreakNotification(
         token: token.fcm_token,
         notification: { title: content.title, body: content.body },
         data: {
-          type: `streak_${notificationType}`,
+          type: fcmNotificationType, // 'streak_milestone' | 'streak_lost'
           streak_count: String(streakCount),
           language,
         },

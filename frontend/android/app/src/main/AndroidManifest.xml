@@ -58,10 +58,10 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- FCM Default Notification Channel -->
+        <!-- FCM Default Notification Channel (must match a registered channel) -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="default_channel" />
+            android:value="daily_verse" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
