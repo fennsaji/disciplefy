@@ -142,10 +142,9 @@ class PaymentMethodValidator {
       );
     }
 
-    // Check if card is expired
+    // Check if card is expired (valid through end of expiry month)
     final now = DateTime.now();
-    final expiryDate = DateTime(year, month + 1, 0); // Last day of expiry month
-    if (now.isAfter(expiryDate)) {
+    if (year < now.year || (year == now.year && month < now.month)) {
       return ValidationResult.invalid(
         errorMessage: 'Card has already expired',
         errorCode: 'CARD_EXPIRED',
