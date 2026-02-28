@@ -54,6 +54,8 @@ class StudyStreamingHandler {
         inputType: event.inputType,
         inputValue: event.input,
         topicDescription: event.topicDescription,
+        pathTitle: event.pathTitle,
+        pathDescription: event.pathDescription,
         language: event.language,
         studyMode: event.studyMode,
       );

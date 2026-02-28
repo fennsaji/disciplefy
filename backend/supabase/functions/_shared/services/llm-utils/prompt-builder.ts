@@ -231,15 +231,20 @@ PRAYER FORMAT REQUIREMENTS:
  * Balanced depth for daily devotional use
  */
 function createStandardModePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const { inputType, inputValue, topicDescription } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription } = params
   const languageExamples = getLanguageExamples(params.language)
 
   // Task description based on input type
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\\n')
+  const pathContext = pathParts ? `\\n\\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create a Bible study guide for: "${inputValue}"`
     : inputType === 'topic'
-    ? `Create a Bible study guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
-    : `Answer the question and create a study guide: "${inputValue}"`
+    ? `Create a Bible study guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
+    : `Answer the question and create a study guide: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const wordTarget = getWordCountTarget(languageConfig, 'standard')
   const systemMessage = `You are a biblical scholar creating Bible study guides.
@@ -399,7 +404,13 @@ OUTPUT: Valid JSON starting with { and ending with }`
  * Concise for busy schedules
  */
 function createQuickReadPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const taskDescription = `Create a 3-MINUTE quick study for: "${params.inputValue}"`
+  const { inputValue, topicDescription, pathTitle, pathDescription } = params
+  const contextSuffix = [
+    topicDescription ? `Context: ${topicDescription}` : '',
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\\n')
+  const taskDescription = `Create a 3-MINUTE quick study for: "${inputValue}"${contextSuffix ? `\\n\\n${contextSuffix}` : ''}`
 
   const systemMessage = `You are a biblical scholar creating CONCISE but SUBSTANTIAL Bible studies for busy readers.
 
@@ -510,11 +521,16 @@ OUTPUT: Valid JSON starting with { and ending with }`
  * Deep exploration with integrated word studies and extended context
  */
 function createDeepDivePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const { inputType, inputValue, topicDescription } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription } = params
 
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\\n')
+  const pathContext = pathParts ? `\\n\\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create a DEEP DIVE study for: "${inputValue}"`
-    : `Create a DEEP DIVE study on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
+    : `Create a DEEP DIVE study on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const wordTarget = getWordCountTarget(languageConfig, 'deep')
   const systemMessage = `You are an expert biblical scholar creating IN-DEPTH theological studies.
@@ -707,13 +723,16 @@ OUTPUT: Valid JSON starting with { and ending with }`
  * Contemplative meditative study
  */
 function createLectioDivinaPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const { inputType, inputValue, topicDescription } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription } = params
 
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\\n')
+  const pathContext = pathParts ? `\\n\\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create a Lectio Divina meditation guide for: "${inputValue}"`
-    : inputType === 'topic'
-    ? `Create a Lectio Divina meditation guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
-    : `Create a Lectio Divina meditation guide for: "${inputValue}"`
+    : `Create a Lectio Divina meditation guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const wordTarget = getWordCountTarget(languageConfig, 'lectio')
   const systemMessage = `You are a spiritual director guiding Lectio Divina (sacred reading).
@@ -918,16 +937,19 @@ export function getSermonHeadings(language: string): Record<string, string> {
 }
 
 function createSermonOutlinePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const { inputType, inputValue, topicDescription } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription } = params
   const headings = getSermonHeadings(params.language)
 
   const sermonFormat = inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL (3-Point)'
 
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\\n')
+  const pathContext = pathParts ? `\\n\\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create an ${sermonFormat} sermon outline for: "${inputValue}"`
-    : inputType === 'topic'
-    ? `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
-    : `Create a sermon outline addressing: "${inputValue}"`
+    : `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const wordTarget = getWordCountTarget(languageConfig, 'sermon')
   const systemMessage = `You are an experienced preacher creating sermon outlines for pastors.

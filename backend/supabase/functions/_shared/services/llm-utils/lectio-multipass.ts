@@ -38,13 +38,16 @@ export function createLectioPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
 
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\n')
+  const pathContext = pathParts ? `\n\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create a MEDITATIVE READING guide for: \"${inputValue}\"`
-    : inputType === 'topic'
-    ? `Create a MEDITATIVE READING guide on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}`
-    : `Create a MEDITATIVE READING guide addressing: \"${inputValue}\"`
+    : `Create a MEDITATIVE READING guide on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const systemMessage = `You are a Bible study guide leading prayerful Scripture reading and personal application.
 
