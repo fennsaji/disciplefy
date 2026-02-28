@@ -237,6 +237,14 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
   /// Optional topic description for providing additional context.
   final String? topicDescription;
 
+  /// Optional learning path title for curriculum-aware generation.
+  /// Only set when the study guide is generated from a learning path topic.
+  final String? pathTitle;
+
+  /// Optional learning path description/goal for curriculum-aware generation.
+  /// Only set when the study guide is generated from a learning path topic.
+  final String? pathDescription;
+
   /// Language code for the study guide.
   final String language;
 
@@ -253,14 +261,24 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
     required this.input,
     required this.inputType,
     this.topicDescription,
+    this.pathTitle,
+    this.pathDescription,
     required this.language,
     this.studyMode = StudyMode.standard,
     this.pendingStudyId,
   });
 
   @override
-  List<Object?> get props =>
-      [input, inputType, topicDescription, language, studyMode, pendingStudyId];
+  List<Object?> get props => [
+        input,
+        inputType,
+        topicDescription,
+        pathTitle,
+        pathDescription,
+        language,
+        studyMode,
+        pendingStudyId
+      ];
 }
 
 /// Internal event when a streaming section is received.

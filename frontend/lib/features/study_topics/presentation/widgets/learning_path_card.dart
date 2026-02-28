@@ -167,16 +167,20 @@ class LearningPathCard extends StatelessWidget {
                     : theme.colorScheme.onSurface.withValues(alpha: 0.75),
                 height: 1.4,
               ),
-              maxLines: 4,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
 
             const SizedBox(height: 12),
 
-            // Progress bar (if enrolled)
+            // Progress bar (if enrolled).
+            // Non-compact cards (For You section) always reserve this space so
+            // all cards in the list reach the same height.
             if (isEnrolled) ...[
               _buildProgressBar(context, color),
               const SizedBox(height: 12),
+            ] else if (!compact) ...[
+              const SizedBox(height: 40),
             ],
 
             if (compact) const Spacer(),

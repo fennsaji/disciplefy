@@ -116,6 +116,8 @@ function parseRequestParams(req: Request): {
   input_type: 'scripture' | 'topic' | 'question'
   input_value: string
   topic_description?: string
+  path_title?: string
+  path_description?: string
   language: string
   study_mode: StudyMode
 } | null {
@@ -124,6 +126,8 @@ function parseRequestParams(req: Request): {
   const input_type = url.searchParams.get('input_type') as 'scripture' | 'topic' | 'question' | null
   const input_value = url.searchParams.get('input_value')
   const topic_description = url.searchParams.get('topic_description') || undefined
+  const path_title = url.searchParams.get('path_title') || undefined
+  const path_description = url.searchParams.get('path_description') || undefined
   const language = url.searchParams.get('language') || 'en'
   const mode = url.searchParams.get('mode') as StudyMode | null
 
@@ -139,7 +143,7 @@ function parseRequestParams(req: Request): {
   const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio', 'sermon']
   const study_mode: StudyMode = mode && validModes.includes(mode) ? mode : 'standard'
 
-  return { input_type, input_value, topic_description, language, study_mode }
+  return { input_type, input_value, topic_description, path_title, path_description, language, study_mode }
 }
 
 /**
@@ -593,7 +597,7 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, topic_description, language, study_mode } = params
+  const { input_type, input_value, topic_description, path_title, path_description, language, study_mode } = params
 
   console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
@@ -774,6 +778,9 @@ async function handleStudyGenerateV2(
           for await (const event of streamCachedContent(cachedGuide)) {
             emit(event)
           }
+
+          // Link user to cached content (ensures user_study_guides record exists for mark-complete)
+          await studyGuideRepository.linkUserToContent(existingContent.id, userContext)
 
           // Emit complete event
           emit(createCompleteEvent(
@@ -1016,6 +1023,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1025,6 +1034,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1067,6 +1078,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1076,6 +1089,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1116,6 +1131,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1125,6 +1142,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1166,6 +1185,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1175,6 +1196,8 @@ async function handleStudyGenerateV2(
               inputType: input_type,
               inputValue: input_value,
               topicDescription: topic_description,
+              pathTitle: path_title,
+              pathDescription: path_description,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1290,6 +1313,8 @@ async function handleStudyGenerateV2(
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
+                pathTitle: path_title,
+                pathDescription: path_description,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1299,6 +1324,8 @@ async function handleStudyGenerateV2(
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
+                pathTitle: path_title,
+                pathDescription: path_description,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1340,6 +1367,8 @@ async function handleStudyGenerateV2(
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
+                pathTitle: path_title,
+                pathDescription: path_description,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1349,6 +1378,8 @@ async function handleStudyGenerateV2(
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
+                pathTitle: path_title,
+                pathDescription: path_description,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1415,6 +1446,8 @@ async function handleStudyGenerateV2(
                 inputType: input_type,
                 inputValue: input_value,
                 topicDescription: topic_description,
+                pathTitle: path_title,
+                pathDescription: path_description,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode,

@@ -1,15 +1,11 @@
-🙏 Disciplefy Bible Study App - Beta Release
+🙏 Disciplefy Bible Study App - Beta Update
 
 ✨ What's New:
-• AI-powered Bible study
-• Voice Discipler - conversational Bible learning
-• Memory Verse feature for scripture memorization
-• Daily verses in English, Hindi & Malayalam
-• Study guides with personalized insights
+• Learning Path studies are now smarter — the full path title and goal are passed to the AI for more focused, curriculum-aware study guides
+• Study guides from Learning Paths now correctly mark topics as complete
 
-🛠️ Improvements:
-• Enhanced performance and stability
-• Multi-language support
-• Offline capabilities
+🛠️ Bug Fixes:
+• Fixed "Complete Study" button failing with a "not found" error on cached study guides
+• Fixed card expiry validation incorrectly rejecting cards expiring this month
 
-📖 Start your discipleship journey today!
+📖 Keep growing in your faith journey!

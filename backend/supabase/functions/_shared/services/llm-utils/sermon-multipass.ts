@@ -35,16 +35,19 @@ export function createSermonPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
   const headings = getSermonHeadings(language)
   const wordTarget = getWordCountTarget(languageConfig, 'sermon')
 
   const sermonFormat = inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL (3-Point)'
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\n')
+  const pathContext = pathParts ? `\n\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create an ${sermonFormat} sermon outline for: "${inputValue}"`
-    : inputType === 'topic'
-    ? `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}`
-    : `Create a sermon outline addressing: "${inputValue}"`
+    : `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const systemMessage = `You are an experienced preacher creating sermon outlines for pastors.
 

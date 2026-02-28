@@ -692,6 +692,8 @@ class AppRouter {
           String? input = state.uri.queryParameters['input'];
           String? type = state.uri.queryParameters['type'];
           final description = state.uri.queryParameters['description'];
+          final pathTitle = state.uri.queryParameters['path_title'];
+          final pathDescription = state.uri.queryParameters['path_description'];
           String? language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
           final modeString = state.uri.queryParameters['mode'];
@@ -736,6 +738,8 @@ class AppRouter {
               input: input,
               type: type,
               description: description,
+              pathTitle: pathTitle,
+              pathDescription: pathDescription,
               language: language,
               navigationSource: navigationSource,
               studyMode: studyMode,
@@ -756,6 +760,8 @@ class AppRouter {
           final input = state.uri.queryParameters['input'];
           final type = state.uri.queryParameters['type'];
           final description = state.uri.queryParameters['description'];
+          final pathTitle = state.uri.queryParameters['path_title'];
+          final pathDescription = state.uri.queryParameters['path_description'];
           final language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
           final modeString = state.uri.queryParameters['mode'];
@@ -774,6 +780,8 @@ class AppRouter {
               input: input,
               type: type,
               description: description,
+              pathTitle: pathTitle,
+              pathDescription: pathDescription,
               language: language,
               navigationSource: navigationSource,
               studyMode: studyMode,
