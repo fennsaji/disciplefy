@@ -126,6 +126,14 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Optional topic description for additional context (only for topics)
   final String? description;
 
+  /// Optional learning path title for curriculum-aware generation.
+  /// Only set when the study guide is generated from a learning path topic.
+  final String? pathTitle;
+
+  /// Optional learning path description for curriculum-aware generation.
+  /// Only set when the study guide is generated from a learning path topic.
+  final String? pathDescription;
+
   /// Optional language code for the study guide
   final String? language;
 
@@ -144,6 +152,8 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.input,
     this.type,
     this.description,
+    this.pathTitle,
+    this.pathDescription,
     this.language,
     this.navigationSource = StudyNavigationSource.home,
     this.studyMode = StudyMode.standard,
@@ -158,6 +168,8 @@ class StudyGuideScreenV2 extends StatelessWidget {
           input: input,
           type: type,
           description: description,
+          pathTitle: pathTitle,
+          pathDescription: pathDescription,
           language: language,
           navigationSource: navigationSource,
           studyMode: studyMode,
@@ -171,6 +183,8 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final String? input;
   final String? type;
   final String? description;
+  final String? pathTitle;
+  final String? pathDescription;
   final String? language;
   final StudyNavigationSource navigationSource;
   final StudyMode studyMode;
@@ -181,6 +195,8 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     this.input,
     this.type,
     this.description,
+    this.pathTitle,
+    this.pathDescription,
     this.language,
     required this.navigationSource,
     required this.studyMode,
@@ -707,11 +723,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     context.read<StudyBloc>().add(GenerateStudyGuideStreamingRequested(
           input: widget.input!,
           inputType: widget.type!,
-          topicDescription: widget
-              .description, // Include topic description for richer context
+          topicDescription: widget.description,
+          pathTitle: widget.pathTitle,
+          pathDescription: widget.pathDescription,
           language: normalizedLanguageCode,
           studyMode: widget.studyMode,
-          pendingStudyId: _pendingStudyId, // Pass pending ID for tracking
+          pendingStudyId: _pendingStudyId,
         ));
   }
 

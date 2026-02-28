@@ -33,14 +33,17 @@ export function createStandardPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
   const wordTarget = getWordCountTarget(languageConfig, 'standard')
 
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\n')
+  const pathContext = pathParts ? `\n\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create a STANDARD STUDY for: \"${inputValue}\"`
-    : inputType === 'topic'
-    ? `Create a STANDARD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}`
-    : `Create a STANDARD STUDY addressing: \"${inputValue}\"`
+    : `Create a STANDARD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const systemMessage = `You are a Bible teacher creating balanced, accessible study guides.
 

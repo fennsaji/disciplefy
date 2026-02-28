@@ -256,18 +256,25 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
     final encodedInputType = Uri.encodeComponent(topic.inputType);
+    final encodedPathTitle = Uri.encodeComponent(path.title);
+    final encodedPathDescription = Uri.encodeComponent(path.description);
     final topicIdParam =
         topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
     final descriptionParam =
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
     final pathIdParam = path.id.isNotEmpty ? '&path_id=${path.id}' : '';
+    final pathTitleParam =
+        path.title.isNotEmpty ? '&path_title=$encodedPathTitle' : '';
+    final pathDescriptionParam = path.description.isNotEmpty
+        ? '&path_description=$encodedPathDescription'
+        : '';
 
     Logger.debug(
-        '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}');
+        '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}, path: ${path.title}');
 
     // Use push and await the result - when user returns, refresh the data
     await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
+      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam$pathTitleParam$pathDescriptionParam',
     );
 
     // Persist that this topic was accessed so future visits bypass the token check

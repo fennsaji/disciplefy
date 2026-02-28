@@ -34,14 +34,17 @@ export function createDeepPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
   const wordTarget = getWordCountTarget(languageConfig, 'deep')
 
+  const pathParts = [
+    pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
+    pathDescription ? `Learning Path Goal: ${pathDescription}` : '',
+  ].filter(Boolean).join('\n')
+  const pathContext = pathParts ? `\n\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
     ? `Create a WORD STUDY for: \"${inputValue}\"`
-    : inputType === 'topic'
-    ? `Create a WORD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}`
-    : `Create a WORD STUDY addressing: \"${inputValue}\"`
+    : `Create a WORD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const systemMessage = `You are a Bible scholar creating WORD STUDIES with theological depth.
 

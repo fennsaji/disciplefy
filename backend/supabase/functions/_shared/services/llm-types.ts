@@ -39,7 +39,9 @@ export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio' | 'sermon'
 export interface LLMGenerationParams {
   readonly inputType: 'scripture' | 'topic' | 'question'
   readonly inputValue: string
-  readonly topicDescription?: string  // Optional: provides additional context for topic-based guides
+  readonly topicDescription?: string   // Optional: provides additional context for topic-based guides
+  readonly pathTitle?: string          // Optional: learning path name for curriculum-aware generation
+  readonly pathDescription?: string    // Optional: learning path description/goal for curriculum-aware generation
   readonly language: string
   readonly tier?: string  // Optional: user subscription tier for model selection
   readonly studyMode?: StudyMode  // Optional: study mode for different experiences (default: 'standard')
