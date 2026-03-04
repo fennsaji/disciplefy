@@ -139,27 +139,69 @@ serve(async (req) => {
     // Check for existing active subscription
     const { data: existingSubs, error: existingError } = await supabase
       .from('subscriptions')
-      .select('id, status, subscription_plan')
+      .select('id, status, plan_type, provider, plan_id, is_iap_subscription')
       .eq('user_id', user.id)
-      .in('status', ['active', 'authenticated', 'created', 'pending_cancellation'])
+      .in('status', ['active', 'authenticated', 'created', 'pending_cancellation', 'trial'])
 
     if (existingError) {
-      console.error('[create-subscription-v2] Existing sub check error:', existingError)
+      console.error('[create-subscription-v2] Existing sub check error:', JSON.stringify(existingError))
       throw new Error('Failed to check existing subscriptions')
     }
 
+    // Track old IAP subscription to cancel AFTER successful validation (atomicity)
+    let oldSubIdToCancel: string | null = null
+
     if (existingSubs && existingSubs.length > 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'You already have an active subscription',
-          code: 'ALREADY_SUBSCRIBED'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      const existing = existingSubs[0]
+      const isIAPProvider = provider === 'google_play' || provider === 'apple_appstore'
+      const existingIsIAP = existing.provider === 'google_play' || existing.provider === 'apple_appstore'
+      const existingPlanCode = existing.plan_type
+      const isDifferentPlan = existingPlanCode !== plan_code
+      const isStaleCreated = existing.status === 'created'
+      const isProviderSwitch = (isIAPProvider && !existingIsIAP) || (!isIAPProvider && existingIsIAP)
+
+      console.log('[create-subscription-v2] Existing sub found:', {
+        id: existing.id,
+        status: existing.status,
+        existingPlanCode,
+        newPlanCode: plan_code,
+        provider,
+        existingProvider: existing.provider,
+        isDifferentPlan,
+        isStaleCreated,
+        isProviderSwitch
+      })
+
+      if (existing.status === 'trial') {
+        // Trial subscription superseded by a paid purchase — cancel trial and proceed
+        console.log('[create-subscription-v2] Trial subscription detected, cancelling to allow paid upgrade')
+        oldSubIdToCancel = existing.id
+      } else if (isStaleCreated) {
+        // Stale 'created' record from a previous failed backend call — cancel and allow retry
+        console.log('[create-subscription-v2] Stale created record detected, cancelling and allowing retry')
+        oldSubIdToCancel = existing.id
+      } else if (isIAPProvider && isDifferentPlan) {
+        // IAP plan upgrade / downgrade — cancel old after new receipt validates
+        console.log('[create-subscription-v2] IAP plan change:', { from: existingPlanCode, to: plan_code })
+        oldSubIdToCancel = existing.id
+      } else if (isProviderSwitch) {
+        // Switching payment provider (e.g. Razorpay → Google Play) — cancel old
+        console.log('[create-subscription-v2] Provider switch:', { from: existing.provider, to: provider })
+        oldSubIdToCancel = existing.id
+      } else {
+        // Genuinely duplicate: same active subscription on same plan and provider
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'You already have an active subscription',
+            code: 'ALREADY_SUBSCRIBED'
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
     }
 
     // Special handling for free plan (no provider configuration needed)
@@ -299,7 +341,8 @@ serve(async (req) => {
         if (appliesToPlan && appliesToProvider) {
           // Calculate discount
           if (promoData.discount_type === 'percentage') {
-            discountedPriceMinor = Math.round(basePriceMinor * (1 - promoData.discount_value / 100))
+            const clampedPct = Math.min(100, Math.max(0, promoData.discount_value))
+            discountedPriceMinor = Math.round(basePriceMinor * (1 - clampedPct / 100))
           } else if (promoData.discount_type === 'fixed_amount') {
             discountedPriceMinor = Math.max(0, basePriceMinor - promoData.discount_value)
           }
@@ -395,6 +438,23 @@ serve(async (req) => {
           )
         }
 
+        // For IAP, the purchase has already occurred on the device — cancel any
+        // existing subscription BEFORE inserting the new one so the unique-per-user
+        // constraint doesn't block the INSERT inside validateAndProcessReceipt.
+        if (oldSubIdToCancel) {
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'cancelled',
+              cancelled_at: new Date().toISOString(),
+              cancellation_reason: 'Superseded by new IAP purchase',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', oldSubIdToCancel)
+          console.log('[create-subscription-v2] Old subscription cancelled before IAP validation')
+          oldSubIdToCancel = null // Already done — skip post-validation cancel
+        }
+
         // Validate receipt and create subscription
         const validationResult = await validateAndProcessReceipt(supabase, {
           provider: provider as 'google_play' | 'apple_appstore',
@@ -402,7 +462,7 @@ serve(async (req) => {
           productId: productData.product_id,
           userId: user.id,
           planCode: plan_code,
-          environment: 'production' // TODO: Add environment detection
+          environment: Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
         })
 
         if (!validationResult.success || !validationResult.isValid) {
@@ -419,8 +479,6 @@ serve(async (req) => {
           )
         }
 
-        // Receipt validation service already created the subscription
-        // Return success response
         console.log('[create-subscription-v2] IAP subscription created:', validationResult.subscriptionId)
 
         return new Response(

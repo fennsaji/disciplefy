@@ -220,7 +220,7 @@ class TranslationKeys {
   static const loginWelcome = 'login.welcome';
   static const loginSubtitle = 'login.subtitle';
   static const loginContinueWithGoogle = 'login.continue_with_google';
-  static const loginContinueAsGuest = 'login.continue_as_guest';
+
   static const loginFeaturesTitle = 'login.features_title';
   static const loginFeatureAiStudyGuides = 'login.feature_ai_study_guides';
   static const loginFeatureAiStudyGuidesSubtitle =
@@ -317,7 +317,7 @@ class TranslationKeys {
   static const settingsContentLanguage = 'settings.content_language';
   static const settingsAccountActions = 'settings.account_actions';
   static const settingsSignOut = 'settings.sign_out';
-  static const settingsClearGuestSession = 'settings.clear_guest_session';
+
   static const settingsSignOutOfAccount = 'settings.sign_out_of_account';
   static const settingsAbout = 'settings.about';
   static const settingsAppVersion = 'settings.app_version';
@@ -339,11 +339,8 @@ class TranslationKeys {
   static const settingsDarkMode = 'settings.dark_mode';
   static const settingsDarkModeSubtitle = 'settings.dark_mode_subtitle';
   static const settingsSelectLanguage = 'settings.select_language';
-  static const settingsClearSession = 'settings.clear_session';
-  static const settingsClearSessionMessage = 'settings.clear_session_message';
   static const settingsSignOutTitle = 'settings.sign_out_title';
   static const settingsSignOutMessage = 'settings.sign_out_message';
-  static const settingsClear = 'settings.clear';
   static const settingsSupportTitle = 'settings.support_title';
   static const settingsSupportMessage = 'settings.support_message';
   static const settingsClose = 'settings.close';

@@ -265,23 +265,6 @@ class OAuthService {
     }
   }
 
-  /// Check if there's an existing anonymous session for potential migration
-  Future<String?> _getExistingAnonymousUserId() async {
-    try {
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser != null && currentUser.isAnonymous) {
-        Logger.debug(
-            '🔐 [OAUTH SERVICE] 👤 Found existing anonymous user: ${currentUser.id}');
-        return currentUser.id;
-      }
-      return null;
-    } catch (e) {
-      Logger.error(
-          '🔐 [OAUTH SERVICE] ⚠️ Error checking anonymous session: $e');
-      return null;
-    }
-  }
-
   /// Sign in with Apple OAuth (iOS/Web only)
   /// FIXED: Updated for corrected PKCE flow configuration
   Future<bool> signInWithApple() async {

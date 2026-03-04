@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -655,7 +656,7 @@ class _SubscriptionManagementPageState
               const SizedBox(height: 8),
               _buildInfoRow(
                 context.tr(TranslationKeys.subscriptionDaysUntilBilling),
-                '${subscription.daysUntilNextBilling} ${context.tr(TranslationKeys.subscriptionDays)}',
+                '${subscription.daysUntilNextBilling ?? '-'} ${context.tr(TranslationKeys.subscriptionDays)}',
                 Icons.access_time_rounded,
               ),
             ],
@@ -872,6 +873,14 @@ class _SubscriptionManagementPageState
     final isLoading = state is SubscriptionLoading &&
         (state.operation == 'cancelling' || state.operation == 'resuming');
 
+    // IAP subscriptions (Google Play / App Store) are managed through the respective app store.
+    // We cannot cancel/resume IAP subscriptions via API — direct users to the store instead.
+    // Use subscription.provider to check, NOT platform detection, so that a Razorpay subscriber
+    // opening the app on Android is not incorrectly shown "Manage in Google Play".
+    if (subscription.isIAPSubscription) {
+      return _buildManageInStoreButton(subscription.provider);
+    }
+
     // Check if subscription has pending cancellation (scheduled to cancel at end of cycle)
     final isCancelledButActive =
         subscription.status == SubscriptionStatus.pending_cancellation;
@@ -885,7 +894,6 @@ class _SubscriptionManagementPageState
             onPressed: isLoading
                 ? null
                 : () {
-                    // Resume the cancelled subscription
                     context
                         .read<SubscriptionBloc>()
                         .add(const ResumeSubscription());
@@ -957,6 +965,84 @@ class _SubscriptionManagementPageState
     );
   }
 
+  /// Builds a button that opens the platform's subscription management page.
+  /// Used for Google Play and App Store subscriptions where cancellation
+  /// cannot be done via API — users must manage them in the store.
+  Widget _buildManageInStoreButton(String subscriptionProvider) {
+    final isAndroid = subscriptionProvider == 'google_play';
+    final storeLabel =
+        isAndroid ? 'Manage in Google Play' : 'Manage in App Store';
+    final storeIcon = isAndroid ? Icons.shop_rounded : Icons.apple_rounded;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: Text(
+            'To cancel or modify your subscription, please manage it through ${isAndroid ? 'Google Play' : 'the App Store'}.',
+            style: AppFonts.inter(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () => _openStoreSubscriptions(isAndroid),
+          icon: Icon(storeIcon, size: 20),
+          label: Text(
+            storeLabel,
+            style: AppFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openStoreSubscriptions(bool isAndroid) async {
+    final Uri uri = isAndroid
+        ? Uri.parse(
+            'https://play.google.com/store/account/subscriptions?package=com.disciplefy.bible_study_app',
+          )
+        : Uri.parse('https://apps.apple.com/account/subscriptions');
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAndroid
+                  ? 'Could not open Google Play. Search "Disciplefy" in Google Play > Subscriptions.'
+                  : 'Could not open App Store. Go to Settings > Apple ID > Subscriptions.',
+            ),
+            backgroundColor: AppTheme.warningColor,
+          ),
+        );
+      }
+    }
+  }
+
   void _showCancelDialog(Subscription subscription, bool immediate) {
     showDialog(
       context: context,
@@ -977,10 +1063,11 @@ class _SubscriptionManagementPageState
                   .tr(TranslationKeys.subscriptionCancelEndMessage)
                   .replaceAll(
                     '{date}',
-                    subscription.currentPeriodEnd != null
-                        ? DateFormat('MMM dd, yyyy')
-                            .format(subscription.currentPeriodEnd!)
-                        : '',
+                    DateFormat('MMM dd, yyyy').format(
+                      subscription.currentPeriodEnd ??
+                          subscription.nextBillingAt ??
+                          DateTime.now().add(const Duration(days: 30)),
+                    ),
                   ),
           style: AppFonts.inter(fontSize: 14),
         ),

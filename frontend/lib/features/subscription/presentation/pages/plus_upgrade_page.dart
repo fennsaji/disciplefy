@@ -42,7 +42,9 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    context.read<SubscriptionBloc>().add(const CheckSubscriptionEligibility());
+    context
+        .read<SubscriptionBloc>()
+        .add(const CheckSubscriptionEligibility(targetPlanCode: 'plus'));
     _loadPlanData();
   }
 

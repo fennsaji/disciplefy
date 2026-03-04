@@ -798,7 +798,9 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetSubscriptionHistory(sl()));
   sl.registerLazySingleton(() => GetInvoices(sl()));
 
-  sl.registerFactory(() => SubscriptionBloc(
+  // Singleton — all routes + main.dart lifecycle share one instance so only
+  // one restorePurchases() call and one IAP callback are active at a time.
+  sl.registerLazySingleton(() => SubscriptionBloc(
         createSubscription: sl(),
         cancelSubscription: sl(),
         resumeSubscription: sl(),

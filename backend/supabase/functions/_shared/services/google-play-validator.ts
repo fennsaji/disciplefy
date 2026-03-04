@@ -37,6 +37,21 @@ export async function validateGooglePlayReceipt(
 ): Promise<GooglePlayValidationResult> {
   console.log('[GOOGLE_PLAY] Validating receipt for product:', receipt.productId)
 
+  // USE_MOCK bypass for local/testing environments without service account credentials
+  if (Deno.env.get('USE_MOCK') === 'true') {
+    console.log('[GOOGLE_PLAY] USE_MOCK=true — skipping real API call, returning mock valid result')
+    return {
+      isValid: true,
+      transactionId: receipt.purchaseToken,
+      purchaseDate: new Date(),
+      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      isTrial: false,
+      isIntroOffer: false,
+      autoRenewing: true,
+      validationResponse: { mock: true, productId: receipt.productId }
+    }
+  }
+
   try {
     // Get Google Play configuration
     const config = await getIAPConfig(supabase, 'google_play', environment)
@@ -64,7 +79,7 @@ export async function validateGooglePlayReceipt(
 
       return {
         isValid: false,
-        transactionId: '',
+        transactionId: receipt.purchaseToken, // fallback — avoids empty unique constraint
         purchaseDate: new Date(),
         isTrial: false,
         isIntroOffer: false,
@@ -86,8 +101,8 @@ export async function validateGooglePlayReceipt(
                      subscriptionState === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD'
 
     // Extract dates
-    const startTime = lineItems[0]?.expiryTime?.seconds
-      ? new Date(parseInt(lineItems[0].expiryTime.seconds) * 1000)
+    const startTime = validationData.startTime?.seconds
+      ? new Date(parseInt(validationData.startTime.seconds) * 1000)
       : new Date()
 
     const expiryTime = lineItems[0]?.expiryTime?.seconds
@@ -99,8 +114,8 @@ export async function validateGooglePlayReceipt(
     const isTrial = offerDetails?.basePlanId?.includes('trial') || false
     const isIntroOffer = offerDetails?.offerType === 'INTRODUCTORY_OFFER' || false
 
-    // Auto-renewing status
-    const autoRenewing = validationData.canceledStateContext === null
+    // Auto-renewing status (== catches both null and undefined)
+    const autoRenewing = validationData.canceledStateContext == null
 
     console.log('[GOOGLE_PLAY] Validation result:', {
       isValid: isActive,
@@ -124,7 +139,7 @@ export async function validateGooglePlayReceipt(
 
     return {
       isValid: false,
-      transactionId: '',
+      transactionId: receipt.purchaseToken, // fallback — avoids empty unique constraint
       purchaseDate: new Date(),
       isTrial: false,
       isIntroOffer: false,
@@ -208,6 +223,11 @@ export async function acknowledgeGooglePlayPurchase(
   environment: 'sandbox' | 'production'
 ): Promise<boolean> {
   console.log('[GOOGLE_PLAY] Acknowledging purchase:', receipt.productId)
+
+  if (Deno.env.get('USE_MOCK') === 'true') {
+    console.log('[GOOGLE_PLAY] USE_MOCK=true — skipping acknowledgment API call')
+    return true
+  }
 
   try {
     const config = await getIAPConfig(supabase, 'google_play', environment)

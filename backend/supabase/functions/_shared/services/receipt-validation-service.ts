@@ -52,10 +52,10 @@ export async function validateAndProcessReceipt(
     validationResult = await validateAppleReceipt(supabase, appleReceipt, environment)
   }
 
-  // Step 2: Store receipt in database
+  // Step 2: Store receipt in database (upsert by transaction_id to handle retries)
   const { data: receiptRecord, error: receiptError } = await supabase
     .from('iap_receipts')
-    .insert({
+    .upsert({
       user_id: request.userId,
       provider: request.provider,
       receipt_data: request.receiptData,  // TODO: Encrypt
@@ -69,7 +69,7 @@ export async function validateAndProcessReceipt(
       is_trial: validationResult.isTrial,
       is_intro_offer: validationResult.isIntroOffer,
       environment
-    })
+    }, { onConflict: 'transaction_id' })
     .select()
     .single()
 
@@ -104,11 +104,21 @@ export async function validateAndProcessReceipt(
       ? validationResult.originalTransactionId
       : validationResult.transactionId
 
+    // Lookup plan_id for FK linkage to subscription_plans
+    const { data: planRow } = await supabase
+      .from('subscription_plans')
+      .select('id')
+      .eq('plan_code', request.planCode)
+      .maybeSingle()
+
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
       .insert({
         user_id: request.userId,
-        plan_type: request.planCode,
+        plan_id: planRow?.id ?? null,
+        plan_type: request.productId.includes('yearly')
+          ? `${request.planCode}_yearly`
+          : `${request.planCode}_monthly`,
         provider: request.provider,
         provider_subscription_id: validationResult.transactionId,
         status: 'active',
@@ -133,12 +143,14 @@ export async function validateAndProcessReceipt(
         .from('iap_receipts')
         .update({ subscription_id: subscriptionId })
         .eq('id', receiptRecord.id)
-    }
 
-    // Step 5: Acknowledge purchase (Google Play only)
-    if (request.provider === 'google_play') {
-      const receiptData: GooglePlayReceipt = JSON.parse(request.receiptData)
-      await acknowledgeGooglePlayPurchase(supabase, receiptData, environment)
+      // Step 5: Acknowledge purchase ONLY after successful subscription creation.
+      // If we acknowledge before the subscription exists, Google Play won't
+      // re-deliver the purchase and the user loses their entitlement.
+      if (request.provider === 'google_play') {
+        const receiptData: GooglePlayReceipt = JSON.parse(request.receiptData)
+        await acknowledgeGooglePlayPurchase(supabase, receiptData, environment)
+      }
     }
   }
 

@@ -10,6 +10,9 @@
  * - SUBSCRIPTION_CANCELED
  * - SUBSCRIPTION_EXPIRED
  * - SUBSCRIPTION_RECOVERED
+ * - SUBSCRIPTION_ON_HOLD
+ * - SUBSCRIPTION_IN_GRACE_PERIOD
+ * - SUBSCRIPTION_RESTARTED
  * - SUBSCRIPTION_PAUSED
  * - SUBSCRIPTION_PAUSE_SCHEDULE_CHANGED
  * - SUBSCRIPTION_REVOKED
@@ -304,5 +307,76 @@ async function processSubscriptionEvent(
         updated_at: new Date().toISOString()
       })
       .eq('id', receiptId)
+  }
+
+  // Handle account on hold (payment failed, access suspended — revoke access)
+  if (eventType === 'SUBSCRIPTION_ON_HOLD') {
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'paused',
+        metadata: { on_hold: true, on_hold_at: new Date().toISOString() },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+  }
+
+  // Handle purchase confirmed (idempotent — app flow already creates sub via create-subscription-v2)
+  if (eventType === 'SUBSCRIPTION_PURCHASED') {
+    if (subscriptionId) {
+      // Confirm active — idempotent update
+      await supabase
+        .from('subscriptions')
+        .update({
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionId)
+      console.log('[GOOGLE_PLAY_WEBHOOK] Purchase confirmed active:', subscriptionId)
+    } else {
+      // Webhook arrived before app — app flow will handle via create-subscription-v2
+      console.warn('[GOOGLE_PLAY_WEBHOOK] SUBSCRIPTION_PURCHASED: no subscription yet, app will process via create-subscription-v2')
+    }
+  }
+
+  // Handle grace period (payment failed, access temporarily maintained)
+  if (eventType === 'SUBSCRIPTION_IN_GRACE_PERIOD') {
+    await supabase
+      .from('subscriptions')
+      .update({
+        metadata: { in_grace_period: true, grace_period_started_at: new Date().toISOString() },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+  }
+
+  // Handle restart (user re-subscribed from on-hold or paused state)
+  if (eventType === 'SUBSCRIPTION_RESTARTED') {
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        cancel_at_cycle_end: false,
+        metadata: {},
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+  }
+
+  // Handle pause (user paused subscription, access will end at period end)
+  if (eventType === 'SUBSCRIPTION_PAUSED') {
+    await supabase
+      .from('subscriptions')
+      .update({
+        cancel_at_cycle_end: true,
+        metadata: { paused: true, paused_at: new Date().toISOString() },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+  }
+
+  // Handle pause schedule changed (log only, no access change)
+  if (eventType === 'SUBSCRIPTION_PAUSE_SCHEDULE_CHANGED') {
+    console.log('[GOOGLE_PLAY_WEBHOOK] Pause schedule changed for subscription:', subscriptionId)
   }
 }

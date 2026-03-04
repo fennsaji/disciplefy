@@ -162,7 +162,15 @@ class ClearSubscriptionError extends SubscriptionEvent {
 /// Verifies if user can create a new subscription
 /// (not already premium, no active subscription, etc.)
 class CheckSubscriptionEligibility extends SubscriptionEvent {
-  const CheckSubscriptionEligibility();
+  /// The plan the user wants to subscribe to (e.g. 'plus', 'premium').
+  /// When provided, upgrades to a higher tier are allowed even if the user
+  /// already has an active subscription at a lower tier.
+  final String? targetPlanCode;
+
+  const CheckSubscriptionEligibility({this.targetPlanCode});
+
+  @override
+  List<Object?> get props => [targetPlanCode];
 }
 
 /// Event to prefetch subscription data for performance

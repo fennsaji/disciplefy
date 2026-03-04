@@ -52,7 +52,10 @@ import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
 import 'core/services/android_hybrid_storage.dart';
+import 'core/services/iap_service.dart';
 import 'core/utils/logger.dart';
+import 'features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'features/subscription/presentation/bloc/subscription_event.dart';
 
 // ============================================================================
 // Firebase Configuration (Environment Variables)
@@ -234,6 +237,13 @@ void main() async {
     await sl<BibleBooksService>().initialize();
     if (kDebugMode) Logger.debug('✅ [MAIN] Bible books service completed');
 
+    // Initialize IAP service (mobile only - sets up Google Play / App Store purchase stream)
+    if (!kIsWeb) {
+      if (kDebugMode) Logger.debug('🛒 [MAIN] Initializing IAP service...');
+      await sl<IAPService>().initialize();
+      if (kDebugMode) Logger.debug('✅ [MAIN] IAP service completed');
+    }
+
     // Check app version requirements
     if (kDebugMode) Logger.debug('🔧 [MAIN] Checking app version...');
     await VersionChecker.checkVersion(sl<SystemConfigService>());
@@ -270,7 +280,8 @@ class DisciplefyBibleStudyApp extends StatefulWidget {
       _DisciplefyBibleStudyAppState();
 }
 
-class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
+class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
+    with WidgetsBindingObserver {
   late AuthBloc _authBloc;
   late AuthStateProvider _authStateProvider;
   AuthSessionValidator? _authSessionValidator;
@@ -282,9 +293,18 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
     super.initState();
 
     // Initialize auth components
-    _authBloc = sl<AuthBloc>()..add(const AuthInitializeRequested());
+    // Note: AuthBloc constructor already adds AuthInitializeRequested internally,
+    // so we do NOT add it again here to avoid a double-initialization that briefly
+    // emits AuthLoadingState (isAuthenticated=false) and causes the Settings screen
+    // to flash "Sign In" even for a logged-in user.
+    _authBloc = sl<AuthBloc>();
     _authStateProvider = sl<AuthStateProvider>();
     _authStateProvider.initialize(_authBloc);
+
+    // Register lifecycle observer for subscription refresh on resume (mobile only)
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addObserver(this);
+    }
 
     // Initialize auth session validator for Phase 3 monitoring (mobile only)
     if (!kIsWeb) {
@@ -376,7 +396,18 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      Logger.debug('[MAIN] App resumed — refreshing subscription status');
+      sl<SubscriptionBloc>().add(const RefreshSubscription());
+    }
+  }
+
+  @override
   void dispose() {
+    if (!kIsWeb) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     _authSessionValidator?.unregister();
     _notificationService?.dispose();
     _notificationServiceWeb?.dispose();

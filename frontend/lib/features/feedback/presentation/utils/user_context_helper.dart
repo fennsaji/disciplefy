@@ -11,17 +11,17 @@ class UserContextHelper {
   static Future<UserContextEntity> getCurrentUserContext() async {
     final user = _supabase.auth.currentUser;
 
-    if (user != null && !user.isAnonymous) {
+    if (user != null) {
       // Authenticated user
       return UserContextEntity.authenticated(userId: user.id);
     } else {
-      // Anonymous user - get session ID
+      // Unauthenticated - get session ID
       final sessionId = await _getSessionId();
       return UserContextEntity.anonymous(sessionId: sessionId);
     }
   }
 
-  /// Get session ID for anonymous users
+  /// Get session ID for unauthenticated users
   static Future<String> _getSessionId() async {
     try {
       // Validate token before getting auth headers

@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// Subscription status enum
 enum SubscriptionStatus {
+  trial, // free trial period, matches DB status = 'trial'
   created,
   authenticated,
   active,
@@ -13,6 +14,8 @@ enum SubscriptionStatus {
 
   String get displayName {
     switch (this) {
+      case SubscriptionStatus.trial:
+        return 'Trial';
       case SubscriptionStatus.created:
         return 'Created';
       case SubscriptionStatus.authenticated:
@@ -34,6 +37,8 @@ enum SubscriptionStatus {
 
   String get description {
     switch (this) {
+      case SubscriptionStatus.trial:
+        return 'Free trial — full access until trial period ends';
       case SubscriptionStatus.created:
         return 'Subscription created, awaiting payment authorization';
       case SubscriptionStatus.authenticated:
@@ -54,6 +59,7 @@ enum SubscriptionStatus {
   }
 
   bool get isActive =>
+      this == SubscriptionStatus.trial ||
       this == SubscriptionStatus.active ||
       this == SubscriptionStatus.authenticated ||
       this == SubscriptionStatus.pending_cancellation;
@@ -68,6 +74,10 @@ class Subscription extends Equatable {
   final String id;
   final String userId;
   final String razorpaySubscriptionId;
+
+  /// Payment provider used for this subscription: 'razorpay', 'google_play',
+  /// 'apple_appstore', 'trial', 'system', or 'free'.
+  final String provider;
   final SubscriptionStatus status;
   final String planType;
   final int amountPaise;
@@ -88,6 +98,7 @@ class Subscription extends Equatable {
     required this.id,
     required this.userId,
     required this.razorpaySubscriptionId,
+    this.provider = 'razorpay',
     required this.status,
     required this.planType,
     required this.amountPaise,
@@ -145,11 +156,19 @@ class Subscription extends Equatable {
   /// Check if subscription is unlimited (lifetime until cancelled)
   bool get isUnlimited => totalCount == null;
 
+  /// Whether this subscription was created through IAP (Google Play / App Store)
+  bool get isIAPSubscription =>
+      provider == 'google_play' || provider == 'apple_appstore';
+
+  /// Whether this subscription was created through Razorpay (web)
+  bool get isRazorpaySubscription => provider == 'razorpay';
+
   @override
   List<Object?> get props => [
         id,
         userId,
         razorpaySubscriptionId,
+        provider,
         status,
         planType,
         amountPaise,

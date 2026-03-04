@@ -34,12 +34,20 @@ class ClearUserDataUseCase {
 
   /// Clears all user data including auth session, secure storage, and local storage
   /// Orchestrates cleanup through repository abstractions maintaining Clean Architecture
+  ///
+  /// ORDER IS CRITICAL: local/secure storage must be cleared BEFORE the auth session.
+  /// Clearing the auth session calls Supabase signOut(), which fires the `signedOut`
+  /// event → GoRouter re-evaluates. If Hive still contains user_type at that point
+  /// the router guard sees is_authenticated=true and stays on the home screen.
+  /// Clearing Hive first ensures the router finds a clean state when it re-evaluates.
   Future<void> execute() async {
+    // Step 1: Clear local and secure storage (does not fire auth events)
     await Future.wait([
-      _clearAuthSession(),
       _clearSecureStorage(),
       _clearLocalStorage(),
     ]);
+    // Step 2: Clear auth session last — triggers signedOut event → router re-eval
+    await _clearAuthSession();
   }
 
   /// Clear authentication session through domain abstraction

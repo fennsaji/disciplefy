@@ -81,11 +81,6 @@ class AuthService {
   /// @returns `true` if sign-in succeeded, `false` otherwise.
   Future<bool> signInWithApple() async => _authService.signInWithApple();
 
-  /// Signs in anonymously using Supabase with custom backend session.
-  ///
-  /// @returns `true` if anonymous sign-in succeeded, `false` otherwise.
-  Future<bool> signInAnonymously() async => _authService.signInAnonymously();
-
   /// Signs up with email, password, and full name.
   ///
   /// Creates a new user account with email/password authentication.
@@ -126,7 +121,7 @@ class AuthService {
   /// Check if current user's email is verified.
   ///
   /// Returns true if the user has verified their email address.
-  /// For non-email auth users (Google, anonymous), returns true.
+  /// For non-email auth users (Google, Apple), returns true.
   bool get isEmailVerified => _authService.isEmailVerified;
 
   /// Resend email verification link.
@@ -148,11 +143,6 @@ class AuthService {
 
   /// Deletes the user account and all associated data permanently.
   Future<void> deleteAccount() async => _authService.deleteAccount();
-
-  /// Creates a mock User object for anonymous sessions.
-  ///
-  /// @returns A [User] instance with anonymous user data.
-  User createAnonymousUser() => _authService.createAnonymousUser();
 
   // ===== STORAGE FACADE METHODS =====
 
@@ -200,7 +190,7 @@ class AuthService {
       if (authState.event == AuthChangeEvent.signedIn) {
         // Check current user after sign in event
         final user = currentUser;
-        if (user != null && !user.isAnonymous) {
+        if (user != null) {
           // New OAuth user signed in - trigger profile sync
           Logger.debug(
               '🔄 [AUTH SERVICE] OAuth user signed in, triggering profile sync');
@@ -215,7 +205,7 @@ class AuthService {
     // Small delay to ensure initialization is complete
     await Future.delayed(const Duration(milliseconds: 500));
 
-    if (currentUser != null && !currentUser!.isAnonymous) {
+    if (currentUser != null) {
       if (kDebugMode) {
         Logger.debug(
             '🔄 [AUTH SERVICE] Found existing OAuth user, triggering profile sync');

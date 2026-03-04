@@ -41,18 +41,17 @@ class AuthValidator {
     if (supabaseUser != null) {
       return AuthStateValidationResult.authenticated(
         user: supabaseUser,
-        authType:
-            supabaseUser.isAnonymous ? AuthType.anonymous : AuthType.supabase,
+        authType: AuthType.supabase,
       );
     }
 
     // Check stored authentication
     try {
       final userType = await getUserType();
-      if (userType != null && (userType == 'guest' || userType == 'google')) {
+      if (userType != null && userType == 'google') {
         return AuthStateValidationResult.authenticated(
           user: null, // No Supabase user for stored sessions
-          authType: userType == 'guest' ? AuthType.anonymous : AuthType.google,
+          authType: AuthType.google,
         );
       }
     } catch (e) {
@@ -70,7 +69,7 @@ class AuthValidator {
   /// Ensures the stored user type is valid
   static bool isValidUserType(String? userType) {
     if (userType == null) return false;
-    return const ['guest', 'google', 'apple', 'email'].contains(userType);
+    return const ['google', 'apple', 'email'].contains(userType);
   }
 
   /// Validates email format
@@ -205,6 +204,5 @@ enum AuthStateStatus {
 enum AuthType {
   supabase,
   google,
-  anonymous,
   email,
 }

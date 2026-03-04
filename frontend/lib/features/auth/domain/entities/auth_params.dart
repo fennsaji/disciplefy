@@ -72,21 +72,6 @@ class AuthDataStorageParams {
         deviceId: deviceId,
       );
 
-  /// Create params for guest authentication
-  factory AuthDataStorageParams.guest({
-    required String accessToken,
-    required String userId,
-    DateTime? expiresAt,
-    String? deviceId,
-  }) =>
-      AuthDataStorageParams(
-        accessToken: accessToken,
-        userType: 'guest',
-        userId: userId,
-        expiresAt: expiresAt,
-        deviceId: deviceId,
-      );
-
   /// Create params for Apple authentication
   factory AuthDataStorageParams.apple({
     required String accessToken,

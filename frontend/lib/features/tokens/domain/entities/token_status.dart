@@ -36,13 +36,10 @@ enum UserPlan {
 
 /// Enum representing authentication types
 enum AuthenticationType {
-  anonymous,
   authenticated;
 
   String get displayName {
     switch (this) {
-      case AuthenticationType.anonymous:
-        return 'Anonymous';
       case AuthenticationType.authenticated:
         return 'Authenticated';
     }

@@ -8,6 +8,7 @@
     "npm:@supabase/realtime-js@2.95.3": "2.95.3",
     "npm:@supabase/storage-js@2.95.3": "2.95.3",
     "npm:@types/node@20": "20.19.33",
+    "npm:jose@*": "5.10.0",
     "npm:jose@5": "5.10.0",
     "npm:pdf-lib@1.17.1": "1.17.1",
     "npm:razorpay@*": "2.9.2_request@2.88.2",

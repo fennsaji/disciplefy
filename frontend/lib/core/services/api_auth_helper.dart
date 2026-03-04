@@ -12,7 +12,7 @@ import '../utils/logger.dart';
 /// Ensures consistent authentication across the application
 class ApiAuthHelper {
   static const String _anonymousSessionBoxName = 'app_settings';
-  static const String _sessionIdKey = 'anonymous_session_id';
+  static const String _sessionIdKey = 'unauthenticated_session_id';
   static const Uuid _uuid = Uuid();
 
   /// Completer to synchronize concurrent token refresh attempts
@@ -81,7 +81,7 @@ class ApiAuthHelper {
     }
   }
 
-  /// Get or create anonymous session ID for unauthenticated users
+  /// Get or create session ID for unauthenticated users
   /// Consistent with StudyRepositoryImpl session management
   static Future<String> _getOrCreateAnonymousSessionId() async {
     try {
@@ -95,10 +95,9 @@ class ApiAuthHelper {
       if (sessionId == null || sessionId.isEmpty) {
         sessionId = _uuid.v4();
         await box.put(_sessionIdKey, sessionId);
-        Logger.debug('🔐 [API] Created new anonymous session ID: $sessionId');
+        Logger.debug('🔐 [API] Created new session ID: $sessionId');
       } else {
-        Logger.debug(
-            '🔐 [API] Using existing anonymous session ID: $sessionId');
+        Logger.debug('🔐 [API] Using existing session ID: $sessionId');
       }
 
       return sessionId;
@@ -166,7 +165,6 @@ class ApiAuthHelper {
   }
 
   /// Check if user requires authentication for API calls
-  /// Anonymous users don't need token validation
   static bool requiresTokenValidation() {
     final session = Supabase.instance.client.auth.currentSession;
     // If there's any session data, we should validate the token
@@ -192,10 +190,10 @@ class ApiAuthHelper {
         if (!requiresTokenValidation()) {
           if (attempt > 1) {
             Logger.debug(
-                '🔐 [TOKEN_VALIDATION] Session became anonymous during retry (attempt $attempt/$maxRetries)');
+                '🔐 [TOKEN_VALIDATION] No session during retry (attempt $attempt/$maxRetries)');
           } else {
             Logger.debug(
-                '🔐 [TOKEN_VALIDATION] Anonymous user - skipping token validation');
+                '🔐 [TOKEN_VALIDATION] No session - skipping token validation');
           }
           return;
         }
@@ -372,7 +370,7 @@ class ApiAuthHelper {
       Logger.debug(
           '🔐 [DEBUG] Token expires: ${DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000)}');
     } else {
-      Logger.debug('🔐 [DEBUG] Anonymous user - no active session');
+      Logger.debug('🔐 [DEBUG] Unauthenticated - no active session');
     }
   }
 }

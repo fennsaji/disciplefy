@@ -19,6 +19,16 @@ class HttpService {
   /// Stream of authentication failure events
   static Stream<String> get authFailureStream => _authFailureController.stream;
 
+  /// Signal an authentication failure from any layer (e.g. repository 401s).
+  /// This triggers [ForceLogoutRequested] in AuthBloc, which clears Hive,
+  /// Supabase session, and all local storage via [ClearUserDataUseCase].
+  /// Prefer this over calling [Supabase.instance.client.auth.signOut()] directly.
+  static void signalAuthFailure(String reason) {
+    if (!_authFailureController.isClosed) {
+      _authFailureController.add(reason);
+    }
+  }
+
   HttpService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
 
