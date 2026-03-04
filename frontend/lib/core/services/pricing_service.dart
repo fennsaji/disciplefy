@@ -178,6 +178,23 @@ class PricingService {
     return planPrice.productId;
   }
 
+  /// Reverse lookup: find plan code from a product ID
+  ///
+  /// Used to recover plan code after app restart when [_pendingPurchasePlanCode]
+  /// is null but a re-delivered IAP purchase arrives.
+  String? getPlanCodeForProductId(String productId, {String? provider}) {
+    final selectedProvider = provider ?? _getDefaultProvider();
+    final providerPricing = pricing.getProvider(selectedProvider);
+    if (providerPricing == null) return null;
+
+    for (final entry in providerPricing.plans.entries) {
+      if (entry.value.productId == productId) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
   /// Get default provider based on platform
   String _getDefaultProvider() {
     if (kIsWeb) {

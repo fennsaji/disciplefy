@@ -505,7 +505,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           .from('subscriptions')
           .select()
           .eq('user_id', user.id)
-          .inFilter('status', ['active', 'authenticated', 'cancelled'])
+          .inFilter('status', ['active', 'authenticated', 'cancelled', 'trial'])
           .order('created_at', ascending: false)
           .limit(1)
           .maybeSingle();

@@ -168,15 +168,6 @@ class AuthenticationService {
               deviceId: deviceId,
             ),
           );
-        } else if (userType == 'guest' || user.isAnonymous) {
-          await _storageService.storeAuthData(
-            AuthDataStorageParams.guest(
-              accessToken: newSession.accessToken,
-              userId: user.id,
-              expiresAt: expiresAt,
-              deviceId: deviceId,
-            ),
-          );
         } else if (userType == 'apple') {
           await _storageService.storeAuthData(
             AuthDataStorageParams.apple(
@@ -327,8 +318,6 @@ class AuthenticationService {
       if (success && currentUser != null) {
         Logger.debug(
             '🔍 [DEBUG] Current user after session recovery: ${currentUser?.id}');
-        Logger.debug(
-            '🔍 [DEBUG] Current user isAnonymous: ${currentUser?.isAnonymous}');
 
         // SECURITY FIX: Extract session expiration and generate device fingerprint
         final session = _supabase.auth.currentSession!;
@@ -395,48 +384,6 @@ class AuthenticationService {
     }
 
     return success;
-  }
-
-  /// Sign in anonymously using Supabase + custom backend session
-  Future<bool> signInAnonymously() async {
-    try {
-      Logger.debug('🔍 [DEBUG] signInAnonymously called');
-      Logger.debug('🔍 [DEBUG] Stack trace: ${StackTrace.current}');
-
-      // Step 1: Create a proper Supabase anonymous user first
-      final response = await _supabase.auth.signInAnonymously();
-      final user = response.user;
-
-      if (user == null) {
-        throw const auth_exceptions.AuthenticationFailedException(
-            'Failed to create Supabase anonymous user');
-      }
-
-      Logger.debug('🔍 [DEBUG] Supabase anonymous user created: ${user.id}');
-      Logger.debug(
-          '🔍 [DEBUG] Anonymous user JWT token available: ${response.session?.accessToken != null}');
-
-      // SECURITY FIX: Extract session expiration and generate device fingerprint
-      final session = response.session!;
-      final expiresAt = _extractSessionExpiration(session);
-      final deviceId = await _generateDeviceFingerprint();
-
-      // Step 2: Store auth state properly - using JWT token, not session_id
-      await _storageService.storeAuthData(
-        AuthDataStorageParams.guest(
-          accessToken: session.accessToken, // ✅ Using actual JWT token
-          userId: user.id, // ✅ Using Supabase user ID
-          expiresAt: expiresAt, // ✅ SECURITY FIX: Track expiration
-          deviceId: deviceId, // ✅ SECURITY FIX: Bind to device
-        ),
-      );
-
-      Logger.debug('🔍 [DEBUG] Anonymous sign-in completed successfully');
-      return true;
-    } catch (e) {
-      Logger.debug('Anonymous Sign-In Error: $e');
-      rethrow;
-    }
   }
 
   /// Sign up with email, password, and full name
@@ -597,9 +544,6 @@ class AuthenticationService {
     final provider = user.appMetadata['provider'] as String?;
     if (provider == 'google') return true;
 
-    // Anonymous users don't need email verification
-    if (user.isAnonymous) return true;
-
     // Check email_confirmed_at for email auth users
     return user.emailConfirmedAt != null;
   }
@@ -753,28 +697,12 @@ class AuthenticationService {
     }
   }
 
-  /// Creates a mock User object for anonymous sessions
-  User createAnonymousUser() {
-    // Create a minimal User object for anonymous sessions
-    // This is needed because the AuthenticatedState expects a User object
-    return User(
-      id: 'anonymous_user',
-      appMetadata: const {},
-      userMetadata: const {'is_anonymous': true},
-      aud: 'authenticated',
-      createdAt: DateTime.now().toIso8601String(),
-      isAnonymous: true,
-    );
-  }
-
   /// Extract OAuth profile data from current user and sync to backend
   Future<void> _syncOAuthProfileData() async {
     if (kDebugMode) {
       Logger.debug('🔐 [PROFILE SYNC] 🚀 _syncOAuthProfileData() called');
       Logger.debug('🔐 [PROFILE SYNC] Current user: ${currentUser?.id}');
       Logger.debug('🔐 [PROFILE SYNC] User email: ${currentUser?.email}');
-      Logger.debug(
-          '🔐 [PROFILE SYNC] Is anonymous: ${currentUser?.isAnonymous}');
       Logger.debug(
           '🔐 [PROFILE SYNC] App metadata: ${currentUser?.appMetadata}');
       Logger.debug(
@@ -784,12 +712,6 @@ class AuthenticationService {
     if (currentUser == null) {
       Logger.warning(
           '🔐 [PROFILE SYNC] ⚠️ No current user, skipping profile sync');
-      return;
-    }
-
-    if (currentUser!.isAnonymous) {
-      Logger.debug(
-          '🔐 [PROFILE SYNC] ℹ️ User is anonymous, skipping OAuth profile sync');
       return;
     }
 

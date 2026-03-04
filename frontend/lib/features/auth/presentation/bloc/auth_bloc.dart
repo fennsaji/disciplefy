@@ -58,7 +58,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     on<AuthInitializeRequested>(_onAuthInitialize);
     on<GoogleSignInRequested>(_onGoogleSignIn);
     on<GoogleOAuthCallbackRequested>(_onGoogleOAuthCallback);
-    on<AnonymousSignInRequested>(_onAnonymousSignIn);
     on<SessionCheckRequested>(_onSessionCheck);
     on<SessionValidationRequested>(_onSessionValidation);
     on<SignOutRequested>(_onSignOut);
@@ -180,7 +179,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         emit(auth_states.AuthenticatedState(
           user: supabaseUser,
           profile: profile,
-          isAnonymous: supabaseUser.isAnonymous,
         ));
         return;
       }
@@ -196,42 +194,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         Logger.debug('   4. First app launch (no session exists)');
       }
 
-      // Check for anonymous session using async method with retry
-      final isStorageAuthenticated =
-          await _retryOperation(() => _authService.isAuthenticatedAsync());
-
-      if (isStorageAuthenticated) {
-        Logger.debug(
-            '🔐 [AUTH INIT] Storage indicates authentication - validating token...');
-
-        // Validate token before trusting storage
-        final isTokenValid = await _authService.isTokenValid();
-
-        if (!isTokenValid) {
-          Logger.warning(
-              '🔐 [AUTH INIT] ⚠️  Token invalid or expired - clearing stale data');
-
-          // Clear stale data and force re-authentication
-          await _clearUserDataUseCase.execute();
-          emit(const auth_states.UnauthenticatedState());
-          return;
-        }
-
-        Logger.debug(
-            '🔐 [AUTH INIT] ✅ Token valid - creating anonymous session');
-
-        // Create mock user for anonymous session
-        final user = _createAnonymousUser();
-
-        emit(auth_states.AuthenticatedState(
-          user: user,
-          isAnonymous: true,
-        ));
-      } else {
-        Logger.debug(
-            '🔐 [AUTH INIT] No valid session - user is unauthenticated');
-        emit(const auth_states.UnauthenticatedState());
-      }
+      Logger.debug('🔐 [AUTH INIT] No valid session - user is unauthenticated');
+      emit(const auth_states.UnauthenticatedState());
     } catch (e, stackTrace) {
       if (kDebugMode) {
         Logger.error(
@@ -282,7 +246,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
-            isAnonymous: false,
           ));
         } else {
           // Handle validation failure
@@ -341,9 +304,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           final user = validationResult.user!;
           if (kDebugMode) {
             Logger.debug(
-                '🔐 [AUTH BLOC] 👤 Retrieved user: ${user.id} (${user.email ?? "Anonymous"})');
-            Logger.debug(
-                '🔐 [AUTH BLOC] 👤 User isAnonymous: ${user.isAnonymous}');
+                '🔐 [AUTH BLOC] 👤 Retrieved user: ${user.id} (${user.email ?? user.id})');
           }
 
           // Load user profile data with retry and caching
@@ -359,7 +320,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
           emit(auth_states.AuthenticatedState(
             user: user,
-            isAnonymous: user.isAnonymous,
             profile: profile,
           ));
 
@@ -375,49 +335,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       },
       onError: (e) => emit(_mapExceptionToErrorState(e)),
       operationName: 'Google OAuth Callback',
-    );
-  }
-
-  /// Handles anonymous sign-in flow with error recovery
-  Future<void> _onAnonymousSignIn(
-    AnonymousSignInRequested event,
-    Emitter<auth_states.AuthState> emit,
-  ) async {
-    await _retryWithExponentialBackoff(
-      operation: () async {
-        emit(const auth_states.AuthLoadingState());
-
-        // Attempt anonymous sign-in with retry
-        final success =
-            await _retryOperation(() => _authService.signInAnonymously());
-
-        if (success) {
-          // Check authentication status using async method with retry
-          final isAuthenticated =
-              await _retryOperation(() => _authService.isAuthenticatedAsync());
-
-          if (isAuthenticated) {
-            // For anonymous users, create a mock user object since Supabase user is null
-            final user = _authService.currentUser ?? _createAnonymousUser();
-
-            // Invalidate router cache since auth status changed
-            RouterGuard.invalidateLanguageSelectionCache();
-
-            emit(auth_states.AuthenticatedState(
-              user: user,
-              isAnonymous: true,
-            ));
-          } else {
-            throw const auth_exceptions.AuthenticationFailedException(
-                'Anonymous sign-in failed');
-          }
-        } else {
-          throw const auth_exceptions.AuthenticationFailedException(
-              'Anonymous sign-in failed');
-        }
-      },
-      onError: (e) => emit(_mapExceptionToErrorState(e)),
-      operationName: 'Anonymous Sign-In',
     );
   }
 
@@ -437,16 +354,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         Logger.debug(
             '🔐 [AUTH BLOC] ✅ Valid session found: ${currentUser.email ?? currentUser.id}');
 
-        // Load user profile if not anonymous with caching
-        Map<String, dynamic>? profile;
-        if (!currentUser.isAnonymous) {
-          profile = await _getProfileWithCache(currentUser.id);
-        }
+        // Load user profile with caching
+        final profile = await _getProfileWithCache(currentUser.id);
 
         emit(auth_states.AuthenticatedState(
           user: currentUser,
           profile: profile,
-          isAnonymous: currentUser.isAnonymous,
         ));
       } else {
         Logger.error('🔐 [AUTH BLOC] ❌ No valid session found');
@@ -473,70 +386,52 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Only validate if currently authenticated
       if (currentState is auth_states.AuthenticatedState) {
         Logger.debug(
-            '🔍 [SESSION VALIDATION] Current user: ${currentState.isAnonymous ? "Anonymous" : currentState.user.email}');
+            '🔍 [SESSION VALIDATION] Current user: ${currentState.user.email}');
 
-        // For non-anonymous users, validate Supabase session and token
-        if (!currentState.isAnonymous) {
-          final currentUser = _authService.currentUser;
-          final currentSession = Supabase.instance.client.auth.currentSession;
+        final currentUser = _authService.currentUser;
+        final currentSession = Supabase.instance.client.auth.currentSession;
 
-          if (currentUser == null || currentSession == null) {
-            Logger.error(
-                '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found - clearing stale data');
+        if (currentUser == null || currentSession == null) {
+          Logger.error(
+              '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found - clearing stale data');
 
-            // Clear stale data and force re-authentication
-            await _clearUserDataUseCase.execute();
-            emit(const auth_states.UnauthenticatedState());
-            return;
+          // Clear stale data and force re-authentication
+          await _clearUserDataUseCase.execute();
+          emit(const auth_states.UnauthenticatedState());
+          return;
+        }
+
+        // Validate token expiration and attempt refresh if needed
+        // ANDROID FIX: Use ensureTokenValid() to attempt refresh instead of just checking
+        final isTokenValid = await _authService.ensureTokenValid();
+        if (!isTokenValid) {
+          Logger.error(
+              '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
+          add(const TokenRefreshFailed(
+              reason:
+                  'Token expired and refresh failed during session validation'));
+          return;
+        }
+
+        Logger.info(
+            '🔍 [SESSION VALIDATION] ✅ Supabase session and token are valid');
+
+        // Check if email verification status changed (in case user verified via link)
+        // Only check for email auth users who haven't verified yet
+        if (currentState.needsEmailVerification) {
+          final isNowVerified =
+              await _authService.syncEmailVerificationStatus();
+          if (isNowVerified) {
+            // Email was just verified - fetch fresh profile (bypass cache)
+            Logger.debug(
+                '🔍 [SESSION VALIDATION] 📧 Email verified! Refreshing profile...');
+            final profile =
+                await _userProfileService.getUserProfileAsMap(currentUser.id);
+            emit(auth_states.AuthenticatedState(
+              user: currentUser,
+              profile: profile,
+            ));
           }
-
-          // Validate token expiration and attempt refresh if needed
-          // ANDROID FIX: Use ensureTokenValid() to attempt refresh instead of just checking
-          final isTokenValid = await _authService.ensureTokenValid();
-          if (!isTokenValid) {
-            Logger.error(
-                '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
-            add(const TokenRefreshFailed(
-                reason:
-                    'Token expired and refresh failed during session validation'));
-            return;
-          }
-
-          Logger.info(
-              '🔍 [SESSION VALIDATION] ✅ Supabase session and token are valid');
-
-          // Check if email verification status changed (in case user verified via link)
-          // Only check for email auth users who haven't verified yet
-          if (currentState.needsEmailVerification) {
-            final isNowVerified =
-                await _authService.syncEmailVerificationStatus();
-            if (isNowVerified) {
-              // Email was just verified - fetch fresh profile (bypass cache)
-              Logger.debug(
-                  '🔍 [SESSION VALIDATION] 📧 Email verified! Refreshing profile...');
-              final profile =
-                  await _userProfileService.getUserProfileAsMap(currentUser.id);
-              emit(auth_states.AuthenticatedState(
-                user: currentUser,
-                profile: profile,
-                isAnonymous: false,
-              ));
-            }
-          }
-        } else {
-          // For anonymous users, validate storage consistency
-          final isStorageAuthenticated =
-              await _authService.isAuthenticatedAsync();
-          if (!isStorageAuthenticated) {
-            Logger.error(
-                '🔍 [SESSION VALIDATION] ❌ Anonymous session storage inconsistent - clearing');
-            await _clearUserDataUseCase.execute();
-            emit(const auth_states.UnauthenticatedState());
-            return;
-          }
-
-          Logger.info(
-              '🔍 [SESSION VALIDATION] ✅ Anonymous session storage is valid');
         }
       } else {
         Logger.debug(
@@ -599,10 +494,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         final user = authState.session?.user;
         if (user != null) {
           Logger.debug(
-              '🔐 [AUTH BLOC] User signed in - Phone: ${user.phone != null}, Anonymous: ${user.isAnonymous}');
+              '🔐 [AUTH BLOC] User signed in - Phone: ${user.phone != null}');
 
           // For phone authentication, clear language selection cache for new users
-          if (user.phone != null && !user.isAnonymous) {
+          if (user.phone != null) {
             try {
               final languageService = sl<LanguagePreferenceService>();
               languageService.invalidateLanguageCache();
@@ -615,37 +510,20 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             }
           }
 
-          // Load user profile if authenticated (not anonymous) with caching
-          final profile =
-              user.isAnonymous ? null : await _getProfileWithCache(user.id);
+          // Load user profile with caching
+          final profile = await _getProfileWithCache(user.id);
 
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
-            isAnonymous: user.isAnonymous,
           ));
         }
       } else if (authState.event == AuthChangeEvent.signedOut) {
-        // Check if we have an anonymous session before signing out completely
-        final isAuthenticated = await _authService.isAuthenticatedAsync();
-        if (isAuthenticated) {
-          // Keep anonymous session active
-          final user = _createAnonymousUser();
-          // Invalidate router cache since auth status changed
-          RouterGuard.invalidateLanguageSelectionCache();
-
-          emit(auth_states.AuthenticatedState(
-            user: user,
-            isAnonymous: true,
-          ));
-        } else {
-          emit(const auth_states.UnauthenticatedState());
-        }
+        emit(const auth_states.UnauthenticatedState());
       }
     } catch (e) {
       Logger.debug('Auth state change error: $e');
       // For flow state errors and similar, just ignore and don't change state
-      // This prevents Supabase OAuth recovery errors from affecting anonymous sessions
       if (e.toString().contains('flow_state_not_found') ||
           e.toString().contains('invalid flow state')) {
         Logger.error(
@@ -732,7 +610,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
-            isAnonymous: false,
           ));
         } else {
           // Handle validation failure
@@ -790,7 +667,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
-            isAnonymous: false,
           ));
         } else {
           // Handle validation failure
@@ -874,7 +750,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       emit(auth_states.VerificationEmailSentState(
         user: user,
         profile: profile,
-        isAnonymous: false,
       ));
     } catch (e) {
       Logger.error('📧 [AUTH BLOC] Resend verification email error: $e');
@@ -914,7 +789,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         emit(auth_states.AuthenticatedState(
           user: user,
           profile: profile,
-          isAnonymous: user.isAnonymous,
         ));
       } else {
         Logger.error('📧 [AUTH BLOC] Profile not found during refresh');
@@ -1142,27 +1016,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       emit(auth_states.AuthenticatedState(
         user: user,
         profile: profile,
-        isAnonymous: user.isAnonymous,
       ));
     } catch (e) {
       Logger.debug('Profile update error: $e');
       emit(const auth_states.AuthErrorState(
           message: 'Failed to update profile'));
     }
-  }
-
-  /// Creates a mock User object for anonymous sessions
-  User _createAnonymousUser() {
-    // Create a minimal User object for anonymous sessions
-    // This is needed because the AuthenticatedState expects a User object
-    return User(
-      id: 'anonymous_user',
-      appMetadata: const {},
-      userMetadata: const {'is_anonymous': true},
-      aud: 'authenticated',
-      createdAt: DateTime.now().toIso8601String(),
-      isAnonymous: true,
-    );
   }
 
   /// Efficiently get user profile with caching support
@@ -1333,27 +1192,22 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         Timer.periodic(const Duration(minutes: 10), (_) async {
       try {
         if (state is auth_states.AuthenticatedState) {
-          final authState = state as auth_states.AuthenticatedState;
+          Logger.debug(
+              '🔄 [TOKEN VALIDATION] Periodic validation and refresh check...');
 
-          // Only validate tokens for non-anonymous users (they have Supabase sessions)
-          if (!authState.isAnonymous) {
+          // CRITICAL FIX: Use ensureTokenValid instead of just checking
+          // This will automatically refresh the token if it's expiring soon
+          final isValid = await _authService.ensureTokenValid();
+
+          if (!isValid) {
+            Logger.error(
+                '🔄 [TOKEN VALIDATION] ❌ Token refresh failed - forcing logout');
+            add(const TokenRefreshFailed(
+                reason:
+                    'Token expired and refresh failed during periodic validation'));
+          } else {
             Logger.debug(
-                '🔄 [TOKEN VALIDATION] Periodic validation and refresh check...');
-
-            // CRITICAL FIX: Use ensureTokenValid instead of just checking
-            // This will automatically refresh the token if it's expiring soon
-            final isValid = await _authService.ensureTokenValid();
-
-            if (!isValid) {
-              Logger.error(
-                  '🔄 [TOKEN VALIDATION] ❌ Token refresh failed - forcing logout');
-              add(const TokenRefreshFailed(
-                  reason:
-                      'Token expired and refresh failed during periodic validation'));
-            } else {
-              Logger.debug(
-                  '🔄 [TOKEN VALIDATION] ✅ Token valid (refreshed if needed)');
-            }
+                '🔄 [TOKEN VALIDATION] ✅ Token valid (refreshed if needed)');
           }
         }
       } catch (e) {
@@ -1382,8 +1236,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           '🔄 [AUTH TRANSITION] ${from.runtimeType} → ${to.runtimeType}');
 
       if (to is auth_states.AuthenticatedState) {
-        final userInfo =
-            to.isAnonymous ? 'Anonymous' : (to.user.email ?? to.user.id);
+        final userInfo = to.user.email ?? to.user.id;
         Logger.debug('🔄 [AUTH TRANSITION]   User: $userInfo');
 
         try {

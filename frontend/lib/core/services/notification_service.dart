@@ -180,7 +180,7 @@ class NotificationService {
   Future<void> _initializeLocalNotifications() async {
     // Android settings
     const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_notification');
 
     // iOS settings
     const iosSettings = DarwinInitializationSettings(
@@ -319,23 +319,11 @@ class NotificationService {
     }
 
     try {
-      // Check if user is authenticated and not anonymous
+      // Check if user is authenticated
       final currentUser = _supabaseClient.auth.currentUser;
       if (currentUser == null) {
         Logger.debug(
             '[NotificationService] User not authenticated, skipping registration');
-        return;
-      }
-
-      // Skip registration for anonymous/guest users
-      final isAnonymous = currentUser.isAnonymous;
-      if (isAnonymous) {
-        if (kDebugMode) {
-          Logger.warning(
-              '[NotificationService] ⚠️  User is anonymous (guest), skipping notification registration');
-          Logger.debug(
-              '[NotificationService] Push notifications are only available for authenticated users');
-        }
         return;
       }
 
@@ -478,6 +466,7 @@ class NotificationService {
       channelDescription: channel.description,
       importance: Importance.high,
       priority: Priority.high,
+      icon: '@drawable/ic_notification',
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -759,6 +748,7 @@ class NotificationService {
       channelDescription: 'Daily verse and study topic notifications',
       importance: Importance.high,
       priority: Priority.high,
+      icon: '@drawable/ic_notification',
     );
 
     const iosDetails = DarwinNotificationDetails(

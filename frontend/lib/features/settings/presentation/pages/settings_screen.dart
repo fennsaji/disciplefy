@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/app_fonts.dart';
@@ -35,7 +36,7 @@ import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Settings Screen with proper AuthBloc integration
-/// Handles both authenticated and anonymous users
+/// Handles both authenticated and unauthenticated users
 /// Features proper logout logic following SOLID principles
 /// Updated: Uses global SettingsBloc to avoid recreation on theme changes
 class SettingsScreen extends StatelessWidget {
@@ -102,8 +103,13 @@ class _SettingsScreenContent extends StatelessWidget {
           body: BlocListener<AuthBloc, auth_states.AuthState>(
             listener: (context, authState) {
               if (authState is auth_states.UnauthenticatedState) {
-                // Navigate to login screen after successful logout
-                context.go('/login');
+                // Only navigate to login once the Supabase session is actually
+                // cleared. If currentUser is still non-null, the bloc is in a
+                // transient state (e.g. a second AuthInitializeRequested is
+                // mid-flight) — wait for the real signOut to complete.
+                if (Supabase.instance.client.auth.currentUser == null) {
+                  context.go('/login');
+                }
               } else if (authState is auth_states.AuthErrorState) {
                 // Show error message
                 _showSnackBar(
@@ -151,7 +157,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         _buildNotificationSection(context, state),
                         const SizedBox(height: 24),
 
-                        // Personalization Section (only for authenticated non-anonymous users)
+                        // Personalization Section (only for authenticated users)
                         _buildPersonalizationSection(context),
 
                         // Help & Support Section
@@ -198,7 +204,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   title: context.tr(TranslationKeys.settingsAccount),
                   children: [
                     _buildUserProfileTile(context, authProvider),
-                    if (!authProvider.isAnonymous) ...[
+                    ...[
                       _buildDivider(),
                       // My Progress - gamification stats dashboard
                       LockedFeatureWrapper(
@@ -300,8 +306,8 @@ class _SettingsScreenContent extends StatelessWidget {
       BuildContext context, AuthStateProvider authProvider) {
     final profilePictureUrl = authProvider.profilePictureUrl;
 
-    // Show network image if available and user is not anonymous
-    if (profilePictureUrl != null && !authProvider.isAnonymous) {
+    // Show network image if available
+    if (profilePictureUrl != null) {
       return CircleAvatar(
         radius: 25,
         backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -341,12 +347,12 @@ class _SettingsScreenContent extends StatelessWidget {
       );
     }
 
-    // Fallback to icon (anonymous users or no profile picture)
+    // Fallback to icon (no profile picture available)
     return CircleAvatar(
       radius: 25,
       backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
       child: Icon(
-        authProvider.isAnonymous ? Icons.person_outline : Icons.person,
+        Icons.person,
         size: 25,
         color: Theme.of(context).colorScheme.primary,
       ),
@@ -380,10 +386,8 @@ class _SettingsScreenContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    authProvider.isAnonymous
-                        ? context.tr(TranslationKeys.settingsSignInToSync)
-                        : authProvider.userEmail ??
-                            context.tr(TranslationKeys.settingsNoEmail),
+                    authProvider.userEmail ??
+                        context.tr(TranslationKeys.settingsNoEmail),
                     style: AppFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)
@@ -395,20 +399,6 @@ class _SettingsScreenContent extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Sign In Button for Anonymous Users
-            if (authProvider.isAnonymous)
-              TextButton(
-                onPressed: () => context.go('/login'),
-                child: Text(
-                  context.tr(TranslationKeys.settingsSignIn),
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
           ],
         ),
       );
@@ -500,8 +490,8 @@ class _SettingsScreenContent extends StatelessWidget {
         builder: (context, _) {
           final authProvider = sl<AuthStateProvider>();
 
-          // Only show for authenticated non-anonymous users
-          if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
+          // Only show for authenticated users
+          if (!authProvider.isAuthenticated) {
             return const SizedBox.shrink();
           }
 
@@ -748,9 +738,8 @@ class _SettingsScreenContent extends StatelessWidget {
                   context: context,
                   icon: Icons.logout_outlined,
                   title: context.tr(TranslationKeys.settingsSignOut),
-                  subtitle: authProvider.isAnonymous
-                      ? context.tr(TranslationKeys.settingsClearGuestSession)
-                      : context.tr(TranslationKeys.settingsSignOutOfAccount),
+                  subtitle:
+                      context.tr(TranslationKeys.settingsSignOutOfAccount),
                   trailing: Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
@@ -759,8 +748,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         .onSurface
                         .withOpacity(0.6),
                   ),
-                  onTap: () =>
-                      _showLogoutDialog(context, authProvider.isAnonymous),
+                  onTap: () => _showLogoutDialog(context),
                   iconColor: Theme.of(context).colorScheme.error,
                 ),
               ],
@@ -965,7 +953,7 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// Logout confirmation dialog with AuthBloc integration
-  void _showLogoutDialog(BuildContext context, bool isAnonymous) {
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -975,9 +963,7 @@ class _SettingsScreenContent extends StatelessWidget {
         elevation: 8,
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
-          isAnonymous
-              ? context.tr(TranslationKeys.settingsClearSession)
-              : context.tr(TranslationKeys.settingsSignOutTitle),
+          context.tr(TranslationKeys.settingsSignOutTitle),
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -985,9 +971,7 @@ class _SettingsScreenContent extends StatelessWidget {
           ),
         ),
         content: Text(
-          isAnonymous
-              ? context.tr(TranslationKeys.settingsClearSessionMessage)
-              : context.tr(TranslationKeys.settingsSignOutMessage),
+          context.tr(TranslationKeys.settingsSignOutMessage),
           style: AppFonts.inter(
             fontSize: 16,
             color: Theme.of(context).colorScheme.onSurface,
@@ -1031,9 +1015,7 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             child: Text(
-              isAnonymous
-                  ? context.tr(TranslationKeys.settingsClear)
-                  : context.tr(TranslationKeys.settingsSignOut),
+              context.tr(TranslationKeys.settingsSignOut),
               style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

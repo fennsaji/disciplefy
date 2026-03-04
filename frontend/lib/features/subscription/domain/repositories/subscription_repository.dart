@@ -133,14 +133,14 @@ class StartPremiumTrialResult {
 /// Result from creating subscription via V2 API
 class CreateSubscriptionV2Result {
   final bool success;
-  final String subscriptionId;
+  final String? subscriptionId;
   final String providerSubscriptionId;
   final String? authorizationUrl;
   final String status;
 
   const CreateSubscriptionV2Result({
     required this.success,
-    required this.subscriptionId,
+    this.subscriptionId,
     required this.providerSubscriptionId,
     this.authorizationUrl,
     required this.status,

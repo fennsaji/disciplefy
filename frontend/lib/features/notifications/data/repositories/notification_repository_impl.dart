@@ -29,8 +29,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // Check if user is authenticated
       final currentUser = supabaseClient.auth.currentUser;
 
-      // For anonymous users, load preferences from SharedPreferences
-      if (currentUser == null || currentUser.isAnonymous) {
+      // For unauthenticated users, load preferences from SharedPreferences
+      if (currentUser == null) {
         final prefs = await SharedPreferences.getInstance();
         final dailyVerseEnabled =
             prefs.getBool('notification_pref_daily_verse_enabled') ?? false;
@@ -188,8 +188,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // Check if user is authenticated
       final currentUser = supabaseClient.auth.currentUser;
 
-      // For anonymous users, save preferences to SharedPreferences
-      if (currentUser == null || currentUser.isAnonymous) {
+      // For unauthenticated users, save preferences to SharedPreferences
+      if (currentUser == null) {
         final prefs = await SharedPreferences.getInstance();
 
         // Load current preferences

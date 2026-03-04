@@ -70,13 +70,11 @@ class LanguagePreferenceService {
 
   /// Get the selected language preference with fallback logic
   /// For authenticated users, checks database first, then local storage, then cache
-  /// For anonymous users, checks local storage, then cache
   /// Uses in-memory cache to prevent language loss during temporary API failures
   Future<AppLanguage> getSelectedLanguage() async {
     try {
-      // For authenticated non-anonymous users, check database first
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      // For authenticated users, check database first
+      if (_authStateProvider.isAuthenticated) {
         final dbLanguageResult =
             await _userProfileService.getLanguagePreference();
 
@@ -99,7 +97,7 @@ class LanguagePreferenceService {
         }
       }
 
-      // Fallback to local storage (for anonymous users or DB failure)
+      // Fallback to local storage (for DB failure or unauthenticated state)
       final languageCode = _prefs.getString(_languagePreferenceKey);
       if (languageCode != null) {
         final language = AppLanguage.fromCode(languageCode);
@@ -137,7 +135,6 @@ class LanguagePreferenceService {
 
   /// Save language preference to both local storage and database
   /// For authenticated users, saves to database first, then local storage
-  /// For anonymous users, saves to local storage only
   /// Notifies listeners of the language change
   /// Invalidates profile cache to ensure fresh data is fetched
   Future<void> saveLanguagePreference(AppLanguage language) async {
@@ -150,19 +147,25 @@ class LanguagePreferenceService {
       Logger.debug(
           '💾 [LANGUAGE_SERVICE] Language cached: ${language.displayName}');
 
-      // For authenticated non-anonymous users, also save to database
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
-        final currentUserId = _authStateProvider.userId;
+      // Always mark completion locally for ALL users (auth state is irrelevant
+      // for onboarding navigation). DB sync is best-effort below.
+      final currentUserId = _authStateProvider.userId;
+      _cacheLanguageCompletion(currentUserId, true);
+      await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+      RouterGuard.markLanguageSelectionCompleted();
+      Logger.debug(
+          '✅ [LANGUAGE_SERVICE] Language selection marked completed locally');
 
-        // FIX: Update database FIRST, then invalidate caches
+      // For authenticated users, also save to database
+      if (_authStateProvider.isAuthenticated) {
+        // Update database; local completion is already marked above.
         final updateResult =
             await _userProfileService.updateLanguagePreference(language);
 
         final dbUpdateSuccessful = updateResult.fold(
           (failure) {
-            Logger.debug(
-                'Failed to update language preference in database: ${failure.message}');
+            Logger.warning(
+                '⚠️ [LANGUAGE_SERVICE] DB update failed - marked locally, will sync on next login: ${failure.message}');
             return false;
           },
           (profile) {
@@ -172,38 +175,14 @@ class LanguagePreferenceService {
           },
         );
 
-        // FIX: Cache the completion state BEFORE invalidating other caches
-        // This prevents race condition where router guard checks before DB update completes
         if (dbUpdateSuccessful) {
-          _cacheLanguageCompletion(currentUserId, true);
-          Logger.debug(
-              '✅ [LANGUAGE_SERVICE] Language completion cached BEFORE invalidation');
-
-          // Mark language selection as completed after successful DB save
-          await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-          Logger.debug(
-              '✅ [LANGUAGE_SERVICE] Marked language selection completed after DB save');
-
-          // FIX: Notify router guard to update its session cache immediately
-          RouterGuard.markLanguageSelectionCompleted();
-
-          // Now invalidate other caches after successful DB update
+          // Invalidate profile/language caches only after a successful DB write
+          // so that the next read fetches the updated value.
           _authStateProvider.invalidateProfileCache();
           _cacheCoordinator.invalidateLanguageCaches();
           Logger.debug(
               '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
-        } else {
-          Logger.error(
-              '⚠️ [LANGUAGE_SERVICE] DB update failed - NOT marking language selection as completed');
         }
-      } else {
-        // For anonymous users, mark completion immediately after local storage save
-        await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-        Logger.debug(
-            '✅ [LANGUAGE_SERVICE] Marked language selection completed for anonymous user');
-
-        // FIX: Notify router guard to update its session cache immediately
-        RouterGuard.markLanguageSelectionCompleted();
       }
 
       // Reset study content language to default when app language changes
@@ -223,15 +202,13 @@ class LanguagePreferenceService {
 
   /// Check if user has completed initial language selection
   /// For authenticated users, checks if language preference exists in database
-  /// For anonymous users, checks local storage completion flag
   /// Uses intelligent caching to prevent excessive API calls
   Future<bool> hasCompletedLanguageSelection() async {
     try {
       final currentUserId = _authStateProvider.userId;
 
-      // For authenticated non-anonymous users, check if they have a language preference in DB
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      // For authenticated users, check if they have a language preference in DB
+      if (_authStateProvider.isAuthenticated) {
         // Check cache first - avoid API calls if we have fresh data for the same user
         if (_isCacheFresh() &&
             _cachedUserId == currentUserId &&
@@ -308,11 +285,11 @@ class LanguagePreferenceService {
         return hasLanguage;
       }
 
-      // For anonymous users, check local storage completion flag
+      // Unauthenticated: check local storage completion flag
       final isCompleted =
           _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
       Logger.debug(
-          '🔍 [LANGUAGE_SELECTION] Anonymous user completion status: $isCompleted');
+          '🔍 [LANGUAGE_SELECTION] Unauthenticated user completion status: $isCompleted');
       return isCompleted;
     } catch (e) {
       Logger.debug('Error checking language selection completion: $e');
@@ -344,12 +321,10 @@ class LanguagePreferenceService {
   }
 
   /// Sync local preferences with database profile for authenticated users
-  /// This is useful when a user upgrades from anonymous to authenticated
   /// Enhanced to use cached profile data to avoid excessive API calls
   Future<void> syncWithProfile() async {
     try {
-      if (!_authStateProvider.isAuthenticated ||
-          _authStateProvider.isAnonymous) {
+      if (!_authStateProvider.isAuthenticated) {
         return;
       }
 
@@ -475,8 +450,7 @@ class LanguagePreferenceService {
           '💾 [PREFERENCE_SERVICE] Study mode preference saved locally: ${mode.displayName}');
 
       // For authenticated users, also save to database
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      if (_authStateProvider.isAuthenticated) {
         final updateResult =
             await _userProfileService.updateStudyModePreference(mode.value);
 
@@ -517,8 +491,7 @@ class LanguagePreferenceService {
           '💾 [PREFERENCE_SERVICE] Study mode preference saved locally: $modeValue');
 
       // For authenticated users, also save to database
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      if (_authStateProvider.isAuthenticated) {
         final updateResult =
             await _userProfileService.updateStudyModePreference(modeValue);
 
@@ -569,8 +542,7 @@ class LanguagePreferenceService {
           '💾 [PREFERENCE_SERVICE] Study mode preference cleared locally');
 
       // For authenticated users, also clear database value
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      if (_authStateProvider.isAuthenticated) {
         final updateResult =
             await _userProfileService.updateStudyModePreference(null);
 
@@ -603,9 +575,6 @@ class LanguagePreferenceService {
           Logger.warning(
               '⚠️ [PREFERENCE_SERVICE] Study mode cleared locally but database sync failed');
         }
-      } else {
-        Logger.info(
-            '✅ [PREFERENCE_SERVICE] Study mode preference cleared (local only)');
       }
     } catch (e) {
       Logger.error(
@@ -621,8 +590,7 @@ class LanguagePreferenceService {
   Future<String?> getStudyModePreferenceRaw() async {
     try {
       // For authenticated users, check database first
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      if (_authStateProvider.isAuthenticated) {
         final profile = _authStateProvider.userProfile;
         final dbMode = profile?['default_study_mode'] as String?;
 
@@ -641,7 +609,7 @@ class LanguagePreferenceService {
         }
       }
 
-      // Fallback to local storage (only for anonymous users)
+      // Fallback to local storage (unauthenticated state)
       final modeString = _prefs.getString(_studyModePreferenceKey);
       if (modeString != null) {
         Logger.info(
@@ -660,8 +628,7 @@ class LanguagePreferenceService {
   Future<StudyMode?> getStudyModePreference() async {
     try {
       // For authenticated users, check database first
-      if (_authStateProvider.isAuthenticated &&
-          !_authStateProvider.isAnonymous) {
+      if (_authStateProvider.isAuthenticated) {
         final dbModeResult = await _userProfileService.getStudyModePreference();
 
         return dbModeResult.fold(
@@ -702,7 +669,7 @@ class LanguagePreferenceService {
         );
       }
 
-      // Fallback to local storage (only for anonymous users)
+      // Fallback to local storage (unauthenticated state)
       final modeString = _prefs.getString(_studyModePreferenceKey);
       if (modeString != null) {
         final mode = studyModeFromString(modeString);

@@ -56,6 +56,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   String? _pendingPurchasePlanCode;
   String? _pendingPurchasePromoCode;
 
+  // Auto-restore: attempt once per session when backend reports no active subscription
+  bool _hasAttemptedAutoRestore = false;
+
+  // Deduplication: prevent the same purchase token being processed more than once
+  // concurrently (can happen when multiple BLoC instances call restorePurchases()).
+  final Set<String> _processingPurchaseTokens = {};
+
   static const Duration _cacheValidityDuration = Duration(minutes: 10);
   static const Duration _autoRefreshInterval = Duration(minutes: 15);
 
@@ -264,6 +271,20 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           activeSubscription: subscription,
           lastUpdated: DateTime.now(),
         ));
+
+        // Auto-restore: if backend reports no active subscription on mobile,
+        // attempt to restore IAP purchases once per session. This heals the
+        // case where a purchase was acknowledged but the backend call failed
+        // (e.g. 500 error), leaving Google Play and App Store unaware the
+        // backend subscription was never created.
+        if (subscription == null &&
+            _iapService != null &&
+            !_hasAttemptedAutoRestore) {
+          _hasAttemptedAutoRestore = true;
+          Logger.debug(
+              '🔄 [BLOC] No active subscription — auto-restoring IAP purchases');
+          _iapService!.restorePurchases();
+        }
       },
     );
   }
@@ -310,20 +331,64 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       },
       (subscription) {
         if (subscription != null && subscription.isActive) {
-          // User already has active subscription
+          final currentTier = _planTier(subscription.planType);
+          final targetTier = _planTier(event.targetPlanCode ?? '');
+
+          // Allow upgrade to a strictly higher tier
+          if (targetTier > currentTier) {
+            emit(const SubscriptionEligibilityChecked(canSubscribe: true));
+            return;
+          }
+
+          // Same tier — block with provider-aware message
+          final currentProviderName =
+              _providerDisplayName(subscription.provider);
+          final reason = subscription.isIAPSubscription
+              ? 'You already have an active subscription via $currentProviderName'
+              : subscription.isRazorpaySubscription
+                  ? 'You already have an active subscription via $currentProviderName'
+                  : 'You already have an active subscription';
           emit(SubscriptionEligibilityChecked(
             canSubscribe: false,
-            reason: 'You already have an active premium subscription',
+            reason: reason,
             existingSubscription: subscription,
           ));
         } else {
           // User can subscribe
-          emit(const SubscriptionEligibilityChecked(
-            canSubscribe: true,
-          ));
+          emit(const SubscriptionEligibilityChecked(canSubscribe: true));
         }
       },
     );
+  }
+
+  /// Map plan code → tier number for upgrade comparisons.
+  /// free=0, standard=1, plus=2, premium=3
+  int _planTier(String planCode) {
+    final code = planCode.toLowerCase().split('_').first;
+    switch (code) {
+      case 'premium':
+        return 3;
+      case 'plus':
+        return 2;
+      case 'standard':
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  /// Human-readable name for a provider string.
+  String _providerDisplayName(String provider) {
+    switch (provider) {
+      case 'google_play':
+        return 'Google Play';
+      case 'apple_appstore':
+        return 'App Store';
+      case 'razorpay':
+        return 'Razorpay';
+      default:
+        return provider;
+    }
   }
 
   /// Handles prefetching subscription data
@@ -667,7 +732,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         // For ₹0 plans, status should be 'active' and no authorization URL
         final createResult = CreateSubscriptionResult(
           success: v2Result.success,
-          subscriptionId: v2Result.subscriptionId,
+          subscriptionId: v2Result.subscriptionId ?? '',
           razorpaySubscriptionId: v2Result.providerSubscriptionId,
           authorizationUrl:
               '', // No payment authorization needed for free plans
@@ -703,10 +768,31 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     final purchase = event.purchaseDetails;
 
-    if (_pendingPurchasePlanCode == null) {
+    // Deduplicate: skip if another BLoC instance is already processing this token.
+    // Multiple instances can exist when the factory creates one per route AND one
+    // for the main.dart lifecycle refresh, each triggering restorePurchases().
+    final purchaseKey =
+        purchase.purchaseID ?? purchase.verificationData.serverVerificationData;
+    if (_processingPurchaseTokens.contains(purchaseKey)) {
       Logger.debug(
-          '⚠️ [BLOC] Purchase completed but no pending plan code - ignoring');
+          '⚠️ [BLOC] Purchase $purchaseKey already processing — skipping duplicate');
       return;
+    }
+    _processingPurchaseTokens.add(purchaseKey);
+
+    if (_pendingPurchasePlanCode == null) {
+      // App may have restarted between purchase initiation and delivery.
+      // Infer plan code from product ID so restored/re-delivered purchases still work.
+      final inferred =
+          _pricingService.getPlanCodeForProductId(purchase.productID);
+      if (inferred == null) {
+        Logger.debug(
+            '⚠️ [BLOC] Purchase completed but cannot infer plan from product ID: ${purchase.productID} — ignoring');
+        return;
+      }
+      Logger.debug(
+          '⚠️ [BLOC] Inferred plan code from product ID: ${purchase.productID} → $inferred');
+      _pendingPurchasePlanCode = inferred;
     }
 
     Logger.debug(
@@ -728,6 +814,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       result.fold(
         (failure) {
           Logger.debug('❌ [BLOC] Receipt validation failed: $failure');
+          _processingPurchaseTokens.remove(purchaseKey);
           emit(SubscriptionError(
             failure: failure,
             operation: 'creating IAP subscription',
@@ -740,7 +827,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
           final createResult = CreateSubscriptionResult(
             success: v2Result.success,
-            subscriptionId: v2Result.subscriptionId,
+            subscriptionId: v2Result.subscriptionId ?? '',
             razorpaySubscriptionId:
                 v2Result.providerSubscriptionId, // Actually IAP transaction ID
             authorizationUrl:
@@ -756,9 +843,14 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
             createdAt: DateTime.now(),
           ));
 
+          // Acknowledge ONLY after backend confirms — keeps purchase in queue
+          // on failure so Google Play re-delivers it automatically next launch.
+          _iapService?.acknowledgePurchase(purchase);
+
           // Clear pending purchase tracking
           _pendingPurchasePlanCode = null;
           _pendingPurchasePromoCode = null;
+          _processingPurchaseTokens.remove(purchaseKey);
 
           // Refresh subscription status
           Future.delayed(const Duration(seconds: 1), () {
@@ -770,6 +862,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       );
     } catch (e) {
       Logger.debug('❌ [BLOC] IAP purchase handling error: $e');
+      _processingPurchaseTokens.remove(purchaseKey);
       emit(SubscriptionError(
         failure: ServerFailure(message: 'Failed to process purchase: $e'),
         operation: 'creating IAP subscription',
@@ -862,7 +955,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       (v2Result) {
         final createResult = CreateSubscriptionResult(
           success: v2Result.success,
-          subscriptionId: v2Result.subscriptionId,
+          subscriptionId: v2Result.subscriptionId ?? '',
           razorpaySubscriptionId: v2Result.providerSubscriptionId,
           authorizationUrl: v2Result.authorizationUrl ?? '',
           amountRupees: 0.0,
@@ -973,7 +1066,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       (v2Result) {
         final createResult = CreateSubscriptionResult(
           success: v2Result.success,
-          subscriptionId: v2Result.subscriptionId,
+          subscriptionId: v2Result.subscriptionId ?? '',
           razorpaySubscriptionId: v2Result.providerSubscriptionId,
           authorizationUrl: v2Result.authorizationUrl ?? '',
           amountRupees: 0.0,

@@ -153,7 +153,7 @@ class RouterGuard {
           tag: 'AUTH_SECURITY',
           context: {
             'user_id': user.id,
-            'user_type': user.isAnonymous ? 'anonymous' : 'supabase',
+            'user_type': 'supabase',
             'session_expired': true,
           },
         );
@@ -166,14 +166,13 @@ class RouterGuard {
         'User authenticated via Supabase',
         tag: 'AUTH',
         context: {
-          'user_email': user.email ?? 'Anonymous',
-          'is_anonymous': user.isAnonymous,
+          'user_email': user.email,
           'user_id': user.id,
         },
       );
       return AuthenticationState(
         isAuthenticated: true,
-        userType: user.isAnonymous ? 'anonymous' : 'supabase',
+        userType: 'supabase',
         userId: user.id,
         userEmail: user.email,
       );
@@ -290,7 +289,7 @@ class RouterGuard {
       final userType = box.get(_userTypeKey);
       final userId = box.get(_userIdKey);
 
-      if (userType != null && (userType == 'guest' || userType == 'google')) {
+      if (userType != null && userType == 'google') {
         // SECURITY FIX: Validate session expiration
         final isExpired = _isSessionExpired();
         if (isExpired) {
@@ -577,10 +576,6 @@ class RouterGuard {
     }
 
     switch (authState.userType) {
-      case 'anonymous':
-        return 'anonymous_session';
-      case 'guest':
-        return 'guest_session';
       case 'google':
       case 'supabase':
         return 'authenticated_session';
@@ -621,30 +616,6 @@ class RouterGuard {
     if (!authState.isAuthenticated) {
       Logger.info('Decision: User not authenticated', tag: 'ROUTER');
       return _handleUnauthenticatedUser(routeAnalysis);
-    }
-
-    // // Case 2: Authenticated but onboarding not completed
-    // if (authState.isAuthenticated && !onboardingState.isCompleted) {
-    //   Logger.info('Decision: User authenticated but onboarding incomplete',
-    //       tag: 'ROUTER');
-    //   return _handleAuthenticatedUserWithoutOnboarding(routeAnalysis);
-    // }
-
-    // Case 2.5: Check if guest/anonymous user is trying to access full-auth route
-    if (authState.isAuthenticated &&
-        (authState.userType == 'guest' || authState.userType == 'anonymous') &&
-        _requiresFullAuthentication(routeAnalysis.currentPath)) {
-      Logger.info(
-        'Decision: Guest/anonymous user blocked from full-auth route',
-        tag: 'ROUTER_SECURITY',
-        context: {
-          'user_type': authState.userType,
-          'attempted_route': routeAnalysis.currentPath,
-          'redirect_target': AppRoutes.login,
-          'reason': 'route_requires_full_authentication',
-        },
-      );
-      return AppRoutes.login;
     }
 
     // Case 3: Authenticated but language selection not completed
@@ -977,6 +948,18 @@ class RouterGuard {
         return null;
       }
 
+      // Stale legacy flag guard: pending_premium_upgrade=true but no active plan
+      // selection means the flag was never cleaned up from a previous session.
+      // Clear it and let the user navigate normally rather than looping forever.
+      if (hasPendingPremium && !hasPendingUpgrade && selectedPlanCode == null) {
+        Logger.warning(
+          'Stale pending_premium_upgrade flag detected — clearing without redirect',
+          tag: 'ROUTER',
+        );
+        await box.delete('pending_premium_upgrade');
+        return null;
+      }
+
       Logger.info(
         'Pending upgrade detected',
         tag: 'ROUTER',
@@ -1021,20 +1004,44 @@ class RouterGuard {
         }
 
         if (subscription != null) {
-          // User already has subscription - clear flags and don't redirect
+          // User already has a subscription — only block if they're trying to
+          // subscribe to the SAME plan they already have.  Allow upgrade
+          // redirects when the desired plan differs from the current one.
+          final currentPlanType =
+              (subscription['plan_type'] as String? ?? '').toLowerCase();
+          final desiredPlanCode = (selectedPlanCode ?? '').toLowerCase();
+          final isUpgrade = desiredPlanCode.isNotEmpty &&
+              !currentPlanType.startsWith(desiredPlanCode) &&
+              !desiredPlanCode.startsWith(currentPlanType.split('_').first);
+          final isPremiumUpgrade =
+              hasPendingPremium && !currentPlanType.startsWith('premium');
+
+          if (!isUpgrade && !isPremiumUpgrade) {
+            // Same plan — clear flags and don't redirect
+            Logger.info(
+              'User already on this plan, clearing flags',
+              tag: 'ROUTER',
+              context: {
+                'subscription_status': subscription['status'],
+                'plan_type': currentPlanType,
+                'desired_plan': desiredPlanCode,
+              },
+            );
+            await box.delete('pending_plan_upgrade');
+            await box.delete('selected_plan_code');
+            await box.delete('selected_plan_price');
+            await box.delete('pending_premium_upgrade');
+            return null;
+          }
+
           Logger.info(
-            'User already has subscription, clearing flags',
+            'Upgrade intent detected — proceeding to upgrade page',
             tag: 'ROUTER',
             context: {
-              'subscription_status': subscription['status'],
-              'plan_type': subscription['plan_type'],
+              'current_plan': currentPlanType,
+              'desired_plan': desiredPlanCode,
             },
           );
-          await box.delete('pending_plan_upgrade');
-          await box.delete('selected_plan_code');
-          await box.delete('selected_plan_price');
-          await box.delete('pending_premium_upgrade');
-          return null;
         }
       }
 
@@ -1091,24 +1098,6 @@ class RouterGuard {
     RouteAnalysis routeAnalysis,
     AuthenticationState authState,
   ) {
-    // Special case: Allow anonymous users to access login screen for account upgrade
-    if (routeAnalysis.isAuthRoute &&
-        authState.userType == 'anonymous' &&
-        routeAnalysis.currentPath == AppRoutes.login) {
-      Logger.info(
-        'Anonymous user accessing login for account upgrade',
-        tag: 'ROUTER_ANALYTICS',
-        context: {
-          'attempted_route': routeAnalysis.currentPath,
-          'user_type': authState.userType,
-          'user_id': authState.userId,
-          'action': 'account_upgrade_attempt',
-          'allowed': true,
-        },
-      );
-      return null; // Allow access to login screen
-    }
-
     // Phase 2: More aggressive blocking for all other cases
     final blockReason = _determineBlockReason(routeAnalysis, authState);
 
@@ -1140,9 +1129,6 @@ class RouterGuard {
     if (routeAnalysis.currentPath == AppRoutes.login) {
       if (authState.userType == 'google' || authState.userType == 'supabase') {
         return 'already_authenticated_with_account';
-      }
-      if (authState.userType == 'guest') {
-        return 'guest_user_blocked_from_login';
       }
     }
 

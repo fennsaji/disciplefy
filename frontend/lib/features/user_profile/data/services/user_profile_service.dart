@@ -24,9 +24,7 @@ class UserProfileService {
   /// Get current user's profile
   Future<Either<Failure, UserProfileEntity>> getUserProfile() async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to access profile',
       ));
@@ -39,9 +37,7 @@ class UserProfileService {
   Future<Either<Failure, UserProfileEntity>> updateLanguagePreference(
       AppLanguage language) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to update profile',
       ));
@@ -54,9 +50,7 @@ class UserProfileService {
   Future<Either<Failure, UserProfileEntity>> updateThemePreference(
       String themePreference) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to update profile',
       ));
@@ -69,9 +63,7 @@ class UserProfileService {
   Future<Either<Failure, UserProfileEntity>> updateProfile(
       Map<String, dynamic> updates) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to update profile',
       ));
@@ -93,9 +85,7 @@ class UserProfileService {
   /// Check if user profile exists
   Future<bool> profileExists() async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return false;
     }
 
@@ -113,9 +103,7 @@ class UserProfileService {
     String themePreference = 'light',
   }) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to initialize profile',
       ));
@@ -191,9 +179,7 @@ class UserProfileService {
   Future<Either<Failure, UserProfileEntity>> syncOAuthProfile(
       Map<String, dynamic> profileData) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to sync OAuth profile',
       ));
@@ -206,9 +192,7 @@ class UserProfileService {
   Future<Either<Failure, UserProfileEntity>> updateStudyModePreference(
       String? modeValue) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message: 'User must be authenticated to update study mode preference',
       ));
@@ -244,9 +228,7 @@ class UserProfileService {
   Future<Either<Failure, UserProfileEntity>>
       updateLearningPathStudyModePreference(String? modeValue) async {
     final currentUser = _authService.currentUser;
-    if (!_authService.isAuthenticated ||
-        currentUser == null ||
-        currentUser.isAnonymous) {
+    if (!_authService.isAuthenticated || currentUser == null) {
       return const Left(AuthenticationFailure(
         message:
             'User must be authenticated to update learning path study mode preference',

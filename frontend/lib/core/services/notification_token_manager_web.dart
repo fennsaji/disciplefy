@@ -107,12 +107,6 @@ class NotificationTokenManagerWeb {
         return false;
       }
 
-      if (currentUser.isAnonymous) {
-        Logger.debug(
-            '[FCM Token] Anonymous user, skipping push notification registration');
-        return false;
-      }
-
       if (kDebugMode) {
         Logger.debug(
             '[FCM Token] 📤 Registering token for user: ${currentUser.id}');

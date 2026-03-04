@@ -39,7 +39,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    context.read<SubscriptionBloc>().add(const CheckSubscriptionEligibility());
+    context
+        .read<SubscriptionBloc>()
+        .add(const CheckSubscriptionEligibility(targetPlanCode: 'premium'));
     _loadPlanData();
   }
 
