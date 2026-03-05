@@ -118,125 +118,165 @@ get_device_name() {
     echo "$name"
 }
 
-# Detect all connected devices (both physical and emulators)
-echo -e "${BLUE}🔍 Detecting Android devices...${NC}"
+# Detect connected devices AND available emulators (always show both)
+echo -e "${BLUE}🔍 Detecting Android devices and available emulators...${NC}"
 
-# Get list of connected devices from adb
+# Connected ADB devices (physical + already-running emulators)
 ADB_DEVICES=$(adb devices 2>/dev/null | grep -v "List of devices" | grep "device$" | awk '{print $1}')
 
-if [ -z "$ADB_DEVICES" ]; then
-    echo -e "${YELLOW}📱 No connected devices found. Checking available emulators...${NC}"
+# Available AVDs (all, including ones not yet running)
+AVAILABLE_AVDS=""
+if command -v emulator &> /dev/null; then
+    AVAILABLE_AVDS=$(emulator -list-avds 2>/dev/null || true)
+fi
 
-    # Check if emulator command is available
-    if ! command -v emulator &> /dev/null; then
-        echo -e "${RED}❌ No devices connected and emulator command not found!${NC}"
-        echo "Please either:"
-        echo "  1. Connect a physical Android device via USB"
-        echo "  2. Install Android SDK with emulator support"
+# Which emulator-* IDs are already running in adb?
+RUNNING_EMULATOR_IDS=$(echo "$ADB_DEVICES" | grep "^emulator-" || true)
+
+# Build unified menu: entries are "adb:<id>" or "avd:<name>"
+declare -a MENU_IDS
+declare -a MENU_LABELS
+menu_idx=1
+
+# --- Connected ADB devices (physical devices + running emulators) ---
+if [ -n "$ADB_DEVICES" ]; then
+    while IFS= read -r device_id; do
+        [ -z "$device_id" ] && continue
+        DEVICE_NAME=$(get_device_name "$device_id")
+        if is_emulator "$device_id"; then
+            DEVICE_TYPE="Emulator (running)"
+        else
+            DEVICE_TYPE="Physical Device"
+        fi
+        MENU_IDS[$menu_idx]="adb:$device_id"
+        MENU_LABELS[$menu_idx]="${DEVICE_NAME} | ${DEVICE_TYPE}"
+        menu_idx=$((menu_idx + 1))
+    done <<< "$ADB_DEVICES"
+fi
+
+# --- Available-but-not-yet-running AVDs ---
+if [ -n "$AVAILABLE_AVDS" ]; then
+    while IFS= read -r avd_name; do
+        [ -z "$avd_name" ] && continue
+
+        # Skip if this AVD is already running (matched via ro.kernel.qemu.avd_name)
+        already_running=false
+        if [ -n "$RUNNING_EMULATOR_IDS" ]; then
+            while IFS= read -r emu_id; do
+                [ -z "$emu_id" ] && continue
+                running_avd=$(adb -s "$emu_id" shell getprop ro.kernel.qemu.avd_name 2>/dev/null | tr -d '\r' || true)
+                if [ "$running_avd" = "$avd_name" ]; then
+                    already_running=true
+                    break
+                fi
+            done <<< "$RUNNING_EMULATOR_IDS"
+        fi
+
+        if [ "$already_running" = false ]; then
+            MENU_IDS[$menu_idx]="avd:$avd_name"
+            MENU_LABELS[$menu_idx]="${avd_name} | Emulator (not running)"
+            menu_idx=$((menu_idx + 1))
+        fi
+    done <<< "$AVAILABLE_AVDS"
+fi
+
+TOTAL_OPTIONS=$((menu_idx - 1))
+
+if [ "$TOTAL_OPTIONS" -eq 0 ]; then
+    echo -e "${RED}❌ No connected devices and no emulators found!${NC}"
+    echo "Please either:"
+    echo "  1. Connect a physical Android device via USB and enable USB debugging"
+    echo "  2. Create an emulator using Android Studio or avdmanager"
+    exit 1
+fi
+
+# --- Resolve device selection ---
+SELECTED_ENTRY=""
+
+if [ -n "$DEVICE_ID_ARG" ]; then
+    # CLI argument: must be an already-connected ADB device
+    if echo "$ADB_DEVICES" | grep -q "^${DEVICE_ID_ARG}$"; then
+        SELECTED_ENTRY="adb:$DEVICE_ID_ARG"
+        echo -e "${GREEN}✅ Using specified device: ${DEVICE_ID_ARG}${NC}"
+    else
+        echo -e "${RED}❌ Device '${DEVICE_ID_ARG}' not found in connected devices!${NC}"
+        echo "Connected devices:"
+        echo "$ADB_DEVICES"
         exit 1
     fi
-
-    # Get list of available emulators
-    AVAILABLE_EMULATORS=$(emulator -list-avds 2>/dev/null)
-
-    if [ -z "$AVAILABLE_EMULATORS" ]; then
-        echo -e "${RED}❌ No connected devices and no emulators found!${NC}"
-        echo "Please either:"
-        echo "  1. Connect a physical Android device via USB and enable USB debugging"
-        echo "  2. Create an emulator using Android Studio or avdmanager"
-        exit 1
-    fi
-
-    # Show available emulators and let user choose
-    echo -e "${CYAN}Available emulators:${NC}"
-    local idx=1
-    declare -a EMULATOR_ARRAY
-    while IFS= read -r emulator; do
-        echo -e "  ${GREEN}${idx})${NC} ${emulator}"
-        EMULATOR_ARRAY[$idx]="$emulator"
-        ((idx++))
-    done <<< "$AVAILABLE_EMULATORS"
-
+elif [ "$TOTAL_OPTIONS" -eq 1 ]; then
+    # Only one option — auto-select
+    SELECTED_ENTRY="${MENU_IDS[1]}"
+    echo -e "${GREEN}✅ Auto-selected: ${MENU_LABELS[1]}${NC}"
+else
+    # Always show unified menu so user can pick any device or emulator
+    echo -e "${CYAN}📱 Select a device or emulator:${NC}"
     echo ""
-    read -p "Select emulator to start (1-$((idx-1))): " selection
+    for i in $(seq 1 $TOTAL_OPTIONS); do
+        LABEL="${MENU_LABELS[$i]}"
+        ENTRY="${MENU_IDS[$i]}"
+        if [[ "$ENTRY" == avd:* ]]; then
+            echo -e "  ${YELLOW}${i})${NC} ${LABEL}"
+        else
+            echo -e "  ${GREEN}${i})${NC} ${LABEL}"
+            echo -e "     ${BLUE}ID:${NC} ${ENTRY#adb:}"
+        fi
+        echo ""
+    done
 
-    if [ -z "$selection" ] || [ "$selection" -lt 1 ] || [ "$selection" -ge "$idx" ]; then
+    read -p "Select (1-${TOTAL_OPTIONS}): " selection
+
+    if [ -z "$selection" ] || ! [[ "$selection" =~ ^[0-9]+$ ]] || \
+       [ "$selection" -lt 1 ] || [ "$selection" -gt "$TOTAL_OPTIONS" ]; then
         echo -e "${RED}❌ Invalid selection${NC}"
         exit 1
     fi
 
-    SELECTED_EMULATOR="${EMULATOR_ARRAY[$selection]}"
-    echo -e "${YELLOW}📱 Starting emulator: ${SELECTED_EMULATOR}${NC}"
+    SELECTED_ENTRY="${MENU_IDS[$selection]}"
+    echo -e "${GREEN}✅ Selected: ${MENU_LABELS[$selection]}${NC}"
+fi
+
+# --- Act on selection ---
+DEVICE_ID=""
+
+if [[ "$SELECTED_ENTRY" == adb:* ]]; then
+    DEVICE_ID="${SELECTED_ENTRY#adb:}"
+
+elif [[ "$SELECTED_ENTRY" == avd:* ]]; then
+    AVD_NAME="${SELECTED_ENTRY#avd:}"
+    echo -e "${YELLOW}📱 Starting emulator: ${AVD_NAME}${NC}"
     echo -e "${YELLOW}⏳ This may take a minute...${NC}"
 
-    # Start emulator in background
-    emulator -avd "$SELECTED_EMULATOR" -no-snapshot-load > /dev/null 2>&1 &
+    # Snapshot existing device IDs so we can identify the new emulator
+    EXISTING_DEVICES=$(adb devices | grep -v "List of devices" | grep "device$" | awk '{print $1}' || true)
+
+    # Launch emulator in background
+    emulator -avd "$AVD_NAME" -no-snapshot-load > /dev/null 2>&1 &
     EMULATOR_PID=$!
 
-    # Wait for emulator to boot
-    echo -e "${BLUE}⏳ Waiting for emulator to boot...${NC}"
-    adb wait-for-device
+    # Wait for the new emulator to appear in adb
+    echo -e "${BLUE}⏳ Waiting for emulator to appear in adb...${NC}"
+    NEW_DEVICE_ID=""
+    while [ -z "$NEW_DEVICE_ID" ]; do
+        sleep 2
+        CURRENT_DEVICES=$(adb devices | grep -v "List of devices" | grep "device$" | awk '{print $1}' || true)
+        while IFS= read -r dev; do
+            [ -z "$dev" ] && continue
+            if ! echo "$EXISTING_DEVICES" | grep -q "^${dev}$"; then
+                NEW_DEVICE_ID="$dev"
+                break
+            fi
+        done <<< "$CURRENT_DEVICES"
+    done
 
-    # Wait for boot to complete
-    while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+    DEVICE_ID="$NEW_DEVICE_ID"
+    echo -e "${BLUE}⏳ Waiting for emulator to finish booting (${DEVICE_ID})...${NC}"
+
+    while [ "$(adb -s "$DEVICE_ID" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
         sleep 2
     done
 
-    echo -e "${GREEN}✅ Emulator started successfully${NC}"
-
-    # Get the newly started emulator's device ID
-    DEVICE_ID=$(adb devices | grep -v "List of devices" | grep "device$" | awk '{print $1}' | head -n 1)
-else
-    # Devices are already connected
-    DEVICE_COUNT=$(echo "$ADB_DEVICES" | wc -l | tr -d ' ')
-
-    if [ -n "$DEVICE_ID_ARG" ]; then
-        # User specified a device ID
-        if echo "$ADB_DEVICES" | grep -q "^${DEVICE_ID_ARG}$"; then
-            DEVICE_ID="$DEVICE_ID_ARG"
-            echo -e "${GREEN}✅ Using specified device: ${DEVICE_ID}${NC}"
-        else
-            echo -e "${RED}❌ Device '$DEVICE_ID_ARG' not found!${NC}"
-            echo "Connected devices:"
-            echo "$ADB_DEVICES"
-            exit 1
-        fi
-    elif [ "$DEVICE_COUNT" -eq 1 ]; then
-        # Only one device - auto-select it
-        DEVICE_ID=$(echo "$ADB_DEVICES" | head -n 1)
-        DEVICE_NAME=$(get_device_name "$DEVICE_ID")
-        DEVICE_TYPE=$(is_emulator "$DEVICE_ID" && echo "Emulator" || echo "Physical Device")
-        echo -e "${GREEN}✅ Auto-selected device: ${DEVICE_NAME} (${DEVICE_ID}) - ${DEVICE_TYPE}${NC}"
-    else
-        # Multiple devices - show selection menu
-        echo -e "${CYAN}📱 Multiple devices detected. Please select one:${NC}"
-        echo ""
-
-        local idx=1
-        declare -a DEVICE_ID_ARRAY
-        while IFS= read -r device_id; do
-            DEVICE_NAME=$(get_device_name "$device_id")
-            DEVICE_TYPE=$(is_emulator "$device_id" && echo "Emulator" || echo "Physical Device")
-            echo -e "  ${GREEN}${idx})${NC} ${DEVICE_NAME}"
-            echo -e "     ${BLUE}ID:${NC} ${device_id}"
-            echo -e "     ${BLUE}Type:${NC} ${DEVICE_TYPE}"
-            echo ""
-            DEVICE_ID_ARRAY[$idx]="$device_id"
-            ((idx++))
-        done <<< "$ADB_DEVICES"
-
-        read -p "Select device (1-$((idx-1))): " selection
-
-        if [ -z "$selection" ] || [ "$selection" -lt 1 ] || [ "$selection" -ge "$idx" ]; then
-            echo -e "${RED}❌ Invalid selection${NC}"
-            exit 1
-        fi
-
-        DEVICE_ID="${DEVICE_ID_ARRAY[$selection]}"
-        DEVICE_NAME=$(get_device_name "$DEVICE_ID")
-        DEVICE_TYPE=$(is_emulator "$DEVICE_ID" && echo "Emulator" || echo "Physical Device")
-        echo -e "${GREEN}✅ Selected: ${DEVICE_NAME} (${DEVICE_ID}) - ${DEVICE_TYPE}${NC}"
-    fi
+    echo -e "${GREEN}✅ Emulator started: ${DEVICE_ID}${NC}"
 fi
 
 # Verify device is ready

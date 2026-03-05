@@ -30,16 +30,14 @@ class UnauthenticatedState extends AuthState {
 class AuthenticatedState extends AuthState {
   final User user;
   final Map<String, dynamic>? profile;
-  final bool isAnonymous;
 
   const AuthenticatedState({
     required this.user,
     this.profile,
-    required this.isAnonymous,
   });
 
   @override
-  List<Object?> get props => [user, profile, isAnonymous];
+  List<Object?> get props => [user, profile];
 
   /// Helper methods for common user data
   String get userId => user.id;
@@ -65,16 +63,12 @@ class AuthenticatedState extends AuthState {
       AuthenticatedState(
         user: user,
         profile: newProfile,
-        isAnonymous: isAnonymous,
       );
 
   /// Checks if user needs to verify their email
   /// Returns true for email/password users who haven't verified their email yet
   /// Uses the email_verified field from user_profiles table
   bool get needsEmailVerification {
-    // Anonymous users don't need verification
-    if (isAnonymous) return false;
-
     // Check provider - Google and Apple users are pre-verified
     final provider = user.appMetadata['provider'] as String?;
     if (provider == 'google' || provider == 'apple') return false;
@@ -141,10 +135,9 @@ class VerificationEmailSentState extends AuthenticatedState {
   const VerificationEmailSentState({
     required super.user,
     super.profile,
-    required super.isAnonymous,
     this.message = 'Verification email sent. Please check your inbox.',
   });
 
   @override
-  List<Object?> get props => [user, profile, isAnonymous, message];
+  List<Object?> get props => [user, profile, message];
 }

@@ -58,13 +58,18 @@ class TokenActionsSection extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             if (tokenStatus.userPlan == UserPlan.free ||
-                tokenStatus.userPlan == UserPlan.standard) ...[
+                tokenStatus.userPlan == UserPlan.standard ||
+                tokenStatus.userPlan == UserPlan.plus) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: onUpgrade,
                   icon: const Icon(Icons.arrow_circle_up_rounded),
-                  label: Text(context.tr('tokens.plans.upgrade')),
+                  label: Text(
+                    tokenStatus.userPlan == UserPlan.plus
+                        ? 'Upgrade to Premium'
+                        : context.tr('tokens.plans.upgrade'),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.streakFlame,
                     foregroundColor: Colors.white,

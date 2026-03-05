@@ -21,11 +21,12 @@ class PricingCard extends StatelessWidget {
   final Color? badgeColor;
   final List<String> features;
   final String buttonText;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isHighlighted;
   final bool isPremium;
   final bool isMobile;
   final Color? accentColor;
+  final bool isCurrentPlan;
 
   const PricingCard({
     super.key,
@@ -44,6 +45,7 @@ class PricingCard extends StatelessWidget {
     this.isPremium = false,
     this.isMobile = false,
     this.accentColor,
+    this.isCurrentPlan = false,
   });
 
   @override
@@ -234,28 +236,53 @@ class PricingCard extends StatelessWidget {
           // CTA button
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: onPressed,
+            onPressed: isCurrentPlan ? null : onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPremium
-                  ? AppTheme.successColor
-                  : isHighlighted
-                      ? (accentColor ?? AppTheme.primaryColor)
-                      : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-              foregroundColor: isPremium || isHighlighted
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.onSurface,
+              backgroundColor: isCurrentPlan
+                  ? Theme.of(context).colorScheme.outline.withOpacity(0.15)
+                  : isPremium
+                      ? AppTheme.successColor
+                      : isHighlighted
+                          ? (accentColor ?? AppTheme.primaryColor)
+                          : Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withOpacity(0.2),
+              foregroundColor: isCurrentPlan
+                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                  : isPremium || isHighlighted
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+              disabledBackgroundColor:
+                  Theme.of(context).colorScheme.outline.withOpacity(0.15),
+              disabledForegroundColor:
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
               elevation: 0,
             ),
-            child: Text(
-              buttonText,
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isCurrentPlan) ...[
+                  Icon(Icons.check_circle_rounded,
+                      size: 16,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.5)),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  isCurrentPlan ? 'Current Plan' : buttonText,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

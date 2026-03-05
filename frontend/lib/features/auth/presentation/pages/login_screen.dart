@@ -13,7 +13,7 @@ import '../../../../core/utils/logger.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 
-/// Login screen with Google OAuth and anonymous sign-in options
+/// Login screen with Google OAuth and email sign-in options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,44 +33,39 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// Check if user is already authenticated and redirect if needed
-  /// Anonymous users are allowed to stay on login screen to upgrade their account
   void _checkAuthenticationStatus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthBloc>().state;
       if (authState is auth_states.AuthenticatedState) {
-        // Only redirect non-anonymous users - let anonymous users upgrade their account
-        if (!authState.isAnonymous) {
-          // Check for pending premium upgrade from pricing page
-          final box = Hive.box('app_settings');
-          final pendingPremiumUpgrade =
-              box.get('pending_premium_upgrade', defaultValue: false);
+        // Check for pending premium upgrade from pricing page
+        final box = Hive.box('app_settings');
+        final pendingPremiumUpgrade =
+            box.get('pending_premium_upgrade', defaultValue: false);
 
-          if (pendingPremiumUpgrade == true) {
-            // Clear the flag and redirect to premium upgrade page
-            box.delete('pending_premium_upgrade');
-            Logger.info(
-              'Authenticated user on login - redirecting to premium upgrade',
-              tag: 'LOGIN_SCREEN',
-              context: {
-                'user_type': 'authenticated',
-                'redirect_reason': 'pending_premium_upgrade',
-              },
-            );
-            context.go(AppRoutes.premiumUpgrade);
-          } else {
-            Logger.info(
-              'Authenticated user detected on login screen - redirecting',
-              tag: 'LOGIN_SCREEN',
-              context: {
-                'user_type': 'authenticated',
-                'redirect_reason': 'already_authenticated',
-              },
-            );
-            // Use AuthAwareNavigationService for proper stack management
-            context.navigateAfterAuth();
-          }
+        if (pendingPremiumUpgrade == true) {
+          // Clear the flag and redirect to premium upgrade page
+          box.delete('pending_premium_upgrade');
+          Logger.info(
+            'Authenticated user on login - redirecting to premium upgrade',
+            tag: 'LOGIN_SCREEN',
+            context: {
+              'user_type': 'authenticated',
+              'redirect_reason': 'pending_premium_upgrade',
+            },
+          );
+          context.go(AppRoutes.premiumUpgrade);
+        } else {
+          Logger.info(
+            'Authenticated user detected on login screen - redirecting',
+            tag: 'LOGIN_SCREEN',
+            context: {
+              'user_type': 'authenticated',
+              'redirect_reason': 'already_authenticated',
+            },
+          );
+          // Use AuthAwareNavigationService for proper stack management
+          context.navigateAfterAuth();
         }
-        // Anonymous users can stay on login screen to upgrade to real account
       }
       // No automatic sign-in - users must explicitly choose authentication method
     });
@@ -94,8 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Authentication successful - redirecting to premium upgrade',
                 tag: 'LOGIN_SCREEN',
                 context: {
-                  'user_type':
-                      state.isAnonymous ? 'anonymous' : 'authenticated',
+                  'user_type': 'authenticated',
                   'redirect_reason': 'pending_premium_upgrade',
                 },
               );
@@ -126,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
               'Authentication successful - navigating to home',
               tag: 'LOGIN_SCREEN',
               context: {
-                'user_type': state.isAnonymous ? 'anonymous' : 'authenticated',
+                'user_type': 'authenticated',
                 'navigation_method': 'auth_aware_service',
               },
             );
@@ -467,49 +461,6 @@ class _LoginScreenState extends State<LoginScreen> {
   //   );
   // }
 
-  /// Builds the guest sign-in button
-  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: isLoading ? null : () => _handleGuestSignIn(context),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
-          side: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          disabledForegroundColor:
-              theme.colorScheme.primary.withValues(alpha: 0.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 20,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              context.tr(TranslationKeys.loginContinueAsGuest),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Builds the features preview section
   Widget _buildFeaturesSection(BuildContext context) {
     final theme = Theme.of(context);
@@ -599,11 +550,6 @@ class _LoginScreenState extends State<LoginScreen> {
   // void _handlePhoneSignIn(BuildContext context) {
   //   context.push(AppRoutes.phoneAuth);
   // }
-
-  /// Handles guest sign-in button tap
-  void _handleGuestSignIn(BuildContext context) {
-    context.read<AuthBloc>().add(const AnonymousSignInRequested());
-  }
 }
 
 /// Individual feature item widget for the login screen

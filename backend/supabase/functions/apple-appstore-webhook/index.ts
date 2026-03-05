@@ -18,6 +18,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { importJWK, jwtVerify } from 'npm:jose'
 import { corsHeaders } from '../_shared/utils/cors.ts'
 import { revalidateReceipt } from '../_shared/services/receipt-validation-service.ts'
 
@@ -72,9 +73,8 @@ serve(async (req) => {
     // Parse notification
     const notification: AppleNotification = await req.json()
 
-    // TODO: Verify JWT signature with Apple's public key
-    // For now, we decode without verification (should be added in production)
-    const payload = decodeJWT(notification.signedPayload) as DecodedPayload
+    // Verify JWT signature with Apple's ES256 public keys
+    const payload = await verifyAppleJWT(notification.signedPayload) as DecodedPayload
     const notificationUUID = payload.notificationUUID
 
     console.log('[APPLE_WEBHOOK] Notification:', {
@@ -107,8 +107,19 @@ serve(async (req) => {
     let originalTransactionId: string | null = null
 
     if (payload.data.signedTransactionInfo) {
-      transactionInfo = decodeJWT(payload.data.signedTransactionInfo) as TransactionInfo
+      transactionInfo = await verifyAppleJWT(payload.data.signedTransactionInfo) as TransactionInfo
       originalTransactionId = transactionInfo.originalTransactionId
+    }
+
+    // Decode renewal info if present
+    let renewalInfo: any = null
+    if (payload.data.signedRenewalInfo) {
+      renewalInfo = await verifyAppleJWT(payload.data.signedRenewalInfo)
+      console.log('[APPLE_WEBHOOK] Renewal info decoded:', {
+        autoRenewStatus: renewalInfo.autoRenewStatus,
+        expirationIntent: renewalInfo.expirationIntent,
+        autoRenewProductId: renewalInfo.autoRenewProductId
+      })
     }
 
     // Store webhook event
@@ -176,7 +187,8 @@ serve(async (req) => {
         payload.subtype,
         transactionInfo,
         receipt.id,
-        receipt.subscription_id
+        receipt.subscription_id,
+        renewalInfo
       )
 
       // Mark as processed
@@ -211,18 +223,49 @@ serve(async (req) => {
 })
 
 /**
- * Decode JWT without verification (for development)
- * TODO: Add signature verification with Apple's public key
+ * Module-level cache for Apple's public JWK keys.
+ * Keys rarely change so we cache them for 1 hour to avoid repeated fetches.
  */
-function decodeJWT(token: string): any {
-  const parts = token.split('.')
-  if (parts.length !== 3) {
-    throw new Error('Invalid JWT format')
+let appleJwkCache: { keys: any[]; fetchedAt: number } | null = null
+const APPLE_JWK_TTL_MS = 60 * 60 * 1000  // 1 hour
+
+/**
+ * Fetch (or return cached) Apple's public JWK keys.
+ */
+async function getApplePublicKeys(): Promise<any[]> {
+  const now = Date.now()
+  if (appleJwkCache && now - appleJwkCache.fetchedAt < APPLE_JWK_TTL_MS) {
+    return appleJwkCache.keys
   }
 
-  const payload = parts[1]
-  const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-  return JSON.parse(decoded)
+  const resp = await fetch('https://appleid.apple.com/auth/keys')
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch Apple public keys: ${resp.status}`)
+  }
+  const { keys } = await resp.json()
+  appleJwkCache = { keys, fetchedAt: now }
+  return keys
+}
+
+/**
+ * Verify an Apple-signed JWT (ES256) and return its payload.
+ * Throws if the signature cannot be verified with any of Apple's published keys.
+ */
+async function verifyAppleJWT(token: string): Promise<any> {
+  const keys = await getApplePublicKeys()
+
+  for (const jwk of keys) {
+    try {
+      const publicKey = await importJWK(jwk, 'ES256')
+      const { payload } = await jwtVerify(token, publicKey)
+      return payload
+    } catch {
+      // Try next key
+      continue
+    }
+  }
+
+  throw new Error('Apple JWT signature verification failed — no matching key found')
 }
 
 /**
@@ -234,7 +277,8 @@ async function processSubscriptionEvent(
   subtype: string | undefined,
   transactionInfo: TransactionInfo | null,
   receiptId: string,
-  subscriptionId: string | null
+  subscriptionId: string | null,
+  renewalInfo?: any
 ): Promise<void> {
   console.log('[APPLE_WEBHOOK] Processing event:', notificationType, subtype)
 
@@ -294,15 +338,24 @@ async function processSubscriptionEvent(
       .eq('id', subscriptionId)
   }
 
-  // Handle failed renewal
+  // Handle failed renewal — keep access during Apple's 16-day grace period
   if (notificationType === 'DID_FAIL_TO_RENEW') {
+    const gracePeriodExpiry = new Date()
+    gracePeriodExpiry.setDate(gracePeriodExpiry.getDate() + 16)
     await supabase
       .from('subscriptions')
       .update({
-        status: 'expired',
+        status: 'active',
+        metadata: {
+          in_grace_period: true,
+          grace_period_started_at: new Date().toISOString(),
+          grace_period_expires_at: gracePeriodExpiry.toISOString(),
+          expiration_intent: renewalInfo?.expirationIntent ?? null
+        },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
+    console.log('[APPLE_WEBHOOK] Grace period set, expires:', gracePeriodExpiry.toISOString())
   }
 
   // Handle refund

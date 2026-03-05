@@ -6,6 +6,7 @@ class SubscriptionModel extends Subscription {
     required super.id,
     required super.userId,
     required super.razorpaySubscriptionId,
+    super.provider,
     required super.status,
     required super.planType,
     required super.amountPaise,
@@ -27,14 +28,18 @@ class SubscriptionModel extends Subscription {
     return SubscriptionModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      razorpaySubscriptionId: json['razorpay_subscription_id'] as String,
+      // DB uses provider_subscription_id for all providers (Razorpay, Google Play, Apple)
+      razorpaySubscriptionId: (json['provider_subscription_id'] ??
+              json['razorpay_subscription_id']) as String? ??
+          '',
+      provider: json['provider'] as String? ?? 'razorpay',
       status: SubscriptionStatus.values.firstWhere(
         (e) => e.name == json['status'] as String,
         orElse: () => SubscriptionStatus.created,
       ),
-      planType: json['plan_type'] as String,
-      amountPaise: json['amount_paise'] as int,
-      currency: json['currency'] as String,
+      planType: json['plan_type'] as String? ?? '',
+      amountPaise: json['amount_paise'] as int? ?? 0,
+      currency: json['currency'] as String? ?? 'INR',
       currentPeriodStart: json['current_period_start'] != null
           ? DateTime.parse(json['current_period_start'] as String)
           : null,
@@ -45,7 +50,7 @@ class SubscriptionModel extends Subscription {
           ? DateTime.parse(json['next_billing_at'] as String)
           : null,
       totalCount: json['total_count'] as int?, // null = unlimited subscription
-      paidCount: json['paid_count'] as int,
+      paidCount: json['paid_count'] as int? ?? 0,
       remainingCount:
           json['remaining_count'] as int?, // null = unlimited remaining
       cancelledAt: json['cancelled_at'] != null
