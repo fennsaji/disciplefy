@@ -9,6 +9,7 @@ interface PlanPricing {
   amount: number
   currency: string
   formatted: string
+  product_id?: string  // IAP product ID for Google Play / Apple App Store
 }
 
 interface ProviderPricing {
@@ -72,6 +73,7 @@ Deno.serve(async (req) => {
         base_price_minor,
         currency,
         region,
+        product_id,
         subscription_plans!inner (
           plan_code,
           plan_name
@@ -130,6 +132,7 @@ Deno.serve(async (req) => {
         amount,
         currency,
         formatted,
+        ...(row.product_id ? { product_id: row.product_id } : {}),
       }
     }
 

@@ -67,8 +67,13 @@ class AuthNotifier extends ChangeNotifier {
               '✅ [AUTH NOTIFIER] Session restoration complete - auth initialized after ${timeSinceInit}ms');
         }
 
-        // Notify if auth state changed OR if this is the first initialization
-        if (wasAuthenticated != _isAuthenticated || !wasInitialized) {
+        // Notify if auth state changed, if this is the first initialization,
+        // or if this is a signedOut event — even when the Supabase session was
+        // already null (e.g. expired) we must notify so the router re-evaluates
+        // and clears stale Hive credentials.
+        if (wasAuthenticated != _isAuthenticated ||
+            !wasInitialized ||
+            authState.event == AuthChangeEvent.signedOut) {
           Logger.debug('🔄 [AUTH NOTIFIER] Notifying router of state change');
           notifyListeners();
         } else {

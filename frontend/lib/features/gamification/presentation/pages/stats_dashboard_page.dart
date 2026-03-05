@@ -326,8 +326,8 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
     final theme = Theme.of(context);
     final profilePictureUrl = authProvider.profilePictureUrl;
 
-    // Show network image if available and user is not anonymous
-    if (profilePictureUrl != null && !authProvider.isAnonymous) {
+    // Show network image if available
+    if (profilePictureUrl != null) {
       return CircleAvatar(
         radius: 35,
         backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
@@ -369,7 +369,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
       radius: 35,
       backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
       child: Icon(
-        authProvider.isAnonymous ? Icons.person_outline : Icons.person,
+        Icons.person,
         size: 35,
         color: theme.colorScheme.primary,
       ),

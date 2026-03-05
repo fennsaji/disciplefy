@@ -17,7 +17,7 @@ import 'recommended_topics_state.dart';
 /// This BLoC follows the Single Responsibility Principle by handling
 /// only recommended topics loading and management.
 ///
-/// Supports both generic "Explore Topics" for anonymous users and
+/// Supports both generic "Explore Topics" for unauthenticated users and
 /// personalized "For You" topics for authenticated users.
 class RecommendedTopicsBloc
     extends Bloc<RecommendedTopicsEvent, RecommendedTopicsState> {
@@ -145,9 +145,8 @@ class RecommendedTopicsBloc
     final currentState = state;
     if (currentState is RecommendedTopicsLoaded) {
       // Check if user is authenticated to decide which endpoint to use
-      final isAuthenticatedUser = _authService.isAuthenticated &&
-          _authService.currentUser != null &&
-          !_authService.currentUser!.isAnonymous;
+      final isAuthenticatedUser =
+          _authService.isAuthenticated && _authService.currentUser != null;
       if (isAuthenticatedUser) {
         add(LoadForYouTopics(
           language: event.languageCode,
@@ -171,14 +170,13 @@ class RecommendedTopicsBloc
     LoadForYouTopics event,
     Emitter<RecommendedTopicsState> emit,
   ) async {
-    // Check if user is authenticated (non-anonymous)
-    final isAnonymousUser = !_authService.isAuthenticated ||
-        _authService.currentUser == null ||
-        _authService.currentUser!.isAnonymous;
-    if (isAnonymousUser) {
-      // Fall back to regular topics for anonymous users
+    // Check if user is authenticated
+    final isUnauthenticatedUser =
+        !_authService.isAuthenticated || _authService.currentUser == null;
+    if (isUnauthenticatedUser) {
+      // Fall back to regular topics for unauthenticated users
       Logger.info(
-        'User is anonymous, falling back to generic topics',
+        'User is not authenticated, falling back to generic topics',
         tag: 'RECOMMENDED_TOPICS',
       );
       add(LoadRecommendedTopics(

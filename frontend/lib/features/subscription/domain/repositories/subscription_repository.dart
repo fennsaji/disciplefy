@@ -113,6 +113,37 @@ abstract class SubscriptionRepository {
     String? promoCode,
     String? receipt,
   });
+
+  /// Synchronises Play Store subscription state with the backend DB.
+  ///
+  /// Called silently on app open (Android only, once per session).
+  /// [purchases] - Raw purchase maps from the device (may be empty).
+  /// [deviceHasNoPurchases] - true when Google Play returned zero active purchases.
+  ///
+  /// Returns [SyncPlayStoreResult] on success (never throws to the caller).
+  /// Returns [Failure] on error — caller should handle silently.
+  Future<Either<Failure, SyncPlayStoreResult>> syncPlayStoreStatus({
+    required List<Map<String, dynamic>> purchases,
+    required bool deviceHasNoPurchases,
+  });
+}
+
+/// Result returned by [syncPlayStoreStatus].
+class SyncPlayStoreResult {
+  final bool success;
+
+  /// One of: 'none' | 'updated_expiry' | 'expired_cancelled_subscription' |
+  ///          'token_updated' | 'created_missing_subscription'
+  final String actionTaken;
+  final String? newStatus;
+  final String? subscriptionId;
+
+  const SyncPlayStoreResult({
+    required this.success,
+    required this.actionTaken,
+    this.newStatus,
+    this.subscriptionId,
+  });
 }
 
 /// Result of starting a Premium trial
@@ -133,14 +164,14 @@ class StartPremiumTrialResult {
 /// Result from creating subscription via V2 API
 class CreateSubscriptionV2Result {
   final bool success;
-  final String subscriptionId;
+  final String? subscriptionId;
   final String providerSubscriptionId;
   final String? authorizationUrl;
   final String status;
 
   const CreateSubscriptionV2Result({
     required this.success,
-    required this.subscriptionId,
+    this.subscriptionId,
     required this.providerSubscriptionId,
     this.authorizationUrl,
     required this.status,

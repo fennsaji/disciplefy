@@ -226,4 +226,26 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       'subscription creation v2',
     );
   }
+
+  @override
+  Future<Either<Failure, SyncPlayStoreResult>> syncPlayStoreStatus({
+    required List<Map<String, dynamic>> purchases,
+    required bool deviceHasNoPurchases,
+  }) async {
+    return _execute<SyncPlayStoreResult>(
+      () async {
+        final response = await _remoteDataSource.syncPlayStoreStatus(
+          purchases: purchases,
+          deviceHasNoPurchases: deviceHasNoPurchases,
+        );
+        return SyncPlayStoreResult(
+          success: response.success,
+          actionTaken: response.actionTaken,
+          newStatus: response.newStatus,
+          subscriptionId: response.subscriptionId,
+        );
+      },
+      'play store sync',
+    );
+  }
 }

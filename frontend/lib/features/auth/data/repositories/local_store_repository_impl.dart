@@ -25,19 +25,21 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // Close all open Hive boxes
       await Hive.close();
 
-      // Delete all Hive data from IndexedDB
-      await Hive.deleteFromDisk();
-
       // Reinitialize Hive for the app
+      // Note: Hive.deleteFromDisk() is a no-op after close() because close()
+      // unregisters all boxes first. We explicitly clear the box contents below.
       await Hive.initFlutter();
 
-      // Reopen essential app_settings box to preserve app-level settings
+      // Reopen essential app_settings box and explicitly clear ALL stale data.
+      // putAll() only adds/updates keys — it does NOT remove existing ones, so
+      // calling clear() first is required to evict user_type, user_id, etc.
       final appSettingsBox = await Hive.openBox('app_settings');
+      await appSettingsBox.clear();
 
-      // Restore essential app settings that should persist
+      // Restore only the settings that should survive logout
       await appSettingsBox.putAll({
-        'onboarding_completed': true, // Keep onboarding status
-        'app_version': '1.0.0', // Preserve app version info
+        'onboarding_completed': true,
+        'app_version': '1.0.0',
       });
 
       // Clear SharedPreferences

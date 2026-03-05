@@ -117,19 +117,6 @@ void main() {
       verify(mockAuthService.signInWithApple()).called(1);
     });
 
-    test('should delegate signInAnonymously to AuthenticationService',
-        () async {
-      // Arrange
-      when(mockAuthService.signInAnonymously()).thenAnswer((_) async => true);
-
-      // Act
-      final result = await authService.signInAnonymously();
-
-      // Assert
-      expect(result, true);
-      verify(mockAuthService.signInAnonymously()).called(1);
-    });
-
     test('should delegate signOut to AuthenticationService', () async {
       // Arrange
       when(mockAuthService.signOut()).thenAnswer((_) async {});
@@ -150,18 +137,6 @@ void main() {
 
       // Assert
       verify(mockAuthService.deleteAccount()).called(1);
-    });
-
-    test('should delegate createAnonymousUser to AuthenticationService', () {
-      // Arrange
-      when(mockAuthService.createAnonymousUser()).thenReturn(mockUser);
-
-      // Act
-      final result = authService.createAnonymousUser();
-
-      // Assert
-      expect(result, mockUser);
-      verify(mockAuthService.createAnonymousUser()).called(1);
     });
   });
 

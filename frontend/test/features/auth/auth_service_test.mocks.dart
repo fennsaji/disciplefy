@@ -189,15 +189,6 @@ class MockAuthenticationService extends _i1.Mock
       ) as _i5.Future<bool>);
 
   @override
-  _i5.Future<bool> signInAnonymously() => (super.noSuchMethod(
-        Invocation.method(
-          #signInAnonymously,
-          [],
-        ),
-        returnValue: _i5.Future<bool>.value(false),
-      ) as _i5.Future<bool>);
-
-  @override
   _i5.Future<bool> signUpWithEmail({
     required String? email,
     required String? password,
@@ -281,21 +272,6 @@ class MockAuthenticationService extends _i1.Mock
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
-
-  @override
-  _i2.User createAnonymousUser() => (super.noSuchMethod(
-        Invocation.method(
-          #createAnonymousUser,
-          [],
-        ),
-        returnValue: _FakeUser_0(
-          this,
-          Invocation.method(
-            #createAnonymousUser,
-            [],
-          ),
-        ),
-      ) as _i2.User);
 
   @override
   _i5.Future<void> testOAuthProfileSync() => (super.noSuchMethod(

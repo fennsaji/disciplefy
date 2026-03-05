@@ -17,6 +17,7 @@ import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/services/platform_detection_service.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
@@ -38,6 +39,9 @@ class MyPlanPage extends StatefulWidget {
 class _MyPlanPageState extends State<MyPlanPage> {
   List<String> _planFeatures = [];
   bool _featuresLoading = true;
+  // Plan display price fetched from the pricing API (provider-aware).
+  // Used as a fallback when subscription.amountPaise == 0 (e.g. Google Play).
+  double? _planDisplayPrice;
 
   @override
   void initState() {
@@ -57,9 +61,16 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ? tokenState.tokenStatus.userPlan
           : UserPlan.free;
 
+      // Use the platform's preferred provider so the price matches what the
+      // user was actually charged (e.g. Google Play price on Android, not
+      // the Razorpay price which is never used on that platform).
+      final platformService = PlatformDetectionService();
+      final providerString = platformService
+          .providerToString(platformService.getPreferredProvider());
+
       final locale = sl<TranslationService>().currentLanguage.code;
       final response = await sl<SubscriptionRemoteDataSource>()
-          .getPlans(provider: 'razorpay', locale: locale);
+          .getPlans(provider: providerString, locale: locale);
 
       final plan = response.plans.firstWhere(
         (p) => p.planCode == userPlan.name,
@@ -69,6 +80,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
       if (mounted) {
         setState(() {
           _planFeatures = PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
+          _planDisplayPrice = plan.displayPrice;
           _featuresLoading = false;
         });
       }
@@ -971,15 +983,9 @@ class _MyPlanPageState extends State<MyPlanPage> {
             const SizedBox(height: 12),
             _buildDetailRow(
               context.tr(TranslationKeys.myPlanAmount),
-              '\u20b9${subscription.amountRupees.toStringAsFixed(0)}/month',
+              '\u20b9${_resolveDisplayAmount(subscription)}/month',
             ),
-            if (subscription.currentPeriodEnd != null)
-              _buildDetailRow(
-                subscription.isActive
-                    ? context.tr(TranslationKeys.myPlanNextBilling)
-                    : context.tr(TranslationKeys.myPlanAccessUntil),
-                _formatDate(subscription.currentPeriodEnd!),
-              ),
+            _buildBillingDateRow(subscription),
             _buildDetailRow(
               context.tr(TranslationKeys.myPlanStatus),
               subscription.status.displayName,
@@ -991,6 +997,44 @@ class _MyPlanPageState extends State<MyPlanPage> {
         ),
       ),
     );
+  }
+
+  /// Returns the formatted amount string for the billing row.
+  /// Prefers the subscription's own amountPaise (Razorpay stores this).
+  /// Falls back to the plan price fetched from the pricing API, which covers
+  /// Google Play / Apple IAP subscriptions where amountPaise is stored as 0.
+  String _resolveDisplayAmount(Subscription subscription) {
+    if (subscription.amountPaise > 0) {
+      return subscription.amountRupees.toStringAsFixed(0);
+    }
+    if (_planDisplayPrice != null && _planDisplayPrice! > 0) {
+      return _planDisplayPrice!.toStringAsFixed(0);
+    }
+    return '—';
+  }
+
+  /// Billing date row — shows next billing / access-until date.
+  /// Tries currentPeriodEnd first, then nextBillingAt as a fallback.
+  /// For IAP subscriptions where neither date is stored locally, shows
+  /// "Via Google Play" / "Via App Store" so the row is never blank.
+  Widget _buildBillingDateRow(Subscription subscription) {
+    final billingDate =
+        subscription.currentPeriodEnd ?? subscription.nextBillingAt;
+    final label = subscription.isActive
+        ? context.tr(TranslationKeys.myPlanNextBilling)
+        : context.tr(TranslationKeys.myPlanAccessUntil);
+
+    if (billingDate != null) {
+      return _buildDetailRow(label, _formatDate(billingDate));
+    }
+
+    if (subscription.isIAPSubscription) {
+      final store =
+          subscription.provider == 'google_play' ? 'Google Play' : 'App Store';
+      return _buildDetailRow(label, 'Via $store');
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
@@ -1387,7 +1431,14 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
         ),
         content: Text(
-          context.tr(TranslationKeys.subscriptionCancelEndMessage),
+          context.tr(TranslationKeys.subscriptionCancelEndMessage).replaceAll(
+                '{date}',
+                _formatDate(
+                  subscription.currentPeriodEnd ??
+                      subscription.nextBillingAt ??
+                      DateTime.now().add(const Duration(days: 30)),
+                ),
+              ),
           style: AppFonts.inter(
             fontSize: 14,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),

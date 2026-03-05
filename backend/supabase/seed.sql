@@ -182,16 +182,7 @@ BEGIN
     WHERE s.id IS NULL  -- No existing subscription
       AND COALESCE(up.created_at, u.created_at) <= v_trial_end_date  -- Created before trial ended
       AND COALESCE(up.is_admin, false) = false  -- Not admin
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      plan_id = EXCLUDED.plan_id,
-      plan_type = EXCLUDED.plan_type,
-      status = EXCLUDED.status,
-      provider = EXCLUDED.provider,
-      provider_subscription_id = EXCLUDED.provider_subscription_id,
-      current_period_start = EXCLUDED.current_period_start,
-      current_period_end = EXCLUDED.current_period_end,
-      updated_at = NOW()
+    ON CONFLICT DO NOTHING
     RETURNING id
   )
   SELECT COUNT(*) INTO v_records_created FROM inserted;

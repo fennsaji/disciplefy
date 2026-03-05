@@ -85,6 +85,19 @@ show_usage() {
     echo ""
     echo -e "${BLUE}📦 Migrations:${NC}"
     echo "  Use --restart to apply any pending migrations without losing data."
+    echo ""
+    echo -e "${BLUE}🪙 IAP / Google Play Billing:${NC}"
+    echo "  Set in your env file to control receipt validation mode:"
+    echo "    APP_ENVIRONMENT=sandbox   # look for sandbox iap_config rows (internal test track)"
+    echo "    APP_ENVIRONMENT=production # look for production iap_config rows (default)"
+    echo "    USE_MOCK=true             # bypass iap_config entirely, return mock success (UI testing)"
+    echo ""
+    echo "  Path A — UI testing only (no real purchases):"
+    echo "    Add USE_MOCK=true to your env file"
+    echo ""
+    echo "  Path B — Internal test track (real Google Play test purchases):"
+    echo "    Add APP_ENVIRONMENT=sandbox to your env file"
+    echo "    Activate sandbox iap_config rows with real service account credentials"
 }
 
 # Parse command line arguments
@@ -206,6 +219,32 @@ else
     echo -e "${YELLOW}⚠️  OAuth credentials not found in ${ENV_FILE}${NC}"
 fi
 
+# Load IAP environment variables BEFORE starting Supabase.
+# config.toml [edge_runtime.secrets] uses env() references, so these must be
+# exported to the shell environment BEFORE `supabase start` is called.
+# supabase functions serve also picks them up via --env-file, but exporting
+# here ensures the baked secrets in the edge runtime are correct too.
+echo -e "${BLUE}🪙 Loading IAP configuration from ${ENV_FILE}...${NC}"
+
+_RAW_APP_ENV=$(grep "^APP_ENVIRONMENT=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d'=' -f2- || true)
+_RAW_USE_MOCK=$(grep "^USE_MOCK=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d'=' -f2- || true)
+
+# Export to shell so config.toml env() references are satisfied
+export APP_ENVIRONMENT="${_RAW_APP_ENV:-production}"
+export USE_MOCK="${_RAW_USE_MOCK:-false}"
+
+if [ "$USE_MOCK" = "true" ]; then
+    echo -e "  ${YELLOW}🎭 IAP mode: MOCK (bypasses Google Play API — UI testing only)${NC}"
+    echo -e "  ${YELLOW}   Real purchases will NOT be validated${NC}"
+elif [ "$APP_ENVIRONMENT" = "sandbox" ]; then
+    echo -e "  ${GREEN}🧪 IAP mode: SANDBOX (internal test track — real test purchases)${NC}"
+    echo -e "  ${GREEN}   Reads iap_config rows where environment='sandbox'${NC}"
+else
+    echo -e "  ${BLUE}🏭 IAP mode: PRODUCTION (reads iap_config rows where environment='production')${NC}"
+    echo -e "  ${YELLOW}   Set APP_ENVIRONMENT=sandbox in ${ENV_FILE} for test track testing${NC}"
+    echo -e "  ${YELLOW}   Set USE_MOCK=true in ${ENV_FILE} for UI-only testing${NC}"
+fi
+
 # Start Supabase services
 if [ "$RESET_DB" = true ]; then
     echo -e "${YELLOW}🚀 Starting Supabase services with database reset...${NC}"
@@ -270,6 +309,18 @@ echo -e "${BLUE}🎯 OAuth Configuration${NC}"
 echo -e "  ✅ Google OAuth callback: ${GREEN}http://127.0.0.1:54321/auth/v1/callback${NC}"
 echo -e "  ✅ Site URL: ${GREEN}http://localhost:59641${NC}"
 echo -e "  📝 Note: Original config.toml backed up and will be restored on exit"
+echo -e ""
+echo -e "${BLUE}🪙 IAP / Google Play Billing${NC}"
+if [ "$USE_MOCK" = "true" ]; then
+    echo -e "  🎭 Mode: ${YELLOW}MOCK${NC} — Google Play API bypassed, purchases auto-succeed"
+elif [ "$APP_ENVIRONMENT" = "sandbox" ]; then
+    echo -e "  🧪 Mode: ${GREEN}SANDBOX${NC} — validates real internal test track purchases"
+    echo -e "  📋 Ensure sandbox iap_config rows are active with real service account creds"
+else
+    echo -e "  🏭 Mode: ${BLUE}PRODUCTION${NC} — needs production iap_config credentials"
+    echo -e "  ${YELLOW}  → Add APP_ENVIRONMENT=sandbox to ${ENV_FILE} for test track testing${NC}"
+    echo -e "  ${YELLOW}  → Add USE_MOCK=true to ${ENV_FILE} for UI-only testing${NC}"
+fi
 echo -e ""
 echo -e "${BLUE}🔥 Important Notes:${NC}"
 echo -e "  • This is for LOCAL development only"
