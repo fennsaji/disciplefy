@@ -104,7 +104,7 @@ jobs:
           storePassword=$STORE_PASSWORD
           keyPassword=$KEY_PASSWORD
           keyAlias=$KEY_ALIAS
-          storeFile=app/upload-keystore.jks
+          storeFile=upload-keystore.jks
           EOF
 
       - name: 📝 Create google-services.json
