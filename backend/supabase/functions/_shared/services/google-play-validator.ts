@@ -56,6 +56,20 @@ export async function validateGooglePlayReceipt(
     // Get Google Play configuration
     const config = await getIAPConfig(supabase, 'google_play', environment)
 
+    // Validate package name matches config
+    if (receipt.packageName !== config.packageName) {
+      return {
+        isValid: false,
+        error: `Package name mismatch: expected ${config.packageName}, got ${receipt.packageName}`,
+        transactionId: receipt.purchaseToken,
+        purchaseDate: new Date(0),
+        autoRenewing: false,
+        isTrial: false,
+        isIntroOffer: false,
+        validationResponse: null
+      }
+    }
+
     // Get access token using service account
     const accessToken = await getGoogleAccessToken(
       config.serviceAccountEmail!,
@@ -111,7 +125,7 @@ export async function validateGooglePlayReceipt(
 
     // Check for trial or intro offer
     const offerDetails = lineItems[0]?.offerDetails
-    const isTrial = offerDetails?.basePlanId?.includes('trial') || false
+    const isTrial = offerDetails?.offerType === 'FREE_TRIAL'
     const isIntroOffer = offerDetails?.offerType === 'INTRODUCTORY_OFFER' || false
 
     // Auto-renewing status (== catches both null and undefined)
@@ -126,7 +140,7 @@ export async function validateGooglePlayReceipt(
 
     return {
       isValid: isActive,
-      transactionId: latestOrderId || receipt.purchaseToken,
+      transactionId: receipt.purchaseToken,
       purchaseDate: startTime,
       expiryDate: expiryTime,
       isTrial,
@@ -236,7 +250,7 @@ export async function acknowledgeGooglePlayPurchase(
       config.serviceAccountKey!
     )
 
-    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${receipt.packageName}/purchases/subscriptions/${receipt.productId}/tokens/${receipt.purchaseToken}:acknowledge`
+    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${receipt.packageName}/purchases/subscriptionsv2/tokens/${receipt.purchaseToken}:acknowledge`
 
     const response = await fetch(apiUrl, {
       method: 'POST',

@@ -82,13 +82,14 @@ class _PricingPageState extends State<PricingPage> {
       // Sync current state immediately
       final currentState = bloc.state;
       if (currentState is SubscriptionLoaded && mounted) {
-        final planCode = currentState.activeSubscription?.planType;
-        if (planCode != null) {
+        final sub = currentState.activeSubscription;
+        final planCode = (sub != null && sub.isActive) ? sub.planType : null;
+        if (planCode != null && planCode.isNotEmpty) {
           setState(() {
             _activePlanCode = planCode;
           });
         } else {
-          // No paid subscription — load status to surface trial/free plan
+          // No active paid subscription — load status to surface trial/free plan
           bloc.add(const LoadSubscriptionStatus());
         }
       } else if (currentState is UserSubscriptionStatusLoaded && mounted) {
@@ -111,30 +112,32 @@ class _PricingPageState extends State<PricingPage> {
         if (state is SubscriptionLoaded && mounted) {
           SchedulerBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              final planCode = state.activeSubscription?.planType;
-              if (planCode != null) {
+              // Only use planType from a genuinely active subscription.
+              // Stale cached cancelled/expired subs must not override the RPC result.
+              final sub = state.activeSubscription;
+              final planCode =
+                  (sub != null && sub.isActive) ? sub.planType : null;
+              if (planCode != null && planCode.isNotEmpty) {
                 setState(() {
                   _activePlanCode = planCode;
                 });
               } else {
-                // No paid subscription — load status to surface trial/free plan
+                // No active paid subscription — load status to surface trial/free plan
                 bloc.add(const LoadSubscriptionStatus());
               }
             }
           });
         } else if (state is UserSubscriptionStatusLoaded && mounted) {
-          // Only update from status if we don't already have a paid subscription plan
-          // (paid subscription always takes priority over trial status)
-          if (_activePlanCode == null) {
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                final plan = state.subscriptionStatus.currentPlan;
-                setState(() {
-                  _activePlanCode = plan != 'free' ? plan : null;
-                });
-              }
-            });
-          }
+          // UserSubscriptionStatus (RPC) is the authoritative source of truth.
+          // Always apply it so a stale cached plan code never persists.
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              final plan = state.subscriptionStatus.currentPlan;
+              setState(() {
+                _activePlanCode = plan != 'free' ? plan : null;
+              });
+            }
+          });
         }
       });
     } catch (_) {

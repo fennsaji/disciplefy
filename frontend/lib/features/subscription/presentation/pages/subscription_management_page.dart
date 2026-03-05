@@ -77,8 +77,15 @@ class _SubscriptionManagementPageState
           }
 
           // Check if user is Standard trial (no subscription yet)
-          final trialEndDate = DateTime(2026, 3, 31);
-          final isTrialActive = DateTime.now().isBefore(trialEndDate);
+          // Use UserSubscriptionStatus from SubscriptionBloc if available,
+          // otherwise fall back to TokenStatus plan check.
+          final subState = context.read<SubscriptionBloc>().state;
+          DateTime? trialEndDate;
+          bool isTrialActive = false;
+          if (subState is UserSubscriptionStatusLoaded) {
+            isTrialActive = subState.subscriptionStatus.isTrialActive;
+            trialEndDate = subState.subscriptionStatus.trialEndDate;
+          }
           final isStandardTrialUser = tokenStatus != null &&
               tokenStatus.userPlan == UserPlan.standard &&
               isTrialActive;
@@ -206,11 +213,11 @@ class _SubscriptionManagementPageState
   }
 
   /// Build view for Standard plan users in trial period (no subscription yet)
-  Widget _buildStandardTrialView(DateTime trialEndDate) {
+  Widget _buildStandardTrialView(DateTime? trialEndDate) {
     const standardColor = AppColors.brandPrimary;
     const standardColorLight =
         Color(0xFFB794F4); // Lighter purple for dark mode
-    final daysRemaining = trialEndDate.difference(DateTime.now()).inDays;
+    final daysRemaining = trialEndDate?.difference(DateTime.now()).inDays ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Theme-aware colors
@@ -452,7 +459,8 @@ class _SubscriptionManagementPageState
     );
   }
 
-  String _formatTrialDate(DateTime date) {
+  String _formatTrialDate(DateTime? date) {
+    if (date == null) return 'the trial end date';
     final months = [
       'January',
       'February',
@@ -873,6 +881,11 @@ class _SubscriptionManagementPageState
     final isLoading = state is SubscriptionLoading &&
         (state.operation == 'cancelling' || state.operation == 'resuming');
 
+    // Paused subscriptions (Google Play) — direct user to Google Play to resume.
+    if (subscription.status == SubscriptionStatus.paused) {
+      return _buildPausedSubscriptionUI(subscription.provider);
+    }
+
     // IAP subscriptions (Google Play / App Store) are managed through the respective app store.
     // We cannot cancel/resume IAP subscriptions via API — direct users to the store instead.
     // Use subscription.provider to check, NOT platform detection, so that a Razorpay subscriber
@@ -1002,6 +1015,73 @@ class _SubscriptionManagementPageState
           icon: Icon(storeIcon, size: 20),
           label: Text(
             storeLabel,
+            style: AppFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds the UI shown when a subscription is paused (e.g. via Google Play).
+  /// Directs the user to Google Play to resume their subscription.
+  Widget _buildPausedSubscriptionUI(String subscriptionProvider) {
+    final isAndroid = subscriptionProvider == 'google_play';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.warningColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.warningColor.withOpacity(0.4),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.pause_circle_outline_rounded,
+                color: AppTheme.warningColor,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Your subscription is paused. Manage it in ${isAndroid ? 'Google Play' : 'the App Store'} to resume.',
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () => _openStoreSubscriptions(isAndroid),
+          icon: Icon(
+            isAndroid ? Icons.shop_rounded : Icons.apple_rounded,
+            size: 20,
+          ),
+          label: Text(
+            isAndroid ? 'Resume in Google Play' : 'Resume in App Store',
             style: AppFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w600,

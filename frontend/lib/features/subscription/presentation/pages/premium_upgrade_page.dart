@@ -149,16 +149,29 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    context.tr(TranslationKeys.premiumSubscriptionCreated)),
-                backgroundColor: AppTheme.successColor,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            _hasOpenedPayment = true;
-            _openAuthorizationUrl(state.authorizationUrl);
+            if (state.authorizationUrl.isNotEmpty) {
+              // Razorpay flow — redirect user to payment page in browser
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      context.tr(TranslationKeys.premiumSubscriptionCreated)),
+                  backgroundColor: AppTheme.successColor,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+              _hasOpenedPayment = true;
+              _openAuthorizationUrl(state.authorizationUrl);
+            } else {
+              // Google Play flow — purchase already processed, no redirect needed
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                      'Purchase received! Activating subscription...'),
+                  backgroundColor: AppTheme.successColor,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
           } else if (state is SubscriptionLoaded) {
             if (state.activeSubscription?.isActive == true) {
               Logger.debug(

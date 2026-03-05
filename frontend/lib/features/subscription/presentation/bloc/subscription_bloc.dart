@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
@@ -59,6 +62,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   // Auto-restore: attempt once per session when backend reports no active subscription
   bool _hasAttemptedAutoRestore = false;
 
+  // Play Store sync: attempt once per session when backend reports an active IAP subscription
+  bool _hasAttemptedPlayStoreSync = false;
+
   // Deduplication: prevent the same purchase token being processed more than once
   // concurrently (can happen when multiple BLoC instances call restorePurchases()).
   final Set<String> _processingPurchaseTokens = {};
@@ -110,6 +116,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     // Internal IAP event handlers
     on<IAPPurchaseCompleted>(_onIAPPurchaseCompleted);
     on<IAPPurchaseError>(_onIAPPurchaseError);
+    on<IAPPurchaseCancelled>(_onIAPPurchaseCancelled);
+    on<SyncPlayStoreSubscription>(_onSyncPlayStoreSubscription);
 
     // Set up IAP callbacks if service is available
     _setupIAPCallbacks();
@@ -284,6 +292,20 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           Logger.debug(
               '🔄 [BLOC] No active subscription — auto-restoring IAP purchases');
           _iapService!.restorePurchases();
+        }
+
+        // Play Store sync: if backend has an active IAP subscription, run a
+        // one-time silent sync to catch cancellations, renewals, and stale
+        // expiry dates that webhooks may have missed.
+        if (subscription != null &&
+            subscription.isIAPSubscription &&
+            !_hasAttemptedPlayStoreSync &&
+            !kIsWeb &&
+            Platform.isAndroid) {
+          _hasAttemptedPlayStoreSync = true;
+          Logger.debug(
+              '🔄 [BLOC] Active IAP subscription found — triggering Play Store sync');
+          _iapService!.restorePurchasesForSync();
         }
       },
     );
@@ -469,7 +491,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       planCode: 'standard',
       planName: 'Standard',
       promoCode: event.promoCode,
-      operation: 'creating standard subscription',
+      operation: 'creating',
       emit: emit,
     );
   }
@@ -483,7 +505,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       planCode: 'plus',
       planName: 'Plus',
       promoCode: event.promoCode,
-      operation: 'creating plus subscription',
+      operation: 'creating',
       emit: emit,
     );
   }
@@ -815,6 +837,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         (failure) {
           Logger.debug('❌ [BLOC] Receipt validation failed: $failure');
           _processingPurchaseTokens.remove(purchaseKey);
+          if (isClosed) return;
           emit(SubscriptionError(
             failure: failure,
             operation: 'creating IAP subscription',
@@ -838,6 +861,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
             message: 'Subscription activated successfully',
           );
 
+          if (isClosed) return;
           emit(SubscriptionCreated(
             result: createResult,
             createdAt: DateTime.now(),
@@ -863,6 +887,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     } catch (e) {
       Logger.debug('❌ [BLOC] IAP purchase handling error: $e');
       _processingPurchaseTokens.remove(purchaseKey);
+      if (isClosed) return;
       emit(SubscriptionError(
         failure: ServerFailure(message: 'Failed to process purchase: $e'),
         operation: 'creating IAP subscription',
@@ -890,6 +915,72 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       operation: 'creating IAP subscription',
       previousSubscription: _cachedSubscription,
     ));
+  }
+
+  /// Handle IAP purchase cancelled by user
+  ///
+  /// Returns the BLoC to a neutral/previous state without showing an error.
+  /// The user deliberately dismissed the purchase sheet — this is not an error.
+  Future<void> _onIAPPurchaseCancelled(
+    IAPPurchaseCancelled event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    Logger.debug('🛒 [BLOC] IAP Purchase cancelled — restoring previous state');
+
+    // Clear pending purchase tracking
+    _pendingPurchasePlanCode = null;
+    _pendingPurchasePromoCode = null;
+
+    // Return to previous loaded state if available, otherwise initial state
+    if (_cachedSubscription != null && _lastCacheUpdate != null) {
+      emit(SubscriptionLoaded(
+        activeSubscription: _cachedSubscription,
+        lastUpdated: _lastCacheUpdate!,
+      ));
+    } else {
+      emit(const SubscriptionInitial());
+    }
+  }
+
+  /// Handle silent Play Store subscription sync event.
+  ///
+  /// Never emits an error state — failures are logged and discarded.
+  /// If the backend made any changes, clears cache and triggers a refresh.
+  Future<void> _onSyncPlayStoreSubscription(
+    SyncPlayStoreSubscription event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    Logger.debug(
+        '🔄 [BLOC] Processing Play Store sync — ${event.purchases.length} purchase(s), deviceHasNoPurchases: ${event.deviceHasNoPurchases}');
+
+    // Build the purchases payload for the backend (Google Play only)
+    final payload = event.purchases
+        .whereType<GooglePlayPurchaseDetails>()
+        .map((p) => {
+              'product_id': p.productID,
+              'purchase_token': p.billingClientPurchase.purchaseToken,
+              'package_name': p.billingClientPurchase.packageName,
+              'receipt_data': p.billingClientPurchase.originalJson,
+            })
+        .toList();
+
+    final result = await _subscriptionRepository.syncPlayStoreStatus(
+      purchases: payload,
+      deviceHasNoPurchases: event.deviceHasNoPurchases,
+    );
+
+    result.fold(
+      (failure) =>
+          Logger.debug('⚠️ [BLOC] Play Store sync failed (silent): $failure'),
+      (syncResult) {
+        Logger.debug(
+            '✅ [BLOC] Play Store sync action: ${syncResult.actionTaken}');
+        if (syncResult.actionTaken != 'none') {
+          _clearCache();
+          if (!isClosed) add(const RefreshSubscription());
+        }
+      },
+    );
   }
 
   // ========== Auto-Refresh Timer ==========
@@ -1118,6 +1209,22 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       Logger.debug('🛒 [BLOC] IAP Purchase error: $error');
       // Add event instead of calling method directly
       add(IAPPurchaseError(error));
+    };
+
+    // Handle purchase cancellation (user dismissed the purchase sheet)
+    _iapService!.onPurchaseCancelled = () {
+      Logger.debug('🛒 [BLOC] IAP Purchase cancelled by user');
+      add(const IAPPurchaseCancelled());
+    };
+
+    // Handle sync-mode restore completion (silent background sync)
+    _iapService!.onSyncRestoreCompleted = (purchases) {
+      Logger.debug(
+          '🔄 [BLOC] Sync restore completed — ${purchases.length} purchase(s)');
+      add(SyncPlayStoreSubscription(
+        purchases: purchases,
+        deviceHasNoPurchases: purchases.isEmpty,
+      ));
     };
   }
 

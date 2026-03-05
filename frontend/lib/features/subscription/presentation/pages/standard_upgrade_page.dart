@@ -144,16 +144,29 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    const Text('Subscription created! Opening payment page...'),
-                backgroundColor: AppTheme.successColor,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            _hasOpenedPayment = true;
-            _openAuthorizationUrl(state.authorizationUrl);
+            if (state.authorizationUrl.isNotEmpty) {
+              // Razorpay flow — redirect user to payment page in browser
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                      'Subscription created! Opening payment page...'),
+                  backgroundColor: AppTheme.successColor,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+              _hasOpenedPayment = true;
+              _openAuthorizationUrl(state.authorizationUrl);
+            } else {
+              // Google Play flow — purchase already processed, no redirect needed
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                      'Purchase received! Activating subscription...'),
+                  backgroundColor: AppTheme.successColor,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
           } else if (state is SubscriptionLoaded) {
             if (state.activeSubscription?.isActive == true) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -168,6 +181,12 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
                 if (mounted) Navigator.of(context).pop();
               });
             }
+          } else if (state is UserSubscriptionStatusLoaded &&
+              state.authorizationUrl != null &&
+              state.authorizationUrl!.isNotEmpty &&
+              !_hasOpenedPayment) {
+            _hasOpenedPayment = true;
+            _openAuthorizationUrl(state.authorizationUrl!);
           } else if (state is SubscriptionError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -503,8 +522,9 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
       );
     }
 
-    final isLoading =
-        state is SubscriptionLoading && state.operation == 'creating';
+    final isLoading = state is SubscriptionLoading &&
+        (state.operation?.contains('creating') == true ||
+            state.operation == 'creating');
 
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,

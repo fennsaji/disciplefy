@@ -185,6 +185,18 @@ abstract class SubscriptionRemoteDataSource {
     String? promoCode,
     String? receipt,
   });
+
+  /// Syncs Play Store subscription status with backend.
+  ///
+  /// [purchases] - Raw purchase maps from the device.
+  /// [deviceHasNoPurchases] - true when device reports zero active purchases.
+  ///
+  /// Returns [SyncPlayStoreResponseModel] on success.
+  /// Throws [ServerException] / [AuthenticationException] on failure.
+  Future<SyncPlayStoreResponseModel> syncPlayStoreStatus({
+    required List<Map<String, dynamic>> purchases,
+    required bool deviceHasNoPurchases,
+  });
 }
 
 /// Response model for starting a Premium trial
@@ -207,6 +219,30 @@ class StartPremiumTrialResponseModel {
       trialEndAt: DateTime.parse(json['trial_end_at'] as String),
       daysRemaining: json['days_remaining'] as int,
       message: json['message'] as String,
+    );
+  }
+}
+
+/// Response model for Play Store sync
+class SyncPlayStoreResponseModel {
+  final bool success;
+  final String actionTaken;
+  final String? newStatus;
+  final String? subscriptionId;
+
+  const SyncPlayStoreResponseModel({
+    required this.success,
+    required this.actionTaken,
+    this.newStatus,
+    this.subscriptionId,
+  });
+
+  factory SyncPlayStoreResponseModel.fromJson(Map<String, dynamic> json) {
+    return SyncPlayStoreResponseModel(
+      success: json['success'] as bool? ?? false,
+      actionTaken: json['action_taken'] as String? ?? 'none',
+      newStatus: json['new_status'] as String?,
+      subscriptionId: json['subscription_id'] as String?,
     );
   }
 }
@@ -1307,6 +1343,66 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       throw ClientException(
         message: 'Unable to create subscription. Please try again later.',
         code: 'SUBSCRIPTION_CREATION_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<SyncPlayStoreResponseModel> syncPlayStoreStatus({
+    required List<Map<String, dynamic>> purchases,
+    required bool deviceHasNoPurchases,
+  }) async {
+    try {
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Syncing Play Store status — ${purchases.length} purchase(s), deviceHasNoPurchases: $deviceHasNoPurchases');
+
+      final response = await _supabaseClient.functions.invoke(
+        'sync-subscription-status',
+        body: {
+          'provider': 'google_play',
+          'purchases': purchases,
+          'device_has_no_purchases': deviceHasNoPurchases,
+        },
+        headers: headers,
+      );
+
+      Logger.debug(
+          '💎 [SUBSCRIPTION_API] Sync response status: ${response.status}');
+
+      if (response.status == 200 && response.data != null) {
+        return SyncPlayStoreResponseModel.fromJson(
+            response.data as Map<String, dynamic>);
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+        );
+      } else {
+        throw ServerException(
+          message: 'Sync failed with status ${response.status}',
+          code: 'SYNC_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error syncing Play Store status: $e');
+      throw ClientException(
+        message: 'Unable to sync subscription status.',
+        code: 'SYNC_FAILED',
         context: {'originalError': e.toString()},
       );
     }
