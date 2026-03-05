@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'frontend/**'
+      - 'distribution/whatsnew/**'
       - '.github/workflows/android-deploy-playstore-beta.yml'
   workflow_dispatch:
     inputs:
