@@ -178,10 +178,8 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
             Logger.debug(
                 '🔍 [AUTH CALLBACK] ✅ Authentication successful, navigating to home...');
             Logger.debug(
-                '🔍 [AUTH CALLBACK] - User: ${state.user.email ?? "Anonymous"}');
+                '🔍 [AUTH CALLBACK] - User: ${state.user.email ?? "Unknown"}');
             Logger.debug('🔍 [AUTH CALLBACK] - User ID: ${state.user.id}');
-            Logger.debug(
-                '🔍 [AUTH CALLBACK] - Is Anonymous: ${state.isAnonymous}');
             Logger.debug('🔍 [AUTH CALLBACK] - Timestamp: $timestamp');
 
             // Add a small delay to ensure storage operations complete

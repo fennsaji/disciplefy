@@ -230,8 +230,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.tokenManagement,
         name: 'token_management',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const TokenManagementPage(),
         ),
       ),
@@ -265,48 +265,48 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.premiumUpgrade,
         name: 'premium_upgrade',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const PremiumUpgradePage(),
         ),
       ),
       GoRoute(
         path: AppRoutes.plusUpgrade,
         name: 'plus_upgrade',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const PlusUpgradePage(),
         ),
       ),
       GoRoute(
         path: AppRoutes.standardUpgrade,
         name: 'standard_upgrade',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const StandardUpgradePage(),
         ),
       ),
       GoRoute(
         path: AppRoutes.subscriptionManagement,
         name: 'subscription_management',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const SubscriptionManagementPage(),
         ),
       ),
       GoRoute(
         path: AppRoutes.myPlan,
         name: 'my_plan',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const MyPlanPage(),
         ),
       ),
       GoRoute(
         path: AppRoutes.subscriptionPaymentHistory,
         name: 'subscription_payment_history',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<SubscriptionBloc>(),
+        builder: (context, state) => BlocProvider.value(
+          value: sl<SubscriptionBloc>(),
           child: const SubscriptionPaymentHistoryPage(),
         ),
       ),
@@ -601,10 +601,31 @@ class AppRouter {
         path: AppRoutes.pricing,
         name: 'pricing',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => PricingPage(
-          platformService: PlatformDetectionService(),
-          dataSource: SubscriptionRemoteDataSourceImpl(
-            supabaseClient: Supabase.instance.client,
+        // Use pageBuilder + state.pageKey so GoRouter assigns a stable ValueKey
+        // to the page. Without pageBuilder, GoRouter wraps the builder result in
+        // a new MaterialPage on every refresh (auth events, token refreshes), which
+        // temporarily places TWO page entries in the navigator for the same route.
+        // That causes ScrollableState._gestureDetectorKey (an internal GlobalKey
+        // inside SingleChildScrollView) to appear in two active element positions
+        // simultaneously, triggering: '_elements.contains(element): is not true'.
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            // UniqueKey() on PricingPage forces Flutter to REPLACE (not update)
+            // the element every time pageBuilder is called. This prevents the
+            // preserved ScrollableState._gestureDetectorKey from being activated
+            // at two tree positions simultaneously during GoRouter rebuilds and
+            // hot reload, which was causing:
+            //   '_elements.contains(element)': is not true
+            // in _InactiveElements.remove → Element._retakeInactiveElement.
+            child: PricingPage(
+              key: UniqueKey(),
+              platformService: PlatformDetectionService(),
+              dataSource: SubscriptionRemoteDataSourceImpl(
+                supabaseClient: Supabase.instance.client,
+              ),
+            ),
           ),
         ),
       ),

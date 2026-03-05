@@ -1,9 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../bloc/subscription_bloc.dart';
+import '../bloc/subscription_state.dart';
 import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -15,6 +23,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../../data/models/subscription_v2_models.dart';
+import '../bloc/subscription_event.dart';
 import '../utils/plan_features_extractor.dart';
 import '../widgets/pricing_card.dart';
 import '../widgets/promo_code_input.dart';
@@ -45,17 +54,110 @@ class _PricingPageState extends State<PricingPage> {
   List<SubscriptionPlanModel> _plans = [];
   PromotionalCampaignModel? _appliedPromo;
 
+  // Active plan code for current-plan highlighting — read from SubscriptionBloc
+  // if available (authenticated routes). Null for unauthenticated/public routes.
+  String? _activePlanCode;
+  StreamSubscription<SubscriptionState>? _subscriptionStateSub;
+
   @override
   void initState() {
     super.initState();
-    _fetchPlans();
+    // setLoadingState: false — _isLoading is already true from the field initializer.
+    // Calling setState from within initState (before _firstBuild completes) marks
+    // the element dirty and can cause a double-build in the same frame.
+    _fetchPlans(setLoadingState: false);
+    // Subscribe to SubscriptionBloc after the first frame so the context is fully mounted.
+    // Using a stream subscription (not BlocBuilder) keeps the widget tree structure stable
+    // and avoids element-lifecycle / duplicate-GlobalKey errors from dynamically switching
+    // between Builder and BlocBuilder widget types.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initSubscriptionListener();
+    });
   }
 
-  Future<void> _fetchPlans({String? promoCode}) async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  void _initSubscriptionListener() {
+    try {
+      final bloc = context.read<SubscriptionBloc>();
+
+      // Sync current state immediately
+      final currentState = bloc.state;
+      if (currentState is SubscriptionLoaded && mounted) {
+        final sub = currentState.activeSubscription;
+        final planCode = (sub != null && sub.isActive) ? sub.planType : null;
+        if (planCode != null && planCode.isNotEmpty) {
+          setState(() {
+            _activePlanCode = planCode;
+          });
+        } else {
+          // No active paid subscription — load status to surface trial/free plan
+          bloc.add(const LoadSubscriptionStatus());
+        }
+      } else if (currentState is UserSubscriptionStatusLoaded && mounted) {
+        final plan = currentState.subscriptionStatus.currentPlan;
+        if (plan != 'free') {
+          setState(() {
+            _activePlanCode = plan;
+          });
+        }
+      } else {
+        // Trigger a fetch so the state arrives shortly
+        bloc.add(const GetActiveSubscription());
+      }
+
+      // Reactively update when state changes.
+      // Defer setState via addPostFrameCallback so it never fires mid-frame
+      // (which causes Duplicate GlobalKey / element-lifecycle assertion errors
+      // when the parent SubscriptionBloc consumer rebuilds in the same frame).
+      _subscriptionStateSub = bloc.stream.listen((state) {
+        if (state is SubscriptionLoaded && mounted) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              // Only use planType from a genuinely active subscription.
+              // Stale cached cancelled/expired subs must not override the RPC result.
+              final sub = state.activeSubscription;
+              final planCode =
+                  (sub != null && sub.isActive) ? sub.planType : null;
+              if (planCode != null && planCode.isNotEmpty) {
+                setState(() {
+                  _activePlanCode = planCode;
+                });
+              } else {
+                // No active paid subscription — load status to surface trial/free plan
+                bloc.add(const LoadSubscriptionStatus());
+              }
+            }
+          });
+        } else if (state is UserSubscriptionStatusLoaded && mounted) {
+          // UserSubscriptionStatus (RPC) is the authoritative source of truth.
+          // Always apply it so a stale cached plan code never persists.
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              final plan = state.subscriptionStatus.currentPlan;
+              setState(() {
+                _activePlanCode = plan != 'free' ? plan : null;
+              });
+            }
+          });
+        }
+      });
+    } catch (_) {
+      // SubscriptionBloc not in tree (unauthenticated / public route) — no highlighting
+    }
+  }
+
+  Future<void> _fetchPlans(
+      {String? promoCode, bool setLoadingState = true}) async {
+    // Only call setState to show loading if we're already mounted and it's a
+    // reload/retry (not the initial fetch, where _isLoading is already true
+    // from the field initializer). Calling setState from initState via the
+    // initial _fetchPlans() call would mark the element dirty before _firstBuild
+    // completes, causing a spurious double-build in the same frame.
+    if (setLoadingState) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final provider = widget.platformService.getPreferredProvider();
@@ -158,8 +260,27 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   Widget _buildBody(BuildContext context, bool isWideScreen) {
-    if (_isLoading) {
-      return Center(
+    // IMPORTANT: SingleChildScrollView is kept PERMANENTLY in the widget tree.
+    // Swapping the root widget between Center/SingleChildScrollView when
+    // _isLoading changes causes ScrollableState._gestureDetectorKey
+    // (LabeledGlobalKey<RawGestureDetectorState>) to be deactivated and
+    // re-created during the same frame, triggering a
+    // "_elements.contains(element)" assertion in _InactiveElements.remove.
+    // Keeping the scroll view constant eliminates the conflict entirely.
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: _isLoading
+          ? _buildLoadingContent(context)
+          : _errorMessage != null
+              ? _buildErrorContent(context)
+              : _buildMainContent(context, isWideScreen),
+    );
+  }
+
+  Widget _buildLoadingContent(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -174,11 +295,14 @@ class _PricingPageState extends State<PricingPage> {
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    if (_errorMessage != null) {
-      return Center(
+  Widget _buildErrorContent(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -220,38 +344,40 @@ class _PricingPageState extends State<PricingPage> {
             ],
           ),
         ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        children: [
-          // Header
-          _buildHeader(context),
-          const SizedBox(height: 32),
-
-          // Promo Code Input
-          PromoCodeInput(
-            onPromoApplied: _handlePromoApplied,
-            onPromoRemoved: _handlePromoRemoved,
-            onValidate: _validatePromoCode,
-            initialPromo: _appliedPromo,
-          ),
-          const SizedBox(height: 32),
-
-          // Pricing Cards
-          if (isWideScreen)
-            _buildWideLayoutCards(context)
-          else
-            _buildMobileLayoutCards(context),
-
-          const SizedBox(height: 32),
-
-          // Footer info
-          _buildFooterInfo(context),
-        ],
       ),
+    );
+  }
+
+  Widget _buildMainContent(BuildContext context, bool isWideScreen) {
+    return Column(
+      children: [
+        // Header
+        _buildHeader(context),
+        const SizedBox(height: 32),
+
+        // Promo Code Input
+        PromoCodeInput(
+          onPromoApplied: _handlePromoApplied,
+          onPromoRemoved: _handlePromoRemoved,
+          onValidate: _validatePromoCode,
+          initialPromo: _appliedPromo,
+        ),
+        const SizedBox(height: 32),
+
+        // Pricing Cards — disable button for the current active plan.
+        // _activePlanCode is populated from SubscriptionBloc via a stream
+        // subscription in initState (see _initSubscriptionListener). Using a
+        // stream subscription rather than BlocBuilder keeps the widget tree
+        // structure stable across rebuilds and avoids element-lifecycle errors.
+        isWideScreen
+            ? _buildWideLayoutCards(context, activePlanCode: _activePlanCode)
+            : _buildMobileLayoutCards(context, activePlanCode: _activePlanCode),
+
+        const SizedBox(height: 32),
+
+        // Footer info
+        _buildFooterInfo(context),
+      ],
     );
   }
 
@@ -276,7 +402,7 @@ class _PricingPageState extends State<PricingPage> {
     );
   }
 
-  Widget _buildWideLayoutCards(BuildContext context) {
+  Widget _buildWideLayoutCards(BuildContext context, {String? activePlanCode}) {
     if (_plans.isEmpty) {
       return Center(
         child: Text(
@@ -295,9 +421,11 @@ class _PricingPageState extends State<PricingPage> {
         children: _plans.map((plan) {
           final isLast = plan == _plans.last;
           return Expanded(
+            key: ValueKey('wide_${plan.planCode}'),
             child: Padding(
               padding: EdgeInsets.only(right: isLast ? 0 : 12),
-              child: _buildDynamicPlanCard(context, plan),
+              child: _buildDynamicPlanCard(context, plan,
+                  activePlanCode: activePlanCode),
             ),
           );
         }).toList(),
@@ -305,7 +433,8 @@ class _PricingPageState extends State<PricingPage> {
     );
   }
 
-  Widget _buildMobileLayoutCards(BuildContext context) {
+  Widget _buildMobileLayoutCards(BuildContext context,
+      {String? activePlanCode}) {
     if (_plans.isEmpty) {
       return Center(
         child: Text(
@@ -322,8 +451,10 @@ class _PricingPageState extends State<PricingPage> {
       children: _plans.map((plan) {
         final isLast = plan == _plans.last;
         return Padding(
+          key: ValueKey('mobile_${plan.planCode}'),
           padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-          child: _buildDynamicPlanCard(context, plan, isMobile: true),
+          child: _buildDynamicPlanCard(context, plan,
+              isMobile: true, activePlanCode: activePlanCode),
         );
       }).toList(),
     );
@@ -333,7 +464,16 @@ class _PricingPageState extends State<PricingPage> {
     BuildContext context,
     SubscriptionPlanModel plan, {
     bool isMobile = false,
+    String? activePlanCode,
   }) {
+    // activePlanCode (from subscriptions.plan_type) may include billing period suffix
+    // e.g. "plus_monthly" while plan.planCode (from subscription_plans) is "plus".
+    // Match if equal OR if activePlanCode starts with "<planCode>_".
+    final normalizedActive = activePlanCode?.toLowerCase() ?? '';
+    final normalizedPlan = plan.planCode.toLowerCase();
+    final isCurrentPlan = activePlanCode != null &&
+        (normalizedActive == normalizedPlan ||
+            normalizedActive.startsWith('${normalizedPlan}_'));
     // Extract features — uses DB marketing_features when populated, computed fallback otherwise
     final features = _extractFeatures(plan);
 
@@ -390,13 +530,16 @@ class _PricingPageState extends State<PricingPage> {
       badgeColor: badgeColor,
       features: features,
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: isPremium
-          ? () => _handlePremiumPlanPress(context)
-          : () => _handlePlanPress(context, plan),
+      onPressed: isCurrentPlan
+          ? null
+          : isPremium
+              ? () => _handlePremiumPlanPress(context)
+              : () => _handlePlanPress(context, plan),
       isHighlighted: isHighlighted,
       isPremium: isPremium,
       isMobile: isMobile,
       accentColor: plan.tier == 2 ? AppColors.tierPlus : null,
+      isCurrentPlan: isCurrentPlan,
     );
   }
 
@@ -404,7 +547,14 @@ class _PricingPageState extends State<PricingPage> {
       PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
 
   Future<void> _handlePremiumPlanPress(BuildContext context) async {
-    // Save pending premium upgrade flag for post-login redirect
+    // If user is already authenticated, go directly to the upgrade page.
+    final isAuthenticated = Supabase.instance.client.auth.currentUser != null;
+    if (isAuthenticated) {
+      if (context.mounted) context.push(AppRoutes.premiumUpgrade);
+      return;
+    }
+
+    // Not authenticated — save pending flag and go to login for post-login redirect
     try {
       Box box;
       if (Hive.isBoxOpen('app_settings')) {
@@ -460,6 +610,16 @@ class _PricingPageState extends State<PricingPage> {
     BuildContext context,
     SubscriptionPlanModel plan,
   ) async {
+    // If user is already authenticated, go directly to the upgrade page.
+    final isAuthenticated = Supabase.instance.client.auth.currentUser != null;
+    if (isAuthenticated) {
+      if (context.mounted) {
+        context.push(_upgradeRouteForPlanCode(plan.planCode));
+      }
+      return;
+    }
+
+    // Not authenticated — save pending flag and go to login for post-login redirect
     try {
       Box box;
       if (Hive.isBoxOpen('app_settings')) {
@@ -499,8 +659,22 @@ class _PricingPageState extends State<PricingPage> {
     }
   }
 
+  String _upgradeRouteForPlanCode(String planCode) {
+    switch (planCode.toLowerCase()) {
+      case 'premium':
+        return AppRoutes.premiumUpgrade;
+      case 'plus':
+        return AppRoutes.plusUpgrade;
+      case 'standard':
+        return AppRoutes.standardUpgrade;
+      default:
+        return AppRoutes.premiumUpgrade;
+    }
+  }
+
   @override
   void dispose() {
+    _subscriptionStateSub?.cancel();
     // Clear promo code if user navigates away without subscribing
     _clearPromoCodeFromHive();
     super.dispose();

@@ -162,7 +162,15 @@ class ClearSubscriptionError extends SubscriptionEvent {
 /// Verifies if user can create a new subscription
 /// (not already premium, no active subscription, etc.)
 class CheckSubscriptionEligibility extends SubscriptionEvent {
-  const CheckSubscriptionEligibility();
+  /// The plan the user wants to subscribe to (e.g. 'plus', 'premium').
+  /// When provided, upgrades to a higher tier are allowed even if the user
+  /// already has an active subscription at a lower tier.
+  final String? targetPlanCode;
+
+  const CheckSubscriptionEligibility({this.targetPlanCode});
+
+  @override
+  List<Object?> get props => [targetPlanCode];
 }
 
 /// Event to prefetch subscription data for performance
@@ -265,4 +273,32 @@ class IAPPurchaseError extends SubscriptionEvent {
 
   @override
   List<Object?> get props => [error];
+}
+
+/// Internal event: IAP purchase cancelled by user
+///
+/// INTERNAL USE ONLY - DO NOT USE DIRECTLY
+/// Triggered by IAP service callback when the user dismisses the purchase sheet
+/// Should NOT show an error snackbar — return to a neutral/previous state
+class IAPPurchaseCancelled extends SubscriptionEvent {
+  const IAPPurchaseCancelled();
+}
+
+/// Internal event: Sync Play Store subscription state with backend
+///
+/// INTERNAL USE ONLY - DO NOT USE DIRECTLY
+/// Triggered once per session after app open on Android. Sends device-side
+/// purchases to the backend for reconciliation against the DB state.
+/// The sync is silent — never emits error UI.
+class SyncPlayStoreSubscription extends SubscriptionEvent {
+  final List<dynamic> purchases;
+  final bool deviceHasNoPurchases;
+
+  const SyncPlayStoreSubscription({
+    required this.purchases,
+    required this.deviceHasNoPurchases,
+  });
+
+  @override
+  List<Object?> get props => [purchases, deviceHasNoPurchases];
 }

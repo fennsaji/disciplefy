@@ -275,7 +275,6 @@ class AppTranslations {
       'welcome': 'Welcome to Disciplefy',
       'subtitle': 'Deepen your faith through guided Bible study',
       'continue_with_google': 'Continue with Google',
-      'continue_as_guest': 'Continue as Guest',
       'features_title': 'What you\'ll get:',
       'feature_ai_study_guides': 'AI-Powered Study Guides',
       'feature_ai_study_guides_subtitle':
@@ -374,7 +373,6 @@ class AppTranslations {
       'content_language': 'Language',
       'account_actions': 'Account Actions',
       'sign_out': 'Sign Out',
-      'clear_guest_session': 'Clear guest session',
       'sign_out_of_account': 'Sign out of your account',
       'about': 'About',
       'app_version': 'App Version',
@@ -393,12 +391,8 @@ class AppTranslations {
       'dark_mode': 'Dark Mode',
       'dark_mode_subtitle': 'Always use dark theme',
       'select_language': 'Select Language',
-      'clear_session': 'Clear Session',
-      'clear_session_message':
-          'Are you sure you want to clear your guest session? Your data will be lost.',
       'sign_out_title': 'Sign Out',
       'sign_out_message': 'Are you sure you want to sign out?',
-      'clear': 'Clear',
       'support_title': 'Support Developer',
       'support_message':
           'Thank you for using Disciplefy! Your support helps us continue improving the app. If this app has blessed you or helped you in any way, and you\'d like to encourage the work behind it, you can support it here by buying me a coffee.',
@@ -2162,7 +2156,6 @@ class AppTranslations {
       'welcome': 'Disciplefy में आपका स्वागत है',
       'subtitle': 'निर्देशित बाइबिल अध्ययन से अपने विश्वास को बढ़ाएं',
       'continue_with_google': 'Google के साथ जारी रखें',
-      'continue_as_guest': 'अतिथि के रूप में जारी रखें',
       'features_title': 'आपको क्या मिलेगा:',
       'feature_ai_study_guides': 'AI-संचालित अध्ययन गाइड',
       'feature_ai_study_guides_subtitle': 'किसी भी आयत की सरल व्याख्या',
@@ -2258,7 +2251,6 @@ class AppTranslations {
       'content_language': 'भाषा',
       'account_actions': 'खाता एक्शन',
       'sign_out': 'साइन आउट करें',
-      'clear_guest_session': 'गेस्ट सेशन साफ करें',
       'sign_out_of_account': 'अपने खाते से साइन आउट करें',
       'about': 'के बारे में',
       'app_version': 'ऐप संस्करण',
@@ -2277,12 +2269,8 @@ class AppTranslations {
       'dark_mode': 'डार्क मोड',
       'dark_mode_subtitle': 'हमेशा डार्क थीम रखें',
       'select_language': 'भाषा चुनें',
-      'clear_session': 'सेशन साफ करें',
-      'clear_session_message':
-          'क्या आप वाकई अपना गेस्ट सेशन साफ करना चाहते हैं? आपका डेटा खो जाएगा।',
       'sign_out_title': 'साइन आउट',
       'sign_out_message': 'क्या आप वाकई साइन आउट करना चाहते हैं?',
-      'clear': 'साफ़ करें',
       'support_title': 'डेवलपर को सपोर्ट करें',
       'support_message':
           'Disciplefy का उपयोग करने के लिए धन्यवाद! आपकी मदद से हम ऐप बेहतर बना सकते हैं। अगर इस ऐप ने आपकी मदद की है, तो आप हमें एक कॉफी खरीदकर सपोर्ट कर सकते हैं।',
@@ -4060,7 +4048,6 @@ class AppTranslations {
       'welcome': 'Disciplefy-ലേക്ക് സ്വാഗതം',
       'subtitle': 'ബൈബിൾ അധ്യയനം ചെയ്ത് വിശ്വാസം വളര്‍ത്തുക',
       'continue_with_google': 'Google ഉപയോഗിച്ച് തുടരുക',
-      'continue_as_guest': 'അതിഥിയായി തുടരുക',
       'features_title': 'നിങ്ങൾക്ക് ലഭിക്കുന്നത്:',
       'feature_ai_study_guides': 'AI-പ്രവർ‍ത്തിക്കുന്ന പഠന ഗൈഡുകൾ',
       'feature_ai_study_guides_subtitle':
@@ -4162,7 +4149,6 @@ class AppTranslations {
       'content_language': 'ഭാഷ',
       'account_actions': 'അക്കൗണ്ട് പ്രവർ‍ത്തനങ്ങൾ',
       'sign_out': 'സൈൻ ഔട്ട് ചെയ്യുക',
-      'clear_guest_session': 'അതിഥി സെഷൻ മായ്ക്കുക',
       'sign_out_of_account': 'നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് സൈൻ ഔട്ട് ചെയ്യുക',
       'about': 'കുറിച്ച്',
       'app_version': 'ആപ്പ് പതിപ്പ്',
@@ -4181,13 +4167,9 @@ class AppTranslations {
       'dark_mode': 'ഡാർക്ക് മോഡ്',
       'dark_mode_subtitle': 'എപ്പോഴും ഡാർക്ക് ഥീം ഉപയോഗിക്കുക',
       'select_language': 'ഭാഷ തിരഞ്ഞെടുക്കുക',
-      'clear_session': 'സെഷൻ മായ്ക്കുക',
-      'clear_session_message':
-          'നിങ്ങൾക്ക് ഉറപ്പാണോ അതിഥി സെഷൻ മായ്ക്കണമെന്ന്? നിങ്ങളുടെ ഡാറ്റ നഷ്ടപ്പെടും.',
       'sign_out_title': 'സൈൻ ഔട്ട് ചെയ്യുക',
       'sign_out_message':
           'നിങ്ങൾക്ക് ഉറപ്പാണോ സൈൻ ഔട്ട് ചെയ്യാൻ ആഗ്രഹിക്കുന്നത്?',
-      'clear': 'മായ്ക്കുക',
       'support_title': 'ഡെവലപ്പറെ പിന്തുണയ്ക്കുക',
       'support_message':
           'Disciplefy ഉപയോഗിച്ചതിന് നന്ദി! നിങ്ങളുടെ പിന്തുണ ആപ്പ് മേല്‍പ്പെടുത്തുന്നതിന് ഞങ്ങളെ സഹായിക്കുന്നു. ഈ ആപ്പ് നിങ്ങളെ അനുഗ്രഹിച്ചിട്ടുണ്ടെങ്കിലോ ഏതെങ്കിലും സഹായിച്ചിട്ടുണ്ടെങ്കിലോ, അതിന് പിന്നിലെ പണി പ്രോത്സാഹിപ്പിക്കാൻ നിങ്ങൾ ആഗ്രഹിക്കുന്നുവെങ്കിൽ, എനിക്ക് ഒരു കോഫി വാങ്ങി ഇവിടെ പിന്തുണയ്ക്കാം.',

@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Push notification permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Required for Google Play In-App Purchases -->
+    <uses-permission android:name="com.android.vending.BILLING" />
     <!-- Note: RECEIVE_BOOT_COMPLETED removed - FCM handles post-boot notification delivery automatically -->
     
     <application
@@ -57,6 +59,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- FCM Default Notification Icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
 
         <!-- FCM Default Notification Channel (must match a registered channel) -->
         <meta-data

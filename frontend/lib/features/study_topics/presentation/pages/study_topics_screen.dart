@@ -695,28 +695,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// Show learning path study mode preference bottom sheet
   void _showStudyModeSelector(BuildContext context) {
-    // Get auth provider and check if user is anonymous
     final authProvider = sl<AuthStateProvider>();
-
-    // Guard against anonymous users - preferences are only saved for signed-in users
-    if (authProvider.isAnonymous) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.tr(TranslationKeys.settingsSignInToSavePreferences),
-          ),
-          backgroundColor: AppColors.brandSecondary,
-          action: SnackBarAction(
-            label: context.tr(TranslationKeys.settingsSignIn),
-            textColor: Theme.of(context).colorScheme.onPrimary,
-            onPressed: () {
-              AppRouter.router.goToLogin();
-            },
-          ),
-        ),
-      );
-      return; // Exit early without showing the sheet
-    }
 
     // Get current learning path mode preference
     final currentMode =

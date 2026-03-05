@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -41,8 +42,7 @@ class AuthStateProvider extends ChangeNotifier {
         Logger.debug(
             '🔄 [AUTH STATE PROVIDER] State changed: ${state.runtimeType}');
         if (state is auth_states.AuthenticatedState) {
-          Logger.debug(
-              '🔄 [AUTH STATE PROVIDER] User: ${state.isAnonymous ? 'Anonymous' : state.user.email}');
+          Logger.debug('🔄 [AUTH STATE PROVIDER] User: ${state.user.email}');
         }
       }
 
@@ -75,14 +75,10 @@ class AuthStateProvider extends ChangeNotifier {
   }
 
   /// Get the current user's display name
-  /// Returns 'Guest' for anonymous users or unauthenticated state
+  /// Returns 'User' for unauthenticated state
   String get currentUserName {
     if (_currentState is auth_states.AuthenticatedState) {
       final authState = _currentState as auth_states.AuthenticatedState;
-
-      if (authState.isAnonymous) {
-        return 'Guest';
-      }
 
       final user = authState.user;
       final displayName = user.userMetadata?['full_name'] ??
@@ -94,33 +90,35 @@ class AuthStateProvider extends ChangeNotifier {
 
       return displayName;
     }
-    return 'Guest';
+    return 'User';
   }
 
-  /// Check if user is currently authenticated (including anonymous)
-  bool get isAuthenticated => _currentState is auth_states.AuthenticatedState;
-
-  /// Check if current session is anonymous
-  bool get isAnonymous {
-    if (_currentState is auth_states.AuthenticatedState) {
-      return (_currentState as auth_states.AuthenticatedState).isAnonymous;
-    }
-    return true; // Default to anonymous for unauthenticated state
+  /// Check if user is currently authenticated.
+  ///
+  /// Falls back to checking the live Supabase session so that the UI stays
+  /// consistent even when [AuthBloc] is momentarily in a transient state
+  /// (e.g. [AuthLoadingState] during the double-initialisation window, or
+  /// briefly after a force-logout before [signOut()] clears the session).
+  bool get isAuthenticated {
+    if (_currentState is auth_states.AuthenticatedState) return true;
+    // Fallback: trust the live Supabase session when the bloc hasn't caught up.
+    // After a real logout, signOut() is always called first, making currentUser
+    // null before UnauthenticatedState is emitted, so this never returns true
+    // for a genuinely signed-out user.
+    return Supabase.instance.client.auth.currentUser != null;
   }
 
   /// Get current authentication state
   auth_states.AuthState get currentState => _currentState;
 
-  /// Check if user is a signed-in (non-anonymous) user
-  bool get isSignedInUser => isAuthenticated && !isAnonymous;
+  /// Check if user is a signed-in user
+  bool get isSignedInUser => isAuthenticated;
 
   /// Get user email if available
   String? get userEmail {
     if (_currentState is auth_states.AuthenticatedState) {
       final authState = _currentState as auth_states.AuthenticatedState;
-      if (!authState.isAnonymous) {
-        return authState.user.email;
-      }
+      return authState.user.email;
     }
     return null;
   }
@@ -301,9 +299,8 @@ class AuthStateProvider extends ChangeNotifier {
 
     if (_currentState is auth_states.AuthenticatedState) {
       final authState = _currentState as auth_states.AuthenticatedState;
-      return 'AuthenticatedState(isAnonymous: ${authState.isAnonymous}, '
-          'userId: ${authState.user.id}, email: ${authState.user.email}, '
-          'profile: $cacheInfo)';
+      return 'AuthenticatedState(userId: ${authState.user.id}, '
+          'email: ${authState.user.email}, profile: $cacheInfo)';
     } else if (_currentState is auth_states.AuthLoadingState) {
       return 'AuthLoadingState';
     } else if (_currentState is auth_states.AuthErrorState) {

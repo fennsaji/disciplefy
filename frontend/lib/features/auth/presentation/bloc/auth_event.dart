@@ -20,11 +20,6 @@ class GoogleSignInRequested extends AuthEvent {
   const GoogleSignInRequested();
 }
 
-/// Event to request anonymous sign-in
-class AnonymousSignInRequested extends AuthEvent {
-  const AnonymousSignInRequested();
-}
-
 /// Event to check current session state (for OAuth callbacks)
 class SessionCheckRequested extends AuthEvent {
   const SessionCheckRequested();

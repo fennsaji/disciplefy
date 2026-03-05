@@ -521,7 +521,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
                             // Email Verification Banner (shown for unverified email users)
                             BlocProvider.value(
-                              value: sl<AuthBloc>(),
+                              value: context.read<AuthBloc>(),
                               child: const EmailVerificationBanner(),
                             ),
 

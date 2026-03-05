@@ -147,29 +147,6 @@ void main() {
       verify(mockAuthBloc.add(const GoogleSignInRequested())).called(1);
     });
 
-    testWidgets('should trigger anonymous sign-in when Guest button is tapped',
-        (tester) async {
-      // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
-
-      // Set a larger test surface to avoid tap-outside-bounds issues
-      await tester.binding.setSurfaceSize(const Size(800, 1200));
-
-      // Act
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle(); // Wait for layout to settle
-      await tester.tap(find.text('Continue as Guest'));
-      await tester.pump();
-
-      // Assert
-      verify(mockAuthBloc.add(const AnonymousSignInRequested())).called(1);
-    },
-        skip:
-            true); // Guest login disabled - all users must sign in with Google or Email
-
     testWidgets('should show error snackbar when authentication fails',
         (tester) async {
       // Arrange
@@ -227,7 +204,6 @@ void main() {
             const auth_states.UnauthenticatedState(),
             auth_states.AuthenticatedState(
               user: mockUser as User,
-              isAnonymous: false,
             ),
           ]));
 
@@ -416,7 +392,6 @@ String _getMockTranslation(String key) {
     'login.welcome': 'Welcome to Disciplefy',
     'login.subtitle': 'Deepen your faith through guided Bible study',
     'login.continue_with_google': 'Continue with Google',
-    'login.continue_as_guest': 'Continue as Guest',
     'login.privacy_policy':
         'By continuing, you agree to our Terms of Service and Privacy Policy',
     'login.features.title': 'What you\'ll get:',

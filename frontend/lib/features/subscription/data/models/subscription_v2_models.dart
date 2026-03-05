@@ -235,14 +235,14 @@ class ValidatePromoCodeResponseModel {
 /// Response from create-subscription-v2 API
 class CreateSubscriptionV2ResponseModel {
   final bool success;
-  final String subscriptionId;
+  final String? subscriptionId;
   final String providerSubscriptionId;
   final String? authorizationUrl; // For Razorpay only
   final String status;
 
   const CreateSubscriptionV2ResponseModel({
     required this.success,
-    required this.subscriptionId,
+    this.subscriptionId,
     required this.providerSubscriptionId,
     this.authorizationUrl,
     required this.status,
@@ -252,7 +252,7 @@ class CreateSubscriptionV2ResponseModel {
       Map<String, dynamic> json) {
     return CreateSubscriptionV2ResponseModel(
       success: json['success'] as bool,
-      subscriptionId: json['subscription_id'] as String,
+      subscriptionId: json['subscription_id'] as String?,
       providerSubscriptionId: json['provider_subscription_id'] as String,
       authorizationUrl: json['authorization_url'] as String?,
       status: json['status'] as String,

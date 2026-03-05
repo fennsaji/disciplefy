@@ -67,40 +67,28 @@ export class GooglePlayProvider extends PaymentProvider {
   }
 
   /**
-   * Get access token from service account
+   * NOTE: This class's getAccessToken() is NOT used in the active IAP validation flow.
    *
-   * In production, this should use Google OAuth2 with service account credentials
+   * Receipt validation for Google Play is handled by:
+   *   _shared/services/google-play-validator.ts → getGoogleAccessToken()
+   * which uses the `jose` library and reads credentials from the `iap_config` DB table
+   * via iap-config-service.ts.
+   *
+   * This provider class handles fetchSubscription() for status sync only.
    */
   private async getAccessToken(): Promise<string> {
     if (this.accessToken) {
       return this.accessToken
     }
 
-    // TODO: Implement proper OAuth2 service account flow
-    // For now, throw error indicating setup required
+    // Credentials are read from the iap_config table (see iap-config-service.ts).
+    // This path is only reached for direct fetchSubscription() calls.
     throw new ProviderError(
-      'Google Play API credentials not configured. Set up service account and enable API.',
+      'Use google-play-validator.ts for receipt validation. For direct API calls, populate iap_config table with service account credentials.',
       'google_play',
       'GOOGLE_PLAY_NOT_CONFIGURED',
       500
     )
-
-    // Example implementation (commented out):
-    // const serviceAccountJson = Deno.env.get('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON')
-    // const credentials = JSON.parse(serviceAccountJson)
-    //
-    // const jwt = await createJWT(credentials)
-    // const response = await fetch('https://oauth2.googleapis.com/token', {
-    //   method: 'POST',
-    //   body: new URLSearchParams({
-    //     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-    //     assertion: jwt
-    //   })
-    // })
-    //
-    // const data = await response.json()
-    // this.accessToken = data.access_token
-    // return this.accessToken
   }
 
   /**

@@ -37,9 +37,38 @@ export async function validateGooglePlayReceipt(
 ): Promise<GooglePlayValidationResult> {
   console.log('[GOOGLE_PLAY] Validating receipt for product:', receipt.productId)
 
+  // USE_MOCK bypass for local/testing environments without service account credentials
+  if (Deno.env.get('USE_MOCK') === 'true') {
+    console.log('[GOOGLE_PLAY] USE_MOCK=true — skipping real API call, returning mock valid result')
+    return {
+      isValid: true,
+      transactionId: receipt.purchaseToken,
+      purchaseDate: new Date(),
+      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      isTrial: false,
+      isIntroOffer: false,
+      autoRenewing: true,
+      validationResponse: { mock: true, productId: receipt.productId }
+    }
+  }
+
   try {
     // Get Google Play configuration
     const config = await getIAPConfig(supabase, 'google_play', environment)
+
+    // Validate package name matches config
+    if (receipt.packageName !== config.packageName) {
+      return {
+        isValid: false,
+        error: `Package name mismatch: expected ${config.packageName}, got ${receipt.packageName}`,
+        transactionId: receipt.purchaseToken,
+        purchaseDate: new Date(0),
+        autoRenewing: false,
+        isTrial: false,
+        isIntroOffer: false,
+        validationResponse: null
+      }
+    }
 
     // Get access token using service account
     const accessToken = await getGoogleAccessToken(
@@ -64,7 +93,7 @@ export async function validateGooglePlayReceipt(
 
       return {
         isValid: false,
-        transactionId: '',
+        transactionId: receipt.purchaseToken, // fallback — avoids empty unique constraint
         purchaseDate: new Date(),
         isTrial: false,
         isIntroOffer: false,
@@ -86,8 +115,8 @@ export async function validateGooglePlayReceipt(
                      subscriptionState === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD'
 
     // Extract dates
-    const startTime = lineItems[0]?.expiryTime?.seconds
-      ? new Date(parseInt(lineItems[0].expiryTime.seconds) * 1000)
+    const startTime = validationData.startTime?.seconds
+      ? new Date(parseInt(validationData.startTime.seconds) * 1000)
       : new Date()
 
     const expiryTime = lineItems[0]?.expiryTime?.seconds
@@ -96,11 +125,11 @@ export async function validateGooglePlayReceipt(
 
     // Check for trial or intro offer
     const offerDetails = lineItems[0]?.offerDetails
-    const isTrial = offerDetails?.basePlanId?.includes('trial') || false
+    const isTrial = offerDetails?.offerType === 'FREE_TRIAL'
     const isIntroOffer = offerDetails?.offerType === 'INTRODUCTORY_OFFER' || false
 
-    // Auto-renewing status
-    const autoRenewing = validationData.canceledStateContext === null
+    // Auto-renewing status (== catches both null and undefined)
+    const autoRenewing = validationData.canceledStateContext == null
 
     console.log('[GOOGLE_PLAY] Validation result:', {
       isValid: isActive,
@@ -111,7 +140,7 @@ export async function validateGooglePlayReceipt(
 
     return {
       isValid: isActive,
-      transactionId: latestOrderId || receipt.purchaseToken,
+      transactionId: receipt.purchaseToken,
       purchaseDate: startTime,
       expiryDate: expiryTime,
       isTrial,
@@ -124,7 +153,7 @@ export async function validateGooglePlayReceipt(
 
     return {
       isValid: false,
-      transactionId: '',
+      transactionId: receipt.purchaseToken, // fallback — avoids empty unique constraint
       purchaseDate: new Date(),
       isTrial: false,
       isIntroOffer: false,
@@ -209,6 +238,11 @@ export async function acknowledgeGooglePlayPurchase(
 ): Promise<boolean> {
   console.log('[GOOGLE_PLAY] Acknowledging purchase:', receipt.productId)
 
+  if (Deno.env.get('USE_MOCK') === 'true') {
+    console.log('[GOOGLE_PLAY] USE_MOCK=true — skipping acknowledgment API call')
+    return true
+  }
+
   try {
     const config = await getIAPConfig(supabase, 'google_play', environment)
     const accessToken = await getGoogleAccessToken(
@@ -216,7 +250,7 @@ export async function acknowledgeGooglePlayPurchase(
       config.serviceAccountKey!
     )
 
-    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${receipt.packageName}/purchases/subscriptions/${receipt.productId}/tokens/${receipt.purchaseToken}:acknowledge`
+    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${receipt.packageName}/purchases/subscriptionsv2/tokens/${receipt.purchaseToken}:acknowledge`
 
     const response = await fetch(apiUrl, {
       method: 'POST',

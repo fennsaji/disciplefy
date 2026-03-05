@@ -81,12 +81,10 @@ class TokenStatusModel extends TokenStatus {
   /// Parse authentication type from string
   static AuthenticationType _parseAuthType(String authTypeString) {
     switch (authTypeString.toLowerCase()) {
-      case 'anonymous':
-        return AuthenticationType.anonymous;
       case 'authenticated':
         return AuthenticationType.authenticated;
       default:
-        return AuthenticationType.anonymous;
+        return AuthenticationType.authenticated;
     }
   }
 

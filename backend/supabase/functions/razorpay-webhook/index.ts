@@ -266,16 +266,21 @@ async function handlePaymentCaptured(
   console.log(`[Webhook] 🔒 Attempting atomic claim for order: ${orderId}`)
   const { data: claimedPurchase, error: claimError } = await supabaseServiceClient
     .from('pending_token_purchases')
-    .update({ 
-      status: 'processing', 
-      updated_at: new Date().toISOString() 
+    .update({
+      status: 'processing',
+      updated_at: new Date().toISOString()
     })
     .eq('order_id', orderId)
     .eq('status', 'pending') // Only update if still pending
     .select('*')
-    .single()
-  
-  if (claimError || !claimedPurchase) {
+    .maybeSingle()
+
+  if (claimError) {
+    console.error(`[Webhook] ❌ Claim error for order: ${orderId}`, claimError)
+    throw new Error(`Failed to claim purchase: ${claimError.message}`)
+  }
+
+  if (!claimedPurchase) {
     console.log(`[Webhook] ✅ Purchase already processed by another handler: ${orderId}`)
     return // Already processed by manual confirmation or another webhook
   }
@@ -615,6 +620,18 @@ async function handleSubscriptionCharged(
     })
     .eq('id', subscription.id)
 
+  // Check for existing invoice before inserting (idempotency)
+  const { data: existingInvoice } = await supabaseServiceClient
+    .from('subscription_invoices')
+    .select('id')
+    .eq('razorpay_payment_id', paymentId)
+    .maybeSingle()
+
+  if (existingInvoice) {
+    console.log(`[Webhook] Invoice already exists for payment ${paymentId}, skipping duplicate`)
+    return
+  }
+
   // Create invoice record
   await supabaseServiceClient
     .from('subscription_invoices')
@@ -780,6 +797,7 @@ async function handleSubscriptionResumed(
     .from('subscriptions')
     .update({
       status: 'active',
+      cancel_at_cycle_end: false,
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
