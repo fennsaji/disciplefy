@@ -1,10 +1,10 @@
 🙏 Disciplefy Bible Study App - Beta Update
 
 ✨ What's New:
-• Google Play subscription billing is now fully integrated — subscribe directly via the Play Store
-• Subscription purchase flow updated for Google Play Billing Library 5+ compatibility
+• Google Play subscription billing fully integrated — subscribe via the Play Store
+• Subscription purchase flow updated for Google Play Billing Library 5+
 
-🛠️ Bug Fixes:
+🛠️ Fixes:
 • Fixed subscription purchase date being incorrectly set to the expiry date
 • Fixed auto-renewal detection missing cancelled subscriptions
 • Fixed card expiry validation incorrectly rejecting cards expiring this month
