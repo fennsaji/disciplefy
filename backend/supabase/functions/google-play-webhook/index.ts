@@ -79,31 +79,59 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Check for duplicate notification (idempotency)
-    const { data: existing } = await supabase
+    // Check for duplicate notification (idempotency).
+    // Use an atomic INSERT ON CONFLICT DO NOTHING to avoid a race condition
+    // where two concurrent requests both see no existing row and both proceed.
+    const { data: dedupResult, error: dedupError } = await supabase
       .from('iap_webhook_events')
+      .insert({
+        provider: 'google_play',
+        event_type: 'DEDUP_CHECK',
+        notification_id: messageId,
+        raw_payload: {},
+        processing_status: 'pending'
+      })
       .select('id')
-      .eq('provider', 'google_play')
-      .eq('notification_id', messageId)
-      .maybeSingle()
+      .single()
 
-    if (existing) {
-      console.log('[GOOGLE_PLAY_WEBHOOK] Duplicate notification, skipping')
-      return new Response('OK', { status: 200, headers: corsHeaders })
+    if (dedupError) {
+      // Unique constraint violation (code 23505) means duplicate — return OK
+      if (dedupError.code === '23505') {
+        console.log('[GOOGLE_PLAY_WEBHOOK] Duplicate notification (constraint), skipping')
+        return new Response('OK', { status: 200, headers: corsHeaders })
+      }
+      // Re-check: maybe the row already existed before this request arrived
+      const { data: existing } = await supabase
+        .from('iap_webhook_events')
+        .select('id')
+        .eq('provider', 'google_play')
+        .eq('notification_id', messageId)
+        .maybeSingle()
+
+      if (existing) {
+        console.log('[GOOGLE_PLAY_WEBHOOK] Duplicate notification, skipping')
+        return new Response('OK', { status: 200, headers: corsHeaders })
+      }
+      // Unexpected error — log and continue so the event is not silently dropped
+      console.error('[GOOGLE_PLAY_WEBHOOK] Dedup insert error:', dedupError)
     }
+
+    // dedupResult holds the placeholder row id; it will be updated below
+    const dedupRowId = dedupResult?.id
 
     // Handle test notification
     if (notification.testNotification) {
       console.log('[GOOGLE_PLAY_WEBHOOK] Test notification received')
 
-      await supabase.from('iap_webhook_events').insert({
-        provider: 'google_play',
-        event_type: 'TEST_NOTIFICATION',
-        notification_id: messageId,
-        raw_payload: notification,
-        processing_status: 'processed',
-        processed_at: new Date().toISOString()
-      })
+      // Update the dedup row (already inserted above) with actual event details
+      if (dedupRowId) {
+        await supabase.from('iap_webhook_events').update({
+          event_type: 'TEST_NOTIFICATION',
+          raw_payload: notification,
+          processing_status: 'processed',
+          processed_at: new Date().toISOString()
+        }).eq('id', dedupRowId)
+      }
 
       return new Response('OK', { status: 200, headers: corsHeaders })
     }
@@ -113,17 +141,16 @@ serve(async (req) => {
       const subNotification = notification.subscriptionNotification
       const eventType = getEventType(subNotification.notificationType)
 
-      // Store webhook event
+      // Update the dedup row (already inserted above) with actual event details
       const { data: webhookEvent, error: webhookError } = await supabase
         .from('iap_webhook_events')
-        .insert({
-          provider: 'google_play',
+        .update({
           event_type: eventType,
-          notification_id: messageId,
           raw_payload: notification,
           transaction_id: subNotification.purchaseToken,
           processing_status: 'pending'
         })
+        .eq('id', dedupRowId)
         .select()
         .single()
 
@@ -144,13 +171,15 @@ serve(async (req) => {
         if (!receipt) {
           console.warn('[GOOGLE_PLAY_WEBHOOK] Receipt not found for token:', subNotification.purchaseToken)
 
-          // Mark as failed
+          // Mark as pending (not failed) — receipt may not yet exist due to timing race.
+          // A future cron job can retry events where processed_at is null and
+          // error_message starts with 'Receipt not found'.
           await supabase
             .from('iap_webhook_events')
             .update({
-              processing_status: 'failed',
-              error_message: 'Receipt not found',
-              processed_at: new Date().toISOString()
+              processing_status: 'pending',
+              error_message: 'Receipt not found - pending retry',
+              processed_at: null
             })
             .eq('id', webhookEvent.id)
 
@@ -269,6 +298,7 @@ async function processSubscriptionEvent(
     await supabase
       .from('subscriptions')
       .update({
+        status: 'pending_cancellation',
         cancel_at_cycle_end: true,
         cancelled_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -339,15 +369,23 @@ async function processSubscriptionEvent(
     }
   }
 
-  // Handle grace period (payment failed, access temporarily maintained)
+  // Handle grace period (payment failed, access temporarily maintained for up to 7 days)
   if (eventType === 'SUBSCRIPTION_IN_GRACE_PERIOD') {
+    const gracePeriodExpiry = new Date()
+    gracePeriodExpiry.setDate(gracePeriodExpiry.getDate() + 7)
     await supabase
       .from('subscriptions')
       .update({
-        metadata: { in_grace_period: true, grace_period_started_at: new Date().toISOString() },
+        status: 'active',
+        metadata: {
+          in_grace_period: true,
+          grace_period_started_at: new Date().toISOString(),
+          grace_period_expires_at: gracePeriodExpiry.toISOString()
+        },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
+    console.log('[GOOGLE_PLAY_WEBHOOK] Grace period set, expires:', gracePeriodExpiry.toISOString())
   }
 
   // Handle restart (user re-subscribed from on-hold or paused state)
@@ -378,5 +416,35 @@ async function processSubscriptionEvent(
   // Handle pause schedule changed (log only, no access change)
   if (eventType === 'SUBSCRIPTION_PAUSE_SCHEDULE_CHANGED') {
     console.log('[GOOGLE_PLAY_WEBHOOK] Pause schedule changed for subscription:', subscriptionId)
+  }
+
+  // Handle price change confirmed by user — record in metadata, no status change
+  if (eventType === 'SUBSCRIPTION_PRICE_CHANGE_CONFIRMED') {
+    await supabase
+      .from('subscriptions')
+      .update({
+        metadata: {
+          price_change_confirmed: true,
+          price_change_confirmed_at: new Date().toISOString()
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+    console.log('[GOOGLE_PLAY_WEBHOOK] Price change confirmed for subscription:', subscriptionId)
+  }
+
+  // Handle deferred billing — payment deferred, subscription remains active
+  if (eventType === 'SUBSCRIPTION_DEFERRED') {
+    await supabase
+      .from('subscriptions')
+      .update({
+        metadata: {
+          payment_deferred: true,
+          deferred_at: new Date().toISOString()
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+    console.log('[GOOGLE_PLAY_WEBHOOK] Billing deferred for subscription:', subscriptionId)
   }
 }

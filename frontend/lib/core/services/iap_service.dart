@@ -19,9 +19,15 @@ class IAPService {
   // Guard against concurrent restorePurchases() calls from multiple BLoC instances
   bool _restoreInProgress = false; // mutable — cannot be final
 
+  // Sync-mode restore: collects purchases without triggering subscription creation
+  bool _isSyncRestore = false;
+  final List<PurchaseDetails> _syncPurchases = [];
+
   // Callbacks
   Function(PurchaseDetails)? onPurchaseUpdate;
   Function(String)? onPurchaseError;
+  void Function()? onPurchaseCancelled;
+  void Function(List<PurchaseDetails> purchases)? onSyncRestoreCompleted;
 
   /// Initialize IAP service
   Future<void> initialize() async {
@@ -95,9 +101,9 @@ class IAPService {
     late PurchaseParam purchaseParam;
 
     if (Platform.isAndroid) {
-      // GooglePlayPurchaseParam ensures the Android platform layer picks up the
-      // offerToken from GooglePlayProductDetails.offerToken (required by
-      // Google Play Billing Library 5+ for subscriptions).
+      // GooglePlayPurchaseParam automatically surfaces the offerToken from
+      // GooglePlayProductDetails.offerToken (via subscriptionIndex) inside the
+      // platform layer — no explicit offerToken parameter is needed here.
       purchaseParam = GooglePlayPurchaseParam(productDetails: productDetails);
     } else {
       purchaseParam = PurchaseParam(productDetails: productDetails);
@@ -141,11 +147,52 @@ class IAPService {
     }
   }
 
+  /// Restore purchases in sync mode — collects device-side purchases without
+  /// triggering subscription creation. Timer-gated (5 s) to let Google Play
+  /// deliver all pending purchase updates.
+  ///
+  /// After the timer completes, [onSyncRestoreCompleted] is called with the
+  /// collected purchases (empty list = device has no active purchases).
+  Future<void> restorePurchasesForSync() async {
+    if (_restoreInProgress) {
+      Logger.debug(
+          '🛒 [IAP] Restore already in progress — skipping sync restore');
+      return;
+    }
+    _restoreInProgress = true;
+    _isSyncRestore = true;
+    _syncPurchases.clear();
+    Logger.debug('🛒 [IAP] Starting sync-mode restore');
+    try {
+      await _iap.restorePurchases();
+      // Wait 5 s for Google Play to deliver all pending purchase updates
+      await Future.delayed(const Duration(seconds: 5));
+    } finally {
+      final collected = List<PurchaseDetails>.from(_syncPurchases);
+      _syncPurchases.clear();
+      _isSyncRestore = false;
+      _restoreInProgress = false;
+      Logger.debug(
+          '🛒 [IAP] Sync restore complete — ${collected.length} purchase(s) collected');
+      onSyncRestoreCompleted?.call(collected);
+    }
+  }
+
   /// Handle purchase updates from store
   void _handlePurchaseUpdate(List<PurchaseDetails> purchases) {
     for (final purchase in purchases) {
       Logger.debug(
           '🛒 [IAP] Purchase update: ${purchase.productID}, status: ${purchase.status}');
+
+      // In sync-mode, collect purchases silently without notifying the BLoC.
+      // This prevents the normal flow from creating duplicate subscriptions.
+      if (_isSyncRestore) {
+        if (purchase.status == PurchaseStatus.purchased ||
+            purchase.status == PurchaseStatus.restored) {
+          _syncPurchases.add(purchase);
+        }
+        continue;
+      }
 
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
@@ -162,7 +209,7 @@ class IAPService {
         }
       } else if (purchase.status == PurchaseStatus.canceled) {
         Logger.debug('🛒 [IAP] Purchase cancelled by user');
-        onPurchaseError?.call('Purchase cancelled');
+        onPurchaseCancelled?.call();
         if (purchase.pendingCompletePurchase) {
           _iap.completePurchase(purchase);
         }

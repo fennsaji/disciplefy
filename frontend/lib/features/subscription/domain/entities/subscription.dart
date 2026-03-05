@@ -62,11 +62,13 @@ enum SubscriptionStatus {
       this == SubscriptionStatus.trial ||
       this == SubscriptionStatus.active ||
       this == SubscriptionStatus.authenticated ||
-      this == SubscriptionStatus.pending_cancellation;
+      this == SubscriptionStatus.pending_cancellation ||
+      this == SubscriptionStatus.paused;
 
   bool get canCancel =>
       this == SubscriptionStatus.active ||
-      this == SubscriptionStatus.authenticated;
+      this == SubscriptionStatus.authenticated ||
+      this == SubscriptionStatus.paused;
 }
 
 /// Entity representing a premium subscription

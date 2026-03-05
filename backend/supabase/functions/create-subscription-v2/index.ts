@@ -141,7 +141,7 @@ serve(async (req) => {
       .from('subscriptions')
       .select('id, status, plan_type, provider, plan_id, is_iap_subscription')
       .eq('user_id', user.id)
-      .in('status', ['active', 'authenticated', 'created', 'pending_cancellation', 'trial'])
+      .in('status', ['active', 'authenticated', 'created', 'pending_cancellation', 'trial', 'paused'])
 
     if (existingError) {
       console.error('[create-subscription-v2] Existing sub check error:', JSON.stringify(existingError))
