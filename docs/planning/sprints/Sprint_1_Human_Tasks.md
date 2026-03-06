@@ -92,7 +92,7 @@ While Sprint 1 architecture and foundation are **100% complete**, the following 
 **Completed By:** @founder  
 **Completion Date:** $(date +%Y-%m-%d)  
 **Implementation Notes:** 
-- Google OAuth client ID: `587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com`
+- Google OAuth client ID: `xx`
 - Flutter authentication service created with full OAuth integration
 - Android package configured: `com.disciplefy.bible_study`
 - All configuration files updated and ready for production deployment  

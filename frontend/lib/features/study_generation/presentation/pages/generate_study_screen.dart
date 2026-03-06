@@ -100,8 +100,38 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Store the computed token cost for display (null = hide badge)
   int? _displayTokenCost;
 
+  bool _isInputFocused = false;
+
   // Suggestions are now loaded from translations to support multiple languages
   // See _getFilteredSuggestions() method for implementation
+
+  static const List<String> _apologeticsQuestions = [
+    'Why did Jesus die for us?',
+    'Why did God create evil?',
+    'How do we know the Bible is true?',
+    'If God is good, why is there suffering?',
+    'Is Jesus the only way to salvation?',
+    'Did Jesus really rise from the dead?',
+    'Why does God allow innocent people to suffer?',
+    'Can I trust the Bible that has been passed down?',
+    'How can God be three yet one?',
+    'Why did God command violence in the Old Testament?',
+    'What happens to people who never heard about Jesus?',
+    'Is Christianity just a copy of other religions?',
+    'Does science disprove God?',
+    'Why would a loving God send people to hell?',
+    'Was Jesus just a good teacher or truly God?',
+    'How do we know God exists?',
+    'Why does God seem different in the Old and New Testament?',
+    'Is faith just believing without evidence?',
+    'How can a good God predestine some to damnation?',
+    'Why pray if God already knows what will happen?',
+    'What is the purpose of suffering in a Christian\'s life?',
+    'Are miracles possible in a scientific world?',
+    'Why did Jesus have to be born of a virgin?',
+    'Is the resurrection historically credible?',
+    'How should Christians respond to doubt?',
+  ];
 
   @override
   void initState() {
@@ -111,6 +141,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     _navigator = GetIt.instance<StudyNavigator>();
     _tokenCostRepository = GetIt.instance<TokenCostRepository>();
     _inputController.addListener(_validateInput);
+    _inputFocusNode.addListener(() {
+      if (mounted) setState(() => _isInputFocused = _inputFocusNode.hasFocus);
+    });
     _loadDefaultLanguage();
     _loadSavedStudyModePreference();
     _setupLanguageChangeListener();
@@ -437,25 +470,21 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           ? translatedList
           : ['Forgiveness', 'Love', 'Faith', 'Hope', 'Prayer'];
     } else {
-      // Question mode - single suggestion
-      final translatedList =
-          context.trList(TranslationKeys.generateStudyQuestionSuggestions);
-      suggestions =
-          translatedList.isNotEmpty ? translatedList : ['How should we pray'];
+      // Question mode — use full apologetics question list
+      suggestions = _apologeticsQuestions;
     }
 
     final query = _inputController.text.trim().toLowerCase();
 
-    // For Question mode, only show 1 suggestion
     if (query.isEmpty) {
       return _selectedMode == StudyInputMode.question
-          ? suggestions.take(1).toList()
+          ? suggestions
           : suggestions.take(3).toList();
     }
 
     return suggestions
         .where((suggestion) => suggestion.toLowerCase().contains(query))
-        .take(5)
+        .take(_selectedMode == StudyInputMode.question ? suggestions.length : 5)
         .toList();
   }
 
@@ -1338,6 +1367,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   Widget _buildSuggestions() {
+    if (_selectedMode == StudyInputMode.question) {
+      return _buildQuestionDropdown();
+    }
+
     final suggestions = _getFilteredSuggestions();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1371,6 +1404,125 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               .toList(),
         ),
       ],
+    );
+  }
+
+  Widget _buildQuestionDropdown() {
+    // Show dropdown when input is focused or empty
+    final showDropdown =
+        _isInputFocused || _inputController.text.trim().isEmpty;
+    if (!showDropdown) return const SizedBox.shrink();
+
+    final suggestions = _getFilteredSuggestions();
+    if (suggestions.isEmpty) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 260),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.1)
+              : AppColors.brandSecondary.withOpacity(0.25),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline_rounded,
+                    size: 14,
+                    color: AppColors.brandSecondary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Try asking...',
+                    style: AppFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: isDark
+                  ? Colors.white.withOpacity(0.08)
+                  : const Color(0xFFE5E7EB),
+            ),
+            Flexible(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                shrinkWrap: true,
+                itemCount: suggestions.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : const Color(0xFFF3F4F6),
+                ),
+                itemBuilder: (context, index) {
+                  final question = suggestions[index];
+                  return InkWell(
+                    onTap: () {
+                      _inputController.text = question;
+                      _inputFocusNode.unfocus();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.help_outline_rounded,
+                            size: 16,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.35)
+                                : const Color(0xFF9CA3AF),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              question,
+                              style: AppFonts.inter(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.85)
+                                    : const Color(0xFF1F2937),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
