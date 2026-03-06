@@ -8,6 +8,7 @@ import '../../core/extensions/translation_extension.dart';
 import '../../core/i18n/translation_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/services/language_preference_service.dart';
+import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
 
@@ -56,6 +57,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   Future<void> _fetchVerseText() async {
     final fetchVerseText = GetIt.instance<FetchVerseText>();
     final languageService = GetIt.instance<LanguagePreferenceService>();
+    final verseCache = GetIt.instance<VerseCacheService>();
 
     // Parse the reference
     final parsed = _parseReference(widget.reference);
@@ -71,6 +73,20 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     // Get current language
     final appLanguage = await languageService.getSelectedLanguage();
     final langCode = appLanguage.code;
+
+    // Check cache first
+    final cached = await verseCache.getCachedVerse(
+      reference: widget.reference,
+      language: langCode,
+    );
+    if (cached != null) {
+      setState(() {
+        _isLoading = false;
+        _verseText = cached.text;
+        _localizedReference = cached.localizedReference;
+      });
+      return;
+    }
 
     // Normalize book name to canonical form (e.g., "Psalm" -> "Psalms")
     final normalizedBook = BibleBooks.normalizeBookName(parsed.book);
@@ -92,6 +108,13 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         });
       },
       (fetchedVerse) {
+        // Save to cache for future opens
+        verseCache.cacheVerse(
+          reference: widget.reference,
+          language: langCode,
+          text: fetchedVerse.text,
+          localizedReference: fetchedVerse.localizedReference,
+        );
         setState(() {
           _isLoading = false;
           _verseText = fetchedVerse.text;
