@@ -679,7 +679,11 @@ class DailyVerseCard extends StatelessWidget {
         // Check memory achievements when verse is added
         sl<GamificationBloc>().add(const CheckMemoryAchievements());
       } else if (memoryState is MemoryVerseError) {
-        _showErrorSnackBar(context, memoryState.message);
+        if (memoryState.code == 'VERSE_ALREADY_EXISTS') {
+          _showAlreadyExistsSnackBar(context);
+        } else {
+          _showErrorSnackBar(context, memoryState.message);
+        }
       } else if (memoryState is OperationQueued) {
         _showQueuedSnackBar(context, memoryState.message);
       }
@@ -725,6 +729,29 @@ class DailyVerseCard extends StatelessWidget {
         content: Text('Something went wrong. Please try again.'),
         backgroundColor: AppColors.error,
         duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Shows snackbar when the verse is already in the memory deck
+  void _showAlreadyExistsSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.bookmark, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text('Verse already in your memory deck'),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.warning,
+        action: SnackBarAction(
+          label: 'Review',
+          textColor: Colors.white,
+          onPressed: () => GoRouter.of(context).go('/memory-verses'),
+        ),
       ),
     );
   }
