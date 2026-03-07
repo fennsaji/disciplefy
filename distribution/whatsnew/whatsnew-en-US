@@ -1,13 +1,12 @@
-🙏 Disciplefy Bible Study App - Beta Update
+🙏 Disciplefy - Beta Update
 
 ✨ What's New:
-• Google Play subscription billing fully integrated — subscribe via the Play Store
-• Subscription purchase flow updated for Google Play Billing Library 5+
+• Personalized study content based on your faith journey level
+• Hindi/Malayalam Bible book search (Hinglish & Manglish input)
+• Verse ranges now show each verse individually
+• Smarter fill-in-the-blanks with meaningful word selection
+• Scroll indicators in word bank practice screens
+• Faster memory verse loading with smart caching
+• Learning paths load faster with local caching
 
-🛠️ Fixes:
-• Fixed subscription purchase date being incorrectly set to the expiry date
-• Fixed auto-renewal detection missing cancelled subscriptions
-• Fixed card expiry validation incorrectly rejecting cards expiring this month
-
-📖 Keep growing in your faith journey!
-
+📖 Keep growing in your faith!
