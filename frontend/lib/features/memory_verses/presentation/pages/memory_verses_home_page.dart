@@ -302,31 +302,23 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             }
           },
           builder: (context, state) {
+            // Track latest loaded state for stale-while-revalidate
             if (state is DueVersesLoaded) {
               _lastLoadedState = state;
             }
-            if (state is MemoryVerseInitial) {
-              return _buildLoadingState();
-            }
-            if (state is MemoryVerseLoading && !state.isRefreshing) {
-              return _buildLoadingState();
-            }
-            if (state is MemoryVerseLoading && state.isRefreshing) {
-              if (_lastLoadedState != null) {
-                return _buildLoadedState(_lastLoadedState!);
-              }
-              return _buildLoadingState();
-            }
+
+            // Show current loaded state (includes silent background refresh)
             if (state is DueVersesLoaded) {
               return _buildLoadedState(state);
             }
-            // Preserve loaded verses during transient states (errors, fetch operations, etc.)
-            // This handles: MemoryVerseError, FetchingVerseText, VerseTextFetched,
-            // FetchVerseTextError, and any other states from modal operations
+
+            // Preserve loaded state during transient states — no flicker
             if (_lastLoadedState != null) {
               return _buildLoadedState(_lastLoadedState!);
             }
-            return _buildEmptyState();
+
+            // No cached data yet (first visit) — show loader while fetching
+            return _buildLoadingState();
           },
         ),
       ).withAuthProtection(),

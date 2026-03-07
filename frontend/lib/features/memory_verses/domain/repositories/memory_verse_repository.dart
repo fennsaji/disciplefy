@@ -54,6 +54,16 @@ abstract class MemoryVerseRepository {
     String? language,
   });
 
+  /// Returns cached due verses immediately from local storage (no network call).
+  ///
+  /// Used for stale-while-revalidate: show cached data instantly,
+  /// then refresh from remote in background.
+  /// Returns null if no cache exists yet.
+  Future<(List<MemoryVerseEntity>, ReviewStatisticsEntity)?>
+      getCachedDueVerses({
+    String? language,
+  });
+
   /// Submits a review for a memory verse
   ///
   /// [memoryVerseId] - ID of the verse being reviewed

@@ -268,13 +268,16 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     final pathDescriptionParam = path.description.isNotEmpty
         ? '&path_description=$encodedPathDescription'
         : '';
+    final discipleLevelParam = path.discipleLevel.isNotEmpty
+        ? '&disciple_level=${Uri.encodeComponent(path.discipleLevel)}'
+        : '';
 
     Logger.debug(
-        '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}, path: ${path.title}');
+        '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}, path: ${path.title}, level: ${path.discipleLevel}');
 
     // Use push and await the result - when user returns, refresh the data
     await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam$pathTitleParam$pathDescriptionParam',
+      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam$pathTitleParam$pathDescriptionParam$discipleLevelParam',
     );
 
     // Persist that this topic was accessed so future visits bypass the token check

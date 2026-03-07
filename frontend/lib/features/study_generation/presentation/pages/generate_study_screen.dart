@@ -39,6 +39,8 @@ import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.da
 import '../../data/repositories/token_cost_repository.dart';
 import '../../data/datasources/study_local_data_source.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/constants/bible_books.dart';
+import '../../../../core/constants/bible_book_transliterations.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -347,7 +349,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         _validationError = null;
       } else if (_selectedMode == StudyInputMode.scripture) {
         _isInputValid = _validateScriptureReference(text);
-        _validationError = _isInputValid
+        // Don't show error while user is still typing the book name (no digit yet)
+        final hasDigit = text.runes.any((r) => r >= 48 && r <= 57);
+        _validationError = (_isInputValid || !hasDigit)
             ? null
             : context.tr(TranslationKeys.generateStudyScriptureError);
       } else if (_selectedMode == StudyInputMode.question) {
@@ -486,6 +490,119 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         .where((suggestion) => suggestion.toLowerCase().contains(query))
         .take(_selectedMode == StudyInputMode.question ? suggestions.length : 5)
         .toList();
+  }
+
+  /// Returns book name suggestions based on the current query and content language.
+  ///
+  /// Detection rules (in order):
+  ///  1. Hindi script → search BibleBooks.hindi (shows native Hindi names)
+  ///  2. Malayalam script → search BibleBooks.malayalam (shows native Malayalam names)
+  ///  3. Roman script → English prefix match + Hinglish (hi mode) / Manglish (ml mode)
+  List<_BookSuggestion> _getBookNameSuggestions() {
+    if (_selectedMode != StudyInputMode.scripture) return [];
+    final query = _inputController.text.trim();
+    if (query.isEmpty) return [];
+    if (query.contains(RegExp(r'[\d:]'))) return [];
+
+    // Detect Unicode script
+    final isHindiScript = query.runes.any((r) => r >= 0x0900 && r <= 0x097F);
+    final isMalayalamScript =
+        query.runes.any((r) => r >= 0x0D00 && r <= 0x0D7F);
+
+    // Native Hindi script input — use API-loaded list
+    if (isHindiScript) {
+      return BibleBooks.allHindi
+          .where((b) => b.startsWith(query))
+          .take(5)
+          .map((b) => _BookSuggestion(label: b, insertText: b))
+          .toList();
+    }
+
+    // Native Malayalam script input — use API-loaded list, insert full forms
+    if (isMalayalamScript) {
+      return BibleBooks.allMalayalam
+          .where((b) {
+            final full = BibleBooks.getMalayalamFullForm(b);
+            return b.startsWith(query) || full.startsWith(query);
+          })
+          .take(5)
+          .map((b) {
+            final full = BibleBooks.getMalayalamFullForm(b);
+            return _BookSuggestion(label: full, insertText: full);
+          })
+          .toList();
+    }
+
+    // Roman script input — language-specific results first, then English fallbacks
+    final q = query.toLowerCase();
+    final results = <_BookSuggestion>[];
+    // Track by canonical English name so the same book isn't shown twice
+    final seenEnglish = <String>{};
+
+    // Hindi language: show Hinglish matches FIRST with Hindi script insertText
+    if (_selectedLanguage == StudyLanguage.hindi) {
+      for (final e in BibleBookTransliterations.searchHindi(q)) {
+        if (seenEnglish.add(e.english)) {
+          results.add(_BookSuggestion(
+            label: '${e.localDisplay} · ${e.english}',
+            insertText: e.localDisplay, // insert Hindi script name
+            badge: 'हिं',
+          ));
+        }
+      }
+    }
+
+    // Malayalam language: show Manglish matches FIRST with full Malayalam script name
+    if (_selectedLanguage == StudyLanguage.malayalam) {
+      for (final e in BibleBookTransliterations.searchMalayalam(q)) {
+        if (seenEnglish.add(e.english)) {
+          final full = BibleBooks.getMalayalamFullForm(e.localDisplay);
+          results.add(_BookSuggestion(
+            label: '$full · ${e.english}',
+            insertText: full, // insert full Malayalam script name
+            badge: 'മ',
+          ));
+        }
+      }
+    }
+
+    // English canonical + abbreviation matches (uses API-loaded data)
+    // BibleBooks.searchEnglish handles both full names and abbreviations like
+    // "Mt" → Matthew, "Mk" → Mark, "Lk" → Luke, "Jn" → John, etc.
+    for (final book in BibleBooks.searchEnglish(q)) {
+      if (seenEnglish.add(book)) {
+        results.add(_BookSuggestion(label: book, insertText: book));
+      }
+    }
+
+    // Fallback: Hinglish if no results yet (user typed Hinglish with English language)
+    if (results.isEmpty) {
+      for (final e in BibleBookTransliterations.searchHindi(q)) {
+        if (seenEnglish.add(e.english)) {
+          results.add(_BookSuggestion(
+            label: '${e.localDisplay} · ${e.english}',
+            insertText: e.english,
+            badge: 'हिं',
+          ));
+        }
+      }
+    }
+
+    // Fallback: Manglish if still no results
+    if (results.isEmpty) {
+      for (final e in BibleBookTransliterations.searchMalayalam(q)) {
+        if (seenEnglish.add(e.english)) {
+          final full = BibleBooks.getMalayalamFullForm(e.localDisplay);
+          results.add(_BookSuggestion(
+            label: '$full · ${e.english}',
+            insertText: e.english,
+            badge: 'മ',
+          ));
+        }
+      }
+    }
+
+    return results.take(6).toList();
   }
 
   @override
@@ -1371,8 +1488,56 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       return _buildQuestionDropdown();
     }
 
-    final suggestions = _getFilteredSuggestions();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Show book name autocomplete when user is typing a book name in scripture mode
+    if (_selectedMode == StudyInputMode.scripture) {
+      final bookSuggestions = _getBookNameSuggestions();
+      if (bookSuggestions.isNotEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Books of the Bible',
+              style: AppFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isDark
+                    ? Colors.white.withOpacity(0.5)
+                    : const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: bookSuggestions
+                  .map((s) => _SuggestionChip(
+                        label: s.label,
+                        badge: s.badge,
+                        onTapDown: (_) => _inputFocusNode.requestFocus(),
+                        onTap: () {
+                          final newText = '${s.insertText} ';
+                          _inputController.text = newText;
+                          // Defer cursor placement to after the system's
+                          // focus-gained auto-select has settled.
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            _inputController.selection =
+                                TextSelection.fromPosition(
+                              TextPosition(offset: newText.length),
+                            );
+                          });
+                        },
+                      ))
+                  .toList(),
+            ),
+          ],
+        );
+      }
+    }
+
+    final suggestions = _getFilteredSuggestions();
 
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
@@ -3036,14 +3201,31 @@ class _LanguageToggleButton extends StatelessWidget {
   }
 }
 
-/// Suggestion chip widget with modern styling.
+/// Data class for a book name autocomplete suggestion.
+class _BookSuggestion {
+  final String label; // displayed on the chip
+  final String insertText; // inserted into the text field on tap
+  final String? badge; // optional language badge (e.g. 'हिं', 'മ')
+
+  const _BookSuggestion({
+    required this.label,
+    required this.insertText,
+    this.badge,
+  });
+}
+
+/// Suggestion chip widget with modern styling and optional language badge.
 class _SuggestionChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
+  final GestureTapDownCallback? onTapDown;
+  final String? badge;
 
   const _SuggestionChip({
     required this.label,
     required this.onTap,
+    this.onTapDown,
+    this.badge,
   });
 
   @override
@@ -3051,6 +3233,7 @@ class _SuggestionChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
+      onTapDown: onTapDown,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -3064,15 +3247,40 @@ class _SuggestionChip extends StatelessWidget {
                 : AppColors.brandSecondary.withOpacity(0.2),
           ),
         ),
-        child: Text(
-          label,
-          style: AppFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark
-                ? Colors.white.withOpacity(0.8)
-                : AppColors.brandSecondary,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (badge != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.brandPrimary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  badge!,
+                  style: AppFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? AppColors.brandPrimaryLight
+                        : AppColors.brandPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isDark
+                    ? Colors.white.withOpacity(0.8)
+                    : AppColors.brandSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );

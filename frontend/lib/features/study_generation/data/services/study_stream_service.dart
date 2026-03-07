@@ -33,6 +33,7 @@ class StudyStreamService {
     String? topicDescription,
     String? pathTitle,
     String? pathDescription,
+    String? discipleLevel,
     required String language,
     StudyMode studyMode = StudyMode.standard,
   }) async* {
@@ -55,6 +56,10 @@ class StudyStreamService {
 
     if (pathDescription != null && pathDescription.isNotEmpty) {
       queryParams['path_description'] = pathDescription;
+    }
+
+    if (discipleLevel != null && discipleLevel.isNotEmpty) {
+      queryParams['disciple_level'] = discipleLevel;
     }
 
     final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);

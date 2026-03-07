@@ -187,6 +187,7 @@ import '../../features/memory_verses/data/repositories/memory_verse_repository_i
 import '../../features/memory_verses/data/services/suggested_verses_cache_service.dart';
 import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/repositories/memory_verse_repository.dart';
+import '../../features/memory_verses/domain/usecases/get_cached_due_verses.dart';
 import '../../features/memory_verses/domain/usecases/get_due_verses.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_from_daily.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
@@ -536,6 +537,7 @@ Future<void> initializeDependencies() async {
 
   // Use Cases
   sl.registerLazySingleton(() => GetDueVerses(sl()));
+  sl.registerLazySingleton(() => GetCachedDueVerses(sl()));
   sl.registerLazySingleton(() => AddVerseFromDaily(sl()));
   sl.registerLazySingleton(() => AddVerseManually(sl()));
   sl.registerLazySingleton(() => SubmitReview(sl()));
@@ -576,6 +578,7 @@ Future<void> initializeDependencies() async {
   // BLoC
   sl.registerFactory(() => MemoryVerseBloc(
         getDueVerses: sl(),
+        getCachedDueVerses: sl(),
         addVerseFromDaily: sl(),
         addVerseManually: sl(),
         submitReview: sl(),

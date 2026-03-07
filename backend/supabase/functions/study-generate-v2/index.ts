@@ -118,6 +118,7 @@ function parseRequestParams(req: Request): {
   topic_description?: string
   path_title?: string
   path_description?: string
+  disciple_level?: string
   language: string
   study_mode: StudyMode
 } | null {
@@ -128,6 +129,7 @@ function parseRequestParams(req: Request): {
   const topic_description = url.searchParams.get('topic_description') || undefined
   const path_title = url.searchParams.get('path_title') || undefined
   const path_description = url.searchParams.get('path_description') || undefined
+  const disciple_level = url.searchParams.get('disciple_level') || undefined
   const language = url.searchParams.get('language') || 'en'
   const mode = url.searchParams.get('mode') as StudyMode | null
 
@@ -143,7 +145,7 @@ function parseRequestParams(req: Request): {
   const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio', 'sermon']
   const study_mode: StudyMode = mode && validModes.includes(mode) ? mode : 'standard'
 
-  return { input_type, input_value, topic_description, path_title, path_description, language, study_mode }
+  return { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode }
 }
 
 /**
@@ -597,7 +599,7 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, topic_description, path_title, path_description, language, study_mode } = params
+  const { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode } = params
 
   console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
@@ -1025,6 +1027,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1036,6 +1039,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1080,6 +1084,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1091,6 +1096,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1133,6 +1139,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1144,6 +1151,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1187,6 +1195,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1198,6 +1207,7 @@ async function handleStudyGenerateV2(
               topicDescription: topic_description,
               pathTitle: path_title,
               pathDescription: path_description,
+              discipleLevel: disciple_level,
               language: targetLanguage,
               tier: userPlan,
               studyMode: study_mode
@@ -1315,6 +1325,7 @@ async function handleStudyGenerateV2(
                 topicDescription: topic_description,
                 pathTitle: path_title,
                 pathDescription: path_description,
+                discipleLevel: disciple_level,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1326,6 +1337,7 @@ async function handleStudyGenerateV2(
                 topicDescription: topic_description,
                 pathTitle: path_title,
                 pathDescription: path_description,
+                discipleLevel: disciple_level,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1369,6 +1381,7 @@ async function handleStudyGenerateV2(
                 topicDescription: topic_description,
                 pathTitle: path_title,
                 pathDescription: path_description,
+                discipleLevel: disciple_level,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1380,6 +1393,7 @@ async function handleStudyGenerateV2(
                 topicDescription: topic_description,
                 pathTitle: path_title,
                 pathDescription: path_description,
+                discipleLevel: disciple_level,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode
@@ -1448,6 +1462,7 @@ async function handleStudyGenerateV2(
                 topicDescription: topic_description,
                 pathTitle: path_title,
                 pathDescription: path_description,
+                discipleLevel: disciple_level,
                 language: targetLanguage,
                 tier: userPlan,
                 studyMode: study_mode,

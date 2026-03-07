@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'dart:io' show File, Platform;
-import 'package:path_provider/path_provider.dart';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -134,6 +133,9 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Only set when the study guide is generated from a learning path topic.
   final String? pathDescription;
 
+  /// Optional disciple level from the learning path (seeker|believer|follower|disciple|leader).
+  final String? pathDiscipleLevel;
+
   /// Optional language code for the study guide
   final String? language;
 
@@ -154,6 +156,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.description,
     this.pathTitle,
     this.pathDescription,
+    this.pathDiscipleLevel,
     this.language,
     this.navigationSource = StudyNavigationSource.home,
     this.studyMode = StudyMode.standard,
@@ -170,6 +173,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
           description: description,
           pathTitle: pathTitle,
           pathDescription: pathDescription,
+          pathDiscipleLevel: pathDiscipleLevel,
           language: language,
           navigationSource: navigationSource,
           studyMode: studyMode,
@@ -185,6 +189,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final String? description;
   final String? pathTitle;
   final String? pathDescription;
+  final String? pathDiscipleLevel;
   final String? language;
   final StudyNavigationSource navigationSource;
   final StudyMode studyMode;
@@ -197,6 +202,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     this.description,
     this.pathTitle,
     this.pathDescription,
+    this.pathDiscipleLevel,
     this.language,
     required this.navigationSource,
     required this.studyMode,
@@ -726,6 +732,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           topicDescription: widget.description,
           pathTitle: widget.pathTitle,
           pathDescription: widget.pathDescription,
+          discipleLevel: widget.pathDiscipleLevel,
           language: normalizedLanguageCode,
           studyMode: widget.studyMode,
           pendingStudyId: _pendingStudyId,
@@ -1324,23 +1331,26 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  /// Guards the learning path sheet: both completion AND absolute-bottom scroll
-  /// must be satisfied before the sheet is shown.
+  /// Guards the completion sheet: shown whenever the guide is fully completed
+  /// AND the user has scrolled to the absolute bottom, regardless of navigation
+  /// source.
   void _maybeShowLearningPathSheet() {
     if (_isTopicCompletedFromPath) return;
-    if (widget.navigationSource != StudyNavigationSource.learningPath) return;
     if (!_completionMarked) return;
     if (!_isScrolledToAbsoluteBottom()) return;
     _showLearningPathCompletionSheet();
   }
 
-  /// Shows a bottom sheet prompting the user to return to their learning path
-  /// after the guide is completed and the user has scrolled to the very bottom.
+  /// Shows a bottom sheet prompting the user after the guide is completed and
+  /// the user has scrolled to the very bottom.
   void _showLearningPathCompletionSheet() {
     if (!mounted) return;
     // Guard: only show once
     if (_isTopicCompletedFromPath) return;
     setState(() => _isTopicCompletedFromPath = true);
+
+    final isFromLearningPath =
+        widget.navigationSource == StudyNavigationSource.learningPath;
 
     showModalBottomSheet<void>(
       context: context,
@@ -1377,7 +1387,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               ),
               const SizedBox(height: 24),
 
-              // Icon + title
+              // Icon
               Container(
                 width: 64,
                 height: 64,
@@ -1404,7 +1414,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               const SizedBox(height: 6),
 
               Text(
-                'Ready to continue your learning path?',
+                isFromLearningPath
+                    ? 'Ready to continue your learning path?'
+                    : 'Great job completing this study!',
                 style: AppFonts.inter(
                   fontSize: 14,
                   color: theme.colorScheme.onSurface
@@ -1415,17 +1427,24 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               ),
               const SizedBox(height: 28),
 
-              // Primary CTA – back to path
+              // Primary CTA
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.of(sheetContext).pop(); // close sheet
-                    _handleBackNavigation(); // go back to learning path
+                    Navigator.of(sheetContext).pop();
+                    _handleBackNavigation();
                   },
-                  icon: const Icon(Icons.route_rounded, size: 20),
-                  label: const Text('Continue Learning Path'),
+                  icon: Icon(
+                    isFromLearningPath
+                        ? Icons.route_rounded
+                        : Icons.check_rounded,
+                    size: 20,
+                  ),
+                  label: Text(
+                    isFromLearningPath ? 'Continue Learning Path' : 'Done',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.brandSecondary,
                     foregroundColor: Colors.white,
@@ -3638,28 +3657,6 @@ ${_currentStudyGuide!.prayerPoints.map((p) => '• $p').join('\n')}
 — Shared from Disciplefy: Bible Study App
 $appLink
 ''';
-
-    // Share as a .txt file when content is long to avoid platform truncation.
-    // Most messaging apps (WhatsApp, Telegram, etc.) cap shared text at ~8 KB.
-    const int textShareLimit = 8000;
-    if (!kIsWeb && shareText.length > textShareLimit) {
-      try {
-        final dir = await getTemporaryDirectory();
-        final safeTitle = _getDisplayTitle()
-            .replaceAll(RegExp(r'[^\w\s-]'), '')
-            .trim()
-            .replaceAll(RegExp(r'\s+'), '_');
-        final file = File('${dir.path}/disciplefy_$safeTitle.txt');
-        await file.writeAsString(shareText);
-        await Share.shareXFiles(
-          [XFile(file.path, mimeType: 'text/plain')],
-          subject: 'Bible Study: ${_getDisplayTitle()}',
-        );
-        return;
-      } catch (_) {
-        // Fall through to plain text share if file creation fails
-      }
-    }
 
     Share.share(
       shareText,

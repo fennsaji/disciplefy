@@ -3,7 +3,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class NotificationPreferenceCard extends StatelessWidget {
   final String title;
@@ -11,7 +11,7 @@ class NotificationPreferenceCard extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final ValueChanged<bool> onChanged;
-  final Widget? trailing; // Optional trailing widget (e.g., time picker button)
+  final Widget? trailing;
 
   const NotificationPreferenceCard({
     super.key,
@@ -26,92 +26,130 @@ class NotificationPreferenceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    const primary = AppColors.brandPrimary;
+    const primaryLight = AppColors.brandPrimaryLight;
 
-    // Use explicit colors for better visibility in dark mode
-    final iconBackgroundColor = isDark
-        ? AppTheme.primaryColor
-            .withOpacity(0.3) // Vibrant purple with 30% opacity
-        : AppTheme.primaryColor
-            .withOpacity(0.1); // Vibrant purple with 10% opacity
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final borderColor = enabled
+        ? primary.withOpacity(isDark ? 0.4 : 0.25)
+        : (isDark ? AppColors.darkBorder : AppColors.lightBorder);
 
-    final iconColor = isDark
-        ? const Color(0xFFA78BFA) // Lighter vibrant purple for dark mode
-        : AppTheme.primaryColor; // Vibrant purple for light mode
+    final iconBg = enabled
+        ? (isDark ? primary.withOpacity(0.25) : AppColors.lightSurfaceVariant)
+        : (isDark ? AppColors.darkSurfaceHigh : const Color(0xFFF3F4F6));
 
-    return Card(
-      elevation: 1,
-      color: isDark
-          ? const Color(0xFF2C2C2C)
-          : null, // Explicit card color in dark mode
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    final iconColor = enabled
+        ? (isDark ? primaryLight : primary)
+        : (isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.5),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: primary.withOpacity(isDark ? 0.12 : 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
-      child: InkWell(
-        onTap: () => onChanged(!enabled),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: iconBackgroundColor,
-                  borderRadius: BorderRadius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => onChanged(!enabled),
+          borderRadius: BorderRadius.circular(16),
+          splashColor: primary.withOpacity(0.08),
+          highlightColor: primary.withOpacity(0.04),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon Container
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, size: 22, color: iconColor),
                 ),
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: iconColor,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : null,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isDark
-                                ? const Color(0xFFB0B0B0) // Explicit light gray
-                                : Colors.grey[600],
-                            height: 1.3,
-                          ),
-                    ),
-                    if (trailing != null) ...[
-                      const SizedBox(height: 12),
-                      trailing!,
+                const SizedBox(width: 14),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                      if (trailing != null) ...[
+                        const SizedBox(height: 10),
+                        trailing!,
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Switch(
-                value: enabled,
-                onChanged: onChanged,
-                activeColor: isDark
-                    ? const Color(0xFFA78BFA) // Lighter vibrant purple thumb
-                    : AppTheme.primaryColor, // Vibrant purple thumb
-                activeTrackColor: isDark
-                    ? AppTheme.primaryColor.withOpacity(0.5)
-                    : AppTheme.primaryColor.withOpacity(0.5),
-                inactiveThumbColor: isDark
-                    ? const Color(0xFF9E9E9E) // Light gray thumb
-                    : const Color(0xFFBDBDBD),
-                inactiveTrackColor: isDark
-                    ? const Color(0xFF424242) // Dark gray track
-                    : const Color(0xFFE0E0E0),
-              ),
-            ],
+                const SizedBox(width: 10),
+
+                // Switch
+                Switch(
+                  value: enabled,
+                  onChanged: onChanged,
+                  activeColor: Colors.white,
+                  activeTrackColor: primary,
+                  inactiveThumbColor: isDark
+                      ? const Color(0xFF6B7280)
+                      : const Color(0xFFD1D5DB),
+                  inactiveTrackColor: isDark
+                      ? const Color(0xFF374151)
+                      : const Color(0xFFE5E7EB),
+                  trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return primary;
+                    }
+                    return isDark
+                        ? const Color(0xFF4B5563)
+                        : const Color(0xFFD1D5DB);
+                  }),
+                  trackOutlineWidth: const WidgetStatePropertyAll(1.5),
+                ),
+              ],
+            ),
           ),
         ),
       ),

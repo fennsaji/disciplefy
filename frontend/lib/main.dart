@@ -465,10 +465,13 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
         child: BlocListener<GamificationBloc, GamificationState>(
           bloc: sl<GamificationBloc>(),
           listenWhen: (previous, current) {
-            // Listen when new pending notifications are added
-            return current.hasPendingNotifications &&
-                current.pendingNotifications.length >
-                    previous.pendingNotifications.length;
+            // Fire when the head of the queue changes to a new non-null item.
+            // This covers two cases:
+            //  1. New achievements added (list grows)
+            //  2. First achievement dismissed and next one surfaces (list shrinks
+            //     but still non-empty — previous.next != current.next)
+            return current.nextNotification != null &&
+                current.nextNotification != previous.nextNotification;
           },
           listener: (context, state) {
             // Show achievement unlock dialog when there are pending notifications

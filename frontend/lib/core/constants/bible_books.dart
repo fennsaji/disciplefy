@@ -197,6 +197,127 @@ class BibleBooks {
     '1 പത്രോസ്', '2 പത്രോസ്',
   ];
 
+  // ---------------------------------------------------------------------------
+  // Remote-aware per-language getters (use API data when loaded)
+  // ---------------------------------------------------------------------------
+
+  /// English canonical names — uses remote data when loaded.
+  static List<String> get allEnglish => _remote?.english ?? english;
+
+  /// English abbreviations — uses remote data when loaded.
+  static List<String> get allEnglishAbbreviations =>
+      _remote?.englishAbbreviations ?? englishAbbreviations;
+
+  /// Hindi canonical names — uses remote data when loaded.
+  static List<String> get allHindi => _remote?.hindi ?? hindi;
+
+  /// Malayalam canonical names — uses remote data when loaded.
+  static List<String> get allMalayalam => _remote?.malayalam ?? malayalam;
+
+  // ---------------------------------------------------------------------------
+  // Malayalam full-form display map
+  // (API canonical forms use abbreviated names with '.'; this maps them back
+  //  to the user-friendly full forms stored in malayalamAlternates)
+  // ---------------------------------------------------------------------------
+
+  static const Map<String, String> _malayalamFullForms = {
+    // Old Testament
+    'ഉല്പ.': 'ഉല്പത്തി',
+    'പുറ.': 'പുറപ്പാട്',
+    'ലേവ്യ.': 'ലേവ്യപുസ്തകം',
+    'സംഖ്യ.': 'സംഖ്യാപുസ്തകം',
+    'ആവർ.': 'ആവർത്തനം',
+    'ന്യായാ.': 'ന്യായാധിപന്മാർ',
+    '1 ശമു.': '1 ശമൂവേൽ',
+    '2 ശമു.': '2 ശമൂവേൽ',
+    '1 രാജാ.': '1 രാജാക്കന്മാർ',
+    '2 രാജാ.': '2 രാജാക്കന്മാർ',
+    '1 ദിന.': '1 ദിനവൃത്താന്തം',
+    '2 ദിന.': '2 ദിനവൃത്താന്തം',
+    'നെഹെ.': 'നെഹെമ്യാവ്',
+    'എസ്ഥേ.': 'എസ്ഥേർ',
+    'ഇയ്യോ.': 'ഇയ്യോബ്',
+    'സങ്കീ.': 'സങ്കീർത്തനങ്ങൾ',
+    'സദൃ.': 'സദൃശവാക്യങ്ങൾ',
+    'സഭാ.': 'സഭാപ്രസംഗി',
+    'ഉത്ത.': 'ഉത്തമഗീതം',
+    'യെശ.': 'യെശയ്യാവ്',
+    'യിരെ.': 'യിരെമ്യാവ്',
+    'വിലാ.': 'വിലാപങ്ങൾ',
+    'യെഹെ.': 'യെഹെസ്കേൽ',
+    'ദാനീ.': 'ദാനിയേൽ',
+    'ഹോശേ.': 'ഹോശേയ',
+    'യോവേ.': 'യോവേൽ',
+    'ആമോ.': 'ആമോസ്',
+    'ഓബ.': 'ഓബദ്യാവ്',
+    'ഹബ.': 'ഹബക്കൂക്ക്',
+    'സെഫ.': 'സെഫന്യാവ്',
+    'ഹഗ്ഗാ.': 'ഹഗ്ഗായി',
+    'സെഖ.': 'സെഖര്യാവ്',
+    'മലാ.': 'മലാഖി',
+    // New Testament
+    'മത്താ.': 'മത്തായി',
+    'മർക്കൊ.': 'മർക്കൊസ്',
+    'ലൂക്കൊ.': 'ലൂക്കൊസ്',
+    'യോഹ.': 'യോഹന്നാൻ',
+    'റോമ.': 'റോമർ',
+    '1 കൊരി.': '1 കൊരിന്ത്യർ',
+    '2 കൊരി.': '2 കൊരിന്ത്യർ',
+    'ഗലാ.': 'ഗലാത്യർ',
+    'എഫെ.': 'എഫെസ്യർ',
+    'ഫിലി.': 'ഫിലിപ്പിയർ',
+    'കൊലൊ.': 'കൊലൊസ്സ്യർ',
+    '1 തെസ്സ.': '1 തെസ്സലൊനീക്യർ',
+    '2 തെസ്സ.': '2 തെസ്സലൊനീക്യർ',
+    '1 തിമൊ.': '1 തിമൊഥെയൊസ്',
+    '2 തിമൊ.': '2 തിമൊഥെയൊസ്',
+    'തീത്തൊ.': 'തീത്തൊസ്',
+    'ഫിലേ.': 'ഫിലേമോൻ',
+    'എബ്രാ.': 'എബ്രായർ',
+    'യാക്കോ.': 'യാക്കോബ്',
+    '1 പത്രൊ.': '1 പത്രൊസ്',
+    '2 പത്രൊ.': '2 പത്രൊസ്',
+    '1 യോഹ.': '1 യോഹന്നാൻ',
+    '2 യോഹ.': '2 യോഹന്നാൻ',
+    '3 യോഹ.': '3 യോഹന്നാൻ',
+    'വെളി.': 'വെളിപ്പാട്',
+  };
+
+  /// Returns the full-form display name for a Malayalam book name.
+  /// Books that are already full-form (no trailing '.') are returned unchanged.
+  static String getMalayalamFullForm(String name) =>
+      _malayalamFullForms[name] ?? name;
+
+  /// Finds all canonical English book names whose full name OR any abbreviation
+  /// starts with [prefix] (case-insensitive). Returns de-duplicated canonical
+  /// names sorted by how early the match occurs (full-name matches first).
+  static List<String> searchEnglish(String prefix) {
+    if (prefix.isEmpty) return [];
+    final q = prefix.toLowerCase();
+    final seen = <String>{};
+    final results = <String>[];
+
+    // 1. Full-name prefix matches (e.g. "Matt" → "Matthew")
+    for (final book in allEnglish) {
+      if (book.toLowerCase().startsWith(q) && seen.add(book)) {
+        results.add(book);
+      }
+    }
+
+    // 2. Abbreviation prefix matches, mapped to canonical name
+    //    (e.g. "Mt" → Matthew, "Mk" → Mark, "Lk" → Luke, "Jn" → John)
+    for (final abbr in allEnglishAbbreviations) {
+      if (abbr.toLowerCase().startsWith(q)) {
+        final canonical = _mapEnglishAlternateToCanonical(abbr);
+        if (seen.add(canonical)) {
+          results.add(canonical);
+        }
+      }
+    }
+
+    return results;
+  }
+
   /// All Bible book names for all languages combined (including alternates).
   /// Uses remote data when loaded; falls back to static const lists.
   static List<String> get all {

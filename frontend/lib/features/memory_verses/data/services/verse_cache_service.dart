@@ -30,6 +30,7 @@ class VerseCacheService {
     required String language,
     required String text,
     required String localizedReference,
+    List<Map<String, dynamic>>? verses,
   }) async {
     await _ensureInitialized();
     try {
@@ -37,6 +38,7 @@ class VerseCacheService {
       await _cacheBox.put(key, {
         'text': text,
         'localized_reference': localizedReference,
+        if (verses != null) 'verses': verses,
         'cached_at': DateTime.now().toIso8601String(),
       });
       Logger.debug('✅ [VERSE_CACHE] Cached verse: $key');
@@ -64,9 +66,14 @@ class VerseCacheService {
       }
 
       Logger.debug('✅ [VERSE_CACHE] Cache hit: $key');
+      final rawVerses = data['verses'] as List<dynamic>?;
       return CachedVerseData(
         text: data['text'] as String,
         localizedReference: data['localized_reference'] as String,
+        verses: rawVerses
+            ?.map((v) =>
+                {'number': v['number'] as int, 'text': v['text'] as String})
+            .toList(),
       );
     } catch (e) {
       Logger.debug('❌ [VERSE_CACHE] Error reading cache: $e');
@@ -109,6 +116,11 @@ class VerseCacheService {
 class CachedVerseData {
   final String text;
   final String localizedReference;
+  final List<Map<String, dynamic>>? verses;
 
-  const CachedVerseData({required this.text, required this.localizedReference});
+  const CachedVerseData({
+    required this.text,
+    required this.localizedReference,
+    this.verses,
+  });
 }
