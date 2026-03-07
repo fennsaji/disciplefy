@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'mastery_progress_entity.dart';
 import 'practice_mode_entity.dart';
 
 /// Sentinel class for copyWith method to distinguish between null and unset values.
@@ -68,6 +69,10 @@ class MemoryVerseEntity extends Equatable {
   /// Updated via database trigger when practice sessions are submitted
   final bool isFullyMasteredCached;
 
+  /// Verse-level mastery level (beginner → master) derived from practice mode history.
+  /// Stored in memory_verses.mastery_level and updated on each practice submission.
+  final MasteryLevel? masteryLevel;
+
   const MemoryVerseEntity({
     required this.id,
     required this.verseReference,
@@ -84,6 +89,7 @@ class MemoryVerseEntity extends Equatable {
     required this.totalReviews,
     required this.createdAt,
     this.isFullyMasteredCached = false,
+    this.masteryLevel,
   });
 
   /// Checks if the verse is due for review (next review date has passed)
@@ -247,6 +253,7 @@ class MemoryVerseEntity extends Equatable {
     int? totalReviews,
     DateTime? createdAt,
     bool? isFullyMasteredCached,
+    Object? masteryLevel = unsetValue,
   }) {
     return MemoryVerseEntity(
       id: id ?? this.id,
@@ -267,6 +274,9 @@ class MemoryVerseEntity extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       isFullyMasteredCached:
           isFullyMasteredCached ?? this.isFullyMasteredCached,
+      masteryLevel: masteryLevel == unsetValue
+          ? this.masteryLevel
+          : masteryLevel as MasteryLevel?,
     );
   }
 
@@ -287,6 +297,7 @@ class MemoryVerseEntity extends Equatable {
         totalReviews,
         createdAt,
         isFullyMasteredCached,
+        masteryLevel,
       ];
 
   @override

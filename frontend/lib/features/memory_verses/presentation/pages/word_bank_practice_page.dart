@@ -95,24 +95,41 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     super.dispose();
   }
 
+  /// Called from scroll-controller listeners (fires after layout — safe to
+  /// access position directly).
   void _checkWordBankScroll() {
     if (!mounted || !_wordBankScrollController.hasClients) return;
     final pos = _wordBankScrollController.position;
-    final hasMore =
-        pos.maxScrollExtent > 0 && pos.pixels < pos.maxScrollExtent - 1;
-    if (hasMore != _wordBankHasMoreBelow) {
-      setState(() => _wordBankHasMoreBelow = hasMore);
-    }
+    _updateScrollIndicator(
+      pos,
+      current: _wordBankHasMoreBelow,
+      onChanged: (v) => setState(() => _wordBankHasMoreBelow = v),
+    );
   }
 
   void _checkAnswerScroll() {
     if (!mounted || !_answerScrollController.hasClients) return;
     final pos = _answerScrollController.position;
-    final hasMore =
-        pos.maxScrollExtent > 0 && pos.pixels < pos.maxScrollExtent - 1;
-    if (hasMore != _answerHasMoreBelow) {
-      setState(() => _answerHasMoreBelow = hasMore);
-    }
+    _updateScrollIndicator(
+      pos,
+      current: _answerHasMoreBelow,
+      onChanged: (v) => setState(() => _answerHasMoreBelow = v),
+    );
+  }
+
+  /// Reads scroll metrics and fires [onChanged] if the "has more below" state
+  /// changed. Safe for both controller-listener and NotificationListener
+  /// contexts because it only reads from the already-computed [metrics] object
+  /// — never accesses RenderBox.size.
+  void _updateScrollIndicator(
+    ScrollMetrics metrics, {
+    required bool current,
+    required void Function(bool) onChanged,
+  }) {
+    if (!mounted) return;
+    final hasMore = metrics.maxScrollExtent > 0 &&
+        metrics.pixels < metrics.maxScrollExtent - 1;
+    if (hasMore != current) onChanged(hasMore);
   }
 
   void _startTimer() {
@@ -549,8 +566,15 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                           child: Stack(
                             children: [
                               NotificationListener<ScrollMetricsNotification>(
-                                onNotification: (_) {
-                                  _checkAnswerScroll();
+                                onNotification: (n) {
+                                  // Use notification metrics directly — avoids
+                                  // accessing RenderBox.size during layout.
+                                  _updateScrollIndicator(
+                                    n.metrics,
+                                    current: _answerHasMoreBelow,
+                                    onChanged: (v) =>
+                                        setState(() => _answerHasMoreBelow = v),
+                                  );
                                   return false;
                                 },
                                 child: SingleChildScrollView(
@@ -614,8 +638,13 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                         child: Stack(
                           children: [
                             NotificationListener<ScrollMetricsNotification>(
-                              onNotification: (_) {
-                                _checkWordBankScroll();
+                              onNotification: (n) {
+                                _updateScrollIndicator(
+                                  n.metrics,
+                                  current: _wordBankHasMoreBelow,
+                                  onChanged: (v) =>
+                                      setState(() => _wordBankHasMoreBelow = v),
+                                );
                                 return false;
                               },
                               child: SingleChildScrollView(

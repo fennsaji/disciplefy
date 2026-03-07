@@ -401,6 +401,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                         verse: verse,
                         onTap: () => _navigateToReviewPage(context, verse.id),
                         onDelete: () => _showDeleteConfirmation(context, verse),
+                        masteryLevel: verse.masteryLevel,
                       ),
                     );
                   },

@@ -265,27 +265,48 @@ async function handleSubmitMemoryVerseReview(
     throw new AppError('NOT_FOUND', 'Memory verse not found', 404)
   }
 
-  // Calculate new SM-2 state
-  const sm2Result = calculateSM2({
-    quality: body.quality_rating,
-    easeFactor: memoryVerse.ease_factor,
-    interval: memoryVerse.interval_days,
-    repetitions: memoryVerse.repetitions
-  })
+  // Check if already reviewed today (same UTC date) — prevent SM-2 inflation from
+  // multiple same-day reviews pushing the next review date further each time.
+  const todayUtc = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+  const alreadyReviewedToday = memoryVerse.last_reviewed
+    ? memoryVerse.last_reviewed.split('T')[0] === todayUtc
+    : false
 
-  // Update memory verse with new SM-2 state
+  if (alreadyReviewedToday) {
+    console.log(`[SubmitReview] Verse ${body.memory_verse_id} already reviewed today — skipping SM-2 progression`)
+  }
+
+  // Calculate new SM-2 state (or keep current state if already reviewed today)
+  const sm2Result: SM2Result = alreadyReviewedToday
+    ? {
+        easeFactor: memoryVerse.ease_factor,
+        interval: memoryVerse.interval_days,
+        repetitions: memoryVerse.repetitions,
+        nextReviewDate: memoryVerse.next_review_date
+      }
+    : calculateSM2({
+        quality: body.quality_rating,
+        easeFactor: memoryVerse.ease_factor,
+        interval: memoryVerse.interval_days,
+        repetitions: memoryVerse.repetitions
+      })
+
+  // Update memory verse — only advance SM-2 state on first review of the day
   const now = new Date().toISOString()
+  const verseUpdate: Record<string, unknown> = {
+    last_reviewed: now,
+    total_reviews: memoryVerse.total_reviews + 1,
+    updated_at: now
+  }
+  if (!alreadyReviewedToday) {
+    verseUpdate.ease_factor = sm2Result.easeFactor
+    verseUpdate.interval_days = sm2Result.interval
+    verseUpdate.repetitions = sm2Result.repetitions
+    verseUpdate.next_review_date = sm2Result.nextReviewDate
+  }
   const { error: updateError } = await services.supabaseServiceClient
     .from('memory_verses')
-    .update({
-      ease_factor: sm2Result.easeFactor,
-      interval_days: sm2Result.interval,
-      repetitions: sm2Result.repetitions,
-      next_review_date: sm2Result.nextReviewDate,
-      last_reviewed: now,
-      total_reviews: memoryVerse.total_reviews + 1,
-      updated_at: now
-    })
+    .update(verseUpdate)
     .eq('id', body.memory_verse_id)
 
   if (updateError) {
