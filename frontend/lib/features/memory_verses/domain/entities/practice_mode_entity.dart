@@ -91,7 +91,7 @@ class PracticeModeProgression {
   static const double masteryThreshold = 80.0;
 
   /// Minimum practices required for mastery status
-  static const int masteryMinPractices = 8;
+  static const int masteryMinPractices = 5;
 
   /// Ordered progression from easiest to hardest.
   /// Users should achieve proficiency in each mode before moving to the next.

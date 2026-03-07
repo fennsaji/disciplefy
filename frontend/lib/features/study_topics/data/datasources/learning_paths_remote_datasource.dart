@@ -6,6 +6,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/learning_path_model.dart';
+import '../services/learning_paths_cache_service.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Remote data source for learning paths operations.
@@ -60,9 +61,13 @@ class LearningPathsRemoteDataSourceImpl
   static const String _endpoint = '/functions/v1/learning-paths';
 
   final HttpService _httpService;
+  final LearningPathsCacheService _cache;
 
-  LearningPathsRemoteDataSourceImpl({HttpService? httpService})
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+  LearningPathsRemoteDataSourceImpl({
+    HttpService? httpService,
+    LearningPathsCacheService? cache,
+  })  : _httpService = httpService ?? HttpServiceProvider.instance,
+        _cache = cache ?? LearningPathsCacheService();
 
   @override
   Future<LearningPathsResponseModel> getLearningPaths({
@@ -71,6 +76,16 @@ class LearningPathsRemoteDataSourceImpl
     int limit = 10,
     int offset = 0,
   }) async {
+    // Check persistent cache for first page only
+    if (offset == 0) {
+      final cached =
+          await _cache.getCachedResponse(type: 'paths', language: language);
+      if (cached != null) {
+        _logDebug('Returning cached learning paths ($language)');
+        return _parsePathsResponse(cached);
+      }
+    }
+
     try {
       _logDebug(
           'Fetching learning paths (language: $language, limit: $limit, offset: $offset)');
@@ -81,7 +96,7 @@ class LearningPathsRemoteDataSourceImpl
         'includeEnrolled': includeEnrolled,
         'limit': limit,
         'offset': offset,
-        'format': 'flat', // ensures the flat-list endpoint is used
+        'format': 'flat',
       });
 
       final response = await _httpService.post(
@@ -93,6 +108,10 @@ class LearningPathsRemoteDataSourceImpl
       _logDebug('Learning paths API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        if (offset == 0) {
+          await _cache.cacheResponse(
+              type: 'paths', language: language, responseBody: response.body);
+        }
         return _parsePathsResponse(response.body);
       } else {
         _logDebug('API error: ${response.statusCode} - ${response.body}');
@@ -107,7 +126,6 @@ class LearningPathsRemoteDataSourceImpl
       rethrow;
     } catch (e) {
       _logDebug('Exception in getLearningPaths: $e');
-
       throw NetworkException(
         message: 'Failed to connect to learning paths service',
         code: 'LEARNING_PATHS_NETWORK_ERROR',
@@ -122,6 +140,16 @@ class LearningPathsRemoteDataSourceImpl
     int categoryLimit = 4,
     int categoryOffset = 0,
   }) async {
+    // Check persistent cache for first page only
+    if (categoryOffset == 0) {
+      final cached = await _cache.getCachedResponse(
+          type: 'categories', language: language);
+      if (cached != null) {
+        _logDebug('Returning cached learning path categories ($language)');
+        return _parseCategoriesResponse(cached);
+      }
+    }
+
     try {
       _logDebug(
           'Fetching learning path categories (language: $language, categoryLimit: $categoryLimit, categoryOffset: $categoryOffset)');
@@ -144,6 +172,12 @@ class LearningPathsRemoteDataSourceImpl
           'Learning path categories API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        if (categoryOffset == 0) {
+          await _cache.cacheResponse(
+              type: 'categories',
+              language: language,
+              responseBody: response.body);
+        }
         return _parseCategoriesResponse(response.body);
       } else {
         _logDebug('API error: ${response.statusCode} - ${response.body}');
@@ -285,6 +319,8 @@ class LearningPathsRemoteDataSourceImpl
       _logDebug('Enrollment API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        // Invalidate persistent cache so enrollment state is reflected on next load
+        await _cache.clearCache();
         return _parseEnrollmentResponse(response.body);
       } else {
         _logDebug('API error: ${response.statusCode} - ${response.body}');

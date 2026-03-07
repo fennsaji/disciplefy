@@ -739,6 +739,17 @@ async function handleSubmitMemoryPractice(
   }
   // ========== END NEW CODE ==========
 
+  // Check if already reviewed today (same UTC date) — prevent SM-2 inflation from
+  // multiple same-day practice sessions pushing the next review date further each time.
+  const todayUtc = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+  const alreadyReviewedToday = memoryVerse.last_reviewed
+    ? memoryVerse.last_reviewed.split('T')[0] === todayUtc
+    : false
+
+  if (alreadyReviewedToday) {
+    console.log(`[SubmitPractice] Verse ${body.memory_verse_id} already reviewed today — skipping SM-2 progression`)
+  }
+
   // Get SM-2 algorithm parameters from database config
   const memoryConfig = await services.memoryVerseConfigService.getMemoryVerseConfig()
   const minEaseFactor = memoryConfig.spacedRepetition.minEaseFactor
@@ -748,16 +759,33 @@ async function handleSubmitMemoryPractice(
 
   console.log(`[SubmitPractice] Using SM-2 config: minEase=${minEaseFactor}, maxEase=${maxEaseFactor}, maxInterval=${maxIntervalDays}`)
 
-  // Calculate new SM-2 state using database config
-  const sm2Result = calculateSM2({
-    quality: body.quality_rating,
-    easeFactor: memoryVerse.ease_factor,
-    interval: memoryVerse.interval_days,
-    repetitions: memoryVerse.repetitions
-  }, minEaseFactor, maxIntervalDays, maxEaseFactor)
+  // Only hard modes affect SM-2 scheduling — they are the true proof of recall.
+  // Easy modes (flip_card, first_letter, progressive) → skip SM-2: self-assessed, no real recall test.
+  // Medium modes (cloze, word_bank, word_scramble) → skip SM-2: not rigorous enough to affect difficulty.
+  // Hard modes (type_it_out, audio) → full SM-2: can increase or decrease ease_factor freely.
+  // XP, streak, mastery progress all use the original body.quality_rating — unaffected.
+  const EASY_MODES = ['flip_card', 'first_letter', 'progressive']
+  const MEDIUM_MODES = ['cloze', 'word_bank', 'word_scramble']
+  const skipSM2 = EASY_MODES.includes(body.practice_mode) || MEDIUM_MODES.includes(body.practice_mode)
 
-  // Determine if this is a perfect recall
-  const isPerfectRecall = body.quality_rating === 5
+  // Calculate new SM-2 state (or keep current state if already reviewed today or non-hard mode)
+  const sm2Result: SM2Result = (alreadyReviewedToday || skipSM2)
+    ? {
+        easeFactor: memoryVerse.ease_factor,
+        interval: memoryVerse.interval_days,
+        repetitions: memoryVerse.repetitions,
+        nextReviewDate: memoryVerse.next_review_date
+      }
+    : calculateSM2({
+        quality: body.quality_rating,
+        easeFactor: memoryVerse.ease_factor,
+        interval: memoryVerse.interval_days,
+        repetitions: memoryVerse.repetitions
+      }, minEaseFactor, maxIntervalDays, maxEaseFactor)
+
+  // Perfect recall only counts for hard/medium modes — easy modes are self-assessed
+  // and cannot genuinely prove recall, so they don't contribute to mastery progress.
+  const isPerfectRecall = body.quality_rating === 5 && !EASY_MODES.includes(body.practice_mode)
   const isSuccessfulPractice = body.quality_rating >= 3
 
   // Update practice mode statistics
@@ -808,20 +836,23 @@ async function handleSubmitMemoryPractice(
     totalXP += 50 // Daily goal bonus
   }
 
-  // Update memory verse with new SM-2 state
+  // Update memory verse — only advance SM-2 state on first review of the day
   const now = new Date().toISOString()
+  const verseUpdate: Record<string, unknown> = {
+    last_reviewed: now,
+    total_reviews: memoryVerse.total_reviews + 1,
+    preferred_practice_mode: body.practice_mode,
+    updated_at: now
+  }
+  if (!alreadyReviewedToday && !skipSM2) {
+    verseUpdate.ease_factor = sm2Result.easeFactor
+    verseUpdate.interval_days = sm2Result.interval
+    verseUpdate.repetitions = sm2Result.repetitions
+    verseUpdate.next_review_date = sm2Result.nextReviewDate
+  }
   const { error: updateError } = await services.supabaseServiceClient
     .from('memory_verses')
-    .update({
-      ease_factor: sm2Result.easeFactor,
-      interval_days: sm2Result.interval,
-      repetitions: sm2Result.repetitions,
-      next_review_date: sm2Result.nextReviewDate,
-      last_reviewed: now,
-      total_reviews: memoryVerse.total_reviews + 1,
-      preferred_practice_mode: body.practice_mode, // Track preferred mode
-      updated_at: now
-    })
+    .update(verseUpdate)
     .eq('id', body.memory_verse_id)
 
   if (updateError) {

@@ -105,6 +105,7 @@ import '../../features/study_topics/domain/repositories/topic_progress_repositor
 import '../../features/study_topics/presentation/bloc/study_topics_bloc.dart';
 import '../../features/study_topics/data/datasources/learning_paths_remote_datasource.dart';
 import '../../features/study_topics/data/repositories/learning_paths_repository_impl.dart';
+import '../../features/study_topics/data/services/learning_paths_cache_service.dart';
 import '../../features/study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/continue_learning_bloc.dart';
@@ -184,7 +185,9 @@ import '../../features/memory_verses/data/datasources/memory_verse_local_datasou
 import '../../features/memory_verses/data/datasources/memory_verse_remote_datasource.dart';
 import '../../features/memory_verses/data/repositories/memory_verse_repository_impl.dart';
 import '../../features/memory_verses/data/services/suggested_verses_cache_service.dart';
+import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/repositories/memory_verse_repository.dart';
+import '../../features/memory_verses/domain/usecases/get_cached_due_verses.dart';
 import '../../features/memory_verses/domain/usecases/get_due_verses.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_from_daily.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
@@ -516,9 +519,12 @@ Future<void> initializeDependencies() async {
     ),
   );
 
-  // Cache Service
+  // Cache Services
   sl.registerLazySingleton<SuggestedVersesCacheService>(
     () => SuggestedVersesCacheService()..initialize(),
+  );
+  sl.registerLazySingleton<VerseCacheService>(
+    () => VerseCacheService()..initialize(),
   );
 
   // Repository
@@ -531,6 +537,7 @@ Future<void> initializeDependencies() async {
 
   // Use Cases
   sl.registerLazySingleton(() => GetDueVerses(sl()));
+  sl.registerLazySingleton(() => GetCachedDueVerses(sl()));
   sl.registerLazySingleton(() => AddVerseFromDaily(sl()));
   sl.registerLazySingleton(() => AddVerseManually(sl()));
   sl.registerLazySingleton(() => SubmitReview(sl()));
@@ -571,6 +578,7 @@ Future<void> initializeDependencies() async {
   // BLoC
   sl.registerFactory(() => MemoryVerseBloc(
         getDueVerses: sl(),
+        getCachedDueVerses: sl(),
         addVerseFromDaily: sl(),
         addVerseManually: sl(),
         submitReview: sl(),
@@ -702,8 +710,12 @@ Future<void> initializeDependencies() async {
   );
 
   //! Learning Paths (Curated Learning Journeys)
+  sl.registerLazySingleton<LearningPathsCacheService>(
+    () => LearningPathsCacheService()..initialize(),
+  );
   sl.registerLazySingleton<LearningPathsRemoteDataSource>(
-    () => LearningPathsRemoteDataSourceImpl(httpService: sl()),
+    () => LearningPathsRemoteDataSourceImpl(
+        httpService: sl(), cache: sl<LearningPathsCacheService>()),
   );
 
   sl.registerLazySingleton<LearningPathsRepository>(

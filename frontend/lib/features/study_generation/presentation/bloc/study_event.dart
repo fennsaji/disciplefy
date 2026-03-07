@@ -245,6 +245,10 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
   /// Only set when the study guide is generated from a learning path topic.
   final String? pathDescription;
 
+  /// Optional disciple level from the learning path (seeker|believer|follower|disciple|leader).
+  /// Used to calibrate content depth and vocabulary for the learner's stage.
+  final String? discipleLevel;
+
   /// Language code for the study guide.
   final String language;
 
@@ -263,6 +267,7 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
     this.topicDescription,
     this.pathTitle,
     this.pathDescription,
+    this.discipleLevel,
     required this.language,
     this.studyMode = StudyMode.standard,
     this.pendingStudyId,
@@ -275,6 +280,7 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
         topicDescription,
         pathTitle,
         pathDescription,
+        discipleLevel,
         language,
         studyMode,
         pendingStudyId

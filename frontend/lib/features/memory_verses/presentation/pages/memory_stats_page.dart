@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
 import '../widgets/memory_heat_map.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -113,7 +112,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
               );
             },
           ),
-        ).withAuthProtection(),
+        ),
       ),
     );
   }
@@ -284,7 +283,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
       'type_it_out': Icons.keyboard,
     };
 
-    final modeStats = practiceModes.map((mode) {
+    final modeStats = practiceModes.take(20).map((mode) {
       final modeMap = mode as Map<String, dynamic>;
       final modeType = modeMap['mode_type'] as String;
       return {

@@ -18,7 +18,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   // Cache for learning paths (flat, used for enrolled paths / recommended)
   LearningPathsResult? _cachedPaths;
   DateTime? _cacheTimestamp;
-  static const _cacheDuration = Duration(minutes: 5);
+  static const _cacheDuration = Duration(hours: 24);
 
   // Cache for path details
   final Map<String, LearningPathDetail> _detailsCache = {};

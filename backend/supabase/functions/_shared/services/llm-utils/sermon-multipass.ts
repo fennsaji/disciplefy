@@ -18,7 +18,8 @@ import {
   createLanguageBlock,
   createVerseReferenceBlock,
   getSermonHeadings,
-  getWordCountTarget
+  getWordCountTarget,
+  getDiscipleLevelContext
 } from './prompt-builder.ts'
 
 export type SermonPass = 'pass1' | 'pass2' | 'pass3' | 'pass4'
@@ -35,7 +36,7 @@ export function createSermonPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
   const headings = getSermonHeadings(language)
   const wordTarget = getWordCountTarget(languageConfig, 'sermon')
 
@@ -55,7 +56,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: SERMON OUTLINE - PASS 1/4 (Introduction + First Point)
 This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
@@ -222,7 +223,7 @@ export function createSermonPass2Prompt(
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
 ): PromptPair {
-  const { language } = params
+  const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
   const systemMessage = `You are an experienced preacher continuing a sermon manuscript.
@@ -231,7 +232,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: SERMON OUTLINE - PASS 2/4 (Point 2 Only)
 This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1.
@@ -309,7 +310,7 @@ export function createSermonPass3Prompt(
   pass1Result: { summary: string },
   pass2Result: { interpretationPart2: string }
 ): PromptPair {
-  const { language } = params
+  const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
   const systemMessage = `You are an experienced preacher continuing a sermon manuscript.
@@ -318,7 +319,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: SERMON OUTLINE - PASS 3/4 (Point 3 Only)
 This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1 and Pass 2.
@@ -393,7 +394,7 @@ export function createSermonPass4Prompt(
   languageConfig: LanguageConfig,
   pass1Result: { summary: string }
 ): PromptPair {
-  const { language } = params
+  const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
   const systemMessage = `You are an experienced preacher completing a sermon manuscript.
@@ -402,7 +403,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: SERMON OUTLINE - PASS 4/4 (Conclusion + Altar Call + Extras)
 This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home powerfully.

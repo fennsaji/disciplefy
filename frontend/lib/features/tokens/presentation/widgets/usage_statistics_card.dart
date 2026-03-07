@@ -69,57 +69,63 @@ class UsageStatisticsCard extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Statistics Grid - Row 1
-            Row(
-              children: [
-                Expanded(
-                  child: _StatisticItem(
-                    context: context,
-                    icon: Icons.token,
-                    label: context.tr('tokens.stats.total_tokens_used'),
-                    value: statistics.totalTokens.toString(),
-                    color: theme.colorScheme.primary,
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _StatisticItem(
+                      context: context,
+                      icon: Icons.token,
+                      label: context.tr('tokens.stats.total_tokens_used'),
+                      value: statistics.totalTokens.toString(),
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _StatisticItem(
-                    context: context,
-                    icon: Icons.file_copy,
-                    label: context.tr('tokens.stats.total_operations'),
-                    value: statistics.totalOperations.toString(),
-                    color: Colors.teal,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatisticItem(
+                      context: context,
+                      icon: Icons.file_copy,
+                      label: context.tr('tokens.stats.total_operations'),
+                      value: statistics.totalOperations.toString(),
+                      color: Colors.teal,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             const SizedBox(height: 16),
 
             // Statistics Grid - Row 2
-            Row(
-              children: [
-                Expanded(
-                  child: _StatisticItem(
-                    context: context,
-                    icon: Icons.calculate,
-                    label: context.tr('tokens.stats.avg_per_operation'),
-                    value:
-                        statistics.averageTokensPerOperation.toStringAsFixed(1),
-                    color: AppColors.warning,
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _StatisticItem(
+                      context: context,
+                      icon: Icons.calculate,
+                      label: context.tr('tokens.stats.avg_per_operation'),
+                      value: statistics.averageTokensPerOperation
+                          .toStringAsFixed(1),
+                      color: AppColors.warning,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _StatisticItem(
-                    context: context,
-                    icon: Icons.shopping_bag,
-                    label: context.tr('tokens.stats.purchased_percentage'),
-                    value:
-                        '${statistics.purchasedTokensPercentage.toStringAsFixed(0)}%',
-                    color: AppColors.success,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatisticItem(
+                      context: context,
+                      icon: Icons.shopping_bag,
+                      label: context.tr('tokens.stats.purchased_percentage'),
+                      value:
+                          '${statistics.purchasedTokensPercentage.toStringAsFixed(0)}%',
+                      color: AppColors.success,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             // Token Source Breakdown

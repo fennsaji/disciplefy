@@ -1,3 +1,5 @@
+import '../../domain/entities/mastery_progress_entity.dart'
+    show MasteryLevel, MasteryLevelExtension;
 import '../../domain/entities/memory_verse_entity.dart';
 
 /// Data model for MemoryVerse with JSON serialization.
@@ -21,6 +23,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
     required super.totalReviews,
     required super.createdAt,
     super.isFullyMasteredCached,
+    super.masteryLevel,
   });
 
   /// Creates a model from domain entity
@@ -41,6 +44,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
       totalReviews: entity.totalReviews,
       createdAt: entity.createdAt,
       isFullyMasteredCached: entity.isFullyMasteredCached,
+      masteryLevel: entity.masteryLevel,
     );
   }
 
@@ -64,6 +68,9 @@ class MemoryVerseModel extends MemoryVerseEntity {
       totalReviews: json['total_reviews'] as int,
       createdAt: DateTime.parse(json['created_at'] as String),
       isFullyMasteredCached: json['is_fully_mastered'] as bool? ?? false,
+      masteryLevel: json['mastery_level'] != null
+          ? MasteryLevelExtension.fromJson(json['mastery_level'] as String)
+          : null,
     );
   }
 
@@ -85,6 +92,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
       'total_reviews': totalReviews,
       'created_at': createdAt.toIso8601String(),
       'is_fully_mastered': isFullyMasteredCached,
+      'mastery_level': masteryLevel?.toJson(),
     };
   }
 
@@ -106,6 +114,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
       totalReviews: totalReviews,
       createdAt: createdAt,
       isFullyMasteredCached: isFullyMasteredCached,
+      masteryLevel: masteryLevel,
     );
   }
 
@@ -132,6 +141,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
     int? totalReviews,
     DateTime? createdAt,
     bool? isFullyMasteredCached,
+    Object? masteryLevel = unsetValue,
   }) {
     return MemoryVerseModel(
       id: id ?? this.id,
@@ -152,6 +162,9 @@ class MemoryVerseModel extends MemoryVerseEntity {
       createdAt: createdAt ?? this.createdAt,
       isFullyMasteredCached:
           isFullyMasteredCached ?? this.isFullyMasteredCached,
+      masteryLevel: masteryLevel == unsetValue
+          ? this.masteryLevel
+          : masteryLevel as MasteryLevel?,
     );
   }
 }

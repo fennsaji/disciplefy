@@ -228,9 +228,7 @@ extension SelfAssessmentRatingExtension on SelfAssessmentRating {
     final isDark = theme.brightness == Brightness.dark;
     switch (this) {
       case SelfAssessmentRating.didNotKnow:
-        return isDark
-            ? theme.colorScheme.errorContainer
-            : theme.colorScheme.error;
+        return isDark ? AppColors.errorLighter : theme.colorScheme.error;
       case SelfAssessmentRating.knewALittle:
         return isDark ? AppColors.warningLighter : AppColors.warningDark;
       case SelfAssessmentRating.knewHalf:

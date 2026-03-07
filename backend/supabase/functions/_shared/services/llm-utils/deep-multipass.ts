@@ -17,7 +17,8 @@ import {
   JSON_OUTPUT_RULES,
   createLanguageBlock,
   createVerseReferenceBlock,
-  getWordCountTarget
+  getWordCountTarget,
+  getDiscipleLevelContext
 } from './prompt-builder.ts'
 
 export type DeepPass = 'pass1' | 'pass2'
@@ -34,7 +35,7 @@ export function createDeepPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
   const wordTarget = getWordCountTarget(languageConfig, 'deep')
 
   const pathParts = [
@@ -52,7 +53,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: WORD STUDY - PASS 1/2 (Key Word Analysis)
 This is part 1 of a 2-part WORD STUDY generation (12 minutes total).
@@ -195,7 +196,7 @@ export function createDeepPass2Prompt(
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
 ): PromptPair {
-  const { language } = params
+  const { language, discipleLevel } = params
 
   const systemMessage = `You are a Bible scholar and teacher completing an in-depth study guide.
 
@@ -203,7 +204,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: DEEP STUDY - PASS 2/2 (Application + Resources)
 This is part 2 of a 2-part deep study generation. Focus on practical transformation.

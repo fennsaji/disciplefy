@@ -111,18 +111,26 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
     // The reference is displayed separately in the UI
     final verseText = currentVerse!.verseText;
     final words = verseText.split(' ');
-    final blankInterval = _getBlankInterval();
     wordEntries = [];
 
+    // Target ~1 blank per N words depending on difficulty, minimum 2.
+    // We divide the verse into that many equal segments and pick the
+    // most meaningful (highest-scored) non-skip word from each segment.
+    // Tie-break: prefer the later position in the segment, since key
+    // words tend to appear at the end of phrases.
+    final divisor = _getBlankDivisor();
+    final targetBlanks =
+        (words.length / divisor).round().clamp(2, words.length ~/ 2);
+    final blankIndices = _selectBlankIndices(words, targetBlanks);
+
     for (int i = 0; i < words.length; i++) {
-      final isBlank = (i + 1) % blankInterval == 0;
+      final isBlank = blankIndices.contains(i);
       wordEntries.add(WordEntry(
         index: i,
         word: words[i],
         isBlank: isBlank,
         userInput: '',
       ));
-
       if (isBlank) {
         blankControllers[i] = TextEditingController();
         blankControllers[i]!.addListener(() => _onInputChanged(i));
@@ -130,14 +138,102 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
     }
   }
 
-  int _getBlankInterval() {
+  /// Divides the verse into [targetCount] equal segments and picks the
+  /// highest-scoring non-skip word from each segment.
+  Set<int> _selectBlankIndices(List<String> words, int targetCount) {
+    final segmentSize = words.length / targetCount;
+    final blankIndices = <int>{};
+
+    for (int seg = 0; seg < targetCount; seg++) {
+      final start = (seg * segmentSize).round();
+      final end =
+          ((seg + 1) * segmentSize).round().clamp(start + 1, words.length);
+
+      int bestIndex = -1;
+      int bestScore = -1;
+
+      for (int i = start; i < end; i++) {
+        if (_isSkipWord(words[i])) continue;
+        final score = _wordScore(words[i]);
+        // Prefer higher score; on tie prefer later position (key words
+        // tend to appear at the end of phrases).
+        if (score > bestScore || (score == bestScore && i > bestIndex)) {
+          bestScore = score;
+          bestIndex = i;
+        }
+      }
+
+      if (bestIndex >= 0) blankIndices.add(bestIndex);
+    }
+
+    return blankIndices;
+  }
+
+  /// Score a word by length as a proxy for semantic importance.
+  /// Longer words are almost always more meaningful than short ones.
+  int _wordScore(String word) {
+    final len = word.toLowerCase().replaceAll(RegExp(r'[^\w]'), '').length;
+    if (len >= 7) return 4;
+    if (len >= 5) return 3;
+    if (len == 4) return 2;
+    return 1;
+  }
+
+  /// Returns true for words that should never be blanked:
+  /// articles, common prepositions, auxiliary verbs, conjunctions, pronouns.
+  /// For non-English verses, skips very short words (particles/conjunctions).
+  bool _isSkipWord(String word) {
+    final clean = word.toLowerCase().replaceAll(RegExp(r'[^\w]'), '');
+    if (clean.isEmpty) return true;
+
+    if (detectedLanguage != 'en') {
+      // For Hindi/Malayalam, skip short particles (≤ 2 chars)
+      return clean.length <= 2;
+    }
+
+    const skipWords = {
+      // Articles
+      'a', 'an', 'the',
+      // Prepositions
+      'of', 'in', 'on', 'to', 'for', 'with', 'by', 'at', 'from', 'into',
+      'onto', 'upon', 'over', 'through', 'between', 'among',
+      'about', 'against', 'along', 'around', 'before', 'behind', 'below',
+      'beneath', 'beside', 'beyond', 'during', 'except', 'inside', 'near',
+      'off', 'outside', 'past', 'since', 'toward', 'towards', 'under',
+      'until', 'up', 'within', 'without', 'as', 'than',
+      // Auxiliary verbs
+      'is', 'are', 'was', 'were', 'be', 'been', 'being',
+      'has', 'have', 'had', 'do', 'does', 'did',
+      'will', 'would', 'shall', 'should', 'may', 'might', 'can', 'could',
+      'must',
+      // Conjunctions & particles
+      'and', 'or', 'but', 'nor', 'so', 'yet', 'not',
+      'although', 'because', 'unless', 'while',
+      'if', 'then', 'that', 'which', 'who', 'whom', 'whose',
+      'when', 'where', 'how',
+      // Pronouns
+      'i', 'me', 'my', 'myself',
+      'you', 'your', 'yourself',
+      'he', 'him', 'his', 'himself',
+      'she', 'her', 'herself',
+      'it', 'its', 'itself',
+      'we', 'us', 'our', 'ourselves',
+      'they', 'them', 'their', 'themselves',
+    };
+
+    return skipWords.contains(clean);
+  }
+
+  /// Returns the 1-in-N ratio for blank density based on difficulty.
+  /// e.g. easy=5 → 1 blank per 5 words, medium=4 → 1 per 4, hard=3 → 1 per 3.
+  int _getBlankDivisor() {
     switch (widget.difficulty) {
       case ClozeDifficulty.easy:
         return 5;
       case ClozeDifficulty.medium:
-        return 3;
+        return 4;
       case ClozeDifficulty.hard:
-        return 2;
+        return 3;
     }
   }
 

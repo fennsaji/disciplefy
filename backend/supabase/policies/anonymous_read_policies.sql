@@ -56,14 +56,6 @@ CREATE POLICY "Only authenticated users can manage daily verse" ON daily_verse
 --     auth.uid() IS NOT NULL
 --   );
 
--- Enhanced anonymous study guides policies
-DROP POLICY IF EXISTS "Anonymous guides are session-scoped" ON anonymous_study_guides;
-CREATE POLICY "Anonymous guides session-based access" ON anonymous_study_guides
-  FOR ALL USING (
-    -- Allow access based on session_id (handled at application level)
-    true
-  );
-
 -- Create a function to validate anonymous session access
 CREATE OR REPLACE FUNCTION validate_anonymous_session(session_uuid UUID)
 RETURNS BOOLEAN AS $$

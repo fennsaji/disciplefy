@@ -8,6 +8,8 @@ import '../../core/extensions/translation_extension.dart';
 import '../../core/i18n/translation_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/services/language_preference_service.dart';
+import '../../features/memory_verses/data/services/verse_cache_service.dart';
+import '../../features/memory_verses/domain/entities/fetched_verse_entity.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
 
@@ -46,6 +48,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   String? _verseText;
   String? _localizedReference;
   String? _errorMessage;
+  List<VerseItem>? _verses; // null = single verse, list = range
 
   @override
   void initState() {
@@ -56,6 +59,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   Future<void> _fetchVerseText() async {
     final fetchVerseText = GetIt.instance<FetchVerseText>();
     final languageService = GetIt.instance<LanguagePreferenceService>();
+    final verseCache = GetIt.instance<VerseCacheService>();
 
     // Parse the reference
     final parsed = _parseReference(widget.reference);
@@ -68,9 +72,28 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       return;
     }
 
-    // Get current language
-    final appLanguage = await languageService.getSelectedLanguage();
+    // Get current language — prefer study content language (set in Study Topics)
+    // over app language, so verse displays in the same language as the study content
+    final appLanguage = await languageService.getStudyContentLanguage();
     final langCode = appLanguage.code;
+
+    // Check cache first
+    final cached = await verseCache.getCachedVerse(
+      reference: widget.reference,
+      language: langCode,
+    );
+    if (cached != null) {
+      setState(() {
+        _isLoading = false;
+        _verseText = cached.text;
+        _localizedReference = cached.localizedReference;
+        _verses = cached.verses
+            ?.map((v) => VerseItem(
+                number: v['number'] as int, text: v['text'] as String))
+            .toList();
+      });
+      return;
+    }
 
     // Normalize book name to canonical form (e.g., "Psalm" -> "Psalms")
     final normalizedBook = BibleBooks.normalizeBookName(parsed.book);
@@ -92,10 +115,21 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         });
       },
       (fetchedVerse) {
+        // Save to cache for future opens
+        verseCache.cacheVerse(
+          reference: widget.reference,
+          language: langCode,
+          text: fetchedVerse.text,
+          localizedReference: fetchedVerse.localizedReference,
+          verses: fetchedVerse.verses
+              ?.map((v) => {'number': v.number, 'text': v.text})
+              .toList(),
+        );
         setState(() {
           _isLoading = false;
           _verseText = fetchedVerse.text;
           _localizedReference = fetchedVerse.localizedReference;
+          _verses = fetchedVerse.verses;
         });
       },
     );
@@ -295,6 +329,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 
   Widget _buildVerseContent(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
+    final hasMultipleVerses = _verses != null && _verses!.length > 1;
 
     return Container(
       width: double.infinity,
@@ -323,14 +358,54 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
             ),
           ),
           const SizedBox(height: 8),
+          if (hasMultipleVerses)
+            ..._verses!.map((verse) => _buildVerseRow(verse, theme))
+          else
+            Text(
+              _verseText ?? '',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                height: 1.7,
+                fontSize: 17,
+                letterSpacing: 0.2,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerseRow(VerseItem verse, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Verse number
+          SizedBox(
+            width: 28,
+            child: Text(
+              '${verse.number}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color:
+                    theme.colorScheme.primary.withOpacity(isDark ? 0.8 : 0.6),
+                height: 1.9,
+              ),
+            ),
+          ),
           // Verse text
-          Text(
-            _verseText ?? '',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              height: 1.7,
-              fontSize: 17,
-              letterSpacing: 0.2,
-              color: theme.colorScheme.onSurface,
+          Expanded(
+            child: Text(
+              verse.text,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                height: 1.7,
+                fontSize: 17,
+                letterSpacing: 0.2,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -340,7 +415,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 
   void _generateStudyGuide() async {
     final languageService = GetIt.instance<LanguagePreferenceService>();
-    final appLanguage = await languageService.getSelectedLanguage();
+    final appLanguage = await languageService.getStudyContentLanguage();
 
     if (mounted) {
       Navigator.pop(context);
@@ -356,7 +431,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 
     final addVerseManually = GetIt.instance<AddVerseManually>();
     final languageService = GetIt.instance<LanguagePreferenceService>();
-    final appLanguage = await languageService.getSelectedLanguage();
+    final appLanguage = await languageService.getStudyContentLanguage();
 
     final result = await addVerseManually(
       verseReference: _localizedReference ?? widget.reference,

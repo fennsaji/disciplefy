@@ -64,25 +64,33 @@ class DueVersesLoaded extends MemoryVerseState {
   final ReviewStatisticsEntity statistics;
   final bool hasMore;
 
+  /// True while a background refresh from remote is in progress.
+  /// UI can show a subtle top indicator without blocking the list.
+  final bool isRefreshingInBackground;
+
   const DueVersesLoaded({
     required this.verses,
     required this.statistics,
     this.hasMore = true,
+    this.isRefreshingInBackground = false,
   });
 
   @override
-  List<Object?> get props => [verses, statistics, hasMore];
+  List<Object?> get props =>
+      [verses, statistics, hasMore, isRefreshingInBackground];
 
-  /// Creates a copy with updated values (for pagination).
   DueVersesLoaded copyWith({
     List<MemoryVerseEntity>? verses,
     ReviewStatisticsEntity? statistics,
     bool? hasMore,
+    bool? isRefreshingInBackground,
   }) {
     return DueVersesLoaded(
       verses: verses ?? this.verses,
       statistics: statistics ?? this.statistics,
       hasMore: hasMore ?? this.hasMore,
+      isRefreshingInBackground:
+          isRefreshingInBackground ?? this.isRefreshingInBackground,
     );
   }
 }
