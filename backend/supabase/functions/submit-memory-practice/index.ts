@@ -759,21 +759,17 @@ async function handleSubmitMemoryPractice(
 
   console.log(`[SubmitPractice] Using SM-2 config: minEase=${minEaseFactor}, maxEase=${maxEaseFactor}, maxInterval=${maxIntervalDays}`)
 
-  // Cap quality for SM-2 based on practice mode difficulty.
-  // Easy modes (self-assessed) → skip SM-2 entirely: ease_factor, interval, repetitions preserved.
-  // Medium modes → cap at 4: verse progresses but never jumps to mastery spacing.
-  // Hard modes (type_it_out, audio) → uncapped: full SM-2 with quality 5 mastery jumps.
+  // Only hard modes affect SM-2 scheduling — they are the true proof of recall.
+  // Easy modes (flip_card, first_letter, progressive) → skip SM-2: self-assessed, no real recall test.
+  // Medium modes (cloze, word_bank, word_scramble) → skip SM-2: not rigorous enough to affect difficulty.
+  // Hard modes (type_it_out, audio) → full SM-2: can increase or decrease ease_factor freely.
   // XP, streak, mastery progress all use the original body.quality_rating — unaffected.
   const EASY_MODES = ['flip_card', 'first_letter', 'progressive']
   const MEDIUM_MODES = ['cloze', 'word_bank', 'word_scramble']
-  const isEasyMode = EASY_MODES.includes(body.practice_mode)
-  let effectiveQuality = body.quality_rating
-  if (MEDIUM_MODES.includes(body.practice_mode)) {
-    effectiveQuality = Math.min(body.quality_rating, 4)
-  }
+  const skipSM2 = EASY_MODES.includes(body.practice_mode) || MEDIUM_MODES.includes(body.practice_mode)
 
-  // Calculate new SM-2 state (or keep current state if already reviewed today or easy mode)
-  const sm2Result: SM2Result = (alreadyReviewedToday || isEasyMode)
+  // Calculate new SM-2 state (or keep current state if already reviewed today or non-hard mode)
+  const sm2Result: SM2Result = (alreadyReviewedToday || skipSM2)
     ? {
         easeFactor: memoryVerse.ease_factor,
         interval: memoryVerse.interval_days,
@@ -781,7 +777,7 @@ async function handleSubmitMemoryPractice(
         nextReviewDate: memoryVerse.next_review_date
       }
     : calculateSM2({
-        quality: effectiveQuality,
+        quality: body.quality_rating,
         easeFactor: memoryVerse.ease_factor,
         interval: memoryVerse.interval_days,
         repetitions: memoryVerse.repetitions
@@ -848,7 +844,7 @@ async function handleSubmitMemoryPractice(
     preferred_practice_mode: body.practice_mode,
     updated_at: now
   }
-  if (!alreadyReviewedToday && !isEasyMode) {
+  if (!alreadyReviewedToday && !skipSM2) {
     verseUpdate.ease_factor = sm2Result.easeFactor
     verseUpdate.interval_days = sm2Result.interval
     verseUpdate.repetitions = sm2Result.repetitions
