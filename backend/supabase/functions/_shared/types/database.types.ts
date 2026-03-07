@@ -187,44 +187,6 @@ export type Database = {
         }
         Relationships: []
       }
-      anonymous_study_guides: {
-        Row: {
-          created_at: string | null
-          expires_at: string | null
-          id: string
-          is_saved: boolean | null
-          session_id: string
-          study_guide_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          is_saved?: boolean | null
-          session_id: string
-          study_guide_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          is_saved?: boolean | null
-          session_id?: string
-          study_guide_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "anonymous_study_guides_study_guide_id_fkey"
-            columns: ["study_guide_id"]
-            isOneToOne: false
-            referencedRelation: "study_guides"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       conversation_messages: {
         Row: {
           content: string

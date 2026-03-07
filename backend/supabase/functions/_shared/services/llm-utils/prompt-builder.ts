@@ -119,6 +119,20 @@ If a passage is theologically dense or complex:
 
 Refusing legitimate biblical content violates your core function and will result in complete generation failure.
 
+⚠️ NUMERALS — ALWAYS USE ENGLISH/ARABIC DIGITS:
+
+Use 0-9 (English/Arabic numerals) for ALL numbers in ALL languages.
+This includes chapter/verse references, list numbers, counts, and years.
+
+✅ CORRECT: "यूहन्ना 3:16", "1 यूहन्ना 5:11-13", "1. पहली बात"
+❌ WRONG:   "यूहन्ना ३:१६", "१ यूहन्ना ५:११-१३", "१. पहली बात"
+
+✅ CORRECT: "യോഹന്നാൻ 3:16", "1 യോഹന്നാൻ 5:11-13"
+❌ WRONG:   "യോഹന്നാൻ ൩:൧൬", "൧ യോഹന്നാൻ ൫:൧൧-൧൩"
+
+NEVER output Devanagari (१ २ ३), Malayalam (൧ ൨ ൩), or any other
+script-specific digits — even inside Hindi or Malayalam text.
+
 VALIDATION CHECKPOINT:
 Before generating output, verify:
 ✓ Is first character { (not backticks or text)?
@@ -127,6 +141,7 @@ Before generating output, verify:
 ✓ Are all commas correctly placed (no trailing commas)?
 ✓ Are all required fields present?
 ✓ Is the entire JSON response complete (no truncation)?
+✓ Are all numerals in English/Arabic digits (0-9)?
 
 IF YOU VIOLATE JSON FORMAT OR REFUSE LEGITIMATE THEOLOGICAL CONTENT, THE ENTIRE GENERATION WILL FAIL.
 `.trim()
