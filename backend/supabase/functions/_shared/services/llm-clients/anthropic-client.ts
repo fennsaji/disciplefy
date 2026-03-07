@@ -72,16 +72,7 @@ export class AnthropicClient {
    * @returns Anthropic model name
    */
   selectModel(language: string, studyMode?: string): string {
-    // v3.4 Cost Optimization: Use Claude Haiku 4.5 for Quick Read mode
-    // Quick Read is simple (600-750 words), Haiku is sufficient and 73% cheaper
-    // Savings: $0.013 → $0.0035 per guide (73% reduction)
-    // Impact: ~₹1,533/month savings on Quick Read alone (1,758 guides/month)
-    if (studyMode === 'quick') {
-      return 'claude-haiku-4-5-20251001'
-    }
-
-    // v3.3: Claude Sonnet 4.5 for all other modes (better at following word count instructions)
-    // Expected improvement: 30-50% longer outputs with better instruction adherence
+    // v3.5: Claude Sonnet 4.5 for all modes (better quality across the board)
     return 'claude-sonnet-4-5-20250929'
   }
 

@@ -283,7 +283,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
       'type_it_out': Icons.keyboard,
     };
 
-    final modeStats = practiceModes.map((mode) {
+    final modeStats = practiceModes.take(20).map((mode) {
       final modeMap = mode as Map<String, dynamic>;
       final modeType = modeMap['mode_type'] as String;
       return {

@@ -278,6 +278,8 @@ async function getPracticeModeStats(
     .from('memory_practice_modes')
     .select('mode_type, times_practiced, success_rate, average_time_seconds, is_favorite')
     .eq('user_id', userId)
+    .order('times_practiced', { ascending: false })
+    .limit(160) // 20 verses × 8 modes max
   
   if (!modes || modes.length === 0) {
     return []
