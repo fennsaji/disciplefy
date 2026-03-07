@@ -105,17 +105,22 @@ export async function validateAndProcessReceipt(
       : validationResult.transactionId
 
     // Lookup plan_id for FK linkage to subscription_plans
-    const { data: planRow } = await supabase
+    const { data: planRow, error: planLookupError } = await supabase
       .from('subscription_plans')
       .select('id')
       .eq('plan_code', request.planCode)
       .maybeSingle()
 
+    if (planLookupError || !planRow) {
+      console.error('[RECEIPT_VALIDATION] Plan not found for planCode:', request.planCode, planLookupError)
+      throw new Error(`Subscription plan '${request.planCode}' not found — cannot create subscription without valid plan`)
+    }
+
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
       .insert({
         user_id: request.userId,
-        plan_id: planRow?.id ?? null,
+        plan_id: planRow.id,
         plan_type: request.productId.includes('yearly')
           ? `${request.planCode}_yearly`
           : `${request.planCode}_monthly`,
@@ -200,18 +205,29 @@ export async function revalidateReceipt(
     validationResult = await validateAppleReceipt(supabase, appleReceipt, environment)
   }
 
-  // Update the receipt row with latest validation result
+  // Update the receipt row with latest validation result.
+  // For Google Play renewals, the purchase token can rotate — update transaction_id
+  // and receipt_data so future re-validations use the current token.
+  const receiptUpdate: Record<string, unknown> = {
+    validation_status: validationResult.isValid ? 'valid' : 'invalid',
+    validation_response: validationResult.validationResponse,
+    validated_at: new Date().toISOString(),
+    expiry_date: validationResult.expiryDate?.toISOString(),
+    is_trial: validationResult.isTrial,
+    is_intro_offer: validationResult.isIntroOffer,
+    updated_at: new Date().toISOString()
+  }
+
+  // If the provider returned a different token (Google Play renewal token rotation),
+  // update transaction_id so future calls use the latest token.
+  if (receipt.provider === 'google_play' && validationResult.transactionId && validationResult.transactionId !== receipt.transaction_id) {
+    console.log(`[RECEIPT_VALIDATION] Token rotated: ${receipt.transaction_id} → ${validationResult.transactionId}`)
+    receiptUpdate.transaction_id = validationResult.transactionId
+  }
+
   await supabase
     .from('iap_receipts')
-    .update({
-      validation_status: validationResult.isValid ? 'valid' : 'invalid',
-      validation_response: validationResult.validationResponse,
-      validated_at: new Date().toISOString(),
-      expiry_date: validationResult.expiryDate?.toISOString(),
-      is_trial: validationResult.isTrial,
-      is_intro_offer: validationResult.isIntroOffer,
-      updated_at: new Date().toISOString()
-    })
+    .update(receiptUpdate)
     .eq('id', receiptId)
 
   // Log validation attempt
