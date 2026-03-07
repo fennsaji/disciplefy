@@ -32,10 +32,16 @@ interface FetchVerseRequest {
 /**
  * API response structure
  */
+interface VerseItem {
+  number: number
+  text: string
+}
+
 interface FetchVerseResponse extends ApiSuccessResponse<{
   reference: string
   localizedReference: string
   text: string
+  verses?: VerseItem[]  // Per-verse breakdown for ranges (absent for single verses)
   translation: string
   language: string
 }> {}
@@ -215,6 +221,7 @@ async function handleFetchVerse(
 
   // Build reference and fetch verse(s)
   let verseText = ''
+  let verses: VerseItem[] | undefined
   let reference: string
   let localizedReference: string
 
@@ -257,37 +264,45 @@ async function handleFetchVerse(
     const localizedBook = getLocalizedBookName(englishBookName, body.language)
     localizedReference = `${localizedBook} ${body.chapter}:${body.verse_start}-${body.verse_end}`
 
-    // Fetch each verse in the range
-    const verseTexts: string[] = []
+    // Fetch all verses in the range in parallel for speed
+    const verseNumbers: number[] = []
     for (let v = body.verse_start; v <= body.verse_end; v++) {
-      const verseId = `${bookCode}.${body.chapter}.${v}`
-      const url = buildVerseUrl(bibleId, verseId)
-
-      try {
-        const response = await fetchWithTimeout(
-          url,
-          { headers: { 'api-key': apiKey } },
-          10000
-        )
-
-        if (response.ok) {
-          const data = await response.json()
-          const text = cleanVerseText(data.data.content)
-          if (text) {
-            verseTexts.push(text)
-          }
-        }
-      } catch (error) {
-        console.error(`[FetchVerse] Error fetching verse ${v}:`, error)
-        // Continue with other verses
-      }
+      verseNumbers.push(v)
     }
 
-    if (verseTexts.length === 0) {
+    const verseResults = await Promise.all(
+      verseNumbers.map(async (v) => {
+        const verseId = `${bookCode}.${body.chapter}.${v}`
+        const url = buildVerseUrl(bibleId, verseId)
+        try {
+          const response = await fetchWithTimeout(
+            url,
+            { headers: { 'api-key': apiKey } },
+            10000
+          )
+          if (response.ok) {
+            const data = await response.json()
+            const text = cleanVerseText(data.data.content)
+            if (text) return { number: v, text } as VerseItem
+          }
+          return null
+        } catch (error) {
+          console.error(`[FetchVerse] Error fetching verse ${v}:`, error)
+          return null
+        }
+      })
+    )
+
+    const verseItems: VerseItem[] = verseResults
+      .filter((item): item is VerseItem => item !== null)
+      .sort((a, b) => a.number - b.number)
+
+    if (verseItems.length === 0) {
       throw new AppError('NOT_FOUND', `No verses found for ${reference}`, 404)
     }
 
-    verseText = verseTexts.join(' ')
+    verseText = verseItems.map(item => item.text).join(' ')
+    verses = verseItems
   } else {
     // Fetch single verse
     reference = `${englishBookName} ${body.chapter}:${body.verse_start}`
@@ -319,6 +334,7 @@ async function handleFetchVerse(
       reference,
       localizedReference,
       text: verseText,
+      ...(verses ? { verses } : {}),
       translation: getTranslationName(body.language),
       language: body.language,
     }

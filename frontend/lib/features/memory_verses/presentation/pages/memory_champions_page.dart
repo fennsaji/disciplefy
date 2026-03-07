@@ -6,7 +6,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../domain/entities/memory_champion_entry.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -168,7 +167,7 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
               );
             },
           ),
-        ).withAuthProtection(),
+        ),
       ),
     );
   }

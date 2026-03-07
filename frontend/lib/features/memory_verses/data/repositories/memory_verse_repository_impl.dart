@@ -110,6 +110,42 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   }
 
   @override
+  Future<(List<MemoryVerseEntity>, ReviewStatisticsEntity)?>
+      getCachedDueVerses({
+    String? language,
+  }) async {
+    try {
+      final cachedModels = await _helper.getDueCachedVerses();
+      if (cachedModels.isEmpty) return null;
+
+      // Apply language filter if set
+      final filtered = language == null
+          ? cachedModels
+          : cachedModels.where((v) => v.language == language).toList();
+
+      if (filtered.isEmpty && language != null) return null;
+
+      final verses = filtered.map((m) => m.toEntity()).toList();
+      final allCached = await _helper.getAllCachedVerses();
+      final total = language == null
+          ? allCached.length
+          : allCached.where((v) => v.language == language).length;
+      final stats = ReviewStatisticsEntity(
+        totalVerses: total,
+        dueVerses: filtered.length,
+        reviewedToday: 0,
+        upcomingReviews: 0,
+        masteredVerses: filtered.where((v) => v.repetitions >= 5).length,
+        fullyMasteredVerses:
+            filtered.where((v) => v.isFullyMasteredCached).length,
+      );
+      return (verses, stats);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Future<Either<Failure, (List<MemoryVerseEntity>, ReviewStatisticsEntity)>>
       getDueVerses({int limit = 20, int offset = 0, String? language}) async {
     try {
@@ -341,9 +377,18 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
 
       _helper.logSuccess('Verse text fetched successfully');
 
+      final rawVerses = result['verses'] as List<dynamic>?;
+      final verses = rawVerses
+          ?.map((v) => VerseItem(
+                number: v['number'] as int,
+                text: v['text'] as String,
+              ))
+          .toList();
+
       return Right(FetchedVerseEntity(
-        text: result['text']!,
-        localizedReference: result['localizedReference']!,
+        text: result['text']! as String,
+        localizedReference: result['localizedReference']! as String,
+        verses: verses,
       ));
     } on ServerException catch (e) {
       _helper.logError('Server error: ${e.message}');

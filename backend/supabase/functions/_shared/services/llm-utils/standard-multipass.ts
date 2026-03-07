@@ -16,7 +16,8 @@ import {
   JSON_OUTPUT_RULES,
   createLanguageBlock,
   createVerseReferenceBlock,
-  getWordCountTarget
+  getWordCountTarget,
+  getDiscipleLevelContext
 } from './prompt-builder.ts'
 
 export type StandardPass = 'pass1' | 'pass2'
@@ -33,7 +34,7 @@ export function createStandardPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
   const wordTarget = getWordCountTarget(languageConfig, 'standard')
 
   const pathParts = [
@@ -51,7 +52,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: STANDARD STUDY - PASS 1/2 (Foundation + Teaching)
 This is part 1 of a multi-pass standard study generation. Focus on solid teaching.
@@ -179,7 +180,7 @@ export function createStandardPass2Prompt(
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
 ): PromptPair {
-  const { language } = params
+  const { language, discipleLevel } = params
 
   const systemMessage = `You are a Bible teacher completing a balanced, accessible study guide.
 
@@ -187,7 +188,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: STANDARD STUDY - PASS 2/2 (Application + Resources)
 This is part 2 of a 2-part standard study generation. Focus on practical life change.

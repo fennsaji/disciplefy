@@ -69,17 +69,50 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   // Track which slots were filled by hints (shouldn't count for accuracy)
   Set<int> hintFilledSlots = {};
 
+  // Scroll controllers and scroll indicator state
+  final ScrollController _wordBankScrollController = ScrollController();
+  bool _wordBankHasMoreBelow = false;
+
+  final ScrollController _answerScrollController = ScrollController();
+  bool _answerHasMoreBelow = false;
+
   @override
   void initState() {
     super.initState();
     _startTimer();
     _loadVerse();
+    _wordBankScrollController.addListener(_checkWordBankScroll);
+    _answerScrollController.addListener(_checkAnswerScroll);
   }
 
   @override
   void dispose() {
     practiceTimer?.cancel();
+    _wordBankScrollController.removeListener(_checkWordBankScroll);
+    _wordBankScrollController.dispose();
+    _answerScrollController.removeListener(_checkAnswerScroll);
+    _answerScrollController.dispose();
     super.dispose();
+  }
+
+  void _checkWordBankScroll() {
+    if (!mounted || !_wordBankScrollController.hasClients) return;
+    final pos = _wordBankScrollController.position;
+    final hasMore =
+        pos.maxScrollExtent > 0 && pos.pixels < pos.maxScrollExtent - 1;
+    if (hasMore != _wordBankHasMoreBelow) {
+      setState(() => _wordBankHasMoreBelow = hasMore);
+    }
+  }
+
+  void _checkAnswerScroll() {
+    if (!mounted || !_answerScrollController.hasClients) return;
+    final pos = _answerScrollController.position;
+    final hasMore =
+        pos.maxScrollExtent > 0 && pos.pixels < pos.maxScrollExtent - 1;
+    if (hasMore != _answerHasMoreBelow) {
+      setState(() => _answerHasMoreBelow = hasMore);
+    }
   }
 
   void _startTimer() {
@@ -292,6 +325,8 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
         showingTransliteration.clear();
         hintFilledSlots.clear();
       });
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _checkWordBankScroll());
     }
   }
 
@@ -460,7 +495,8 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
 
               // Hints counter
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -487,7 +523,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
               // Answer area (placed words) - 50% of available space
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -497,7 +533,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       Expanded(
                         child: Container(
                           width: double.infinity,
@@ -510,15 +546,33 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                                   .withAlpha((0.3 * 255).round()),
                             ),
                           ),
-                          child: SingleChildScrollView(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: List.generate(
-                                correctWords.length,
-                                (index) => _buildAnswerSlot(index),
+                          child: Stack(
+                            children: [
+                              NotificationListener<ScrollMetricsNotification>(
+                                onNotification: (_) {
+                                  _checkAnswerScroll();
+                                  return false;
+                                },
+                                child: SingleChildScrollView(
+                                  controller: _answerScrollController,
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: List.generate(
+                                      correctWords.length,
+                                      (index) => _buildAnswerSlot(index),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (_answerHasMoreBelow)
+                                Positioned(
+                                  right: 0,
+                                  bottom: 8,
+                                  child: _buildScrollDownIndicator(
+                                      _answerScrollController),
+                                ),
+                            ],
                           ),
                         ),
                       ),
@@ -532,7 +586,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
               // Word Bank area - 50% of available space
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   color: theme.colorScheme.surfaceContainerHighest
                       .withAlpha((0.3 * 255).round()),
                   child: Column(
@@ -555,17 +609,35 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: List.generate(
-                              availableWords.length,
-                              (index) => _buildWordChip(index),
+                        child: Stack(
+                          children: [
+                            NotificationListener<ScrollMetricsNotification>(
+                              onNotification: (_) {
+                                _checkWordBankScroll();
+                                return false;
+                              },
+                              child: SingleChildScrollView(
+                                controller: _wordBankScrollController,
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: List.generate(
+                                    availableWords.length,
+                                    (index) => _buildWordChip(index),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            if (_wordBankHasMoreBelow)
+                              Positioned(
+                                right: 0,
+                                bottom: 8,
+                                child: _buildScrollDownIndicator(
+                                    _wordBankScrollController),
+                              ),
+                          ],
                         ),
                       ),
                     ],
@@ -687,6 +759,42 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                       .withAlpha((0.5 * 255).round()),
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildScrollDownIndicator(ScrollController controller) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: () {
+        controller.animateTo(
+          (controller.offset + 100).clamp(
+            0.0,
+            controller.position.maxScrollExtent,
+          ),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      },
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withAlpha((0.9 * 255).round()),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha((0.2 * 255).round()),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.keyboard_arrow_down,
+          color: Colors.white,
+          size: 18,
+        ),
       ),
     );
   }

@@ -140,6 +140,50 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
 }
 
 // ============================================================================
+// Admin Auto-Grant
+// ============================================================================
+
+/**
+ * Checks system_config for admin_emails and grants is_admin = true
+ * if the user's email is in the list.
+ *
+ * This fulfils the seed.sql promise of "auto-granted on login".
+ */
+async function autoGrantAdminIfEligible(
+  services: ServiceContainer,
+  userId: string,
+  userEmail: string | undefined | null
+): Promise<void> {
+  if (!userEmail) return
+
+  try {
+    const { data } = await services.supabaseServiceClient
+      .from('system_config')
+      .select('value')
+      .eq('key', 'admin_emails')
+      .single()
+
+    if (!data?.value) return
+
+    const adminEmails = (data.value as string)
+      .split(',')
+      .map((e: string) => e.trim().toLowerCase())
+
+    if (adminEmails.includes(userEmail.toLowerCase())) {
+      await services.supabaseServiceClient
+        .from('user_profiles')
+        .update({ is_admin: true, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+
+      console.log(`✅ [USER_PROFILE] Admin access auto-granted to: ${userEmail}`)
+    }
+  } catch (error) {
+    // Non-fatal — don't break sync if admin check fails
+    console.warn('⚠️ [USER_PROFILE] Failed to check admin emails:', error)
+  }
+}
+
+// ============================================================================
 // Profile Management
 // ============================================================================
 
@@ -300,10 +344,21 @@ async function handleGetProfile(
 
   // Fetch auth user data
   const { data: { user }, error: userError } = await services.supabaseServiceClient.auth.admin.getUserById(userId)
-  
+
   if (!userError && user) {
     userProfile.email = user.email || null
     userProfile.phone = user.phone || null
+
+    // Auto-grant admin if email is in system_config admin_emails list
+    await autoGrantAdminIfEligible(services, userId, user.email)
+
+    // Re-fetch profile to pick up any is_admin change
+    const { data: refreshed } = await services.supabaseServiceClient
+      .from('user_profiles')
+      .select('is_admin')
+      .eq('id', userId)
+      .single()
+    if (refreshed) userProfile.is_admin = refreshed.is_admin
   }
 
   // Merge preferences into profile response
@@ -376,6 +431,10 @@ async function handleSyncProfile(
 
   const profile = await upsertProfile(services, userId, profileUpdateData)
   logProfileExtraction(user, extractionResult)
+
+  // Auto-grant admin if email is in system_config admin_emails list
+  await autoGrantAdminIfEligible(services, userId, user.email)
+
   console.log(`✅ [USER_PROFILE] Profile synced successfully for user ${userId}`)
 
   return new Response(

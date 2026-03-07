@@ -17,7 +17,6 @@ import '../utils/logger.dart';
 class BibleBooksService {
   static const String _cacheKey = 'bible_books_config_v1';
   static const String _cacheTimestampKey = 'bible_books_config_v1_timestamp';
-  static const Duration _cacheDuration = Duration(days: 30);
 
   DateTime? _lastFetch;
 
@@ -109,7 +108,6 @@ class BibleBooksService {
     }
   }
 
-  bool _isCacheValid() =>
-      _lastFetch != null &&
-      DateTime.now().difference(_lastFetch!) < _cacheDuration;
+  // Cache is valid forever once loaded — only fetch when there is no cached data.
+  bool _isCacheValid() => _lastFetch != null;
 }

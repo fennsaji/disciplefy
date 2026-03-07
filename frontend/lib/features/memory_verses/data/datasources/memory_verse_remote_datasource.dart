@@ -330,7 +330,7 @@ class MemoryVerseRemoteDataSource {
   /// [language] - Language code ('en', 'hi', 'ml')
   ///
   /// Returns map with 'text' and 'localizedReference' keys
-  Future<Map<String, String>> fetchVerseText({
+  Future<Map<String, dynamic>> fetchVerseText({
     required String book,
     required int chapter,
     required int verseStart,
@@ -351,8 +351,15 @@ class MemoryVerseRemoteDataSource {
       });
 
       final headers = await _httpService.createHeaders();
-      final response =
-          await _httpService.post(url, headers: headers, body: body);
+      // Use longer timeout for verse ranges (parallel backend calls still need network time)
+      final isRange = verseEnd != null && verseEnd > verseStart;
+      final response = await _httpService.post(
+        url,
+        headers: headers,
+        body: body,
+        timeout:
+            isRange ? const Duration(seconds: 60) : const Duration(seconds: 15),
+      );
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -363,6 +370,11 @@ class MemoryVerseRemoteDataSource {
         return {
           'text': data['text'] as String,
           'localizedReference': data['localizedReference'] as String,
+          if (data['verses'] != null)
+            'verses': (data['verses'] as List<dynamic>)
+                .map((v) =>
+                    {'number': v['number'] as int, 'text': v['text'] as String})
+                .toList(),
         };
       } else if (response.statusCode == 404) {
         throw const ServerException(

@@ -1022,25 +1022,26 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (!comparison.isMatch && !isExtraWord) ...[
-                        // Show expected word with strikethrough
-                        Text(
-                          comparison.originalWord,
-                          style: const TextStyle(
-                            color: AppColors.errorDark,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
+                        // Cross out what the user said (wrong)
                         if (comparison.recognizedWord.isNotEmpty)
                           Text(
                             comparison.recognizedWord,
                             style: const TextStyle(
-                              color: AppColors.warning,
+                              color: AppColors.errorDark,
                               fontWeight: FontWeight.w500,
-                              fontSize: 14,
+                              fontSize: 12,
+                              decoration: TextDecoration.lineThrough,
                             ),
                           ),
+                        // Show the correct word below
+                        Text(
+                          comparison.originalWord,
+                          style: const TextStyle(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
                       ] else
                         Text(
                           isExtraWord

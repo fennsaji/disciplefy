@@ -41,10 +41,13 @@ class HttpService {
 
   /// Make an authenticated HTTP POST request with automatic 401 handling
   Future<http.Response> post(String url,
-          {Map<String, String>? headers, String? body}) async =>
+          {Map<String, String>? headers,
+          String? body,
+          Duration timeout = const Duration(seconds: 10)}) async =>
       await _makeRequest(
         () => _httpClient.post(Uri.parse(url), headers: headers, body: body),
         url,
+        timeout: timeout,
       );
 
   /// Make an authenticated HTTP PUT request with automatic 401 handling
@@ -66,8 +69,9 @@ class HttpService {
   /// Core request method with automatic 401 handling and retry logic
   Future<http.Response> _makeRequest(
     Future<http.Response> Function() requestFunction,
-    String url,
-  ) async {
+    String url, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     if (_isDisposed) {
       throw const NetworkException(
         message: 'HTTP client has been disposed',
@@ -97,8 +101,7 @@ class HttpService {
 
     while (retryCount <= _maxRetries) {
       try {
-        final response =
-            await requestFunction().timeout(const Duration(seconds: 10));
+        final response = await requestFunction().timeout(timeout);
 
         // Handle 401 Unauthorized - this should rarely happen now with pre-validation
         if (response.statusCode == 401) {

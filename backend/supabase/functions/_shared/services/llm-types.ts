@@ -42,6 +42,7 @@ export interface LLMGenerationParams {
   readonly topicDescription?: string   // Optional: provides additional context for topic-based guides
   readonly pathTitle?: string          // Optional: learning path name for curriculum-aware generation
   readonly pathDescription?: string    // Optional: learning path description/goal for curriculum-aware generation
+  readonly discipleLevel?: string      // Optional: learner level (seeker|believer|follower|disciple|leader)
   readonly language: string
   readonly tier?: string  // Optional: user subscription tier for model selection
   readonly studyMode?: StudyMode  // Optional: study mode for different experiences (default: 'standard')

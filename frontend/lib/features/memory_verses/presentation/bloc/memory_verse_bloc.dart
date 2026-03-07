@@ -10,6 +10,7 @@ import '../../domain/usecases/delete_verse.dart' as delete_verse_uc;
 import '../../domain/usecases/fetch_verse_text.dart';
 import '../../domain/usecases/get_active_challenges.dart';
 import '../../domain/usecases/get_daily_goal.dart';
+import '../../domain/usecases/get_cached_due_verses.dart';
 import '../../domain/usecases/get_due_verses.dart';
 import '../../domain/usecases/get_mastery_progress.dart';
 import '../../domain/usecases/get_memory_streak.dart';
@@ -54,6 +55,7 @@ import '../../../../core/utils/logger.dart';
 /// - Pagination support for verse lists
 class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final GetDueVerses getDueVerses;
+  final GetCachedDueVerses getCachedDueVerses;
   final add_from_daily_uc.AddVerseFromDaily addVerseFromDaily;
   final add_manually_uc.AddVerseManually addVerseManually;
   final submit_review_uc.SubmitReview submitReview;
@@ -88,6 +90,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
   MemoryVerseBloc({
     required this.getDueVerses,
+    required this.getCachedDueVerses,
     required this.addVerseFromDaily,
     required this.addVerseManually,
     required this.submitReview,
@@ -152,10 +155,14 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<AddSuggestedVerseEvent>(_onAddSuggestedVerse);
   }
 
-  /// Handles LoadDueVerses event.
+  /// Handles LoadDueVerses event with stale-while-revalidate pattern.
   ///
-  /// Fetches verses due for review along with statistics.
-  /// Supports pagination and force refresh.
+  /// 1. Immediately emits cached verses from local Hive storage (no spinner).
+  /// 2. Fetches fresh data from remote in the background.
+  /// 3. Emits updated state when remote data arrives.
+  ///
+  /// This means the UI always shows something instantly, and silently
+  /// refreshes without blocking the user.
   Future<void> _onLoadDueVerses(
     LoadDueVerses event,
     Emitter<MemoryVerseState> emit,
@@ -164,15 +171,27 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       Logger.debug(
           '📖 [BLOC] Loading due verses (limit: ${event.limit}, offset: ${event.offset})');
 
-      // Show loading state (unless refreshing with existing data)
-      if (!event.forceRefresh || state is! DueVersesLoaded) {
-        emit(MemoryVerseLoading(
-          message: 'Loading verses...',
-          isRefreshing: event.forceRefresh,
-        ));
+      // Step 1: Emit cached data immediately (no spinner, instant UX)
+      if (state is! DueVersesLoaded) {
+        final cached = await getCachedDueVerses(language: event.language);
+        if (cached != null) {
+          final (cachedVerses, cachedStats) = cached;
+          Logger.info(
+              '⚡ [BLOC] Showing ${cachedVerses.length} cached verses instantly');
+          emit(DueVersesLoaded(
+            verses: cachedVerses,
+            statistics: cachedStats,
+            isRefreshingInBackground: true,
+          ));
+        }
+        // If no cache, nothing to show yet — remote fetch below will populate
+      } else {
+        // Already loaded — mark as refreshing in background (no UI disruption)
+        emit((state as DueVersesLoaded)
+            .copyWith(isRefreshingInBackground: true));
       }
 
-      // Execute use case
+      // Step 2: Fetch fresh data from remote
       final result = await getDueVerses(
         limit: event.limit,
         offset: event.offset,
@@ -182,20 +201,23 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error('❌ [BLOC] Load due verses failed: ${failure.message}');
-          emit(MemoryVerseError(
-            message: failure.message,
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
+          // Only show error if we have no cached data to display
+          if (state is! DueVersesLoaded) {
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+              isNetworkError: failure is NetworkFailure,
+            ));
+          } else {
+            // Silently stop the background refresh indicator
+            emit((state as DueVersesLoaded)
+                .copyWith(isRefreshingInBackground: false));
+          }
         },
         (data) {
           final (verses, statistics) = data;
-
-          Logger.info('✅ [BLOC] Loaded ${verses.length} due verses');
-
-          // Determine if more verses are available (basic pagination check)
+          Logger.info('✅ [BLOC] Remote: loaded ${verses.length} due verses');
           final hasMore = verses.length >= event.limit;
-
           emit(DueVersesLoaded(
             verses: verses,
             statistics: statistics,
@@ -205,10 +227,12 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       );
     } catch (e) {
       Logger.error('❌ [BLOC] Unexpected error loading verses: $e');
-      emit(MemoryVerseError(
-        message: 'An unexpected error occurred',
-        code: 'UNEXPECTED_ERROR',
-      ));
+      if (state is! DueVersesLoaded) {
+        emit(MemoryVerseError(
+          message: 'An unexpected error occurred',
+          code: 'UNEXPECTED_ERROR',
+        ));
+      }
     }
   }
 

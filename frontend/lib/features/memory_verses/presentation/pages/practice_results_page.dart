@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../data/services/transliteration_service.dart';
 import '../../domain/entities/practice_result_params.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
@@ -116,6 +119,11 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
 
     return BlocListener<MemoryVerseBloc, MemoryVerseState>(
       listener: (context, state) {
+        // Check memory achievements after a successful practice session
+        if (state is PracticeSessionSubmitted) {
+          sl<GamificationBloc>().add(const CheckMemoryAchievements());
+        }
+
         // Handle tier-locked error
         if (state is MemoryVerseError &&
             state.code == 'PRACTICE_MODE_TIER_LOCKED') {

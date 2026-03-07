@@ -21,7 +21,8 @@ import {
   THEOLOGICAL_FOUNDATION,
   JSON_OUTPUT_RULES,
   createLanguageBlock,
-  createVerseReferenceBlock
+  createVerseReferenceBlock,
+  getDiscipleLevelContext
 } from './prompt-builder.ts'
 
 export type LectioPass = 'pass1' | 'pass2'
@@ -38,7 +39,7 @@ export function createLectioPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
 ): PromptPair {
-  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, language } = params
+  const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
 
   const pathParts = [
     pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
@@ -55,7 +56,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: MEDITATIVE READING - PASS 1/2 (Careful Reading + Biblical Reflection)
 This is part 1 of a multi-pass Meditative Reading generation. Focus on slow, careful reading of the biblical text and deep reflection on what Scripture itself says.
@@ -196,7 +197,7 @@ export function createLectioPass2Prompt(
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
 ): PromptPair {
-  const { language } = params
+  const { language, discipleLevel } = params
 
   const systemMessage = `You are a Bible study guide completing a Meditative Reading guide.
 
@@ -204,7 +205,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, language)}
+${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
 
 STUDY MODE: MEDITATIVE READING - PASS 2/2 (Prayer Response + Application & Commitment)
 This is part 2 of a 2-part Meditative Reading generation. Focus on prayerful response to Scripture and concrete life application.
