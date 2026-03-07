@@ -165,6 +165,8 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       await handleSubscriptionResumed(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.completed') {
       await handleSubscriptionCompleted(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'refund.created') {
+      await handleRefundCreated(payload, services)
     } else {
       console.log(`[Webhook] Ignoring event: ${event}`)
     }
@@ -588,10 +590,13 @@ async function handleSubscriptionCharged(
     return
   }
 
-  // Update subscription billing info and provider metadata
+  // Update subscription billing info, reset status to active, and update provider metadata.
+  // Resetting status handles the case where the subscription was in pending_cancellation
+  // but the user re-enabled auto-renew and was successfully charged again.
   await supabaseServiceClient
     .from('subscriptions')
     .update({
+      status: 'active',
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       current_period_start: subscriptionEntity.current_start
@@ -869,6 +874,66 @@ async function handleSubscriptionCompleted(
   await analyticsLogger.logEvent('webhook_subscription_completed', {
     user_id: userId,
     subscription_id: razorpaySubId
+  })
+}
+
+/**
+ * Handle refund.created event
+ * Razorpay sends this when a payment is refunded.
+ * Revokes subscription access and marks receipt as refunded.
+ */
+async function handleRefundCreated(
+  payload: any,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const paymentEntity = payload.payload?.payment?.entity
+  const refundEntity = payload.payload?.refund?.entity
+
+  const paymentId = paymentEntity?.id || refundEntity?.payment_id
+  if (!paymentId) {
+    console.warn('[Webhook] refund.created: no payment_id found, skipping')
+    return
+  }
+
+  console.log(`[Webhook] Refund created for payment: ${paymentId}`)
+
+  // Find subscription via invoice linked to this payment
+  const { data: invoice } = await supabaseServiceClient
+    .from('subscription_invoices')
+    .select('subscription_id, user_id')
+    .eq('razorpay_payment_id', paymentId)
+    .maybeSingle()
+
+  if (!invoice?.subscription_id) {
+    console.warn('[Webhook] refund.created: no subscription found for payment', paymentId)
+    return
+  }
+
+  // Revoke subscription access immediately
+  await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancellation_reason: 'Refunded',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', invoice.subscription_id)
+
+  // Mark invoice as refunded
+  await supabaseServiceClient
+    .from('subscription_invoices')
+    .update({ status: 'refunded' })
+    .eq('razorpay_payment_id', paymentId)
+
+  console.log(`[Webhook] ✅ Subscription ${invoice.subscription_id} cancelled due to refund of payment ${paymentId}`)
+
+  await analyticsLogger.logEvent('webhook_refund_created', {
+    user_id: invoice.user_id,
+    subscription_id: invoice.subscription_id,
+    payment_id: paymentId,
+    refund_id: refundEntity?.id
   })
 }
 
