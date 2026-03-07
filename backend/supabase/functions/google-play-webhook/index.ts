@@ -57,6 +57,15 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
+  // Validate Pub/Sub push token
+  const url = new URL(req.url)
+  const requestToken = url.searchParams.get('token')
+  const expectedToken = Deno.env.get('GOOGLE_PLAY_WEBHOOK_TOKEN')
+  if (!expectedToken || requestToken !== expectedToken) {
+    console.warn('[GOOGLE_PLAY_WEBHOOK] Invalid or missing token')
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+
   try {
     console.log('[GOOGLE_PLAY_WEBHOOK] Received notification')
 
