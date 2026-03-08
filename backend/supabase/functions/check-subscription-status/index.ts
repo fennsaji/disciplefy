@@ -67,6 +67,7 @@ serve(async (req) => {
       .not('current_period_end', 'is', null)
       .lt('current_period_end', graceCutoff)
       .in('provider', ['google_play', 'apple_appstore'])
+      .not('metadata->>in_grace_period', 'eq', 'true') // exclude active grace period subscriptions
       .select('id, user_id, provider, current_period_end, status')
 
     if (expireError) {

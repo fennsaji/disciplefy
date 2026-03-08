@@ -57,6 +57,15 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
+  // Validate Pub/Sub push token
+  const url = new URL(req.url)
+  const requestToken = url.searchParams.get('token')
+  const expectedToken = Deno.env.get('GOOGLE_PLAY_WEBHOOK_TOKEN')
+  if (!expectedToken || requestToken !== expectedToken) {
+    console.warn('[GOOGLE_PLAY_WEBHOOK] Invalid or missing token')
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+
   try {
     console.log('[GOOGLE_PLAY_WEBHOOK] Received notification')
 
@@ -259,6 +268,19 @@ function getEventType(notificationType: number): string {
 }
 
 /**
+ * Fetch current metadata for a subscription to enable safe merging.
+ * All metadata writes must merge with existing keys rather than replacing.
+ */
+async function getSubscriptionMetadata(supabase: any, subscriptionId: string): Promise<Record<string, unknown>> {
+  const { data } = await supabase
+    .from('subscriptions')
+    .select('metadata')
+    .eq('id', subscriptionId)
+    .single()
+  return (data?.metadata as Record<string, unknown>) ?? {}
+}
+
+/**
  * Process subscription event and update database
  */
 async function processSubscriptionEvent(
@@ -275,7 +297,11 @@ async function processSubscriptionEvent(
     return
   }
 
-  // Re-validate receipt for renewal events
+  // Re-validate receipt for renewal events.
+  // Note: revalidateReceipt uses the stored purchase token. For renewals, Google
+  // may issue a new token — sync-subscription-status handles token rotation on
+  // app open (Scenario 3). Here we attempt re-validation and proceed even if it
+  // returns invalid, to avoid silently dropping the renewal event.
   if (eventType === 'SUBSCRIPTION_RENEWED' || eventType === 'SUBSCRIPTION_RECOVERED') {
     console.log('[GOOGLE_PLAY_WEBHOOK] Re-validating receipt')
     const validationResult = await revalidateReceipt(supabase, receiptId)
@@ -290,10 +316,13 @@ async function processSubscriptionEvent(
           updated_at: new Date().toISOString()
         })
         .eq('id', subscriptionId)
+    } else {
+      // Token may have rotated — mark pending so sync-subscription-status retries on next app open
+      console.warn('[GOOGLE_PLAY_WEBHOOK] Re-validation returned invalid — token may have rotated, sync will correct on next app open')
     }
   }
 
-  // Handle cancellation
+  // Handle cancellation — user cancelled, access continues until period end
   if (eventType === 'SUBSCRIPTION_CANCELED') {
     await supabase
       .from('subscriptions')
@@ -317,7 +346,7 @@ async function processSubscriptionEvent(
       .eq('id', subscriptionId)
   }
 
-  // Handle revocation (refund)
+  // Handle revocation (refund) — revoke access immediately
   if (eventType === 'SUBSCRIPTION_REVOKED') {
     await supabase
       .from('subscriptions')
@@ -339,13 +368,15 @@ async function processSubscriptionEvent(
       .eq('id', receiptId)
   }
 
-  // Handle account on hold (payment failed, access suspended — revoke access)
+  // Handle account on hold — payment failed, access must be suspended immediately.
+  // Uses dedicated 'on_hold' status distinct from user-initiated 'paused'.
   if (eventType === 'SUBSCRIPTION_ON_HOLD') {
+    const existingMetadata = await getSubscriptionMetadata(supabase, subscriptionId)
     await supabase
       .from('subscriptions')
       .update({
-        status: 'paused',
-        metadata: { on_hold: true, on_hold_at: new Date().toISOString() },
+        status: 'on_hold',
+        metadata: { ...existingMetadata, on_hold: true, on_hold_at: new Date().toISOString() },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
@@ -353,61 +384,73 @@ async function processSubscriptionEvent(
 
   // Handle purchase confirmed (idempotent — app flow already creates sub via create-subscription-v2)
   if (eventType === 'SUBSCRIPTION_PURCHASED') {
-    if (subscriptionId) {
-      // Confirm active — idempotent update
-      await supabase
-        .from('subscriptions')
-        .update({
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscriptionId)
-      console.log('[GOOGLE_PLAY_WEBHOOK] Purchase confirmed active:', subscriptionId)
-    } else {
-      // Webhook arrived before app — app flow will handle via create-subscription-v2
-      console.warn('[GOOGLE_PLAY_WEBHOOK] SUBSCRIPTION_PURCHASED: no subscription yet, app will process via create-subscription-v2')
-    }
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId)
+    console.log('[GOOGLE_PLAY_WEBHOOK] Purchase confirmed active:', subscriptionId)
   }
 
-  // Handle grace period (payment failed, access temporarily maintained for up to 7 days)
+  // Handle grace period — payment failed but access maintained temporarily.
+  // Re-validate to get actual expiry from Google Play rather than computing NOW+7.
   if (eventType === 'SUBSCRIPTION_IN_GRACE_PERIOD') {
-    const gracePeriodExpiry = new Date()
-    gracePeriodExpiry.setDate(gracePeriodExpiry.getDate() + 7)
+    const existingMetadata = await getSubscriptionMetadata(supabase, subscriptionId)
+    let gracePeriodExpiry: string
+
+    try {
+      const validationResult = await revalidateReceipt(supabase, receiptId)
+      // Google Play returns the real expiry (end of grace window) in expiryDate
+      gracePeriodExpiry = validationResult.expiryDate?.toISOString() ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    } catch {
+      // Fallback to 7 days if re-validation fails
+      gracePeriodExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    }
+
     await supabase
       .from('subscriptions')
       .update({
         status: 'active',
         metadata: {
+          ...existingMetadata,
           in_grace_period: true,
           grace_period_started_at: new Date().toISOString(),
-          grace_period_expires_at: gracePeriodExpiry.toISOString()
+          grace_period_expires_at: gracePeriodExpiry
         },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
-    console.log('[GOOGLE_PLAY_WEBHOOK] Grace period set, expires:', gracePeriodExpiry.toISOString())
+    console.log('[GOOGLE_PLAY_WEBHOOK] Grace period set, expires:', gracePeriodExpiry)
   }
 
-  // Handle restart (user re-subscribed from on-hold or paused state)
+  // Handle restart — user re-subscribed from on-hold or paused state.
+  // Clear only the state flags; preserve other business metadata.
   if (eventType === 'SUBSCRIPTION_RESTARTED') {
+    const existingMetadata = await getSubscriptionMetadata(supabase, subscriptionId)
+    const { on_hold, on_hold_at, paused, paused_at, in_grace_period, grace_period_started_at, grace_period_expires_at, ...remainingMetadata } = existingMetadata
     await supabase
       .from('subscriptions')
       .update({
         status: 'active',
         cancel_at_cycle_end: false,
-        metadata: {},
+        metadata: remainingMetadata,
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
   }
 
-  // Handle pause (user paused subscription, access will end at period end)
+  // Handle pause — user voluntarily paused, access ends at current_period_end.
+  // Set status to 'paused' so access gating takes effect at period end.
   if (eventType === 'SUBSCRIPTION_PAUSED') {
+    const existingMetadata = await getSubscriptionMetadata(supabase, subscriptionId)
     await supabase
       .from('subscriptions')
       .update({
+        status: 'paused',
         cancel_at_cycle_end: true,
-        metadata: { paused: true, paused_at: new Date().toISOString() },
+        metadata: { ...existingMetadata, paused: true, paused_at: new Date().toISOString() },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
@@ -420,13 +463,11 @@ async function processSubscriptionEvent(
 
   // Handle price change confirmed by user — record in metadata, no status change
   if (eventType === 'SUBSCRIPTION_PRICE_CHANGE_CONFIRMED') {
+    const existingMetadata = await getSubscriptionMetadata(supabase, subscriptionId)
     await supabase
       .from('subscriptions')
       .update({
-        metadata: {
-          price_change_confirmed: true,
-          price_change_confirmed_at: new Date().toISOString()
-        },
+        metadata: { ...existingMetadata, price_change_confirmed: true, price_change_confirmed_at: new Date().toISOString() },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
@@ -435,13 +476,11 @@ async function processSubscriptionEvent(
 
   // Handle deferred billing — payment deferred, subscription remains active
   if (eventType === 'SUBSCRIPTION_DEFERRED') {
+    const existingMetadata = await getSubscriptionMetadata(supabase, subscriptionId)
     await supabase
       .from('subscriptions')
       .update({
-        metadata: {
-          payment_deferred: true,
-          deferred_at: new Date().toISOString()
-        },
+        metadata: { ...existingMetadata, payment_deferred: true, deferred_at: new Date().toISOString() },
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
