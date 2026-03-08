@@ -1,0 +1,1082 @@
+# Product Requirements Document (PRD)
+
+## Feature
+
+Community & Fellowship System for Disciplefy
+
+---
+
+# 1. Overview
+
+The Community feature enables users to participate in small fellowship groups where they study Bible learning paths together, discuss lessons, share reflections, and support one another through prayer and questions.
+
+The goal is to transform Disciplefy from a solo Bible study app into a collaborative discipleship platform centered around mentor-led fellowships.
+
+---
+
+# 2. Goals
+
+Primary goals:
+
+* Enable small group discipleship inside the app
+* Allow mentors to guide group learning paths
+* Encourage discussion and reflection on lessons
+* Build spiritual community through prayer and encouragement
+
+Secondary goals:
+
+* Increase engagement and retention
+* Encourage users to become mentors
+
+---
+
+# 3. Non Goals (MVP)
+
+The following will NOT be included in the first version:
+
+* Public communities
+* Global discussion feed
+* Video / voice meetings
+* Direct messaging
+* Complex moderation tools
+* Media uploads (images, audio) in posts (schema columns reserved for v2)
+* AI-generated discussion prompts (v2)
+* Multi-language post translation (v2)
+
+---
+
+# 4. Key Concepts
+
+## Fellowship
+
+A private community group led by a mentor where members study learning paths together.
+
+Characteristics:
+
+* Private access — invite only
+* Mentor-led
+* Maximum 12 members (default; configurable per fellowship)
+* Shared study path
+* One active study path at a time
+
+## Mentor
+
+User role that can:
+
+* Create fellowships
+* Start learning paths
+* Invite members
+* Moderate posts
+
+Mentor role is permanent once assigned by an Admin, unless revoked.
+
+A mentor who wants to leave or delete their account must first transfer mentor ownership or dissolve the fellowship.
+
+## Member
+
+User who participates in a fellowship but cannot manage it.
+
+Members can:
+
+* Study lessons
+* Post reflections
+* Ask questions
+* Share prayer requests
+
+---
+
+# 5. User Roles
+
+The system supports role-based permissions. Roles are assigned to users and determine what actions they can perform inside the community system.
+
+## Admin
+
+Admins are platform operators with full control over community management.
+
+Permissions:
+
+* Create fellowships
+* Assign or remove Mentor role from any user
+* Access admin panel
+* Moderate any fellowship if needed
+* Resolve escalated reports (e.g., reports against a mentor)
+
+Admin panel capability:
+
+* Promote user to Mentor
+* Revoke Mentor role
+
+## Mentor
+
+Mentor is a role assigned to users. Once a user becomes a mentor, they permanently receive the Mentor role unless removed by an Admin.
+
+Mentors can lead and manage fellowship groups.
+
+Permissions:
+
+* Create fellowship
+* Start learning path
+* Pause / resume study
+* Advance to next lesson
+* Invite members (targeted invite or standing invite link)
+* Remove members
+* Mute members temporarily
+* Pin posts
+* Delete posts (soft delete)
+* Resolve reports within their fellowship
+* Transfer mentor ownership to another member
+
+## Member
+
+Default role for regular users participating in fellowships.
+
+Members can:
+
+* Join fellowship via invite
+* Study lessons
+* Participate in discussions
+* Create posts (reflection, prayer request, question)
+* React to posts and comments
+* Reply to comments (one level deep)
+* Report posts and comments
+
+---
+
+# 6. Product Decisions (Resolved)
+
+The following decisions must be made before implementation. Each is resolved below.
+
+## Fellowship Access & Subscription Gating
+
+**Decision:** Fellowship creation requires a paid subscription (Standard or Premium tier). Joining as a member is free for all registered users.
+
+Rationale: Fellowship creation drives mentor acquisition (paid). Member joining drives viral growth (free). This matches how small-group platforms monetize.
+
+Implementation note: The `fellowships_insert` RLS policy and the `fellowship/create` Edge Function must validate the calling user's active subscription before allowing insert.
+
+## Fellowship Size Limits
+
+**Decision:** Maximum 12 members per fellowship by default. Premium subscribers can set max_members up to 50.
+
+The `max_members` column on the `fellowships` table stores the per-fellowship ceiling. The Edge Function validates against the user's subscription plan tier on create and on join.
+
+## Mentor Leave / Dissolution
+
+**Decision:** A mentor cannot leave a fellowship while other members exist. They must either:
+1. Transfer mentor ownership to another member, then leave.
+2. Dissolve the fellowship (soft delete), which removes all members.
+
+The `ON DELETE RESTRICT` on `fellowships.mentor_id` enforces this at the DB level.
+
+## Invite Mechanisms
+
+**Decision:** Two invite mechanisms are supported:
+1. **Standing invite link** — A unique `invite_code` on the fellowship. Shareable via QR code or link. Valid indefinitely until regenerated by mentor.
+2. **Targeted invite** — A time-limited, single-use token in `fellowship_invites`, optionally tied to a specific email address. Expires in 7 days.
+
+Both can be used simultaneously. Mentors manage targeted invites from the Members screen.
+
+## Multi-Fellowship Membership
+
+**Decision:** A user may belong to multiple fellowships simultaneously (as member or mentor). The community tab shows all fellowships. No cap on memberships for v1.
+
+## Anonymous Users
+
+**Decision:** Anonymous users cannot join fellowships. Fellowship join requires a registered (non-anonymous) account. The invite acceptance flow must validate `auth.uid()` is not an anonymous session.
+
+## Notification Opt-Out
+
+**Decision:** Members can control notifications per fellowship. Each member has a `notification_preferences` JSONB column on `fellowship_members` with flags for: `new_post`, `new_comment`, `new_study`, `new_lesson`. Defaults: all enabled except `new_reaction`.
+
+## Comment Threading Depth
+
+**Decision:** Maximum two levels — top-level comment and one reply level. Enforced at both the application layer and the DB via `depth CHECK (depth IN (0, 1))`. This prevents recursive query complexity and keeps the UI simple.
+
+## Reaction Types
+
+**Decision:** Five reaction types: `amen`, `i_prayed`, `heart`, `fire`, `hands`. Stored as TEXT with a CHECK constraint (not a PostgreSQL ENUM) to allow future additions without DDL table locks.
+
+## Report Escalation
+
+**Decision:** Reports against posts/comments in a fellowship are routed to the fellowship mentor. If the mentor is the subject of the report, the report must be routed to a platform Admin. The `fellowship_reports.resolved_by` column stores the resolver (either mentor or admin).
+
+---
+
+# 7. Community Tab Navigation
+
+Community Tab Navigation
+
+Community
+
+* My Fellowships
+* Join Fellowship
+
+Flow:
+
+Community
+→ Fellowship
+→ Feed / Lessons / Members
+
+---
+
+# 8. Core Screens
+
+## Community Tab
+
+Displays:
+
+* List of fellowships user belongs to (all roles)
+* Join fellowship option (enter invite code or scan QR)
+
+## Fellowship Home
+
+Displays:
+
+* Fellowship name and avatar
+* Mentor name
+* Member count
+* Current study path and current lesson
+* Fellowship status (created / study active / paused / completed)
+
+Actions:
+
+* Open lesson
+* Discuss lesson
+* Create post
+
+## Fellowship Feed
+
+Post types:
+
+* Reflection
+* Prayer Request
+* Question
+
+Each post supports:
+
+* Reactions (amen, i_prayed, heart, fire, hands)
+* Comments with one level of replies
+* Pinned posts appear at top
+
+## Lessons Screen
+
+Displays:
+
+* Active learning path
+* List of lessons (topics)
+* User progress per lesson
+* Group progress indicator
+
+## Lesson Discussion
+
+Threaded discussion for each lesson.
+
+Users can:
+
+* Comment
+* Reply (one level)
+
+## Members Screen
+
+Displays:
+
+* Mentor (highlighted)
+* Member list with join date
+
+Mentor actions:
+
+* Invite member (targeted or share link)
+* Mute member
+* Remove member
+* Transfer mentor ownership
+
+## Create Post
+
+Post types:
+
+* Reflection
+* Prayer Request
+* Question
+
+Fields:
+
+* Message text (max 2000 characters)
+* Optional lesson reference
+
+## Invite Member
+
+Mentor can:
+
+* Generate a shareable invite link (standing)
+* Create a targeted invite (by email, expires in 7 days)
+* View and revoke pending invites
+
+---
+
+# 9. Fellowship States
+
+The fellowship operates as a lifecycle with clear states to ensure predictable behavior in the UI and backend logic.
+
+The fellowship `status` field on the `fellowships` table stores the current state.
+
+## State 1: Fellowship Created
+
+Status value: `created`
+
+Conditions:
+
+* Fellowship exists
+* No learning path started yet
+
+UI behavior:
+
+Mentor sees:
+
+* "Start Learning Path" button
+
+Members see:
+
+* "Waiting for mentor to start study"
+
+## State 2: Study Active
+
+Status value: `study_active`
+
+Conditions:
+
+* A learning path has been started
+* Lessons are progressing
+
+Displays:
+
+* Active study path
+* Current lesson (linked to `learning_path_topics.id`)
+* Group progress
+
+## State 3: Study Paused
+
+Status value: `study_paused`
+
+Conditions:
+
+* Mentor manually pauses the study
+
+Displays:
+
+"Study paused by mentor"
+
+## State 4: Study Completed
+
+Status value: `study_completed`
+
+Conditions:
+
+* Final lesson completed
+
+Displays:
+
+"Study completed"
+
+Mentor can start new path (creates a new `fellowship_study` row)
+
+## Fellowship Lifecycle State Diagram
+
+```
+
+          +---------------------+
+          |  Fellowship Created |
+          | (No Study Started)  |
+          +----------+----------+
+                     |
+                     | Mentor starts study path
+                     v
+          +---------------------+
+          |     Study Active    |
+          |  Lessons progressing|
+          +----+-----------+----+
+               |           |
+               | Pause     | All lessons completed
+               v           v
+        +------------+   +------------------+
+        | Study      |   |  Study Completed |
+        | Paused     |   |                  |
+        +------+-----+   +---------+--------+
+               |                     |
+               | Resume              | Mentor starts new path
+               v                     v
+          +-------------------------------+
+          |         Study Active          |
+          +-------------------------------+
+
+```
+
+State transition triggers:
+
+| Event                   | From State      | To State        |
+| ----------------------- | --------------- | --------------- |
+| Mentor starts study     | Created         | Study Active    |
+| Mentor pauses study     | Study Active    | Study Paused    |
+| Mentor resumes study    | Study Paused    | Study Active    |
+| Final lesson completed  | Study Active    | Study Completed |
+| Mentor starts new study | Study Completed | Study Active    |
+
+---
+
+# 10. Learning Path Flow
+
+Learning Path Flow
+
+Mentor Flow:
+
+Fellowship
+→ Start Study Path
+→ Select Path (from existing learning_paths)
+→ Choose Start Topic (defaults to first topic)
+→ Launch Study (sets fellowship.status = 'study_active')
+
+Mentor Lesson Advancement:
+
+After each lesson the mentor decides when the group moves on:
+
+Fellowship
+→ Lessons Tab
+→ Advance to Next Lesson
+→ Confirm (sends new_lesson notification to all members)
+
+Member Flow:
+
+Fellowship
+→ Open Lesson (current_topic_id)
+→ Study Lesson
+→ Discuss Lesson
+
+---
+
+# 11. Posting System
+
+Users can create three types of posts:
+
+Reflection
+
+Sharing insight from a lesson.
+
+Prayer Request
+
+Request support from group members.
+
+Interaction:
+
+"I prayed" reaction (maps to `i_prayed` reaction type)
+
+Question
+
+Ask theological or lesson related question.
+
+Post constraints:
+
+* Content: 1–2000 characters
+* Rate limit: max 5 posts per hour per user per fellowship
+* Comments: 1–1000 characters, max 20 per hour per user
+* Muted members cannot post or comment
+
+---
+
+# 12. Notifications
+
+Users receive notifications when:
+
+* Someone replies to their comment
+* Someone reacts to their prayer request (`i_prayed`)
+* Mentor starts a new study path
+* Mentor advances to next lesson
+* A member joins their fellowship (mentor only)
+
+Notification delivery uses an outbox queue (see Section 15.4). Each member's `notification_preferences` on `fellowship_members` controls which events they receive per fellowship.
+
+---
+
+# 13. Database Entities
+
+The six PRD entities expand to **eleven tables** in production. The four additional tables (reactions, invites, mutes, reports) are required for correctness, not optional polish.
+
+## fellowships
+
+Fields:
+
+* id — UUID PK
+* name — TEXT, 3–100 chars
+* description — TEXT, max 500 chars
+* mentor_id — UUID FK to auth.users (ON DELETE RESTRICT)
+* status — TEXT: `created` | `study_active` | `study_paused` | `study_completed`
+* invite_code — TEXT UNIQUE (cryptographically random, 16 bytes hex)
+* max_members — INTEGER (default 12, range 2–50)
+* avatar_url — TEXT
+* member_count — INTEGER (denormalized, maintained by trigger)
+* deleted_at — TIMESTAMPTZ (soft delete)
+* created_at, updated_at
+
+## fellowship_members
+
+Fields:
+
+* id — UUID PK
+* fellowship_id — UUID FK
+* user_id — UUID FK
+* role — TEXT: `mentor` | `co_mentor` | `member`
+* joined_at — TIMESTAMPTZ
+* invited_by — UUID FK to auth.users (nullable)
+* is_muted — BOOLEAN (denormalized fast-path; source of truth is fellowship_mutes)
+* notification_preferences — JSONB (`new_post`, `new_comment`, `new_reaction`, `new_study`, `new_lesson`)
+* UNIQUE (fellowship_id, user_id)
+
+## fellowship_study
+
+Fields:
+
+* id — UUID PK
+* fellowship_id — UUID FK (UNIQUE — one active study per fellowship)
+* study_path_id — UUID FK to learning_paths (ON DELETE RESTRICT)
+* current_topic_id — UUID FK to learning_path_topics (ON DELETE SET NULL)
+  - **CRITICAL**: Must be a FK to the actual topic row, NOT an integer index. Integer indices are silently corrupted by topic reordering.
+* status — TEXT: `active` | `paused` | `completed`
+* started_by — UUID FK to auth.users
+* started_at, paused_at, completed_at, updated_at
+
+## fellowship_posts
+
+Fields:
+
+* id — UUID PK
+* fellowship_id — UUID FK
+* user_id — UUID FK
+* type — TEXT: `reflection` | `prayer_request` | `question`
+* content — TEXT, 1–2000 chars
+* is_pinned — BOOLEAN (default false)
+* pinned_by — UUID FK (nullable)
+* pinned_at — TIMESTAMPTZ (nullable)
+* is_deleted — BOOLEAN (soft delete)
+* deleted_at, deleted_by — for audit trail
+* edited_at — TIMESTAMPTZ (nullable)
+* attachment_url, attachment_type — reserved for v2 media uploads
+* reaction_count — INTEGER (denormalized counter)
+* comment_count — INTEGER (denormalized counter)
+* created_at, updated_at
+
+## fellowship_comments
+
+Fields:
+
+* id — UUID PK
+* post_id — UUID FK
+* user_id — UUID FK
+* parent_comment_id — UUID FK self-referential (NULL = top-level, non-null = reply)
+  - **CRITICAL**: Must be included from day one. Adding threading after data exists requires costly data migration.
+* depth — INTEGER CHECK (depth IN (0, 1)) — enforces two-level max at DB layer
+* content — TEXT, 1–1000 chars
+* is_deleted — BOOLEAN (soft delete)
+* deleted_at, deleted_by
+* edited_at
+* reaction_count — INTEGER (denormalized)
+* created_at, updated_at
+
+## fellowship_reactions
+
+Fields:
+
+* id — UUID PK
+* post_id — UUID FK (nullable, mutually exclusive with comment_id)
+* comment_id — UUID FK (nullable, mutually exclusive with post_id)
+* user_id — UUID FK
+* reaction_type — TEXT: `amen` | `i_prayed` | `heart` | `fire` | `hands`
+* created_at
+* CONSTRAINT: exactly one of post_id or comment_id must be non-null
+* UNIQUE: (post_id, user_id, reaction_type) and (comment_id, user_id, reaction_type)
+
+## fellowship_invites
+
+Fields:
+
+* id — UUID PK
+* fellowship_id — UUID FK
+* invited_by — UUID FK
+* invited_email — TEXT (nullable; NULL means shareable link invite)
+* token — TEXT UNIQUE (cryptographically random, 24 bytes hex)
+* status — TEXT: `pending` | `accepted` | `declined` | `expired` | `revoked`
+* expires_at — TIMESTAMPTZ (default: NOW() + 7 days)
+* used_by — UUID FK (set on acceptance)
+* used_at — TIMESTAMPTZ
+* created_at
+
+## fellowship_mutes
+
+Fields:
+
+* id — UUID PK
+* fellowship_id — UUID FK
+* muted_user_id — UUID FK
+* muted_by — UUID FK
+* reason — TEXT (nullable)
+* expires_at — TIMESTAMPTZ NOT NULL (all mutes are temporary; no permanent mutes — use remove-member instead)
+* is_lifted — BOOLEAN
+* lifted_by, lifted_at
+* created_at
+* UNIQUE (fellowship_id, muted_user_id)
+
+## fellowship_reports
+
+Fields:
+
+* id — UUID PK
+* reporter_id — UUID FK
+* post_id — UUID FK (ON DELETE SET NULL — preserve report even if post deleted)
+* comment_id — UUID FK (ON DELETE SET NULL)
+* reason — TEXT: `inappropriate_content` | `harassment` | `spam` | `theological_concern` | `off_topic` | `other`
+* details — TEXT (optional)
+* status — TEXT: `pending` | `under_review` | `actioned` | `dismissed`
+* resolved_by — UUID FK (mentor or admin)
+* resolution_note — TEXT
+* resolved_at — TIMESTAMPTZ
+* created_at
+* UNIQUE (reporter_id, post_id) and (reporter_id, comment_id) — one report per user per content item
+
+## fellowship_notification_queue
+
+Fields:
+
+* id — UUID PK
+* event_type — TEXT: `new_post` | `new_comment` | `new_reaction` | `new_study` | `new_lesson` | `member_joined`
+* fellowship_id — UUID FK
+* actor_id — UUID FK
+* payload — JSONB (post_id, comment_id, etc.)
+* status — TEXT: `pending` | `processing` | `sent` | `failed`
+* attempt_count — INTEGER (max 3)
+* next_attempt_at — TIMESTAMPTZ
+* created_at
+
+Note: Notification fan-out MUST use an outbox queue — do NOT fan out synchronously in the post-create Edge Function. A 50-member fellowship with synchronous fan-out will hit Edge Function timeout limits. Write one queue row; a cron worker processes fan-out.
+
+## StudyPaths (existing: learning_paths)
+
+The existing `learning_paths` table is used. No new table needed.
+`fellowship_study.study_path_id` references `learning_paths.id`.
+`fellowship_study.current_topic_id` references `learning_path_topics.id`.
+
+---
+
+# 14. RLS Policy Design
+
+## Core Principle
+
+Fellowship tables are **group-scoped**. A user must be a member of a fellowship to read its content, and must have the appropriate role to write.
+
+## Helper Functions (SECURITY DEFINER)
+
+```sql
+-- Prevents recursive RLS problem when fellowship_members itself has RLS
+CREATE OR REPLACE FUNCTION is_fellowship_member(fid UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM fellowship_members
+    WHERE fellowship_id = fid AND user_id = auth.uid()
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION is_fellowship_moderator(fid UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM fellowship_members
+    WHERE fellowship_id = fid AND user_id = auth.uid()
+      AND role IN ('mentor','co_mentor')
+  );
+$$;
+```
+
+## Policy Summary
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|---|---|---|---|---|
+| fellowships | is_fellowship_member(id) | mentor_id = auth.uid() | mentor only | Hard delete blocked (soft delete via UPDATE) |
+| fellowship_members | is_fellowship_member | moderator or self | moderator or self | moderator or self |
+| fellowship_posts | member + is_deleted=false | member + not muted | author or moderator | moderator only |
+| fellowship_comments | member (via post) | member + not muted | author or moderator | — |
+| fellowship_reactions | member (via post/comment) | member | — | self only |
+| fellowship_invites | moderator or invited_by or invited_email | moderator only | moderator | — |
+| fellowship_mutes | moderator only | moderator only | moderator | — |
+| fellowship_reports | reporter or moderator | any member | moderator only | — |
+
+---
+
+# 15. Required Indexes
+
+```sql
+-- fellowships
+CREATE INDEX idx_fellowships_mentor      ON fellowships(mentor_id);
+CREATE INDEX idx_fellowships_invite_code ON fellowships(invite_code) WHERE deleted_at IS NULL;
+
+-- fellowship_members
+CREATE INDEX idx_fmembers_user        ON fellowship_members(user_id);
+CREATE INDEX idx_fmembers_fellowship  ON fellowship_members(fellowship_id);
+CREATE INDEX idx_fmembers_role        ON fellowship_members(fellowship_id, user_id, role);
+
+-- fellowship_posts (feed queries — most performance critical)
+CREATE INDEX idx_fposts_feed   ON fellowship_posts(fellowship_id, created_at DESC) WHERE is_deleted = FALSE;
+CREATE INDEX idx_fposts_pinned ON fellowship_posts(fellowship_id, is_pinned DESC, created_at DESC) WHERE is_deleted = FALSE;
+CREATE INDEX idx_fposts_type   ON fellowship_posts(fellowship_id, type, created_at DESC) WHERE is_deleted = FALSE;
+
+-- fellowship_comments
+CREATE INDEX idx_fcomments_post   ON fellowship_comments(post_id, created_at ASC) WHERE is_deleted = FALSE AND parent_comment_id IS NULL;
+CREATE INDEX idx_fcomments_parent ON fellowship_comments(parent_comment_id, created_at ASC) WHERE is_deleted = FALSE;
+
+-- fellowship_reactions
+CREATE INDEX idx_freactions_post      ON fellowship_reactions(post_id, reaction_type);
+CREATE INDEX idx_freactions_post_user ON fellowship_reactions(post_id, user_id);
+
+-- fellowship_invites
+CREATE INDEX idx_finvites_token ON fellowship_invites(token) WHERE status = 'pending' AND expires_at > NOW();
+
+-- fellowship_mutes
+CREATE INDEX idx_fmutes_active ON fellowship_mutes(fellowship_id, muted_user_id) WHERE is_lifted = FALSE;
+
+-- fellowship_notification_queue
+CREATE INDEX idx_fnqueue_pending ON fellowship_notification_queue(next_attempt_at) WHERE status IN ('pending','failed') AND attempt_count < 3;
+```
+
+---
+
+# 16. Edge Function Contracts
+
+All functions follow the existing Supabase Edge Function pattern (TypeScript, Deno, JWT auth).
+
+```
+fellowship/create
+  POST /fellowship/create
+  Auth: required, subscription check (paid tier required)
+  Input:  { name, description?, max_members? }
+  Output: { fellowship_id, invite_code }
+  Side effects: inserts fellowship + calling user as mentor member
+
+fellowship/join-by-invite
+  POST /fellowship/join-by-invite
+  Auth: required, non-anonymous
+  Input:  { token }
+  Output: { fellowship_id, fellowship_name }
+  Validates: token exists, not expired, fellowship not full, not already a member
+
+fellowship/get
+  GET /fellowship/:id
+  Auth: required (RLS enforces membership)
+  Output: fellowship with members + current study
+
+fellowship/update
+  PATCH /fellowship/:id
+  Auth: required, mentor only
+  Input:  { name?, description?, max_members?, invite_code? (regenerate) }
+
+fellowship/leave
+  DELETE /fellowship/:id/member
+  Auth: required
+  Blocks: if caller is last mentor and other members exist (must transfer first)
+
+fellowship/transfer-mentor
+  POST /fellowship/:id/transfer-mentor
+  Auth: required, current mentor
+  Input:  { new_mentor_id }
+
+fellowship/members/mute
+  POST /fellowship/:id/mute
+  Auth: required, moderator
+  Input:  { user_id, reason?, expires_at }
+  Side effects: sets fellowship_members.is_muted = true
+
+fellowship/members/unmute
+  DELETE /fellowship/:id/mute/:mute_id
+  Auth: required, moderator
+  Side effects: sets is_lifted=true, clears fellowship_members.is_muted
+
+fellowship/study/set
+  POST /fellowship/:id/study
+  Auth: required, moderator
+  Input:  { study_path_id }
+  Side effects: inserts fellowship_study, sets fellowship.status = 'study_active'
+                enqueues new_study notification
+
+fellowship/study/advance-lesson
+  POST /fellowship/:id/study/advance
+  Auth: required, moderator
+  Input:  { next_topic_id }
+  Side effects: updates current_topic_id, enqueues new_lesson notification
+
+fellowship/posts/create
+  POST /fellowship/:id/posts
+  Auth: required, member, not muted
+  Input:  { type, content }
+  Side effects: enqueues new_post notification
+
+fellowship/posts/list
+  GET /fellowship/:id/posts
+  Auth: required (RLS)
+  Query: cursor (keyset pagination), limit=20, type?
+  Note: pinned posts returned first
+
+fellowship/posts/pin
+  PATCH /fellowship/:id/posts/:post_id/pin
+  Auth: required, moderator
+  Input:  { is_pinned }
+
+fellowship/posts/delete
+  DELETE /fellowship/:id/posts/:post_id
+  Auth: required, author or moderator
+  Logic: soft delete only (is_deleted=true, deleted_by, deleted_at)
+
+fellowship/comments/create
+  POST /fellowship/:id/posts/:post_id/comments
+  Auth: required, member, not muted
+  Input:  { content, parent_comment_id? }
+  Validates: if parent given, parent.depth = 0 (enforces max depth=1)
+  Side effects: increments post.comment_count, enqueues reply notification
+
+fellowship/reactions/toggle
+  POST /fellowship/:id/reactions
+  Auth: required, member
+  Input:  { reaction_type, post_id? OR comment_id? }
+  Logic: toggle — if exists delete + decrement, if not insert + increment
+  Output: { action: 'added'|'removed', new_count }
+
+fellowship/invites/create
+  POST /fellowship/:id/invites
+  Auth: required, moderator
+  Input:  { invited_email?, expires_in_days? (1-30) }
+  Output: { token, expires_at }
+
+fellowship/invites/revoke
+  DELETE /fellowship/:id/invites/:invite_id
+  Auth: required, moderator
+
+fellowship/reports/create
+  POST /fellowship/:id/reports
+  Auth: required, member
+  Input:  { post_id? OR comment_id?, reason, details? }
+
+fellowship/reports/resolve
+  PATCH /fellowship/:id/reports/:report_id
+  Auth: required, moderator or admin
+  Input:  { status: 'actioned'|'dismissed', resolution_note? }
+```
+
+---
+
+# 17. Moderation & Abuse Controls
+
+Healthy communities require lightweight moderation to prevent spam, harassment, or disruptive behavior. The system provides role-based moderation tools and user reporting.
+
+## Reporting System
+
+Members can report any post or comment.
+
+Report reasons:
+
+* Spam
+* Harassment
+* Offensive content
+* Theological concern
+* Off-topic
+* Other
+
+Report flow:
+
+User taps "Report"
+→ Select reason
+→ Submit report
+
+Reports are visible to:
+
+* Fellowship mentor (for their fellowship)
+* Platform admins (always, for escalated cases)
+
+**Escalation rule:** If the report is against the mentor, it bypasses the mentor and routes directly to a platform Admin.
+
+## Mentor Moderation Tools
+
+Mentors can moderate content within their fellowship.
+
+Capabilities:
+
+* Delete post (soft delete)
+* Delete comment (soft delete)
+* Pin post
+* Remove member
+* Mute member temporarily (expires_at required; no permanent mutes)
+
+Muted members:
+
+* Cannot post
+* Cannot comment
+* Can still view lessons
+
+## Admin Moderation Tools
+
+Admins have platform-wide authority.
+
+Capabilities:
+
+* Remove any post
+* Remove any comment
+* Ban user from community features
+* Remove user from fellowships
+* Revoke mentor role
+
+## Content Safety Measures
+
+To prevent abuse at scale, the system includes automated safeguards.
+
+Mechanisms:
+
+* Rate limiting: max 5 posts per hour, max 20 comments per hour (enforced in Edge Function)
+* Spam detection
+* Profanity filtering
+
+Example limits:
+
+* Max 5 posts per hour
+* Max 20 comments per hour
+
+## AI-Based Post Review
+
+All posts and comments will be evaluated by an AI moderation system before or shortly after publication to reduce harmful or abusive content.
+
+AI checks for:
+
+* Harassment or bullying
+* Hate speech
+* Abusive language
+* Spam or promotional content
+* Explicit or inappropriate content
+
+Moderation behavior:
+
+1. **Safe Content**
+
+Post is published normally.
+
+2. **Suspicious Content**
+
+Post is published but flagged for mentor review.
+
+3. **High-Risk Content**
+
+Post is temporarily blocked and user receives warning.
+
+Mentors and admins can review flagged posts in a moderation queue.
+
+### AI Moderation Flow
+
+User submits post
+→ AI evaluates content
+→ Content classified (Safe / Suspicious / High Risk)
+→ Action applied
+
+The AI moderation should be lightweight and fast to avoid blocking normal posting experience.
+
+## Abuse Escalation Levels
+
+Level 1 – Warning
+
+User receives warning for inappropriate behavior.
+
+Level 2 – Temporary Restriction
+
+User temporarily blocked from posting (muted).
+
+Level 3 – Community Ban
+
+User permanently banned from community features.
+
+---
+
+# 18. MVP Scope
+
+## Included in MVP
+
+* Fellowship creation (subscription-gated for mentors)
+* Standing invite link + targeted invite (fellowship_invites table)
+* Learning path start and lesson advancement
+* Fellowship feed with pinning
+* Soft delete for posts and comments
+* Comment replies (one level)
+* Reactions (5 types including "I prayed")
+* Lesson discussions
+* Reflection / prayer / question posts
+* Member mute (temporary)
+* Report system (routes to mentor / admin)
+* Outbox-based notification queue
+* Per-member notification preferences
+
+## Excluded from MVP
+
+* Public community
+* Direct messaging
+* Media uploads in posts (columns reserved for v2)
+* AI moderation (v2 — use simple rate limiting in v1)
+* AI-generated discussion prompts (v2)
+* Multi-language post translation (v2)
+* Cross-fellowship discussions (v2)
+
+---
+
+# 19. Failure Mode Analysis
+
+| Component | Failure Scenario | Mitigation |
+|---|---|---|
+| `is_fellowship_member()` RLS function | Execution error | Fail-closed (access denied is safer than data leak) |
+| Reaction toggle | Concurrent double-tap | UNIQUE constraint catches 409; return current state, not error |
+| `member_count` counter | Drift from actual rows | DB trigger on fellowship_members INSERT/DELETE |
+| Notification queue | Worker crash mid-batch | `attempt_count` + `next_attempt_at` enable retry (max 3) |
+| `fellowship_mutes.expires_at` | Mute expires but `is_muted` flag not cleared | Scheduled function clears stale is_muted flags every 15 min |
+| Mentor account deletion | ON DELETE RESTRICT blocks delete | User flow: "Transfer or dissolve your fellowships first" |
+
+---
+
+# 20. Decisions That Would Force a V2 Rewrite If Done Wrong
+
+1. **Using `current_lesson INTEGER` instead of `current_topic_id UUID FK`** — Integer indices are silently corrupted by topic reordering. This is resolved: use `current_topic_id` FK.
+
+2. **Missing `parent_comment_id` on comments** — Adding threading after comments exist requires a data migration mapping flat comments to the new tree model. This is resolved: `parent_comment_id` included from day one.
+
+3. **Hard-deleting posts and fellowships** — Once hard-deleted, there is no audit trail and orphaned children cause data integrity issues. This is resolved: all deletes are soft deletes.
+
+4. **Synchronous notification fan-out** — At 20+ members, synchronous fan-out in a user-facing Edge Function hits timeout limits. This is resolved: outbox queue pattern.
+
+5. **PostgreSQL ENUM types for reaction_type** — Adding a new value requires DDL. This is resolved: CHECK constraint on TEXT column.
+
+---
+
+# 21. Success Metrics
+
+Key metrics:
+
+* % users joining a fellowship
+* Lessons completed per fellowship
+* Posts per fellowship per week
+* Discussion participation rate (% members who post or comment)
+
+Target:
+
+At least 30% of members in a fellowship should post or comment weekly.
+
+---
+
+# 22. Future Enhancements
+
+* AI generated discussion prompts
+* Weekly group reflections
+* Voice discussions
+* Leaderboards for participation
+* Cross fellowship discussions
+* Media uploads in posts (images, audio prayer cards)
+* Multi-language post translation
+* Fellowship discovery (public opt-in, not default)
+* Co-mentor role (already supported in schema)
+
+---
+
+# End of PRD
