@@ -182,6 +182,39 @@
         },
         {
           "type": "frame",
+          "id": "prPhB",
+          "name": "fab",
+          "enabled": false,
+          "width": 56,
+          "height": 56,
+          "fill": "#4F46E5",
+          "cornerRadius": 16,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4F46E540",
+            "offset": {
+              "x": 0,
+              "y": 4
+            },
+            "blur": 12
+          },
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "BzCOu",
+              "width": 24,
+              "height": 24,
+              "iconFontName": "plus",
+              "iconFontFamily": "lucide",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "Mzhcd",
           "name": "scroll-content",
           "width": "fill_container",
@@ -502,238 +535,6 @@
                   "fontFamily": "Inter",
                   "fontSize": 15,
                   "fontWeight": "600"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "prPhB",
-          "name": "fab",
-          "enabled": false,
-          "width": 56,
-          "height": 56,
-          "fill": "#4F46E5",
-          "cornerRadius": 16,
-          "effect": {
-            "type": "shadow",
-            "shadowType": "outer",
-            "color": "#4F46E540",
-            "offset": {
-              "x": 0,
-              "y": 4
-            },
-            "blur": 12
-          },
-          "justifyContent": "center",
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "icon_font",
-              "id": "BzCOu",
-              "width": 24,
-              "height": 24,
-              "iconFontName": "plus",
-              "iconFontFamily": "lucide",
-              "fill": "#FFFFFF"
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "SdeMl",
-          "name": "tab-bar",
-          "width": "fill_container",
-          "height": 90,
-          "fill": "#FFFFFF",
-          "layout": "vertical",
-          "padding": [
-            8,
-            16
-          ],
-          "children": [
-            {
-              "type": "frame",
-              "id": "wOUOV",
-              "name": "pill",
-              "width": "fill_container",
-              "height": 62,
-              "fill": "#F9FAFB",
-              "cornerRadius": 36,
-              "stroke": {
-                "align": "inside",
-                "thickness": 1,
-                "fill": "#E5E7EB"
-              },
-              "padding": 4,
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "rhWsc",
-                  "name": "tab1a",
-                  "width": "fill_container",
-                  "height": "fill_container",
-                  "cornerRadius": 26,
-                  "layout": "vertical",
-                  "gap": 3,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "wcaeE",
-                      "width": 18,
-                      "height": 18,
-                      "iconFontName": "house",
-                      "iconFontFamily": "lucide",
-                      "fill": "#9CA3AF"
-                    },
-                    {
-                      "type": "text",
-                      "id": "0fVNY",
-                      "fill": "#9CA3AF",
-                      "content": "HOME",
-                      "fontFamily": "Inter",
-                      "fontSize": 9,
-                      "fontWeight": "600",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "r9fWI",
-                  "name": "tab1b",
-                  "width": "fill_container",
-                  "height": "fill_container",
-                  "cornerRadius": 26,
-                  "layout": "vertical",
-                  "gap": 3,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "xlpkE",
-                      "width": 18,
-                      "height": 18,
-                      "iconFontName": "book-open",
-                      "iconFontFamily": "lucide",
-                      "fill": "#9CA3AF"
-                    },
-                    {
-                      "type": "text",
-                      "id": "iPQDM",
-                      "fill": "#9CA3AF",
-                      "content": "STUDY",
-                      "fontFamily": "Inter",
-                      "fontSize": 9,
-                      "fontWeight": "600",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "ojXdz",
-                  "name": "tab1c",
-                  "width": "fill_container",
-                  "height": "fill_container",
-                  "fill": "#4F46E5",
-                  "cornerRadius": 26,
-                  "layout": "vertical",
-                  "gap": 3,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "jHwmK",
-                      "width": 18,
-                      "height": 18,
-                      "iconFontName": "users",
-                      "iconFontFamily": "lucide",
-                      "fill": "#FFFFFF"
-                    },
-                    {
-                      "type": "text",
-                      "id": "U7nyn",
-                      "fill": "#FFFFFF",
-                      "content": "COMMUNITY",
-                      "fontFamily": "Inter",
-                      "fontSize": 9,
-                      "fontWeight": "600",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "EKs6Y",
-                  "name": "tab1d",
-                  "width": "fill_container",
-                  "height": "fill_container",
-                  "cornerRadius": 26,
-                  "layout": "vertical",
-                  "gap": 3,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "r2gnQ",
-                      "width": 18,
-                      "height": 18,
-                      "iconFontName": "brain",
-                      "iconFontFamily": "lucide",
-                      "fill": "#9CA3AF"
-                    },
-                    {
-                      "type": "text",
-                      "id": "k9jCL",
-                      "fill": "#9CA3AF",
-                      "content": "MEMORY",
-                      "fontFamily": "Inter",
-                      "fontSize": 9,
-                      "fontWeight": "600",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "CjXlg",
-                  "name": "tab1e",
-                  "width": "fill_container",
-                  "height": "fill_container",
-                  "cornerRadius": 26,
-                  "layout": "vertical",
-                  "gap": 3,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "1kkr9",
-                      "width": 18,
-                      "height": 18,
-                      "iconFontName": "user",
-                      "iconFontFamily": "lucide",
-                      "fill": "#9CA3AF"
-                    },
-                    {
-                      "type": "text",
-                      "id": "uQyy4",
-                      "fill": "#9CA3AF",
-                      "content": "PROFILE",
-                      "fontFamily": "Inter",
-                      "fontSize": 9,
-                      "fontWeight": "600",
-                      "letterSpacing": 0.5
-                    }
-                  ]
                 }
               ]
             }
@@ -2545,7 +2346,7 @@
       "id": "JwuKK",
       "x": 0,
       "y": 900,
-      "name": "5 · Lessons Screen",
+      "name": "5 · Learning Path",
       "clip": true,
       "width": 390,
       "height": 844,
@@ -2637,7 +2438,7 @@
                   "type": "text",
                   "id": "RXaeB",
                   "fill": "#1E1E1E",
-                  "content": "Lessons",
+                  "content": "Learning Path",
                   "fontFamily": "Inter",
                   "fontSize": 18,
                   "fontWeight": "700"
@@ -2651,7 +2452,7 @@
           "id": "00lNj",
           "name": "pathBanner",
           "width": "fill_container",
-          "height": 100,
+          "height": 116,
           "fill": "#4F46E5",
           "layout": "vertical",
           "gap": 6,
@@ -2670,6 +2471,16 @@
               "fontWeight": "700"
             },
             {
+              "type": "text",
+              "id": "WMVGM",
+              "name": "mentorLine",
+              "fill": "#C7D2FE",
+              "content": "Led by Pastor David  ·  Mentor",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "500"
+            },
+            {
               "type": "frame",
               "id": "AazfM",
               "name": "pathMeta",
@@ -2681,7 +2492,7 @@
                   "type": "text",
                   "id": "KE2UZ",
                   "fill": "#A5B4FC",
-                  "content": "21 lessons  ·  5 completed",
+                  "content": "21 study guides  ·  5 completed",
                   "fontFamily": "Inter",
                   "fontSize": 12,
                   "fontWeight": "normal"
@@ -3076,7 +2887,7 @@
       "id": "igKsJ",
       "x": 430,
       "y": 900,
-      "name": "6 · Lesson Discussion",
+      "name": "6 · Study Guide Discussion",
       "clip": true,
       "width": 390,
       "height": 844,
@@ -3090,11 +2901,18 @@
           "width": "fill_container",
           "height": 62,
           "fill": "#FFFFFF",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "qGQn7",
               "name": "t6",
+              "fill": "#1E1E1E",
               "content": "9:41",
               "fontFamily": "Inter",
               "fontSize": 15,
@@ -3111,6 +2929,7 @@
               "type": "text",
               "id": "rPACf",
               "name": "ic6",
+              "fill": "#1E1E1E",
               "content": "▮▮ ◉ ⬛",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -3126,11 +2945,18 @@
           "height": 56,
           "fill": "#FFFFFF",
           "gap": 8,
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "yS0HV",
               "name": "bk6",
+              "fill": "#1E1E1E",
               "content": "‹",
               "fontFamily": "Inter",
               "fontSize": 26,
@@ -3140,7 +2966,8 @@
               "type": "text",
               "id": "1ZfAu",
               "name": "ht6",
-              "content": "Lesson Discussion",
+              "fill": "#1E1E1E",
+              "content": "Study Guide Discussion",
               "textAlign": "center",
               "fontFamily": "Inter",
               "fontSize": 17,
@@ -3163,6 +2990,11 @@
           "height": 68,
           "fill": "#4F46E5",
           "gap": 12,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
           "children": [
             {
               "type": "frame",
@@ -3177,6 +3009,7 @@
                   "type": "text",
                   "id": "FXIIA",
                   "name": "lbooktxt",
+                  "fill": "#FFFFFF",
                   "content": "📖",
                   "fontFamily": "Inter",
                   "fontSize": 18,
@@ -3196,7 +3029,8 @@
                   "type": "text",
                   "id": "62GCL",
                   "name": "llbl",
-                  "content": "CURRENT LESSON",
+                  "fill": "#FFFFFF",
+                  "content": "ACTIVE GUIDE",
                   "fontFamily": "Inter",
                   "fontSize": 10,
                   "fontWeight": "700"
@@ -3205,6 +3039,7 @@
                   "type": "text",
                   "id": "cdGGp",
                   "name": "ltitle",
+                  "fill": "#FFFFFF",
                   "content": "5. The Bread of Life  ·  John 6:25-59",
                   "fontFamily": "Inter",
                   "fontSize": 13,
@@ -3223,6 +3058,10 @@
           "fill": "#FAF8F5",
           "layout": "vertical",
           "gap": 10,
+          "padding": [
+            0,
+            16
+          ],
           "children": [
             {
               "type": "frame",
@@ -3233,6 +3072,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 12,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -3247,6 +3088,7 @@
                       "type": "text",
                       "id": "MYjjG",
                       "name": "c1avt",
+                      "fill": "#3730A3",
                       "content": "SM",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3259,6 +3101,7 @@
                   "id": "4yQ7p",
                   "name": "c1b",
                   "width": "fill_container",
+                  "height": 66,
                   "layout": "vertical",
                   "gap": 4,
                   "children": [
@@ -3266,12 +3109,16 @@
                       "type": "frame",
                       "id": "aqfBC",
                       "name": "c1nr",
+                      "height": 18,
                       "gap": 8,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
                           "id": "irNWP",
                           "name": "c1name",
+                          "fill": "#1E1E1E",
                           "content": "Sarah M.",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -3281,6 +3128,7 @@
                           "type": "text",
                           "id": "r90DG",
                           "name": "c1time",
+                          "fill": "#6B7280",
                           "content": "2h ago",
                           "fontFamily": "Inter",
                           "fontSize": 11,
@@ -3292,6 +3140,7 @@
                       "type": "text",
                       "id": "Lz7nd",
                       "name": "c1txt",
+                      "fill": "#4B5563",
                       "content": "What struck me most was Jesus calling himself the bread of life — this connects to manna in Exodus!",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3310,6 +3159,11 @@
               "fill": "#F3F0FF",
               "cornerRadius": 10,
               "gap": 10,
+              "padding": [
+                8,
+                12
+              ],
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -3324,6 +3178,7 @@
                       "type": "text",
                       "id": "5eYn4",
                       "name": "r1avt",
+                      "fill": "#065F46",
                       "content": "JK",
                       "fontFamily": "Inter",
                       "fontSize": 11,
@@ -3336,6 +3191,7 @@
                   "id": "TWI2c",
                   "name": "r1b",
                   "width": "fill_container",
+                  "height": 44,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -3343,6 +3199,7 @@
                       "type": "text",
                       "id": "irUL7",
                       "name": "r1name",
+                      "fill": "#1E1E1E",
                       "content": "James K.",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3352,6 +3209,7 @@
                       "type": "text",
                       "id": "l1so7",
                       "name": "r1txt",
+                      "fill": "#4B5563",
                       "content": "Great insight! Manna sustained physically; Jesus gives eternal life.",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -3370,6 +3228,8 @@
               "fill": "#FFFBEB",
               "cornerRadius": 12,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -3384,6 +3244,7 @@
                       "type": "text",
                       "id": "Cie84",
                       "name": "c2avt",
+                      "fill": "#92400E",
                       "content": "PD",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3396,6 +3257,7 @@
                   "id": "bICXD",
                   "name": "c2b",
                   "width": "fill_container",
+                  "height": 76,
                   "layout": "vertical",
                   "gap": 4,
                   "children": [
@@ -3403,12 +3265,15 @@
                       "type": "frame",
                       "id": "AhR77",
                       "name": "c2nr",
+                      "height": 18,
                       "gap": 8,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
                           "id": "fS3XO",
                           "name": "c2name",
+                          "fill": "#1E1E1E",
                           "content": "Pastor David",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -3425,6 +3290,7 @@
                               "type": "text",
                               "id": "jsQCL",
                               "name": "c2badgetxt",
+                              "fill": "#FFFFFF",
                               "content": "Mentor",
                               "fontFamily": "Inter",
                               "fontSize": 10,
@@ -3438,6 +3304,7 @@
                       "type": "text",
                       "id": "GrnJI",
                       "name": "c2txt",
+                      "fill": "#4B5563",
                       "content": "The Greek 'artos' carries deep meaning. Jesus is not just teacher — He is the source of life itself.",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3457,6 +3324,11 @@
           "height": 60,
           "fill": "#FFFFFF",
           "gap": 10,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
           "children": [
             {
               "type": "frame",
@@ -3480,6 +3352,7 @@
                   "type": "text",
                   "id": "xu1I1",
                   "name": "rbph",
+                  "fill": "#9CA3AF",
                   "content": "Add a comment...",
                   "fontFamily": "Inter",
                   "fontSize": 14,
@@ -3500,6 +3373,7 @@
                   "type": "text",
                   "id": "oR0C4",
                   "name": "rbsendtxt",
+                  "fill": "#FFFFFF",
                   "content": "→",
                   "fontFamily": "Inter",
                   "fontSize": 18,
@@ -3541,6 +3415,7 @@
                       "type": "text",
                       "id": "RE6CM",
                       "name": "tti61",
+                      "fill": "#6B7280",
                       "content": "⌂",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -3550,6 +3425,7 @@
                       "type": "text",
                       "id": "YI5g8",
                       "name": "ttl61",
+                      "fill": "#6B7280",
                       "content": "Home",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -3571,6 +3447,7 @@
                       "type": "text",
                       "id": "5ZKqc",
                       "name": "tti62",
+                      "fill": "#6B7280",
                       "content": "📖",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -3580,6 +3457,7 @@
                       "type": "text",
                       "id": "uQ1mB",
                       "name": "ttl62",
+                      "fill": "#6B7280",
                       "content": "Study",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -3602,6 +3480,7 @@
                       "type": "text",
                       "id": "x5lCJ",
                       "name": "tti63",
+                      "fill": "#4F46E5",
                       "content": "👥",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -3611,6 +3490,7 @@
                       "type": "text",
                       "id": "r9Gfk",
                       "name": "ttl63",
+                      "fill": "#4F46E5",
                       "content": "Community",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -3632,6 +3512,7 @@
                       "type": "text",
                       "id": "GDuQ4",
                       "name": "tti64",
+                      "fill": "#6B7280",
                       "content": "🧠",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -3641,6 +3522,7 @@
                       "type": "text",
                       "id": "SGz4d",
                       "name": "ttl64",
+                      "fill": "#6B7280",
                       "content": "Memory",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -3662,6 +3544,7 @@
                       "type": "text",
                       "id": "4UQ6T",
                       "name": "tti65",
+                      "fill": "#6B7280",
                       "content": "👤",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -3671,6 +3554,7 @@
                       "type": "text",
                       "id": "UrFnz",
                       "name": "ttl65",
+                      "fill": "#6B7280",
                       "content": "Profile",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -3703,11 +3587,18 @@
           "width": "fill_container",
           "height": 62,
           "fill": "#FFFFFF",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "QjyUS",
               "name": "t7",
+              "fill": "#1E1E1E",
               "content": "9:41",
               "fontFamily": "Inter",
               "fontSize": 15,
@@ -3724,6 +3615,7 @@
               "type": "text",
               "id": "DqGYl",
               "name": "ic7",
+              "fill": "#1E1E1E",
               "content": "▮▮ ◉ ⬛",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -3739,11 +3631,18 @@
           "height": 56,
           "fill": "#FFFFFF",
           "gap": 8,
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "ZjBZz",
               "name": "bk7",
+              "fill": "#1E1E1E",
               "content": "‹",
               "fontFamily": "Inter",
               "fontSize": 26,
@@ -3753,6 +3652,7 @@
               "type": "text",
               "id": "x68fD",
               "name": "ht7",
+              "fill": "#1E1E1E",
               "content": "Members",
               "textAlign": "center",
               "fontFamily": "Inter",
@@ -3772,6 +3672,7 @@
                   "type": "text",
                   "id": "GtDQP",
                   "name": "hset7t",
+                  "fill": "#1E1E1E",
                   "content": "⚙",
                   "fontFamily": "Inter",
                   "fontSize": 14,
@@ -3788,6 +3689,11 @@
           "width": "fill_container",
           "height": 52,
           "fill": "#FFFFFF",
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
           "children": [
             {
               "type": "frame",
@@ -3798,11 +3704,13 @@
               "fill": "#F3F4F6",
               "cornerRadius": 10,
               "gap": 8,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "text",
                   "id": "zL584",
                   "name": "srph7",
+                  "fill": "#9CA3AF",
                   "content": "⌕  Search members...",
                   "fontFamily": "Inter",
                   "fontSize": 14,
@@ -3820,11 +3728,16 @@
           "height": 584,
           "fill": "#FAF8F5",
           "layout": "vertical",
+          "padding": [
+            8,
+            16
+          ],
           "children": [
             {
               "type": "text",
               "id": "72Pof",
               "name": "mentlbl",
+              "fill": "#6B7280",
               "content": "MENTOR",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -3839,6 +3752,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 12,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -3862,6 +3777,7 @@
                       "type": "text",
                       "id": "ggjrj",
                       "name": "mentavt",
+                      "fill": "#92400E",
                       "content": "PD",
                       "fontFamily": "Inter",
                       "fontSize": 15,
@@ -3874,6 +3790,7 @@
                   "id": "RcDsN",
                   "name": "mentinfo",
                   "width": "fill_container",
+                  "height": 56,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -3881,12 +3798,15 @@
                       "type": "frame",
                       "id": "L1mBj",
                       "name": "mentnamerow",
+                      "height": 20,
                       "gap": 8,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
                           "id": "3eV3k",
                           "name": "mentname",
+                          "fill": "#1E1E1E",
                           "content": "Pastor David",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -3903,6 +3823,7 @@
                               "type": "text",
                               "id": "Leutj",
                               "name": "mentbadgetxt",
+                              "fill": "#FFFFFF",
                               "content": "Mentor",
                               "fontFamily": "Inter",
                               "fontSize": 10,
@@ -3916,6 +3837,7 @@
                       "type": "text",
                       "id": "gToXA",
                       "name": "mentsub",
+                      "fill": "#6B7280",
                       "content": "Fellowship Leader  ·  Active",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3937,11 +3859,14 @@
               "id": "83FUy",
               "name": "membhdr",
               "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
               "children": [
                 {
                   "type": "text",
                   "id": "d00bY",
                   "name": "membtitle",
+                  "fill": "#6B7280",
                   "content": "MEMBERS (8)",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -3951,6 +3876,7 @@
                   "type": "text",
                   "id": "aBOZE",
                   "name": "membinvite",
+                  "fill": "#4F46E5",
                   "content": "+ Invite",
                   "fontFamily": "Inter",
                   "fontSize": 13,
@@ -3967,6 +3893,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -3981,6 +3909,7 @@
                       "type": "text",
                       "id": "WNCgG",
                       "name": "avt1",
+                      "fill": "#3730A3",
                       "content": "RP",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -3993,6 +3922,7 @@
                   "id": "0NopN",
                   "name": "kk1",
                   "width": "fill_container",
+                  "height": 44,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -4000,6 +3930,7 @@
                       "type": "text",
                       "id": "aAlMp",
                       "name": "m1n",
+                      "fill": "#1E1E1E",
                       "content": "Rachel P.",
                       "fontFamily": "Inter",
                       "fontSize": 15,
@@ -4009,6 +3940,7 @@
                       "type": "text",
                       "id": "fEdOe",
                       "name": "m1s",
+                      "fill": "#6B7280",
                       "content": "Member  ·  Joined Mar 2025",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4027,6 +3959,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4041,6 +3975,7 @@
                       "type": "text",
                       "id": "zQauR",
                       "name": "avt2",
+                      "fill": "#065F46",
                       "content": "TA",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -4053,6 +3988,7 @@
                   "id": "0RUgc",
                   "name": "kk2",
                   "width": "fill_container",
+                  "height": 44,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -4060,6 +3996,7 @@
                       "type": "text",
                       "id": "U908G",
                       "name": "m2n",
+                      "fill": "#1E1E1E",
                       "content": "Thomas A.",
                       "fontFamily": "Inter",
                       "fontSize": 15,
@@ -4069,6 +4006,7 @@
                       "type": "text",
                       "id": "FYJI3",
                       "name": "m2s",
+                      "fill": "#6B7280",
                       "content": "Member  ·  Joined Feb 2025",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4087,6 +4025,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4101,6 +4041,7 @@
                       "type": "text",
                       "id": "6b6GI",
                       "name": "avt3",
+                      "fill": "#9B1C1C",
                       "content": "ML",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -4113,6 +4054,7 @@
                   "id": "UjhXf",
                   "name": "kk3",
                   "width": "fill_container",
+                  "height": 36,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -4120,6 +4062,7 @@
                       "type": "text",
                       "id": "UpDbT",
                       "name": "m3n",
+                      "fill": "#1E1E1E",
                       "content": "Maria L.",
                       "fontFamily": "Inter",
                       "fontSize": 15,
@@ -4129,6 +4072,7 @@
                       "type": "text",
                       "id": "fiHaq",
                       "name": "m3s",
+                      "fill": "#6B7280",
                       "content": "Member  ·  Joined Jan 2025",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4147,6 +4091,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4161,6 +4107,7 @@
                       "type": "text",
                       "id": "bzVX1",
                       "name": "avt4",
+                      "fill": "#92400E",
                       "content": "JK",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -4173,6 +4120,7 @@
                   "id": "9sPKG",
                   "name": "kk4",
                   "width": "fill_container",
+                  "height": 36,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -4180,6 +4128,7 @@
                       "type": "text",
                       "id": "bHiZa",
                       "name": "m4n",
+                      "fill": "#1E1E1E",
                       "content": "James K.",
                       "fontFamily": "Inter",
                       "fontSize": 15,
@@ -4189,6 +4138,7 @@
                       "type": "text",
                       "id": "1s6ZX",
                       "name": "m4s",
+                      "fill": "#6B7280",
                       "content": "Member  ·  Joined Jan 2025",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4232,6 +4182,7 @@
                       "type": "text",
                       "id": "OUaE0",
                       "name": "tti71",
+                      "fill": "#6B7280",
                       "content": "⌂",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -4241,6 +4192,7 @@
                       "type": "text",
                       "id": "gec95",
                       "name": "ttl71",
+                      "fill": "#6B7280",
                       "content": "Home",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4262,6 +4214,7 @@
                       "type": "text",
                       "id": "NAQ9N",
                       "name": "tti72",
+                      "fill": "#6B7280",
                       "content": "📖",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4271,6 +4224,7 @@
                       "type": "text",
                       "id": "U5mf1",
                       "name": "ttl72",
+                      "fill": "#6B7280",
                       "content": "Study",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4293,6 +4247,7 @@
                       "type": "text",
                       "id": "5Z2OK",
                       "name": "tti73",
+                      "fill": "#4F46E5",
                       "content": "👥",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4302,6 +4257,7 @@
                       "type": "text",
                       "id": "DGWN3",
                       "name": "ttl73",
+                      "fill": "#4F46E5",
                       "content": "Community",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4323,6 +4279,7 @@
                       "type": "text",
                       "id": "FogLk",
                       "name": "tti74",
+                      "fill": "#6B7280",
                       "content": "🧠",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4332,6 +4289,7 @@
                       "type": "text",
                       "id": "KvwJC",
                       "name": "ttl74",
+                      "fill": "#6B7280",
                       "content": "Memory",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4353,6 +4311,7 @@
                       "type": "text",
                       "id": "VYMFI",
                       "name": "tti75",
+                      "fill": "#6B7280",
                       "content": "👤",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4362,6 +4321,7 @@
                       "type": "text",
                       "id": "PliIf",
                       "name": "ttl75",
+                      "fill": "#6B7280",
                       "content": "Profile",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4394,11 +4354,18 @@
           "width": "fill_container",
           "height": 62,
           "fill": "#FFFFFF",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "esJR9",
               "name": "t8",
+              "fill": "#1E1E1E",
               "content": "9:41",
               "fontFamily": "Inter",
               "fontSize": 15,
@@ -4415,6 +4382,7 @@
               "type": "text",
               "id": "f4qnV",
               "name": "ic8",
+              "fill": "#1E1E1E",
               "content": "▮▮ ◉ ⬛",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -4430,11 +4398,18 @@
           "height": 56,
           "fill": "#FFFFFF",
           "gap": 8,
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "vvsvq",
               "name": "bk8",
+              "fill": "#1E1E1E",
               "content": "‹",
               "fontFamily": "Inter",
               "fontSize": 26,
@@ -4444,6 +4419,7 @@
               "type": "text",
               "id": "l7Lgo",
               "name": "ht8",
+              "fill": "#1E1E1E",
               "content": "Invite Member",
               "textAlign": "center",
               "fontFamily": "Inter",
@@ -4467,11 +4443,16 @@
           "height": 636,
           "fill": "#FAF8F5",
           "layout": "vertical",
+          "padding": [
+            8,
+            16
+          ],
           "children": [
             {
               "type": "text",
               "id": "40Ecn",
               "name": "linkhdr",
+              "fill": "#6B7280",
               "content": "SHARE INVITE LINK",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -4493,11 +4474,13 @@
                   "name": "linkrow",
                   "width": "fill_container",
                   "gap": 8,
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "b3pek",
                       "name": "linktext",
+                      "fill": "#4F46E5",
                       "content": "disciplefy.app/join/faith-journey-2025",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -4514,6 +4497,7 @@
                           "type": "text",
                           "id": "XdnM7",
                           "name": "copytxt",
+                          "fill": "#4F46E5",
                           "content": "Copy",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -4532,11 +4516,14 @@
                   "fill": "#F3F0FF",
                   "cornerRadius": 8,
                   "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "UU48a",
                       "name": "sharetxt",
+                      "fill": "#1E1E1E",
                       "content": "Share via WhatsApp / Messages",
                       "fontFamily": "Inter",
                       "fontSize": 13,
@@ -4552,6 +4539,7 @@
               "name": "ordiv",
               "width": "fill_container",
               "gap": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4565,6 +4553,7 @@
                   "type": "text",
                   "id": "69G9U",
                   "name": "ortxt",
+                  "fill": "#6B7280",
                   "content": "OR",
                   "fontFamily": "Inter",
                   "fontSize": 12,
@@ -4594,6 +4583,7 @@
                   "type": "text",
                   "id": "o1btJ",
                   "name": "srchph",
+                  "fill": "#9CA3AF",
                   "content": "⌕  Search by name or email...",
                   "fontFamily": "Inter",
                   "fontSize": 14,
@@ -4605,6 +4595,7 @@
               "type": "text",
               "id": "oTTgU",
               "name": "suglbl",
+              "fill": "#6B7280",
               "content": "SUGGESTED CONTACTS",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -4619,6 +4610,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4634,6 +4627,7 @@
                   "id": "dXCc9",
                   "name": "s1body",
                   "width": "fill_container",
+                  "height": 36,
                   "layout": "vertical",
                   "gap": 2,
                   "children": [
@@ -4641,6 +4635,7 @@
                       "type": "text",
                       "id": "pHIMD",
                       "name": "s1name",
+                      "fill": "#1E1E1E",
                       "content": "Anna Singh",
                       "fontFamily": "Inter",
                       "fontSize": 14,
@@ -4650,6 +4645,7 @@
                       "type": "text",
                       "id": "IMlng",
                       "name": "s1sub",
+                      "fill": "#6B7280",
                       "content": "In 2 mutual fellowships",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4663,11 +4659,14 @@
                   "name": "s1add",
                   "fill": "#4F46E5",
                   "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "EYccL",
                       "name": "s1addtxt",
+                      "fill": "#FFFFFF",
                       "content": "+ Invite",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4686,6 +4685,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4701,6 +4702,7 @@
                   "id": "GFzKC",
                   "name": "s2body",
                   "width": "fill_container",
+                  "height": 36,
                   "layout": "vertical",
                   "gap": 2,
                   "children": [
@@ -4708,6 +4710,7 @@
                       "type": "text",
                       "id": "im2s6",
                       "name": "s2name",
+                      "fill": "#1E1E1E",
                       "content": "Michael Chen",
                       "fontFamily": "Inter",
                       "fontSize": 14,
@@ -4717,6 +4720,7 @@
                       "type": "text",
                       "id": "oMb90",
                       "name": "s2sub",
+                      "fill": "#6B7280",
                       "content": "1 mutual fellowship",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4730,11 +4734,14 @@
                   "name": "s2add",
                   "fill": "#4F46E5",
                   "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "G6vi2",
                       "name": "s2addtxt",
+                      "fill": "#FFFFFF",
                       "content": "+ Invite",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4753,6 +4760,8 @@
               "fill": "#FFFFFF",
               "cornerRadius": 10,
               "gap": 12,
+              "padding": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -4768,6 +4777,7 @@
                   "id": "3VDZ4",
                   "name": "s3body",
                   "width": "fill_container",
+                  "height": 36,
                   "layout": "vertical",
                   "gap": 2,
                   "children": [
@@ -4775,6 +4785,7 @@
                       "type": "text",
                       "id": "s8iG0",
                       "name": "s3name",
+                      "fill": "#1E1E1E",
                       "content": "Priya Nair",
                       "fontFamily": "Inter",
                       "fontSize": 14,
@@ -4784,6 +4795,7 @@
                       "type": "text",
                       "id": "ovVWt",
                       "name": "s3sub",
+                      "fill": "#6B7280",
                       "content": "Contact in your phone",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4797,11 +4809,14 @@
                   "name": "s3add",
                   "fill": "#F3F0FF",
                   "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "euL64",
                       "name": "s3addtxt",
+                      "fill": "#4F46E5",
                       "content": "+ Invite",
                       "fontFamily": "Inter",
                       "fontSize": 12,
@@ -4819,11 +4834,14 @@
               "height": 52,
               "fill": "#4F46E5",
               "cornerRadius": 14,
+              "justifyContent": "center",
+              "alignItems": "center",
               "children": [
                 {
                   "type": "text",
                   "id": "Q3XDm",
                   "name": "sendtxt",
+                  "fill": "#FFFFFF",
                   "content": "Send Invites",
                   "fontFamily": "Inter",
                   "fontSize": 15,
@@ -4865,6 +4883,7 @@
                       "type": "text",
                       "id": "LOPh3",
                       "name": "tti81",
+                      "fill": "#6B7280",
                       "content": "⌂",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -4874,6 +4893,7 @@
                       "type": "text",
                       "id": "f8edI",
                       "name": "ttl81",
+                      "fill": "#6B7280",
                       "content": "Home",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4895,6 +4915,7 @@
                       "type": "text",
                       "id": "hwPTd",
                       "name": "tti82",
+                      "fill": "#6B7280",
                       "content": "📖",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4904,6 +4925,7 @@
                       "type": "text",
                       "id": "0QgKE",
                       "name": "ttl82",
+                      "fill": "#6B7280",
                       "content": "Study",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4926,6 +4948,7 @@
                       "type": "text",
                       "id": "HrZPT",
                       "name": "tti83",
+                      "fill": "#4F46E5",
                       "content": "👥",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4935,6 +4958,7 @@
                       "type": "text",
                       "id": "AnbKZ",
                       "name": "ttl83",
+                      "fill": "#4F46E5",
                       "content": "Community",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4956,6 +4980,7 @@
                       "type": "text",
                       "id": "p9T2M",
                       "name": "tti84",
+                      "fill": "#6B7280",
                       "content": "🧠",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4965,6 +4990,7 @@
                       "type": "text",
                       "id": "35mfT",
                       "name": "ttl84",
+                      "fill": "#6B7280",
                       "content": "Memory",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -4986,6 +5012,7 @@
                       "type": "text",
                       "id": "hcru2",
                       "name": "tti85",
+                      "fill": "#6B7280",
                       "content": "👤",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -4995,6 +5022,7 @@
                       "type": "text",
                       "id": "mHu7V",
                       "name": "ttl85",
+                      "fill": "#6B7280",
                       "content": "Profile",
                       "fontFamily": "Inter",
                       "fontSize": 10,
@@ -5027,11 +5055,18 @@
           "width": "fill_container",
           "height": 62,
           "fill": "#FFFFFF",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "5P93F",
               "name": "t9",
+              "fill": "#1E1E1E",
               "content": "9:41",
               "fontFamily": "Inter",
               "fontSize": 15,
@@ -5048,6 +5083,7 @@
               "type": "text",
               "id": "oxLjD",
               "name": "ic9",
+              "fill": "#1E1E1E",
               "content": "▮▮ ◉ ⬛",
               "fontFamily": "Inter",
               "fontSize": 11,
@@ -5063,11 +5099,18 @@
           "height": 56,
           "fill": "#FFFFFF",
           "gap": 8,
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
           "children": [
             {
               "type": "text",
               "id": "HiYaw",
               "name": "bk9",
+              "fill": "#1E1E1E",
               "content": "‹",
               "fontFamily": "Inter",
               "fontSize": 26,
@@ -5077,6 +5120,7 @@
               "type": "text",
               "id": "L76qj",
               "name": "ht9",
+              "fill": "#1E1E1E",
               "content": "Join a Fellowship",
               "textAlign": "center",
               "fontFamily": "Inter",
@@ -5100,6 +5144,10 @@
           "height": 726,
           "fill": "#FAF8F5",
           "layout": "vertical",
+          "padding": [
+            16,
+            20
+          ],
           "children": [
             {
               "type": "frame",
@@ -5122,6 +5170,7 @@
                       "type": "text",
                       "id": "Tvs0r",
                       "name": "ictxt",
+                      "fill": "#1E1E1E",
                       "content": "🤝",
                       "fontFamily": "Inter",
                       "fontSize": 36,
@@ -5133,6 +5182,7 @@
                   "type": "text",
                   "id": "2OfGK",
                   "name": "illush",
+                  "fill": "#1E1E1E",
                   "content": "Join Your Community",
                   "textAlign": "center",
                   "fontFamily": "Inter",
@@ -5143,6 +5193,7 @@
                   "type": "text",
                   "id": "0bJzz",
                   "name": "illuss",
+                  "fill": "#6B7280",
                   "content": "Enter an invite code or paste a link\nshared by a fellowship member",
                   "textAlign": "center",
                   "fontFamily": "Inter",
@@ -5163,6 +5214,7 @@
                   "type": "text",
                   "id": "wEEEa",
                   "name": "codelbl",
+                  "fill": "#6B7280",
                   "content": "INVITE CODE",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -5177,11 +5229,13 @@
                   "fill": "#FFFFFF",
                   "cornerRadius": 12,
                   "gap": 12,
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "6Yfci",
                       "name": "codeph",
+                      "fill": "#9CA3AF",
                       "content": "e.g.  ABC - 123 - XYZ",
                       "textAlign": "center",
                       "fontFamily": "Inter",
@@ -5198,6 +5252,7 @@
               "name": "ordiv",
               "width": "fill_container",
               "gap": 12,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
@@ -5211,6 +5266,7 @@
                   "type": "text",
                   "id": "ZXjKZ",
                   "name": "ortxt",
+                  "fill": "#6B7280",
                   "content": "OR",
                   "fontFamily": "Inter",
                   "fontSize": 12,
@@ -5238,6 +5294,7 @@
                   "type": "text",
                   "id": "sw7Ak",
                   "name": "linklbl",
+                  "fill": "#6B7280",
                   "content": "PASTE INVITE LINK",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -5252,11 +5309,13 @@
                   "fill": "#FFFFFF",
                   "cornerRadius": 12,
                   "gap": 8,
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
                       "id": "7jekV",
                       "name": "linkph",
+                      "fill": "#9CA3AF",
                       "content": "Paste invite link here...",
                       "fontFamily": "Inter",
                       "fontSize": 14,
@@ -5273,6 +5332,7 @@
                           "type": "text",
                           "id": "a5YmT",
                           "name": "pastebtntxt",
+                          "fill": "#4F46E5",
                           "content": "Paste",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -5292,11 +5352,14 @@
               "height": 56,
               "fill": "#4F46E5",
               "cornerRadius": 16,
+              "justifyContent": "center",
+              "alignItems": "center",
               "children": [
                 {
                   "type": "text",
                   "id": "Dcd87",
                   "name": "jointxt",
+                  "fill": "#FFFFFF",
                   "content": "Join Fellowship",
                   "fontFamily": "Inter",
                   "fontSize": 16,
@@ -5308,11 +5371,213 @@
               "type": "text",
               "id": "AUNJF",
               "name": "terms",
+              "fill": "#6B7280",
               "content": "By joining, you agree to our community guidelines\nand fellowship code of conduct.",
               "textAlign": "center",
               "fontFamily": "Inter",
               "fontSize": 12,
               "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "SdeMl",
+      "x": 0,
+      "y": 754,
+      "name": "tab-bar",
+      "width": "fill_container(390)",
+      "height": 90,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "padding": [
+        8,
+        16
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "wOUOV",
+          "name": "pill",
+          "width": "fill_container",
+          "height": 62,
+          "fill": "#F9FAFB",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#E5E7EB"
+          },
+          "padding": 4,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "rhWsc",
+              "name": "tab1a",
+              "width": "fill_container",
+              "height": "fill_container",
+              "cornerRadius": 26,
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "wcaeE",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "house",
+                  "iconFontFamily": "lucide",
+                  "fill": "#9CA3AF"
+                },
+                {
+                  "type": "text",
+                  "id": "0fVNY",
+                  "fill": "#9CA3AF",
+                  "content": "HOME",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.5
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "r9fWI",
+              "name": "tab1b",
+              "width": "fill_container",
+              "height": "fill_container",
+              "cornerRadius": 26,
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "xlpkE",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "book-open",
+                  "iconFontFamily": "lucide",
+                  "fill": "#9CA3AF"
+                },
+                {
+                  "type": "text",
+                  "id": "iPQDM",
+                  "fill": "#9CA3AF",
+                  "content": "STUDY",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.5
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ojXdz",
+              "name": "tab1c",
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "#4F46E5",
+              "cornerRadius": 26,
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "jHwmK",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "users",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "id": "U7nyn",
+                  "fill": "#FFFFFF",
+                  "content": "COMMUNITY",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.5
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "EKs6Y",
+              "name": "tab1d",
+              "width": "fill_container",
+              "height": "fill_container",
+              "cornerRadius": 26,
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "r2gnQ",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "brain",
+                  "iconFontFamily": "lucide",
+                  "fill": "#9CA3AF"
+                },
+                {
+                  "type": "text",
+                  "id": "k9jCL",
+                  "fill": "#9CA3AF",
+                  "content": "MEMORY",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.5
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "CjXlg",
+              "name": "tab1e",
+              "width": "fill_container",
+              "height": "fill_container",
+              "cornerRadius": 26,
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "1kkr9",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "user",
+                  "iconFontFamily": "lucide",
+                  "fill": "#9CA3AF"
+                },
+                {
+                  "type": "text",
+                  "id": "uQyy4",
+                  "fill": "#9CA3AF",
+                  "content": "PROFILE",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.5
+                }
+              ]
             }
           ]
         }
