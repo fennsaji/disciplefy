@@ -646,7 +646,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           onTap: isLoading
               ? null
               : () => context.read<LearningPathsBloc>().add(
-                    LoadMorePathsForCategory(category: categoryName),
+                    LoadMorePathsForCategory(
+                        category: categoryName, language: widget.language),
                   ),
           borderRadius: BorderRadius.circular(12),
           child: Container(
