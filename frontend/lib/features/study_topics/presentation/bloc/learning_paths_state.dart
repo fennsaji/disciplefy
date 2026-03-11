@@ -40,6 +40,15 @@ class LearningPathsLoaded extends LearningPathsState {
   /// Category names currently loading more paths (per-category load more)
   final List<String> loadingCategories;
 
+  /// Non-null when the picker is showing server search results.
+  final String? searchQuery;
+
+  /// Flat list of search results; non-null only when [searchQuery] is set.
+  final List<LearningPath>? searchResults;
+
+  /// True while a search API call is in flight.
+  final bool isSearching;
+
   const LearningPathsLoaded({
     required this.categories,
     this.enrolledPaths = const [],
@@ -47,6 +56,9 @@ class LearningPathsLoaded extends LearningPathsState {
     this.isFetchingMoreCategories = false,
     this.nextCategoryOffset = 4,
     this.loadingCategories = const [],
+    this.searchQuery,
+    this.searchResults,
+    this.isSearching = false,
   });
 
   @override
@@ -57,6 +69,9 @@ class LearningPathsLoaded extends LearningPathsState {
         isFetchingMoreCategories,
         nextCategoryOffset,
         loadingCategories,
+        searchQuery,
+        searchResults,
+        isSearching,
       ];
 
   /// Whether there are any paths to display
@@ -88,6 +103,10 @@ class LearningPathsLoaded extends LearningPathsState {
     bool? isFetchingMoreCategories,
     int? nextCategoryOffset,
     List<String>? loadingCategories,
+    String? searchQuery,
+    List<LearningPath>? searchResults,
+    bool? isSearching,
+    bool clearSearch = false,
   }) {
     return LearningPathsLoaded(
       categories: categories ?? this.categories,
@@ -97,6 +116,9 @@ class LearningPathsLoaded extends LearningPathsState {
           isFetchingMoreCategories ?? this.isFetchingMoreCategories,
       nextCategoryOffset: nextCategoryOffset ?? this.nextCategoryOffset,
       loadingCategories: loadingCategories ?? this.loadingCategories,
+      searchQuery: clearSearch ? null : (searchQuery ?? this.searchQuery),
+      searchResults: clearSearch ? null : (searchResults ?? this.searchResults),
+      isSearching: clearSearch ? false : (isSearching ?? this.isSearching),
     );
   }
 }

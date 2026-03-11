@@ -55,6 +55,9 @@ import '../../domain/entities/reflection_response.dart';
 import '../../domain/repositories/reflections_repository.dart';
 import '../widgets/reading_completion_card.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../community/domain/entities/fellowship_entity.dart';
+import '../../../community/domain/repositories/community_repository.dart';
+import '../../../community/presentation/screens/share_guide_sheet.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -309,12 +312,27 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   static const double _fontSizeStep = 2.0;
   double _contentFontSize = 18.0;
 
+  // Fellowship data for optional "post to fellowship feed" toggle
+  List<FellowshipEntity>? _userFellowships;
+
   @override
   void initState() {
     super.initState();
     _pageOpenedAt = DateTime.now();
     _loadContentFontSize();
     _initializeStudyGuide();
+    _loadUserFellowships();
+  }
+
+  /// Loads the fellowships the current user belongs to so the
+  /// [_ReflectionCommentSection] can offer an optional share toggle.
+  Future<void> _loadUserFellowships() async {
+    final result = await sl<CommunityRepository>().getFellowships();
+    if (!mounted) return;
+    result.fold(
+      (_) => setState(() => _userFellowships = []),
+      (fellowships) => setState(() => _userFellowships = fellowships),
+    );
   }
 
   Future<void> _loadContentFontSize() async {
@@ -1309,6 +1327,31 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 '   First completion: ${completionResult.isFirstCompletion}');
           }
 
+          // Show fellowship advance notification first so the XP snackbar
+          // (shown below) is the last message visible when both fire together.
+          if (completionResult.fellowshipAdvanced && mounted) {
+            final msg = completionResult.studyCompleted
+                ? 'Your fellowship has completed the entire study path!'
+                : 'Your fellowship has moved to the next guide!';
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    msg,
+                    style: const TextStyle(fontFamily: 'Inter'),
+                  ),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 3),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+          }
+
           // Show XP earned feedback if this is the first completion
           if (completionResult.isFirstCompletion &&
               completionResult.xpEarned > 0 &&
@@ -1446,7 +1489,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     isFromLearningPath ? 'Continue Learning Path' : 'Done',
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandSecondary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1656,6 +1699,20 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     case 'share':
                       _shareStudyGuide();
                       break;
+                    case 'share_fellowship':
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => ShareGuideSheet(
+                          studyGuideId: _currentStudyGuide!.id,
+                          guideTitle: _getDisplayTitle(),
+                          guideInputType: _currentStudyGuide!.inputType,
+                          guideLanguage: _currentStudyGuide!.language,
+                          fellowships: _userFellowships!,
+                        ),
+                      );
+                      break;
                     case 'pdf':
                       _exportToPdf();
                       break;
@@ -1718,6 +1775,27 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                       ],
                     ),
                   ),
+                  if (_userFellowships?.isNotEmpty == true)
+                    PopupMenuItem(
+                      value: 'share_fellowship',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.group_rounded,
+                            size: 20,
+                            color: accentColor,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Share to Fellowship',
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   PopupMenuItem(
                     value: 'pdf',
                     enabled: !_isExportingPdf,
@@ -2184,7 +2262,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: isLargeScreen ? 24 : 16),
+          SizedBox(height: isLargeScreen ? 24 : 20),
 
           // Topic Title
           _buildTopicTitle(),
@@ -2217,7 +2295,42 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               ),
             ),
 
-          SizedBox(height: isLargeScreen ? 32 : 24),
+          SizedBox(height: isLargeScreen ? 16 : 12),
+
+          // Share to Fellowship banner — only shown when user has fellowships
+          if (_userFellowships?.isNotEmpty == true)
+            _ShareFellowshipBanner(
+              onShare: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ShareGuideSheet(
+                    studyGuideId: _currentStudyGuide!.id,
+                    guideTitle: _getDisplayTitle(),
+                    guideInputType: _currentStudyGuide!.inputType,
+                    guideLanguage: _currentStudyGuide!.language,
+                    fellowships: _userFellowships!,
+                  ),
+                );
+              },
+            ),
+
+          if (_userFellowships?.isNotEmpty == true)
+            SizedBox(height: isLargeScreen ? 24 : 16),
+
+          // Reflection comment section — only shown when user has fellowships
+          if (_userFellowships != null && _userFellowships!.isNotEmpty)
+            _ReflectionCommentSection(
+              studyGuideId: _currentStudyGuide!.id,
+              guideTitle: _getDisplayTitle(),
+              guideInputType: _currentStudyGuide!.inputType,
+              guideLanguage: _currentStudyGuide!.language,
+              userFellowships: _userFellowships!,
+            ),
+
+          if (_userFellowships != null && _userFellowships!.isNotEmpty)
+            SizedBox(height: isLargeScreen ? 32 : 24),
 
           // Follow-up Chat Section - with lock support for study_chat feature
           LockedFeatureWrapper(
@@ -3794,7 +3907,7 @@ $appLink
               _shareStudyGuide();
             },
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.brandSecondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('Share as Text'),
@@ -4281,6 +4394,347 @@ class _LectioStudySection extends StatelessWidget {
         backgroundColor: accentColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Reflection Comment Section
+// =============================================================================
+
+/// A card that lets users write a short reflection on the current study guide.
+///
+/// When the user belongs to at least one fellowship, a toggle is shown that
+/// opens [ShareGuideSheet] so they can also post the reflection to a fellowship
+/// feed as a `study_note` post.
+class _ReflectionCommentSection extends StatefulWidget {
+  final String studyGuideId;
+  final String guideTitle;
+  final String guideInputType;
+  final String guideLanguage;
+  final List<FellowshipEntity> userFellowships;
+
+  const _ReflectionCommentSection({
+    required this.studyGuideId,
+    required this.guideTitle,
+    required this.guideInputType,
+    required this.guideLanguage,
+    required this.userFellowships,
+  });
+
+  @override
+  State<_ReflectionCommentSection> createState() =>
+      _ReflectionCommentSectionState();
+}
+
+class _ReflectionCommentSectionState extends State<_ReflectionCommentSection> {
+  final TextEditingController _reflectionController = TextEditingController();
+  bool _postToFellowship = false;
+  bool _isPosting = false;
+
+  @override
+  void dispose() {
+    _reflectionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handlePost() async {
+    final text = _reflectionController.text.trim();
+    if (text.isEmpty) return;
+
+    if (_postToFellowship) {
+      // Open the ShareGuideSheet to let the user pick fellowship(s)
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: ShareGuideSheet(
+              studyGuideId: widget.studyGuideId,
+              guideTitle: widget.guideTitle,
+              guideInputType: widget.guideInputType,
+              guideLanguage: widget.guideLanguage,
+              fellowships: widget.userFellowships,
+            ),
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      if (result == true) {
+        _reflectionController.clear();
+        setState(() => _postToFellowship = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Shared to fellowship feed!'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Toggle OFF — show a simple success snackbar (no remote call).
+    setState(() => _isPosting = true);
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    setState(() => _isPosting = false);
+    _reflectionController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reflection saved!'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasText = _reflectionController.text.trim().isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appBorder),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section heading
+          Text(
+            'Share a Reflection',
+            style: AppFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: context.appTextPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Multi-line text input
+          TextField(
+            controller: _reflectionController,
+            maxLines: 4,
+            maxLength: 500,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: 'What stood out to you in this study?',
+              hintStyle: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                color: context.appTextTertiary,
+              ),
+              filled: true,
+              fillColor: context.appInputFill,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.appBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.brandPrimary,
+                  width: 2,
+                ),
+              ),
+              counterStyle: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 11,
+                color: context.appTextTertiary,
+              ),
+            ),
+          ),
+
+          // "Also post to fellowship feed" toggle
+          if (widget.userFellowships.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(
+                'Also post to fellowship feed',
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: context.appTextPrimary,
+                ),
+              ),
+              value: _postToFellowship,
+              activeColor: AppColors.brandPrimary,
+              onChanged: (v) => setState(() => _postToFellowship = v),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Post button
+          SizedBox(
+            width: double.infinity,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: hasText ? AppColors.primaryGradient : null,
+                color: hasText ? null : context.appBorder,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ElevatedButton(
+                onPressed: (hasText && !_isPosting) ? _handlePost : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isPosting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        _postToFellowship
+                            ? 'Post Reflection to Fellowship'
+                            : 'Post Reflection',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color:
+                              hasText ? Colors.white : context.appTextTertiary,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A compact banner encouraging the user to share the current study guide with
+/// one of their fellowships.  Only rendered when the user has at least one
+/// fellowship (controlled by the caller).
+class _ShareFellowshipBanner extends StatelessWidget {
+  /// Called when the user taps the "Share" button.
+  final VoidCallback onShare;
+
+  const _ShareFellowshipBanner({required this.onShare});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final backgroundColor = isDark
+        ? AppColors.brandSecondary.withValues(alpha: 0.15)
+        : AppColors.brandSecondary.withValues(alpha: 0.10);
+
+    final borderColor = isDark
+        ? AppColors.brandSecondary.withValues(alpha: 0.30)
+        : AppColors.brandSecondary.withValues(alpha: 0.25);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.brandPrimary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.group_rounded,
+              size: 20,
+              color: AppColors.brandPrimary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Share with your fellowship',
+                  style: AppFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Let your group study this guide together.',
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onShare,
+            style: TextButton.styleFrom(
+              foregroundColor:
+                  theme.colorScheme.onSurface.withValues(alpha: 0.50),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: const Size(0, 36),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Share',
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

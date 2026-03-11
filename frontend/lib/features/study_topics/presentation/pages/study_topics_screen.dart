@@ -378,7 +378,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final showInitialLoading = !widget.dataLoadingStarted;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       children: [
         // Section 1: For You — in-progress paths first, then recommended
         ForYouLearningPathsSection(
@@ -424,12 +424,15 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.brandSecondary.withValues(alpha: 0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.route_outlined,
-                  color: AppColors.brandSecondary,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 18,
                 ),
               ),
@@ -650,7 +653,8 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               trailing: isDefault
-                  ? Icon(Icons.check, color: AppColors.brandSecondary)
+                  ? Icon(Icons.check,
+                      color: Theme.of(context).colorScheme.primary)
                   : null,
               onTap: () async {
                 // Set to default (use app language)
@@ -671,7 +675,8 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               return ListTile(
                 title: Text(language.displayName),
                 trailing: isSelected
-                    ? Icon(Icons.check, color: AppColors.brandSecondary)
+                    ? Icon(Icons.check,
+                        color: Theme.of(context).colorScheme.primary)
                     : null,
                 onTap: () async {
                   // Save study content language (does NOT affect app UI)
@@ -901,7 +906,8 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                         parentContext
                             .tr(TranslationKeys.preferenceUpdatedSuccessfully),
                       ),
-                      backgroundColor: AppColors.brandSecondary,
+                      backgroundColor:
+                          Theme.of(parentContext).colorScheme.primary,
                     ),
                   );
                 },

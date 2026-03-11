@@ -158,6 +158,11 @@ class TopicProgressActionResponse {
   final int? xpEarned;
   final bool? isFirstCompletion;
   final String? topicTitle;
+  // Fellowship auto-advance fields (present only when all members completed)
+  final bool fellowshipAdvanced;
+  final String? fellowshipId;
+  final int? newGuideIndex;
+  final bool studyCompleted;
 
   const TopicProgressActionResponse({
     required this.success,
@@ -165,6 +170,10 @@ class TopicProgressActionResponse {
     this.xpEarned,
     this.isFirstCompletion,
     this.topicTitle,
+    this.fellowshipAdvanced = false,
+    this.fellowshipId,
+    this.newGuideIndex,
+    this.studyCompleted = false,
   });
 
   factory TopicProgressActionResponse.fromJson(Map<String, dynamic> json) {
@@ -176,6 +185,10 @@ class TopicProgressActionResponse {
       xpEarned: data?['xp_earned'] as int?,
       isFirstCompletion: data?['is_first_completion'] as bool?,
       topicTitle: data?['topic_title'] as String?,
+      fellowshipAdvanced: data?['fellowship_advanced'] as bool? ?? false,
+      fellowshipId: data?['fellowship_id'] as String?,
+      newGuideIndex: data?['new_guide_index'] as int?,
+      studyCompleted: data?['study_completed'] as bool? ?? false,
     );
   }
 }
