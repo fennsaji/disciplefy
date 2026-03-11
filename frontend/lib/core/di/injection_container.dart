@@ -715,7 +715,11 @@ Future<void> initializeDependencies() async {
   );
 
   sl.registerLazySingleton<TopicProgressRepository>(
-    () => TopicProgressRepositoryImpl(remoteDataSource: sl()),
+    () => TopicProgressRepositoryImpl(
+      remoteDataSource: sl(),
+      learningPathsRepository: sl(),
+      learningPathsHiveCache: sl(),
+    ),
   );
 
   //! Learning Paths (Curated Learning Journeys)

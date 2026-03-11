@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/topic_progress.dart';
+import '../../domain/repositories/learning_paths_repository.dart';
 import '../../domain/repositories/topic_progress_repository.dart';
 import '../datasources/topic_progress_remote_datasource.dart';
+import '../services/learning_paths_cache_service.dart';
 
 /// Implementation of [TopicProgressRepository].
 ///
@@ -12,10 +16,16 @@ import '../datasources/topic_progress_remote_datasource.dart';
 /// and maps exceptions to domain failures.
 class TopicProgressRepositoryImpl implements TopicProgressRepository {
   final TopicProgressRemoteDataSource _remoteDataSource;
+  final LearningPathsRepository _learningPathsRepository;
+  final LearningPathsCacheService _learningPathsHiveCache;
 
   TopicProgressRepositoryImpl({
     required TopicProgressRemoteDataSource remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource;
+    required LearningPathsRepository learningPathsRepository,
+    required LearningPathsCacheService learningPathsHiveCache,
+  })  : _remoteDataSource = remoteDataSource,
+        _learningPathsRepository = learningPathsRepository,
+        _learningPathsHiveCache = learningPathsHiveCache;
 
   @override
   Future<Either<Failure, void>> startTopic(String topicId) async {
@@ -43,6 +53,11 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
         timeSpentSeconds: timeSpentSeconds,
         generationMode: generationMode,
       );
+
+      // Invalidate learning paths cache (both in-memory and persistent Hive)
+      // so progress % in the list refreshes silently on next load.
+      _learningPathsRepository.clearCache();
+      unawaited(_learningPathsHiveCache.clearCache());
 
       return Right(TopicCompletionResult(
         progressId: response.progressId,
