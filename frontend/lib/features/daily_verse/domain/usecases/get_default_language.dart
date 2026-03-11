@@ -16,7 +16,7 @@ class GetDefaultLanguage implements UseCase<VerseLanguage, NoParams> {
   Future<Either<Failure, VerseLanguage>> call(NoParams params) async {
     try {
       final appLanguage =
-          await _languagePreferenceService.getSelectedLanguage();
+          await _languagePreferenceService.getStudyContentLanguage();
       return Right(appLanguage.toVerseLanguage());
     } catch (e) {
       // Return English as fallback

@@ -30,6 +30,7 @@ import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
+import '../bloc/learning_paths_state.dart';
 import '../widgets/for_you_learning_paths_section.dart';
 import '../widgets/learning_path_card.dart';
 import '../widgets/learning_paths_section.dart';
@@ -257,16 +258,40 @@ class _StudyTopicsScreenContent extends StatefulWidget {
 class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
 
     // Handle deep link navigation from notification
     if (widget.topicId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _handleTopicDeepLink(widget.topicId!);
       });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      final bloc = context.read<LearningPathsBloc>();
+      final state = bloc.state;
+      final isSearchActive = state is LearningPathsLoaded &&
+          (state.searchQuery?.isNotEmpty ?? false);
+      if (state is LearningPathsLoaded &&
+          state.hasMoreCategories &&
+          !state.isFetchingMoreCategories &&
+          !isSearchActive) {
+        bloc.add(LoadMoreCategories(language: widget.currentLanguage));
+      }
     }
   }
 
@@ -378,6 +403,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final showInitialLoading = !widget.dataLoadingStarted;
 
     return ListView(
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       children: [
         // Section 1: For You — in-progress paths first, then recommended
@@ -397,6 +423,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 _buildLearningPathsLoadingState(context)
               else
                 LearningPathsSection(
+                  language: widget.currentLanguage,
                   onPathTap: _navigateToLearningPath,
                   onRetry: () => context.read<LearningPathsBloc>().add(
                       RefreshLearningPaths(language: widget.currentLanguage)),

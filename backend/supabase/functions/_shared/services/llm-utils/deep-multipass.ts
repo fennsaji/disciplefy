@@ -47,6 +47,19 @@ export function createDeepPass1Prompt(
     ? `Create a WORD STUDY for: \"${inputValue}\"`
     : `Create a WORD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
+  // Language-aware passage examples to prevent LLM from writing English references
+  // when generating content in Hindi or Malayalam
+  const passageExamples = language === 'hi'
+    ? "'रोमियों 8:1-39', 'यूहन्ना 14:1-27', 'इफिसियों 2:1-10'"
+    : language === 'ml'
+    ? "'റോമർ 8:1-39', 'യോഹന്നാൻ 14:1-27', 'എഫേസ്യർ 2:1-10'"
+    : "'Romans 8:1-39', 'John 14:1-27', 'Ephesians 2:1-10'"
+  const passageOutputExample = language === 'hi'
+    ? 'रोमियों 8:1-39'
+    : language === 'ml'
+    ? 'റോമർ 8:1-39'
+    : 'Romans 8:1-39'
+
   const systemMessage = `You are a Bible scholar creating WORD STUDIES with theological depth.
 
 ${THEOLOGICAL_FOUNDATION}
@@ -74,7 +87,7 @@ Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 {
   "summary": "[130-160 words: Study title, central theme, key questions, theological significance, study objectives]",
   "context": "[50-70 words: MINIMAL - essential theological and biblical framing]",
-  "passage": "⚠️ MANDATORY - Scripture reference for deep study. PREFER LONGER passages with rich theological content (e.g., 'Romans 8:1-39', 'John 14:1-27', 'Ephesians 2:1-10'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
+  "passage": "⚠️ MANDATORY - Scripture reference for deep study. PREFER LONGER passages with rich theological content (e.g., ${passageExamples}). Format: Just the reference, no verse text. DO NOT skip this field.",
   "interpretationPart1": "[700-900 words: EXEGETICAL ANALYSIS with textual analysis, original language insights, theological interpretation, doctrinal implications]"
 }
 
@@ -181,7 +194,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "summary": "[YOUR 130-160 WORD SUMMARY HERE - as specified above]",
   "context": "[YOUR 50-70 WORD CONTEXT HERE - as specified above]",
-  "passage": "[Scripture reference ONLY - e.g., 'Romans 8:1-39' in ${languageConfig.name}]",
+  "passage": "[Scripture reference ONLY - e.g., '${passageOutputExample}']",
   "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 3 paragraphs]"
 }`
 

@@ -35,6 +35,8 @@ interface LearningPathsRequest {
   categoryOffset?: number;
   /** format='flat' keeps the legacy flat-list response for internal use */
   format?: 'flat' | 'categories';
+  /** Optional search term — filters by title/description via ILIKE */
+  search?: string;
 }
 
 interface CategoryPathsRequest {
@@ -470,6 +472,7 @@ async function handleListPathsFlat(
   let includeEnrolled = true;
   let limit = PAGE_SIZE;
   let offset = 0;
+  let search: string | undefined;
 
   try {
     const body: LearningPathsRequest = await req.json();
@@ -477,19 +480,23 @@ async function handleListPathsFlat(
     includeEnrolled = body.includeEnrolled ?? true;
     limit = typeof body.limit === 'number' ? body.limit : PAGE_SIZE;
     offset = typeof body.offset === 'number' ? body.offset : 0;
+    search = body.search?.trim() || undefined;
   } catch {
     // Use defaults
   }
 
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
 
-  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', {
+  const rpcParams: Record<string, unknown> = {
     p_user_id: userId,
     p_language: language,
     p_include_enrolled: includeEnrolled,
     p_limit: limit + 1,
     p_offset: offset,
-  });
+  };
+  if (search) rpcParams['p_search'] = search;
+
+  const { data, error } = await supabaseServiceClient.rpc('get_available_learning_paths', rpcParams);
 
   if (error) {
     console.error('Error fetching learning paths (flat):', error);
