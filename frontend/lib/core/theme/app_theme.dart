@@ -162,7 +162,7 @@ class AppTheme {
         useMaterial3: true,
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.brandPrimary,
+          seedColor: AppColors.brandSecondary,
           brightness: Brightness.dark,
           primary: AppColors
               .brandPrimaryLight, // #A78BFA — 6.5:1 on dark (was #6A4FB6, 2.7:1)
@@ -268,7 +268,7 @@ class AppTheme {
               borderRadius: BorderRadius.circular(8),
             ),
             minimumSize: const Size(120, 48),
-            backgroundColor: AppColors.brandPrimary,
+            backgroundColor: AppColors.brandSecondary,
             foregroundColor: AppColors.onGradient,
           ),
         ),
@@ -283,7 +283,7 @@ class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.brandPrimary),
+            borderSide: BorderSide(color: AppColors.brandSecondary),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -17,11 +17,28 @@ class TopicCompletionResult {
   /// Title of the completed topic
   final String? topicTitle;
 
+  /// Whether all active fellowship members have now completed this guide,
+  /// causing the fellowship to auto-advance to the next guide.
+  final bool fellowshipAdvanced;
+
+  /// Fellowship ID that advanced (null when [fellowshipAdvanced] is false)
+  final String? fellowshipId;
+
+  /// The new guide index after advancement (null when [fellowshipAdvanced] is false)
+  final int? newGuideIndex;
+
+  /// Whether the entire fellowship study path has been completed
+  final bool studyCompleted;
+
   const TopicCompletionResult({
     this.progressId,
     required this.xpEarned,
     required this.isFirstCompletion,
     this.topicTitle,
+    this.fellowshipAdvanced = false,
+    this.fellowshipId,
+    this.newGuideIndex,
+    this.studyCompleted = false,
   });
 }
 

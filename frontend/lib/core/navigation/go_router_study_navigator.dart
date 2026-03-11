@@ -61,6 +61,10 @@ class GoRouterStudyNavigator implements StudyNavigator {
           // All these go back to study topics screen
           context.go(AppRoutes.studyTopics);
           break;
+        case StudyNavigationSource.fellowship:
+          // Fallback to community tab if stack is empty
+          context.go(AppRoutes.community);
+          break;
       }
     }
   }

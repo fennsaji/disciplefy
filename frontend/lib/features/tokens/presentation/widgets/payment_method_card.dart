@@ -26,7 +26,8 @@ class PaymentMethodCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: paymentMethod.isDefault
-              ? BorderSide(color: AppColors.brandPrimary, width: 2)
+              ? BorderSide(
+                  color: Theme.of(context).colorScheme.primary, width: 2)
               : BorderSide.none,
         ),
         child: Padding(
@@ -36,7 +37,7 @@ class PaymentMethodCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _buildMethodIcon(),
+                  _buildMethodIcon(context),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -60,7 +61,7 @@ class PaymentMethodCard extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.brandPrimary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -172,9 +173,9 @@ class PaymentMethodCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMethodIcon() {
+  Widget _buildMethodIcon(BuildContext context) {
     IconData iconData;
-    Color iconColor = AppColors.brandPrimary;
+    Color iconColor = Theme.of(context).colorScheme.primary;
 
     switch (paymentMethod.methodType) {
       case 'card':

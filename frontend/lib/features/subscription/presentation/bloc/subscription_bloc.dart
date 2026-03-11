@@ -291,7 +291,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           _hasAttemptedAutoRestore = true;
           Logger.debug(
               '🔄 [BLOC] No active subscription — auto-restoring IAP purchases');
-          _iapService!.restorePurchases();
+          _iapService.restorePurchases();
         }
 
         // Play Store sync: if backend has an active IAP subscription, run a
@@ -869,7 +869,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
           // Acknowledge ONLY after backend confirms — keeps purchase in queue
           // on failure so Google Play re-delivers it automatically next launch.
-          _iapService?.acknowledgePurchase(purchase);
+          _iapService.acknowledgePurchase(purchase);
 
           // Clear pending purchase tracking
           _pendingPurchasePlanCode = null;
@@ -1193,7 +1193,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     Logger.debug('🛒 [BLOC] Setting up IAP callbacks');
 
     // Handle purchase updates (success/failure)
-    _iapService!.onPurchaseUpdate = (PurchaseDetails purchase) {
+    _iapService.onPurchaseUpdate = (PurchaseDetails purchase) {
       Logger.debug(
           '🛒 [BLOC] IAP Purchase update: ${purchase.productID}, status: ${purchase.status}');
 
@@ -1205,20 +1205,20 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     };
 
     // Handle purchase errors
-    _iapService!.onPurchaseError = (String error) {
+    _iapService.onPurchaseError = (String error) {
       Logger.debug('🛒 [BLOC] IAP Purchase error: $error');
       // Add event instead of calling method directly
       add(IAPPurchaseError(error));
     };
 
     // Handle purchase cancellation (user dismissed the purchase sheet)
-    _iapService!.onPurchaseCancelled = () {
+    _iapService.onPurchaseCancelled = () {
       Logger.debug('🛒 [BLOC] IAP Purchase cancelled by user');
       add(const IAPPurchaseCancelled());
     };
 
     // Handle sync-mode restore completion (silent background sync)
-    _iapService!.onSyncRestoreCompleted = (purchases) {
+    _iapService.onSyncRestoreCompleted = (purchases) {
       Logger.debug(
           '🔄 [BLOC] Sync restore completed — ${purchases.length} purchase(s)');
       add(SyncPlayStoreSubscription(
@@ -1259,7 +1259,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       Logger.debug('🛒 [BLOC] Fetching product from store: $productId');
 
       // Fetch products from store
-      final products = await _iapService!.getProducts({productId});
+      final products = await _iapService.getProducts({productId});
 
       if (products.isEmpty) {
         throw Exception('Product not found in store: $productId');
@@ -1270,7 +1270,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           '🛒 [BLOC] Product found: ${product.title} - ${product.price}');
 
       // Initiate purchase
-      await _iapService!.purchaseProduct(product);
+      await _iapService.purchaseProduct(product);
 
       Logger.debug('✅ [BLOC] Purchase initiated successfully');
     } catch (e) {

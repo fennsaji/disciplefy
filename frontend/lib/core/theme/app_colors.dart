@@ -321,4 +321,17 @@ extension AppColorsTheme on BuildContext {
       _isDark ? AppColors.darkDivider : AppColors.lightDivider;
   Color get appInputFill =>
       _isDark ? AppColors.darkInputFill : AppColors.lightInputFill;
+
+  /// Theme-aware primary brand color — adapts to light/dark mode automatically.
+  Color get appPrimary => Theme.of(this).colorScheme.primary;
+
+  /// Theme-aware primary brand color with opacity.
+  Color appPrimaryWith(double opacity) =>
+      Theme.of(this).colorScheme.primary.withValues(alpha: opacity);
+
+  /// Theme-aware interactive/button color.
+  /// Dark mode uses [AppColors.brandSecondary] (darker indigo) instead of the
+  /// light-lavender [colorScheme.primary] so buttons have proper visual weight.
+  Color get appInteractive =>
+      _isDark ? AppColors.brandSecondary : AppColors.brandPrimary;
 }

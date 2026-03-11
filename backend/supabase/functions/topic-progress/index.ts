@@ -45,6 +45,11 @@ interface CompleteProgressResponse {
   xp_earned: number;
   is_first_completion: boolean;
   topic_title: string;
+  // Optional fellowship auto-advance fields populated when the group advances
+  fellowship_advanced?: boolean;
+  fellowship_id?: string;
+  new_guide_index?: number;
+  study_completed?: boolean;
 }
 
 interface UpdateTimeResponse {
@@ -330,6 +335,126 @@ async function maybeTriggerScoreRecalculation(
 }
 
 // ============================================================================
+// Fellowship Auto-Advance
+// ============================================================================
+
+interface FellowshipAdvanceResult {
+  fellowship_id: string
+  new_guide_index: number
+  study_completed: boolean
+}
+
+async function maybeTriggerFellowshipAutoAdvance(
+  services: ServiceContainer,
+  userId: string,
+  topicId: string,
+  isFirstCompletion: boolean,
+): Promise<FellowshipAdvanceResult | null> {
+  if (!isFirstCompletion) return null
+
+  try {
+    const db = services.supabaseServiceClient
+
+    const { data: memberships } = await db
+      .from('fellowship_members')
+      .select('fellowship_id')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (!memberships || memberships.length === 0) return null
+
+    const fellowshipIds = memberships.map((m: { fellowship_id: string }) => m.fellowship_id)
+
+    const { data: studies } = await db
+      .from('fellowship_study')
+      .select('id, fellowship_id, learning_path_id, current_guide_index')
+      .in('fellowship_id', fellowshipIds)
+      .is('completed_at', null)
+
+    if (!studies || studies.length === 0) return null
+
+    for (const study of studies) {
+      const { data: topicRow } = await db
+        .from('learning_path_topics')
+        .select('id')
+        .eq('learning_path_id', study.learning_path_id)
+        .eq('position', study.current_guide_index)
+        .maybeSingle()
+
+      if (!topicRow || topicRow.id !== topicId) continue
+
+      // Muted members are intentionally included — muting restricts posting only,
+      // not study participation. All active members must complete to trigger advance.
+      const { data: members } = await db
+        .from('fellowship_members')
+        .select('user_id')
+        .eq('fellowship_id', study.fellowship_id)
+        .eq('is_active', true)
+
+      if (!members || members.length === 0) continue
+
+      const memberUserIds = members.map((m: { user_id: string }) => m.user_id)
+
+      const { count: completedCount } = await db
+        .from('user_topic_progress')
+        .select('id', { count: 'exact', head: true })
+        .eq('topic_id', topicId)
+        .in('user_id', memberUserIds)
+        .not('completed_at', 'is', null)
+
+      if (completedCount !== memberUserIds.length) continue
+
+      const { count: totalTopics } = await db
+        .from('learning_path_topics')
+        .select('id', { count: 'exact', head: true })
+        .eq('learning_path_id', study.learning_path_id)
+
+      if (!totalTopics) continue
+
+      const nextIndex = study.current_guide_index + 1
+      const isComplete = nextIndex >= totalTopics
+
+      const updateData = isComplete
+        ? { completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+        : { current_guide_index: nextIndex, updated_at: new Date().toISOString() }
+
+      const { data: updatedRows, error: updateError } = await db
+        .from('fellowship_study')
+        .update(updateData)
+        .eq('id', study.id)
+        .eq('current_guide_index', study.current_guide_index)
+        .select('id')
+
+      if (updateError) {
+        console.warn('[topic-progress] Fellowship auto-advance update error (non-fatal):', updateError)
+        continue
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        // Optimistic lock lost — another concurrent request already advanced
+        console.log(`[topic-progress] Fellowship ${study.fellowship_id} already advanced by concurrent request, skipping`)
+        continue
+      }
+
+      console.log(
+        `[topic-progress] Fellowship ${study.fellowship_id} auto-advanced to guide ${isComplete ? 'COMPLETE' : nextIndex}`
+      )
+
+      return {
+        fellowship_id: study.fellowship_id,
+        new_guide_index: isComplete ? study.current_guide_index : nextIndex,
+        study_completed: isComplete,
+      }
+    }
+
+    return null
+  } catch (err) {
+    console.warn('[topic-progress] Fellowship auto-advance error (non-fatal):', err)
+    return null
+  }
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -368,20 +493,33 @@ async function handleTopicProgress(
       result = await handleStartProgress(services, userId, request.topic_id);
       break;
 
-    case 'complete':
+    case 'complete': {
       result = await handleCompleteProgress(
         services,
         userId,
         request.topic_id,
         request.time_spent_seconds
       );
-      // Trigger non-fatal score recalculation after topic is marked complete
       await maybeTriggerScoreRecalculation(
         services,
         userId,
         (result as CompleteProgressResponse).is_first_completion
       );
+      const fellowshipAdvance = await maybeTriggerFellowshipAutoAdvance(
+        services,
+        userId,
+        request.topic_id,
+        (result as CompleteProgressResponse).is_first_completion
+      );
+      if (fellowshipAdvance) {
+        const typed = result as CompleteProgressResponse;
+        typed.fellowship_advanced = true;
+        typed.fellowship_id = fellowshipAdvance.fellowship_id;
+        typed.new_guide_index = fellowshipAdvance.new_guide_index;
+        typed.study_completed = fellowshipAdvance.study_completed;
+      }
       break;
+    }
 
     case 'update_time':
       if (request.time_spent_seconds === undefined) {

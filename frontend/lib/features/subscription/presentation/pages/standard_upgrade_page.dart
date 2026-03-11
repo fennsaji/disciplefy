@@ -36,8 +36,6 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   List<String> _features = [];
   List<PlanComparisonRow> _comparisonRows = [];
 
-  static const Color _standardPurple = AppColors.brandPrimary;
-
   @override
   void initState() {
     super.initState();
@@ -125,7 +123,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
           context.tr(TranslationKeys.upgradeToStandard),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
-            color: _standardPurple,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         centerTitle: true,
@@ -238,25 +236,28 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _standardPurple.withOpacity(0.1),
-            _standardPurple.withOpacity(0.2),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _standardPurple.withOpacity(0.3), width: 1.5),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            width: 1.5),
       ),
       child: Column(
         children: [
-          Icon(Icons.auto_awesome_rounded, size: 64, color: _standardPurple),
+          Icon(Icons.auto_awesome_rounded,
+              size: 64, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 12),
           Text(
             _planName,
             style: AppFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: _standardPurple,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 8),
@@ -283,7 +284,10 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
-            colors: [_standardPurple, _standardPurple.withOpacity(0.8)],
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -382,7 +386,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: _standardPurple,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 16),
@@ -401,10 +405,11 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _standardPurple.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.check_rounded, size: 18, color: _standardPurple),
+          child: Icon(Icons.check_rounded,
+              size: 18, color: Theme.of(context).colorScheme.primary),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -439,7 +444,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: _standardPurple,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(height: 16),
@@ -486,7 +491,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: _standardPurple,
+                color: Theme.of(context).colorScheme.primary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -499,13 +504,14 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   Widget _buildActionButton(SubscriptionState state) {
     if (state is SubscriptionEligibilityChecked && !state.canSubscribe) {
       return Card(
-        color: _standardPurple.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Icon(Icons.info_outline_rounded, color: _standardPurple),
+              Icon(Icons.info_outline_rounded,
+                  color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -529,7 +535,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,
       style: ElevatedButton.styleFrom(
-        backgroundColor: _standardPurple,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -595,14 +601,19 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: _standardPurple.withOpacity(0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _standardPurple.withOpacity(0.3)),
+              border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
                 Icon(Icons.info_outline_rounded,
-                    color: _standardPurple, size: 20),
+                    color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

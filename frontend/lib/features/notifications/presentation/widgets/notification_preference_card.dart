@@ -26,7 +26,7 @@ class NotificationPreferenceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandPrimary;
+    final primary = Theme.of(context).colorScheme.primary;
     const primaryLight = AppColors.brandPrimaryLight;
 
     final cardBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;

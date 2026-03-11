@@ -112,6 +112,7 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
           ],
         ),
         body: ListView(
+          padding: const EdgeInsets.only(top: 20),
           children: [
             // Language Section
             _buildSectionHeader(

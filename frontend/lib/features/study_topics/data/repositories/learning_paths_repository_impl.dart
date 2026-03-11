@@ -39,9 +39,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     bool forceRefresh = false,
     int limit = 10,
     int offset = 0,
+    String? search,
   }) async {
-    // Only use cache for first page without force-refresh
-    if (!forceRefresh && offset == 0 && _isCacheValid()) {
+    // Only use cache for non-search first-page requests without force-refresh
+    if (!forceRefresh && offset == 0 && search == null && _isCacheValid()) {
       return Right(_cachedPaths!);
     }
 
@@ -51,12 +52,13 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         includeEnrolled: includeEnrolled,
         limit: limit,
         offset: offset,
+        search: search,
       );
 
       final result = response.toEntity();
 
-      // Cache only the first page
-      if (offset == 0) {
+      // Cache only non-search first-page results
+      if (offset == 0 && search == null) {
         _cachedPaths = result;
         _cacheTimestamp = DateTime.now();
       }
