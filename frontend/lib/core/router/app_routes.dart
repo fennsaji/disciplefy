@@ -80,4 +80,13 @@ class AppRoutes {
 
   // Public Pages
   static const String pricing = '/pricing';
+
+  // Community (Fellowship)
+  static const String community = '/community';
+  static const String communityJoin = '/community/join';
+  static const String communityCreate = '/community/create';
+  static const String fellowshipHome = '/community/:fellowshipId';
+  static const String fellowshipFeed = '/community/:fellowshipId/feed';
+  static const String fellowshipLessons = '/community/:fellowshipId/lessons';
+  static const String fellowshipMembers = '/community/:fellowshipId/members';
 }
