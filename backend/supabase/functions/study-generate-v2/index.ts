@@ -241,9 +241,10 @@ async function streamAndParsePass(
   emit: (data: string) => void,
   totalSections: number,
   emitImmediately: string[] = []
-): Promise<{ data: Record<string, unknown>, usage: LLMUsageMetadata }> {
+): Promise<{ data: Record<string, unknown>, usage: LLMUsageMetadata, emittedSections: Set<string> }> {
   const parser = new StreamingJsonParser()
   let accumulatedChunks = ''
+  const emittedSections = new Set<string>()
   let lastKeepaliveTime = Date.now()
   const KEEPALIVE_INTERVAL = 15000 // Send keepalive every 15 seconds
 
@@ -275,6 +276,7 @@ async function streamAndParsePass(
       if (emitImmediately.includes(section.type)) {
         console.log(`[LLM-MultiPass] 📤 Emitting ${section.type} from ${passName}`)
         emit(createSectionEvent(section, totalSections))
+        emittedSections.add(section.type)
       }
     }
   }
@@ -284,7 +286,7 @@ async function streamAndParsePass(
   const { cleanJSONResponse } = await import('../_shared/services/llm-utils/response-parser.ts')
   const data = JSON.parse(cleanJSONResponse(accumulatedChunks))
 
-  return { data, usage: usage! }
+  return { data, usage: usage!, emittedSections }
 }
 
 /**
@@ -1354,6 +1356,15 @@ async function handleStudyGenerateV2(
               costContext.addCall(pass1Result.usage)
               console.log(`[LLM-MultiPass] ✅ ${modeName} Pass 1 complete (streamed)`)
               console.log(`[LLM-MultiPass] Pass 1 fields:`, Object.keys(pass1Data))
+
+              // Safety net: emit passage if LLM generated it but streaming parser missed it
+              // (can happen when LLM omits passage during streaming then includes it in final JSON)
+              if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
+                console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
+                emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))
+              } else if (!pass1Data.passage) {
+                console.warn(`[LLM-MultiPass] ⚠️ LLM did not generate passage field in Pass 1`)
+              }
 
               // PROGRESSIVE SAVE: Save Pass 1 sections to in-progress table
               await studyGuideRepository.updateInProgressSections(inProgressId, {

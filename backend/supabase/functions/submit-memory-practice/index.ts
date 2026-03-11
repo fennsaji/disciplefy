@@ -844,11 +844,32 @@ async function handleSubmitMemoryPractice(
     preferred_practice_mode: body.practice_mode,
     updated_at: now
   }
+
+  // Track what values will actually be persisted (used in response below)
+  let savedNextReviewDate: string = memoryVerse.next_review_date
+  let savedRepetitions: number = memoryVerse.repetitions
+
   if (!alreadyReviewedToday && !skipSM2) {
+    // Hard modes: full SM-2 update (ease_factor + interval + repetitions + next_review_date)
     verseUpdate.ease_factor = sm2Result.easeFactor
     verseUpdate.interval_days = sm2Result.interval
     verseUpdate.repetitions = sm2Result.repetitions
     verseUpdate.next_review_date = sm2Result.nextReviewDate
+    savedNextReviewDate = sm2Result.nextReviewDate
+    savedRepetitions = sm2Result.repetitions
+  } else if (!alreadyReviewedToday && skipSM2) {
+    // Easy/medium modes: advance next_review_date by the current interval and
+    // increment repetitions so the card shows progress — but do NOT touch
+    // ease_factor or interval_days so SM-2 scheduling difficulty is preserved.
+    const newRepetitions = memoryVerse.repetitions + 1
+    const nextDate = new Date()
+    nextDate.setDate(nextDate.getDate() + Math.max(1, memoryVerse.interval_days))
+    const nextReviewDateStr = nextDate.toISOString()
+
+    verseUpdate.repetitions = newRepetitions
+    verseUpdate.next_review_date = nextReviewDateStr
+    savedNextReviewDate = nextReviewDateStr
+    savedRepetitions = newRepetitions
   }
   const { error: updateError } = await services.supabaseServiceClient
     .from('memory_verses')
@@ -933,13 +954,14 @@ async function handleSubmitMemoryPractice(
     }
   }
 
-  // Build response data
+  // Build response data — use savedNextReviewDate/savedRepetitions which reflect
+  // what was actually written to the DB (including easy/medium mode updates).
   const responseData: SubmitPracticeData = {
     success: true,
-    next_review_date: sm2Result.nextReviewDate,
+    next_review_date: savedNextReviewDate,
     interval_days: sm2Result.interval,
     ease_factor: sm2Result.easeFactor,
-    repetitions: sm2Result.repetitions,
+    repetitions: savedRepetitions,
     total_reviews: memoryVerse.total_reviews + 1,
     mastery_level: mastery.level,
     mastery_percentage: mastery.percentage,

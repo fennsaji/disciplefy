@@ -158,11 +158,14 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     Logger.debug(
         '[LearningPathsRepo] getLearningPathDetails called for $pathId with forceRefresh: $forceRefresh');
 
+    // Cache key includes language so a language change always fetches fresh data
+    final cacheKey = '${pathId}_$language';
+
     // Check cache
-    if (!forceRefresh && _isDetailsCacheValid(pathId)) {
+    if (!forceRefresh && _isDetailsCacheValid(cacheKey)) {
       Logger.debug(
-          '[LearningPathsRepo] Returning cached path details (progress: ${_detailsCache[pathId]?.progressPercentage}%)');
-      return Right(_detailsCache[pathId]!);
+          '[LearningPathsRepo] Returning cached path details (progress: ${_detailsCache[cacheKey]?.progressPercentage}%)');
+      return Right(_detailsCache[cacheKey]!);
     }
 
     Logger.debug('[LearningPathsRepo] Fetching fresh path details from API...');
@@ -176,16 +179,16 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
           '[LearningPathsRepo] Got fresh path details - progress: ${detail.progressPercentage}%');
 
       // Update cache
-      _detailsCache[pathId] = detail;
-      _detailsCacheTimestamps[pathId] = DateTime.now();
+      _detailsCache[cacheKey] = detail;
+      _detailsCacheTimestamps[cacheKey] = DateTime.now();
 
       return Right(detail);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
       // Return cached data if available
-      if (_detailsCache.containsKey(pathId)) {
-        return Right(_detailsCache[pathId]!);
+      if (_detailsCache.containsKey(cacheKey)) {
+        return Right(_detailsCache[cacheKey]!);
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
@@ -259,12 +262,12 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     return DateTime.now().difference(_cacheTimestamp!) < _cacheDuration;
   }
 
-  bool _isDetailsCacheValid(String pathId) {
-    if (!_detailsCache.containsKey(pathId) ||
-        !_detailsCacheTimestamps.containsKey(pathId)) {
+  bool _isDetailsCacheValid(String cacheKey) {
+    if (!_detailsCache.containsKey(cacheKey) ||
+        !_detailsCacheTimestamps.containsKey(cacheKey)) {
       return false;
     }
-    return DateTime.now().difference(_detailsCacheTimestamps[pathId]!) <
+    return DateTime.now().difference(_detailsCacheTimestamps[cacheKey]!) <
         _cacheDuration;
   }
 
