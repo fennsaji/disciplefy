@@ -290,7 +290,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
           state.hasMoreCategories &&
           !state.isFetchingMoreCategories &&
           !isSearchActive) {
-        bloc.add(const LoadMoreCategories());
+        bloc.add(LoadMoreCategories(language: widget.currentLanguage));
       }
     }
   }
