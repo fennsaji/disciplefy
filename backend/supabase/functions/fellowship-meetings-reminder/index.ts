@@ -62,7 +62,7 @@ serve(async (req: Request): Promise<Response> => {
   let sent = 0
 
   for (const reminder of reminders) {
-    const meeting = reminder.fellowship_meetings as {
+    const meeting = reminder.fellowship_meetings as unknown as {
       fellowship_id: string
       title: string
       starts_at: string

@@ -38,7 +38,7 @@ interface MemberRow {
 
 interface StudyRow {
   fellowship_id: string
-  learning_paths: { title: string | null } | null
+  learning_paths: { title: string | null }[] | null
 }
 
 async function handleDiscoverFellowships(
@@ -240,7 +240,7 @@ async function handleDiscoverFellowships(
   for (const row of (studyRows as StudyRow[] ?? [])) {
     const fid = row.fellowship_id
     if (!studyTitleMap.has(fid)) {
-      const title: string | null = row.learning_paths?.title ?? null
+      const title: string | null = row.learning_paths?.[0]?.title ?? null
       studyTitleMap.set(fid, title)
     }
   }
