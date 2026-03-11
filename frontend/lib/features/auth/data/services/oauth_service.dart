@@ -128,9 +128,9 @@ class OAuthService {
       Logger.debug(
           '🔐 [OAUTH SERVICE] - Using pure PKCE flow (NO custom Flutter callbacks)');
 
-      // CRITICAL FIX: Pure native Supabase PKCE flow
-      // With backend config fixed, OAuth will redirect to Supabase auth endpoint
-      // This enables proper PKCE token exchange and session establishment
+      // Pure native Supabase PKCE flow — no sensitive scopes at sign-in.
+      // Google Meet links are generated via the Meet REST API using the
+      // service account, so calendar.events scope is not needed here.
       final response = await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         // NO redirectTo - Supabase will use its configured auth endpoint
@@ -299,7 +299,7 @@ class OAuthService {
     if (!kIsWeb) {
       try {
         await GoogleSignIn.instance.signOut();
-        Logger.error('🔐 [OAUTH SERVICE] ✅ Signed out from Google');
+        Logger.debug('🔐 [OAUTH SERVICE] ✅ Signed out from Google');
       } catch (e) {
         Logger.debug('🔐 [OAUTH SERVICE] ⚠️ Error signing out from Google: $e');
       }

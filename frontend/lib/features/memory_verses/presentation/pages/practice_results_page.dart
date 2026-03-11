@@ -172,11 +172,9 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
           ),
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
               child: Column(
                 children: [
-                  const SizedBox(height: 16),
-
                   // Accuracy Circle
                   _buildAccuracyCircle(theme, accuracyColor),
                   const SizedBox(height: 24),

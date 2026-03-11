@@ -129,7 +129,7 @@ class _NotificationSettingsView extends StatelessWidget {
             if (state is NotificationLoading) {
               return Center(
                 child: CircularProgressIndicator(
-                  color: AppColors.brandPrimary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               );
             }
@@ -338,7 +338,7 @@ class _NotificationSettingsView extends StatelessWidget {
     ValueChanged<TimeOfDay> onPicked,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandPrimary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
       onTap: () async {
@@ -393,7 +393,7 @@ class _NotificationSettingsView extends StatelessWidget {
 
   Widget _buildPermissionCard(BuildContext context, bool permissionsGranted) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandPrimary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     final bgColor = permissionsGranted
         ? (isDark ? primary.withOpacity(0.12) : const Color(0xFFEEF2FF))
@@ -504,7 +504,7 @@ class _NotificationSettingsView extends StatelessWidget {
 
   Widget _buildInfoSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandPrimary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -603,7 +603,7 @@ class _NotificationSettingsView extends StatelessWidget {
               label:
                   Text(context.tr(TranslationKeys.notificationsSettingsRetry)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

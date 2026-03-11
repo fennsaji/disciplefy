@@ -388,7 +388,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             icon: const Icon(Icons.play_arrow),
             label: Text(context.tr('voice_buddy.start_conversation')),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.brandSecondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
@@ -822,7 +822,7 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
             );
           },
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.brandSecondary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
           ),
           child: Text(context.tr('voice_buddy.conversation.end_button')),

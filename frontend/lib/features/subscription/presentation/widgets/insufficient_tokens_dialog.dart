@@ -59,7 +59,7 @@ class InsufficientTokensDialog extends StatelessWidget {
             const SizedBox(height: 16),
             _buildUpgradePlans(isDark, colorScheme, theme),
             const SizedBox(height: 16),
-            _buildInfoBox(isDark),
+            _buildInfoBox(isDark, colorScheme),
             const SizedBox(height: 20),
             if (tokenStatus.canPurchaseTokens) ...[
               _buildPurchaseTokensButton(context, isDark, colorScheme),
@@ -79,12 +79,12 @@ class InsufficientTokensDialog extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.brandSecondary.withOpacity(0.15),
+            color: colorScheme.primary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.token_rounded,
-            color: AppColors.brandSecondary,
+            color: colorScheme.primary,
             size: 28,
           ),
         ),
@@ -203,7 +203,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           isDark: isDark,
           colorScheme: colorScheme,
           icon: Icons.info_outline,
-          iconColor: AppColors.brandSecondary,
+          iconColor: colorScheme.primary,
           label: 'Plus',
           detail: '50 tokens/day  ₹149/month',
         ),
@@ -212,7 +212,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           isDark: isDark,
           colorScheme: colorScheme,
           icon: Icons.info_outline,
-          iconColor: AppColors.brandSecondary,
+          iconColor: colorScheme.primary,
           label: 'Premium',
           detail: 'Unlimited  ₹499/month',
         ),
@@ -262,14 +262,14 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBox(bool isDark) {
+  Widget _buildInfoBox(bool isDark, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.brandSecondary.withOpacity(0.1),
+        color: colorScheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.brandSecondary.withOpacity(0.25),
+          color: colorScheme.primary.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
@@ -278,7 +278,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           Icon(
             Icons.info_outline,
             size: 18,
-            color: AppColors.brandSecondary,
+            color: colorScheme.primary,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -288,7 +288,7 @@ class InsufficientTokensDialog extends StatelessWidget {
                 fontSize: 13,
                 color: isDark
                     ? Colors.white.withOpacity(0.75)
-                    : AppColors.brandSecondary,
+                    : colorScheme.primary,
                 height: 1.4,
               ),
             ),
@@ -312,7 +312,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               .push(AppRoutes.tokenPurchase, extra: tokenStatus);
         },
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.brandSecondary),
+          side: BorderSide(color: Theme.of(context).colorScheme.primary),
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -323,7 +323,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.brandSecondary,
+            color: colorScheme.primary,
           ),
         ),
       ),
@@ -366,7 +366,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               GoRouter.of(context).push(AppRoutes.pricing);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandSecondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
