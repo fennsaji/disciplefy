@@ -164,34 +164,24 @@ class _AppShellState extends State<AppShell>
   }
 
   /// Maps visible tab index to actual router branch index
-  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden
+  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden.
+  /// Community tab (branch 3) is always visible and always maps last.
   int _mapTabIndexToBranchIndex(int tabIndex) {
     final tabs = _getFilteredTabs();
 
-    // Determine which tabs are visible
-    final hasHome = tabs.any((tab) => tab.label == 'Home');
+    // Determine which optional tabs are visible
     final hasGenerate = tabs.any((tab) => tab.label == 'Generate');
     final hasTopics = tabs.any((tab) => tab.label == 'Topics');
 
-    // Case 1: All tabs visible - 1:1 mapping
-    if (tabs.length == 3) {
-      return tabIndex; // Home→0, Generate→1, Topics→2
-    }
+    // Build an ordered list of branch indices for visible tabs.
+    // Branches: 0=Home, 1=Generate, 2=Topics, 3=Community (always shown)
+    final branchOrder = <int>[0]; // Home always first
+    if (hasGenerate) branchOrder.add(1);
+    if (hasTopics) branchOrder.add(2);
+    branchOrder.add(3); // Community always last
 
-    // Case 2: Only Home visible
-    if (tabs.length == 1) {
-      return 0; // Home→0
-    }
-
-    // Case 3: Two tabs visible - determine which combination
-    if (hasHome && hasGenerate && !hasTopics) {
-      // Home + Generate visible, Topics hidden
-      return tabIndex; // Home→0, Generate→1
-    }
-
-    if (hasHome && !hasGenerate && hasTopics) {
-      // Home + Topics visible, Generate hidden
-      return tabIndex == 0 ? 0 : 2; // Home→0, Topics→2
+    if (tabIndex >= 0 && tabIndex < branchOrder.length) {
+      return branchOrder[tabIndex];
     }
 
     // Fallback to home
@@ -199,43 +189,25 @@ class _AppShellState extends State<AppShell>
   }
 
   /// Maps router branch index to visible tab index
-  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden
+  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden.
+  /// Community tab (branch 3) is always visible and always maps last.
   int _mapBranchIndexToTabIndex(int branchIndex) {
     final tabs = _getFilteredTabs();
 
-    // Determine which tabs are visible
-    final hasHome = tabs.any((tab) => tab.label == 'Home');
+    // Determine which optional tabs are visible
     final hasGenerate = tabs.any((tab) => tab.label == 'Generate');
     final hasTopics = tabs.any((tab) => tab.label == 'Topics');
 
-    // Case 1: All tabs visible - 1:1 mapping
-    if (tabs.length == 3) {
-      return branchIndex; // 0→Home(0), 1→Generate(1), 2→Topics(2)
-    }
+    // Build an ordered list of branch indices for visible tabs.
+    final branchOrder = <int>[0]; // Home always first
+    if (hasGenerate) branchOrder.add(1);
+    if (hasTopics) branchOrder.add(2);
+    branchOrder.add(3); // Community always last
 
-    // Case 2: Only Home visible
-    if (tabs.length == 1) {
-      return 0; // Always map to Home
-    }
+    final tabIndex = branchOrder.indexOf(branchIndex);
+    if (tabIndex != -1) return tabIndex;
 
-    // Case 3: Two tabs visible - determine which combination
-    if (hasHome && hasGenerate && !hasTopics) {
-      // Home + Generate visible, Topics hidden
-      if (branchIndex == 0) return 0; // Home→0
-      if (branchIndex == 1) return 1; // Generate→1
-      // If navigating to hidden Topics (branch 2), redirect to Home
-      return 0;
-    }
-
-    if (hasHome && !hasGenerate && hasTopics) {
-      // Home + Topics visible, Generate hidden
-      if (branchIndex == 0) return 0; // Home→0
-      if (branchIndex == 2) return 1; // Topics→1
-      // If navigating to hidden Generate (branch 1), redirect to Home
-      return 0;
-    }
-
-    // Fallback to home
+    // If navigating to a hidden branch (e.g. Generate when disabled), redirect to Home
     return 0;
   }
 
@@ -389,6 +361,9 @@ class _AppShellState extends State<AppShell>
     if (!shouldHideTopics) {
       filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[2]);
     }
+
+    // Always add Community tab (index 3)
+    filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[3]);
 
     return filteredTabs;
   }

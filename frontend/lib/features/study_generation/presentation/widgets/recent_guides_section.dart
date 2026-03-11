@@ -104,7 +104,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.brandSecondary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -133,7 +133,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.brandSecondary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         ),
       ),
       child: Column(
@@ -203,7 +203,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.brandSecondary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         ),
       ),
       child: Column(
@@ -211,7 +211,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           Icon(
             Icons.person_outline,
             size: 40,
-            color: AppColors.brandSecondary.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 8),
           Text(
@@ -296,8 +296,8 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             onPressed: () => _bloc
                 ?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.brandSecondary,
-              side: BorderSide(color: AppColors.brandSecondary),
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              side: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
             icon: const Icon(Icons.refresh),
             label: Text(context.tr(TranslationKeys.homeTryAgain)),

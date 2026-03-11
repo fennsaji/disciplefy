@@ -125,7 +125,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
     final longestStreak = statistics['longest_streak'] as int? ?? 0;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

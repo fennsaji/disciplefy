@@ -179,7 +179,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
               // Statistics Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
                   child: BlocBuilder<TokenBloc, TokenState>(
                     buildWhen: (previous, current) =>
                         current is PurchaseStatisticsLoading ||

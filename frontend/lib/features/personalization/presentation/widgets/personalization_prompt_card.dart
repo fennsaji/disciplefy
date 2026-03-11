@@ -110,7 +110,7 @@ class PersonalizationPromptCard extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: onGetStarted,
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.brandPrimary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: AppColors.onGradient,
                     ),
                     icon: const Icon(Icons.arrow_forward, size: 18),

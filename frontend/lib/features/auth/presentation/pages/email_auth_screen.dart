@@ -78,7 +78,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
                     // Title
                     _buildTitle(context),

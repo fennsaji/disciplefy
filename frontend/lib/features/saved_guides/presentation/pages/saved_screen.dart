@@ -198,7 +198,7 @@ class _SavedScreenContent extends StatelessWidget {
             children: [
               // Header with tabs
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -542,7 +542,7 @@ class _SavedScreenContent extends StatelessWidget {
       },
       child: ListView.builder(
         controller: savedScrollController,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
         itemCount: state.savedGuides.length + (state.isLoadingSaved ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == state.savedGuides.length) {
@@ -592,7 +592,7 @@ class _SavedScreenContent extends StatelessWidget {
       },
       child: ListView.builder(
         controller: recentScrollController,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
         itemCount: state.recentGuides.length + (state.isLoadingRecent ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == state.recentGuides.length) {

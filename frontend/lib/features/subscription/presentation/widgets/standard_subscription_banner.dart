@@ -42,14 +42,19 @@ class StandardSubscriptionBanner extends StatelessWidget {
         gradient: LinearGradient(
           colors: isUrgent
               ? [const Color(0xFFFF6B6B), const Color(0xFFFF8E53)]
-              : [AppColors.brandPrimary, const Color(0xFF8B5CF6)],
+              : [
+                  Theme.of(context).colorScheme.primary,
+                  const Color(0xFF8B5CF6)
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (isUrgent ? const Color(0xFFFF6B6B) : AppColors.brandPrimary)
+            color: (isUrgent
+                    ? const Color(0xFFFF6B6B)
+                    : Theme.of(context).colorScheme.primary)
                 .withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -132,7 +137,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
                       backgroundColor: Colors.white,
                       foregroundColor: isUrgent
                           ? const Color(0xFFFF6B6B)
-                          : AppColors.brandPrimary,
+                          : Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -148,7 +153,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: isUrgent
                                 ? const Color(0xFFFF6B6B)
-                                : AppColors.brandPrimary,
+                                : Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -158,7 +163,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: (isUrgent
                                     ? const Color(0xFFFF6B6B)
-                                    : AppColors.brandPrimary)
+                                    : Theme.of(context).colorScheme.primary)
                                 .withValues(alpha: 0.7),
                           ),
                         ),

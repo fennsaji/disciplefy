@@ -178,7 +178,7 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
     final userStreak = userStats.longestStreak;
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(

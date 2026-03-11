@@ -231,6 +231,15 @@ import '../../features/gamification/data/datasources/gamification_remote_datasou
 import '../../features/gamification/data/repositories/gamification_repository_impl.dart';
 import '../../features/gamification/domain/repositories/gamification_repository.dart';
 import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
+import '../../features/community/data/datasources/community_remote_datasource.dart';
+import '../../features/community/data/repositories/community_repository_impl.dart';
+import '../../features/community/domain/repositories/community_repository.dart';
+import '../../features/community/presentation/bloc/fellowship_list/fellowship_list_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_members/fellowship_members_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_study/fellowship_study_bloc.dart';
+import '../../features/community/presentation/bloc/discover/discover_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -974,5 +983,41 @@ Future<void> initializeDependencies() async {
       languagePreferenceService: sl(),
     ),
     dispose: (bloc) => bloc.close(),
+  );
+
+  //! Community (Fellowship)
+  // Datasource (depends on HttpService)
+  sl.registerLazySingleton<CommunityRemoteDatasource>(
+    () => CommunityRemoteDatasourceImpl(httpService: sl()),
+  );
+
+  // Repository (depends on datasource)
+  sl.registerLazySingleton<CommunityRepository>(
+    () => CommunityRepositoryImpl(datasource: sl()),
+  );
+
+  // BLoCs (depend on repository)
+  sl.registerFactory<FellowshipListBloc>(
+    () => FellowshipListBloc(repository: sl()),
+  );
+
+  sl.registerFactory<FellowshipFeedBloc>(
+    () => FellowshipFeedBloc(repository: sl()),
+  );
+
+  sl.registerFactory<FellowshipMembersBloc>(
+    () => FellowshipMembersBloc(repository: sl()),
+  );
+
+  sl.registerFactory<FellowshipStudyBloc>(
+    () => FellowshipStudyBloc(repository: sl()),
+  );
+
+  sl.registerFactory<DiscoverBloc>(
+    () => DiscoverBloc(repository: sl()),
+  );
+
+  sl.registerFactory<FellowshipMeetingsBloc>(
+    () => FellowshipMeetingsBloc(repository: sl()),
   );
 }

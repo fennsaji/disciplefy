@@ -246,7 +246,8 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
                               Text(context.tr(TranslationKeys.practiceSubmit)),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: AppColors.brandSecondary,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

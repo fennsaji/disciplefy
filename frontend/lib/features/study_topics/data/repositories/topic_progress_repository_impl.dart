@@ -49,6 +49,10 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
         xpEarned: response.xpEarned ?? 0,
         isFirstCompletion: response.isFirstCompletion ?? false,
         topicTitle: response.topicTitle,
+        fellowshipAdvanced: response.fellowshipAdvanced,
+        fellowshipId: response.fellowshipId,
+        newGuideIndex: response.newGuideIndex,
+        studyCompleted: response.studyCompleted,
       ));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, code: e.code));

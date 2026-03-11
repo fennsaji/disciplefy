@@ -49,7 +49,7 @@ class TokenActionsSection extends StatelessWidget {
                   icon: const Icon(Icons.add_shopping_cart),
                   label: Text(context.tr('tokens.purchase.title')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandSecondary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
                   ),

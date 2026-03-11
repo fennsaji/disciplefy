@@ -111,7 +111,10 @@ class LockedFeatureWrapper extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.brandSecondary.withOpacity(0.3),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.3),
                       width: 2,
                     ),
                     gradient: LinearGradient(
@@ -131,12 +134,14 @@ class LockedFeatureWrapper extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.brandSecondary,
+                            color: Theme.of(context).colorScheme.primary,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    AppColors.brandSecondary.withOpacity(0.3),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 1),
                               ),
@@ -155,7 +160,7 @@ class LockedFeatureWrapper extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.brandSecondary,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(

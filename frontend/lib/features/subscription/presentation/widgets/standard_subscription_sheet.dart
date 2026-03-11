@@ -161,7 +161,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                         sl<PricingService>().getFormattedPrice('standard'),
                         style: theme.textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.brandPrimary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                       Padding(
@@ -169,8 +169,10 @@ class StandardSubscriptionSheet extends StatelessWidget {
                         child: Text(
                           '/month',
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color:
-                                AppColors.brandPrimary.withValues(alpha: 0.7),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -246,7 +248,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                 ElevatedButton(
                   onPressed: isLoading ? null : _handleSubscribe,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandPrimary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -321,7 +323,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
             ),
             child: Icon(
               icon,
-              color: AppColors.brandPrimary,
+              color: Theme.of(context).colorScheme.primary,
               size: 20,
             ),
           ),

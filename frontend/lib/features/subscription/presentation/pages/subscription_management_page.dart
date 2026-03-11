@@ -214,7 +214,7 @@ class _SubscriptionManagementPageState
 
   /// Build view for Standard plan users in trial period (no subscription yet)
   Widget _buildStandardTrialView(DateTime? trialEndDate) {
-    const standardColor = AppColors.brandPrimary;
+    final standardColor = Theme.of(context).colorScheme.primary;
     const standardColorLight =
         Color(0xFFB794F4); // Lighter purple for dark mode
     final daysRemaining = trialEndDate?.difference(DateTime.now()).inDays ?? 0;
@@ -732,7 +732,7 @@ class _SubscriptionManagementPageState
             ? Icons.star_rounded
             : Icons.workspace_premium_rounded;
     final planColor = isStandardPlan
-        ? AppColors.brandPrimary
+        ? Theme.of(context).colorScheme.primary
         : isPlusPlan
             ? plusColor
             : AppTheme.primaryColor;
