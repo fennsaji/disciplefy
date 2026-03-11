@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,6 +35,90 @@ class LearningPathsSection extends StatefulWidget {
 }
 
 class _LearningPathsSectionState extends State<LearningPathsSection> {
+  // -------------------------------------------------------------------------
+  // Search + filter state
+  // -------------------------------------------------------------------------
+
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+  String? _selectedLevel; // null = all levels
+  bool _featuredOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      context.read<LearningPathsBloc>().add(SearchLearningPaths(query: query));
+    });
+  }
+
+  /// Apply level/featured filters to a flat list of paths.
+  List<LearningPath> _applyFilters(List<LearningPath> paths) {
+    return paths.where((p) {
+      if (_featuredOnly && !p.isFeatured) return false;
+      if (_selectedLevel != null && p.discipleLevel != _selectedLevel) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  /// Build display categories, applying local filters.
+  /// In search mode, groups searchResults by category; otherwise uses state categories.
+  List<LearningPathCategory> _displayCategories(LearningPathsLoaded state) {
+    final isSearchActive =
+        state.searchQuery != null && state.searchQuery!.isNotEmpty;
+
+    final List<LearningPathCategory> base;
+    if (isSearchActive) {
+      // Group flat search results by category
+      final Map<String, List<LearningPath>> grouped = {};
+      for (final p in state.searchResults ?? []) {
+        grouped.putIfAbsent(p.category, () => []).add(p);
+      }
+      base = grouped.entries
+          .map((e) => LearningPathCategory(
+                name: e.key,
+                paths: e.value,
+                totalInCategory: e.value.length,
+                nextPathOffset: e.value.length,
+              ))
+          .toList();
+    } else {
+      base = state.categories;
+    }
+
+    // Apply local filters per category; drop empty categories
+    return base
+        .map((cat) {
+          final filtered = _applyFilters(cat.paths);
+          if (filtered.isEmpty) return null;
+          return LearningPathCategory(
+            name: cat.name,
+            paths: filtered,
+            totalInCategory: cat.totalInCategory,
+            hasMoreInCategory:
+                isSearchActive ? false : cat.hasMoreInCategory,
+            isCompleted: cat.isCompleted,
+            nextPathOffset: cat.nextPathOffset,
+          );
+        })
+        .whereType<LearningPathCategory>()
+        .toList();
+  }
+
   // -------------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------------
@@ -300,21 +386,160 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   Widget _buildLoadedState(BuildContext context, LearningPathsLoaded state) {
     if (!state.hasPaths) return _buildEmptyState(context);
 
+    final isSearchActive =
+        state.searchQuery != null && state.searchQuery!.isNotEmpty;
+    final displayCats = _displayCategories(state);
+
+    // Derive available discipline levels from all loaded paths
+    final availableLevels = {
+      ...state.categories.expand((c) => c.paths).map((p) => p.discipleLevel),
+    }.toList()
+      ..sort();
+
     return _buildSection(
       context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final category in state.categories)
-            _buildCategoryRow(context, category: category, state: state),
+          // ── Search bar ──────────────────────────────────────────────────
+          _buildSearchBar(context),
+          // ── Filter chips ────────────────────────────────────────────────
+          if (availableLevels.isNotEmpty)
+            _buildFilterChips(context, availableLevels),
+          const SizedBox(height: 8),
 
-          // Footer — spinner while loading more categories (triggered by scroll)
-          if (state.isFetchingMoreCategories)
+          // ── Content ─────────────────────────────────────────────────────
+          if (state.isSearching)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: 32),
               child: Center(child: CircularProgressIndicator()),
-            ),
+            )
+          else if (displayCats.isEmpty)
+            _buildNoResultsState(context, isSearchActive)
+          else ...[
+            for (final category in displayCats)
+              _buildCategoryRow(context, category: category, state: state),
+
+            // Spinner while infinite-scroll loads more categories
+            if (state.isFetchingMoreCategories && !isSearchActive)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        style: AppFonts.inter(
+          fontSize: 14,
+          color: theme.colorScheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          hintText: 'Search learning paths…',
+          hintStyle: AppFonts.inter(
+            fontSize: 14,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            size: 20,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    size: 18,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    _onSearchChanged('');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: theme.colorScheme.primary.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(BuildContext context, List<String> levels) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Row(
+        children: [
+          // Featured chip
+          _FilterChip(
+            label: '⭐ Featured',
+            selected: _featuredOnly,
+            onSelected: (v) => setState(() => _featuredOnly = v),
+            theme: theme,
+          ),
+          const SizedBox(width: 8),
+          // Level chips
+          for (final level in levels) ...[
+            _FilterChip(
+              label: level,
+              selected: _selectedLevel == level,
+              onSelected: (v) =>
+                  setState(() => _selectedLevel = v ? level : null),
+              theme: theme,
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState(BuildContext context, bool isSearchActive) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: Center(
+        child: Text(
+          isSearchActive
+              ? 'No paths found for "${_searchController.text}"'
+              : 'No paths match the selected filters',
+          style: AppFonts.inter(
+            fontSize: 14,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -463,4 +688,54 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     );
   }
 
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Private helper widget — themed filter chip
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final ValueChanged<bool> onSelected;
+  final ThemeData theme;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onSelected(!selected),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurface.withValues(alpha: 0.15),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: selected
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+          ),
+        ),
+      ),
+    );
+  }
 }
