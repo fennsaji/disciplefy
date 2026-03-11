@@ -308,14 +308,12 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           for (final category in state.categories)
             _buildCategoryRow(context, category: category, state: state),
 
-          // Footer
+          // Footer — spinner while loading more categories (triggered by scroll)
           if (state.isFetchingMoreCategories)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(child: CircularProgressIndicator()),
-            )
-          else if (state.hasMoreCategories)
-            _buildShowMoreCategoriesButton(context),
+            ),
         ],
       ),
     );
@@ -465,49 +463,4 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Show More Categories button
-  // -------------------------------------------------------------------------
-
-  Widget _buildShowMoreCategoriesButton(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: GestureDetector(
-        onTap: () =>
-            context.read<LearningPathsBloc>().add(const LoadMoreCategories()),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.keyboard_arrow_down,
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Show More Categories',
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
