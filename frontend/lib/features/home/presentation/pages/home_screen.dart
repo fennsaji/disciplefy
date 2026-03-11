@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -55,6 +56,9 @@ import '../bloc/home_state.dart';
 import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
+import '../../../community/domain/entities/fellowship_entity.dart';
+import '../../../community/domain/entities/fellowship_meeting_entity.dart';
+import '../../../community/domain/repositories/community_repository.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 
@@ -518,6 +522,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                             _buildWelcomeMessage(currentUserName),
 
                             SizedBox(height: isLargeScreen ? 16 : 12),
+
+                            // Upcoming meeting banner (today's meetings)
+                            const _UpcomingMeetingBanner(),
 
                             // Email Verification Banner (shown for unverified email users)
                             BlocProvider.value(
@@ -1891,6 +1898,258 @@ class _RecommendedGuideTopicCardState extends State<_RecommendedGuideTopicCard>
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Upcoming Meeting Banner
+// ---------------------------------------------------------------------------
+
+/// Fetches all fellowships the user belongs to, collects today's upcoming
+/// (or currently running) meetings across all of them, and surfaces the
+/// single nearest meeting as a compact banner card.
+///
+/// Renders [SizedBox.shrink] when there are no meetings today.
+class _UpcomingMeetingBanner extends StatefulWidget {
+  const _UpcomingMeetingBanner();
+
+  @override
+  State<_UpcomingMeetingBanner> createState() => _UpcomingMeetingBannerState();
+}
+
+class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
+  // Paired data: the nearest upcoming/ongoing meeting + its fellowship name + id.
+  ({
+    FellowshipMeetingEntity meeting,
+    String fellowshipName,
+    String fellowshipId,
+  })? _upcoming;
+
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUpcomingMeeting();
+  }
+
+  Future<void> _fetchUpcomingMeeting() async {
+    try {
+      final repo = sl<CommunityRepository>();
+      final fellowshipsResult = await repo.getFellowships();
+      final fellowships = fellowshipsResult.fold(
+        (_) => <FellowshipEntity>[],
+        (list) => list,
+      );
+
+      if (fellowships.isEmpty) {
+        if (mounted) setState(() => _loaded = true);
+        return;
+      }
+
+      final now = DateTime.now();
+      final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+      ({
+        FellowshipMeetingEntity meeting,
+        String fellowshipName,
+        String fellowshipId,
+      })? closest;
+
+      // Fetch meetings for each fellowship; keep the nearest one ending after now.
+      for (final fellowship in fellowships) {
+        final result = await repo.getMeetings(fellowship.id);
+        result.fold(
+          (_) {},
+          (meetings) {
+            for (final m in meetings) {
+              final start = DateTime.tryParse(m.startsAt)?.toLocal();
+              final end = DateTime.tryParse(m.endsAt)?.toLocal();
+              if (start == null || end == null) continue;
+              // Only show meetings that: start today AND haven't ended yet.
+              if (start.isBefore(endOfToday) && end.isAfter(now)) {
+                final currentStart =
+                    DateTime.tryParse(closest?.meeting.startsAt ?? '')
+                        ?.toLocal();
+                if (closest == null ||
+                    currentStart == null ||
+                    start.isBefore(currentStart)) {
+                  closest = (
+                    meeting: m,
+                    fellowshipName: fellowship.name,
+                    fellowshipId: fellowship.id,
+                  );
+                }
+              }
+            }
+          },
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _upcoming = closest;
+          _loaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _upcoming == null) return const SizedBox.shrink();
+
+    final data = _upcoming!;
+    final meeting = data.meeting;
+    final start = DateTime.tryParse(meeting.startsAt)?.toLocal();
+    final end = DateTime.tryParse(meeting.endsAt)?.toLocal();
+    final now = DateTime.now();
+
+    final isHappeningNow =
+        start != null && end != null && now.isAfter(start) && now.isBefore(end);
+    final timeLabel = start == null
+        ? ''
+        : isHappeningNow
+            ? 'Now · ends ${DateFormat('h:mm a').format(end)}'
+            : DateFormat('h:mm a').format(start);
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isOnline = meeting.meetLink.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: GestureDetector(
+        onTap: () => context.push('/community/${data.fellowshipId}'),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.brandPrimary.withValues(alpha: 0.12)
+                : AppColors.brandPrimary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.brandPrimary.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Left accent bar
+              Container(
+                width: 4,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              // Icon
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isOnline ? Icons.videocam_rounded : Icons.location_on_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Text content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          if (isHappeningNow) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.brandPrimary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            'Today',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: context.appTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        meeting.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${data.fellowshipName} · $timeLabel',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Chevron
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: context.appTextTertiary,
+                  size: 20,
+                ),
+              ),
+            ],
           ),
         ),
       ),
