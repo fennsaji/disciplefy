@@ -1,5 +1,7 @@
 package com.disciplefy.bible_study
 
+import android.annotation.TargetApi
+import android.app.Activity
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
@@ -40,9 +42,7 @@ class MainActivity : FlutterActivity() {
     private fun registerScreenshotListener() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             // Android 14+: dedicated API — no permissions needed
-            addScreenCaptureCallback(Executors.newSingleThreadExecutor()) {
-                runOnUiThread { screenshotEventSink?.success(null) }
-            }
+            registerScreenCaptureCallbackApi34()
         } else {
             // Android < 14: ContentObserver on the images store
             val handler = Handler(Looper.getMainLooper())
@@ -61,6 +61,14 @@ class MainActivity : FlutterActivity() {
             )
             screenshotObserver = observer
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun registerScreenCaptureCallbackApi34() {
+        addScreenCaptureCallback(
+            Executors.newSingleThreadExecutor(),
+            Activity.ScreenCaptureCallback { runOnUiThread { screenshotEventSink?.success(null) } }
+        )
     }
 
     private fun unregisterScreenshotListener() {
