@@ -310,8 +310,9 @@ class _MyPlanPageState extends State<MyPlanPage> {
       statusIcon = Icons.person;
     } else if (userPlan == UserPlan.standard && isTrialActive) {
       statusText = context.tr(TranslationKeys.myPlanTrialActive);
-      statusColor =
-          isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+      statusColor = isDark
+          ? AppColors.brandPrimaryLight
+          : Theme.of(context).colorScheme.primary;
       statusIcon = Icons.auto_awesome;
     } else if (userPlan == UserPlan.free) {
       statusText = context.tr(TranslationKeys.myPlanFreePlan);
@@ -439,7 +440,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
   }
 
   Widget _buildTrialInfoBanner(DateTime trialEndDate, bool isDark) {
-    const standardColor = AppColors.brandPrimary;
+    final standardColor = Theme.of(context).colorScheme.primary;
     final daysRemaining = trialEndDate.difference(DateTime.now()).inDays;
 
     return Container(
@@ -492,7 +493,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
 
   Widget _buildGracePeriodBanner(UserSubscriptionStatus status, bool isDark) {
     final isUrgent = status.graceDaysRemaining <= 3;
-    final bannerColor = isUrgent ? AppColors.warning : AppColors.brandPrimary;
+    final bannerColor =
+        isUrgent ? AppColors.warning : Theme.of(context).colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -519,7 +521,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ? bannerColor.withOpacity(0.8)
                 : isUrgent
                     ? AppColors.warningDark
-                    : AppColors.brandPrimary,
+                    : Theme.of(context).colorScheme.primary,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -538,7 +540,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                         ? bannerColor.withOpacity(0.9)
                         : isUrgent
                             ? AppColors.warningDark
-                            : AppColors.brandPrimary,
+                            : Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -553,7 +555,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                         ? bannerColor.withOpacity(0.8)
                         : (isUrgent
                                 ? AppColors.warningDark
-                                : AppColors.brandPrimary)
+                                : Theme.of(context).colorScheme.primary)
                             .withOpacity(0.8),
                   ),
                 ),
@@ -1484,7 +1486,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
       case UserPlan.free:
         return Colors.grey[600]!;
       case UserPlan.standard:
-        return AppColors.brandPrimary;
+        return Theme.of(context).colorScheme.primary;
       case UserPlan.plus:
         return Colors.purple[600]!;
       case UserPlan.premium:

@@ -134,7 +134,8 @@ class _QuestionnaireContent extends StatelessWidget {
                                   }
                                 : null,
                             style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.brandSecondary,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
                               foregroundColor: Colors.white,
                             ),
                             child: Text(state.isLastQuestion
@@ -232,7 +233,7 @@ class _QuestionnaireContent extends StatelessWidget {
                   .add(const SkipQuestionnaire());
             },
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.brandSecondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
             ),
             child: Text(context.tr(TranslationKeys.questionnaireSkip)),

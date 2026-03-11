@@ -79,7 +79,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
 
           // Icon
           Icon(

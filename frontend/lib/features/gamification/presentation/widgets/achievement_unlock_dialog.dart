@@ -219,7 +219,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
                     widget.onDismiss();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandSecondary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

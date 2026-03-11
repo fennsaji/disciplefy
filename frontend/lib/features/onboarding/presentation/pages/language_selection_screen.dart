@@ -220,7 +220,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                       ? _continueWithSelection
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandSecondary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor:
                         theme.colorScheme.onSurface.withOpacity(0.12),

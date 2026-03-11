@@ -149,7 +149,7 @@ class _OnboardingLanguageContent extends StatelessWidget {
                               .add(const NextStep())
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brandSecondary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         minimumSize: const Size.fromHeight(56),
                       ),
