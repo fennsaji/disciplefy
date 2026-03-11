@@ -82,6 +82,11 @@ import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
 import 'app_loading_screen.dart'; // ANDROID FIX: Loading screen during session restoration
+import '../../features/community/domain/entities/fellowship_entity.dart';
+import '../../features/community/presentation/screens/community_tab_screen.dart';
+import '../../features/community/presentation/screens/join_fellowship_screen.dart';
+import '../../features/community/presentation/screens/create_fellowship_screen.dart';
+import '../../features/community/presentation/screens/fellowship_home_screen.dart';
 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
@@ -185,6 +190,96 @@ class AppRouter {
                   final topicId = state.uri.queryParameters['topic_id'];
                   return StudyTopicsScreen(topicId: topicId);
                 },
+              ),
+            ],
+          ),
+          // Community Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.community,
+                name: 'community',
+                builder: (context, state) => const CommunityTabScreen(),
+                routes: [
+                  // IMPORTANT: /community/join and /community/create MUST be listed before
+                  // /community/:fellowshipId to prevent GoRouter treating literal segments as IDs.
+                  GoRoute(
+                    path: 'join',
+                    name: 'community_join',
+                    builder: (context, state) => const JoinFellowshipScreen(),
+                  ),
+                  GoRoute(
+                    path: 'create',
+                    name: 'community_create',
+                    builder: (context, state) => const CreateFellowshipScreen(),
+                  ),
+                  GoRoute(
+                    path: ':fellowshipId',
+                    name: 'fellowship_home',
+                    builder: (context, state) {
+                      final fellowshipId =
+                          state.pathParameters['fellowshipId'] ?? '';
+                      final fellowship = state.extra is FellowshipEntity
+                          ? state.extra as FellowshipEntity
+                          : null;
+                      return FellowshipHomeScreen(
+                        fellowshipId: fellowshipId,
+                        fellowshipName: fellowship?.name,
+                        fellowship: fellowship,
+                      );
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'feed',
+                        name: 'fellowship_feed',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          final fellowship = state.extra is FellowshipEntity
+                              ? state.extra as FellowshipEntity
+                              : null;
+                          return FellowshipHomeScreen(
+                            fellowshipId: fellowshipId,
+                            fellowshipName: fellowship?.name,
+                            fellowship: fellowship,
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'lessons',
+                        name: 'fellowship_lessons',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          final fellowship = state.extra is FellowshipEntity
+                              ? state.extra as FellowshipEntity
+                              : null;
+                          return FellowshipHomeScreen(
+                            fellowshipId: fellowshipId,
+                            fellowshipName: fellowship?.name,
+                            fellowship: fellowship,
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'members',
+                        name: 'fellowship_members',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          final fellowship = state.extra is FellowshipEntity
+                              ? state.extra as FellowshipEntity
+                              : null;
+                          return FellowshipHomeScreen(
+                            fellowshipId: fellowshipId,
+                            fellowshipName: fellowship?.name,
+                            fellowship: fellowship,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -976,4 +1071,28 @@ extension AppRouterExtension on GoRouter {
 
   /// Navigates to the reflection journal page showing past reflections.
   void goToReflectionJournal() => go(AppRoutes.reflectionJournal);
+
+  /// Navigates to the Community tab showing the list of fellowships.
+  void goToCommunity() => go(AppRoutes.community);
+
+  /// Navigates to the Join Fellowship screen where users can enter an invite code.
+  void goToCommunityJoin() => go(AppRoutes.communityJoin);
+
+  /// Navigates to a specific fellowship home screen.
+  ///
+  /// Pass [fellowshipName] to display it in the AppBar without an extra fetch.
+  void goToFellowshipHome(String fellowshipId, {String? fellowshipName}) =>
+      go('/community/$fellowshipId', extra: fellowshipName);
+
+  /// Navigates to the feed tab of a specific fellowship.
+  void goToFellowshipFeed(String fellowshipId) =>
+      go('/community/$fellowshipId/feed');
+
+  /// Navigates to the lessons tab of a specific fellowship.
+  void goToFellowshipLessons(String fellowshipId) =>
+      go('/community/$fellowshipId/lessons');
+
+  /// Navigates to the members tab of a specific fellowship.
+  void goToFellowshipMembers(String fellowshipId) =>
+      go('/community/$fellowshipId/members');
 }

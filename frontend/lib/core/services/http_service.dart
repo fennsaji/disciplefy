@@ -58,11 +58,19 @@ class HttpService {
         url,
       );
 
+  /// Make an authenticated HTTP PATCH request with automatic 401 handling
+  Future<http.Response> patch(String url,
+          {Map<String, String>? headers, String? body}) async =>
+      await _makeRequest(
+        () => _httpClient.patch(Uri.parse(url), headers: headers, body: body),
+        url,
+      );
+
   /// Make an authenticated HTTP DELETE request with automatic 401 handling
   Future<http.Response> delete(String url,
-          {Map<String, String>? headers}) async =>
+          {Map<String, String>? headers, String? body}) async =>
       await _makeRequest(
-        () => _httpClient.delete(Uri.parse(url), headers: headers),
+        () => _httpClient.delete(Uri.parse(url), headers: headers, body: body),
         url,
       );
 

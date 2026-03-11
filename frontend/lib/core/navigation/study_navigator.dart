@@ -91,6 +91,9 @@ enum StudyNavigationSource {
 
   /// Navigated from a learning path detail page.
   learningPath,
+
+  /// Navigated from a fellowship guide detail screen.
+  fellowship,
 }
 
 /// Extension on StudyNavigationSource for convenience methods.
@@ -112,6 +115,8 @@ extension StudyNavigationSourceExtension on StudyNavigationSource {
         return 'Continue Learning';
       case StudyNavigationSource.learningPath:
         return 'Learning Path';
+      case StudyNavigationSource.fellowship:
+        return 'Fellowship';
     }
   }
 }
