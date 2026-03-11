@@ -26,6 +26,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<ClearLearningPathsCache>(_onClearCache);
     on<LoadMoreCategories>(_onLoadMoreCategories);
     on<LoadMorePathsForCategory>(_onLoadMorePathsForCategory);
+    on<SearchLearningPaths>(_onSearchLearningPaths);
   }
 
   Future<void> _onLoadLearningPaths(
@@ -254,5 +255,75 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
         ));
       },
     );
+  }
+
+  /// Handles search queries.
+  ///
+  /// When [event.query] is empty, clears search state and returns to the
+  /// normal category listing. Otherwise, fetches matching paths from the
+  /// server (bypassing cache) across all supported languages and emits
+  /// merged results into [LearningPathsLoaded.searchResults].
+  Future<void> _onSearchLearningPaths(
+    SearchLearningPaths event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    final current = state;
+
+    // Empty query → restore normal listing
+    if (event.query.isEmpty) {
+      if (current is LearningPathsLoaded) {
+        emit(current.copyWith(clearSearch: true));
+      }
+      return;
+    }
+
+    // Keep the existing categories visible while search loads
+    if (current is LearningPathsLoaded) {
+      emit(current.copyWith(
+        searchQuery: event.query,
+        isSearching: true,
+      ));
+    }
+
+    // Fetch across all supported languages in parallel
+    const allLangs = ['en', 'hi', 'ml'];
+    final futures = allLangs.map((lang) => _repository.getLearningPaths(
+          language: lang,
+          includeEnrolled: false,
+          forceRefresh: true,
+          limit: 50,
+          search: event.query,
+        ));
+
+    final responses = await Future.wait(futures);
+
+    // Collect results; de-duplicate by path id (keep first language hit)
+    final seen = <String>{};
+    final merged = <LearningPath>[];
+    for (final result in responses) {
+      result.fold((_) {}, (data) {
+        for (final path in data.paths) {
+          if (seen.add(path.id)) {
+            merged.add(path);
+          }
+        }
+      });
+    }
+
+    final afterSearch = state;
+    if (afterSearch is LearningPathsLoaded) {
+      emit(afterSearch.copyWith(
+        searchQuery: event.query,
+        searchResults: merged,
+        isSearching: false,
+      ));
+    } else {
+      // Bloc was reset while we were searching — emit a fresh loaded state
+      emit(LearningPathsLoaded(
+        categories: const [],
+        searchQuery: event.query,
+        searchResults: merged,
+      ));
+    }
   }
 }

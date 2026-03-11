@@ -644,7 +644,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         context.tr(TranslationKeys.generateStudyTitle),
         style: AppFonts.inter(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.onBackground,
         ),
       ),
@@ -661,10 +661,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.brandSecondary.withOpacity(0.15),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.brandSecondary.withOpacity(0.4),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.4),
                     ),
                   ),
                   child: Row(
@@ -673,7 +679,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       Icon(
                         Icons.token,
                         size: 16,
-                        color: AppColors.brandSecondary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -683,7 +689,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         style: AppFonts.inter(
                           fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.brandSecondary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],
@@ -847,7 +853,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Top spacing
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // Mode Toggle - Compact design
                     _buildCompactModeToggle(),
@@ -948,7 +954,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandSecondary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Expanded(
       child: Material(
@@ -1028,7 +1034,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             border: Border.all(
               color: isDark
                   ? Colors.white.withOpacity(0.1)
-                  : AppColors.brandSecondary.withOpacity(0.15),
+                  : Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.15),
             ),
           ),
           child: Row(
@@ -1079,7 +1088,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       }
     }
 
-    const primary = AppColors.brandSecondary;
+    final primary = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -1147,13 +1156,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? AppColors.brandSecondary
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onBackground,
               ),
             ),
           ),
           if (isSelected)
-            Icon(Icons.check, color: AppColors.brandSecondary, size: 18),
+            Icon(Icons.check,
+                color: Theme.of(context).colorScheme.primary, size: 18),
         ],
       ),
     );
@@ -1175,15 +1185,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.white.withOpacity(0.05)
-                : AppColors.brandSecondary.withOpacity(0.08),
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.brandSecondary.withOpacity(0.3),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.brandSecondary.withOpacity(0.15),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.15),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -1194,12 +1208,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.brandSecondary.withOpacity(0.15),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.mic_rounded,
-                  color: AppColors.brandSecondary,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 24,
                 ),
               ),
@@ -1230,7 +1247,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.brandSecondary,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1263,7 +1280,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: AppColors.brandSecondary.withOpacity(0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -1299,7 +1319,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             border: Border.all(
               color: isDark
                   ? Colors.white.withOpacity(0.1)
-                  : AppColors.brandSecondary.withOpacity(0.15),
+                  : Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.15),
             ),
           ),
           child: Column(
@@ -1387,7 +1410,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             boxShadow: [
               if (_inputFocusNode.hasFocus)
                 BoxShadow(
-                  color: AppColors.brandSecondary.withOpacity(0.15),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.15),
                   blurRadius: 12,
                   spreadRadius: 1,
                 ),
@@ -1425,7 +1451,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 borderSide: BorderSide(
                   color: isDark
                       ? Colors.white.withOpacity(0.1)
-                      : AppColors.brandSecondary.withOpacity(0.2),
+                      : Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.2),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
@@ -1433,13 +1462,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 borderSide: BorderSide(
                   color: isDark
                       ? Colors.white.withOpacity(0.1)
-                      : AppColors.brandSecondary.withOpacity(0.2),
+                      : Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.2),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
-                  color: AppColors.brandSecondary,
+                  color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),
@@ -1591,7 +1623,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         border: Border.all(
           color: isDark
               ? Colors.white.withOpacity(0.1)
-              : AppColors.brandSecondary.withOpacity(0.25),
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
         ),
         boxShadow: [
           BoxShadow(
@@ -1614,7 +1646,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   Icon(
                     Icons.lightbulb_outline_rounded,
                     size: 14,
-                    color: AppColors.brandSecondary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -1622,7 +1654,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     style: AppFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.brandSecondary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -1700,7 +1732,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandSecondary.withOpacity(0.4),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: -4,
@@ -1858,7 +1890,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           border: Border.all(
             color: isDark
                 ? Colors.white.withOpacity(0.1)
-                : AppColors.brandSecondary.withOpacity(0.2),
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
           ),
         ),
         child: Material(
@@ -1876,7 +1908,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     size: 20,
                     color: isDark
                         ? Colors.white.withOpacity(0.7)
-                        : AppColors.brandSecondary,
+                        : Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 10),
                   Text(
@@ -1886,7 +1918,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       fontWeight: FontWeight.w600,
                       color: isDark
                           ? Colors.white.withOpacity(0.8)
-                          : AppColors.brandSecondary,
+                          : Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -1917,7 +1949,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.brandSecondary.withOpacity(0.1),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   AppTheme.secondaryPurple.withOpacity(0.1),
                 ],
                 begin: Alignment.topLeft,
@@ -1925,7 +1957,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.brandSecondary.withOpacity(0.2),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.2),
               ),
             ),
             child: Column(
@@ -1939,7 +1974,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.brandSecondary,
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -1950,7 +1985,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.brandSecondary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -1988,7 +2023,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   boxShadow: isEnabled
                       ? [
                           BoxShadow(
-                            color: AppColors.brandSecondary.withOpacity(0.3),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -2096,10 +2134,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withOpacity(0.1)
-                    : AppColors.brandSecondary.withOpacity(0.1),
+                    : Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.brandSecondary.withOpacity(0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -2110,7 +2154,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   borderRadius: BorderRadius.circular(16),
                   child: Icon(
                     Icons.tune_rounded,
-                    color: AppColors.brandSecondary,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 24,
                   ),
                 ),
@@ -2364,7 +2408,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }) {
     final isSelected = mode == currentMode;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandSecondary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
       onTap: () async {
@@ -2556,7 +2600,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }) {
     final isSelected = modeValue == currentModeRaw;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primary = AppColors.brandSecondary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
       onTap: () async {
@@ -3044,7 +3088,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _navigateToTokenManagement();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandSecondary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
                 elevation: 0,
                 padding:
@@ -3069,7 +3113,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _generateStudyGuide();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandSecondary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
                 elevation: 0,
                 padding:
@@ -3121,7 +3165,10 @@ class _ModeToggleButton extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.brandSecondary.withOpacity(0.3),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -3137,7 +3184,7 @@ class _ModeToggleButton extends StatelessWidget {
                 ? Colors.white
                 : isDark
                     ? Colors.white.withOpacity(0.7)
-                    : AppColors.brandSecondary,
+                    : Theme.of(context).colorScheme.primary,
           ),
           textAlign: TextAlign.center,
         ),
@@ -3174,7 +3221,10 @@ class _LanguageToggleButton extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.brandSecondary.withOpacity(0.3),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -3190,7 +3240,7 @@ class _LanguageToggleButton extends StatelessWidget {
                 ? Colors.white
                 : isDark
                     ? Colors.white.withOpacity(0.7)
-                    : AppColors.brandSecondary,
+                    : Theme.of(context).colorScheme.primary,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -3244,7 +3294,7 @@ class _SuggestionChip extends StatelessWidget {
           border: Border.all(
             color: isDark
                 ? Colors.white.withOpacity(0.1)
-                : AppColors.brandSecondary.withOpacity(0.2),
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -3254,7 +3304,10 @@ class _SuggestionChip extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.brandPrimary.withOpacity(0.15),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -3264,7 +3317,7 @@ class _SuggestionChip extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: isDark
                         ? AppColors.brandPrimaryLight
-                        : AppColors.brandPrimary,
+                        : Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -3277,7 +3330,7 @@ class _SuggestionChip extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: isDark
                     ? Colors.white.withOpacity(0.8)
-                    : AppColors.brandSecondary,
+                    : Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
