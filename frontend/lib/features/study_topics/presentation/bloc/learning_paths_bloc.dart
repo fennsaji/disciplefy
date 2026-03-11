@@ -261,8 +261,8 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
   ///
   /// When [event.query] is empty, clears search state and returns to the
   /// normal category listing. Otherwise, fetches matching paths from the
-  /// server (bypassing cache) across all supported languages and emits
-  /// merged results into [LearningPathsLoaded.searchResults].
+  /// server (bypassing cache) using the user's content language and emits
+  /// results into [LearningPathsLoaded.searchResults].
   Future<void> _onSearchLearningPaths(
     SearchLearningPaths event,
     Emitter<LearningPathsState> emit,
@@ -285,36 +285,21 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       ));
     }
 
-    // Fetch across all supported languages in parallel
-    const allLangs = ['en', 'hi', 'ml'];
-    final futures = allLangs.map((lang) => _repository.getLearningPaths(
-          language: lang,
-          includeEnrolled: false,
-          forceRefresh: true,
-          limit: 50,
-          search: event.query,
-        ));
+    // Search using the user's content language
+    final result = await _repository.getLearningPaths(
+      language: event.language,
+      forceRefresh: true,
+      limit: 50,
+      search: event.query,
+    );
 
-    final responses = await Future.wait(futures);
-
-    // Collect results; de-duplicate by path id (keep first language hit)
-    final seen = <String>{};
-    final merged = <LearningPath>[];
-    for (final result in responses) {
-      result.fold((_) {}, (data) {
-        for (final path in data.paths) {
-          if (seen.add(path.id)) {
-            merged.add(path);
-          }
-        }
-      });
-    }
+    final paths = result.fold((_) => <LearningPath>[], (data) => data.paths);
 
     final afterSearch = state;
     if (afterSearch is LearningPathsLoaded) {
       emit(afterSearch.copyWith(
         searchQuery: event.query,
-        searchResults: merged,
+        searchResults: paths,
         isSearching: false,
       ));
     } else {
@@ -322,7 +307,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       emit(LearningPathsLoaded(
         categories: const [],
         searchQuery: event.query,
-        searchResults: merged,
+        searchResults: paths,
       ));
     }
   }

@@ -284,9 +284,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     if (pos.pixels >= pos.maxScrollExtent - 300) {
       final bloc = context.read<LearningPathsBloc>();
       final state = bloc.state;
+      final isSearchActive = state is LearningPathsLoaded &&
+          (state.searchQuery?.isNotEmpty ?? false);
       if (state is LearningPathsLoaded &&
           state.hasMoreCategories &&
-          !state.isFetchingMoreCategories) {
+          !state.isFetchingMoreCategories &&
+          !isSearchActive) {
         bloc.add(const LoadMoreCategories());
       }
     }
@@ -420,6 +423,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 _buildLearningPathsLoadingState(context)
               else
                 LearningPathsSection(
+                  language: widget.currentLanguage,
                   onPathTap: _navigateToLearningPath,
                   onRetry: () => context.read<LearningPathsBloc>().add(
                       RefreshLearningPaths(language: widget.currentLanguage)),

@@ -23,11 +23,15 @@ class LearningPathsSection extends StatefulWidget {
   final VoidCallback? onSeeAllTap;
   final VoidCallback? onRetry;
 
+  /// Content language code used for search API calls (e.g. 'en', 'hi', 'ml').
+  final String language;
+
   const LearningPathsSection({
     super.key,
     required this.onPathTap,
     this.onSeeAllTap,
     this.onRetry,
+    this.language = 'en',
   });
 
   @override
@@ -60,7 +64,9 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   void _onSearchChanged(String query) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      context.read<LearningPathsBloc>().add(SearchLearningPaths(query: query));
+      context.read<LearningPathsBloc>().add(
+            SearchLearningPaths(query: query, language: widget.language),
+          );
     });
   }
 
@@ -109,8 +115,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
             name: cat.name,
             paths: filtered,
             totalInCategory: cat.totalInCategory,
-            hasMoreInCategory:
-                isSearchActive ? false : cat.hasMoreInCategory,
+            hasMoreInCategory: isSearchActive ? false : cat.hasMoreInCategory,
             isCompleted: cat.isCompleted,
             nextPathOffset: cat.nextPathOffset,
           );
@@ -687,7 +692,6 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
       ),
     );
   }
-
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
