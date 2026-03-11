@@ -100,3 +100,20 @@ class LoadMorePathsForCategory extends LearningPathsEvent {
   @override
   List<Object?> get props => [category, language];
 }
+
+/// Search learning paths by query (bypasses cache, hits backend).
+///
+/// When [query] is empty, clears search results and returns to the
+/// normal category listing.
+class SearchLearningPaths extends LearningPathsEvent {
+  final String query;
+  final String language;
+
+  const SearchLearningPaths({
+    required this.query,
+    this.language = 'en',
+  });
+
+  @override
+  List<Object?> get props => [query, language];
+}

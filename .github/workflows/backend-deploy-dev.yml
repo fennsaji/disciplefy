@@ -246,6 +246,10 @@ jobs:
         AUTHENTICATED_RATE_LIMIT=20
         API_REQUEST_LIMIT=200
 
+        # Google Calendar / Meet Configuration (Development)
+        GOOGLE_SERVICE_ACCOUNT_JSON=${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_DEV }}
+        GOOGLE_CALENDAR_ID=${{ secrets.GOOGLE_CALENDAR_ID_DEV }}
+
         # Email Configuration (Development)
         RESEND_API_KEY=${{ secrets.RESEND_API_KEY_DEV }}
         APP_URL=https://dev.disciplefy.in

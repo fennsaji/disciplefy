@@ -17,6 +17,7 @@ abstract class LearningPathsRemoteDataSource {
     bool includeEnrolled = true,
     int limit = 10,
     int offset = 0,
+    String? search,
   });
 
   /// Get learning paths grouped by category (primary listing endpoint).
@@ -75,9 +76,10 @@ class LearningPathsRemoteDataSourceImpl
     bool includeEnrolled = true,
     int limit = 10,
     int offset = 0,
+    String? search,
   }) async {
-    // Check persistent cache for first page only
-    if (offset == 0) {
+    // Only use persistent cache when not searching (search results must be fresh)
+    if (offset == 0 && search == null) {
       final cached =
           await _cache.getCachedResponse(type: 'paths', language: language);
       if (cached != null) {
@@ -88,16 +90,20 @@ class LearningPathsRemoteDataSourceImpl
 
     try {
       _logDebug(
-          'Fetching learning paths (language: $language, limit: $limit, offset: $offset)');
+          'Fetching learning paths (language: $language, limit: $limit, offset: $offset, search: $search)');
 
       final headers = await _httpService.createHeaders();
-      final body = jsonEncode({
+      final bodyMap = <String, dynamic>{
         'language': language,
         'includeEnrolled': includeEnrolled,
         'limit': limit,
         'offset': offset,
         'format': 'flat',
-      });
+      };
+      if (search != null && search.isNotEmpty) {
+        bodyMap['search'] = search;
+      }
+      final body = jsonEncode(bodyMap);
 
       final response = await _httpService.post(
         '$_baseUrl$_endpoint',
@@ -108,7 +114,8 @@ class LearningPathsRemoteDataSourceImpl
       _logDebug('Learning paths API response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        if (offset == 0) {
+        // Only cache non-search first-page results
+        if (offset == 0 && search == null) {
           await _cache.cacheResponse(
               type: 'paths', language: language, responseBody: response.body);
         }

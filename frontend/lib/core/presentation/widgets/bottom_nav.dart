@@ -63,6 +63,13 @@ class DisciplefyBottomNav extends StatelessWidget {
       semanticLabel:
           'Navigate to Study Topics screen. Browse learning paths and continue your studies.',
     ),
+    NavTab(
+      icon: Icons.people_outline,
+      activeIcon: Icons.people,
+      label: 'Community',
+      semanticLabel:
+          'Navigate to Community screen. Join fellowships and connect with other believers.',
+    ),
   ];
 
   @override

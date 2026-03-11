@@ -1006,7 +1006,7 @@ class _SettingsScreenContent extends StatelessWidget {
               context.read<AuthBloc>().add(const SignOutRequested());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandSecondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

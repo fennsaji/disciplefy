@@ -32,7 +32,7 @@ class LearningPathCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final color = _parseColor(path.color);
+    final color = _parseColor(path.color, context);
     final isEnrolled = path.isEnrolled;
     final isCompleted = path.isCompleted;
     final isInProgress = path.isInProgress;
@@ -435,12 +435,12 @@ class LearningPathCard extends StatelessWidget {
     );
   }
 
-  Color _parseColor(String colorHex) {
+  Color _parseColor(String colorHex, BuildContext context) {
     try {
       final hex = colorHex.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return AppColors.brandPrimary; // Default purple
+      return Theme.of(context).colorScheme.primary; // Default purple
     }
   }
 
@@ -458,7 +458,9 @@ class LearningPathCard extends StatelessWidget {
       case 'disciple':
         return isDark ? AppColors.warningLighter : AppColors.warningDark;
       case 'leader':
-        return isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+        return isDark
+            ? AppColors.brandPrimaryLight
+            : Theme.of(context).colorScheme.primary;
       case 'follower':
         return isDark
             ? AppColors.brandPrimaryLight

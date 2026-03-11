@@ -243,6 +243,151 @@ class AppLocalizations {
           'The first century saw rapid church growth despite severe persecution.',
       'loading_fact_60':
           'Early Christians believed Jesus would return in their lifetime.',
+
+      // Community Feature
+      'communityTitle': 'Community',
+      'communityJoinButton': 'Join',
+      'communityJoinedSuccess': 'You joined the fellowship!',
+      'communityJoinFailed': 'Failed to join fellowship. Please retry.',
+      'communityLoadError': 'Could not load fellowships',
+      'communityRetry': 'Try Again',
+      'communityEmptyTitle': "You haven't joined\na fellowship yet",
+      'communityEmptyDescription':
+          'Join a fellowship to study the Bible together\nwith a community of believers.',
+      'communityJoinFellowship': 'Join a Fellowship',
+      'communityMyFellowships': 'My Fellowships',
+      'communityDiscover': 'Discover',
+      'communityMembers': 'members',
+      'communityGuideLabel': 'Guide',
+      'joinFellowshipTitle': 'Join Fellowship',
+      'joinFellowshipHeading': 'Enter your invite code',
+      'joinFellowshipInstructions':
+          'Ask your fellowship leader for an invite\ncode and enter it below.',
+      'joinFellowshipCodeLabel': 'Invite Code',
+      'joinFellowshipCodeHint': 'Enter your invite code',
+      'joinFellowshipButton': 'Join Fellowship',
+      'joinFellowshipHelper':
+          'Invite codes are provided by fellowship mentors.',
+      'fellowshipDefaultTitle': 'Fellowship',
+      'fellowshipTabFeed': 'Feed',
+      'fellowshipTabLessons': 'Lessons',
+      'fellowshipTabMembers': 'Members',
+      'feedNewPost': 'New Post',
+      'feedLoadError': 'Something went wrong.',
+      'feedRetry': 'Retry',
+      'feedEmpty': 'No posts yet.\nBe the first to share!',
+      'postTypePrayer': 'Prayer',
+      'postTypePraise': 'Praise',
+      'postTypeQuestion': 'Question',
+      'postTypeGeneral': 'General',
+      'postTypeStudyNote': 'Study Note',
+      'postTypeSharedGuide': 'Shared Guide',
+      'studyNoteLesson': 'Lesson',
+      'sharedGuideCta': 'Study This Guide',
+      'feedCreateTitle': 'New Post',
+      'feedCreateTypeLabel': 'Post type',
+      'feedCreateContentLabel': 'Share something with your fellowship',
+      'feedCreateContentHint': "What's on your heart?",
+      'feedCreatePost': 'Post',
+      'lessonsComing': 'Lessons coming soon',
+      'lessonsDescription': 'Your fellowship study guides will appear here.',
+      'lessonsAssignPath': 'Assign Learning Path',
+      'lessonsChangePath': 'Change Learning Path',
+      'lessonsNoPathMentor':
+          'No learning path assigned yet.\nTap below to assign one.',
+      'lessonsNoPathMember': "Your mentor hasn't assigned a learning path yet.",
+      'lessonsCurrentStudy': 'Current Study',
+      'lessonsSelectPath': 'Select a Learning Path',
+      'lessonsPickPathTitle': 'Pick a Learning Path for Your Fellowship',
+      'searchPathsHint': 'Search learning paths...',
+      'searchNoResults': 'No paths match your search',
+      'lessonsGuide': 'Guide',
+      'lessonsTitle': 'Lessons',
+      'lessonsMemberProgress': 'Member Progress',
+      'lessonsMembersCompleted': 'completed',
+      'membersInvite': 'Invite',
+      'membersEmpty': 'No members yet',
+      'membersEmptyDescription': 'Invite someone to join your fellowship.',
+      'membersLoadError': 'Failed to load members.',
+      'membersRetry': 'Retry',
+      'membersMuted': 'Muted',
+      'membersInviteTitle': 'Invite to Fellowship',
+      'membersInviteSubtitle':
+          'Share this code with someone to invite them to your fellowship.',
+      'membersInviteComingSoon':
+          'Coming soon \u2014 invite links will appear here',
+      'membersCopy': 'Copy',
+      'leaveFellowshipTitle': 'Leave Fellowship',
+      'leaveFellowshipConfirm':
+          'Are you sure you want to leave this fellowship?',
+      'cancel': 'Cancel',
+      'muteSuccess': 'Member muted',
+      'unmuteSuccess': 'Member unmuted',
+      'inviteGenerating': 'Generating invite...',
+      'inviteShareCode': 'Share this code',
+      'inviteExpires': 'Expires in 7 days',
+      'lessonsAdvanceGuide': 'Advance to Next Guide',
+      'lessonsAdvanceConfirm':
+          'Mark current guide complete and advance to the next?',
+      'lessonsCompleted': 'Study Completed!',
+      'lessonsGuideProgress': 'Guide',
+      'lessonsOf': 'of',
+      // Edit Fellowship
+      'editFellowshipTitle': 'Edit Fellowship',
+      'editFellowshipSave': 'Save Changes',
+      'editFellowshipSuccess': 'Fellowship updated',
+      // Invite list + revoke
+      'inviteListEmpty': 'No active invite links',
+      'inviteRevoke': 'Revoke',
+      'inviteRevokeSuccess': 'Invite revoked',
+      // Transfer mentor
+      'transferMentorTitle': 'Transfer Mentor Role',
+      'transferMentorConfirm':
+          'Transfer the mentor role to this member? You will become a regular member.',
+      'transferMentorSuccess': 'Mentor role transferred',
+      'removeMemberTitle': 'Remove Member',
+      'removeMemberConfirm':
+          'Remove this member from the fellowship? They can rejoin with a new invite.',
+      'removeMemberAction': 'Remove',
+      'removeMemberSuccess': 'Member removed',
+      'memberJoinedLabel': 'Joined',
+      // Report
+      'reportTitle': 'Report Content',
+      'reportReasonLabel': 'Reason',
+      'reportReasonHint': 'Why are you reporting this? (5–500 characters)',
+      'reportSubmit': 'Submit Report',
+      'reportSuccess': 'Report submitted. Thank you.',
+      // Create Fellowship Screen
+      'createFellowshipTitle': 'Create Fellowship',
+      'createFellowshipHeading': 'Start a new fellowship',
+      'createFellowshipSubtitle':
+          'Give your group a name and invite others to study the Bible together.',
+      'createFellowshipNameLabel': 'Fellowship Name',
+      'createFellowshipNameHint': 'e.g. Morning Bible Warriors',
+      'createFellowshipDescLabel': 'Description (optional)',
+      'createFellowshipDescHint': 'What will your fellowship study together?',
+      'createFellowshipMaxLabel': 'Max Members (2–50)',
+      'createFellowshipButton': 'Create Fellowship',
+      'createFellowshipSuccess': 'Fellowship created!',
+      'createFellowshipFailed': 'Failed to create fellowship.',
+      'createFellowshipNameError': 'Name must be 3–60 characters.',
+      'createFellowshipDescError':
+          'Description must be 500 characters or fewer.',
+      'createFellowshipMaxError': 'Max members must be between 2 and 50.',
+      // Discover tab
+      'discoverFilterAll': 'All Languages',
+      'discoverFilterEnglish': 'English',
+      'discoverFilterHindi': 'Hindi',
+      'discoverFilterMalayalam': 'Malayalam',
+      'discoverEmpty': 'No public fellowships yet',
+      'discoverEmptyShowAll': 'Show all languages',
+      'discoverJoinButton': 'Join',
+      'discoverFull': 'Full',
+      'discoverJoinedSnackbar': 'You joined {name}!',
+      'discoverMembersCount': '{count} / {max} members',
+      'createFellowshipLanguageLabel': 'Language',
+      'createFellowshipMakePublicLabel': 'Make Public',
+      'createFellowshipMakePublicHint': 'Visible to all users in Discover',
     },
     'hi': {
       // Common
@@ -460,6 +605,153 @@ class AppLocalizations {
           'पहली शताब्दी में गंभीर उत्पीड़न के बावजूद तेजी से कलीसिया वृद्धि हुई।',
       'loading_fact_60':
           'प्रारंभिक मसीहियों का मानना था कि यीशु उनके जीवनकाल में लौटेंगे।',
+
+      // Community Feature
+      'communityTitle': 'समुदाय',
+      'communityJoinButton': 'शामिल हों',
+      'communityJoinedSuccess': 'आप संगति में शामिल हो गए!',
+      'communityJoinFailed':
+          'संगति में शामिल होना विफल। कृपया पुनः प्रयास करें।',
+      'communityLoadError': 'संगतियां लोड नहीं हो सकीं',
+      'communityRetry': 'पुनः प्रयास करें',
+      'communityEmptyTitle': 'आप अभी तक किसी संगति में शामिल नहीं हुए',
+      'communityEmptyDescription':
+          'विश्वासियों के समुदाय के साथ बाइबल का अध्ययन करने के लिए एक संगति में शामिल हों।',
+      'communityJoinFellowship': 'एक संगति में शामिल हों',
+      'communityMyFellowships': 'मेरी संगतियाँ',
+      'communityDiscover': 'खोजें',
+      'communityMembers': 'सदस्य',
+      'communityGuideLabel': 'पाठ',
+      'joinFellowshipTitle': 'संगति में शामिल हों',
+      'joinFellowshipHeading': 'अपना आमंत्रण कोड दर्ज करें',
+      'joinFellowshipInstructions':
+          'अपने संगति नेता से आमंत्रण कोड मांगें और नीचे दर्ज करें।',
+      'joinFellowshipCodeLabel': 'आमंत्रण कोड',
+      'joinFellowshipCodeHint': 'आमंत्रण कोड दर्ज करें',
+      'joinFellowshipButton': 'संगति में शामिल हों',
+      'joinFellowshipHelper':
+          'आमंत्रण कोड संगति मार्गदर्शकों द्वारा दिए जाते हैं।',
+      'fellowshipDefaultTitle': 'संगति',
+      'fellowshipTabFeed': 'फ़ीड',
+      'fellowshipTabLessons': 'पाठ',
+      'fellowshipTabMembers': 'सदस्य',
+      'feedNewPost': 'नई पोस्ट',
+      'feedLoadError': 'कुछ गलत हो गया।',
+      'feedRetry': 'पुनः प्रयास',
+      'feedEmpty': 'अभी कोई पोस्ट नहीं।\nपहले साझा करें!',
+      'postTypePrayer': 'प्रार्थना',
+      'postTypePraise': 'स्तुति',
+      'postTypeQuestion': 'प्रश्न',
+      'postTypeGeneral': 'सामान्य',
+      'postTypeStudyNote': 'अध्ययन नोट',
+      'postTypeSharedGuide': 'साझा गाइड',
+      'studyNoteLesson': 'पाठ',
+      'sharedGuideCta': 'इस गाइड का अध्ययन करें',
+      'feedCreateTitle': 'नई पोस्ट',
+      'feedCreateTypeLabel': 'पोस्ट प्रकार',
+      'feedCreateContentLabel': 'अपनी संगति के साथ कुछ साझा करें',
+      'feedCreateContentHint': 'आपके मन में क्या है?',
+      'feedCreatePost': 'पोस्ट करें',
+      'lessonsComing': 'पाठ जल्द आ रहे हैं',
+      'lessonsDescription':
+          'आपकी संगति के अध्ययन मार्गदर्शिकाएं यहाँ दिखाई देंगी।',
+      'lessonsAssignPath': 'लर्निंग पथ असाइन करें',
+      'lessonsChangePath': 'लर्निंग पथ बदलें',
+      'lessonsNoPathMentor':
+          'अभी कोई लर्निंग पथ असाइन नहीं है।\nएक असाइन करने के लिए नीचे टैप करें।',
+      'lessonsNoPathMember':
+          'आपके मार्गदर्शक ने अभी कोई लर्निंग पथ असाइन नहीं किया है।',
+      'lessonsCurrentStudy': 'वर्तमान अध्ययन',
+      'lessonsSelectPath': 'एक लर्निंग पथ चुनें',
+      'lessonsPickPathTitle': 'अपनी संगति के लिए एक लर्निंग पथ चुनें',
+      'searchPathsHint': 'लर्निंग पथ खोजें...',
+      'searchNoResults': 'कोई पथ मेल नहीं खाता',
+      'lessonsGuide': 'मार्गदर्शिका',
+      'lessonsTitle': 'पाठ',
+      'lessonsMemberProgress': 'सदस्य प्रगति',
+      'lessonsMembersCompleted': 'पूर्ण',
+      'membersInvite': 'आमंत्रित करें',
+      'membersEmpty': 'अभी कोई सदस्य नहीं',
+      'membersEmptyDescription':
+          'किसी को अपनी संगति में शामिल होने के लिए आमंत्रित करें।',
+      'membersLoadError': 'सदस्यों को लोड करना विफल।',
+      'membersRetry': 'पुनः प्रयास',
+      'membersMuted': 'म्यूट',
+      'membersInviteTitle': 'संगति में आमंत्रित करें',
+      'membersInviteSubtitle':
+          'किसी को अपनी संगति में आमंत्रित करने के लिए यह कोड साझा करें।',
+      'membersInviteComingSoon':
+          'जल्द आ रहा है — आमंत्रण लिंक यहाँ दिखाई देंगे',
+      'membersCopy': 'कॉपी करें',
+      'leaveFellowshipTitle': 'संगति छोड़ें',
+      'leaveFellowshipConfirm': 'क्या आप वाकई इस संगति को छोड़ना चाहते हैं?',
+      'cancel': 'रद्द करें',
+      'muteSuccess': 'सदस्य म्यूट किया गया',
+      'unmuteSuccess': 'सदस्य अनम्यूट किया गया',
+      'inviteGenerating': 'आमंत्रण बना रहे हैं...',
+      'inviteShareCode': 'यह कोड साझा करें',
+      'inviteExpires': '7 दिनों में समाप्त',
+      'lessonsAdvanceGuide': 'अगले गाइड पर जाएं',
+      'lessonsAdvanceConfirm': 'वर्तमान गाइड पूर्ण करें और अगले पर जाएं?',
+      'lessonsCompleted': 'अध्ययन पूर्ण!',
+      'lessonsGuideProgress': 'गाइड',
+      'lessonsOf': 'का',
+      // Edit Fellowship
+      'editFellowshipTitle': 'संगति संपादित करें',
+      'editFellowshipSave': 'परिवर्तन सहेजें',
+      'editFellowshipSuccess': 'संगति अपडेट हुई',
+      // Invite list + revoke
+      'inviteListEmpty': 'कोई सक्रिय आमंत्रण लिंक नहीं',
+      'inviteRevoke': 'रद्द करें',
+      'inviteRevokeSuccess': 'आमंत्रण रद्द किया गया',
+      // Transfer mentor
+      'transferMentorTitle': 'मार्गदर्शक भूमिका स्थानांतरित करें',
+      'transferMentorConfirm':
+          'इस सदस्य को मार्गदर्शक भूमिका दें? आप एक सामान्य सदस्य बन जाएंगे।',
+      'transferMentorSuccess': 'मार्गदर्शक भूमिका स्थानांतरित की गई',
+      'removeMemberTitle': 'सदस्य हटाएं',
+      'removeMemberConfirm':
+          'इस सदस्य को संगति से हटाएं? वे नए आमंत्रण से पुनः शामिल हो सकते हैं।',
+      'removeMemberAction': 'हटाएं',
+      'removeMemberSuccess': 'सदस्य हटाया गया',
+      'memberJoinedLabel': 'शामिल हुए',
+      // Report
+      'reportTitle': 'सामग्री की रिपोर्ट करें',
+      'reportReasonLabel': 'कारण',
+      'reportReasonHint': 'आप इसे क्यों रिपोर्ट कर रहे हैं? (5–500 अक्षर)',
+      'reportSubmit': 'रिपोर्ट सबमिट करें',
+      'reportSuccess': 'रिपोर्ट सबमिट हुई। धन्यवाद।',
+      // Create Fellowship Screen
+      'createFellowshipTitle': 'संगति बनाएं',
+      'createFellowshipHeading': 'एक नई संगति शुरू करें',
+      'createFellowshipSubtitle':
+          'अपने समूह को एक नाम दें और दूसरों को बाइबल का अध्ययन करने के लिए आमंत्रित करें।',
+      'createFellowshipNameLabel': 'संगति का नाम',
+      'createFellowshipNameHint': 'जैसे. सुबह के बाइबिल योद्धा',
+      'createFellowshipDescLabel': 'विवरण (वैकल्पिक)',
+      'createFellowshipDescHint': 'आपकी संगति मिलकर क्या अध्ययन करेगी?',
+      'createFellowshipMaxLabel': 'अधिकतम सदस्य (2–50)',
+      'createFellowshipButton': 'संगति बनाएं',
+      'createFellowshipSuccess': 'संगति बन गई!',
+      'createFellowshipFailed': 'संगति बनाना विफल।',
+      'createFellowshipNameError': 'नाम 3–60 अक्षरों का होना चाहिए।',
+      'createFellowshipDescError': 'विवरण अधिकतम 500 अक्षर।',
+      'createFellowshipMaxError': 'अधिकतम सदस्य 2 से 50 के बीच होने चाहिए।',
+      // Discover tab
+      'discoverFilterAll': 'सभी भाषाएं',
+      'discoverFilterEnglish': 'अंग्रेज़ी',
+      'discoverFilterHindi': 'हिन्दी',
+      'discoverFilterMalayalam': 'मलयालम',
+      'discoverEmpty': 'अभी कोई सार्वजनिक संगति नहीं',
+      'discoverEmptyShowAll': 'सभी भाषाएं दिखाएं',
+      'discoverJoinButton': 'शामिल हों',
+      'discoverFull': 'पूर्ण',
+      'discoverJoinedSnackbar': 'आप {name} में शामिल हो गए!',
+      'discoverMembersCount': '{count} / {max} सदस्य',
+      'createFellowshipLanguageLabel': 'भाषा',
+      'createFellowshipMakePublicLabel': 'सार्वजनिक करें',
+      'createFellowshipMakePublicHint':
+          'Discover में सभी उपयोगकर्ताओं को दिखाई देगा',
     },
     'ml': {
       // Common
@@ -680,6 +972,155 @@ class AppLocalizations {
           'കഠിനമായ പീഡനം ഉണ്ടായിട്ടും ഒന്നാം നൂറ്റാണ്ടിൽ സഭാ വളർച്ച അതിവേഗമായിരുന്നു.',
       'loading_fact_60':
           'യേശു തങ്ങളുടെ ജീവിതകാലത്ത് തന്നെ മടങ്ങിവരുമെന്ന് ആദ്യകാല ക്രിസ്ത്യാനികൾ വിശ്വസിച്ചു.',
+
+      // Community Feature
+      'communityTitle': 'സമൂഹം',
+      'communityJoinButton': 'ചേരുക',
+      'communityJoinedSuccess': 'നിങ്ങൾ കൂട്ടായ്മയിൽ ചേർന്നു!',
+      'communityJoinFailed':
+          'കൂട്ടായ്മയിൽ ചേരാൻ കഴിഞ്ഞില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
+      'communityLoadError': 'കൂട്ടായ്മകൾ ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല',
+      'communityRetry': 'വീണ്ടും ശ്രമിക്കുക',
+      'communityEmptyTitle': 'നിങ്ങൾ ഇതുവരെ ഒരു കൂട്ടായ്മയിലും ചേർന്നിട്ടില്ല',
+      'communityEmptyDescription':
+          'വിശ്വാസികളുടെ സമൂഹത്തോടൊപ്പം ബൈബിൾ പഠിക്കാൻ ഒരു കൂട്ടായ്മയിൽ ചേരുക.',
+      'communityJoinFellowship': 'ഒരു കൂട്ടായ്മയിൽ ചേരുക',
+      'communityMyFellowships': 'എന്റെ കൂട്ടായ്മകൾ',
+      'communityDiscover': 'കണ്ടെത്തുക',
+      'communityMembers': 'അംഗങ്ങൾ',
+      'communityGuideLabel': 'ഗൈഡ്',
+      'joinFellowshipTitle': 'കൂട്ടായ്മയിൽ ചേരുക',
+      'joinFellowshipHeading': 'നിങ്ങളുടെ ക്ഷണ കോഡ് നൽകുക',
+      'joinFellowshipInstructions':
+          'നിങ്ങളുടെ കൂട്ടായ്മ നേതാവിനോട് ക്ഷണ കോഡ് ചോദിച്ച് ചുവടെ നൽകുക.',
+      'joinFellowshipCodeLabel': 'ക്ഷണ കോഡ്',
+      'joinFellowshipCodeHint': 'ക്ഷണ കോഡ് നൽകുക',
+      'joinFellowshipButton': 'കൂട്ടായ്മയിൽ ചേരുക',
+      'joinFellowshipHelper': 'ക്ഷണ കോഡുകൾ കൂട്ടായ്മ മെൻ്ററുകൾ നൽകുന്നു.',
+      'fellowshipDefaultTitle': 'കൂട്ടായ്മ',
+      'fellowshipTabFeed': 'ഫീഡ്',
+      'fellowshipTabLessons': 'പാഠങ്ങൾ',
+      'fellowshipTabMembers': 'അംഗങ്ങൾ',
+      'feedNewPost': 'പുതിയ പോസ്റ്റ്',
+      'feedLoadError': 'എന്തോ തകരാറുണ്ടായി.',
+      'feedRetry': 'വീണ്ടും ശ്രമിക്കുക',
+      'feedEmpty': 'ഇതുവരെ പോസ്റ്റുകൾ ഇല്ല.\nആദ്യം പങ്കുവെക്കൂ!',
+      'postTypePrayer': 'പ്രാർഥന',
+      'postTypePraise': 'സ്തുതി',
+      'postTypeQuestion': 'ചോദ്യം',
+      'postTypeGeneral': 'പൊതുവായ',
+      'postTypeStudyNote': 'പഠന കുറിപ്പ്',
+      'postTypeSharedGuide': 'പങ്കിട്ട ഗൈഡ്',
+      'studyNoteLesson': 'പാഠം',
+      'sharedGuideCta': 'ഈ ഗൈഡ് പഠിക്കുക',
+      'feedCreateTitle': 'പുതിയ പോസ്റ്റ്',
+      'feedCreateTypeLabel': 'പോസ്റ്റ് തരം',
+      'feedCreateContentLabel':
+          'നിങ്ങളുടെ കൂട്ടായ്മയുമായി എന്തെങ്കിലും പങ്കിടുക',
+      'feedCreateContentHint': 'നിങ്ങളുടെ മനസ്സിൽ എന്തുണ്ട്?',
+      'feedCreatePost': 'പോസ്റ്റ് ചെയ്യുക',
+      'lessonsComing': 'പാഠങ്ങൾ ഉടൻ വരും',
+      'lessonsDescription': 'നിങ്ങളുടെ കൂട്ടായ്മ പഠന ഗൈഡുകൾ ഇവിടെ ദൃശ്യമാകും.',
+      'lessonsAssignPath': 'ലേണിംഗ് പാത്ത് നിശ്ചയിക്കുക',
+      'lessonsChangePath': 'ലേണിംഗ് പാത്ത് മാറ്റുക',
+      'lessonsNoPathMentor':
+          'ഇതുവരെ ഒരു ലേണിംഗ് പാത്ത് നിശ്ചയിച്ചിട്ടില്ല.\nഒന്ന് നിശ്ചയിക്കാൻ ചുവടെ ടാപ്പ് ചെയ്യുക.',
+      'lessonsNoPathMember':
+          'നിങ്ങളുടെ മെൻ്ററർ ഇതുവരെ ഒരു ലേണിംഗ് പാത്ത് നിശ്ചയിച്ചിട്ടില്ല.',
+      'lessonsCurrentStudy': 'നിലവിലെ പഠനം',
+      'lessonsSelectPath': 'ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'lessonsPickPathTitle':
+          'നിങ്ങളുടെ കൂട്ടായ്മക്കായി ഒരു ലേണിംഗ് പാത്ത് തിരഞ്ഞെടുക്കുക',
+      'searchPathsHint': 'ലേണിംഗ് പാത്തുകൾ തിരയുക...',
+      'searchNoResults': 'തിരയലുമായി പൊരുത്തപ്പെടുന്ന പാത്തുകൾ ഇല്ല',
+      'lessonsGuide': 'ഗൈഡ്',
+      'lessonsTitle': 'പാഠങ്ങൾ',
+      'lessonsMemberProgress': 'അംഗ പുരോഗതി',
+      'lessonsMembersCompleted': 'പൂർത്തിയാക്കി',
+      'membersInvite': 'ക്ഷണിക്കുക',
+      'membersEmpty': 'ഇതുവരെ അംഗങ്ങൾ ഇല്ല',
+      'membersEmptyDescription':
+          'ആരെയെങ്കിലും നിങ്ങളുടെ കൂട്ടായ്മയിൽ ചേരാൻ ക്ഷണിക്കുക.',
+      'membersLoadError': 'അംഗങ്ങളെ ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല.',
+      'membersRetry': 'വീണ്ടും ശ്രമിക്കുക',
+      'membersMuted': 'നിശ്ശബ്ദമാക്കി',
+      'membersInviteTitle': 'കൂട്ടായ്മയിലേക്ക് ക്ഷണിക്കുക',
+      'membersInviteSubtitle':
+          'ആരെയെങ്കിലും നിങ്ങളുടെ കൂട്ടായ്മയിലേക്ക് ക്ഷണിക്കാൻ ഈ കോഡ് പങ്കിടുക.',
+      'membersInviteComingSoon':
+          'ഉടൻ വരും \u2014 ക്ഷണ ലിങ്കുകൾ ഇവിടെ ദൃശ്യമാകും',
+      'membersCopy': 'പകർത്തുക',
+      'leaveFellowshipTitle': 'കൂട്ടായ്മ വിടുക',
+      'leaveFellowshipConfirm': 'നിങ്ങൾക്ക് ഈ കൂട്ടായ്മ വിടണോ?',
+      'cancel': 'റദ്ദാക്കുക',
+      'muteSuccess': 'അംഗം നിശ്ശബ്ദമാക്കി',
+      'unmuteSuccess': 'അംഗം നിശ്ശബ്ദം മാറ്റി',
+      'inviteGenerating': 'ക്ഷണം സൃഷ്ടിക്കുന്നു...',
+      'inviteShareCode': 'ഈ കോഡ് പങ്കിടുക',
+      'inviteExpires': '7 ദിവസത്തിൽ കാലഹരണം',
+      'lessonsAdvanceGuide': 'അടുത്ത ഗൈഡിലേക്ക് മുന്നേറുക',
+      'lessonsAdvanceConfirm':
+          'നിലവിലെ ഗൈഡ് പൂർത്തിയാക്കി അടുത്തതിലേക്ക് മുന്നേറണോ?',
+      'lessonsCompleted': 'പഠനം പൂർത്തിയായി!',
+      'lessonsGuideProgress': 'ഗൈഡ്',
+      'lessonsOf': 'ൽ',
+      // Edit Fellowship
+      'editFellowshipTitle': 'കൂട്ടായ്മ തിരുത്തുക',
+      'editFellowshipSave': 'മാറ്റങ്ങൾ സംരക്ഷിക്കുക',
+      'editFellowshipSuccess': 'കൂട്ടായ്മ അപ്ഡേറ്റ് ചെയ്തു',
+      // Invite list + revoke
+      'inviteListEmpty': 'സജീവ ക്ഷണ ലിങ്കുകൾ ഇല്ല',
+      'inviteRevoke': 'റദ്ദാക്കുക',
+      'inviteRevokeSuccess': 'ക്ഷണം റദ്ദാക്കി',
+      // Transfer mentor
+      'transferMentorTitle': 'മെൻ്റർ റോൾ കൈമാറുക',
+      'transferMentorConfirm':
+          'ഈ അംഗത്തിന് മെൻ്റർ റോൾ കൈമാറണോ? നിങ്ങൾ ഒരു സാധാരണ അംഗമാകും.',
+      'transferMentorSuccess': 'മെൻ്റർ റോൾ കൈമാറ്റം ചെയ്തു',
+      'removeMemberTitle': 'അംഗത്തെ നീക്കംചെയ്യുക',
+      'removeMemberConfirm':
+          'ഈ അംഗത്തെ കൂട്ടായ്മയിൽ നിന്ന് നീക്കംചെയ്യണോ? പുതിയ ക്ഷണം ഉപയോഗിച്ച് അവർക്ക് വീണ്ടും ചേരാം.',
+      'removeMemberAction': 'നീക്കംചെയ്യുക',
+      'removeMemberSuccess': 'അംഗത്തെ നീക്കംചെയ്തു',
+      'memberJoinedLabel': 'ചേർന്നത്',
+      // Report
+      'reportTitle': 'ഉള്ളടക്കം റിപ്പോർട്ട് ചെയ്യുക',
+      'reportReasonLabel': 'കാരണം',
+      'reportReasonHint':
+          'നിങ്ങൾ ഇത് എന്തിന് റിപ്പോർട്ട് ചെയ്യുന്നു? (5–500 അക്ഷരങ്ങൾ)',
+      'reportSubmit': 'റിപ്പോർട്ട് സമർപ്പിക്കുക',
+      'reportSuccess': 'റിപ്പോർട്ട് സമർപ്പിച്ചു. നന്ദി.',
+      // Create Fellowship Screen
+      'createFellowshipTitle': 'കൂട്ടായ്മ ഉണ്ടാക്കുക',
+      'createFellowshipHeading': 'ഒരു പുതിയ കൂട്ടായ്മ ആരംഭിക്കുക',
+      'createFellowshipSubtitle':
+          'നിങ്ങളുടെ ഗ്രൂപ്പിന് ഒരു പേര് നൽകി മറ്റുള്ളവരെ ബൈബിൾ പഠിക്കാൻ ക്ഷണിക്കുക.',
+      'createFellowshipNameLabel': 'കൂട്ടായ്മ പേര്',
+      'createFellowshipNameHint': 'ഉദാ. Morning Bible Warriors',
+      'createFellowshipDescLabel': 'വിവരണം (ഐച്ഛികം)',
+      'createFellowshipDescHint': 'നിങ്ങളുടെ കൂട്ടായ്മ എന്ത് പഠിക്കും?',
+      'createFellowshipMaxLabel': 'പരമാവധി അംഗങ്ങൾ (2–50)',
+      'createFellowshipButton': 'കൂട്ടായ്മ ഉണ്ടാക്കുക',
+      'createFellowshipSuccess': 'കൂട്ടായ്മ ഉണ്ടായി!',
+      'createFellowshipFailed': 'കൂട്ടായ്മ ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല.',
+      'createFellowshipNameError': 'പേര് 3–60 അക്ഷരങ്ങൾ ആയിരിക്കണം.',
+      'createFellowshipDescError': 'വിവരണം പരമാവധി 500 അക്ഷരങ്ങൾ.',
+      'createFellowshipMaxError': 'പരമാവധി അംഗങ്ങൾ 2–50 ആയിരിക്കണം.',
+      // Discover tab
+      'discoverFilterAll': 'എല്ലാ ഭാഷകളും',
+      'discoverFilterEnglish': 'ഇംഗ്ലീഷ്',
+      'discoverFilterHindi': 'ഹിന്ദി',
+      'discoverFilterMalayalam': 'മലയാളം',
+      'discoverEmpty': 'ഇനിയും പൊതു കൂട്ടായ്മകൾ ഇല്ല',
+      'discoverEmptyShowAll': 'എല്ലാ ഭാഷകളും കാണുക',
+      'discoverJoinButton': 'ചേരുക',
+      'discoverFull': 'നിറഞ്ഞു',
+      'discoverJoinedSnackbar': 'നിങ്ങൾ {name}-ൽ ചേർന്നു!',
+      'discoverMembersCount': '{count} / {max} അംഗങ്ങൾ',
+      'createFellowshipLanguageLabel': 'ഭാഷ',
+      'createFellowshipMakePublicLabel': 'പൊതുവാക്കുക',
+      'createFellowshipMakePublicHint':
+          'Discover-ൽ എല്ലാ ഉപയോക്താക്കൾക്കും ദൃശ്യമാകും',
     },
   };
 
@@ -845,6 +1286,269 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['achievement_category_voice']!;
   String get achievementCategorySaved =>
       _localizedValues[locale.languageCode]!['achievement_category_saved']!;
+
+  // Community Feature
+  String get communityTitle =>
+      _localizedValues[locale.languageCode]!['communityTitle']!;
+  String get communityJoinButton =>
+      _localizedValues[locale.languageCode]!['communityJoinButton']!;
+  String get communityJoinedSuccess =>
+      _localizedValues[locale.languageCode]!['communityJoinedSuccess']!;
+  String get communityJoinFailed =>
+      _localizedValues[locale.languageCode]!['communityJoinFailed']!;
+  String get communityLoadError =>
+      _localizedValues[locale.languageCode]!['communityLoadError']!;
+  String get communityRetry =>
+      _localizedValues[locale.languageCode]!['communityRetry']!;
+  String get communityEmptyTitle =>
+      _localizedValues[locale.languageCode]!['communityEmptyTitle']!;
+  String get communityEmptyDescription =>
+      _localizedValues[locale.languageCode]!['communityEmptyDescription']!;
+  String get communityJoinFellowship =>
+      _localizedValues[locale.languageCode]!['communityJoinFellowship']!;
+  String get communityMyFellowships =>
+      _localizedValues[locale.languageCode]!['communityMyFellowships']!;
+  String get communityDiscover =>
+      _localizedValues[locale.languageCode]!['communityDiscover']!;
+  String get communityMembers =>
+      _localizedValues[locale.languageCode]!['communityMembers']!;
+  String get communityGuideLabel =>
+      _localizedValues[locale.languageCode]!['communityGuideLabel']!;
+  String get joinFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['joinFellowshipTitle']!;
+  String get joinFellowshipHeading =>
+      _localizedValues[locale.languageCode]!['joinFellowshipHeading']!;
+  String get joinFellowshipInstructions =>
+      _localizedValues[locale.languageCode]!['joinFellowshipInstructions']!;
+  String get joinFellowshipCodeLabel =>
+      _localizedValues[locale.languageCode]!['joinFellowshipCodeLabel']!;
+  String get joinFellowshipCodeHint =>
+      _localizedValues[locale.languageCode]!['joinFellowshipCodeHint']!;
+  String get joinFellowshipButton =>
+      _localizedValues[locale.languageCode]!['joinFellowshipButton']!;
+  String get joinFellowshipHelper =>
+      _localizedValues[locale.languageCode]!['joinFellowshipHelper']!;
+  String get fellowshipDefaultTitle =>
+      _localizedValues[locale.languageCode]!['fellowshipDefaultTitle']!;
+  String get fellowshipTabFeed =>
+      _localizedValues[locale.languageCode]!['fellowshipTabFeed']!;
+  String get fellowshipTabLessons =>
+      _localizedValues[locale.languageCode]!['fellowshipTabLessons']!;
+  String get fellowshipTabMembers =>
+      _localizedValues[locale.languageCode]!['fellowshipTabMembers']!;
+  String get feedNewPost =>
+      _localizedValues[locale.languageCode]!['feedNewPost']!;
+  String get feedLoadError =>
+      _localizedValues[locale.languageCode]!['feedLoadError']!;
+  String get feedRetry => _localizedValues[locale.languageCode]!['feedRetry']!;
+  String get feedEmpty => _localizedValues[locale.languageCode]!['feedEmpty']!;
+  String get postTypePrayer =>
+      _localizedValues[locale.languageCode]!['postTypePrayer']!;
+  String get postTypePraise =>
+      _localizedValues[locale.languageCode]!['postTypePraise']!;
+  String get postTypeQuestion =>
+      _localizedValues[locale.languageCode]!['postTypeQuestion']!;
+  String get postTypeGeneral =>
+      _localizedValues[locale.languageCode]!['postTypeGeneral']!;
+  String get postTypeStudyNote =>
+      _localizedValues[locale.languageCode]!['postTypeStudyNote']!;
+  String get postTypeSharedGuide =>
+      _localizedValues[locale.languageCode]!['postTypeSharedGuide']!;
+  String get studyNoteLesson =>
+      _localizedValues[locale.languageCode]!['studyNoteLesson']!;
+  String get sharedGuideCta =>
+      _localizedValues[locale.languageCode]!['sharedGuideCta']!;
+  String get feedCreateTitle =>
+      _localizedValues[locale.languageCode]!['feedCreateTitle']!;
+  String get feedCreateTypeLabel =>
+      _localizedValues[locale.languageCode]!['feedCreateTypeLabel']!;
+  String get feedCreateContentLabel =>
+      _localizedValues[locale.languageCode]!['feedCreateContentLabel']!;
+  String get feedCreateContentHint =>
+      _localizedValues[locale.languageCode]!['feedCreateContentHint']!;
+  String get feedCreatePost =>
+      _localizedValues[locale.languageCode]!['feedCreatePost']!;
+  String get lessonsComing =>
+      _localizedValues[locale.languageCode]!['lessonsComing']!;
+  String get lessonsDescription =>
+      _localizedValues[locale.languageCode]!['lessonsDescription']!;
+  String get lessonsAssignPath =>
+      _localizedValues[locale.languageCode]!['lessonsAssignPath']!;
+  String get lessonsChangePath =>
+      _localizedValues[locale.languageCode]!['lessonsChangePath']!;
+  String get lessonsNoPathMentor =>
+      _localizedValues[locale.languageCode]!['lessonsNoPathMentor']!;
+  String get lessonsNoPathMember =>
+      _localizedValues[locale.languageCode]!['lessonsNoPathMember']!;
+  String get lessonsCurrentStudy =>
+      _localizedValues[locale.languageCode]!['lessonsCurrentStudy']!;
+  String get lessonsSelectPath =>
+      _localizedValues[locale.languageCode]!['lessonsSelectPath']!;
+  String get lessonsPickPathTitle =>
+      _localizedValues[locale.languageCode]!['lessonsPickPathTitle']!;
+  String get searchPathsHint =>
+      _localizedValues[locale.languageCode]!['searchPathsHint']!;
+  String get searchNoResults =>
+      _localizedValues[locale.languageCode]!['searchNoResults']!;
+  String get lessonsGuide =>
+      _localizedValues[locale.languageCode]!['lessonsGuide']!;
+  String get lessonsTitle =>
+      _localizedValues[locale.languageCode]!['lessonsTitle']!;
+  String get lessonsMemberProgress =>
+      _localizedValues[locale.languageCode]!['lessonsMemberProgress']!;
+  String get lessonsMembersCompleted =>
+      _localizedValues[locale.languageCode]!['lessonsMembersCompleted']!;
+  String get membersInvite =>
+      _localizedValues[locale.languageCode]!['membersInvite']!;
+  String get membersEmpty =>
+      _localizedValues[locale.languageCode]!['membersEmpty']!;
+  String get membersEmptyDescription =>
+      _localizedValues[locale.languageCode]!['membersEmptyDescription']!;
+  String get membersLoadError =>
+      _localizedValues[locale.languageCode]!['membersLoadError']!;
+  String get membersRetry =>
+      _localizedValues[locale.languageCode]!['membersRetry']!;
+  String get membersMuted =>
+      _localizedValues[locale.languageCode]!['membersMuted']!;
+  String get membersInviteTitle =>
+      _localizedValues[locale.languageCode]!['membersInviteTitle']!;
+  String get membersInviteSubtitle =>
+      _localizedValues[locale.languageCode]!['membersInviteSubtitle']!;
+  String get membersInviteComingSoon =>
+      _localizedValues[locale.languageCode]!['membersInviteComingSoon']!;
+  String get membersCopy =>
+      _localizedValues[locale.languageCode]!['membersCopy']!;
+
+  // Leave / Mute / Invite / Lessons — additional keys
+  String get leaveFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['leaveFellowshipTitle']!;
+  String get leaveFellowshipConfirm =>
+      _localizedValues[locale.languageCode]!['leaveFellowshipConfirm']!;
+  String get cancel => _localizedValues[locale.languageCode]!['cancel']!;
+  String get muteSuccess =>
+      _localizedValues[locale.languageCode]!['muteSuccess']!;
+  String get unmuteSuccess =>
+      _localizedValues[locale.languageCode]!['unmuteSuccess']!;
+  String get inviteGenerating =>
+      _localizedValues[locale.languageCode]!['inviteGenerating']!;
+  String get inviteShareCode =>
+      _localizedValues[locale.languageCode]!['inviteShareCode']!;
+  String get inviteExpires =>
+      _localizedValues[locale.languageCode]!['inviteExpires']!;
+  String get lessonsAdvanceGuide =>
+      _localizedValues[locale.languageCode]!['lessonsAdvanceGuide']!;
+  String get lessonsAdvanceConfirm =>
+      _localizedValues[locale.languageCode]!['lessonsAdvanceConfirm']!;
+  String get lessonsCompleted =>
+      _localizedValues[locale.languageCode]!['lessonsCompleted']!;
+  String get lessonsGuideProgress =>
+      _localizedValues[locale.languageCode]!['lessonsGuideProgress']!;
+  String get lessonsOf => _localizedValues[locale.languageCode]!['lessonsOf']!;
+
+  // Edit Fellowship
+  String get editFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['editFellowshipTitle']!;
+  String get editFellowshipSave =>
+      _localizedValues[locale.languageCode]!['editFellowshipSave']!;
+  String get editFellowshipSuccess =>
+      _localizedValues[locale.languageCode]!['editFellowshipSuccess']!;
+  // Invite list + revoke
+  String get inviteListEmpty =>
+      _localizedValues[locale.languageCode]!['inviteListEmpty']!;
+  String get inviteRevoke =>
+      _localizedValues[locale.languageCode]!['inviteRevoke']!;
+  String get inviteRevokeSuccess =>
+      _localizedValues[locale.languageCode]!['inviteRevokeSuccess']!;
+  // Transfer mentor
+  String get transferMentorTitle =>
+      _localizedValues[locale.languageCode]!['transferMentorTitle']!;
+  String get transferMentorConfirm =>
+      _localizedValues[locale.languageCode]!['transferMentorConfirm']!;
+  String get transferMentorSuccess =>
+      _localizedValues[locale.languageCode]!['transferMentorSuccess']!;
+  // Remove member
+  String get removeMemberTitle =>
+      _localizedValues[locale.languageCode]!['removeMemberTitle']!;
+  String get removeMemberConfirm =>
+      _localizedValues[locale.languageCode]!['removeMemberConfirm']!;
+  String get removeMemberAction =>
+      _localizedValues[locale.languageCode]!['removeMemberAction']!;
+  String get removeMemberSuccess =>
+      _localizedValues[locale.languageCode]!['removeMemberSuccess']!;
+  String get memberJoinedLabel =>
+      _localizedValues[locale.languageCode]!['memberJoinedLabel']!;
+  // Report
+  String get reportTitle =>
+      _localizedValues[locale.languageCode]!['reportTitle']!;
+  String get reportReasonLabel =>
+      _localizedValues[locale.languageCode]!['reportReasonLabel']!;
+  String get reportReasonHint =>
+      _localizedValues[locale.languageCode]!['reportReasonHint']!;
+  String get reportSubmit =>
+      _localizedValues[locale.languageCode]!['reportSubmit']!;
+  String get reportSuccess =>
+      _localizedValues[locale.languageCode]!['reportSuccess']!;
+
+  // Create Fellowship Screen
+  String get createFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['createFellowshipTitle']!;
+  String get createFellowshipHeading =>
+      _localizedValues[locale.languageCode]!['createFellowshipHeading']!;
+  String get createFellowshipSubtitle =>
+      _localizedValues[locale.languageCode]!['createFellowshipSubtitle']!;
+  String get createFellowshipNameLabel =>
+      _localizedValues[locale.languageCode]!['createFellowshipNameLabel']!;
+  String get createFellowshipNameHint =>
+      _localizedValues[locale.languageCode]!['createFellowshipNameHint']!;
+  String get createFellowshipDescLabel =>
+      _localizedValues[locale.languageCode]!['createFellowshipDescLabel']!;
+  String get createFellowshipDescHint =>
+      _localizedValues[locale.languageCode]!['createFellowshipDescHint']!;
+  String get createFellowshipMaxLabel =>
+      _localizedValues[locale.languageCode]!['createFellowshipMaxLabel']!;
+  String get createFellowshipButton =>
+      _localizedValues[locale.languageCode]!['createFellowshipButton']!;
+  String get createFellowshipSuccess =>
+      _localizedValues[locale.languageCode]!['createFellowshipSuccess']!;
+  String get createFellowshipFailed =>
+      _localizedValues[locale.languageCode]!['createFellowshipFailed']!;
+  String get createFellowshipNameError =>
+      _localizedValues[locale.languageCode]!['createFellowshipNameError']!;
+  String get createFellowshipDescError =>
+      _localizedValues[locale.languageCode]!['createFellowshipDescError']!;
+  String get createFellowshipMaxError =>
+      _localizedValues[locale.languageCode]!['createFellowshipMaxError']!;
+
+  // Discover tab
+  String get discoverFilterAll =>
+      _localizedValues[locale.languageCode]!['discoverFilterAll']!;
+  String get discoverFilterEnglish =>
+      _localizedValues[locale.languageCode]!['discoverFilterEnglish']!;
+  String get discoverFilterHindi =>
+      _localizedValues[locale.languageCode]!['discoverFilterHindi']!;
+  String get discoverFilterMalayalam =>
+      _localizedValues[locale.languageCode]!['discoverFilterMalayalam']!;
+  String get discoverEmpty =>
+      _localizedValues[locale.languageCode]!['discoverEmpty']!;
+  String get discoverEmptyShowAll =>
+      _localizedValues[locale.languageCode]!['discoverEmptyShowAll']!;
+  String get discoverJoinButton =>
+      _localizedValues[locale.languageCode]!['discoverJoinButton']!;
+  String get discoverFull =>
+      _localizedValues[locale.languageCode]!['discoverFull']!;
+  String discoverJoinedSnackbar(String name) =>
+      _localizedValues[locale.languageCode]!['discoverJoinedSnackbar']!
+          .replaceAll('{name}', name);
+  String discoverMembersCount(int count, int max) =>
+      _localizedValues[locale.languageCode]!['discoverMembersCount']!
+          .replaceAll('{count}', '$count')
+          .replaceAll('{max}', '$max');
+  String get createFellowshipLanguageLabel =>
+      _localizedValues[locale.languageCode]!['createFellowshipLanguageLabel']!;
+  String get createFellowshipMakePublicLabel => _localizedValues[
+      locale.languageCode]!['createFellowshipMakePublicLabel']!;
+  String get createFellowshipMakePublicHint =>
+      _localizedValues[locale.languageCode]!['createFellowshipMakePublicHint']!;
 
   // First Century Christian Facts for Loading Screen
   String getLoadingFact(int index) {

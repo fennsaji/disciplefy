@@ -1164,7 +1164,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       final hex = colorHex.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return AppColors.brandPrimary;
+      return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -1177,7 +1177,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       case 'disciple':
         return AppColors.warning;
       case 'leader':
-        return AppColors.brandSecondary;
+        return Theme.of(context).colorScheme.primary;
       default:
         return AppColors.lightTextSecondary;
     }

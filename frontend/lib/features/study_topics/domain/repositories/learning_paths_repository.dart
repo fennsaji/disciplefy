@@ -12,12 +12,15 @@ abstract class LearningPathsRepository {
   /// [forceRefresh] - Whether to bypass cache and force refresh
   /// [limit] - Page size (default: 10)
   /// [offset] - Page offset (default: 0)
+  /// [search] - Optional search query sent to backend; also used for client-side
+  ///   filtering when the backend returns full results.
   Future<Either<Failure, LearningPathsResult>> getLearningPaths({
     String language = 'en',
     bool includeEnrolled = true,
     bool forceRefresh = false,
     int limit = 10,
     int offset = 0,
+    String? search,
   });
 
   /// Get learning paths grouped by category (primary section listing).

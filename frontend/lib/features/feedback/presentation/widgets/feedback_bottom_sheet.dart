@@ -246,7 +246,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
             return ElevatedButton(
               onPressed: isSubmitting ? null : _submitFeedback,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandSecondary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
