@@ -157,18 +157,21 @@ class LearningPathCard extends StatelessWidget {
 
             const SizedBox(height: 6),
 
-            // Description
-            Text(
-              path.description,
-              style: AppFonts.inter(
-                fontSize: 13,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.85)
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                height: 1.4,
+            // Description — Flexible so it claims leftover vertical space and
+            // clips with ellipsis rather than overflowing the constrained card.
+            Flexible(
+              child: Text(
+                path.description,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                  height: 1.4,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
 
             const SizedBox(height: 12),
@@ -182,8 +185,6 @@ class LearningPathCard extends StatelessWidget {
             ] else if (!compact) ...[
               const SizedBox(height: 40),
             ],
-
-            if (compact) const Spacer(),
 
             // Footer with XP and duration
             Row(

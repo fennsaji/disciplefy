@@ -315,6 +315,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   // Fellowship data for optional "post to fellowship feed" toggle
   List<FellowshipEntity>? _userFellowships;
 
+  // Screenshot detection
+  StreamSubscription<dynamic>? _screenshotSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -322,6 +325,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _loadContentFontSize();
     _initializeStudyGuide();
     _loadUserFellowships();
+    if (!kIsWeb) _setupScreenshotDetection();
   }
 
   /// Loads the fellowships the current user belongs to so the
@@ -540,6 +544,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Stop TTS when navigating away
     sl<StudyGuideTTSService>().stop();
 
+    _screenshotSubscription?.cancel();
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
     _isCompletionTrackingStarted = false;
@@ -3738,6 +3743,53 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
+  // ============================================================================
+  // SCREENSHOT DETECTION
+  // ============================================================================
+
+  void _setupScreenshotDetection() {
+    try {
+      const channel = EventChannel('com.disciplefy/screenshot');
+      _screenshotSubscription = channel.receiveBroadcastStream().listen((_) {
+        if (mounted && _currentStudyGuide != null) {
+          _showShareOnScreenshotPrompt();
+        }
+      });
+    } catch (_) {
+      // Platform does not support screenshot detection — no-op
+    }
+  }
+
+  void _showShareOnScreenshotPrompt() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ScreenshotShareSheet(
+        onShareText: () {
+          Navigator.of(ctx).pop();
+          _shareStudyGuide();
+        },
+        onShareFellowship: (_userFellowships?.isNotEmpty == true)
+            ? () {
+                Navigator.of(ctx).pop();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ShareGuideSheet(
+                    studyGuideId: _currentStudyGuide!.id,
+                    guideTitle: _getDisplayTitle(),
+                    guideInputType: _currentStudyGuide!.inputType,
+                    guideLanguage: _currentStudyGuide!.language,
+                    fellowships: _userFellowships!,
+                  ),
+                );
+              }
+            : null,
+      ),
+    );
+  }
+
   Future<void> _shareStudyGuide() async {
     if (_currentStudyGuide == null) return;
 
@@ -4734,6 +4786,128 @@ class _ShareFellowshipBanner extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Screenshot share prompt sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ScreenshotShareSheet extends StatelessWidget {
+  final VoidCallback onShareText;
+  final VoidCallback? onShareFellowship;
+
+  const _ScreenshotShareSheet({
+    required this.onShareText,
+    this.onShareFellowship,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Icon + headline
+          Icon(
+            Icons.screenshot_monitor_rounded,
+            size: 36,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Share your study guide',
+            style: AppFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'You took a screenshot — want to share it?',
+            style: AppFonts.inter(
+              fontSize: 13,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Share buttons
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onShareText,
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: const Text('Share'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                if (onShareFellowship != null) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onShareFellowship,
+                      icon: const Icon(Icons.group_rounded, size: 18),
+                      label: const Text('Share to Fellowship'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Dismiss',
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );

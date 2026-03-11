@@ -222,12 +222,17 @@ class RecommendedTopicsBloc
           },
         );
 
-        // Determine if we should show the personalization prompt
-        // Show prompt if:
-        // 1. User hasn't completed questionnaire
-        // 2. Prompt wasn't dismissed (persisted in local storage)
+        // Show the prompt only if the user hasn't completed the questionnaire
+        // AND hasn't seen the prompt before (once shown it is permanently hidden).
         final showPrompt =
             !forYouResult.hasCompletedQuestionnaire && !_promptDismissed;
+
+        // Mark as seen immediately so it never reappears, even if the user
+        // navigates away without tapping either button.
+        if (showPrompt) {
+          _promptDismissed = true;
+          unawaited(_prefs.setBool(_promptDismissedKey, true));
+        }
 
         emit(RecommendedTopicsLoaded(
           topics: forYouResult.topics,

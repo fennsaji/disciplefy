@@ -46,16 +46,29 @@ class StudyStreamService {
       'mode': studyMode.name,
     };
 
+    // Truncate long text fields to prevent URL length overflow (Malayalam/Hindi text
+    // URL-encodes at ~9 chars per character, easily exceeding 8KB URL limits).
+    const int descMaxChars = 300;
+    const int pathDescMaxChars = 200;
+    const int pathTitleMaxChars = 100;
+
     if (topicDescription != null && topicDescription.isNotEmpty) {
-      queryParams['topic_description'] = topicDescription;
+      queryParams['topic_description'] = topicDescription.length > descMaxChars
+          ? topicDescription.substring(0, descMaxChars)
+          : topicDescription;
     }
 
     if (pathTitle != null && pathTitle.isNotEmpty) {
-      queryParams['path_title'] = pathTitle;
+      queryParams['path_title'] = pathTitle.length > pathTitleMaxChars
+          ? pathTitle.substring(0, pathTitleMaxChars)
+          : pathTitle;
     }
 
     if (pathDescription != null && pathDescription.isNotEmpty) {
-      queryParams['path_description'] = pathDescription;
+      queryParams['path_description'] =
+          pathDescription.length > pathDescMaxChars
+              ? pathDescription.substring(0, pathDescMaxChars)
+              : pathDescription;
     }
 
     if (discipleLevel != null && discipleLevel.isNotEmpty) {

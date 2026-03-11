@@ -54,14 +54,17 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     _setupLanguageChangeListener();
   }
 
-  /// Setup listener for language preference changes from settings
+  /// Setup listener for language preference changes from settings.
+  /// Reloads verse when either the app UI language or the study content
+  /// language (three-dot menu → Content Language) changes.
   void _setupLanguageChangeListener() {
     _languageChangeSubscription =
         languagePreferenceService.languageChanges.listen(
-      (appLanguage) {
-        // Convert AppLanguage to VerseLanguage and trigger reload
-        add(const LanguagePreferenceChanged());
-      },
+      (_) => add(const LanguagePreferenceChanged()),
+    );
+    // Also reload when the study content language is changed independently.
+    languagePreferenceService.studyContentLanguageChanges.listen(
+      (_) => add(const LanguagePreferenceChanged()),
     );
   }
 
