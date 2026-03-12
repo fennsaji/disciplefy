@@ -359,10 +359,10 @@ jobs:
     steps:
       - name: Send Meeting Reminder Push Notifications (Prod)
         run: |
-          echo "Triggering fellowship-meetings-reminder Edge Function (Production)..."
+          echo "Triggering fellowship-meetings/reminder Edge Function (Production)..."
 
           response=$(curl -X POST \
-            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/fellowship-meetings-reminder" \
+            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/fellowship-meetings/reminder" \
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{}' \
