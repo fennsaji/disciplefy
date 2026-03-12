@@ -545,7 +545,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               icon: const Icon(Icons.refresh),
               label: Text(AppLocalizations.of(context)!.progressRetry),
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: context.appInteractive,
                 foregroundColor: Colors.white,
               ),
             ),

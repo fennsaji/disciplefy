@@ -610,9 +610,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           height: 48,
           decoration: BoxDecoration(
             color: isActive
-                ? theme.colorScheme.primary
+                ? context.appInteractive
                 : isCompleted
-                    ? theme.colorScheme.primary.withAlpha(100)
+                    ? context.appInteractive.withAlpha(100)
                     : AppColors.lightBorder,
             shape: BoxShape.circle,
           ),
@@ -660,11 +660,11 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
+                color: context.appInteractive,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withAlpha(60),
+                    color: context.appInteractive.withAlpha(60),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -801,14 +801,13 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color:
-                    _isRecording ? AppColors.error : theme.colorScheme.primary,
+                color: _isRecording ? AppColors.error : context.appInteractive,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: (_isRecording
                             ? AppColors.error
-                            : theme.colorScheme.primary)
+                            : context.appInteractive)
                         .withAlpha(60),
                     blurRadius: 20,
                     spreadRadius: 5,
@@ -1064,22 +1063,28 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
           // Action Buttons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              OutlinedButton.icon(
-                onPressed: _retryRecording,
-                icon: const Icon(Icons.refresh),
-                label: Text(context.tr(TranslationKeys.practiceRetry)),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _retryRecording,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(context.tr(TranslationKeys.practiceRetry)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
               ),
-              ElevatedButton.icon(
-                onPressed: _submitPractice,
-                icon: const Icon(Icons.check),
-                label: Text(context.tr(TranslationKeys.practiceSubmit)),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _submitPractice,
+                  icon: const Icon(Icons.check),
+                  label: Text(context.tr(TranslationKeys.practiceSubmit)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: context.appInteractive,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ),
             ],

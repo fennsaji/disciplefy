@@ -146,7 +146,7 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
             Navigator.pushNamed(context, AppRoutes.pricing);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.primary,
+            backgroundColor: context.appInteractive,
             foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),

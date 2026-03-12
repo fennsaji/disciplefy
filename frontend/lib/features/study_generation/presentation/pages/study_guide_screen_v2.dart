@@ -1494,7 +1494,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     isFromLearningPath ? 'Continue Learning Path' : 'Done',
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: context.appInteractive,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -3959,7 +3959,7 @@ $appLink
               _shareStudyGuide();
             },
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: context.appInteractive,
               foregroundColor: Colors.white,
             ),
             child: const Text('Share as Text'),
@@ -4129,7 +4129,7 @@ class _StudySection extends StatelessWidget {
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
           style: AppFonts.inter(color: Colors.white),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: context.appInteractive,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),

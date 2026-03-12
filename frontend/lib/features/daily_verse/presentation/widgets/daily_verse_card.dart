@@ -802,7 +802,7 @@ class DailyVerseCard extends StatelessWidget {
             color: theme.colorScheme.onPrimary,
           ),
         ),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: context.appInteractive,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
