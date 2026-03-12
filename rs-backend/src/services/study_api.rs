@@ -16,6 +16,7 @@ pub struct StudyGuideResult {
 /// - "section" with data: {"type":"summary","content":"..."}
 /// - "complete" with data: {"studyGuideId":"..."}
 /// - "error" with data: {"code":"...","message":"..."}
+#[allow(clippy::too_many_arguments)]
 pub async fn generate_study_guide(
     http: &Client,
     config: &Config,

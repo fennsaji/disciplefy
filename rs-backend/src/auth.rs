@@ -9,7 +9,7 @@ use crate::error::AppError;
 
 #[derive(Debug, Clone)]
 pub struct AdminUser {
-    pub user_id: Uuid,
+    pub _user_id: Uuid,
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,5 +82,5 @@ pub async fn require_admin(
         return Err(AppError::Forbidden("Admin access required".to_string()));
     }
 
-    Ok(AdminUser { user_id })
+    Ok(AdminUser { _user_id: user_id })
 }

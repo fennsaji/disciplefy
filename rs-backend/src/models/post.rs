@@ -155,7 +155,7 @@ fn to_list_item(meta: BlogPostMeta) -> PostListItem {
 }
 
 pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPosts, AppError> {
-    let limit = q.limit.min(50).max(1);
+    let limit = q.limit.clamp(1, 50);
     let offset = (q.page.max(1) - 1) * limit;
 
     let total: i64 = sqlx::query_scalar(
@@ -223,7 +223,7 @@ pub async fn get_tags(pool: &PgPool, locale: &str) -> Result<Vec<String>, AppErr
 }
 
 pub async fn search_posts(pool: &PgPool, q: &SearchQuery) -> Result<PaginatedPosts, AppError> {
-    let limit = q.limit.min(50).max(1);
+    let limit = q.limit.clamp(1, 50);
     let offset = (q.page.max(1) - 1) * limit;
 
     let total: i64 = sqlx::query_scalar(
