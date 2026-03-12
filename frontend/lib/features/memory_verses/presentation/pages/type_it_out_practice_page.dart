@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -91,32 +92,22 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
   void _loadVerse() {
     final state = context.read<MemoryVerseBloc>().state;
     if (state is DueVersesLoaded) {
-      try {
-        final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
+      final verse =
+          state.verses.firstWhereOrNull((v) => v.id == widget.verseId);
+      if (verse != null) {
         setState(() {
           currentVerse = verse;
           // Include reference at the end of verse text for memorization
           final fullText = '${verse.verseText} ${verse.verseReference}';
           _initializeExpectedText(fullText);
         });
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) context.pop();
-          });
-        }
+      } else {
+        context
+            .read<MemoryVerseBloc>()
+            .add(const LoadDueVerses(forceRefresh: true));
       }
     } else {
       context.read<MemoryVerseBloc>().add(const LoadDueVerses());
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _loadVerse();
-      });
     }
   }
 
@@ -358,69 +349,77 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
         if (didPop) return;
         _handleBackNavigation();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackNavigation,
+      child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
+        listener: (context, state) {
+          if (state is DueVersesLoaded && currentVerse == null) {
+            _loadVerse();
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _handleBackNavigation,
+            ),
+            title: Text(context.tr(TranslationKeys.practiceModeTypeItOut)),
+            actions: [
+              TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+              const SizedBox(width: 8),
+            ],
           ),
-          title: Text(context.tr(TranslationKeys.practiceModeTypeItOut)),
-          actions: [
-            TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: currentVerse == null
-            ? const Center(child: CircularProgressIndicator())
-            : SafeArea(
-                child: Column(
-                  children: [
-                    // Verse Reference Header
-                    _buildVerseReferenceHeader(theme),
+          body: currentVerse == null
+              ? const Center(child: CircularProgressIndicator())
+              : SafeArea(
+                  child: Column(
+                    children: [
+                      // Verse Reference Header
+                      _buildVerseReferenceHeader(theme),
 
-                    // Language hint for non-English
-                    if (detectedLanguage != 'en') _buildLanguageHint(theme),
+                      // Language hint for non-English
+                      if (detectedLanguage != 'en') _buildLanguageHint(theme),
 
-                    // Text Input Area
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: TextField(
-                          controller: _textController,
-                          focusNode: _focusNode,
-                          maxLines: null,
-                          expands: true,
-                          textAlignVertical: TextAlignVertical.top,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            height: 1.6,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: context
-                                .tr(TranslationKeys.typeItOutPlaceholder),
-                            hintStyle: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withOpacity(0.5),
+                      // Text Input Area
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TextField(
+                            controller: _textController,
+                            focusNode: _focusNode,
+                            maxLines: null,
+                            expands: true,
+                            textAlignVertical: TextAlignVertical.top,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              height: 1.6,
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            decoration: InputDecoration(
+                              hintText: context
+                                  .tr(TranslationKeys.typeItOutPlaceholder),
+                              hintStyle: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withOpacity(0.5),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: theme
+                                  .colorScheme.surfaceContainerHighest
+                                  .withOpacity(0.3),
                             ),
-                            filled: true,
-                            fillColor: theme.colorScheme.surfaceContainerHighest
-                                .withOpacity(0.3),
+                            onChanged: (_) => setState(() {}),
                           ),
-                          onChanged: (_) => setState(() {}),
                         ),
                       ),
-                    ),
 
-                    // Word count row
-                    _buildWordCountRow(theme),
+                      // Word count row
+                      _buildWordCountRow(theme),
 
-                    // Action buttons
-                    _buildActionButtons(theme),
-                  ],
+                      // Action buttons
+                      _buildActionButtons(theme),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     ).withAuthProtection();
   }

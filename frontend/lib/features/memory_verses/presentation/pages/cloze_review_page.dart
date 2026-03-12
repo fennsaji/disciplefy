@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -75,32 +76,22 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   void _loadVerse() {
     final state = context.read<MemoryVerseBloc>().state;
     if (state is DueVersesLoaded) {
-      try {
-        final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
+      final verse =
+          state.verses.firstWhereOrNull((v) => v.id == widget.verseId);
+      if (verse != null) {
         setState(() {
           currentVerse = verse;
           detectedLanguage =
               TransliterationService.detectLanguage(verse.verseText);
           _initializeWordEntries();
         });
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) context.pop();
-          });
-        }
+      } else {
+        context
+            .read<MemoryVerseBloc>()
+            .add(const LoadDueVerses(forceRefresh: true));
       }
     } else {
       context.read<MemoryVerseBloc>().add(const LoadDueVerses());
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _loadVerse();
-      });
     }
   }
 
@@ -377,72 +368,79 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
         if (didPop) return;
         _handleBackNavigation();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackNavigation,
+      child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
+        listener: (context, state) {
+          if (state is DueVersesLoaded && currentVerse == null) {
+            _loadVerse();
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _handleBackNavigation,
+            ),
+            title: Text(
+                '${context.tr(TranslationKeys.practiceModeCloze)} - ${_getDifficultyLabel(context)}'),
+            actions: [
+              TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+              const SizedBox(width: 8),
+            ],
           ),
-          title: Text(
-              '${context.tr(TranslationKeys.practiceModeCloze)} - ${_getDifficultyLabel(context)}'),
-          actions: [
-            TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: currentVerse == null
-            ? const Center(child: CircularProgressIndicator())
-            : SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    // Verse Reference
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        currentVerse!.verseReference,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Expanded(
-                      child: SingleChildScrollView(
+          body: currentVerse == null
+              ? const Center(child: CircularProgressIndicator())
+              : SafeArea(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      // Verse Reference
+                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: _ClozeVerseView(
-                          wordEntries: wordEntries,
-                          blankControllers: blankControllers,
-                          showFeedback: false,
+                        child: Text(
+                          currentVerse!.verseReference,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    ),
-                    // Submit Button
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: isCompleted ? _submitPractice : null,
-                          icon: const Icon(Icons.check),
-                          label:
-                              Text(context.tr(TranslationKeys.practiceSubmit)),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: context.appInteractive,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 24),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: _ClozeVerseView(
+                            wordEntries: wordEntries,
+                            blankControllers: blankControllers,
+                            showFeedback: false,
+                          ),
+                        ),
+                      ),
+                      // Submit Button
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: isCompleted ? _submitPractice : null,
+                            icon: const Icon(Icons.check),
+                            label: Text(
+                                context.tr(TranslationKeys.practiceSubmit)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: context.appInteractive,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     ).withAuthProtection();
   }

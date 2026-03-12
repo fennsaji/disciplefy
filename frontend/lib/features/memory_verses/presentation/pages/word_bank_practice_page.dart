@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -141,32 +143,22 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   void _loadVerse() {
     final state = context.read<MemoryVerseBloc>().state;
     if (state is DueVersesLoaded) {
-      try {
-        final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
+      final verse =
+          state.verses.firstWhereOrNull((v) => v.id == widget.verseId);
+      if (verse != null) {
         setState(() {
           currentVerse = verse;
           // Include reference at the end of verse text for memorization
           final fullText = '${verse.verseText} ${verse.verseReference}';
           _initializeWordBank(fullText);
         });
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) context.pop();
-          });
-        }
+      } else {
+        context
+            .read<MemoryVerseBloc>()
+            .add(const LoadDueVerses(forceRefresh: true));
       }
     } else {
       context.read<MemoryVerseBloc>().add(const LoadDueVerses());
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _loadVerse();
-      });
     }
   }
 
@@ -444,11 +436,16 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     final theme = Theme.of(context);
 
     if (currentVerse == null) {
-      return Scaffold(
-        appBar: AppBar(
-            title: Text(context.tr(TranslationKeys.practiceModeWordBank))),
-        body: const Center(child: CircularProgressIndicator()),
-      ).withAuthProtection();
+      return BlocListener<MemoryVerseBloc, MemoryVerseState>(
+        listener: (context, state) {
+          if (state is DueVersesLoaded && currentVerse == null) _loadVerse();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+              title: Text(context.tr(TranslationKeys.practiceModeWordBank))),
+          body: const Center(child: CircularProgressIndicator()),
+        ).withAuthProtection(),
+      );
     }
 
     return PopScope(

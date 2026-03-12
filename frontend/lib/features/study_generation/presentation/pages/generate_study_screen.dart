@@ -1183,10 +1183,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: context.appInteractive.withValues(alpha: isDark ? 0.12 : 0.08),
+            color:
+                context.appInteractive.withValues(alpha: isDark ? 0.12 : 0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: context.appInteractive.withValues(alpha: isDark ? 0.5 : 0.3),
+              color:
+                  context.appInteractive.withValues(alpha: isDark ? 0.5 : 0.3),
               width: 1.5,
             ),
             boxShadow: [
@@ -1202,7 +1204,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: context.appInteractive.withValues(alpha: isDark ? 0.25 : 0.15),
+                  color: context.appInteractive
+                      .withValues(alpha: isDark ? 0.25 : 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
