@@ -39,7 +39,7 @@ pub async fn run_blog_generation(
          FROM learning_path_topics lpt
          JOIN learning_paths lp ON lpt.learning_path_id = lp.id
          WHERE lp.is_active = true
-         ORDER BY lp.display_order, lpt.position"
+         ORDER BY lp.display_order, lpt.position",
     )
     .fetch_all(pool)
     .await?;
@@ -90,7 +90,8 @@ pub async fn run_blog_generation(
                 Err(e) => {
                     tracing::error!(topic = %topic.title, locale, "Study API failed: {}", e);
                     failed += 1;
-                    tokio::time::sleep(std::time::Duration::from_secs(DELAY_BETWEEN_CALLS_SECS)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(DELAY_BETWEEN_CALLS_SECS))
+                        .await;
                     continue;
                 }
             };

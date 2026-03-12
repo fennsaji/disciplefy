@@ -29,10 +29,8 @@ impl fmt::Debug for Config {
 impl Config {
     pub fn from_env() -> Self {
         Self {
-            database_url: env::var("DATABASE_URL")
-                .expect("DATABASE_URL must be set"),
-            supabase_url: env::var("SUPABASE_URL")
-                .expect("SUPABASE_URL must be set"),
+            database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
+            supabase_url: env::var("SUPABASE_URL").expect("SUPABASE_URL must be set"),
             supabase_anon_key: env::var("SUPABASE_ANON_KEY")
                 .expect("SUPABASE_ANON_KEY must be set"),
             supabase_service_role_key: env::var("SUPABASE_SERVICE_ROLE_KEY")

@@ -1,8 +1,8 @@
 pub mod blog_generator;
 pub mod schedules;
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use reqwest::Client;
 use sqlx::PgPool;
@@ -18,7 +18,10 @@ pub struct CronGuard;
 
 impl CronGuard {
     pub fn try_acquire() -> Option<Self> {
-        if CRON_RUNNING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+        if CRON_RUNNING
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
             Some(CronGuard)
         } else {
             None
@@ -33,7 +36,9 @@ impl Drop for CronGuard {
 }
 
 pub async fn start_scheduler(pool: PgPool, config: Config, http: Client) {
-    let sched = JobScheduler::new().await.expect("Failed to create scheduler");
+    let sched = JobScheduler::new()
+        .await
+        .expect("Failed to create scheduler");
 
     // Blog generation CRON
     let blog_pool = pool.clone();
@@ -59,8 +64,14 @@ pub async fn start_scheduler(pool: PgPool, config: Config, http: Client) {
     })
     .expect("Failed to create blog CRON job");
 
-    sched.add(blog_job).await.expect("Failed to add blog CRON job");
+    sched
+        .add(blog_job)
+        .await
+        .expect("Failed to add blog CRON job");
 
     sched.start().await.expect("Failed to start CRON scheduler");
-    tracing::info!(schedule = schedules::BLOG_GENERATION, "CRON scheduler started");
+    tracing::info!(
+        schedule = schedules::BLOG_GENERATION,
+        "CRON scheduler started"
+    );
 }
