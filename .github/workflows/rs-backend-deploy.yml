@@ -1,0 +1,100 @@
+name: RS Backend Deploy
+
+on:
+  workflow_run:
+    workflows: [RS Backend CI]
+    branches: [main]
+    types: [completed]
+
+concurrency:
+  group: rs-backend-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # ── Write .env for rs-backend (app secrets) ─────────────────────────────
+      - name: Write .env
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY:         ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AXIOM_API_KEY:             ${{ secrets.AXIOM_API_KEY }}
+          AXIOM_DATASET:             ${{ secrets.AXIOM_DATASET }}
+        run: |
+          {
+            printf 'DATABASE_URL=postgres://postgres.%s:%s@aws-0-ap-south-1.pooler.supabase.com:6543/postgres\n' "$SUPABASE_PROJECT_REF" "$SUPABASE_DB_PASSWORD"
+            printf 'SUPABASE_URL=%s\n'              "$SUPABASE_URL"
+            printf 'SUPABASE_ANON_KEY=%s\n'         "$SUPABASE_ANON_KEY"
+            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
+            printf 'ALLOWED_ORIGINS=https://app.disciplefy.in,https://disciplefy.in,https://admin.disciplefy.in\n'
+            printf 'PORT=8090\n'
+            printf 'DB_POOL_SIZE=10\n'
+            printf 'RUST_LOG=rs_backend=info,tower_http=warn\n'
+            printf 'AXIOM_API_KEY=%s\n'             "$AXIOM_API_KEY"
+            printf 'AXIOM_DATASET=%s\n'             "$AXIOM_DATASET"
+          } > rs-backend/.env
+
+      # ── Build & push Docker image ───────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./rs-backend
+          file: ./rs-backend/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/disciplefy-rs-backend:latest
+            ghcr.io/${{ github.repository_owner }}/disciplefy-rs-backend:${{ github.event.workflow_run.head_sha }}
+          cache-from: type=gha,scope=rs-backend
+          cache-to: type=gha,scope=rs-backend,mode=max
+
+      # ── Copy files to VPS ───────────────────────────────────────────────────
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "rs-backend/docker-compose.yml,rs-backend/.env,rs-backend/Caddyfile,rs-backend/vector.toml"
+          target: /opt/disciplefy/
+          strip_components: 1
+
+      # ── Deploy on VPS ───────────────────────────────────────────────────────
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /opt/disciplefy
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f

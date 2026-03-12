@@ -1,0 +1,8 @@
+[sources.docker]
+type = "docker_logs"
+
+[sinks.axiom]
+type = "axiom"
+inputs = ["docker"]
+token = "${AXIOM_API_KEY}"
+dataset = "${AXIOM_DATASET}"
