@@ -1,5 +1,4 @@
 pub mod blog_generator;
-pub mod push_notifications;
 pub mod schedules;
 
 use std::sync::Arc;

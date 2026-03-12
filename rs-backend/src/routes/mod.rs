@@ -2,7 +2,7 @@ pub mod health;
 pub mod posts;
 pub mod admin;
 
-use axum::routing::{get, post, put, delete};
+use axum::routing::{get, post, put};
 use axum::Router;
 use crate::AppState;
 
