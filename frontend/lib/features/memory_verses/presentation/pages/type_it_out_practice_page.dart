@@ -547,7 +547,7 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
                 label: Text(context.tr(TranslationKeys.practiceSubmit)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: context.appInteractive,
                   foregroundColor: Colors.white,
                 ),
               ),
