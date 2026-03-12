@@ -1183,21 +1183,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            color: context.appInteractive.withValues(alpha: isDark ? 0.12 : 0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+              color: context.appInteractive.withValues(alpha: isDark ? 0.5 : 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.15),
+                color: context.appInteractive.withValues(alpha: 0.15),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -1208,15 +1202,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
+                  color: context.appInteractive.withValues(alpha: isDark ? 0.25 : 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.mic_rounded,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: isDark ? Colors.white : context.appInteractive,
                   size: 24,
                 ),
               ),
@@ -1247,7 +1238,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: context.appInteractive,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1280,10 +1271,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.5),
+                color: context.appInteractive.withValues(alpha: 0.6),
               ),
             ],
           ),
@@ -1950,7 +1938,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               gradient: LinearGradient(
                 colors: [
                   Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  AppTheme.secondaryPurple.withOpacity(0.1),
+                  AppColors.brandSecondary.withOpacity(0.1),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -3088,7 +3076,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _navigateToTokenManagement();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: context.appInteractive,
                 foregroundColor: theme.colorScheme.onPrimary,
                 elevation: 0,
                 padding:
@@ -3113,7 +3101,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _generateStudyGuide();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: context.appInteractive,
                 foregroundColor: theme.colorScheme.onPrimary,
                 elevation: 0,
                 padding:
