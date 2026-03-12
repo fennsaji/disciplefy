@@ -248,7 +248,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                 ElevatedButton(
                   onPressed: isLoading ? null : _handleSubscribe,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: context.appInteractive,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

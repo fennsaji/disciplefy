@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -208,7 +209,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('Verification code sent!'),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: context.appInteractive,
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -509,7 +510,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           child: ElevatedButton(
             onPressed: (isLoading || !isOTPComplete) ? null : _verifyOTP,
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
+              backgroundColor: context.appInteractive,
               foregroundColor: theme.colorScheme.onPrimary,
               elevation: 0,
               shape: RoundedRectangleBorder(

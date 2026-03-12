@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:shimmer/shimmer.dart';
@@ -1472,7 +1473,7 @@ class _StreamingSectionState extends State<_StreamingSection>
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
           style: AppFonts.inter(color: Colors.white),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: context.appInteractive,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -1720,7 +1721,7 @@ class _QuickSectionState extends State<_QuickSection>
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
           style: AppFonts.inter(color: Colors.white),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: context.appInteractive,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -1980,7 +1981,7 @@ class _LectioSectionState extends State<_LectioSection>
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
           style: AppFonts.inter(color: Colors.white),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: context.appInteractive,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
