@@ -811,10 +811,10 @@ class DailyVerseCard extends StatelessWidget {
 
   void _shareVerse(DailyVerseLoaded state) {
     final appLink = kIsWeb
-        ? '🌐 https://www.disciplefy.in/'
+        ? '🌐 https://app.disciplefy.in/'
         : Platform.isAndroid
             ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
-            : '🌐 https://www.disciplefy.in/';
+            : '🌐 https://app.disciplefy.in/';
     final text =
         '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
     Share.share(text);

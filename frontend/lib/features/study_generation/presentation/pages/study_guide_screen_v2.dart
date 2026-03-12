@@ -3794,10 +3794,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (_currentStudyGuide == null) return;
 
     final appLink = kIsWeb
-        ? '🌐 https://www.disciplefy.in/'
+        ? '🌐 https://app.disciplefy.in/'
         : Platform.isAndroid
             ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
-            : '🌐 https://www.disciplefy.in/';
+            : '🌐 https://app.disciplefy.in/';
 
     final passage = _currentStudyGuide!.passage;
     final shareText = '''

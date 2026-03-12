@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     // Check if already verified
     if (profile.email_verified) {
       // Redirect to success page or return success
-      const appUrl = Deno.env.get('APP_URL') || 'https://www.disciplefy.in'
+      const appUrl = Deno.env.get('APP_URL') || 'https://app.disciplefy.in'
       
       if (req.method === 'GET') {
         return Response.redirect(`${appUrl}/email-verified?status=already_verified`, 302)
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
 
     // For GET requests (from email link), redirect to success page
     if (req.method === 'GET') {
-      const appUrl = Deno.env.get('APP_URL') || 'https://www.disciplefy.in'
+      const appUrl = Deno.env.get('APP_URL') || 'https://app.disciplefy.in'
       return Response.redirect(`${appUrl}/email-verified?status=success`, 302)
     }
 

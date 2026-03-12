@@ -8,8 +8,9 @@
 const ALLOWED_ORIGINS = [
   'http://localhost:59641',           // Flutter web local development
   'http://localhost:3000',            // Alternative local development port
-  'https://www.disciplefy.in',        // Production web app
-  'https://dev.disciplefy.in',             // Vercel preview deployments
+  'https://app.disciplefy.in',        // Production Flutter web app
+  'https://disciplefy.in',            // Marketing website
+  'https://dev.disciplefy.in',        // Vercel preview deployments
 ]
 
 /**
