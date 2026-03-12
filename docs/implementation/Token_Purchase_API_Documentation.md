@@ -1009,7 +1009,7 @@ class PaymentConstants {
   
   // Payment themes
   static const Map<String, dynamic> razorpayTheme = {
-    'color': '#6A4FB6',  // Primary purple
+    'color': '#4F46E5',  // Primary indigo
   };
 }
 ```

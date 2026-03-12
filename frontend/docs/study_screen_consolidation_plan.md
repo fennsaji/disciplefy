@@ -54,7 +54,7 @@ This document outlines the plan to consolidate the `generate_study` and `saved` 
 
 ### Color Scheme & Theming
 - Maintain current light theme consistency
-- Use primary purple (`#7A56DB`) for active states
+- Use primary indigo (`#4F46E5`) for active states
 - Use highlight gold (`#FFEEC0`) for accents
 - Follow existing spacing and typography patterns
 
