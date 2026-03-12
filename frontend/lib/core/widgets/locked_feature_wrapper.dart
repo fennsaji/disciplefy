@@ -134,13 +134,11 @@ class LockedFeatureWrapper extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: context.appInteractive,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
+                                color: context.appInteractive
                                     .withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 1),
@@ -160,7 +158,7 @@ class LockedFeatureWrapper extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: context.appInteractive,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
