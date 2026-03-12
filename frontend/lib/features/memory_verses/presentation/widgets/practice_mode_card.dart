@@ -182,7 +182,7 @@ class PracticeModeCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: context.appInteractive,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(

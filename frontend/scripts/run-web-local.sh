@@ -86,6 +86,7 @@ echo -e "  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:0:20}..." # Show only first 20
 echo -e "  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}"
 echo -e "  APP_URL: ${APP_URL}"
 echo -e "  FLUTTER_ENV: ${FLUTTER_ENV}"
+echo -e "  GOOGLE_CLOUD_TTS_API_KEY: ${GOOGLE_CLOUD_TTS_API_KEY:0:20}..." # Show only first 20 chars for security
 echo -e "  FIREBASE_API_KEY: ${FIREBASE_API_KEY:0:20}..." # Show only first 20 chars for security
 echo -e "  WEB_OAUTH_REDIRECT_URL: http://localhost:59641/auth/callback"
 echo -e ""

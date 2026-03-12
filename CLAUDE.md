@@ -601,7 +601,7 @@ Fixes #issue-number
   - Bible verse reference (Philippians 4:13) styling
   - Verse content container background (subtle alpha)
 - **Enhanced typography** - Improved font weights, sizes, and spacing for better readability
-- **Primary purple (#6A4FB6)** - Used for action buttons (Copy, Share, Refresh) and text elements
+- **Primary indigo (#4F46E5)** - Used for action buttons (Copy, Share, Refresh) and text elements
 
 #### **3. Layout & Spacing Improvements**
 - **Increased padding and margins** - Better breathing room between components:
@@ -621,7 +621,7 @@ Fixes #issue-number
 
 ### 🎨 **Design System Integration**
 - **Light theme compliance** - Aligns with app-wide scaffold background
-- **Color palette consistency** - Uses defined primary purple and highlight gold
+- **Color palette consistency** - Uses defined primary indigo and highlight gold
 - **Typography standards** - Leverages theme text styles with appropriate customizations
 - **Spacing units** - Follows consistent 4px grid system for margins and padding
 

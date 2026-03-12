@@ -190,7 +190,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
+                      color: context.appInteractive,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: theme.scaffoldBackgroundColor,
@@ -429,7 +429,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleContinue,
         style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
+          backgroundColor: context.appInteractive,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(

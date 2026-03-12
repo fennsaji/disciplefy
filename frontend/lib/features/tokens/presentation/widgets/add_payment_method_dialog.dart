@@ -156,7 +156,7 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                     child: ElevatedButton(
                       onPressed: _savePaymentMethod,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        backgroundColor: context.appInteractive,
                         foregroundColor: Colors.white,
                       ),
                       child: const Text('Save'),

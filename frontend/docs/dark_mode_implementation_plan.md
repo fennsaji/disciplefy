@@ -133,7 +133,7 @@ static ThemeData get darkTheme => ThemeData(
     // Improved colors for better UX
     surface: const Color(0xFF1A1A1A),        // Dark gray instead of brown
     onSurface: const Color(0xFFE0E0E0),      // Light gray text
-    secondary: const Color(0xFF4A3B7A),      // Darker purple for secondary
+    secondary: const Color(0xFF4338CA),      // Indigo-700 (brandPrimaryDeep) for secondary
     onSecondary: const Color(0xFFE0E0E0),    // Light text on secondary
     background: const Color(0xFF121212),     // Darker background
     onBackground: const Color(0xFFE0E0E0),   // Light text
@@ -173,8 +173,8 @@ static ThemeData get darkTheme => ThemeData(
 
 #### **Light Theme** (Current - ✅ Complete)
 ```dart
-Primary: #6A4FB6    // Spiritual Lavender
-Secondary: #FFEFC0  // Golden Glow  
+Primary: #4F46E5    // Indigo-600 (brandPrimary)
+Secondary: #FFEFC0  // Golden Glow
 Background: #F9F8F3 // Light Background
 Surface: #FFFFFF    // White
 Text: #1E1E1E      // Dark Text
@@ -182,8 +182,8 @@ Text: #1E1E1E      // Dark Text
 
 #### **Dark Theme** (Needs Enhancement)
 ```dart
-Primary: #8B7AC7     // Lighter lavender for dark
-Secondary: #4A3B7A   // Darker purple  
+Primary: #A5B4FC     // Indigo-300 (brandPrimaryLight)
+Secondary: #4338CA   // Indigo-700 (brandPrimaryDeep)
 Background: #121212  // True dark
 Surface: #1A1A1A    // Dark gray
 Text: #E0E0E0       // Light gray

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -366,7 +367,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
           child: ElevatedButton(
             onPressed: isLoading ? null : _sendOTP,
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
+              backgroundColor: context.appInteractive,
               foregroundColor: theme.colorScheme.onPrimary,
               elevation: 0,
               shape: RoundedRectangleBorder(

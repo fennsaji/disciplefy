@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
@@ -210,7 +211,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
             context.push(AppRoutes.pricing);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
+            backgroundColor: context.appInteractive,
             foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
