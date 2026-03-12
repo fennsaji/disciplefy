@@ -5,23 +5,23 @@ import { motion } from "framer-motion";
 
 const testimonials = [
   {
-    quote: "Disciplefy has transformed my sermon preparation. I get deep insights in minutes.",
-    name: "Rev. Thomas M.",
-    location: "Ernakulam, Kerala",
-    role: "Pastor",
+    quote: "My quiet time has completely changed. I feel like I actually know God more deeply now — His character, His promises. Scripture feels alive to me in a way it never did before.",
+    name: "Anju S.",
+    location: "Kottayam, Kerala",
+    role: "College Student",
   },
   {
-    quote: "मैं हिंदी में बाइबल पढ़ और समझ सकती हूँ। यह बहुत आशीषमय है।",
-    name: "Sunita P.",
-    location: "Lucknow, UP",
-    role: "Homemaker",
+    quote: "Disciplefy ने मुझे परमेश्वर के वचन को गहराई से समझने में मदद की। अब मेरी प्रार्थना और विश्वास दोनों मज़बूत हो रहे हैं।",
+    name: "Rahul K.",
+    location: "Varanasi, UP",
+    role: "Youth Leader",
     font: "devanagari",
   },
   {
-    quote: "Finally a Bible app that feels modern and actually explains the context.",
-    name: "Akhil R.",
-    location: "Bangalore",
-    role: "Software Engineer",
+    quote: "I've memorised more verses in the last few months than in years. The daily verse and study guides keep me rooted in God's Word consistently.",
+    name: "David J.",
+    location: "Chennai",
+    role: "IT Professional",
   },
 ];
 
@@ -63,9 +63,6 @@ export function Testimonials() {
             </motion.div>
           ))}
         </div>
-        <p className="text-center text-xs text-[var(--muted)] mt-6 italic">
-          * Testimonials are representative placeholders. Replace with real user quotes before launch.
-        </p>
       </div>
     </section>
   );
