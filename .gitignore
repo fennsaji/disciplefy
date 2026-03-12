@@ -476,3 +476,7 @@ github-secrets-*.txt
 **/google-services.json
 **/firebase-service-account*.json
 **/.firebase-service-account*.json
+.superpowers/
+
+target/
+
