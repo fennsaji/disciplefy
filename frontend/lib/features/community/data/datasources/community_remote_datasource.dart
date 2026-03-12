@@ -224,62 +224,75 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   // ---------------------------------------------------------------------------
   static String get _baseUrl => AppConfig.supabaseUrl;
 
-  static const String _fellowshipListEndpoint = '/functions/v1/fellowship-list';
-  static const String _fellowshipMembersListEndpoint =
-      '/functions/v1/fellowship-members-list';
-  static const String _fellowshipPostsListEndpoint =
-      '/functions/v1/fellowship-posts-list';
-  static const String _fellowshipPostsCreateEndpoint =
-      '/functions/v1/fellowship-posts-create';
-  static const String _fellowshipPostsDeleteEndpoint =
-      '/functions/v1/fellowship-posts-delete';
-  static const String _fellowshipCommentsListEndpoint =
-      '/functions/v1/fellowship-comments-list';
-  static const String _fellowshipCommentsCreateEndpoint =
-      '/functions/v1/fellowship-comments-create';
-  static const String _fellowshipCommentsDeleteEndpoint =
-      '/functions/v1/fellowship-comments-delete';
-  static const String _fellowshipReactionsToggleEndpoint =
-      '/functions/v1/fellowship-reactions-toggle';
-  static const String _fellowshipInvitesJoinEndpoint =
-      '/functions/v1/fellowship-invites-join';
-  static const String _fellowshipCreateEndpoint =
-      '/functions/v1/fellowship-create';
-  static const String _fellowshipStudySetEndpoint =
-      '/functions/v1/fellowship-study-set';
-  static const String _fellowshipStudyAdvanceEndpoint =
-      '/functions/v1/fellowship-study-advance';
-  static const String _fellowshipLeaveEndpoint =
-      '/functions/v1/fellowship-leave';
-  static const String _fellowshipMembersmuteEndpoint =
-      '/functions/v1/fellowship-members-mute';
-  static const String _fellowshipMembersUnmuteEndpoint =
-      '/functions/v1/fellowship-members-unmute';
-  static const String _fellowshipInvitesCreateEndpoint =
-      '/functions/v1/fellowship-invites-create';
-  static const String _fellowshipGetEndpoint = '/functions/v1/fellowship-get';
-  static const String _fellowshipUpdateEndpoint =
-      '/functions/v1/fellowship-update';
-  static const String _fellowshipInvitesListEndpoint =
-      '/functions/v1/fellowship-invites-list';
-  static const String _fellowshipInvitesRevokeEndpoint =
-      '/functions/v1/fellowship-invites-revoke';
-  static const String _fellowshipTransferMentorEndpoint =
-      '/functions/v1/fellowship-transfer-mentor';
-  static const String _fellowshipReportsCreateEndpoint =
-      '/functions/v1/fellowship-reports-create';
-  static const String _fellowshipMembersRemoveEndpoint =
-      '/functions/v1/fellowship-members-remove';
+  // Merged: fellowship (list, get, create, update, discover, join, leave)
+  static const String _fellowshipListEndpoint = '/functions/v1/fellowship';
+  static const String _fellowshipGetEndpoint = '/functions/v1/fellowship';
+  static const String _fellowshipCreateEndpoint = '/functions/v1/fellowship';
+  static const String _fellowshipUpdateEndpoint = '/functions/v1/fellowship';
   static const String _fellowshipDiscoverEndpoint =
-      '/functions/v1/fellowship-discover';
+      '/functions/v1/fellowship/discover';
   static const String _fellowshipJoinPublicEndpoint =
-      '/functions/v1/fellowship-join-public';
+      '/functions/v1/fellowship/join';
+  static const String _fellowshipLeaveEndpoint =
+      '/functions/v1/fellowship/leave';
+
+  // Merged: fellowship-study (set, advance)
+  static const String _fellowshipStudySetEndpoint =
+      '/functions/v1/fellowship-study/set';
+  static const String _fellowshipStudyAdvanceEndpoint =
+      '/functions/v1/fellowship-study/advance';
+
+  // Merged: fellowship-members (list, mute, unmute, remove, transfer)
+  static const String _fellowshipMembersListEndpoint =
+      '/functions/v1/fellowship-members';
+  static const String _fellowshipMembersmuteEndpoint =
+      '/functions/v1/fellowship-members/mute';
+  static const String _fellowshipMembersUnmuteEndpoint =
+      '/functions/v1/fellowship-members/unmute';
+  static const String _fellowshipMembersRemoveEndpoint =
+      '/functions/v1/fellowship-members/remove';
+  static const String _fellowshipTransferMentorEndpoint =
+      '/functions/v1/fellowship-members/transfer';
+
+  // Merged: fellowship-posts (list, create, delete)
+  static const String _fellowshipPostsListEndpoint =
+      '/functions/v1/fellowship-posts';
+  static const String _fellowshipPostsCreateEndpoint =
+      '/functions/v1/fellowship-posts';
+  static const String _fellowshipPostsDeleteEndpoint =
+      '/functions/v1/fellowship-posts';
+
+  // Merged: fellowship-comments (list, create, delete)
+  static const String _fellowshipCommentsListEndpoint =
+      '/functions/v1/fellowship-comments';
+  static const String _fellowshipCommentsCreateEndpoint =
+      '/functions/v1/fellowship-comments';
+  static const String _fellowshipCommentsDeleteEndpoint =
+      '/functions/v1/fellowship-comments';
+
+  // Merged: fellowship-invites (list, create, join, revoke)
+  static const String _fellowshipInvitesJoinEndpoint =
+      '/functions/v1/fellowship-invites/join';
+  static const String _fellowshipInvitesCreateEndpoint =
+      '/functions/v1/fellowship-invites';
+  static const String _fellowshipInvitesListEndpoint =
+      '/functions/v1/fellowship-invites';
+  static const String _fellowshipInvitesRevokeEndpoint =
+      '/functions/v1/fellowship-invites/revoke';
+
+  // Merged: fellowship-meetings (list, create, cancel)
   static const String _fellowshipMeetingsListEndpoint =
-      '/functions/v1/fellowship-meetings-list';
+      '/functions/v1/fellowship-meetings';
   static const String _fellowshipMeetingsCreateEndpoint =
-      '/functions/v1/fellowship-meetings-create';
+      '/functions/v1/fellowship-meetings';
   static const String _fellowshipMeetingsCancelEndpoint =
-      '/functions/v1/fellowship-meetings-cancel';
+      '/functions/v1/fellowship-meetings/cancel';
+
+  // Merged into fellowship-posts: reactions toggle, reports create
+  static const String _fellowshipReactionsToggleEndpoint =
+      '/functions/v1/fellowship-posts/react';
+  static const String _fellowshipReportsCreateEndpoint =
+      '/functions/v1/fellowship-posts/report';
 
   // ---------------------------------------------------------------------------
   // Dependencies

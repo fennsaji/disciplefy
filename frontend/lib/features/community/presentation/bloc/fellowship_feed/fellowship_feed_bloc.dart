@@ -206,6 +206,13 @@ class FellowshipFeedBloc
               updatedCounts: updatedCounts,
             ),
             commentCount: post.commentCount,
+            topicId: post.topicId,
+            topicTitle: post.topicTitle,
+            guideTitle: post.guideTitle,
+            lessonIndex: post.lessonIndex,
+            studyGuideId: post.studyGuideId,
+            guideInputType: post.guideInputType,
+            guideLanguage: post.guideLanguage,
           );
         }).toList();
 

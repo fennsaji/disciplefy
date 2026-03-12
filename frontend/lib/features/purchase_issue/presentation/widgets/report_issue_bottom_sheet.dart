@@ -589,7 +589,7 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
                     .add(const SubmitPurchaseIssueRequested());
               },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: context.appInteractive,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           disabledBackgroundColor:
               Theme.of(context).colorScheme.primary.withOpacity(0.5),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
@@ -189,7 +190,7 @@ class TierLockedModeDialog extends StatelessWidget {
             Navigator.pushNamed(context, AppRoutes.pricing);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
+            backgroundColor: context.appInteractive,
             foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
