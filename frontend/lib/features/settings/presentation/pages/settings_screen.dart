@@ -1006,7 +1006,7 @@ class _SettingsScreenContent extends StatelessWidget {
               context.read<AuthBloc>().add(const SignOutRequested());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: context.appInteractive,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -1085,7 +1085,8 @@ class _SettingsScreenContent extends StatelessWidget {
     required VoidCallback? onTap,
     Color? iconColor,
   }) {
-    final effectiveColor = iconColor ?? AppTheme.primaryColor;
+    final themeColor = Theme.of(context).colorScheme.primary;
+    final effectiveColor = iconColor ?? themeColor;
 
     return Material(
       color: Colors.transparent,
@@ -1108,15 +1109,15 @@ class _SettingsScreenContent extends StatelessWidget {
                   gradient: iconColor == null
                       ? LinearGradient(
                           colors: [
-                            AppTheme.primaryColor.withOpacity(0.15),
-                            AppTheme.secondaryPurple.withOpacity(0.1),
+                            themeColor.withOpacity(0.2),
+                            AppColors.brandSecondary.withOpacity(0.15),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         )
                       : null,
                   color: iconColor != null
-                      ? effectiveColor.withOpacity(0.1)
+                      ? effectiveColor.withOpacity(0.15)
                       : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
