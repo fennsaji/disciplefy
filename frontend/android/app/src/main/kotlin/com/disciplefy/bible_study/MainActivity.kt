@@ -1,17 +1,13 @@
 package com.disciplefy.bible_study
 
-import android.annotation.TargetApi
-import android.app.Activity
 import android.database.ContentObserver
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
-import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
 
@@ -40,35 +36,21 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun registerScreenshotListener() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Android 14+: dedicated API — no permissions needed
-            registerScreenCaptureCallbackApi34()
-        } else {
-            // Android < 14: ContentObserver on the images store
-            val handler = Handler(Looper.getMainLooper())
-            val observer = object : ContentObserver(handler) {
-                private var lastMs = 0L
+        val handler = Handler(Looper.getMainLooper())
+        val observer = object : ContentObserver(handler) {
+            private var lastMs = 0L
 
-                override fun onChange(selfChange: Boolean, uri: Uri?) {
-                    val now = System.currentTimeMillis()
-                    if (now - lastMs < 1_500) return // debounce duplicate events
-                    lastMs = now
-                    uri?.let { checkIfScreenshot(it) }
-                }
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                val now = System.currentTimeMillis()
+                if (now - lastMs < 1_500) return // debounce duplicate events
+                lastMs = now
+                uri?.let { checkIfScreenshot(it) }
             }
-            contentResolver.registerContentObserver(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, observer
-            )
-            screenshotObserver = observer
         }
-    }
-
-    @TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private fun registerScreenCaptureCallbackApi34() {
-        addScreenCaptureCallback(
-            Executors.newSingleThreadExecutor(),
-            Activity.ScreenCaptureCallback { runOnUiThread { screenshotEventSink?.success(null) } }
+        contentResolver.registerContentObserver(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, observer
         )
+        screenshotObserver = observer
     }
 
     private fun unregisterScreenshotListener() {
@@ -78,7 +60,6 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    /** Queries the specific URI provided by the ContentObserver to check if it is a screenshot. */
     private fun checkIfScreenshot(uri: Uri) {
         try {
             contentResolver.query(
