@@ -79,10 +79,14 @@ pub async fn trigger_cron(
     tokio::spawn(async move {
         // _guard is moved into the spawned task so it releases when done
         let _g = _guard;
-        if let Err(e) = crate::cron::blog_generator::run_blog_generation(&pool, &config, &http).await {
+        if let Err(e) =
+            crate::cron::blog_generator::run_blog_generation(&pool, &config, &http).await
+        {
             tracing::error!("Manual CRON trigger failed: {}", e);
         }
     });
 
-    Ok(Json(json!({ "success": true, "message": "Blog generation triggered" })))
+    Ok(Json(
+        json!({ "success": true, "message": "Blog generation triggered" }),
+    ))
 }

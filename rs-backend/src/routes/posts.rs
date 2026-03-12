@@ -59,7 +59,9 @@ pub async fn search_posts(
     Query(query): Query<post::SearchQuery>,
 ) -> Result<Json<Value>, AppError> {
     if query.q.trim().is_empty() {
-        return Err(AppError::BadRequest("Search query 'q' is required".to_string()));
+        return Err(AppError::BadRequest(
+            "Search query 'q' is required".to_string(),
+        ));
     }
     let result = post::search_posts(&state.pool, &query).await?;
     Ok(Json(json!({

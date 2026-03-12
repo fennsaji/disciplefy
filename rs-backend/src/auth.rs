@@ -33,7 +33,9 @@ async fn validate_supabase_jwt(
         .map_err(|e| AppError::Internal(format!("Auth request failed: {}", e)))?;
 
     if !resp.status().is_success() {
-        return Err(AppError::Unauthorized("Invalid or expired token".to_string()));
+        return Err(AppError::Unauthorized(
+            "Invalid or expired token".to_string(),
+        ));
     }
 
     let user: SupabaseUser = resp
@@ -46,12 +48,11 @@ async fn validate_supabase_jwt(
 }
 
 async fn is_admin(pool: &PgPool, user_id: Uuid) -> Result<bool, AppError> {
-    let is_admin: Option<bool> = sqlx::query_scalar(
-        "SELECT is_admin FROM user_profiles WHERE id = $1"
-    )
-    .bind(user_id)
-    .fetch_optional(pool)
-    .await?;
+    let is_admin: Option<bool> =
+        sqlx::query_scalar("SELECT is_admin FROM user_profiles WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(pool)
+            .await?;
 
     Ok(is_admin.unwrap_or(false))
 }
@@ -63,7 +64,9 @@ fn extract_bearer_token(headers: &HeaderMap) -> Result<String, AppError> {
         .ok_or_else(|| AppError::Unauthorized("Missing Authorization header".to_string()))?;
 
     if !header.starts_with("Bearer ") {
-        return Err(AppError::Unauthorized("Invalid Authorization header format".to_string()));
+        return Err(AppError::Unauthorized(
+            "Invalid Authorization header format".to_string(),
+        ));
     }
 
     Ok(header[7..].to_string())

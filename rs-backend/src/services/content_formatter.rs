@@ -96,10 +96,10 @@ pub fn format_blog_post(
             if !items.is_empty() {
                 md.push_str("## Related Verses\n\n");
                 for item in &items {
-                    if let (Some(reference), Some(text)) =
-                        (item.get("reference").and_then(|v| v.as_str()),
-                         item.get("text").and_then(|v| v.as_str()))
-                    {
+                    if let (Some(reference), Some(text)) = (
+                        item.get("reference").and_then(|v| v.as_str()),
+                        item.get("text").and_then(|v| v.as_str()),
+                    ) {
                         md.push_str(&format!("- **{}** — {}\n", reference, text));
                     }
                 }

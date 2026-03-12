@@ -118,8 +118,12 @@ pub struct ListPostsQuery {
     pub featured: Option<bool>,
 }
 
-fn default_page() -> i64 { 1 }
-fn default_limit() -> i64 { 10 }
+fn default_page() -> i64 {
+    1
+}
+fn default_limit() -> i64 {
+    10
+}
 
 #[derive(Debug, Deserialize)]
 pub struct SearchQuery {
@@ -132,7 +136,9 @@ pub struct SearchQuery {
     pub limit: i64,
 }
 
-fn default_locale() -> String { "en".to_string() }
+fn default_locale() -> String {
+    "en".to_string()
+}
 
 // ── Database functions ─────────────────────────────────────
 
@@ -161,7 +167,7 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM blog_posts WHERE locale = $1 AND status = 'published'
          AND ($2::text IS NULL OR $2 = ANY(tags))
-         AND ($3::bool IS NULL OR featured = $3)"
+         AND ($3::bool IS NULL OR featured = $3)",
     )
     .bind(&q.locale)
     .bind(&q.tag)
@@ -177,7 +183,7 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
            AND ($2::text IS NULL OR $2 = ANY(tags))
            AND ($3::bool IS NULL OR featured = $3)
          ORDER BY published_at DESC NULLS LAST
-         LIMIT $4 OFFSET $5"
+         LIMIT $4 OFFSET $5",
     )
     .bind(&q.locale)
     .bind(&q.tag)
@@ -187,7 +193,11 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
     .fetch_all(pool)
     .await?;
 
-    let total_pages = if limit > 0 { (total as f64 / limit as f64).ceil() as i64 } else { 0 };
+    let total_pages = if limit > 0 {
+        (total as f64 / limit as f64).ceil() as i64
+    } else {
+        0
+    };
 
     Ok(PaginatedPosts {
         posts: rows.into_iter().map(to_list_item).collect(),
@@ -203,7 +213,7 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
 
 pub async fn get_post_by_slug(pool: &PgPool, slug: &str) -> Result<BlogPost, AppError> {
     sqlx::query_as::<_, BlogPost>(
-        "SELECT * FROM blog_posts WHERE slug = $1 AND status = 'published'"
+        "SELECT * FROM blog_posts WHERE slug = $1 AND status = 'published'",
     )
     .bind(slug)
     .fetch_optional(pool)
@@ -214,7 +224,7 @@ pub async fn get_post_by_slug(pool: &PgPool, slug: &str) -> Result<BlogPost, App
 pub async fn get_tags(pool: &PgPool, locale: &str) -> Result<Vec<String>, AppError> {
     let tags: Vec<String> = sqlx::query_scalar(
         "SELECT DISTINCT unnest(tags) AS tag FROM blog_posts
-         WHERE locale = $1 AND status = 'published' ORDER BY tag"
+         WHERE locale = $1 AND status = 'published' ORDER BY tag",
     )
     .bind(locale)
     .fetch_all(pool)
@@ -257,7 +267,11 @@ pub async fn search_posts(pool: &PgPool, q: &SearchQuery) -> Result<PaginatedPos
     .fetch_all(pool)
     .await?;
 
-    let total_pages = if limit > 0 { (total as f64 / limit as f64).ceil() as i64 } else { 0 };
+    let total_pages = if limit > 0 {
+        (total as f64 / limit as f64).ceil() as i64
+    } else {
+        0
+    };
 
     Ok(PaginatedPosts {
         posts: rows.into_iter().map(to_list_item).collect(),
@@ -276,18 +290,24 @@ fn validate_create_input(input: &CreatePostInput) -> Result<(), AppError> {
         return Err(AppError::BadRequest("title is required".to_string()));
     }
     if input.title.len() > 500 {
-        return Err(AppError::BadRequest("title must be under 500 characters".to_string()));
+        return Err(AppError::BadRequest(
+            "title must be under 500 characters".to_string(),
+        ));
     }
     if input.content.trim().is_empty() {
         return Err(AppError::BadRequest("content is required".to_string()));
     }
     let valid_locales = ["en", "hi", "ml"];
     if !valid_locales.contains(&input.locale.as_str()) {
-        return Err(AppError::BadRequest("locale must be one of: en, hi, ml".to_string()));
+        return Err(AppError::BadRequest(
+            "locale must be one of: en, hi, ml".to_string(),
+        ));
     }
     let valid_statuses = ["draft", "published"];
     if !valid_statuses.contains(&input.status.as_str()) {
-        return Err(AppError::BadRequest("status must be 'draft' or 'published'".to_string()));
+        return Err(AppError::BadRequest(
+            "status must be 'draft' or 'published'".to_string(),
+        ));
     }
     if input.tags.len() > 20 {
         return Err(AppError::BadRequest("maximum 20 tags allowed".to_string()));
@@ -333,7 +353,11 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
     Ok(post)
 }
 
-pub async fn update_post(pool: &PgPool, id: Uuid, input: UpdatePostInput) -> Result<BlogPost, AppError> {
+pub async fn update_post(
+    pool: &PgPool,
+    id: Uuid,
+    input: UpdatePostInput,
+) -> Result<BlogPost, AppError> {
     let post = sqlx::query_as::<_, BlogPost>(
         "UPDATE blog_posts SET
            title = COALESCE($2, title),
@@ -343,7 +367,7 @@ pub async fn update_post(pool: &PgPool, id: Uuid, input: UpdatePostInput) -> Res
            featured = COALESCE($6, featured),
            status = COALESCE($7, status)
          WHERE id = $1
-         RETURNING *"
+         RETURNING *",
     )
     .bind(id)
     .bind(input.title)
@@ -374,7 +398,7 @@ pub async fn delete_post(pool: &PgPool, id: Uuid) -> Result<(), AppError> {
 pub async fn publish_post(pool: &PgPool, id: Uuid) -> Result<BlogPost, AppError> {
     sqlx::query_as::<_, BlogPost>(
         "UPDATE blog_posts SET status = 'published', published_at = COALESCE(published_at, now())
-         WHERE id = $1 RETURNING *"
+         WHERE id = $1 RETURNING *",
     )
     .bind(id)
     .fetch_optional(pool)
@@ -384,7 +408,7 @@ pub async fn publish_post(pool: &PgPool, id: Uuid) -> Result<BlogPost, AppError>
 
 pub async fn unpublish_post(pool: &PgPool, id: Uuid) -> Result<BlogPost, AppError> {
     sqlx::query_as::<_, BlogPost>(
-        "UPDATE blog_posts SET status = 'draft' WHERE id = $1 RETURNING *"
+        "UPDATE blog_posts SET status = 'draft' WHERE id = $1 RETURNING *",
     )
     .bind(id)
     .fetch_optional(pool)
@@ -392,9 +416,13 @@ pub async fn unpublish_post(pool: &PgPool, id: Uuid) -> Result<BlogPost, AppErro
     .ok_or_else(|| AppError::NotFound("Post not found".to_string()))
 }
 
-pub async fn post_exists_for_topic(pool: &PgPool, topic_id: Uuid, locale: &str) -> Result<bool, AppError> {
+pub async fn post_exists_for_topic(
+    pool: &PgPool,
+    topic_id: Uuid,
+    locale: &str,
+) -> Result<bool, AppError> {
     let exists: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM blog_posts WHERE source_topic_id = $1 AND locale = $2)"
+        "SELECT EXISTS(SELECT 1 FROM blog_posts WHERE source_topic_id = $1 AND locale = $2)",
     )
     .bind(topic_id)
     .bind(locale)

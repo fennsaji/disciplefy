@@ -50,11 +50,19 @@ pub async fn generate_study_guide(
         url.push_str(&format!("&disciple_level={}", urlencoding::encode(level)));
     }
 
-    tracing::info!(language, input_type, input_value, "Calling study-generate-v2");
+    tracing::info!(
+        language,
+        input_type,
+        input_value,
+        "Calling study-generate-v2"
+    );
 
     let resp = http
         .get(&url)
-        .header("Authorization", format!("Bearer {}", config.supabase_service_role_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", config.supabase_service_role_key),
+        )
         .header("apikey", &config.supabase_anon_key)
         .send()
         .await
@@ -63,11 +71,17 @@ pub async fn generate_study_guide(
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        return Err(AppError::Internal(format!("study-generate-v2 returned {}: {}", status, body)));
+        return Err(AppError::Internal(format!(
+            "study-generate-v2 returned {}: {}",
+            status, body
+        )));
     }
 
     // Parse SSE stream
-    let body = resp.text().await.map_err(|e| AppError::Internal(format!("Failed to read SSE body: {}", e)))?;
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read SSE body: {}", e)))?;
     let mut sections = HashMap::new();
 
     for line in body.lines() {
@@ -101,7 +115,9 @@ pub async fn generate_study_guide(
     }
 
     if sections.is_empty() {
-        return Err(AppError::Internal("No sections received from study-generate-v2".to_string()));
+        return Err(AppError::Internal(
+            "No sections received from study-generate-v2".to_string(),
+        ));
     }
 
     tracing::info!(section_count = sections.len(), "Study guide received");

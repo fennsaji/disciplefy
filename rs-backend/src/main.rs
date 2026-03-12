@@ -39,7 +39,10 @@ async fn main() {
         .build()
         .expect("Failed to build HTTP client");
 
-    sqlx::query("SELECT 1").execute(&pool).await.expect("Database ping failed");
+    sqlx::query("SELECT 1")
+        .execute(&pool)
+        .await
+        .expect("Database ping failed");
     tracing::info!("rs-backend: Database connected");
 
     let state = AppState {
