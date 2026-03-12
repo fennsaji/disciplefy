@@ -126,8 +126,8 @@ bible study guide, christian devotional, prayer app, bible learning
 
 **Developer Name:** Disciplefy
 **Email:** support@disciplefy.in
-**Website:** https://www.disciplefy.in
-**Privacy Policy:** https://www.disciplefy.in/privacy
+**Website:** https://app.disciplefy.in
+**Privacy Policy:** https://app.disciplefy.in/privacy
 
 ---
 

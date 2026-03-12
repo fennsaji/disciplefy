@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "blog": "Blog",
+    "download": "Download Free"
+  },
+  "hero": {
+    "headline": "The Bible. Understood.",
+    "headlineAccent": "In Your Language.",
+    "subheadline": "AI-powered Bible study guides in English, हिन्दी & മലയാളം",
+    "webApp": "Open Web App →"
+  },
+  "features": {
+    "title": "Everything You Need to Study Deeper",
+    "aiGuides": { "title": "AI Study Guides", "desc": "Instant guides with context, interpretation, and prayer points" },
+    "dailyVerse": { "title": "Daily Verse", "desc": "Fresh verse every day with devotional content in your language" },
+    "voiceBuddy": { "title": "Voice Buddy", "desc": "Speak and listen — have conversations about Scripture" },
+    "memory": { "title": "Memory Verses", "desc": "Spaced repetition flashcards to actually memorize God's Word" },
+    "paths": { "title": "Learning Paths", "desc": "Structured journeys: Grace, Discipleship, Prayer & more" },
+    "chat": { "title": "Follow-Up Chat", "desc": "Ask deeper questions about any study guide, keep the context" }
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1": { "title": "Choose a verse or topic", "desc": "Enter any Bible reference like \"John 3:16\" or ask a spiritual question like \"What does the Bible say about anxiety?\" — Disciplefy understands both and gets you started instantly." },
+    "step2": { "title": "Get an instant AI guide", "desc": "Our AI generates a complete study guide in seconds — a clear summary, historical and cultural context, verse-by-verse interpretation, practical life application, and related scripture references, all grounded in sound theology." },
+    "step3": { "title": "Talk to your AI Voice Discipler", "desc": "Have a real voice conversation about any Bible passage or spiritual question. Your AI Voice Discipler listens, responds naturally in your language, and walks you through Scripture like a personal Bible study companion — anytime, anywhere." },
+    "step4": { "title": "Follow a learning path", "desc": "Go deeper with structured discipleship journeys on Grace, Prayer, Faith, and more. Each path walks you through a curated sequence of lessons — so you're not just studying random verses, you're growing with purpose and direction." },
+    "step5": { "title": "Memorize & grow", "desc": "Build lasting habits with daily verse reminders, spaced-repetition memorization practice with audio and fill-in-the-blank modes, streak tracking to stay consistent, and a growing library of your saved study guides." }
+  },
+  "languageShowcase": {
+    "title": "Study in Your Heart Language",
+    "subtitle": "Native-quality AI in all three languages — not a translation, a truly multilingual experience."
+  },
+  "testimonials": {
+    "title": "What Believers Are Saying"
+  },
+  "pricing": {
+    "title": "Simple, Affordable Plans",
+    "free": "Free",
+    "perMonth": "/month",
+    "mostPopular": "Most Popular",
+    "viewFull": "View full comparison →",
+    "startFree": "Start Free — No Credit Card Required"
+  },
+  "downloadCTA": {
+    "title": "Start Your Bible Study Journey Today",
+    "subtitle": "Free to download. Start in minutes.",
+    "webApp": "Or open the web app →"
+  },
+  "footer": {
+    "tagline": "Your Bible Study Companion",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "features": "Features",
+    "pricing": "Pricing",
+    "download": "Download",
+    "about": "About",
+    "blog": "Blog",
+    "contact": "Contact",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "refund": "Refund Policy",
+    "copyright": "Made with ✝ for Indian Christians"
+  },
+  "cookieConsent": {
+    "message": "We use cookies to improve your experience and analyse site traffic.",
+    "learnMore": "Learn more",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "blog": {
+    "title": "Blog",
+    "readMore": "Read more →",
+    "backToBlog": "← Back to Blog"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "subtitle": "The page you're looking for doesn't exist.",
+    "home": "Go Home"
+  }
+}

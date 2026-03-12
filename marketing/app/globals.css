@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: theme("colors.light.bg");
+    --surface: theme("colors.light.surface");
+    --border: theme("colors.light.border");
+    --text: theme("colors.light.text");
+    --muted: theme("colors.light.muted");
+  }
+
+  .dark {
+    --bg: theme("colors.dark.bg");
+    --surface: theme("colors.dark.surface");
+    --border: theme("colors.dark.border");
+    --text: theme("colors.dark.text");
+    --muted: theme("colors.dark.muted");
+  }
+
+  body {
+    @apply bg-[var(--bg)] text-[var(--text)] transition-colors duration-200;
+  }
+}
+
+/* Prose styles for MDX pages */
+@layer components {
+  .prose-disciplefy {
+    @apply max-w-3xl mx-auto text-[var(--text)];
+  }
+  .prose-disciplefy h1 { @apply text-3xl font-display font-bold mb-6 mt-8; }
+  .prose-disciplefy h2 { @apply text-2xl font-display font-semibold mb-4 mt-8; }
+  .prose-disciplefy h3 { @apply text-xl font-display font-semibold mb-3 mt-6; }
+  .prose-disciplefy p  { @apply text-base leading-relaxed mb-4 text-[var(--muted)]; }
+  .prose-disciplefy ul { @apply list-disc pl-6 mb-4 space-y-2; }
+  .prose-disciplefy a  { @apply text-primary underline hover:text-primary-hover; }
+}

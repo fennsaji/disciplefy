@@ -187,7 +187,7 @@ Example: `1.0.0` (build 202501011200)
 SUPABASE_URL: https://{PROJECT_REF}.supabase.co
 SUPABASE_ANON_KEY: {from secrets}
 GOOGLE_CLIENT_ID: {ANDROID client ID}
-APP_URL: https://www.disciplefy.in
+APP_URL: https://app.disciplefy.in
 FLUTTER_ENV: production
 RAZORPAY_KEY_ID: {from secrets}
 GOOGLE_CLOUD_TTS_API_KEY: {from secrets}

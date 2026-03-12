@@ -1,0 +1,190 @@
+name: Marketing Website Production Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'marketing/**'
+      - '.github/workflows/marketing-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      deploy_to_vercel:
+        description: 'Deploy to Vercel Production'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: marketing-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Marketing Site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: ./marketing
+
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: marketing/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Lint
+        run: npm run lint
+
+      - name: 🏗️ Build (type-check + static generation)
+        run: npm run build
+
+      - name: ✅ Validation summary
+        run: |
+          echo "🎉 Marketing site validation completed successfully!"
+          echo "✅ Dependencies installed"
+          echo "✅ Lint passed"
+          echo "✅ Build passed"
+
+  build-and-deploy:
+    name: Build and Deploy to Vercel Production
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 15
+    environment: production
+
+    defaults:
+      run:
+        working-directory: ./marketing
+
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: marketing/package-lock.json
+
+      - name: 🔧 Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📝 Create production environment file
+        run: |
+          cat > .env.local << EOF
+          NEXT_PUBLIC_APP_URL=https://app.disciplefy.in
+          EOF
+          echo "✅ Production environment file created"
+
+      - name: 🔗 Link Vercel project
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          vercel link \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_ORG_ID }} \
+            --project ${{ secrets.VERCEL_MARKETING_PROJECT_ID }} \
+            --yes
+          vercel pull \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --yes \
+            --environment=production
+          echo "✅ Vercel project linked and settings pulled"
+
+      - name: 🏗️ Build with Vercel
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          vercel build \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --prod
+          echo "✅ Build completed"
+
+      - name: 🚀 Deploy to Vercel Production
+        id: deploy
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          VERCEL_URL=$(vercel deploy \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --prebuilt \
+            --prod)
+          echo "deployment-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          echo "✅ Deployed to production: $VERCEL_URL"
+
+      - name: 🧪 Smoke test production deployment
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          echo "🧪 Testing production deployment..."
+          sleep 20
+
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.deployment-url }}"
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            DEPLOYMENT_URL="https://disciplefy.in"
+          fi
+
+          echo "🔍 Testing URL: $DEPLOYMENT_URL"
+
+          ROUTES=("/" "/blog" "/pricing" "/about" "/hi" "/ml" "/sitemap.xml")
+
+          for route in "${ROUTES[@]}"; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL$route" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ $route — HTTP $HTTP_CODE"
+            else
+              echo "⚠️ $route — HTTP $HTTP_CODE"
+            fi
+          done
+
+          echo "🎉 Smoke tests completed"
+
+      - name: 🧹 Security cleanup
+        if: always()
+        run: |
+          rm -f .env.local
+          echo "✅ Cleanup completed"
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "🎉 Marketing site production deployment completed!"
+          if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
+            echo "🌐 Production URL: ${{ steps.deploy.outputs.deployment-url }}"
+            echo "🗺️ Sitemap: https://disciplefy.in/sitemap.xml"
+          else
+            echo "⏭️ Vercel deployment skipped"
+          fi
+          echo "📋 Configuration:"
+          echo "   • Environment: production"
+          echo "   • Region: bom1 (Mumbai)"
+          echo "   • Locales: en / hi / ml"
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [validate, build-and-deploy]
+    if: always()
+
+    steps:
+      - name: 📢 Deployment notification
+        run: |
+          if [ "${{ needs.build-and-deploy.result }}" = "success" ]; then
+            echo "🎉 Marketing site production deployment was successful!"
+            echo "🌐 URL: ${{ needs.build-and-deploy.outputs.deployment-url }}"
+          else
+            echo "❌ Marketing site production deployment failed. Check the logs above."
+            exit 1
+          fi

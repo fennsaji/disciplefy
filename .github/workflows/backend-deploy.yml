@@ -190,7 +190,6 @@ jobs:
 
         # Firebase/FCM Configuration (${{ env.DEPLOY_ENV }})
         FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
-        FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}
         FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}
 
         # Authentication (${{ env.DEPLOY_ENV }})
@@ -234,7 +233,6 @@ jobs:
         API_REQUEST_LIMIT=100
 
         # Google Calendar / Meet Configuration (${{ env.DEPLOY_ENV }})
-        GOOGLE_SERVICE_ACCOUNT_JSON=${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         GOOGLE_CALENDAR_ID=${{ secrets.GOOGLE_CALENDAR_ID }}
 
         # Email Configuration (${{ env.DEPLOY_ENV }})
@@ -242,7 +240,20 @@ jobs:
         APP_URL=https://www.disciplefy.in
 
         EOF
+
+        # FIREBASE_PRIVATE_KEY: PEM keys contain real newlines which break dotenv parsing.
+        # Normalize to escaped \n sequences so the value is on a single line.
+        ESCAPED_PK=$(printf '%s' "$FIREBASE_PRIVATE_KEY" | awk 'NR>1{printf "\\n"} {printf "%s", $0}')
+        echo "FIREBASE_PRIVATE_KEY=${ESCAPED_PK}" >> .env.${{ env.DEPLOY_ENV }}
+
+        # GOOGLE_SERVICE_ACCOUNT_JSON: multi-line JSON breaks dotenv parsing.
+        # Compact to a single-line JSON string before writing.
+        python3 -c "import sys,json; print('GOOGLE_SERVICE_ACCOUNT_JSON=' + json.dumps(json.loads(sys.stdin.read())))" <<< "$GOOGLE_SERVICE_ACCOUNT_JSON" >> .env.${{ env.DEPLOY_ENV }}
+
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
+      env:
+        FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
 
     - name: 🔗 Link to Supabase production project & Run Migrations
       working-directory: ./backend

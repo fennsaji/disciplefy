@@ -626,7 +626,7 @@ class StudyGuidePdfService {
             style: AppFonts.inter(fontSize: 9, color: Colors.grey[500]),
           ),
           Text(
-            'www.disciplefy.in',
+            'app.disciplefy.in',
             style: AppFonts.inter(fontSize: 9, color: Colors.grey[500]),
           ),
         ],
@@ -840,7 +840,7 @@ class StudyGuidePdfService {
             ),
           ),
           pw.Text(
-            'www.disciplefy.in',
+            'app.disciplefy.in',
             style: const pw.TextStyle(
               fontSize: 9,
               color: PdfColors.grey500,
