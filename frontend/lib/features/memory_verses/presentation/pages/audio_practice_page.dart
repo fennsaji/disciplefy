@@ -1064,22 +1064,28 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
           // Action Buttons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              OutlinedButton.icon(
-                onPressed: _retryRecording,
-                icon: const Icon(Icons.refresh),
-                label: Text(context.tr(TranslationKeys.practiceRetry)),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _retryRecording,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(context.tr(TranslationKeys.practiceRetry)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
               ),
-              ElevatedButton.icon(
-                onPressed: _submitPractice,
-                icon: const Icon(Icons.check),
-                label: Text(context.tr(TranslationKeys.practiceSubmit)),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  backgroundColor: context.appInteractive,
-                  foregroundColor: Colors.white,
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _submitPractice,
+                  icon: const Icon(Icons.check),
+                  label: Text(context.tr(TranslationKeys.practiceSubmit)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: context.appInteractive,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ),
             ],
