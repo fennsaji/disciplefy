@@ -2,7 +2,7 @@ name: RS Backend CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [dev]
     paths:
       - 'rs-backend/**'
   pull_request:
