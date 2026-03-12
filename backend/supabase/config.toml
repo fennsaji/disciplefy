@@ -380,15 +380,15 @@ GOOGLE_CALENDAR_ID = "env(GOOGLE_CALENDAR_ID)"
 # Google OAuth client — needed to refresh user access tokens for Meet links
 GOOGLE_OAUTH_CLIENT_ID = "env(GOOGLE_OAUTH_CLIENT_ID)"
 GOOGLE_OAUTH_CLIENT_SECRET = "env(GOOGLE_OAUTH_CLIENT_SECRET)"
-# Cron authentication secret — verified by fellowship-meetings-reminder
+# Cron authentication secret — verified by fellowship-meetings/reminder route
 CRON_SECRET = "env(CRON_SECRET)"
 
 # Function-specific configurations
 # CRITICAL FIX: Disable JWT verification at Kong level for ES256 compatibility
 # Kong doesn't properly verify ES256 tokens in CLI 2.75.0 (waiting for PR #4721)
 # Edge Functions handle JWT verification themselves via auth.getUser()
-# Cron schedule is handled by GitHub Actions workflow: .github/workflows/meeting-reminders.yml
-[functions.fellowship-meetings-reminder]
+# Cron schedule is handled by GitHub Actions workflow: .github/workflows/send-notifications.yml
+[functions.fellowship-meetings]
 verify_jwt = false
 
 [functions.verify-email]
