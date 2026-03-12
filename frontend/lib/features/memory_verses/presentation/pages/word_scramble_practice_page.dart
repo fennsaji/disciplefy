@@ -491,7 +491,8 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                                   availablePhrases.asMap().entries.map((entry) {
                                 final phrase = entry.value;
                                 return Padding(
-                                  key: ValueKey('available_$phrase'),
+                                  key: ValueKey(
+                                      'available_${entry.key}_$phrase'),
                                   padding: const EdgeInsets.only(bottom: 8.0),
                                   child: _buildDraggablePhrase(phrase),
                                 );
