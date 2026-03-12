@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// A chat bubble widget for displaying conversation messages.
 ///
@@ -216,7 +217,7 @@ class ConversationBubble extends StatelessWidget {
     // Fallback to icon (no profile picture)
     return CircleAvatar(
       radius: 16,
-      backgroundColor: theme.colorScheme.primary,
+      backgroundColor: AppColors.brandSecondary,
       child: const Icon(
         Icons.person,
         color: Colors.white,

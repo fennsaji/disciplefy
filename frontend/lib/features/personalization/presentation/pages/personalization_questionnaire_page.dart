@@ -233,7 +233,7 @@ class _QuestionnaireContent extends StatelessWidget {
                   .add(const SkipQuestionnaire());
             },
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: context.appInteractive,
               foregroundColor: Colors.white,
             ),
             child: Text(context.tr(TranslationKeys.questionnaireSkip)),

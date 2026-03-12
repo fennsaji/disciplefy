@@ -366,7 +366,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               GoRouter.of(context).push(AppRoutes.pricing);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: context.appInteractive,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(

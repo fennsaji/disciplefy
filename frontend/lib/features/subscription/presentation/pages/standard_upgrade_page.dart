@@ -535,7 +535,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: context.appInteractive,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

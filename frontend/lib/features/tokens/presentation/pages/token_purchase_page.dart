@@ -668,7 +668,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         child: ElevatedButton(
           onPressed: isValid && !_isLoading ? _handlePurchase : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: context.appInteractive,
             foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(

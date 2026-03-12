@@ -603,7 +603,7 @@ class _NotificationSettingsView extends StatelessWidget {
               label:
                   Text(context.tr(TranslationKeys.notificationsSettingsRetry)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: context.appInteractive,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
