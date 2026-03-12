@@ -119,8 +119,8 @@ additional_redirect_urls = [
   "http://localhost:3000",  # Admin web base URL - REQUIRED!
 
   # Production URLs
-  "https://www.disciplefy.in", # Production Flutter app
-  "https://www.disciplefy.in/", # Production Flutter app with trailing slash
+  "https://app.disciplefy.in", # Production Flutter web app
+  "https://app.disciplefy.in/", # Production Flutter web app with trailing slash
 
   # Production Admin Web
   "https://admin.disciplefy.in/auth/callback",  # Admin web OAuth callback - REQUIRED!

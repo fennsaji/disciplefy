@@ -8,7 +8,7 @@ This guide covers deploying the Flutter web app to multiple platforms, including
 
 ### **Production Deployment (Vercel)**
 - **Platform**: Vercel
-- **URL**: `https://www.disciplefy.in`
+- **URL**: `https://app.disciplefy.in`
 - **CDN**: Vercel Edge Network
 - **Custom Domain**: `disciplefy.com` (optional)
 - **SSL**: Automatic HTTPS with Let's Encrypt
@@ -55,7 +55,7 @@ flutter pub get
 flutter build web --release \
   --web-renderer canvaskit \
   --base-href "/" \
-  --dart-define=APP_URL=https://www.disciplefy.in \
+  --dart-define=APP_URL=https://app.disciplefy.in \
   --dart-define=FLUTTER_WEB_BUILD=true \
   --dart-define=SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co" \
   --dart-define=SUPABASE_ANON_KEY="your-anon-key"
@@ -77,10 +77,10 @@ vercel ls disciplefy
 #### **Step 4: Test Deployment**
 ```bash
 # Test the deployed app
-curl -I "https://www.disciplefy.in"
+curl -I "https://app.disciplefy.in"
 
 # Open in browser
-open "https://www.disciplefy.in"
+open "https://app.disciplefy.in"
 ```
 
 ### **Option 2: Supabase Storage Deployment**
@@ -205,7 +205,7 @@ Create a `vercel.json` file in your project root:
     }
   ],
   "env": {
-    "APP_URL": "https://www.disciplefy.in",
+    "APP_URL": "https://app.disciplefy.in",
     "FLUTTER_WEB_BUILD": "true",
     "SUPABASE_URL": "https://wzdcwxvyjuxjgzpnukvm.supabase.co",
     "SUPABASE_ANON_KEY": "@supabase_anon_key"
@@ -218,7 +218,7 @@ Configure in Vercel Dashboard → Project Settings → Environment Variables:
 
 | Variable Name | Value | Environment |
 |---------------|-------|-------------|
-| `APP_URL` | `https://www.disciplefy.in` | Production |
+| `APP_URL` | `https://app.disciplefy.in` | Production |
 | `FLUTTER_WEB_BUILD` | `true` | All |
 | `SUPABASE_URL` | `https://wzdcwxvyjuxjgzpnukvm.supabase.co` | All |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | All |
@@ -232,7 +232,7 @@ vercel domains add disciplefy.in
 vercel domains inspect disciplefy.in
 
 # Set domain for project
-vercel alias set www.disciplefy.in disciplefy.in
+vercel alias set app.disciplefy.in disciplefy.in
 ```
 
 ## 🤖 **Automated Deployment (GitHub Actions)**
@@ -278,7 +278,7 @@ jobs:
           flutter build web --release \
             --web-renderer canvaskit \
             --base-href "/" \
-            --dart-define=APP_URL=${{ github.ref == 'refs/heads/main' && 'https://www.disciplefy.in' || 'https://disciplefy-preview.vercel.app' }} \
+            --dart-define=APP_URL=${{ github.ref == 'refs/heads/main' && 'https://app.disciplefy.in' || 'https://disciplefy-preview.vercel.app' }} \
             --dart-define=FLUTTER_WEB_BUILD=true \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
@@ -397,7 +397,7 @@ git push origin main
 #### **Vercel Deployment Checks:**
 ```bash
 # HTTP status check
-response=$(curl -s -o /dev/null -w "%{http_code}" "https://www.disciplefy.in")
+response=$(curl -s -o /dev/null -w "%{http_code}" "https://app.disciplefy.in")
 
 if [ "$response" = "200" ]; then
   echo "✅ Vercel deployment successful (HTTP $response)"
@@ -424,7 +424,7 @@ fi
 ### **Manual Verification Steps**
 
 #### **For Vercel Deployment:**
-1. **Check HTTP Status**: Ensure `https://www.disciplefy.in` returns 200 OK
+1. **Check HTTP Status**: Ensure `https://app.disciplefy.in` returns 200 OK
 2. **Test CSP**: Verify no CSP violations in browser console
 3. **Test Functionality**: Ensure all features work
 4. **Check Performance**: Verify acceptable loading times
@@ -535,7 +535,7 @@ curl -s "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disci
 # Error: Images, fonts, etc. not loading
 # Solution: Check asset paths and base href
 # Vercel:
-curl -I "https://www.disciplefy.in/assets/AssetManifest.json"
+curl -I "https://app.disciplefy.in/assets/AssetManifest.json"
 # Supabase:
 curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/assets/AssetManifest.json"
 ```
@@ -553,7 +553,7 @@ curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/functions/v1/env-test"
 # Error: PWA doesn't install
 # Solution: Check manifest.json and service worker
 # Vercel:
-curl -I "https://www.disciplefy.in/manifest.json"
+curl -I "https://app.disciplefy.in/manifest.json"
 # Supabase:
 curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/manifest.json"
 ```
@@ -572,14 +572,14 @@ vercel logs disciplefy
 vercel env ls
 
 # Test specific files
-curl -I "https://www.disciplefy.in/flutter.js"
-curl -I "https://www.disciplefy.in/manifest.json"
+curl -I "https://app.disciplefy.in/flutter.js"
+curl -I "https://app.disciplefy.in/manifest.json"
 
 # Check headers
-curl -I "https://www.disciplefy.in"
+curl -I "https://app.disciplefy.in"
 
 # Download deployed file for inspection
-curl -s "https://www.disciplefy.in/index.html" > debug_index.html
+curl -s "https://app.disciplefy.in/index.html" > debug_index.html
 ```
 
 #### **Supabase Debug Commands:**
@@ -730,7 +730,7 @@ curl -f "https://wzdcwxvyjuxjgzpnukvm.supabase.co/functions/v1/env-test" > /dev/
 ### **Vercel Deployment Success:**
 Your Vercel deployment is successful when:
 - ✅ **GitHub Actions workflow** completes without errors
-- ✅ **App loads** at `https://www.disciplefy.in`
+- ✅ **App loads** at `https://app.disciplefy.in`
 - ✅ **No console errors** in browser
 - ✅ **All features work** as expected
 - ✅ **Performance is acceptable** (< 3s load time)
@@ -755,14 +755,14 @@ Your Supabase deployment is successful when:
 ```bash
 flutter build web --release \
   --base-href "/" \
-  --dart-define=APP_URL=https://www.disciplefy.in \
+  --dart-define=APP_URL=https://app.disciplefy.in \
   --dart-define=FLUTTER_WEB_BUILD=true \
   --dart-define=SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co" \
   --dart-define=SUPABASE_ANON_KEY="your-anon-key"
 ```
 
 ### **Deployment URLs:**
-- **Primary (Vercel)**: https://www.disciplefy.in
+- **Primary (Vercel)**: https://app.disciplefy.in
 - **Alternative (Supabase)**: https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/
 - **Preview (Vercel)**: https://disciplefy-{branch}.vercel.app
 
