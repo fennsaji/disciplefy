@@ -33,12 +33,12 @@ export function PricingPreview() {
         >
           {t("title")}
         </motion.h2>
-        {/* Mobile/tablet: horizontal scroll. Desktop: 4-column grid */}
-        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 lg:grid lg:grid-cols-4 lg:overflow-visible lg:snap-none">
+        {/* Responsive grid: 2 cols on mobile, 4 cols on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map(({ key, price, highlighted }, index) => (
             <motion.div
               key={key}
-              className={`relative p-6 rounded-2xl border transition-all snap-start shrink-0 w-56 lg:w-auto ${
+              className={`relative p-6 rounded-2xl border transition-all ${
                 highlighted
                   ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
                   : "border-[var(--border)] bg-[var(--surface)]"
