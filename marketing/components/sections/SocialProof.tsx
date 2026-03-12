@@ -29,9 +29,10 @@ export function SocialProof() {
           <span className="text-yellow-400 text-lg">★★★★★</span>
           <span className="text-sm text-[var(--muted)]">4.9/5 on App Store</span>
           <span className="hidden sm:block text-[var(--border)]">·</span>
-          <span className="hidden sm:block text-xs font-semibold text-primary px-3 py-1 rounded-full border border-primary">
+          <span className="hidden sm:block text-xs font-semibold text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/50">
             Theologically Sound · Orthodox Christian
           </span>
+
         </div>
         <AnimatePresence mode="wait">
           <motion.div
