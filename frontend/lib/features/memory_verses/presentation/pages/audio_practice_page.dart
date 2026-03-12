@@ -610,9 +610,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           height: 48,
           decoration: BoxDecoration(
             color: isActive
-                ? theme.colorScheme.primary
+                ? context.appInteractive
                 : isCompleted
-                    ? theme.colorScheme.primary.withAlpha(100)
+                    ? context.appInteractive.withAlpha(100)
                     : AppColors.lightBorder,
             shape: BoxShape.circle,
           ),
@@ -660,11 +660,11 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
+                color: context.appInteractive,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withAlpha(60),
+                    color: context.appInteractive.withAlpha(60),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -802,13 +802,13 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               height: 120,
               decoration: BoxDecoration(
                 color:
-                    _isRecording ? AppColors.error : theme.colorScheme.primary,
+                    _isRecording ? AppColors.error : context.appInteractive,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: (_isRecording
                             ? AppColors.error
-                            : theme.colorScheme.primary)
+                            : context.appInteractive)
                         .withAlpha(60),
                     blurRadius: 20,
                     spreadRadius: 5,
@@ -1078,7 +1078,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 style: ElevatedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: context.appInteractive,
                   foregroundColor: Colors.white,
                 ),
               ),

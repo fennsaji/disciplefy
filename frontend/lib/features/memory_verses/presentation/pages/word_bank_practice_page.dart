@@ -705,8 +705,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                         label: Text(context.tr(TranslationKeys.practiceSubmit)),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
+                          backgroundColor: context.appInteractive,
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -810,7 +809,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withAlpha((0.9 * 255).round()),
+          color: context.appInteractive,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
