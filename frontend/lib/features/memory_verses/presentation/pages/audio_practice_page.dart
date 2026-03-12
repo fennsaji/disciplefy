@@ -801,8 +801,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color:
-                    _isRecording ? AppColors.error : context.appInteractive,
+                color: _isRecording ? AppColors.error : context.appInteractive,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
