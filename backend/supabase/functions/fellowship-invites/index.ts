@@ -41,13 +41,14 @@ async function handleListInvites(req: Request, services: ServiceContainer): Prom
   if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
 
   // Fire-and-forget: mark expired codes as revoked for this fellowship
-  db.from('fellowship_invites')
-    .update({ is_revoked: true })
-    .eq('fellowship_id', fellowshipId)
-    .eq('is_revoked', false)
-    .is('used_at', null)
-    .lt('expires_at', new Date().toISOString())
-    .then(() => {}).catch(() => {})
+  void Promise.resolve(
+    db.from('fellowship_invites')
+      .update({ is_revoked: true })
+      .eq('fellowship_id', fellowshipId)
+      .eq('is_revoked', false)
+      .is('used_at', null)
+      .lt('expires_at', new Date().toISOString())
+  ).catch(() => {})
 
   const { data: invites, error } = await db
     .from('fellowship_invites')
