@@ -34,9 +34,19 @@ on:
     # ============================================================================
     # Memory Verse Overdue Notifications (6 PM across timezones)
     # ============================================================================
-    # UTC 10: 6 PM UTC+8 (East Asia), UTC 22: 6 PM UTC-4 (Eastern US)
-    - cron: '0 10 * * *'  # UTC 10:00 → 6 PM East Asia
-    - cron: '0 22 * * *'  # UTC 22:00 → 6 PM Eastern US
+    # 6 PM local time converted to UTC for each major timezone band:
+    # UTC  1: 6 PM UTC-5  (US Eastern Standard / Latin America)
+    # UTC  7: 6 PM UTC+1  (Central Europe / West Africa)
+    # UTC 10: 6 PM UTC+4  (Gulf / Mauritius) — also close to UTC+8 East Asia at 10 PM
+    # UTC 12: 6 PM UTC+6  (Bangladesh) / ~5:30 PM UTC+5:30 (IST)
+    # UTC 16: 6 PM UTC+10 (Australia Eastern)
+    # UTC 22: 6 PM UTC-4  (US Eastern Daylight / Atlantic)
+    - cron: '0 1 * * *'   # UTC 01:00 → 6 PM UTC-5
+    - cron: '0 7 * * *'   # UTC 07:00 → 6 PM UTC+1
+    - cron: '0 10 * * *'  # UTC 10:00 → 6 PM UTC+4
+    - cron: '0 12 * * *'  # UTC 12:00 → ~5:30 PM IST / 6 PM UTC+6
+    - cron: '0 16 * * *'  # UTC 16:00 → 6 PM UTC+10
+    - cron: '0 22 * * *'  # UTC 22:00 → 6 PM UTC-4
 
   # Allow manual triggering for testing
   workflow_dispatch:
@@ -301,7 +311,11 @@ jobs:
 
     if: |
       (github.event_name == 'schedule' &&
-       (github.event.schedule == '0 10 * * *' ||
+       (github.event.schedule == '0 1 * * *'  ||
+        github.event.schedule == '0 7 * * *'  ||
+        github.event.schedule == '0 10 * * *' ||
+        github.event.schedule == '0 12 * * *' ||
+        github.event.schedule == '0 16 * * *' ||
         github.event.schedule == '0 22 * * *')) ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'memory_verse_overdue' ||

@@ -30,8 +30,12 @@ on:
     # ============================================================================
     # Memory Verse Overdue Notifications (6 PM across timezones) - Development
     # ============================================================================
-    - cron: '0 10 * * *'  # UTC 10:00 → 6 PM UTC+8 (East Asia)
-    - cron: '0 22 * * *'  # UTC 22:00 → 6 PM UTC-4 (Eastern US)
+    - cron: '0 1 * * *'   # UTC 01:00 → 6 PM UTC-5
+    - cron: '0 7 * * *'   # UTC 07:00 → 6 PM UTC+1
+    - cron: '0 10 * * *'  # UTC 10:00 → 6 PM UTC+4
+    - cron: '0 12 * * *'  # UTC 12:00 → ~5:30 PM IST / 6 PM UTC+6
+    - cron: '0 16 * * *'  # UTC 16:00 → 6 PM UTC+10
+    - cron: '0 22 * * *'  # UTC 22:00 → 6 PM UTC-4
 
   # Allow manual triggering for testing
   workflow_dispatch:
@@ -259,7 +263,11 @@ jobs:
     # Only run on scheduled events during 6 PM hours OR manual dispatch
     if: |
       (github.event_name == 'schedule' &&
-       (github.event.schedule == '0 10 * * *' ||
+       (github.event.schedule == '0 1 * * *'  ||
+        github.event.schedule == '0 7 * * *'  ||
+        github.event.schedule == '0 10 * * *' ||
+        github.event.schedule == '0 12 * * *' ||
+        github.event.schedule == '0 16 * * *' ||
         github.event.schedule == '0 22 * * *')) ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'memory_verse_overdue' ||
