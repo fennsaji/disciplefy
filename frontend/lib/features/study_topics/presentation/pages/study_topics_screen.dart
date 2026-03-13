@@ -218,6 +218,10 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
           dataLoadingStarted: _dataLoadingStarted,
           isLearningPathsFeatureEnabled: _isLearningPathsFeatureEnabled,
           isLeaderboardFeatureEnabled: _isLeaderboardFeatureEnabled,
+          onStudyLanguageChanged: (newLang) {
+            setState(() => _currentLanguage = newLang);
+            _learningPathsBloc.add(RefreshLearningPaths(language: newLang));
+          },
         ),
       );
 }
@@ -241,6 +245,11 @@ class _StudyTopicsScreenContent extends StatefulWidget {
   /// Whether leaderboard feature is enabled for user's plan
   final bool isLeaderboardFeatureEnabled;
 
+  /// Called when the user changes the study content language via the AppBar.
+  /// Receives the new language code; the outer state updates [currentLanguage]
+  /// and dispatches the BLoC refresh so all child widgets stay in sync.
+  final void Function(String newLanguageCode)? onStudyLanguageChanged;
+
   const _StudyTopicsScreenContent({
     this.topicId,
     required this.currentLanguage,
@@ -248,6 +257,7 @@ class _StudyTopicsScreenContent extends StatefulWidget {
     required this.dataLoadingStarted,
     required this.isLearningPathsFeatureEnabled,
     required this.isLeaderboardFeatureEnabled,
+    this.onStudyLanguageChanged,
   });
 
   @override
@@ -384,7 +394,11 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     );
   }
 
-  /// Handle study content language change and refresh content
+  /// Handle study content language change and refresh content.
+  ///
+  /// Delegates to [widget.onStudyLanguageChanged] so the outer state can
+  /// update [currentLanguage] (used by [LearningPathsSection] for "More" /
+  /// search actions) and dispatch the BLoC refresh — single source of truth.
   Future<void> _handleStudyLanguageChange() async {
     if (!mounted) return;
 
@@ -392,9 +406,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final newLanguage = await languageService.getStudyContentLanguage();
 
     if (mounted) {
-      context
-          .read<LearningPathsBloc>()
-          .add(RefreshLearningPaths(language: newLanguage.code));
+      widget.onStudyLanguageChanged?.call(newLanguage.code);
     }
   }
 

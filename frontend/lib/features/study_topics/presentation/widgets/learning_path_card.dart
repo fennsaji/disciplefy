@@ -157,33 +157,47 @@ class LearningPathCard extends StatelessWidget {
 
             const SizedBox(height: 6),
 
-            // Description — Flexible so it claims leftover vertical space and
-            // clips with ellipsis rather than overflowing the constrained card.
-            Flexible(
-              child: Text(
-                path.description,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                  height: 1.4,
+            // Description — fixed height for non-compact so all "For You" cards
+            // are uniform (3 lines × 13px × 1.4 line-height ≈ 55px).
+            // Compact cards use Flexible to fill the constrained card height.
+            if (compact)
+              Flexible(
+                child: Text(
+                  path.description,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+              )
+            else
+              SizedBox(
+                height: 55,
+                child: Text(
+                  path.description,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
 
             const SizedBox(height: 12),
 
             // Progress bar (if enrolled).
-            // Non-compact cards (For You section) always reserve this space so
-            // all cards in the list reach the same height.
             if (isEnrolled) ...[
               _buildProgressBar(context, color),
               const SizedBox(height: 12),
-            ] else if (!compact) ...[
-              const SizedBox(height: 40),
             ],
 
             // Footer with XP and duration

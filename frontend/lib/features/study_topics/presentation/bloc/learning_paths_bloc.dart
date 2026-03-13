@@ -27,6 +27,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<LoadMoreCategories>(_onLoadMoreCategories);
     on<LoadMorePathsForCategory>(_onLoadMorePathsForCategory);
     on<SearchLearningPaths>(_onSearchLearningPaths);
+    on<LoadFlatLearningPaths>(_onLoadFlatLearningPaths);
   }
 
   Future<void> _onLoadLearningPaths(
@@ -254,6 +255,37 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
               .toList(),
         ));
       },
+    );
+  }
+
+  /// Loads all paths as a flat list (no category grouping, no per-category limit).
+  ///
+  /// Used by the fellowship picker so that completed paths (sorted last in the
+  /// category API) are never cut off by the 3-paths-per-category limit.
+  Future<void> _onLoadFlatLearningPaths(
+    LoadFlatLearningPaths event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    final current = state;
+    if (current is LearningPathsLoaded) {
+      emit(current.copyWith(isSearching: true, searchQuery: ''));
+    } else {
+      emit(const LearningPathsLoading());
+    }
+
+    final result = await _repository.getLearningPaths(
+      language: event.language,
+      limit: 100,
+      forceRefresh: true,
+    );
+
+    result.fold(
+      (failure) => emit(LearningPathsError(message: failure.message)),
+      (data) => emit(LearningPathsLoaded(
+        categories: const [],
+        searchResults: data.paths,
+        searchQuery: '',
+      )),
     );
   }
 
