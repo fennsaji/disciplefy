@@ -796,6 +796,18 @@ class AppRouter {
         },
       ),
 
+      // Fellowship invite deep link — top-level, outside shell, public
+      // Handles https://app.disciplefy.in/fellowship/join/:token on Android App Links
+      // and the same path natively on Flutter web.
+      GoRoute(
+        path: '/fellowship/join/:token',
+        name: 'fellowship_join_deep',
+        builder: (context, state) {
+          final token = state.pathParameters['token'] ?? '';
+          return JoinFellowshipScreen(initialToken: token);
+        },
+      ),
+
       // Full Screen Routes (outside shell)
       // Study Guide Screen - Unified route using V2 implementation
       // Supports both query parameters and extra data for backward compatibility

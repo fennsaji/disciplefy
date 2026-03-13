@@ -246,7 +246,7 @@ async function handleRemoveMember(req: Request, services: ServiceContainer): Pro
   if ((targetMember as any).role === 'mentor') throw new AppError('VALIDATION_ERROR', 'Cannot remove the mentor — transfer mentor role first', 400)
 
   const { error } = await db.from('fellowship_members')
-    .update({ is_active: false, left_at: new Date().toISOString() })
+    .update({ is_active: false })
     .eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id)
   if (error) { console.error('[fellowship-members/remove] Update error:', error); throw new AppError('DATABASE_ERROR', 'Failed to remove member', 500) }
   return new Response(JSON.stringify({ success: true, message: 'Member removed' }), { status: 200, headers: { 'Content-Type': 'application/json' } })

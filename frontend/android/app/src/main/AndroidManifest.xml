@@ -46,6 +46,16 @@
                       android:pathPrefix="/auth/callback" />
             </intent-filter>
             
+            <!-- App Links: fellowship invite deep links (HTTPS) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                      android:host="app.disciplefy.in"
+                      android:pathPrefix="/fellowship/join" />
+            </intent-filter>
+
             <!-- Custom scheme for OAuth redirects (fallback) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

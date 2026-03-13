@@ -1183,6 +1183,7 @@ class AppTranslations {
       'believer': 'Believer',
       'disciple': 'Disciple',
       'leader': 'Leader',
+      'follower': 'Follower',
     },
     'continue_learning': {
       'title': 'Continue Learning',
@@ -3067,6 +3068,7 @@ class AppTranslations {
       'believer': 'विश्वासी',
       'disciple': 'शिष्य',
       'leader': 'नेता',
+      'follower': 'अनुयायी',
     },
     'continue_learning': {
       'title': 'सीखना जारी रखें',
@@ -5029,6 +5031,7 @@ class AppTranslations {
       'believer': 'വിശ്വാസി',
       'disciple': 'ശിഷ്യൻ',
       'leader': 'നേതാവ്',
+      'follower': 'അനുയായി',
     },
     'continue_learning': {
       'title': 'പഠനം തുടരുക',

@@ -75,11 +75,23 @@ async function handleDailyVerseNotification(
 
   // Step 1: Calculate timezone offset range for users who should receive notification
   const currentHour = new Date().getUTCHours()
-  const targetOffsetMinutes = (6 - currentHour) * 60 // 6 AM target
-  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 180)
-  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 180)
+  let targetOffsetMinutes = (6 - currentHour) * 60 // 6 AM target
 
-  console.log(`[DailyVerse] UTC hour: ${currentHour}, targeting offset: ${targetOffsetMinutes} (±3 hours)`)
+  // Normalize to valid timezone range: -720 (UTC-12) to +840 (UTC+14).
+  // Without this, the UTC-21 cron fires with targetOffsetMinutes = -900 which
+  // clamps to [-720, -720] and misses UTC+7:30–UTC+10:30 users entirely.
+  if (targetOffsetMinutes < -720) {
+    targetOffsetMinutes += 1440
+  } else if (targetOffsetMinutes > 840) {
+    targetOffsetMinutes -= 1440
+  }
+
+  // Use ±90 min (half the 3-hour cron interval) so each timezone falls in
+  // exactly ONE cron window and avoids duplicate/late deliveries.
+  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 90)
+  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 90)
+
+  console.log(`[DailyVerse] UTC hour: ${currentHour}, targeting offset: ${targetOffsetMinutes} (±90 min)`)
 
   // Step 2: Fetch eligible users with valid FCM tokens
   const { data: tokens, error: tokensError } = await supabase

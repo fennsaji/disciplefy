@@ -40,6 +40,16 @@ async function handleListInvites(req: Request, services: ServiceContainer): Prom
   }
   if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
 
+  // Fire-and-forget: mark expired codes as revoked for this fellowship
+  void Promise.resolve(
+    db.from('fellowship_invites')
+      .update({ is_revoked: true })
+      .eq('fellowship_id', fellowshipId)
+      .eq('is_revoked', false)
+      .is('used_at', null)
+      .lt('expires_at', new Date().toISOString())
+  ).catch(() => {})
+
   const { data: invites, error } = await db
     .from('fellowship_invites')
     .select('id, token, expires_at, used_at, created_at')
@@ -56,7 +66,7 @@ async function handleListInvites(req: Request, services: ServiceContainer): Prom
 
   const invitesWithUrl = invites.map((inv: any) => ({
     ...inv,
-    join_url: `disciplefy://fellowship/join?token=${inv.token}`
+    join_url: `https://app.disciplefy.in/fellowship/join/${inv.token}`
   }))
 
   return new Response(
@@ -132,7 +142,7 @@ async function handleCreateInvite(req: Request, services: ServiceContainer): Pro
         id: invite.id,
         token: invite.token,
         expires_at: invite.expires_at,
-        join_url: `disciplefy://fellowship/join?token=${invite.token}`
+        join_url: `https://app.disciplefy.in/fellowship/join/${invite.token}`
       }
     }),
     { status: 201, headers: { 'Content-Type': 'application/json' } }
@@ -221,6 +231,24 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     .eq('id', invite.id)
   if (markUsedError) {
     console.error('[fellowship-invites/join] Failed to mark invite used — token may be reusable:', invite.id, markUsedError)
+  }
+
+  // Fire-and-forget: notify new member of upcoming meetings (non-blocking)
+  const invitePromise = fetch(
+    `${Deno.env.get('SUPABASE_URL')}/functions/v1/fellowship-meetings/invite-member`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fellowshipId: fellowship.id, memberId: user.id }),
+    }
+  ).catch((err: unknown) =>
+    console.error('[fellowship-invites/join] invite-member fire-and-forget failed:', err)
+  )
+  if (typeof EdgeRuntime !== 'undefined') {
+    EdgeRuntime.waitUntil(invitePromise)
   }
 
   return new Response(

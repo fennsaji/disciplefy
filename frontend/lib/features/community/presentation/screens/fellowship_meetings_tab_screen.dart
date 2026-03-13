@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_meeting_entity.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
@@ -28,7 +29,8 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
     return BlocConsumer<FellowshipMeetingsBloc, FellowshipMeetingsState>(
       listenWhen: (prev, curr) =>
           prev.successMessage != curr.successMessage ||
-          prev.errorMessage != curr.errorMessage,
+          prev.errorMessage != curr.errorMessage ||
+          prev.syncRequiresReconnect != curr.syncRequiresReconnect,
       listener: (context, state) {
         if (state.successMessage != null) {
           ScaffoldMessenger.of(context)
@@ -47,6 +49,18 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
             ..showSnackBar(SnackBar(
               content: Text(state.errorMessage!),
               backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ));
+        } else if (state.syncRequiresReconnect) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.meetingsSyncReconnect),
+              backgroundColor: AppColors.brandPrimary,
               behavior: SnackBarBehavior.floating,
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               shape: RoundedRectangleBorder(
@@ -118,15 +132,26 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
             ),
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-          itemCount: state.meetings.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => _MeetingCard(
-            meeting: state.meetings[index],
-            isMentor: isMentor,
-            onCancel: () => cancelMeeting(state.meetings[index].id),
-          ),
+        return Column(
+          children: [
+            if (isMentor && state.showSyncBanner)
+              _SyncCalendarBanner(
+                fellowshipId: fellowshipId,
+                isSyncing: state.isSyncingCalendar,
+              ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                itemCount: state.meetings.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) => _MeetingCard(
+                  meeting: state.meetings[index],
+                  isMentor: isMentor,
+                  onCancel: () => cancelMeeting(state.meetings[index].id),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -450,6 +475,80 @@ class _MeetingCard extends StatelessWidget {
 
   String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+}
+
+/// Shown at the top of the meetings list when the mentor has upcoming meetings
+/// whose Google Calendar events have not yet been synced with the full
+/// fellowship member list.  A single tap triggers [FellowshipMeetingsSyncCalendarRequested].
+class _SyncCalendarBanner extends StatelessWidget {
+  final String fellowshipId;
+  final bool isSyncing;
+
+  const _SyncCalendarBanner({
+    required this.fellowshipId,
+    required this.isSyncing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.brandSecondary.withValues(alpha: isDark ? 0.15 : 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.brandSecondary.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.sync_rounded,
+            size: 18,
+            color: AppColors.brandPrimaryLight,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l10n.meetingsSyncBannerTitle,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                color: context.appTextPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          isSyncing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : TextButton(
+                  onPressed: () => context.read<FellowshipMeetingsBloc>().add(
+                        FellowshipMeetingsSyncCalendarRequested(fellowshipId),
+                      ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.brandPrimaryLight,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  child: Text(l10n.meetingsSyncCalendar),
+                ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Displays the physical location of an in-person meeting inside the card's

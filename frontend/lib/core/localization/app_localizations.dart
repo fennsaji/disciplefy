@@ -256,7 +256,7 @@ class AppLocalizations {
           'Join a fellowship to study the Bible together\nwith a community of believers.',
       'communityJoinFellowship': 'Join a Fellowship',
       'communityMyFellowships': 'My Fellowships',
-      'communityDiscover': 'Discover',
+      'communityDiscover': 'Explore Public Fellowships',
       'communityMembers': 'members',
       'communityGuideLabel': 'Guide',
       'joinFellowshipTitle': 'Join Fellowship',
@@ -388,6 +388,21 @@ class AppLocalizations {
       'createFellowshipLanguageLabel': 'Language',
       'createFellowshipMakePublicLabel': 'Make Public',
       'createFellowshipMakePublicHint': 'Visible to all users in Discover',
+      'meetingsSyncBannerTitle':
+          "New members haven't received calendar invites",
+      'meetingsSyncCalendar': 'Sync to Calendar',
+      'meetingsSyncReconnect': 'Please reconnect Google Calendar',
+      'homeAssignPathMentor': 'Assign a study path',
+      'homeNoPathAssigned': 'No study path assigned',
+      'fellowshipRecentActivity': 'Recent Activity',
+      'fellowshipViewAll': 'View All',
+      'feedPostSomething': 'Post something',
+      'meetingsTitle': 'Meetings',
+      'meetingsSchedule': 'Schedule',
+      'meetingsSchedulePrompt': 'Tap + to schedule a meeting',
+      'meetingsNoUpcoming': 'No upcoming meetings',
+      'meetingsNextNoTime': 'Next: {0}',
+      'meetingsNextWithTime': 'Next: {0} at {1}',
     },
     'hi': {
       // Common
@@ -619,7 +634,7 @@ class AppLocalizations {
           'विश्वासियों के समुदाय के साथ बाइबल का अध्ययन करने के लिए एक संगति में शामिल हों।',
       'communityJoinFellowship': 'एक संगति में शामिल हों',
       'communityMyFellowships': 'मेरी संगतियाँ',
-      'communityDiscover': 'खोजें',
+      'communityDiscover': 'सार्वजनिक संगतियाँ खोजें',
       'communityMembers': 'सदस्य',
       'communityGuideLabel': 'पाठ',
       'joinFellowshipTitle': 'संगति में शामिल हों',
@@ -752,6 +767,20 @@ class AppLocalizations {
       'createFellowshipMakePublicLabel': 'सार्वजनिक करें',
       'createFellowshipMakePublicHint':
           'Discover में सभी उपयोगकर्ताओं को दिखाई देगा',
+      'meetingsSyncBannerTitle': 'नए सदस्यों को कैलेंडर इनवाइट नहीं मिले',
+      'meetingsSyncCalendar': 'कैलेंडर से सिंक करें',
+      'meetingsSyncReconnect': 'कृपया Google Calendar फिर से कनेक्ट करें',
+      'homeAssignPathMentor': 'अध्ययन पथ असाइन करें',
+      'homeNoPathAssigned': 'कोई अध्ययन पथ नहीं',
+      'fellowshipRecentActivity': 'हाल की गतिविधि',
+      'fellowshipViewAll': 'सभी देखें',
+      'feedPostSomething': 'कुछ पोस्ट करें',
+      'meetingsTitle': 'मीटिंग',
+      'meetingsSchedule': 'शेड्यूल करें',
+      'meetingsSchedulePrompt': 'मीटिंग शेड्यूल करने के लिए + दबाएं',
+      'meetingsNoUpcoming': 'कोई आगामी मीटिंग नहीं',
+      'meetingsNextNoTime': 'अगला: {0}',
+      'meetingsNextWithTime': 'अगला: {0} at {1}',
     },
     'ml': {
       // Common
@@ -986,7 +1015,7 @@ class AppLocalizations {
           'വിശ്വാസികളുടെ സമൂഹത്തോടൊപ്പം ബൈബിൾ പഠിക്കാൻ ഒരു കൂട്ടായ്മയിൽ ചേരുക.',
       'communityJoinFellowship': 'ഒരു കൂട്ടായ്മയിൽ ചേരുക',
       'communityMyFellowships': 'എന്റെ കൂട്ടായ്മകൾ',
-      'communityDiscover': 'കണ്ടെത്തുക',
+      'communityDiscover': 'പൊതു ഫെല്ലോഷിപ്പുകൾ പര്യവേക്ഷണം ചെയ്യുക',
       'communityMembers': 'അംഗങ്ങൾ',
       'communityGuideLabel': 'ഗൈഡ്',
       'joinFellowshipTitle': 'കൂട്ടായ്മയിൽ ചേരുക',
@@ -1121,6 +1150,21 @@ class AppLocalizations {
       'createFellowshipMakePublicLabel': 'പൊതുവാക്കുക',
       'createFellowshipMakePublicHint':
           'Discover-ൽ എല്ലാ ഉപയോക്താക്കൾക്കും ദൃശ്യമാകും',
+      'meetingsSyncBannerTitle':
+          'പുതിയ അംഗങ്ങൾക്ക് കലണ്ടർ ക്ഷണം ലഭിച്ചിട്ടില്ല',
+      'meetingsSyncCalendar': 'കലണ്ടറിലേക്ക് സമന്വയിപ്പിക്കുക',
+      'meetingsSyncReconnect': 'ദയവായി Google Calendar വീണ്ടും ബന്ധിപ്പിക്കുക',
+      'homeAssignPathMentor': 'പഠന പാത നൽകുക',
+      'homeNoPathAssigned': 'പഠന പാത ഇല്ല',
+      'fellowshipRecentActivity': 'സമീപകാല പ്രവർത്തനം',
+      'fellowshipViewAll': 'എല്ലാം കാണുക',
+      'feedPostSomething': 'എന്തെങ്കിലും പോസ്റ്റ് ചെയ്യുക',
+      'meetingsTitle': 'മീറ്റിംഗുകൾ',
+      'meetingsSchedule': 'ഷെഡ്യൂൾ ചെയ്യുക',
+      'meetingsSchedulePrompt': 'മീറ്റിംഗ് ഷെഡ്യൂൾ ചെയ്യാൻ + അമർത്തുക',
+      'meetingsNoUpcoming': 'വരാനിരിക്കുന്ന മീറ്റിംഗുകൾ ഇല്ല',
+      'meetingsNextNoTime': 'അടുത്തത്: {0}',
+      'meetingsNextWithTime': 'അടുത്തത്: {0} at {1}',
     },
   };
 
@@ -1549,6 +1593,37 @@ class AppLocalizations {
       locale.languageCode]!['createFellowshipMakePublicLabel']!;
   String get createFellowshipMakePublicHint =>
       _localizedValues[locale.languageCode]!['createFellowshipMakePublicHint']!;
+  String get meetingsSyncBannerTitle =>
+      _localizedValues[locale.languageCode]!['meetingsSyncBannerTitle']!;
+  String get meetingsSyncCalendar =>
+      _localizedValues[locale.languageCode]!['meetingsSyncCalendar']!;
+  String get meetingsSyncReconnect =>
+      _localizedValues[locale.languageCode]!['meetingsSyncReconnect']!;
+  String get homeAssignPathMentor =>
+      _localizedValues[locale.languageCode]!['homeAssignPathMentor']!;
+  String get homeNoPathAssigned =>
+      _localizedValues[locale.languageCode]!['homeNoPathAssigned']!;
+  String get fellowshipRecentActivity =>
+      _localizedValues[locale.languageCode]!['fellowshipRecentActivity']!;
+  String get fellowshipViewAll =>
+      _localizedValues[locale.languageCode]!['fellowshipViewAll']!;
+  String get feedPostSomething =>
+      _localizedValues[locale.languageCode]!['feedPostSomething']!;
+  String get meetingsTitle =>
+      _localizedValues[locale.languageCode]!['meetingsTitle']!;
+  String get meetingsSchedule =>
+      _localizedValues[locale.languageCode]!['meetingsSchedule']!;
+  String get meetingsSchedulePrompt =>
+      _localizedValues[locale.languageCode]!['meetingsSchedulePrompt']!;
+  String get meetingsNoUpcoming =>
+      _localizedValues[locale.languageCode]!['meetingsNoUpcoming']!;
+  String meetingsNextNoTime(String title) =>
+      _localizedValues[locale.languageCode]!['meetingsNextNoTime']!
+          .replaceAll('{0}', title);
+  String meetingsNextWithTime(String title, String time) =>
+      _localizedValues[locale.languageCode]!['meetingsNextWithTime']!
+          .replaceAll('{0}', title)
+          .replaceAll('{1}', time);
 
   // First Century Christian Facts for Loading Screen
   String getLoadingFact(int index) {
@@ -1562,6 +1637,31 @@ class AppLocalizations {
       60,
       (index) => getLoadingFact(index + 1),
     );
+  }
+
+  static const Map<String, Map<String, String>> _categoryTranslations = {
+    'hi': {
+      'Foundations': 'आधार',
+      'Growth': 'विकास',
+      'Service & Mission': 'सेवा और मिशन',
+      'Apologetics': 'विश्वास की रक्षा',
+      'Life & Relationships': 'जीवन और रिश्ते',
+      'Theology': 'धर्मशास्त्र',
+    },
+    'ml': {
+      'Foundations': 'അടിത്തറ',
+      'Growth': 'വളർച്ച',
+      'Service & Mission': 'സേവനവും ദൗത്യവും',
+      'Apologetics': 'വിശ്വാസ സംരക്ഷണം',
+      'Life & Relationships': 'ജീവിതവും ബന്ധങ്ങളും',
+      'Theology': 'ദൈവശാസ്ത്രം',
+    },
+  };
+
+  /// Returns the translated category name for the current locale.
+  /// Falls back to the original English name if no translation exists.
+  String translateLearningPathCategory(String category) {
+    return _categoryTranslations[locale.languageCode]?[category] ?? category;
   }
 }
 

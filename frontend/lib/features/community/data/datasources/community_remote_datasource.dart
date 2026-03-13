@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
+import '../../domain/entities/sync_calendar_result.dart';
 import '../models/fellowship_comment_model.dart';
 import '../models/fellowship_meeting_model.dart';
 import '../models/fellowship_member_model.dart';
@@ -211,6 +212,9 @@ abstract class CommunityRemoteDatasource {
 
   /// Cancels the meeting identified by [meetingId].
   Future<void> cancelMeeting(String meetingId, {String? googleAccessToken});
+
+  /// Syncs Google Calendar attendees for all upcoming meetings of [fellowshipId].
+  Future<SyncCalendarResult> syncFellowshipCalendar(String fellowshipId);
 }
 
 /// [HttpService]-backed implementation of [CommunityRemoteDatasource].
@@ -287,6 +291,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       '/functions/v1/fellowship-meetings';
   static const String _fellowshipMeetingsCancelEndpoint =
       '/functions/v1/fellowship-meetings/cancel';
+  static const String _fellowshipMeetingsSyncCalendarEndpoint =
+      '/functions/v1/fellowship-meetings/sync-calendar';
 
   // Merged into fellowship-posts: reactions toggle, reports create
   static const String _fellowshipReactionsToggleEndpoint =
@@ -754,8 +760,19 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
           await _httpService.post(url, headers: headers, body: body);
 
       if (response.statusCode != 200 && response.statusCode != 201) {
+        String errorMessage =
+            'Failed to join fellowship: ${response.statusCode}';
+        try {
+          final json = jsonDecode(response.body) as Map<String, dynamic>;
+          final error = json['error'];
+          if (error is Map<String, dynamic>) {
+            errorMessage = (error['message'] as String?) ?? errorMessage;
+          } else if (error is String) {
+            errorMessage = error;
+          }
+        } catch (_) {}
         throw ServerException(
-          message: 'Failed to join fellowship: ${response.statusCode}',
+          message: errorMessage,
           code: 'FELLOWSHIP_JOIN_ERROR',
         );
       }
@@ -1563,6 +1580,38 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       throw ServerException(
         message: 'Failed to cancel meeting: $e',
         code: 'FELLOWSHIP_MEETINGS_CANCEL_ERROR',
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fellowship meetings — sync calendar
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<SyncCalendarResult> syncFellowshipCalendar(String fellowshipId) async {
+    try {
+      final url = '$_baseUrl$_fellowshipMeetingsSyncCalendarEndpoint';
+      final headers = await _httpService.createHeaders();
+      final body = jsonEncode({'fellowshipId': fellowshipId});
+      final response =
+          await _httpService.post(url, headers: headers, body: body);
+
+      if (response.statusCode != 200) {
+        throw ServerException(
+          message: 'Failed to sync calendar: ${response.statusCode}',
+          code: 'CALENDAR_SYNC_ERROR',
+        );
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return SyncCalendarResult.fromJson(json);
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to sync calendar: $e',
+        code: 'CALENDAR_SYNC_ERROR',
       );
     }
   }

@@ -55,6 +55,9 @@ dependencies:
   share_plus: ^11.0.0
   url_launcher: ^6.3.1
   
+  # Deep Links
+  app_links: ^6.3.4
+
   # Utilities
   get_it: ^8.0.3
   connectivity_plus: ^6.1.4

@@ -41,8 +41,12 @@ function calculateTimezoneOffsetRange(currentHour: number): { offsetRangeMin: nu
     targetOffsetMinutes -= 1440
   }
 
-  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 180)
-  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 180)
+  // Use ±90 min (half of the 3-hour cron interval) so each timezone falls in
+  // exactly ONE cron window. ±180 caused overlap between consecutive windows
+  // (e.g. IST +330 matched both UTC-2 and UTC-5), leading to late delivery
+  // when the earlier run failed silently and the next one retried 3 hr late.
+  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 90)
+  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 90)
 
   return { offsetRangeMin, offsetRangeMax }
 }

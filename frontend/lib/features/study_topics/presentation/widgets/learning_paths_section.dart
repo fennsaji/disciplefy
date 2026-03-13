@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -507,7 +508,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
         children: [
           // Featured chip
           _FilterChip(
-            label: '⭐ Featured',
+            label: '⭐ ${context.tr(TranslationKeys.learningPathsFeatured)}',
             selected: _featuredOnly,
             onSelected: (v) => setState(() => _featuredOnly = v),
             theme: theme,
@@ -516,7 +517,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           // Level chips
           for (final level in levels) ...[
             _FilterChip(
-              label: level,
+              label: context.tr('disciple_level.$level'),
               selected: _selectedLevel == level,
               onSelected: (v) =>
                   setState(() => _selectedLevel = v ? level : null),
@@ -584,7 +585,8 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
                   const SizedBox(width: 6),
                 ],
                 Text(
-                  category.name,
+                  AppLocalizations.of(context)!
+                      .translateLearningPathCategory(category.name),
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,

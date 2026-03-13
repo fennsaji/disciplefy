@@ -1,16 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../features/community/domain/entities/sync_calendar_result.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_meetings_event.dart';
 import 'fellowship_meetings_state.dart';
 
 /// BLoC that manages the scheduled meetings list for a single fellowship,
-/// along with create and cancel operations.
+/// along with create, cancel, and calendar-sync operations.
 ///
 /// Inject [CommunityRepository] via the constructor. Dispatch:
 /// - [FellowshipMeetingsLoadRequested] to fetch/refresh the list.
 /// - [FellowshipMeetingCreateRequested] to schedule a new meeting.
 /// - [FellowshipMeetingCancelRequested] to cancel an existing meeting.
+/// - [FellowshipMeetingsSyncCalendarRequested] to bulk-sync Google Calendar.
 class FellowshipMeetingsBloc
     extends Bloc<FellowshipMeetingsEvent, FellowshipMeetingsState> {
   final CommunityRepository _repository;
@@ -21,6 +23,7 @@ class FellowshipMeetingsBloc
     on<FellowshipMeetingsLoadRequested>(_onLoadRequested);
     on<FellowshipMeetingCreateRequested>(_onCreateRequested);
     on<FellowshipMeetingCancelRequested>(_onCancelRequested);
+    on<FellowshipMeetingsSyncCalendarRequested>(_onSyncCalendarRequested);
   }
 
   // ---------------------------------------------------------------------------
@@ -41,11 +44,24 @@ class FellowshipMeetingsBloc
         status: FellowshipMeetingsStatus.failure,
         errorMessage: () => failure.message,
       )),
-      (meetings) => emit(state.copyWith(
-        status: FellowshipMeetingsStatus.success,
-        meetings: meetings,
-        errorMessage: () => null,
-      )),
+      (meetings) {
+        // Use meetLink as proxy for "has Google Calendar event" because the API
+        // does not return google_calendar_event_id to the client. Only meetings
+        // with a Google Meet link can be synced (service_account meetings also
+        // have a meet link, but filtering by calendar_type is backend-only).
+        // This is an intentional approximation: the worst-case is showing the
+        // banner for service_account meetings, where /sync-calendar will simply
+        // return syncedMeetings: 0 and the banner will remain visible.
+        final hasMeetingNeedingSync = meetings.any(
+          (m) => m.meetLink.isNotEmpty && m.lastSyncedAt == null,
+        );
+        emit(state.copyWith(
+          status: FellowshipMeetingsStatus.success,
+          meetings: meetings,
+          showSyncBanner: hasMeetingNeedingSync,
+          errorMessage: () => null,
+        ));
+      },
     );
   }
 
@@ -120,6 +136,43 @@ class FellowshipMeetingsBloc
           meetings: updated,
           successMessage: () => 'Meeting cancelled.',
         ));
+      },
+    );
+  }
+
+  /// Bulk-syncs Google Calendar attendees for all upcoming meetings.
+  Future<void> _onSyncCalendarRequested(
+    FellowshipMeetingsSyncCalendarRequested event,
+    Emitter<FellowshipMeetingsState> emit,
+  ) async {
+    emit(state.copyWith(
+      isSyncingCalendar: true,
+      syncRequiresReconnect: false,
+      errorMessage: () => null,
+      successMessage: () => null,
+    ));
+
+    final result = await _repository.syncFellowshipCalendar(event.fellowshipId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        isSyncingCalendar: false,
+        errorMessage: () => failure.message,
+      )),
+      (syncResult) {
+        if (syncResult.requiresReconnect) {
+          emit(state.copyWith(
+            isSyncingCalendar: false,
+            syncRequiresReconnect: true,
+          ));
+        } else {
+          emit(state.copyWith(
+            isSyncingCalendar: false,
+            showSyncBanner: false,
+            successMessage: () =>
+                'Calendar synced for ${syncResult.syncedMembers} members.',
+          ));
+        }
       },
     );
   }

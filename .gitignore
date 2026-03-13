@@ -480,3 +480,4 @@ github-secrets-*.txt
 
 target/
 
+.worktrees/

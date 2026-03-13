@@ -263,10 +263,7 @@ class _FellowshipLessonsTabScreenState
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider<LearningPathsBloc>(
         create: (_) => sl<LearningPathsBloc>()
-          ..add(LoadLearningPaths(
-            language: _contentLanguage,
-            forceRefresh: true,
-          )),
+          ..add(LoadFlatLearningPaths(language: _contentLanguage)),
         child: _PathPickerSheet(
           fellowshipId: widget.fellowshipId,
           studyBloc: studyBloc,
@@ -1193,12 +1190,16 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
       if (!mounted) return;
-      context.read<LearningPathsBloc>().add(
-            SearchLearningPaths(
-              query: value.trim(),
-              language: widget.language,
-            ),
-          );
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        context.read<LearningPathsBloc>().add(
+              LoadFlatLearningPaths(language: widget.language),
+            );
+      } else {
+        context.read<LearningPathsBloc>().add(
+              SearchLearningPaths(query: trimmed, language: widget.language),
+            );
+      }
     });
   }
 

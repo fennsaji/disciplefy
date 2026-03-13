@@ -140,7 +140,7 @@ function normalizeTimezone(tz: string): string {
  * Exchanges a Google OAuth refresh token for a fresh access token.
  * Uses the same Google OAuth Client ID/Secret as the Supabase auth provider.
  */
-async function refreshGoogleAccessToken(refreshToken: string): Promise<string> {
+export async function refreshGoogleAccessToken(refreshToken: string): Promise<string> {
   const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID')
   const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET')
   if (!clientId || !clientSecret) {

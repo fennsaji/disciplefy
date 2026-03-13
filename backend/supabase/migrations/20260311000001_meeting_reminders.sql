@@ -26,7 +26,16 @@ CREATE INDEX IF NOT EXISTS idx_meeting_reminders_pending
 
 ALTER TABLE meeting_reminders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "meeting_reminders_service_all"
-  ON meeting_reminders FOR ALL TO service_role USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'meeting_reminders'
+      AND policyname = 'meeting_reminders_service_all'
+  ) THEN
+    CREATE POLICY "meeting_reminders_service_all"
+      ON meeting_reminders FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
 COMMIT;

@@ -603,6 +603,24 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
   })
   if (postError) console.warn('[fellowship/join] Failed to create system post — non-fatal:', postError)
 
+  // Fire-and-forget: notify new member of upcoming meetings (non-blocking)
+  const invitePromise = fetch(
+    `${Deno.env.get('SUPABASE_URL')}/functions/v1/fellowship-meetings/invite-member`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fellowshipId: fellowship.id, memberId: user.id }),
+    }
+  ).catch((err: unknown) =>
+    console.error('[fellowship/join] invite-member fire-and-forget failed:', err)
+  )
+  if (typeof EdgeRuntime !== 'undefined') {
+    EdgeRuntime.waitUntil(invitePromise)
+  }
+
   return new Response(
     JSON.stringify({
       success: true,

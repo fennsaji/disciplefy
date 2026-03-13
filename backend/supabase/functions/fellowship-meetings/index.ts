@@ -13,7 +13,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { createCalendarEvent, cancelCalendarEvent } from '../_shared/utils/google-calendar.ts'
+import { createCalendarEvent, cancelCalendarEvent, refreshGoogleAccessToken } from '../_shared/utils/google-calendar.ts'
 import { FCMService } from '../_shared/fcm-service.ts'
 
 // ---------------------------------------------------------------------------
@@ -214,6 +214,7 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       recurrence: body.recurrence ?? null, location: body.location?.trim() ?? null,
       meet_link: calendarResult.meetLink, calendar_event_id: calendarResult.eventId,
       calendar_type: calendarResult.calendarType,
+      google_refresh_token: body.google_refresh_token ?? null,
     })
     .select().single()
 
@@ -438,6 +439,393 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
 }
 
 // ---------------------------------------------------------------------------
+// Invite new member to upcoming meetings  POST /fellowship-meetings/invite-member
+// Internal service-role only — called fire-and-forget from join handlers.
+// Auth: checks Authorization header against SUPABASE_SERVICE_ROLE_KEY.
+// ---------------------------------------------------------------------------
+
+interface InviteMemberRequest {
+  fellowshipId: string
+  memberId: string
+}
+
+async function handleInviteMember(req: Request, services: ServiceContainer): Promise<Response> {
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  let body: InviteMemberRequest
+  try {
+    body = await req.json() as InviteMemberRequest
+  } catch {
+    return new Response('Bad Request', { status: 400 })
+  }
+
+  const { fellowshipId, memberId } = body
+  if (!fellowshipId || !memberId) {
+    return new Response('fellowshipId and memberId required', { status: 400 })
+  }
+
+  const db = services.supabaseServiceClient
+
+  // Rate limit: skip if member already received a meeting_invite in last 24h
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: recentLog } = await db
+    .from('notification_logs')
+    .select('id')
+    .eq('user_id', memberId)
+    .eq('notification_type', 'meeting_invite')
+    .gte('created_at', since)
+    .maybeSingle()
+
+  if (recentLog) {
+    console.log(`[invite-member] Skipping ${memberId} — rate limited`)
+    return new Response(
+      JSON.stringify({ skipped: true, reason: 'rate_limited' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Fetch up to 5 upcoming meetings
+  const { data: meetings } = await db
+    .from('fellowship_meetings')
+    .select('id, title, description, starts_at, ends_at, location, meet_link')
+    .eq('fellowship_id', fellowshipId)
+    .eq('is_cancelled', false)
+    .gte('starts_at', new Date().toISOString())
+    .order('starts_at', { ascending: true })
+    .limit(5)
+
+  if (!meetings || meetings.length === 0) {
+    console.log(`[invite-member] No upcoming meetings for fellowship ${fellowshipId}`)
+    return new Response(
+      JSON.stringify({ success: true, meetingCount: 0 }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Fetch fellowship name
+  const { data: fellowship } = await db
+    .from('fellowships')
+    .select('name')
+    .eq('id', fellowshipId)
+    .maybeSingle()
+  const fellowshipName = fellowship?.name ?? 'your fellowship'
+
+  // Fetch member email
+  const { data: userData } = await db.auth.admin.getUserById(memberId)
+  const memberEmail = userData?.user?.email ?? null
+
+  // Fetch member language from user_profiles (canonical source — matches notification-helper-service.ts)
+  const { data: profile } = await db
+    .from('user_profiles')
+    .select('language_preference')
+    .eq('id', memberId)
+    .maybeSingle()
+  const language: string = profile?.language_preference ?? 'en'
+
+  // Fetch timezone offset from user_notification_preferences
+  const { data: prefs } = await db
+    .from('user_notification_preferences')
+    .select('timezone_offset_minutes')
+    .eq('user_id', memberId)
+    .maybeSingle()
+  const tzOffsetMinutes: number = prefs?.timezone_offset_minutes ?? 0
+
+  // Send email if available
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  if (memberEmail && resendApiKey) {
+    const subject = language === 'hi'
+      ? `${fellowshipName} में स्वागत है! आगामी मीटिंग्स`
+      : language === 'ml'
+        ? `${fellowshipName}-ലേക്ക് സ്വാഗതം! ആഗതമായ യോഗങ്ങൾ`
+        : `Welcome to ${fellowshipName}! Here are your upcoming meetings`
+
+    const meetingRows = meetings.map((m: {
+      title: string; description: string | null; starts_at: string; location: string | null; meet_link: string
+    }) => {
+      const d = new Date(m.starts_at)
+      const local = new Date(d.getTime() + tzOffsetMinutes * 60 * 1000)
+      const dateStr = local.toISOString().replace('T', ' ').substring(0, 16) + ' (local)'
+      const loc = m.location ?? m.meet_link ?? ''
+      return `<tr>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2a40;color:#e0e0f0;font-size:13px;font-weight:600;">${escHtml(m.title)}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2a40;color:#a0a0c0;font-size:12px;">${dateStr}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2a40;color:#6366f1;font-size:12px;">${escHtml(loc)}</td>
+      </tr>`
+    }).join('')
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0f0f1a;font-family:'Inter',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f1a;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <span style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;">Disciplefy</span>
+        </td></tr>
+        <tr><td style="background:#1a1a2e;border-radius:20px;overflow:hidden;border:1px solid #2a2a40;">
+          <div style="height:4px;background:linear-gradient(90deg,#4f46e5,#6366f1);"></div>
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 28px 24px;">
+            <tr><td style="padding-bottom:16px;">
+              <div style="font-size:18px;font-weight:800;color:#fff;">📅 ${escHtml(subject)}</div>
+            </td></tr>
+            <tr><td style="padding-bottom:20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#12122a;border-radius:12px;overflow:hidden;">
+                <tr>
+                  <th style="padding:10px 14px;text-align:left;font-size:11px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;">Meeting</th>
+                  <th style="padding:10px 14px;text-align:left;font-size:11px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;">Date &amp; Time</th>
+                  <th style="padding:10px 14px;text-align:left;font-size:11px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;">Location / Link</th>
+                </tr>
+                ${meetingRows}
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding-top:20px;text-align:center;"><p style="margin:0;font-size:12px;color:#404060;">You received this because you joined <span style="color:#6366f1;">Disciplefy</span>.</p></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
+
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Disciplefy <noreply@disciplefy.in>',
+          to: [memberEmail],
+          subject,
+          html,
+        }),
+      })
+    } catch (emailErr) {
+      console.error('[invite-member] Email send failed (non-fatal):', emailErr)
+    }
+  }
+
+  // Send FCM push if member has a token
+  try {
+    const { data: tokenRow } = await db
+      .from('user_notification_tokens')
+      .select('fcm_token')
+      .eq('user_id', memberId)
+      .maybeSingle()
+
+    if (tokenRow?.fcm_token) {
+      const fcm = new FCMService()
+      await fcm.sendNotification({
+        token: tokenRow.fcm_token,
+        notification: {
+          title: "You've been added to a fellowship",
+          body: `There are ${meetings.length} upcoming meeting${meetings.length > 1 ? 's' : ''}. Check your email for details.`,
+        },
+        data: { type: 'fellowship_meeting_invite', fellowship_id: fellowshipId },
+        android: { priority: 'high' },
+        apns: { headers: { 'apns-priority': '10' }, payload: { aps: { sound: 'default' } } },
+      })
+    }
+  } catch (fcmErr) {
+    console.error('[invite-member] FCM send failed (non-fatal):', fcmErr)
+  }
+
+  // Log the invite for rate limiting
+  try {
+    await db.from('notification_logs').insert({
+      user_id: memberId,
+      notification_type: 'meeting_invite',
+      title: `Upcoming meetings in ${fellowshipName}`,
+      body: `${meetings.length} upcoming meeting(s)`,
+      delivery_status: 'sent',
+      sent_at: new Date().toISOString(),
+    })
+  } catch (logErr) {
+    console.error('[invite-member] Failed to log notification (non-fatal):', logErr)
+  }
+
+  console.log(`[invite-member] Notified ${memberId} of ${meetings.length} meetings in ${fellowshipId}`)
+  return new Response(
+    JSON.stringify({ success: true, meetingCount: meetings.length }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Sync Google Calendar attendees  POST /fellowship-meetings/sync-calendar
+// Authenticated mentor — bulk-syncs all upcoming meetings for a fellowship.
+// Reads stored google_refresh_token from each meeting row to avoid requiring
+// the mentor to re-authenticate.
+// ---------------------------------------------------------------------------
+
+interface SyncCalendarRequest {
+  fellowshipId: string
+}
+
+interface MeetingSyncResult {
+  meetingId: string
+  status: 'synced' | 'skipped'
+  reason?: string
+}
+
+async function handleSyncCalendar(req: Request, services: ServiceContainer): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+    authHeader.replace('Bearer ', '')
+  )
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+
+  let body: SyncCalendarRequest
+  try {
+    body = await req.json() as SyncCalendarRequest
+  } catch {
+    throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400)
+  }
+  if (!body.fellowshipId) throw new AppError('VALIDATION_ERROR', 'fellowshipId is required', 400)
+
+  const db = services.supabaseServiceClient
+
+  // Verify caller is the fellowship mentor
+  const { data: isMentor, error: mentorError } = await db.rpc('is_fellowship_mentor', {
+    p_fellowship_id: body.fellowshipId,
+    p_user_id: user.id,
+  })
+  if (mentorError) throw new AppError('DATABASE_ERROR', 'Failed to verify mentor status', 500)
+  if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Only the fellowship mentor can sync the calendar', 403)
+
+  // Fetch upcoming meetings that have a Google Calendar event (user_primary only)
+  const { data: meetings } = await db
+    .from('fellowship_meetings')
+    .select('id, calendar_event_id, calendar_type, google_refresh_token')
+    .eq('fellowship_id', body.fellowshipId)
+    .eq('is_cancelled', false)
+    .eq('calendar_type', 'user_primary')
+    .gte('starts_at', new Date().toISOString())
+    .not('calendar_event_id', 'is', null)
+    .neq('calendar_event_id', '')
+
+  if (!meetings || meetings.length === 0) {
+    return new Response(
+      JSON.stringify({ success: true, syncedMeetings: 0, skippedMeetings: 0, syncedMembers: 0, oauthErrors: [] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Fetch all active fellowship members' emails
+  const { data: memberRows } = await db
+    .from('fellowship_members')
+    .select('user_id')
+    .eq('fellowship_id', body.fellowshipId)
+    .eq('is_active', true)
+
+  const memberIds = (memberRows ?? []).map((m: { user_id: string }) => m.user_id)
+  const memberEmailEntries = await Promise.all(
+    memberIds.map(async (uid: string): Promise<string | null> => {
+      try {
+        const { data } = await db.auth.admin.getUserById(uid)
+        return data?.user?.email ?? null
+      } catch { return null }
+    })
+  )
+  const memberEmails = memberEmailEntries.filter((e): e is string => !!e)
+
+  if (memberEmails.length === 0) {
+    return new Response(
+      JSON.stringify({ success: true, syncedMeetings: 0, skippedMeetings: meetings.length, syncedMembers: 0, oauthErrors: [] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const results: MeetingSyncResult[] = []
+  const oauthErrors: string[] = []
+
+  for (const meeting of meetings) {
+    const calendarEventId = meeting.calendar_event_id as string
+    const storedRefreshToken = meeting.google_refresh_token as string | null
+
+    if (!storedRefreshToken) {
+      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'no_refresh_token' })
+      oauthErrors.push(meeting.id)
+      continue
+    }
+
+    let accessToken: string
+    try {
+      accessToken = await refreshGoogleAccessToken(storedRefreshToken)
+    } catch (refreshErr) {
+      console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}:`, refreshErr)
+      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+      oauthErrors.push(meeting.id)
+      continue
+    }
+
+    try {
+      // Fetch current attendees to avoid removing existing ones
+      const getRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}?fields=attendees`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      )
+      const currentEvent = getRes.ok
+        ? await getRes.json() as { attendees?: Array<{ email: string }> }
+        : { attendees: [] }
+      const existingEmails = new Set((currentEvent.attendees ?? []).map((a: { email: string }) => a.email))
+
+      const newAttendees = memberEmails
+        .filter(e => !existingEmails.has(e))
+        .map(e => ({ email: e }))
+
+      const allAttendees = [...(currentEvent.attendees ?? []), ...newAttendees]
+
+      if (newAttendees.length > 0) {
+        const patchRes = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}?sendUpdates=added`,
+          {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ attendees: allAttendees }),
+          }
+        )
+        if (!patchRes.ok) {
+          const errText = await patchRes.text()
+          console.error(`[sync-calendar] PATCH failed for meeting ${meeting.id}:`, errText)
+          results.push({ meetingId: meeting.id, status: 'skipped', reason: 'google_api_error' })
+          continue
+        }
+      }
+
+      await db.from('fellowship_meetings')
+        .update({ last_synced_at: new Date().toISOString() })
+        .eq('id', meeting.id)
+
+      results.push({ meetingId: meeting.id, status: 'synced' })
+    } catch (err) {
+      console.error(`[sync-calendar] Error for meeting ${meeting.id}:`, err)
+      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'error' })
+    }
+  }
+
+  const syncedCount = results.filter(r => r.status === 'synced').length
+  const skippedCount = results.filter(r => r.status === 'skipped').length
+
+  console.log(`[sync-calendar] Done: ${syncedCount} synced, ${skippedCount} skipped, ${oauthErrors.length} OAuth errors`)
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      syncedMeetings: syncedCount,
+      skippedMeetings: skippedCount,
+      syncedMembers: memberEmails.length,
+      oauthErrors,
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -449,7 +837,16 @@ async function handleMeetings(req: Request, services: ServiceContainer): Promise
     return handleReminder(req, services)
   }
 
+  // Invite member — service-role internal, skip maintenance check
+  if (req.method === 'POST' && pathname.endsWith('/invite-member')) {
+    return handleInviteMember(req, services)
+  }
+
   await checkMaintenanceMode(req, services)
+
+  if (req.method === 'POST' && pathname.endsWith('/sync-calendar')) {
+    return handleSyncCalendar(req, services)
+  }
 
   if (req.method === 'GET') return handleListMeetings(req, services)
 

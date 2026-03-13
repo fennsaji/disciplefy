@@ -40,108 +40,110 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
 
-                // Title
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                  child: Text(
-                    context.tr(TranslationKeys.studyGuideTtsControls),
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    child: Text(
+                      context.tr(TranslationKeys.studyGuideTtsControls),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
 
-                // Speed control section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr(TranslationKeys.studyGuideTtsSpeed),
+                  // Speed control section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.studyGuideTtsSpeed),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSpeedSelector(state.speechRate, isDark),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Progress bar for section navigation
+                  if (_ttsService.hasGuide && _ttsService.totalSections > 1)
+                    _buildProgressBar(state, isDark),
+
+                  const SizedBox(height: 20),
+
+                  // Playback controls (Previous, Play/Pause, Next)
+                  _buildPlaybackControls(state, isDark),
+
+                  const SizedBox(height: 24),
+
+                  // Section navigation
+                  if (_ttsService.hasGuide &&
+                      _ttsService.sectionNames.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        context.tr(TranslationKeys.studyGuideTtsNowReading),
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _buildSpeedSelector(state.speechRate, isDark),
-                    ],
-                  ),
-                ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSectionList(state, theme, isDark),
+                    const SizedBox(height: 24),
+                  ],
 
-                const SizedBox(height: 24),
-
-                // Progress bar for section navigation
-                if (_ttsService.hasGuide && _ttsService.totalSections > 1)
-                  _buildProgressBar(state, isDark),
-
-                const SizedBox(height: 20),
-
-                // Playback controls (Previous, Play/Pause, Next)
-                _buildPlaybackControls(state, isDark),
-
-                const SizedBox(height: 24),
-
-                // Section navigation
-                if (_ttsService.hasGuide &&
-                    _ttsService.sectionNames.isNotEmpty) ...[
+                  // Stop button
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      context.tr(TranslationKeys.studyGuideTtsNowReading),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSectionList(state, theme, isDark),
-                  const SizedBox(height: 24),
-                ],
-
-                // Stop button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        _ttsService.stop();
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.stop),
-                      label:
-                          Text(context.tr(TranslationKeys.studyGuideTtsStop)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(
-                          color: theme.colorScheme.error,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          _ttsService.stop();
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.stop),
+                        label:
+                            Text(context.tr(TranslationKeys.studyGuideTtsStop)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                            color: theme.colorScheme.error,
+                          ),
+                          foregroundColor: theme.colorScheme.error,
                         ),
-                        foregroundColor: theme.colorScheme.error,
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
