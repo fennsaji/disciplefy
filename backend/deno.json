@@ -6,7 +6,8 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "types": ["https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts"]
   },
   "imports": {
     "std/": "https://deno.land/std@0.208.0/",
