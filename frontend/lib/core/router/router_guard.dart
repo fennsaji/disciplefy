@@ -523,7 +523,8 @@ class RouterGuard {
         path.startsWith('/auth/callback') ||
         path.startsWith('/phone-auth') || // Allow all phone auth related routes
         path.startsWith('/email-auth') || // Allow email auth routes
-        path.startsWith('/password-reset'); // Allow password reset routes
+        path.startsWith('/password-reset') || // Allow password reset routes
+        path.startsWith('/fellowship/join'); // Fellowship invite deep links
   }
 
   /// Check if the route requires full authentication (not guest/anonymous)

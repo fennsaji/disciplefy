@@ -92,6 +92,7 @@ class FellowshipMembersBloc
       (data) => emit(state.copyWith(
         inviteStatus: FellowshipInviteStatus.success,
         inviteToken: data['token'] as String?,
+        inviteId: data['id'] as String?,
         inviteJoinUrl: data['join_url'] as String?,
         clearInviteError: true,
       )),
@@ -150,8 +151,7 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(errorMessage: failure.message)),
       (_) => emit(state.copyWith(
-        status: FellowshipMembersStatus.success,
-        members: const [],
+        leaveStatus: FellowshipLeaveStatus.success,
         clearErrorMessage: true,
       )),
     );

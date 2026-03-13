@@ -193,7 +193,7 @@ class SoftPaywallDialog extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'Continue on $_planDisplayName',
+                'Skip',
                 style: AppFonts.inter(
                   color: isDark
                       ? Colors.white.withOpacity(0.7)

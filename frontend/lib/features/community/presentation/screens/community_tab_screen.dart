@@ -62,6 +62,42 @@ class _CommunityTabContent extends StatefulWidget {
 class _CommunityTabContentState extends State<_CommunityTabContent> {
   int _selectedTab = 0; // 0 = My Fellowships, 1 = Discover
 
+  GoRouter? _router;
+  bool _wasInFellowshipDetail = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-attach listener when the router changes (should only happen once).
+    final router = GoRouter.of(context);
+    if (_router != router) {
+      _router?.routerDelegate.removeListener(_onRouteChange);
+      _router = router;
+      _router!.routerDelegate.addListener(_onRouteChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_onRouteChange);
+    super.dispose();
+  }
+
+  void _onRouteChange() {
+    if (!mounted) return;
+    final location = _router?.state.uri.toString() ?? '';
+    final inDetail = location.startsWith('/community/') &&
+        !location.startsWith('/community/join') &&
+        !location.startsWith('/community/create');
+    if (_wasInFellowshipDetail && !inDetail && location == '/community') {
+      // Returned from a fellowship detail — refresh the list.
+      context
+          .read<FellowshipListBloc>()
+          .add(const FellowshipListLoadRequested());
+    }
+    _wasInFellowshipDetail = inDetail;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -197,24 +233,39 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
           // ── Body ─────────────────────────────────────────────────────────
           Expanded(
             child: _selectedTab == 0
-                ? _MyFellowshipsTab(onJoinPressed: _onJoinPressed)
+                ? _MyFellowshipsTab(
+                    onJoinPressed: _onJoinPressed,
+                    onDiscover: () => setState(() => _selectedTab = 1),
+                  )
                 : _DiscoverTab(),
           ),
         ],
       ),
+      // Hide FAB when the user has no fellowships — the empty state has its own CTAs.
       floatingActionButton: _selectedTab == 0
-          ? FloatingActionButton.extended(
-              onPressed: _onJoinPressed,
-              backgroundColor: context.appInteractive,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.group_add_rounded),
-              label: Text(
-                l10n.communityJoinFellowship,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+          ? BlocBuilder<FellowshipListBloc, FellowshipListState>(
+              buildWhen: (prev, curr) =>
+                  prev.fellowships.isEmpty != curr.fellowships.isEmpty ||
+                  prev.status != curr.status,
+              builder: (context, state) {
+                if (state.status != FellowshipListStatus.success ||
+                    state.fellowships.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return FloatingActionButton.extended(
+                  onPressed: _onJoinPressed,
+                  backgroundColor: context.appInteractive,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.group_add_rounded),
+                  label: Text(
+                    l10n.communityJoinFellowship,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
             )
           : null,
     );
@@ -292,8 +343,12 @@ class _PillTabs extends StatelessWidget {
 
 class _MyFellowshipsTab extends StatelessWidget {
   final Future<void> Function() onJoinPressed;
+  final VoidCallback onDiscover;
 
-  const _MyFellowshipsTab({required this.onJoinPressed});
+  const _MyFellowshipsTab({
+    required this.onJoinPressed,
+    required this.onDiscover,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -347,7 +402,7 @@ class _MyFellowshipsTab extends StatelessWidget {
 
           case FellowshipListStatus.success:
             if (state.fellowships.isEmpty) {
-              return _EmptyState(onJoin: onJoinPressed);
+              return _EmptyState(onJoin: onJoinPressed, onDiscover: onDiscover);
             }
             return _FellowshipList(
               fellowships: state.fellowships,
@@ -819,8 +874,9 @@ class _DiscoverTabState extends State<_DiscoverTab> {
 
 class _EmptyState extends StatelessWidget {
   final Future<void> Function() onJoin;
+  final VoidCallback onDiscover;
 
-  const _EmptyState({required this.onJoin});
+  const _EmptyState({required this.onJoin, required this.onDiscover});
 
   @override
   Widget build(BuildContext context) {
@@ -908,6 +964,31 @@ class _EmptyState extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: onDiscover,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary, width: 1.5),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: Icon(Icons.explore_outlined,
+                  size: 20, color: Theme.of(context).colorScheme.primary),
+              label: Text(
+                l10n.communityDiscover,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),

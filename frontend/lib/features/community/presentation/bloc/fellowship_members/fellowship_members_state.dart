@@ -17,6 +17,9 @@ enum FellowshipEditStatus { idle, loading, success, failure }
 /// Describes the status of a transfer-mentor operation.
 enum FellowshipTransferStatus { idle, loading, success, failure }
 
+/// Describes the status of a leave-fellowship operation.
+enum FellowshipLeaveStatus { idle, loading, success, failure }
+
 /// Single immutable state for [FellowshipMembersBloc].
 ///
 /// Use [copyWith] to produce updated snapshots; never mutate fields directly.
@@ -47,6 +50,9 @@ class FellowshipMembersState extends Equatable {
   /// The generated invite token (non-null after a successful invite create).
   final String? inviteToken;
 
+  /// The ID of the generated invite (non-null after a successful invite create).
+  final String? inviteId;
+
   /// The deep-link URL for the invite (e.g. `disciplefy://fellowship/join?token=...`).
   final String? inviteJoinUrl;
 
@@ -72,6 +78,9 @@ class FellowshipMembersState extends Equatable {
   /// Non-null when the transfer-mentor operation failed.
   final String? transferError;
 
+  /// Status of the leave-fellowship operation.
+  final FellowshipLeaveStatus leaveStatus;
+
   const FellowshipMembersState({
     this.status = FellowshipMembersStatus.initial,
     this.members = const [],
@@ -81,6 +90,7 @@ class FellowshipMembersState extends Equatable {
     this.currentUserId,
     this.inviteStatus = FellowshipInviteStatus.idle,
     this.inviteToken,
+    this.inviteId,
     this.inviteJoinUrl,
     this.inviteError,
     this.invitesListStatus = FellowshipInvitesListStatus.idle,
@@ -89,6 +99,7 @@ class FellowshipMembersState extends Equatable {
     this.editError,
     this.transferStatus = FellowshipTransferStatus.idle,
     this.transferError,
+    this.leaveStatus = FellowshipLeaveStatus.idle,
   });
 
   /// Returns the initial state (used as the BLoC seed value).
@@ -104,6 +115,7 @@ class FellowshipMembersState extends Equatable {
         currentUserId,
         inviteStatus,
         inviteToken,
+        inviteId,
         inviteJoinUrl,
         inviteError,
         invitesListStatus,
@@ -112,6 +124,7 @@ class FellowshipMembersState extends Equatable {
         editError,
         transferStatus,
         transferError,
+        leaveStatus,
       ];
 
   /// Creates a copy of this state with the provided fields replaced.
@@ -125,6 +138,7 @@ class FellowshipMembersState extends Equatable {
     String? currentUserId,
     FellowshipInviteStatus? inviteStatus,
     String? inviteToken,
+    String? inviteId,
     String? inviteJoinUrl,
     String? inviteError,
     bool clearInviteError = false,
@@ -136,6 +150,7 @@ class FellowshipMembersState extends Equatable {
     FellowshipTransferStatus? transferStatus,
     String? transferError,
     bool clearTransferError = false,
+    FellowshipLeaveStatus? leaveStatus,
   }) {
     return FellowshipMembersState(
       status: status ?? this.status,
@@ -147,6 +162,7 @@ class FellowshipMembersState extends Equatable {
       currentUserId: currentUserId ?? this.currentUserId,
       inviteStatus: inviteStatus ?? this.inviteStatus,
       inviteToken: inviteToken ?? this.inviteToken,
+      inviteId: inviteId ?? this.inviteId,
       inviteJoinUrl: inviteJoinUrl ?? this.inviteJoinUrl,
       inviteError: clearInviteError ? null : (inviteError ?? this.inviteError),
       invitesListStatus: invitesListStatus ?? this.invitesListStatus,
@@ -156,6 +172,7 @@ class FellowshipMembersState extends Equatable {
       transferStatus: transferStatus ?? this.transferStatus,
       transferError:
           clearTransferError ? null : (transferError ?? this.transferError),
+      leaveStatus: leaveStatus ?? this.leaveStatus,
     );
   }
 }
