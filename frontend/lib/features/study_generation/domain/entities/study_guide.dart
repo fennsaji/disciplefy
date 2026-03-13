@@ -90,6 +90,10 @@ class StudyGuide extends Equatable {
   /// Whether this study guide was returned from cache (no tokens consumed).
   final bool fromCache;
 
+  /// Study mode used to generate this guide (e.g. 'quick', 'standard', 'deep').
+  /// Nullable for backward compatibility with guides cached before this field existed.
+  final String? studyMode;
+
   /// Creates a new StudyGuide instance.
   ///
   /// All fields except [userId] are required to ensure the study guide
@@ -120,6 +124,7 @@ class StudyGuide extends Equatable {
     this.prayerQuestion,
     this.tokenConsumption,
     this.fromCache = false,
+    this.studyMode,
   });
 
   /// Creates a copy of this study guide with optionally modified fields.
@@ -152,6 +157,7 @@ class StudyGuide extends Equatable {
     String? prayerQuestion,
     TokenConsumption? tokenConsumption,
     bool? fromCache,
+    String? studyMode,
   }) =>
       StudyGuide(
         id: id ?? this.id,
@@ -181,6 +187,7 @@ class StudyGuide extends Equatable {
         prayerQuestion: prayerQuestion ?? this.prayerQuestion,
         tokenConsumption: tokenConsumption ?? this.tokenConsumption,
         fromCache: fromCache ?? this.fromCache,
+        studyMode: studyMode ?? this.studyMode,
       );
 
   /// Gets the title of the study guide based on input type and content.
@@ -257,6 +264,7 @@ class StudyGuide extends Equatable {
         prayerQuestion,
         tokenConsumption,
         fromCache,
+        studyMode,
       ];
 
   @override

@@ -130,6 +130,7 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
         contextQuestion: data['contextQuestion'] as String?,
         personalNotes: data['personalNotes'] as String?,
         isSaved: data['isSaved'] as bool?,
+        studyMode: data['studyMode'] as String?,
       );
 
   /// Converts a study guide to a map for caching.
@@ -150,5 +151,6 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
         'contextQuestion': studyGuide.contextQuestion,
         'personalNotes': studyGuide.personalNotes,
         'isSaved': studyGuide.isSaved,
+        'studyMode': studyGuide.studyMode,
       };
 }

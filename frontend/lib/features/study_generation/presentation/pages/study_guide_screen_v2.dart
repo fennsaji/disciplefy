@@ -66,7 +66,12 @@ String _cleanDuplicateTitle(String content, String title) {
 
   // Remove markdown formatting and normalize for comparison
   final normalizedTitle =
-      title.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '');
+      title.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '').trim();
+
+  // If the title has no ASCII word characters (e.g. Hindi/Malayalam scripts),
+  // normalizedTitle becomes empty and would falsely match any line — skip cleanup.
+  if (normalizedTitle.isEmpty) return content;
+
   final firstLine =
       lines.first.toLowerCase().replaceAll(RegExp(r'[*_#]'), '').trim();
 
@@ -730,6 +735,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       input: widget.input!,
       inputType: widget.type!,
       language: normalizedLanguageCode,
+      studyMode: widget.studyMode.name,
     );
     if (cached != null && mounted) {
       Logger.info('📦 [STUDY_GUIDE_V2] Cache hit — skipping API call');
@@ -821,10 +827,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   /// Find a matching study guide in local Hive cache.
+  ///
+  /// Matches on input + inputType + language + studyMode so that different
+  /// modes for the same topic each get their own cached guide.
   Future<StudyGuide?> _findCachedStudyGuide({
     required String input,
     required String inputType,
     required String language,
+    required String studyMode,
   }) async {
     try {
       final cached = await sl<StudyLocalDataSource>().getCachedStudyGuides();
@@ -833,7 +843,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         (g) =>
             g.input.trim().toLowerCase() == normalizedInput &&
             g.inputType == inputType &&
-            g.language == language,
+            g.language == language &&
+            g.studyMode == studyMode,
       );
     } catch (_) {
       return null;
@@ -919,21 +930,25 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     Logger.info('✅ [GENERATION] Study generation completed successfully');
 
+    // Attach study mode so the cache key includes it, preventing different
+    // modes from returning each other's cached guide.
+    final guideWithMode = studyGuide.copyWith(studyMode: widget.studyMode.name);
+
     setState(() {
-      _currentStudyGuide = studyGuide;
+      _currentStudyGuide = guideWithMode;
       _isLoading = false;
       _hasError = false;
       _errorMessage = '';
 
       // Check if guide is already saved
-      if (studyGuide.isSaved != null) {
-        _isSaved = studyGuide.isSaved!;
+      if (guideWithMode.isSaved != null) {
+        _isSaved = guideWithMode.isSaved!;
       }
 
       // Load personal notes if bundled with guide data
-      if (studyGuide.personalNotes != null) {
-        _loadedNotes = studyGuide.personalNotes;
-        _notesController.text = studyGuide.personalNotes!;
+      if (guideWithMode.personalNotes != null) {
+        _loadedNotes = guideWithMode.personalNotes;
+        _notesController.text = guideWithMode.personalNotes!;
         _notesLoaded = true;
       }
     });
@@ -945,14 +960,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _startCompletionTracking();
 
     // Cache the generated guide for cache-first loading next time
-    sl<StudyLocalDataSource>().cacheStudyGuide(studyGuide);
+    sl<StudyLocalDataSource>().cacheStudyGuide(guideWithMode);
 
     // Always load notes from backend — notes are saved independently of save status
     // Backend may return same guide ID on repeat generation (cache hit), so notes may exist
     if (!_notesLoaded) {
       context
           .read<StudyBloc>()
-          .add(LoadPersonalNotesRequested(guideId: studyGuide.id));
+          .add(LoadPersonalNotesRequested(guideId: guideWithMode.id));
     }
   }
 
