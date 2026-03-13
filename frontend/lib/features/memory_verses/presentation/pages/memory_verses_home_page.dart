@@ -265,6 +265,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   ),
                 );
               }
+            } else if (state is PracticeSessionSubmitted) {
+              // Silently refresh verse list so stats (review count, next date)
+              // reflect the just-completed practice session.
+              _loadVerses(forceRefresh: true);
             } else if (state is VerseAdded) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -272,7 +276,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   backgroundColor: AppColors.success,
                 ),
               );
-              _loadVerses();
+              _loadVerses(forceRefresh: true);
               // Check memory achievements when verse is added
               sl<GamificationBloc>().add(const CheckMemoryAchievements());
               // Show notification prompt for memory verse reminder after adding first verse
@@ -298,7 +302,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   backgroundColor: AppColors.success,
                 ),
               );
-              _loadVerses();
+              _loadVerses(forceRefresh: true);
             }
           },
           builder: (context, state) {

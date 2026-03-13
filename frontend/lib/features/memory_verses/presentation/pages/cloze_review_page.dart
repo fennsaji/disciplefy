@@ -163,7 +163,10 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   /// Score a word by length as a proxy for semantic importance.
   /// Longer words are almost always more meaningful than short ones.
   int _wordScore(String word) {
-    final len = word.toLowerCase().replaceAll(RegExp(r'[^\w]'), '').length;
+    // [^\w] only strips ASCII punctuation; use Unicode-aware pattern so that
+    // Devanagari/Malayalam characters are not incorrectly removed.
+    final len =
+        word.replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '').length;
     if (len >= 7) return 4;
     if (len >= 5) return 3;
     if (len == 4) return 2;
@@ -174,7 +177,12 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   /// articles, common prepositions, auxiliary verbs, conjunctions, pronouns.
   /// For non-English verses, skips very short words (particles/conjunctions).
   bool _isSkipWord(String word) {
-    final clean = word.toLowerCase().replaceAll(RegExp(r'[^\w]'), '');
+    // [^\w] only matches ASCII word chars — all Unicode letters (Devanagari,
+    // Malayalam, etc.) would be stripped, making every non-English word appear
+    // empty and therefore always skipped. Use a Unicode-aware pattern instead.
+    final clean = word
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
     if (clean.isEmpty) return true;
 
     if (detectedLanguage != 'en') {
