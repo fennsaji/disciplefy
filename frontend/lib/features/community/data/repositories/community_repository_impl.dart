@@ -8,6 +8,7 @@ import '../../domain/entities/fellowship_meeting_entity.dart';
 import '../../domain/entities/fellowship_member_entity.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../../domain/entities/public_fellowship_entity.dart';
+import '../../domain/entities/sync_calendar_result.dart';
 import '../../domain/repositories/community_repository.dart';
 import '../datasources/community_remote_datasource.dart';
 
@@ -699,6 +700,19 @@ class CommunityRepositoryImpl implements CommunityRepository {
       return Left(ServerFailure(message: e.message));
     } catch (e) {
       return Left(ServerFailure(message: 'Failed to cancel meeting: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SyncCalendarResult>> syncFellowshipCalendar(
+      String fellowshipId) async {
+    try {
+      final result = await _datasource.syncFellowshipCalendar(fellowshipId);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Calendar sync failed: $e'));
     }
   }
 }

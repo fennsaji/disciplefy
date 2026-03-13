@@ -41,6 +41,10 @@ class FellowshipMeetingEntity extends Equatable {
   /// ISO-8601 timestamp when this record was created.
   final String createdAt;
 
+  /// ISO-8601 timestamp of the last Google Calendar attendee sync.
+  /// Null if this meeting has never been synced.
+  final String? lastSyncedAt;
+
   /// Whether this is an in-person gathering (as opposed to an online meeting).
   bool get isInPerson => location != null && location!.isNotEmpty;
 
@@ -56,6 +60,7 @@ class FellowshipMeetingEntity extends Equatable {
     this.location,
     required this.meetLink,
     required this.createdAt,
+    this.lastSyncedAt,
   });
 
   @override
@@ -71,5 +76,6 @@ class FellowshipMeetingEntity extends Equatable {
         location,
         meetLink,
         createdAt,
+        lastSyncedAt,
       ];
 }

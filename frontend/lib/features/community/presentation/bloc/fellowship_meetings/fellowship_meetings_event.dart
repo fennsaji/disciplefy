@@ -80,6 +80,17 @@ class FellowshipMeetingCreateRequested extends FellowshipMeetingsEvent {
       ];
 }
 
+/// Requests a bulk Google Calendar attendee sync across all upcoming meetings
+/// of [fellowshipId].
+class FellowshipMeetingsSyncCalendarRequested extends FellowshipMeetingsEvent {
+  final String fellowshipId;
+
+  const FellowshipMeetingsSyncCalendarRequested(this.fellowshipId);
+
+  @override
+  List<Object?> get props => [fellowshipId];
+}
+
 /// Requests cancellation of the meeting identified by [meetingId].
 class FellowshipMeetingCancelRequested extends FellowshipMeetingsEvent {
   /// The ID of the meeting to cancel.
