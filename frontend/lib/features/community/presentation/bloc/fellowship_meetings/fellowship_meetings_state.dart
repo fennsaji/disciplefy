@@ -23,20 +23,21 @@ enum FellowshipMeetingsStatus {
 /// Nullable message fields use the closure-based `copyWith` pattern so that
 /// callers can explicitly clear them by passing `() => null`.
 class FellowshipMeetingsState extends Equatable {
-  /// Current status of the meetings list load.
   final FellowshipMeetingsStatus status;
-
-  /// The list of meetings currently held in state.
   final List<FellowshipMeetingEntity> meetings;
-
-  /// True while a create or cancel operation is in progress.
   final bool submitting;
-
-  /// Non-null when the last operation produced an error.
   final String? errorMessage;
-
-  /// Non-null after a successful create or cancel operation.
   final String? successMessage;
+
+  /// True while a Google Calendar sync operation is in progress.
+  final bool isSyncingCalendar;
+
+  /// True when any upcoming meeting with a Google Calendar event has
+  /// [FellowshipMeetingEntity.lastSyncedAt] == null (never synced).
+  final bool showSyncBanner;
+
+  /// True when one or more meetings could not be synced due to expired OAuth.
+  final bool syncRequiresReconnect;
 
   const FellowshipMeetingsState({
     this.status = FellowshipMeetingsStatus.initial,
@@ -44,18 +45,20 @@ class FellowshipMeetingsState extends Equatable {
     this.submitting = false,
     this.errorMessage,
     this.successMessage,
+    this.isSyncingCalendar = false,
+    this.showSyncBanner = false,
+    this.syncRequiresReconnect = false,
   });
 
-  /// Returns a copy of this state with the supplied fields replaced.
-  ///
-  /// Pass `errorMessage: () => null` or `successMessage: () => null` to
-  /// explicitly clear those fields.
   FellowshipMeetingsState copyWith({
     FellowshipMeetingsStatus? status,
     List<FellowshipMeetingEntity>? meetings,
     bool? submitting,
     String? Function()? errorMessage,
     String? Function()? successMessage,
+    bool? isSyncingCalendar,
+    bool? showSyncBanner,
+    bool? syncRequiresReconnect,
   }) {
     return FellowshipMeetingsState(
       status: status ?? this.status,
@@ -64,10 +67,22 @@ class FellowshipMeetingsState extends Equatable {
       errorMessage: errorMessage != null ? errorMessage() : this.errorMessage,
       successMessage:
           successMessage != null ? successMessage() : this.successMessage,
+      isSyncingCalendar: isSyncingCalendar ?? this.isSyncingCalendar,
+      showSyncBanner: showSyncBanner ?? this.showSyncBanner,
+      syncRequiresReconnect:
+          syncRequiresReconnect ?? this.syncRequiresReconnect,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [status, meetings, submitting, errorMessage, successMessage];
+  List<Object?> get props => [
+        status,
+        meetings,
+        submitting,
+        errorMessage,
+        successMessage,
+        isSyncingCalendar,
+        showSyncBanner,
+        syncRequiresReconnect,
+      ];
 }

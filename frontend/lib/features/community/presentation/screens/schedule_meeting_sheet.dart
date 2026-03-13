@@ -330,12 +330,13 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
+      text.toUpperCase(),
       style: TextStyle(
         fontFamily: 'Inter',
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
         color: color,
+        letterSpacing: 1.1,
       ),
     );
   }
@@ -508,35 +509,58 @@ class _SubmitButton extends StatelessWidget {
     return BlocBuilder<FellowshipMeetingsBloc, FellowshipMeetingsState>(
       buildWhen: (prev, curr) => prev.submitting != curr.submitting,
       builder: (context, state) {
-        return SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: state.submitting ? null : onSubmit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandPrimary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: state.submitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text(
-                    'Schedule & Send Invites',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: state.submitting
+                ? null
+                : const LinearGradient(
+                    colors: [AppColors.brandPrimary, AppColors.brandSecondary],
                   ),
+            color: state.submitting ? AppColors.brandPrimary : null,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: state.submitting
+                ? null
+                : [
+                    BoxShadow(
+                      color: AppColors.brandPrimary.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: state.submitting ? null : onSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                disabledBackgroundColor:
+                    AppColors.brandPrimary.withValues(alpha: 0.6),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: state.submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Schedule & Send Invites',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+            ),
           ),
         );
       },
@@ -671,10 +695,13 @@ class _PickerTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.appInputFill,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.brandPrimary.withValues(alpha: 0.15),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: context.appTextTertiary),
+            Icon(icon, size: 16, color: AppColors.brandPrimaryLight),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
@@ -682,11 +709,16 @@ class _PickerTile extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 13,
+                  fontWeight: FontWeight.w500,
                   color: context.appTextPrimary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 4),
+            Icon(Icons.expand_more_rounded,
+                size: 14,
+                color: AppColors.brandPrimaryLight.withValues(alpha: 0.6)),
           ],
         ),
       ),

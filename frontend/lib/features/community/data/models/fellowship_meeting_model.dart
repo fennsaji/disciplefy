@@ -23,6 +23,8 @@ class FellowshipMeetingModel {
 
   final String createdAt;
 
+  final String? lastSyncedAt;
+
   const FellowshipMeetingModel({
     required this.id,
     required this.fellowshipId,
@@ -35,6 +37,7 @@ class FellowshipMeetingModel {
     this.location,
     required this.meetLink,
     required this.createdAt,
+    this.lastSyncedAt,
   });
 
   factory FellowshipMeetingModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +53,7 @@ class FellowshipMeetingModel {
       location: json['location'] as String?,
       meetLink: (json['meet_link'] as String?) ?? '',
       createdAt: json['created_at'] as String,
+      lastSyncedAt: json['last_synced_at'] as String?,
     );
   }
 
@@ -65,5 +69,6 @@ class FellowshipMeetingModel {
         location: location,
         meetLink: meetLink,
         createdAt: createdAt,
+        lastSyncedAt: lastSyncedAt,
       );
 }

@@ -5,6 +5,7 @@ import '../entities/fellowship_comment_entity.dart';
 import '../entities/fellowship_entity.dart';
 import '../entities/fellowship_meeting_entity.dart';
 import '../entities/fellowship_member_entity.dart';
+import '../entities/sync_calendar_result.dart';
 import '../entities/fellowship_post_entity.dart';
 import '../entities/public_fellowship_entity.dart';
 
@@ -234,4 +235,12 @@ abstract class CommunityRepository {
     String meetingId, {
     String? googleAccessToken,
   });
+
+  /// Syncs Google Calendar attendees for all upcoming meetings of [fellowshipId].
+  ///
+  /// Returns [Right(SyncCalendarResult)] on success.
+  /// If [SyncCalendarResult.requiresReconnect] is true, prompt the mentor to
+  /// re-authenticate with Google Calendar.
+  Future<Either<Failure, SyncCalendarResult>> syncFellowshipCalendar(
+      String fellowshipId);
 }
