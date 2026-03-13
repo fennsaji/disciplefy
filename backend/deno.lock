@@ -7,7 +7,7 @@
     "npm:@supabase/postgrest-js@2.95.3": "2.95.3",
     "npm:@supabase/realtime-js@2.95.3": "2.95.3",
     "npm:@supabase/storage-js@2.95.3": "2.95.3",
-    "npm:@types/node@20": "20.19.33",
+    "npm:@types/node@*": "22.15.15",
     "npm:jose@*": "5.10.0",
     "npm:jose@5": "5.10.0",
     "npm:pdf-lib@1.17.1": "1.17.1",
@@ -76,12 +76,6 @@
     "@types/caseless@0.12.5": {
       "integrity": "sha512-hWtVTC2q7hc7xZ/RLbxapMvDMgUnDvKvMOpKal4DrMyfGBUfB1oKaZlIRr6mJL+If3bAP6sV/QneGzF6tJjZDg=="
     },
-    "@types/node@20.19.33": {
-      "integrity": "sha512-Rs1bVAIdBs5gbTIKza/tgpMuG1k3U/UMJLWecIMxNdJFDMzcM5LOiLVRYh3PilWEYDIeUDv7bpiHPLPsbydGcw==",
-      "dependencies": [
-        "undici-types"
-      ]
-    },
     "@types/node@22.15.15": {
       "integrity": "sha512-R5muMcZob3/Jjchn5LcO8jdKwSCbzqmPB6ruBxMcf9kbxtniZHP327s6C37iOfuw8mbKK3cAQa7sEl7afLrQ8A==",
       "dependencies": [
@@ -102,7 +96,7 @@
       "integrity": "sha512-FGJ6udDNUCjd19pp0Q3iTiDkwhYup7J8hpMW9c4k53NrccQFFWKRho6hvtPPEhnXWKvukfwAlB6DbDz4yhH5Gg==",
       "dependencies": [
         "@types/caseless",
-        "@types/node@22.15.15",
+        "@types/node",
         "@types/tough-cookie",
         "form-data@2.5.5"
       ]
@@ -113,7 +107,7 @@
     "@types/ws@8.18.1": {
       "integrity": "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==",
       "dependencies": [
-        "@types/node@22.15.15"
+        "@types/node"
       ]
     },
     "ajv@6.12.6": {
@@ -538,6 +532,7 @@
   "redirects": {
     "https://esm.sh/@pdf-lib/standard-fonts@^1.0.0?target=denonext": "https://esm.sh/@pdf-lib/standard-fonts@1.0.0?target=denonext",
     "https://esm.sh/@pdf-lib/upng@^1.0.1?target=denonext": "https://esm.sh/@pdf-lib/upng@1.0.1?target=denonext",
+    "https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts": "https://esm.sh/@supabase/functions-js@2.99.1/src/edge-runtime.d.ts",
     "https://esm.sh/@supabase/functions-js@^2.1.5?target=denonext": "https://esm.sh/@supabase/functions-js@2.95.3?target=denonext",
     "https://esm.sh/@supabase/gotrue-js@^2.56.0?target=denonext": "https://esm.sh/@supabase/gotrue-js@2.95.3?target=denonext",
     "https://esm.sh/@supabase/gotrue-js@^2.60.0?target=denonext": "https://esm.sh/@supabase/gotrue-js@2.95.3?target=denonext",
@@ -669,7 +664,6 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@types/node@20",
       "npm:razorpay@2.9.2"
     ]
   }
