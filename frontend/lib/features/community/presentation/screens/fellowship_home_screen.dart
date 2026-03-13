@@ -157,6 +157,7 @@ class _FellowshipHomeContent extends StatelessWidget {
           child: _FellowshipMembersPage(
             fellowshipId: fellowshipId,
             isMentor: isMentor,
+            fellowshipName: fellowshipName,
           ),
         ),
       ),
@@ -298,12 +299,11 @@ class _FellowshipHomeContent extends StatelessWidget {
               prev.status != curr.status ||
               prev.errorMessage != curr.errorMessage ||
               prev.editStatus != curr.editStatus ||
-              prev.transferStatus != curr.transferStatus,
+              prev.transferStatus != curr.transferStatus ||
+              prev.leaveStatus != curr.leaveStatus,
           listener: (context, state) {
-            // Left the fellowship — navigate back.
-            if (state.status == FellowshipMembersStatus.success &&
-                state.members.isEmpty &&
-                !isMentor) {
+            // Left the fellowship — navigate back to list.
+            if (state.leaveStatus == FellowshipLeaveStatus.success) {
               context.go('/community');
             }
             // Mentor transferred — navigate back.
@@ -651,8 +651,8 @@ class _HeroHeader extends StatelessWidget {
                       const SizedBox(width: 10),
                       Text(
                         isMentor
-                            ? 'Tap to assign a learning path'
-                            : 'No learning path assigned yet',
+                            ? AppLocalizations.of(context)!.homeAssignPathMentor
+                            : AppLocalizations.of(context)!.homeNoPathAssigned,
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 14,
@@ -700,7 +700,7 @@ class _FeedPreviewSection extends StatelessWidget {
           // Section header
           Row(children: [
             Text(
-              'Recent Activity',
+              l10n.fellowshipRecentActivity,
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 16,
@@ -712,7 +712,7 @@ class _FeedPreviewSection extends StatelessWidget {
             TextButton(
               onPressed: onViewAll,
               child: Text(
-                'View All',
+                l10n.fellowshipViewAll,
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
@@ -782,7 +782,7 @@ class _FeedPreviewSection extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: onViewAll,
                         icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Post something'),
+                        label: Text(l10n.feedPostSomething),
                         style: OutlinedButton.styleFrom(
                           foregroundColor:
                               Theme.of(context).colorScheme.primary,
@@ -903,10 +903,12 @@ class _FellowshipLessonsPage extends StatelessWidget {
 class _FellowshipMembersPage extends StatelessWidget {
   final String fellowshipId;
   final bool isMentor;
+  final String? fellowshipName;
 
   const _FellowshipMembersPage({
     required this.fellowshipId,
     required this.isMentor,
+    this.fellowshipName,
   });
 
   @override
@@ -929,7 +931,10 @@ class _FellowshipMembersPage extends StatelessWidget {
           ),
         ),
       ),
-      body: FellowshipMembersTabScreen(fellowshipId: fellowshipId),
+      body: FellowshipMembersTabScreen(
+        fellowshipId: fellowshipId,
+        fellowshipName: fellowshipName,
+      ),
     );
   }
 }
@@ -960,6 +965,7 @@ class _FellowshipMeetingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: context.appScaffold,
       appBar: AppBar(
@@ -968,7 +974,7 @@ class _FellowshipMeetingsPage extends StatelessWidget {
         scrolledUnderElevation: 0,
         centerTitle: true,
         title: Text(
-          'Meetings',
+          l10n.meetingsTitle,
           style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 20,
@@ -983,9 +989,9 @@ class _FellowshipMeetingsPage extends StatelessWidget {
               backgroundColor: context.appInteractive,
               foregroundColor: AppColors.onGradient,
               icon: const Icon(Icons.add_rounded),
-              label: const Text(
-                'Schedule',
-                style: TextStyle(
+              label: Text(
+                l10n.meetingsSchedule,
+                style: const TextStyle(
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w600,
                 ),
@@ -1017,6 +1023,7 @@ class _MeetingsSectionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: GestureDetector(
@@ -1054,7 +1061,7 @@ class _MeetingsSectionTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Meetings',
+                          l10n.meetingsTitle,
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 14,
@@ -1068,17 +1075,20 @@ class _MeetingsSectionTile extends StatelessWidget {
                               ? () {
                                   final dt = DateTime.tryParse(next.startsAt)
                                       ?.toLocal();
-                                  if (dt == null) return 'Next: ${next.title}';
+                                  if (dt == null) {
+                                    return l10n.meetingsNextNoTime(next.title);
+                                  }
                                   final h =
                                       dt.hour % 12 == 0 ? 12 : dt.hour % 12;
                                   final m =
                                       dt.minute.toString().padLeft(2, '0');
                                   final ampm = dt.hour < 12 ? 'AM' : 'PM';
-                                  return 'Next: ${next.title} · $h:$m $ampm';
+                                  return l10n.meetingsNextWithTime(
+                                      next.title, '$h:$m $ampm');
                                 }()
                               : (isMentor
-                                  ? 'Schedule a meeting'
-                                  : 'No upcoming meetings'),
+                                  ? l10n.meetingsSchedulePrompt
+                                  : l10n.meetingsNoUpcoming),
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 12,

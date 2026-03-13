@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,15 +13,14 @@ import '../bloc/fellowship_list/fellowship_list_state.dart';
 
 /// Screen that allows a user to join a fellowship by entering an invite code.
 ///
-/// **Does NOT create its own [BlocProvider].** The [FellowshipListBloc] is
-/// provided by the parent [CommunityTabScreen] (via the GoRouter sub-route
-/// relationship) and is accessed here via [context.read].
+/// Accepts an optional [initialToken] (from a deep link) which is pre-filled
+/// into the code tiles and auto-submitted on the first frame.
 ///
-/// Uses [BlocConsumer] to:
-/// - Listen: pop on join success, show error SnackBar on join failure.
-/// - Build: overlay a loading spinner while the join request is in-flight.
+/// Creates its own [FellowshipListBloc] so it can be pushed as a top-level
+/// GoRouter route (deep link) without requiring a parent BlocProvider.
 class JoinFellowshipScreen extends StatefulWidget {
-  const JoinFellowshipScreen({super.key});
+  final String initialToken;
+  const JoinFellowshipScreen({super.key, this.initialToken = ''});
 
   @override
   State<JoinFellowshipScreen> createState() => _JoinFellowshipScreenState();
@@ -33,10 +33,17 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
   // Tracks whether the text field is non-empty to drive button enabled state.
   bool _hasInput = false;
 
+  // True when a deep-link token was provided and hasn't been submitted yet.
+  bool _shouldAutoSubmit = false;
+
   @override
   void initState() {
     super.initState();
     _tokenController.addListener(_onTextChanged);
+    if (widget.initialToken.isNotEmpty) {
+      _tokenController.text = widget.initialToken.toUpperCase();
+      _shouldAutoSubmit = true;
+    }
   }
 
   void _onTextChanged() {
@@ -55,7 +62,7 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
   }
 
   void _onJoinPressed(BuildContext context) {
-    final token = _tokenController.text.trim();
+    final token = _tokenController.text.trim().toUpperCase();
     if (token.isEmpty) return;
     context.read<FellowshipListBloc>().add(
           FellowshipJoinRequested(inviteToken: token),
@@ -64,17 +71,25 @@ class _JoinFellowshipScreenState extends State<JoinFellowshipScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // JoinFellowshipScreen owns its own BLoC because GoRouter pushes it as a
-    // separate navigator page — parent route widget-tree providers are not
-    // accessible from child route pages. After a successful join we pop(true)
-    // so the caller can reload the fellowship list.
     return BlocProvider<FellowshipListBloc>(
       create: (_) => sl<FellowshipListBloc>(),
-      child: _JoinFellowshipConsumer(
-        tokenController: _tokenController,
-        tokenFocusNode: _tokenFocusNode,
-        hasInput: _hasInput,
-        onJoinPressed: _onJoinPressed,
+      // Builder gives us a context that is inside the BlocProvider, allowing
+      // the deep-link auto-submit callback to call context.read<FellowshipListBloc>().
+      child: Builder(
+        builder: (innerContext) {
+          if (_shouldAutoSubmit) {
+            _shouldAutoSubmit = false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _onJoinPressed(innerContext);
+            });
+          }
+          return _JoinFellowshipConsumer(
+            tokenController: _tokenController,
+            tokenFocusNode: _tokenFocusNode,
+            hasInput: _hasInput,
+            onJoinPressed: _onJoinPressed,
+          );
+        },
       ),
     );
   }
@@ -107,7 +122,12 @@ class _JoinFellowshipConsumer extends StatelessWidget {
         final l10n = AppLocalizations.of(context)!;
         if (state.joinStatus == FellowshipJoinStatus.success) {
           // Pop with true so the community tab knows to reload its list.
-          context.pop(true);
+          // If opened via deep link there is nothing to pop — go directly.
+          if (context.canPop()) {
+            context.pop(true);
+          } else {
+            context.go('/community');
+          }
         } else if (state.joinStatus == FellowshipJoinStatus.failure) {
           final message = state.joinError ?? l10n.communityJoinFailed;
           ScaffoldMessenger.of(context)
@@ -257,85 +277,14 @@ class _JoinFellowshipBody extends StatelessWidget {
 
               const SizedBox(height: 40),
 
-              // ── Invite code field ─────────────────────────────────────────
-              Text(
-                l10n.joinFellowshipCodeLabel,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: context.appTextPrimary,
-                  letterSpacing: 0.3,
+              // ── Invite code tiles ─────────────────────────────────────────
+              Center(
+                child: _CodeTileInput(
+                  controller: tokenController,
+                  focusNode: tokenFocusNode,
+                  enabled: !isLoading,
+                  onSubmitted: onJoinPressed,
                 ),
-              ),
-
-              const SizedBox(height: 8),
-
-              TextField(
-                controller: tokenController,
-                focusNode: tokenFocusNode,
-                enabled: !isLoading,
-                textInputAction: TextInputAction.done,
-                autocorrect: false,
-                enableSuggestions: false,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: context.appTextPrimary,
-                  letterSpacing: 1.2,
-                ),
-                decoration: InputDecoration(
-                  hintText: l10n.joinFellowshipCodeHint,
-                  hintStyle: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    color: context.appTextTertiary,
-                    letterSpacing: 0,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  filled: true,
-                  fillColor: context.appInputFill,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: context.appBorder,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: context.appBorder,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  disabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: context.appBorder,
-                    ),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.vpn_key_outlined,
-                    size: 20,
-                    color: context.appTextTertiary,
-                  ),
-                ),
-                onSubmitted: (_) {
-                  if (!isLoading && tokenController.text.trim().isNotEmpty) {
-                    onJoinPressed();
-                  }
-                },
               ),
 
               const SizedBox(height: 36),
@@ -484,6 +433,151 @@ class _LoadingOverlay extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _CodeTileInput — OTP-style 6-tile code entry
+// ---------------------------------------------------------------------------
+
+/// Displays 6 letter-tile boxes while capturing input via an invisible
+/// underlying [TextField]. Supports paste, keyboard, and accessibility.
+class _CodeTileInput extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool enabled;
+  final VoidCallback? onSubmitted;
+
+  const _CodeTileInput({
+    required this.controller,
+    required this.focusNode,
+    required this.enabled,
+    this.onSubmitted,
+  });
+
+  static const int _length = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 6.0;
+        // Fit all tiles within available width; clamp between 40–52px per tile.
+        final tileWidth =
+            ((constraints.maxWidth - gap * (_length - 1)) / _length)
+                .clamp(40.0, 52.0);
+        final tileHeight = tileWidth * 1.2;
+        final rowWidth = tileWidth * _length + gap * (_length - 1);
+
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            final text = value.text.toUpperCase();
+            final isFocused = focusNode.hasFocus;
+
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // Invisible input catcher (paste + keyboard)
+                SizedBox(
+                  width: rowWidth,
+                  height: tileHeight,
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    enabled: enabled,
+                    textInputAction: TextInputAction.done,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.characters,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]')),
+                      LengthLimitingTextInputFormatter(_length),
+                    ],
+                    style:
+                        const TextStyle(color: Colors.transparent, fontSize: 1),
+                    cursorColor: Colors.transparent,
+                    cursorWidth: 0,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onSubmitted: (_) => onSubmitted?.call(),
+                  ),
+                ),
+                // Visual tiles (pointer events pass through to TextField)
+                IgnorePointer(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(_length, (i) {
+                      final hasChar = i < text.length;
+                      final isActive = enabled && isFocused && i == text.length;
+
+                      return Container(
+                        margin: i < _length - 1
+                            ? EdgeInsets.only(right: gap)
+                            : null,
+                        width: tileWidth,
+                        height: tileHeight,
+                        decoration: BoxDecoration(
+                          color: hasChar
+                              ? (isDark
+                                  ? primary.withOpacity(0.15)
+                                  : primary.withOpacity(0.08))
+                              : (isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade100),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isActive
+                                ? primary
+                                : (hasChar
+                                    ? primary.withOpacity(0.4)
+                                    : (isDark
+                                        ? Colors.grey.shade600
+                                        : Colors.grey.shade300)),
+                            width: isActive ? 2 : 1.5,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: hasChar
+                            ? Text(
+                                text[i],
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: tileWidth * 0.52,
+                                  fontWeight: FontWeight.w700,
+                                  color: primary,
+                                  height: 1,
+                                ),
+                              )
+                            : (i == 0 && text.isEmpty && !isFocused
+                                ? Text(
+                                    '·',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      color: isDark
+                                          ? Colors.grey.shade600
+                                          : Colors.grey.shade400,
+                                    ),
+                                  )
+                                : null),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

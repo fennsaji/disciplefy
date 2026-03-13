@@ -12,6 +12,7 @@ import 'core/di/injection_container.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import 'features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import 'core/router/app_router.dart';
+import 'core/services/deep_link_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'core/localization/app_localizations.dart';
@@ -259,6 +260,16 @@ void main() async {
       if (kDebugMode) {
         KeyboardPerformanceMonitor.instance.startMonitoring();
       }
+    }
+
+    // Initialize deep link handler (Android App Links — no-op on web)
+    if (!kIsWeb) {
+      if (kDebugMode) {
+        Logger.debug('🔗 [MAIN] Initializing deep link service...');
+      }
+      final deepLinkService = DeepLinkService(router: AppRouter.router);
+      await deepLinkService.init();
+      if (kDebugMode) Logger.debug('✅ [MAIN] Deep link service completed');
     }
 
     Logger.debug('🎉 [MAIN] All initialization completed, starting app...');
