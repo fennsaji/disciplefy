@@ -33,10 +33,15 @@ class HttpService {
       : _httpClient = httpClient ?? http.Client();
 
   /// Make an authenticated HTTP GET request with automatic 401 handling
-  Future<http.Response> get(String url, {Map<String, String>? headers}) async =>
+  Future<http.Response> get(
+    String url, {
+    Map<String, String>? headers,
+    Duration timeout = const Duration(seconds: 10),
+  }) async =>
       await _makeRequest(
         () => _httpClient.get(Uri.parse(url), headers: headers),
         url,
+        timeout: timeout,
       );
 
   /// Make an authenticated HTTP POST request with automatic 401 handling

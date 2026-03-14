@@ -49,7 +49,11 @@ class DailyVerseApiService {
         url += '?$queryString';
       }
 
-      final response = await _httpService.get(url, headers: headers);
+      final response = await _httpService.get(
+        url,
+        headers: headers,
+        timeout: const Duration(seconds: 30),
+      );
 
       if (response.statusCode == 200) {
         return _parseVerseResponse(response.body);

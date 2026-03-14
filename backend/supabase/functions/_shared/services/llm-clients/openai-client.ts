@@ -478,14 +478,18 @@ export class OpenAIClient {
     let totalChars = 0
     let fullResponse = '' // For debugging
     let usageData: LLMUsageMetadata | null = null
+    let leftover = '' // Buffer for incomplete SSE lines split across network reads
 
     try {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        const rawChunk = decoder.decode(value, { stream: true })
+        const combined = leftover + rawChunk
+        const lines = combined.split('\n')
+        // Last element may be an incomplete line — save for next read
+        leftover = lines.pop() ?? ''
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -550,6 +554,23 @@ export class OpenAIClient {
               console.warn(`[OpenAI] Failed to parse chunk: ${data.substring(0, 100)}...`)
               continue
             }
+          }
+        }
+      }
+      // Process any remaining leftover after stream ends
+      if (leftover.startsWith('data: ')) {
+        const data = leftover.slice(6)
+        if (data !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(data)
+            const delta = parsed.choices?.[0]?.delta?.content
+            if (delta) {
+              totalChars += delta.length
+              fullResponse += delta
+              yield delta
+            }
+          } catch {
+            // Ignore unparseable leftover
           }
         }
       }
