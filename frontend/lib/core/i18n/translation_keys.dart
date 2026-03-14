@@ -317,6 +317,12 @@ class TranslationKeys {
   static const settingsContentLanguage = 'settings.content_language';
   static const settingsAccountActions = 'settings.account_actions';
   static const settingsSignOut = 'settings.sign_out';
+  static const settingsDeleteAccount = 'settings.delete_account';
+  static const settingsDeleteAccountSubtitle =
+      'settings.delete_account_subtitle';
+  static const settingsDeleteAccountTitle = 'settings.delete_account_title';
+  static const settingsDeleteAccountMessage = 'settings.delete_account_message';
+  static const settingsDeleteAccountConfirm = 'settings.delete_account_confirm';
 
   static const settingsSignOutOfAccount = 'settings.sign_out_of_account';
   static const settingsAbout = 'settings.about';
