@@ -42,13 +42,18 @@ export class AnalyticsLogger {
       // Sanitize event data to ensure no sensitive information is logged
       const sanitizedData = this.sanitizeEventData(eventData)
 
+      // X-Forwarded-For can be a comma-separated list; extract only the first (client) IP
+      const normalizedIp = ipAddress
+        ? ipAddress.split(',')[0].trim() || null
+        : null
+
       // Insert analytics event
       const { error } = await this.supabaseClient
         .from('analytics_events')
         .insert({
           event_type: eventType,
           event_data: sanitizedData,
-          ip_address: ipAddress,
+          ip_address: normalizedIp,
           created_at: new Date().toISOString()
         })
 
