@@ -686,10 +686,15 @@ class AuthenticationService {
     if (!isAuthenticated) return;
 
     try {
-      // Note: Profile deletion should be handled by UserProfileService
-      // This method only handles auth-specific cleanup
+      final response = await _supabase.functions.invoke(
+        'delete-account',
+        method: HttpMethod.delete,
+      );
 
-      // Sign out after profile deletion
+      if (response.status != 200) {
+        throw Exception('Delete account failed: ${response.data}');
+      }
+
       await signOut();
     } catch (e) {
       Logger.debug('Delete Account Error: $e');
