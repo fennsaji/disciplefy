@@ -242,5 +242,6 @@ abstract class CommunityRepository {
   /// If [SyncCalendarResult.requiresReconnect] is true, prompt the mentor to
   /// re-authenticate with Google Calendar.
   Future<Either<Failure, SyncCalendarResult>> syncFellowshipCalendar(
-      String fellowshipId);
+      String fellowshipId,
+      {String? googleAccessToken});
 }

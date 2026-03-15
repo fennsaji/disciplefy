@@ -69,13 +69,32 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        Future<void> syncCalendar() async {
+          final supabaseUser = Supabase.instance.client.auth.currentUser;
+          final isGoogleUser =
+              supabaseUser?.identities?.any((id) => id.provider == 'google') ??
+                  false;
+          final googleAccessToken = isGoogleUser
+              ? await requestCalendarAccessToken(AppConfig.googleClientId,
+                  userEmail: supabaseUser?.email)
+              : null;
+          if (!context.mounted) return;
+          context.read<FellowshipMeetingsBloc>().add(
+                FellowshipMeetingsSyncCalendarRequested(
+                  fellowshipId,
+                  googleAccessToken: googleAccessToken,
+                ),
+              );
+        }
+
         Future<void> cancelMeeting(String meetingId) async {
           final supabaseUser = Supabase.instance.client.auth.currentUser;
           final isGoogleUser =
               supabaseUser?.identities?.any((id) => id.provider == 'google') ??
                   false;
           final googleAccessToken = isGoogleUser
-              ? await requestCalendarAccessToken(AppConfig.googleClientId)
+              ? await requestCalendarAccessToken(AppConfig.googleClientId,
+                  userEmail: supabaseUser?.email)
               : null;
           if (!context.mounted) return;
           context.read<FellowshipMeetingsBloc>().add(
@@ -136,8 +155,8 @@ class FellowshipMeetingsTabScreen extends StatelessWidget {
           children: [
             if (isMentor && state.showSyncBanner)
               _SyncCalendarBanner(
-                fellowshipId: fellowshipId,
                 isSyncing: state.isSyncingCalendar,
+                onSync: syncCalendar,
               ),
             Expanded(
               child: ListView.separated(
@@ -481,12 +500,12 @@ class _MeetingCard extends StatelessWidget {
 /// whose Google Calendar events have not yet been synced with the full
 /// fellowship member list.  A single tap triggers [FellowshipMeetingsSyncCalendarRequested].
 class _SyncCalendarBanner extends StatelessWidget {
-  final String fellowshipId;
   final bool isSyncing;
+  final VoidCallback onSync;
 
   const _SyncCalendarBanner({
-    required this.fellowshipId,
     required this.isSyncing,
+    required this.onSync,
   });
 
   @override
@@ -529,9 +548,7 @@ class _SyncCalendarBanner extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : TextButton(
-                  onPressed: () => context.read<FellowshipMeetingsBloc>().add(
-                        FellowshipMeetingsSyncCalendarRequested(fellowshipId),
-                      ),
+                  onPressed: onSync,
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.brandPrimaryLight,
                     padding:

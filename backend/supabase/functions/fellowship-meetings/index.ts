@@ -662,6 +662,7 @@ async function handleInviteMember(req: Request, services: ServiceContainer): Pro
 
 interface SyncCalendarRequest {
   fellowshipId: string
+  googleAccessToken?: string
 }
 
 interface MeetingSyncResult {
@@ -747,18 +748,21 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
     const calendarEventId = meeting.calendar_event_id as string
     const storedRefreshToken = meeting.google_refresh_token as string | null
 
-    if (!storedRefreshToken) {
-      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'no_refresh_token' })
-      oauthErrors.push(meeting.id)
-      continue
-    }
-
     let accessToken: string
-    try {
-      accessToken = await refreshGoogleAccessToken(storedRefreshToken)
-    } catch (refreshErr) {
-      console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}:`, refreshErr)
-      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+    if (body.googleAccessToken) {
+      // Use the fresh access token supplied by the client directly.
+      accessToken = body.googleAccessToken
+    } else if (storedRefreshToken) {
+      try {
+        accessToken = await refreshGoogleAccessToken(storedRefreshToken)
+      } catch (refreshErr) {
+        console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}:`, refreshErr)
+        results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+        oauthErrors.push(meeting.id)
+        continue
+      }
+    } else {
+      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'no_token' })
       oauthErrors.push(meeting.id)
       continue
     }

@@ -214,7 +214,8 @@ abstract class CommunityRemoteDatasource {
   Future<void> cancelMeeting(String meetingId, {String? googleAccessToken});
 
   /// Syncs Google Calendar attendees for all upcoming meetings of [fellowshipId].
-  Future<SyncCalendarResult> syncFellowshipCalendar(String fellowshipId);
+  Future<SyncCalendarResult> syncFellowshipCalendar(String fellowshipId,
+      {String? googleAccessToken});
 }
 
 /// [HttpService]-backed implementation of [CommunityRemoteDatasource].
@@ -1589,11 +1590,15 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<SyncCalendarResult> syncFellowshipCalendar(String fellowshipId) async {
+  Future<SyncCalendarResult> syncFellowshipCalendar(String fellowshipId,
+      {String? googleAccessToken}) async {
     try {
       final url = '$_baseUrl$_fellowshipMeetingsSyncCalendarEndpoint';
       final headers = await _httpService.createHeaders();
-      final body = jsonEncode({'fellowshipId': fellowshipId});
+      final body = jsonEncode({
+        'fellowshipId': fellowshipId,
+        if (googleAccessToken != null) 'googleAccessToken': googleAccessToken,
+      });
       final response =
           await _httpService.post(url, headers: headers, body: body);
 

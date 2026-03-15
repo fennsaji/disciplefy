@@ -705,9 +705,13 @@ class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Either<Failure, SyncCalendarResult>> syncFellowshipCalendar(
-      String fellowshipId) async {
+      String fellowshipId,
+      {String? googleAccessToken}) async {
     try {
-      final result = await _datasource.syncFellowshipCalendar(fellowshipId);
+      final result = await _datasource.syncFellowshipCalendar(
+        fellowshipId,
+        googleAccessToken: googleAccessToken,
+      );
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
