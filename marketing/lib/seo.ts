@@ -10,6 +10,7 @@ export function getAlternates(path: string) {
     const prefix = locale === "en" ? "" : `/${locale}`;
     languages[locale] = `${BASE}${prefix}${path}`;
   }
+  languages["x-default"] = `${BASE}${path}`;
   return { canonical: `${BASE}${path}`, languages };
 }
 
