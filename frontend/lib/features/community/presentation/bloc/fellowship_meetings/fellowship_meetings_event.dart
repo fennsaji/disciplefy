@@ -85,10 +85,18 @@ class FellowshipMeetingCreateRequested extends FellowshipMeetingsEvent {
 class FellowshipMeetingsSyncCalendarRequested extends FellowshipMeetingsEvent {
   final String fellowshipId;
 
-  const FellowshipMeetingsSyncCalendarRequested(this.fellowshipId);
+  /// Fresh Google OAuth access token (calendar.events scope). Passed directly
+  /// to the backend so it can call the Calendar API without needing a stored
+  /// refresh token.
+  final String? googleAccessToken;
+
+  const FellowshipMeetingsSyncCalendarRequested(
+    this.fellowshipId, {
+    this.googleAccessToken,
+  });
 
   @override
-  List<Object?> get props => [fellowshipId];
+  List<Object?> get props => [fellowshipId, googleAccessToken];
 }
 
 /// Requests cancellation of the meeting identified by [meetingId].

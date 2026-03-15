@@ -9,8 +9,10 @@ const _calendarScope = 'https://www.googleapis.com/auth/calendar.events';
 /// [authorizeScopes] (interactive consent popup) when truly needed, i.e. the
 /// first time or after the grant is revoked.
 ///
-/// [userEmail] is unused — GoogleSignIn automatically reuses the existing
-/// signed-in session, so the correct account is always selected.
+/// [userEmail] restricts the Calendar grant to the account the user is already
+/// signed into the app with.  If the resolved Google account email differs from
+/// [userEmail] the function returns null so the caller can surface an error
+/// rather than silently using the wrong calendar.
 Future<String?> requestCalendarAccessToken(
   String clientId, {
   String? userEmail,
@@ -25,6 +27,10 @@ Future<String?> requestCalendarAccessToken(
       account = await silentFuture;
     }
     account ??= await signIn.authenticate();
+
+    // Reject if the authenticated Google account is not the one signed into
+    // the app — prevents calendar access leaking to a different account.
+    if (userEmail != null && account.email != userEmail) return null;
 
     final authClient = account.authorizationClient;
 
