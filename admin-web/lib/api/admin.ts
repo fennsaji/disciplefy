@@ -42,7 +42,14 @@ import type {
   ToggleMilestoneResponse,
   LoadStudyGuideResponse,
   UpdateStudyGuideRequest,
-  UpdateStudyGuideResponse
+  UpdateStudyGuideResponse,
+  ListBlogPostsResponse,
+  GetBlogPostResponse,
+  CreateBlogPostRequest,
+  UpdateBlogPostRequest,
+  BlogPostResponse,
+  DeleteBlogPostResponse,
+  TriggerCronResponse
 } from '@/types/admin'
 
 export async function fetchUsageAnalytics(
@@ -587,5 +594,118 @@ export async function updateStudyGuide(
     throw new Error(error.error || 'Failed to update study guide')
   }
 
+  return response.json()
+}
+
+// ============================================================================
+// Blog API Client Functions
+// ============================================================================
+
+export async function listBlogPosts(params?: {
+  locale?: string
+  status?: string
+  page?: number
+  limit?: number
+}): Promise<ListBlogPostsResponse> {
+  const query = new URLSearchParams()
+  if (params?.locale) query.set('locale', params.locale)
+  if (params?.status) query.set('status', params.status)
+  if (params?.page) query.set('page', String(params.page))
+  if (params?.limit) query.set('limit', String(params.limit))
+
+  const response = await fetch(`/api/admin/blogs?${query}`, {
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to list blog posts')
+  }
+  return response.json()
+}
+
+export async function getBlogPost(id: string): Promise<GetBlogPostResponse> {
+  const response = await fetch(`/api/admin/blogs/${id}`, {
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to get blog post')
+  }
+  return response.json()
+}
+
+export async function createBlogPost(data: CreateBlogPostRequest): Promise<BlogPostResponse> {
+  const response = await fetch('/api/admin/blogs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to create blog post')
+  }
+  return response.json()
+}
+
+export async function updateBlogPost(id: string, data: UpdateBlogPostRequest): Promise<BlogPostResponse> {
+  const response = await fetch(`/api/admin/blogs/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update blog post')
+  }
+  return response.json()
+}
+
+export async function deleteBlogPost(id: string): Promise<DeleteBlogPostResponse> {
+  const response = await fetch(`/api/admin/blogs/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete blog post')
+  }
+  return response.json()
+}
+
+export async function publishBlogPost(id: string): Promise<BlogPostResponse> {
+  const response = await fetch(`/api/admin/blogs/${id}/publish`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to publish blog post')
+  }
+  return response.json()
+}
+
+export async function unpublishBlogPost(id: string): Promise<BlogPostResponse> {
+  const response = await fetch(`/api/admin/blogs/${id}/unpublish`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to unpublish blog post')
+  }
+  return response.json()
+}
+
+export async function triggerBlogCron(): Promise<TriggerCronResponse> {
+  const response = await fetch('/api/admin/blogs/cron', {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to trigger blog generation')
+  }
   return response.json()
 }
