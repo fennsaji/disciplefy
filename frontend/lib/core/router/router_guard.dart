@@ -516,6 +516,8 @@ class RouterGuard {
       AppRoutes.emailAuth, // /email-auth
       AppRoutes.passwordReset, // /password-reset
       AppRoutes.pricing, // /pricing - public pricing page
+      AppRoutes
+          .deleteAccount, // /delete-account - Google Play data deletion page
     ];
 
     return publicRoutes.contains(path) ||

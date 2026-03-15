@@ -41,6 +41,7 @@ import '../../features/subscription/presentation/pages/subscription_management_p
 import '../../features/subscription/presentation/pages/subscription_payment_history_page.dart';
 import '../../features/subscription/presentation/pages/my_plan_page.dart';
 import '../../features/subscription/presentation/pages/pricing_page.dart';
+import '../../features/auth/presentation/pages/delete_account_page.dart';
 import '../../core/services/platform_detection_service.dart';
 import '../../features/subscription/data/datasources/subscription_remote_data_source.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -688,6 +689,17 @@ class AppRouter {
             child: const ReflectionJournalScreen(),
           ),
           state: state,
+        ),
+      ),
+
+      // Public Delete Account Page (required by Google Play)
+      GoRoute(
+        path: AppRoutes.deleteAccount,
+        name: 'delete_account',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const DeleteAccountPage(),
         ),
       ),
 

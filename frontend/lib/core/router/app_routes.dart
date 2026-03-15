@@ -80,6 +80,7 @@ class AppRoutes {
 
   // Public Pages
   static const String pricing = '/pricing';
+  static const String deleteAccount = '/delete-account';
 
   // Community (Fellowship)
   static const String community = '/community';

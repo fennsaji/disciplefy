@@ -751,6 +751,24 @@ class _SettingsScreenContent extends StatelessWidget {
                   onTap: () => _showLogoutDialog(context),
                   iconColor: Theme.of(context).colorScheme.error,
                 ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context: context,
+                  icon: Icons.delete_forever_outlined,
+                  title: context.tr(TranslationKeys.settingsDeleteAccount),
+                  subtitle:
+                      context.tr(TranslationKeys.settingsDeleteAccountSubtitle),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
+                  onTap: () => _showDeleteAccountDialog(context),
+                  iconColor: Theme.of(context).colorScheme.error,
+                ),
               ],
             );
           }
@@ -1016,6 +1034,81 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             child: Text(
               context.tr(TranslationKeys.settingsSignOut),
+              style: AppFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Delete account confirmation dialog
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
+        title: Text(
+          context.tr(TranslationKeys.settingsDeleteAccountTitle),
+          style: AppFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.error,
+          ),
+        ),
+        content: Text(
+          context.tr(TranslationKeys.settingsDeleteAccountMessage),
+          style: AppFonts.inter(
+            fontSize: 16,
+            color: Theme.of(context).colorScheme.onSurface,
+            height: 1.5,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor:
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              context.tr(TranslationKeys.commonCancel),
+              style: AppFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.read<AuthBloc>().add(const DeleteAccountRequested());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              context.tr(TranslationKeys.settingsDeleteAccountConfirm),
               style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
