@@ -82,7 +82,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT }}
-          source: "rs-backend/docker-compose.yml,rs-backend/.env,rs-backend/Caddyfile,rs-backend/vector.toml"
+          source: "rs-backend/docker-compose.yml,rs-backend/.env,rs-backend/vector.toml"
           target: /opt/disciplefy/
           strip_components: 1
 
