@@ -246,8 +246,8 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
 
       const startsAtDate = new Date(meeting.starts_at)
       const endsAtDate = new Date(meeting.ends_at)
-      const dateStr = startsAtDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-      const timeStr = startsAtDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+      const dateStr = startsAtDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: body.time_zone })
+      const timeStr = startsAtDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: body.time_zone })
       const dur = Math.round((endsAtDate.getTime() - startsAtDate.getTime()) / 60000)
       const durationLabel = dur < 60 ? `${dur} min` : dur % 60 === 0 ? `${dur / 60} hr` : `${Math.floor(dur / 60)} hr ${dur % 60} min`
       const gcalDateFmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
