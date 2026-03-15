@@ -13,6 +13,7 @@ import {
 } from '@/lib/api/admin'
 import type { BlogPostListItem, BlogLocale } from '@/types/admin'
 
+const PAGE_SIZE = 25
 const LOCALE_LABELS: Record<BlogLocale, string> = { en: 'EN', hi: 'HI', ml: 'ML' }
 const LOCALE_COLORS: Record<BlogLocale, string> = {
   en: 'bg-blue-500/20 text-blue-300',
@@ -32,6 +33,7 @@ export default function BlogsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [triggeringCron, setTriggeringCron] = useState(false)
+  const [page, setPage] = useState(1)
 
   const loadPosts = useCallback(async () => {
     setIsLoading(true)
@@ -62,6 +64,7 @@ export default function BlogsPage() {
       )
     }
     setFiltered(result)
+    setPage(1)
   }, [posts, localeFilter, statusFilter, search])
 
   const handleToggleStatus = async (post: BlogPostListItem) => {
@@ -110,6 +113,8 @@ export default function BlogsPage() {
 
   const published = posts.filter(p => p.status === 'published').length
   const drafts = posts.filter(p => p.status === 'draft').length
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div className="space-y-6">
@@ -206,7 +211,7 @@ export default function BlogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.map(post => (
+              {paginatedFiltered.map(post => (
                 <tr key={post.id} className="group transition-colors hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="flex items-start gap-2">
@@ -292,6 +297,33 @@ export default function BlogsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-indigo-400/60">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white transition-colors hover:bg-white/10 disabled:opacity-40"
+            >
+              ← Prev
+            </button>
+            <span className="flex items-center px-2 text-xs text-indigo-400/60">
+              {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white transition-colors hover:bg-white/10 disabled:opacity-40"
+            >
+              Next →
+            </button>
+          </div>
         </div>
       )}
     </div>

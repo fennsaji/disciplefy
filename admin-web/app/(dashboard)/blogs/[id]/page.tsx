@@ -78,6 +78,10 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
 
   const handleToggleStatus = async () => {
     if (!post) return
+    if (isDirty) {
+      toast.error('Save changes before changing publish status')
+      return
+    }
     setIsToggling(true)
     try {
       const updated = post.status === 'published'
