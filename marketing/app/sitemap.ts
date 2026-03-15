@@ -5,7 +5,26 @@ import { getAllPosts } from "@/lib/blog";
 
 const BASE = "https://disciplefy.in";
 
-const staticPages = ["", "/pricing", "/about", "/blog", "/privacy", "/terms", "/contact"];
+const staticPages = [
+  "",
+  "/download",
+  "/pricing",
+  "/about",
+  "/blog",
+  "/privacy",
+  "/terms",
+  "/contact",
+  "/features/ai-bible-study",
+  "/features/daily-verse",
+  "/features/study-guides",
+  "/features/fellowship",
+  "/features/voice-buddy",
+  "/features/memory-verses",
+  "/features/learning-paths",
+  "/features/follow-up-chat",
+  // NOTE: Uncomment /vs/youversion only after Phase 3 authority-building is complete
+  // "/vs/youversion",
+];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];

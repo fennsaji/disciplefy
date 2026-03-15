@@ -9,10 +9,20 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
 import { Button } from "@/components/ui/Button";
 
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.disciplefy.app";
+const WEB_APP_URL = "https://app.disciplefy.in";
+
 export function Navbar() {
   const t = useTranslations("nav");
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState(WEB_APP_URL);
+
+  useEffect(() => {
+    if (/android/i.test(navigator.userAgent)) {
+      setDownloadUrl(PLAY_STORE_URL);
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,7 +90,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <LocaleSwitcher />
             <ThemeToggle />
-            <Button href="https://app.disciplefy.in" size="sm" className="hidden md:inline-flex">
+            <Button href={downloadUrl} size="sm" className="hidden md:inline-flex">
               {t("download")}
             </Button>
             {/* Mobile hamburger */}
@@ -130,7 +140,7 @@ export function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.2, delay: 0.05 + navLinks.length * 0.07 }}
                 >
-                  <Button href="https://app.disciplefy.in" size="sm" className="w-full mt-2">
+                  <Button href={downloadUrl} size="sm" className="w-full mt-2">
                     {t("download")}
                   </Button>
                 </motion.div>

@@ -2,9 +2,18 @@
 // marketing/components/sections/Features.tsx
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
+import { Link } from "@/lib/navigation";
 
 const featureIcons = ["🤖", "🌅", "🎙️", "🧠", "📚", "💬"];
 const featureKeys = ["aiGuides", "dailyVerse", "voiceBuddy", "memory", "paths", "chat"] as const;
+const featureHrefs: Record<typeof featureKeys[number], string> = {
+  aiGuides: "/features/ai-bible-study",
+  dailyVerse: "/features/daily-verse",
+  voiceBuddy: "/features/voice-buddy",
+  memory: "/features/memory-verses",
+  paths: "/features/learning-paths",
+  chat: "/features/follow-up-chat",
+};
 
 export function Features() {
   const t = useTranslations("features");
@@ -25,16 +34,20 @@ export function Features() {
           {featureKeys.map((key, i) => (
             <motion.div
               key={key}
-              className="p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:border-primary/30 transition-colors"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
             >
-              <div className="text-3xl mb-4">{featureIcons[i]}</div>
-              <h3 className="font-display font-semibold text-lg mb-2">{t(`${key}.title`)}</h3>
-              <p className="text-sm text-[var(--muted)] leading-relaxed">{t(`${key}.desc`)}</p>
+              <Link
+                href={featureHrefs[key]}
+                className="block p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:border-primary/30 transition-colors h-full"
+              >
+                <div className="text-3xl mb-4">{featureIcons[i]}</div>
+                <h3 className="font-display font-semibold text-lg mb-2">{t(`${key}.title`)}</h3>
+                <p className="text-sm text-[var(--muted)] leading-relaxed">{t(`${key}.desc`)}</p>
+              </Link>
             </motion.div>
           ))}
         </div>

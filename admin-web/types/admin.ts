@@ -700,3 +700,83 @@ export interface StudyGuideListItem {
 export interface ListStudyGuidesResponse {
   study_guides: StudyGuideListItem[]
 }
+
+// ============================================================================
+// Blog Post Types
+// ============================================================================
+
+export type BlogPostStatus = 'draft' | 'published'
+export type BlogLocale = 'en' | 'hi' | 'ml'
+
+export interface BlogPost {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  content: string
+  author: string
+  locale: BlogLocale
+  tags: string[]
+  featured: boolean
+  status: BlogPostStatus
+  source_type: string | null
+  created_at: string
+  updated_at: string
+  published_at: string | null
+}
+
+export interface BlogPostListItem {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  author: string
+  locale: BlogLocale
+  tags: string[]
+  featured: boolean
+  status: BlogPostStatus
+  source_type: string | null
+  created_at: string
+  published_at: string | null
+}
+
+export interface ListBlogPostsResponse {
+  posts: BlogPostListItem[]
+  total: number
+}
+
+export interface GetBlogPostResponse {
+  post: BlogPost
+}
+
+export interface CreateBlogPostRequest {
+  title: string
+  content: string
+  excerpt?: string
+  locale: BlogLocale
+  tags?: string[]
+  featured?: boolean
+  status?: BlogPostStatus
+  slug?: string
+}
+
+export interface UpdateBlogPostRequest {
+  title?: string
+  content?: string
+  excerpt?: string
+  tags?: string[]
+  featured?: boolean
+  status?: BlogPostStatus
+}
+
+export interface BlogPostResponse {
+  post: BlogPost
+}
+
+export interface DeleteBlogPostResponse {
+  message: string
+}
+
+export interface TriggerCronResponse {
+  message: string
+}

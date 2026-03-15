@@ -111,7 +111,7 @@ function ScreenshotPlaceholder({ index }: { index: number }) {
   );
 }
 
-function Screenshot({ index, locale }: { index: number; locale: string }) {
+function Screenshot({ index, locale, alt }: { index: number; locale: string; alt: string }) {
   const [failed, setFailed] = useState(false);
   const src = `/screenshots/step${index + 1}-${locale}.jpg`;
 
@@ -121,7 +121,7 @@ function Screenshot({ index, locale }: { index: number; locale: string }) {
     <div className="relative w-full h-full">
       <Image
         src={src}
-        alt={`Step ${index + 1}`}
+        alt={alt}
         fill
         className="object-cover object-top"
         sizes="300px"
@@ -192,11 +192,13 @@ function MobileStep({
   locale,
   title,
   desc,
+  alt,
 }: {
   index: number;
   locale: string;
   title: string;
   desc: string;
+  alt: string;
 }) {
   const Icon = STEP_ICONS[index];
   return (
@@ -209,7 +211,7 @@ function MobileStep({
     >
       {/* Mini phone mockup */}
       <PhoneShell className="w-60 h-[520px]">
-        <Screenshot index={index} locale={locale} />
+        <Screenshot index={index} locale={locale} alt={alt} />
       </PhoneShell>
       {/* Text */}
       <div className="text-center max-w-sm">
@@ -308,7 +310,7 @@ export function HowItWorks() {
                       className="absolute inset-0"
                       style={{ opacity }}
                     >
-                      <Screenshot index={i} locale={locale} />
+                      <Screenshot index={i} locale={locale} alt={t(`${STEP_KEYS[i]}.imageAlt`)} />
                     </motion.div>
                   ))}
                 </PhoneShell>
@@ -345,6 +347,7 @@ export function HowItWorks() {
               locale={locale}
               title={t(`${key}.title`)}
               desc={t(`${key}.desc`)}
+              alt={t(`${key}.imageAlt`)}
             />
           ))}
         </div>

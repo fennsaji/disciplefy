@@ -246,8 +246,8 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
 
       const startsAtDate = new Date(meeting.starts_at)
       const endsAtDate = new Date(meeting.ends_at)
-      const dateStr = startsAtDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-      const timeStr = startsAtDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+      const dateStr = startsAtDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: body.time_zone })
+      const timeStr = startsAtDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: body.time_zone })
       const dur = Math.round((endsAtDate.getTime() - startsAtDate.getTime()) / 60000)
       const durationLabel = dur < 60 ? `${dur} min` : dur % 60 === 0 ? `${dur / 60} hr` : `${Math.floor(dur / 60)} hr ${dur % 60} min`
       const gcalDateFmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
@@ -662,6 +662,7 @@ async function handleInviteMember(req: Request, services: ServiceContainer): Pro
 
 interface SyncCalendarRequest {
   fellowshipId: string
+  googleAccessToken?: string
 }
 
 interface MeetingSyncResult {
@@ -747,18 +748,22 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
     const calendarEventId = meeting.calendar_event_id as string
     const storedRefreshToken = meeting.google_refresh_token as string | null
 
-    if (!storedRefreshToken) {
-      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'no_refresh_token' })
-      oauthErrors.push(meeting.id)
-      continue
-    }
-
     let accessToken: string
-    try {
-      accessToken = await refreshGoogleAccessToken(storedRefreshToken)
-    } catch (refreshErr) {
-      console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}:`, refreshErr)
-      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+    if (body.googleAccessToken) {
+      // Use the fresh access token supplied by the client directly.
+      accessToken = body.googleAccessToken
+    } else if (storedRefreshToken) {
+      try {
+        accessToken = await refreshGoogleAccessToken(storedRefreshToken)
+      } catch (refreshErr) {
+        const msg = refreshErr instanceof Error ? refreshErr.message : String(refreshErr)
+        console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}: ${msg}`)
+        results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+        oauthErrors.push(meeting.id)
+        continue
+      }
+    } else {
+      results.push({ meetingId: meeting.id, status: 'skipped', reason: 'no_token' })
       oauthErrors.push(meeting.id)
       continue
     }
@@ -769,6 +774,12 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
         `https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}?fields=attendees`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       )
+      if (!getRes.ok && (getRes.status === 401 || getRes.status === 403)) {
+        console.error(`[sync-calendar] OAuth error getting event for meeting ${meeting.id}: ${getRes.status}`)
+        results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+        oauthErrors.push(meeting.id)
+        continue
+      }
       const currentEvent = getRes.ok
         ? await getRes.json() as { attendees?: Array<{ email: string }> }
         : { attendees: [] }
@@ -791,8 +802,14 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
         )
         if (!patchRes.ok) {
           const errText = await patchRes.text()
-          console.error(`[sync-calendar] PATCH failed for meeting ${meeting.id}:`, errText)
-          results.push({ meetingId: meeting.id, status: 'skipped', reason: 'google_api_error' })
+          if (patchRes.status === 401 || patchRes.status === 403) {
+            console.error(`[sync-calendar] OAuth error patching event for meeting ${meeting.id}: ${patchRes.status}`)
+            results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+            oauthErrors.push(meeting.id)
+          } else {
+            console.error(`[sync-calendar] PATCH failed for meeting ${meeting.id}:`, errText)
+            results.push({ meetingId: meeting.id, status: 'skipped', reason: 'google_api_error' })
+          }
           continue
         }
       }

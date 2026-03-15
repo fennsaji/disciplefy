@@ -23,11 +23,11 @@
   },
   "howItWorks": {
     "title": "How It Works",
-    "step1": { "title": "Choose a verse or topic", "desc": "Enter any Bible reference like \"John 3:16\" or ask a spiritual question like \"What does the Bible say about anxiety?\" — Disciplefy understands both and gets you started instantly." },
-    "step2": { "title": "Get an instant AI guide", "desc": "Our AI generates a complete study guide in seconds — a clear summary, historical and cultural context, verse-by-verse interpretation, practical life application, and related scripture references, all grounded in sound theology." },
-    "step3": { "title": "Talk to your AI Voice Discipler", "desc": "Have a real voice conversation about any Bible passage or spiritual question. Your AI Voice Discipler listens, responds naturally in your language, and walks you through Scripture like a personal Bible study companion — anytime, anywhere." },
-    "step4": { "title": "Follow a learning path", "desc": "Go deeper with structured discipleship journeys on Grace, Prayer, Faith, and more. Each path walks you through a curated sequence of lessons — so you're not just studying random verses, you're growing with purpose and direction." },
-    "step5": { "title": "Memorize & grow", "desc": "Build lasting habits with daily verse reminders, spaced-repetition memorization practice with audio and fill-in-the-blank modes, streak tracking to stay consistent, and a growing library of your saved study guides." }
+    "step1": { "title": "Choose a verse or topic", "desc": "Enter any Bible reference like \"John 3:16\" or ask a spiritual question like \"What does the Bible say about anxiety?\" — Disciplefy understands both and gets you started instantly.", "imageAlt": "Disciplefy app — Bible verse search screen, type John 3:16 or a spiritual question to begin" },
+    "step2": { "title": "Get an instant AI guide", "desc": "Our AI generates a complete study guide in seconds — a clear summary, historical and cultural context, verse-by-verse interpretation, practical life application, and related scripture references, all grounded in sound theology.", "imageAlt": "AI-generated Bible study guide showing historical context, verse-by-verse interpretation and life application" },
+    "step3": { "title": "Talk to your AI Voice Discipler", "desc": "Have a real voice conversation about any Bible passage or spiritual question. Your AI Voice Discipler listens, responds naturally in your language, and walks you through Scripture like a personal Bible study companion — anytime, anywhere.", "imageAlt": "Voice Discipler conversation screen — speak your Bible question and hear a response in your language" },
+    "step4": { "title": "Follow a learning path", "desc": "Go deeper with structured discipleship journeys on Grace, Prayer, Faith, and more. Each path walks you through a curated sequence of lessons — so you're not just studying random verses, you're growing with purpose and direction.", "imageAlt": "Discipleship learning path screen showing structured journeys on Grace, Prayer and Faith" },
+    "step5": { "title": "Memorize & grow", "desc": "Build lasting habits with daily verse reminders, spaced-repetition memorization practice with audio and fill-in-the-blank modes, streak tracking to stay consistent, and a growing library of your saved study guides.", "imageAlt": "Daily verse reminder and memorization practice screen with streak tracking and saved study guides" }
   },
   "languageShowcase": {
     "title": "Study in Your Heart Language",
@@ -44,6 +44,28 @@
     "viewFull": "View full comparison →",
     "startFree": "Start Free — No Credit Card Required"
   },
+  "downloadPage": {
+    "title": "Download Disciplefy — Free Bible Study App",
+    "subtitle": "AI-powered Bible study in English, हिन्दी & മലയാളം. Free on Android.",
+    "cta": "Download Free on Google Play",
+    "or": "or",
+    "openWebApp": "open the web app",
+    "faqTitle": "Frequently Asked Questions",
+    "feature1": { "title": "AI Study Guides", "desc": "Instant verse-by-verse guides with context and life application" },
+    "feature2": { "title": "Voice Discipler", "desc": "Have real voice conversations about Scripture in your language" },
+    "feature3": { "title": "Daily Verse", "desc": "A fresh verse every morning with devotional content" },
+    "feature4": { "title": "3 Languages", "desc": "English, हिन्दी & മലയാളം — native quality, not a translation" },
+    "q1": { "q": "Is Disciplefy free?", "a": "Yes — the core app is completely free. Premium plans with more AI tokens are available starting at ₹79/month." },
+    "q2": { "q": "What languages are supported?", "a": "English, Hindi, and Malayalam. All AI features work in all three languages." },
+    "q3": { "q": "Is there an iOS app?", "a": "Not yet. Android and web app are available now. iOS is coming soon." },
+    "q4": { "q": "How does the AI Bible study work?", "a": "Enter any Bible verse or question; Disciplefy generates a complete study guide in seconds in your language." }
+  },
+  "downloadSection": {
+    "title": "Start Studying the Bible Today",
+    "subtitle": "Free on Android — English, हिन्दी & മലയാളം",
+    "cta": "Download Free on Google Play",
+    "openWebApp": "or open the web app →"
+  },
   "downloadCTA": {
     "title": "Start Your Bible Study Journey Today",
     "subtitle": "Free to download. Start in minutes.",
@@ -55,6 +77,14 @@
     "company": "Company",
     "legal": "Legal",
     "features": "Features",
+    "aiStudy": "AI Bible Study",
+    "dailyVerse": "Daily Verse",
+    "studyGuides": "Study Guides",
+    "fellowship": "Fellowship",
+    "voiceBuddy": "Voice Buddy",
+    "memoryVerses": "Memory Verses",
+    "learningPaths": "Learning Paths",
+    "followUpChat": "Follow-Up Chat",
     "pricing": "Pricing",
     "download": "Download",
     "about": "About",
@@ -80,5 +110,9 @@
     "title": "Page Not Found",
     "subtitle": "The page you're looking for doesn't exist.",
     "home": "Go Home"
+  },
+  "featurePage": {
+    "howItWorksTitle": "How It Works",
+    "exploreOtherFeatures": "Explore Other Features"
   }
 }

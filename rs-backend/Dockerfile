@@ -12,5 +12,5 @@ RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 COPY --from=builder /app/target/release/rs-backend /usr/local/bin/
 USER appuser
-EXPOSE 8080
+EXPOSE 8090
 CMD ["rs-backend"]

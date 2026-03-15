@@ -152,7 +152,10 @@ class FellowshipMeetingsBloc
       successMessage: () => null,
     ));
 
-    final result = await _repository.syncFellowshipCalendar(event.fellowshipId);
+    final result = await _repository.syncFellowshipCalendar(
+      event.fellowshipId,
+      googleAccessToken: event.googleAccessToken,
+    );
 
     result.fold(
       (failure) => emit(state.copyWith(
