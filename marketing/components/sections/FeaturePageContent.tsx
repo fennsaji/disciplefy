@@ -2,6 +2,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
@@ -25,6 +26,7 @@ export function FeaturePageContent({
   downloadCta,
   relatedFeatures,
 }: FeaturePageProps) {
+  const t = useTranslations('featurePage');
   return (
     <>
       <Navbar />
@@ -53,7 +55,7 @@ export function FeaturePageContent({
           transition={{ duration: 0.4 }}
           className="mb-12"
         >
-          <h2 className="font-display font-bold text-2xl mb-6 text-primary">How It Works</h2>
+          <h2 className="font-display font-bold text-2xl mb-6 text-primary">{t('howItWorksTitle')}</h2>
           <ol className="space-y-5">
             {howItWorks.map((step, i) => (
               <li key={i} className="flex items-start gap-4">
@@ -89,7 +91,7 @@ export function FeaturePageContent({
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
           >
-            <h3 className="font-display font-semibold text-lg mb-3">Explore Other Features</h3>
+            <h3 className="font-display font-semibold text-lg mb-3">{t('exploreOtherFeatures')}</h3>
             <ul className="flex flex-wrap gap-2">
               {relatedFeatures.map((f) => (
                 <li key={f.href}>

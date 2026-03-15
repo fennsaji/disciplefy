@@ -1,6 +1,7 @@
 // marketing/app/vs/youversion/page.tsx
 // NOTE: Deploy this page only after Phase 3 authority-building (directory submissions)
-// is complete. Publishing too early against a high-DA competitor is counterproductive.
+// is complete. Set NEXT_PUBLIC_VS_PAGES_ENABLED=true to publish.
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getAlternates } from "@/lib/seo";
@@ -63,6 +64,7 @@ function ComparisonTable() {
 }
 
 export default function VsYouversionPage() {
+  if (process.env.NEXT_PUBLIC_VS_PAGES_ENABLED !== 'true') notFound();
   return (
     <NextIntlClientProvider locale="en" messages={messages}>
       <Navbar />

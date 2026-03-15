@@ -11,6 +11,8 @@ function slugify(text: string): string {
   return text
     .toLowerCase()
     .trim()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -41,6 +43,7 @@ export default function NewBlogPostPage() {
   }
 
   const handleSave = async (saveStatus: 'draft' | 'published') => {
+    if (isSaving) return
     if (!title.trim()) { toast.error('Title is required'); return }
     if (!content.trim()) { toast.error('Content is required'); return }
 

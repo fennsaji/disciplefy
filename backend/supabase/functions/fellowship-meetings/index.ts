@@ -756,7 +756,8 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
       try {
         accessToken = await refreshGoogleAccessToken(storedRefreshToken)
       } catch (refreshErr) {
-        console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}:`, refreshErr)
+        const msg = refreshErr instanceof Error ? refreshErr.message : String(refreshErr)
+        console.error(`[sync-calendar] Token refresh failed for meeting ${meeting.id}: ${msg}`)
         results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
         oauthErrors.push(meeting.id)
         continue
@@ -773,6 +774,12 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
         `https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}?fields=attendees`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       )
+      if (!getRes.ok && (getRes.status === 401 || getRes.status === 403)) {
+        console.error(`[sync-calendar] OAuth error getting event for meeting ${meeting.id}: ${getRes.status}`)
+        results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+        oauthErrors.push(meeting.id)
+        continue
+      }
       const currentEvent = getRes.ok
         ? await getRes.json() as { attendees?: Array<{ email: string }> }
         : { attendees: [] }
@@ -795,8 +802,14 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
         )
         if (!patchRes.ok) {
           const errText = await patchRes.text()
-          console.error(`[sync-calendar] PATCH failed for meeting ${meeting.id}:`, errText)
-          results.push({ meetingId: meeting.id, status: 'skipped', reason: 'google_api_error' })
+          if (patchRes.status === 401 || patchRes.status === 403) {
+            console.error(`[sync-calendar] OAuth error patching event for meeting ${meeting.id}: ${patchRes.status}`)
+            results.push({ meetingId: meeting.id, status: 'skipped', reason: 'oauth_expired' })
+            oauthErrors.push(meeting.id)
+          } else {
+            console.error(`[sync-calendar] PATCH failed for meeting ${meeting.id}:`, errText)
+            results.push({ meetingId: meeting.id, status: 'skipped', reason: 'google_api_error' })
+          }
           continue
         }
       }

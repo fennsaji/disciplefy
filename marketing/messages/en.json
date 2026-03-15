@@ -110,5 +110,9 @@
     "title": "Page Not Found",
     "subtitle": "The page you're looking for doesn't exist.",
     "home": "Go Home"
+  },
+  "featurePage": {
+    "howItWorksTitle": "How It Works",
+    "exploreOtherFeatures": "Explore Other Features"
   }
 }

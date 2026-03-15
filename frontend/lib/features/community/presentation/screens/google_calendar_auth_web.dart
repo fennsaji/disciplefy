@@ -49,7 +49,7 @@ Future<String?> requestCalendarAccessToken(
   final config = JSObject();
   config['client_id'] = clientId.toJS;
   config['scope'] = 'https://www.googleapis.com/auth/calendar.events'.toJS;
-  if (userEmail != null) config['hint'] = userEmail.toJS;
+  if (userEmail != null) config['login_hint'] = userEmail.toJS;
   config['callback'] = ((JSObject response) {
     final error = response.getProperty<JSAny?>('error'.toJS);
     if (error != null && error.toString().isNotEmpty) {
