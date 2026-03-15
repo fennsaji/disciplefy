@@ -9,6 +9,14 @@ export const metadata: Metadata = {
   title: "Pricing — Disciplefy Bible Study App",
   description: "Simple, affordable plans starting at ₹79/month. Start free.",
   alternates: getAlternates("/pricing"),
+  openGraph: {
+    images: [{
+      url: `/og?title=Pricing&subtitle=Simple%2C+Affordable+Plans`,
+      width: 1200,
+      height: 630,
+      alt: "Disciplefy pricing plans",
+    }],
+  },
 };
 
 export default function PricingPage() {

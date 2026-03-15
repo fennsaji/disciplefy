@@ -62,9 +62,16 @@ export function Footer() {
           >
             <p className="font-semibold text-sm mb-3">{t("product")}</p>
             <div className="flex flex-col gap-2">
-              <Link href="/#features" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("features")}</Link>
+              <Link href="/features/ai-bible-study" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("aiStudy")}</Link>
+              <Link href="/features/daily-verse" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("dailyVerse")}</Link>
+              <Link href="/features/study-guides" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("studyGuides")}</Link>
+              <Link href="/features/fellowship" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("fellowship")}</Link>
+              <Link href="/features/voice-buddy" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("voiceBuddy")}</Link>
+              <Link href="/features/memory-verses" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("memoryVerses")}</Link>
+              <Link href="/features/learning-paths" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("learningPaths")}</Link>
+              <Link href="/features/follow-up-chat" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("followUpChat")}</Link>
               <Link href="/pricing" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("pricing")}</Link>
-              <Link href="https://app.disciplefy.in" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("download")}</Link>
+              <Link href="/download" className="text-sm text-[var(--muted)] hover:text-[var(--text)]">{t("download")}</Link>
             </div>
           </motion.div>
           {/* Company */}

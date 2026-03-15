@@ -2,10 +2,12 @@
 import type { Metadata } from "next";
 import { BlogList } from "@/components/blog/BlogList";
 import { getAllPosts } from "@/lib/blog";
+import { getAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Blog — Disciplefy",
   description: "Devotionals, Bible study tips, and updates from the Disciplefy team.",
+  alternates: getAlternates("/blog"),
 };
 
 export default async function BlogPage({

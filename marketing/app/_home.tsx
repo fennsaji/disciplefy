@@ -10,6 +10,7 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { LanguageShowcase } from "@/components/sections/LanguageShowcase";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { PricingPreview } from "@/components/sections/PricingPreview";
+import { DownloadSection } from "@/components/sections/DownloadSection";
 import { DownloadCTA } from "@/components/sections/DownloadCTA";
 
 export function HomePage() {
@@ -19,6 +20,7 @@ export function HomePage() {
       <main>
         <Hero />
         <SocialProof />
+        <DownloadSection />
         <Features />
         <HowItWorks />
         <LanguageShowcase />
