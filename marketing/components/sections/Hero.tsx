@@ -22,7 +22,7 @@ function HeroScreenshot({ locale }: { locale: string }) {
   return (
     <Image
       src={`/screenshots/hero-${locale}.jpg`}
-      alt="Disciplefy app"
+      alt="Disciplefy Bible study app home screen showing daily verse and AI study guide features"
       fill
       className="object-cover object-top"
       sizes="300px"
