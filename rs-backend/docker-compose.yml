@@ -1,5 +1,5 @@
 # Production compose — runs on the VPS.
-# Caddy handles HTTPS (auto SSL via Let's Encrypt) and proxies to backend.
+# Caddy runs on the host (not Docker) and proxies to this backend via localhost:8090.
 # Vector ships logs to Axiom.
 # Database is Supabase-hosted (no local postgres).
 
@@ -8,26 +8,14 @@ services:
     image: ghcr.io/fennsaji/disciplefy-rs-backend:latest
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "127.0.0.1:8090:8090"
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8090/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - backend
 
   vector:
     image: timberio/vector:0.43.0-alpine
@@ -41,7 +29,3 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       - backend
-
-volumes:
-  caddy_data:
-  caddy_config:
