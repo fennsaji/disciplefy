@@ -49,6 +49,16 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   String? _selectedLevel; // null = all levels
   bool _featuredOnly = false;
 
+  // Per-category horizontal scroll controllers for auto-load-more
+  final Map<String, ScrollController> _scrollControllers = {};
+
+  ScrollController _scrollControllerFor(String category) {
+    return _scrollControllers.putIfAbsent(
+      category,
+      () => ScrollController(),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +69,9 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   void dispose() {
     _searchController.dispose();
     _debounce?.cancel();
+    for (final sc in _scrollControllers.values) {
+      sc.dispose();
+    }
     super.dispose();
   }
 
@@ -562,6 +575,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     final theme = Theme.of(context);
     final hasActive = category.paths.any((p) => p.isInProgress || p.isEnrolled);
     final isLoadingMore = state.loadingCategories.contains(category.name);
+    final scrollController = _scrollControllerFor(category.name);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
@@ -604,94 +618,60 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           // IntrinsicHeight measures the tallest card in the row and
           // constrains all siblings to that height via CrossAxisAlignment.stretch.
           IntrinsicHeight(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (int i = 0; i < category.paths.length; i++) ...[
-                    LearningPathCard(
-                      path: category.paths[i],
-                      onTap: () => widget.onPathTap(category.paths[i]),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification &&
+                    category.hasMoreInCategory &&
+                    !isLoadingMore) {
+                  final pos = scrollController.position;
+                  if (pos.pixels >= pos.maxScrollExtent - 80) {
+                    context.read<LearningPathsBloc>().add(
+                          LoadMorePathsForCategory(
+                            category: category.name,
+                            language: widget.language,
+                          ),
+                        );
+                  }
+                }
+                return false;
+              },
+              child: SingleChildScrollView(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (int i = 0; i < category.paths.length; i++) ...[
+                      LearningPathCard(
+                        path: category.paths[i],
+                        onTap: () => widget.onPathTap(category.paths[i]),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
 
-                  // Load-more ghost card
-                  if (category.hasMoreInCategory || isLoadingMore)
-                    _buildLoadMoreCard(context, category.name, isLoadingMore),
-                ],
+                    // Inline loading spinner while fetching more
+                    if (isLoadingMore)
+                      SizedBox(
+                        width: 56,
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Per-category load-more ghost card
-  // -------------------------------------------------------------------------
-
-  Widget _buildLoadMoreCard(
-      BuildContext context, String categoryName, bool isLoading) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: 120,
-      child: Material(
-        color: theme.colorScheme.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: isLoading
-              ? null
-              : () => context.read<LearningPathsBloc>().add(
-                    LoadMorePathsForCategory(
-                        category: categoryName, language: widget.language),
-                  ),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            height: 160,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Center(
-              child: isLoading
-                  ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.keyboard_arrow_right,
-                          color: theme.colorScheme.primary,
-                          size: 28,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'More',
-                          style: AppFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
       ),
     );
   }
