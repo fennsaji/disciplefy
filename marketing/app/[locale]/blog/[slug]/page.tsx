@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { getPost } from "@/lib/blog";
 import { type Locale } from "@/i18n";
-import { getAlternates, getBlogPostingJsonLd, getBreadcrumbJsonLd } from "@/lib/seo";
+import { getAlternates } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -14,10 +14,17 @@ export async function generateMetadata({
   const post = await getPost(params.slug);
   if (!post) return {};
   return {
-    title: `${post.title} — Disciplefy`,
+    title: `${post.title} | Bible Study — Disciplefy`,
     description: post.excerpt,
+    keywords: post.tags,
     alternates: getAlternates(`/blog/${params.slug}`),
     openGraph: {
+      title: `${post.title} | Disciplefy`,
+      description: post.excerpt,
+      type: "article",
+      publishedTime: post.published_at ?? undefined,
+      authors: [post.author],
+      tags: post.tags,
       images: [{
         url: `/og?title=${encodeURIComponent(post.title)}&subtitle=Disciplefy Blog`,
         width: 1200,
@@ -36,17 +43,5 @@ export default async function LocaleBlogPostPage({
   const post = await getPost(params.slug);
   if (!post) notFound();
 
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(getBlogPostingJsonLd(post, params.locale)) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(getBreadcrumbJsonLd(post, params.locale)) }}
-      />
-      <BlogPostContent post={post} locale={params.locale} />
-    </>
-  );
+  return <BlogPostContent post={post} locale={params.locale} />;
 }
