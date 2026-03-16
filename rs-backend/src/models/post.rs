@@ -416,17 +416,41 @@ pub async fn unpublish_post(pool: &PgPool, id: Uuid) -> Result<BlogPost, AppErro
     .ok_or_else(|| AppError::NotFound("Post not found".to_string()))
 }
 
-pub async fn post_exists_for_topic(
+pub async fn find_next_ungenerated_topic(
     pool: &PgPool,
-    topic_id: Uuid,
-    locale: &str,
-) -> Result<bool, AppError> {
-    let exists: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM blog_posts WHERE source_topic_id = $1 AND locale = $2)",
+) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
+    let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
+        "SELECT lpt.id, rt.title, rt.description, rt.input_type,
+                lp.id AS path_id, lp.title AS path_title, lp.description AS path_description,
+                lp.disciple_level, lp.category,
+                hi_t.title       AS hi_title,
+                ml_t.title       AS ml_title,
+                hi_t.description AS hi_description,
+                ml_t.description AS ml_description,
+                hi_lp.title      AS hi_path_title,
+                ml_lp.title      AS ml_path_title,
+                hi_lp.description AS hi_path_description,
+                ml_lp.description AS ml_path_description
+         FROM learning_path_topics lpt
+         JOIN recommended_topics rt ON lpt.topic_id = rt.id
+         JOIN learning_paths lp ON lpt.learning_path_id = lp.id
+         LEFT JOIN recommended_topics_translations hi_t
+               ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
+         LEFT JOIN recommended_topics_translations ml_t
+               ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
+         LEFT JOIN learning_path_translations hi_lp
+               ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
+         LEFT JOIN learning_path_translations ml_lp
+               ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
+         WHERE lp.is_active = true AND rt.is_active = true
+           AND NOT EXISTS (
+               SELECT 1 FROM blog_posts bp WHERE bp.source_topic_id = lpt.id
+           )
+         ORDER BY lp.display_order, lpt.position
+         LIMIT 1",
     )
-    .bind(topic_id)
-    .bind(locale)
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await?;
-    Ok(exists)
+    Ok(topic)
 }
+
