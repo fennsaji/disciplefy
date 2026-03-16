@@ -58,20 +58,39 @@ export const pricingJsonLd = {
   ],
 };
 
+const LOCALE_LANG: Record<string, string> = { en: "en-IN", hi: "hi-IN", ml: "ml-IN" };
+
 /** JSON-LD for blog posts — BlogPosting */
 export function getBlogPostingJsonLd(
-  post: { title: string; excerpt: string; published_at: string | null; author: string; slug: string },
+  post: { title: string; excerpt: string; published_at: string | null; author: string; slug: string; tags?: string[] },
   locale: string = "en"
 ) {
   const prefix = locale === "en" ? "" : `/${locale}`;
+  const url = `${BASE}${prefix}/blog/${post.slug}`;
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
     datePublished: post.published_at,
-    author: { "@type": "Organization", name: post.author },
-    url: `${BASE}${prefix}/blog/${post.slug}`,
+    dateModified: post.published_at,
+    inLanguage: LOCALE_LANG[locale] ?? "en-IN",
+    keywords: post.tags?.join(", "),
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    author: { "@type": "Organization", name: "Disciplefy", url: BASE },
+    publisher: {
+      "@type": "Organization",
+      name: "Disciplefy",
+      url: BASE,
+      logo: { "@type": "ImageObject", url: `${BASE}/images/logo.png` },
+    },
+    image: {
+      "@type": "ImageObject",
+      url: `${BASE}/og?title=${encodeURIComponent(post.title)}&subtitle=Disciplefy+Blog`,
+      width: 1200,
+      height: 630,
+    },
   };
 }
 
