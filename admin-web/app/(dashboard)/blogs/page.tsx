@@ -225,16 +225,16 @@ export default function BlogsPage() {
                         >
                           {post.title}
                         </button>
-                        <p className="mt-0.5 text-xs text-indigo-400/60 line-clamp-1">{post.excerpt}</p>
+                        <p className="mt-0.5 text-xs text-slate-400 line-clamp-1">{post.excerpt}</p>
                         {post.tags.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">
                             {post.tags.slice(0, 3).map(tag => (
-                              <span key={tag} className="rounded px-1.5 py-0.5 text-[10px] bg-white/5 text-indigo-400/70">
+                              <span key={tag} className="rounded px-1.5 py-0.5 text-[10px] bg-indigo-500/15 text-indigo-300">
                                 {tag}
                               </span>
                             ))}
                             {post.tags.length > 3 && (
-                              <span className="text-[10px] text-indigo-400/50">+{post.tags.length - 3}</span>
+                              <span className="text-[10px] text-slate-400">+{post.tags.length - 3}</span>
                             )}
                           </div>
                         )}
@@ -256,10 +256,10 @@ export default function BlogsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-xs text-indigo-400/60 capitalize">{post.source_type ?? 'manual'}</span>
+                    <span className="text-xs text-slate-400 capitalize">{post.source_type ?? 'manual'}</span>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className="text-xs text-indigo-400/60">
+                    <span className="text-xs text-slate-400">
                       {post.published_at
                         ? new Date(post.published_at).toLocaleDateString()
                         : new Date(post.created_at).toLocaleDateString()}

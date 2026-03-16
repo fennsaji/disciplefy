@@ -563,11 +563,13 @@ async function handleStudyGenerateV2(
       )
     }
 
+    const internalApiKey = req.headers.get('X-Internal-Api-Key')
     authReq = new Request(req.url, {
       method: req.method,
       headers: new Headers({
         'Authorization': authToken ? `Bearer ${authToken}` : '',
-        'apikey': apiKey || ''
+        'apikey': apiKey || '',
+        ...(internalApiKey ? { 'X-Internal-Api-Key': internalApiKey } : {})
       })
     })
 
