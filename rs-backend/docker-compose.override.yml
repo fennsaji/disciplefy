@@ -1,5 +1,0 @@
-services:
-  backend:
-    image: rs-backend:local
-  vector:
-    profiles: [vector]  # disabled locally
