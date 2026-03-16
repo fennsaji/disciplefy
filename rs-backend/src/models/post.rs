@@ -453,4 +453,3 @@ pub async fn find_next_ungenerated_topic(
     .await?;
     Ok(topic)
 }
-

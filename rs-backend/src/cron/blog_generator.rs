@@ -67,8 +67,14 @@ pub async fn run_blog_generation(
             _ => &topic.title,
         };
         let display_description: Option<&str> = match *locale {
-            "hi" => topic.hi_description.as_deref().or(topic.description.as_deref()),
-            "ml" => topic.ml_description.as_deref().or(topic.description.as_deref()),
+            "hi" => topic
+                .hi_description
+                .as_deref()
+                .or(topic.description.as_deref()),
+            "ml" => topic
+                .ml_description
+                .as_deref()
+                .or(topic.description.as_deref()),
             _ => topic.description.as_deref(),
         };
         let display_path_title: &str = match *locale {
@@ -77,8 +83,14 @@ pub async fn run_blog_generation(
             _ => &topic.path_title,
         };
         let display_path_description: &str = match *locale {
-            "hi" => topic.hi_path_description.as_deref().unwrap_or(&topic.path_description),
-            "ml" => topic.ml_path_description.as_deref().unwrap_or(&topic.path_description),
+            "hi" => topic
+                .hi_path_description
+                .as_deref()
+                .unwrap_or(&topic.path_description),
+            "ml" => topic
+                .ml_path_description
+                .as_deref()
+                .unwrap_or(&topic.path_description),
             _ => &topic.path_description,
         };
 
@@ -99,8 +111,7 @@ pub async fn run_blog_generation(
             Err(e) => {
                 tracing::error!(topic = %topic.title, locale, "Study API failed: {}", e);
                 failed += 1;
-                tokio::time::sleep(std::time::Duration::from_secs(DELAY_BETWEEN_CALLS_SECS))
-                    .await;
+                tokio::time::sleep(std::time::Duration::from_secs(DELAY_BETWEEN_CALLS_SECS)).await;
                 continue;
             }
         };

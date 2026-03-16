@@ -18,10 +18,7 @@ pub fn create_router() -> Router<AppState> {
             "/api/v1/admin/posts/:id",
             put(admin::update_post).delete(admin::delete_post),
         )
-        .route(
-            "/api/v1/admin/posts/:id/publish",
-            post(admin::publish_post),
-        )
+        .route("/api/v1/admin/posts/:id/publish", post(admin::publish_post))
         .route(
             "/api/v1/admin/posts/:id/unpublish",
             post(admin::unpublish_post),
