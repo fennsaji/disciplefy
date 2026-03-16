@@ -226,7 +226,17 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
                   }
                 }
               },
-              tabs: [l10n.communityMyFellowships, l10n.communityDiscover],
+              tabs: [
+                Text(l10n.communityMyFellowships),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.public_rounded),
+                    SizedBox(width: 5),
+                    Text('Discover'),
+                  ],
+                ),
+              ],
             ),
           ),
 
@@ -288,7 +298,7 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
 class _PillTabs extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onChanged;
-  final List<String> tabs;
+  final List<Widget> tabs;
 
   const _PillTabs({
     required this.selected,
@@ -319,13 +329,20 @@ class _PillTabs extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  tabs[i],
+                child: DefaultTextStyle(
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: isSelected ? Colors.white : context.appTextSecondary,
+                  ),
+                  child: IconTheme(
+                    data: IconThemeData(
+                      size: 15,
+                      color:
+                          isSelected ? Colors.white : context.appTextSecondary,
+                    ),
+                    child: tabs[i],
                   ),
                 ),
               ),

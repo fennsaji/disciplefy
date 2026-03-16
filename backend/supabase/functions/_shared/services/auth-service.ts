@@ -74,8 +74,19 @@ export class AuthService {
    * @throws AppError when authentication fails
    */
   async getUserContext(req: Request): Promise<UserContext> {
+    // Server-to-server: bypass auth.getUser() for trusted internal callers
+    const internalKey = req.headers.get('X-Internal-Api-Key')
+    const expectedKey = Deno.env.get('INTERNAL_API_KEY')
+    if (internalKey && expectedKey && this.constantTimeCompare(internalKey, expectedKey)) {
+      return {
+        type: 'authenticated',
+        userId: '00000000-0000-0000-0000-000000000000',
+        userType: 'admin',
+      }
+    }
+
     const authClient = this.createAuthClient(req)
-    
+
     try {
       const { data: { user }, error } = await authClient.auth.getUser()
       
@@ -411,6 +422,11 @@ export class AuthService {
 
       if (userContext.type !== 'authenticated' || !userContext.userId) {
         return 'free'
+      }
+
+      // Internal system caller — always premium, no DB lookup needed
+      if (userContext.userId === '00000000-0000-0000-0000-000000000000') {
+        return 'premium'
       }
 
       if (!this.supabaseServiceClient) {

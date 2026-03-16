@@ -209,6 +209,7 @@ jobs:
         # Security (${{ env.DEPLOY_ENV }})
         JWT_SECRET=${{ secrets.JWT_SECRET }}
         CRON_SECRET=${{ secrets.CRON_SECRET }}
+        INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}
 
         # ${{ env.DEPLOY_ENV }} settings
         LOG_LEVEL=info

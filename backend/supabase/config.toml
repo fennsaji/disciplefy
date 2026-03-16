@@ -388,6 +388,9 @@ CRON_SECRET = "env(CRON_SECRET)"
 # Kong doesn't properly verify ES256 tokens in CLI 2.75.0 (waiting for PR #4721)
 # Edge Functions handle JWT verification themselves via auth.getUser()
 # Cron schedule is handled by GitHub Actions workflow: .github/workflows/send-notifications.yml
+[functions.study-generate-v2]
+verify_jwt = false
+
 [functions.fellowship-meetings]
 verify_jwt = false
 

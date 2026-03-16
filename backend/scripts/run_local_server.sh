@@ -354,4 +354,4 @@ popd > /dev/null
 
 # Run the functions server
 echo -e "${BLUE}🚀 Starting Edge Functions with environment: ${ENV_FILE}${NC}"
-supabase functions serve --env-file "$ENV_FILE"
+supabase functions serve --env-file "$ENV_FILE" --no-verify-jwt

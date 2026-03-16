@@ -33,6 +33,7 @@ jobs:
           SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY:         ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          INTERNAL_API_KEY:          ${{ secrets.INTERNAL_API_KEY }}
           AXIOM_API_KEY:             ${{ secrets.AXIOM_API_KEY }}
           AXIOM_DATASET:             ${{ secrets.AXIOM_DATASET }}
         run: |
@@ -42,6 +43,7 @@ jobs:
             printf 'SUPABASE_URL=%s\n'              "$SUPABASE_URL"
             printf 'SUPABASE_ANON_KEY=%s\n'         "$SUPABASE_ANON_KEY"
             printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
+            printf 'INTERNAL_API_KEY=%s\n'          "$INTERNAL_API_KEY"
             printf 'ALLOWED_ORIGINS=https://app.disciplefy.in,https://disciplefy.in,https://admin.disciplefy.in\n'
             printf 'PORT=8090\n'
             printf 'DB_POOL_SIZE=10\n'

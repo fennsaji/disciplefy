@@ -593,6 +593,26 @@ class DailyVerseCard extends StatelessWidget {
     return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
       bloc: sl<MemoryVerseBloc>(),
       builder: (context, memoryState) {
+        // Show spinner while the add-verse API call is in progress
+        if (memoryState is MemoryVerseLoading) {
+          return SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    iconColor.withOpacity(0.9),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
         // Check if this verse is already in memory (with same language)
         bool isAlreadyInMemory = false;
 

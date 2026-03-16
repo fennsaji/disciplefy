@@ -17,6 +17,7 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState(WEB_APP_URL);
+  const buttonLabel = downloadUrl === WEB_APP_URL ? t("openApp") : t("download");
 
   useEffect(() => {
     if (/android/i.test(navigator.userAgent)) {
@@ -91,7 +92,7 @@ export function Navbar() {
             <LocaleSwitcher />
             <ThemeToggle />
             <Button href={downloadUrl} size="sm" className="hidden md:inline-flex">
-              {t("download")}
+              {buttonLabel}
             </Button>
             {/* Mobile hamburger */}
             <button
@@ -141,7 +142,7 @@ export function Navbar() {
                   transition={{ duration: 0.2, delay: 0.05 + navLinks.length * 0.07 }}
                 >
                   <Button href={downloadUrl} size="sm" className="w-full mt-2">
-                    {t("download")}
+                    {buttonLabel}
                   </Button>
                 </motion.div>
               </div>

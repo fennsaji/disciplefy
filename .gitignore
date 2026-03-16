@@ -15,6 +15,14 @@
 .env.*
 
 
+# Docker Compose local overrides (never commit — auto-loaded and would break production)
+docker-compose.override.yml
+**/docker-compose.override.yml
+
+# Docker Compose local overrides (not auto-loaded, but keep out of repo)
+docker-compose.local.yml
+**/docker-compose.local.yml
+
 # Supabase environment
 backend/.env
 backend/.env.local
