@@ -261,12 +261,21 @@ jobs:
       run: |
         echo "📦 Running DB migrations..."
 
+        # Fetch project region from Supabase Management API so we can build the
+        # IPv4-compatible Supavisor pooler URL (db.[ref].supabase.co is IPv6-only
+        # and unreachable from GitHub Actions runners)
+        PROJECT_REGION=$(curl -sf \
+          -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+          "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF" \
+          | python3 -c "import json,sys; print(json.load(sys.stdin)['region'])")
+        echo "Project region: $PROJECT_REGION"
+
         # URL-encode the DB password so special characters are safe inside the connection URL
         ENCODED_DB_PASSWORD=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$SUPABASE_DB_PASSWORD")
 
-        # Use --db-url directly — skips 'supabase link' which tries to build its own URL
-        # and fails when the raw password contains special characters like @, #, /
-        DB_URL="postgresql://postgres:${ENCODED_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+        # Supavisor session-mode pooler — IPv4, supports all SQL including migrations
+        # Username format for pooler is postgres.[project_ref]
+        DB_URL="postgresql://postgres.${SUPABASE_PROJECT_REF}:${ENCODED_DB_PASSWORD}@aws-0-${PROJECT_REGION}.pooler.supabase.com:5432/postgres"
 
         supabase db push --db-url "$DB_URL" --include-all
 
