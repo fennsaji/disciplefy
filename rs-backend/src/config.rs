@@ -37,8 +37,7 @@ impl Config {
                 .expect("SUPABASE_ANON_KEY must be set"),
             supabase_service_role_key: env::var("SUPABASE_SERVICE_ROLE_KEY")
                 .expect("SUPABASE_SERVICE_ROLE_KEY must be set"),
-            internal_api_key: env::var("INTERNAL_API_KEY")
-                .expect("INTERNAL_API_KEY must be set"),
+            internal_api_key: env::var("INTERNAL_API_KEY").expect("INTERNAL_API_KEY must be set"),
             port: env::var("PORT")
                 .unwrap_or_else(|_| "8080".to_string())
                 .parse()

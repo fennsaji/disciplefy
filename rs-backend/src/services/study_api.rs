@@ -41,8 +41,8 @@ pub async fn generate_study_guide(
     // Truncate long fields to prevent URL overflow — same limits as the mobile app.
     // (Non-Latin scripts URL-encode at up to 9 bytes/char, easily blowing past 8 KB limits.)
     let topic_description = topic_description.map(|s| truncate_chars(s, 300));
-    let path_title        = path_title.map(|s| truncate_chars(s, 100));
-    let path_description  = path_description.map(|s| truncate_chars(s, 200));
+    let path_title = path_title.map(|s| truncate_chars(s, 100));
+    let path_description = path_description.map(|s| truncate_chars(s, 200));
 
     let mut url = format!(
         "{}/functions/v1/study-generate-v2?input_type={}&input_value={}&language={}&mode=standard",
