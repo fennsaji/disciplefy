@@ -264,9 +264,11 @@ jobs:
         # URL-encode the DB password so special characters are safe inside the connection URL
         ENCODED_DB_PASSWORD=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$SUPABASE_DB_PASSWORD")
 
-        # Use --db-url directly — skips 'supabase link' which tries to build its own URL
-        # and fails when the raw password contains special characters like @, #, /
-        DB_URL="postgresql://postgres:${ENCODED_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+        # Use the Supavisor session-mode pooler (IPv4, port 5432) — the direct DB host
+        # db.[ref].supabase.co resolves to an IPv6 address unreachable from GitHub Actions.
+        # Pooler host is fixed for this project (ap-south-1 region, confirmed from CI logs).
+        # Username format for pooler must include the project ref: postgres.[ref]
+        DB_URL="postgresql://postgres.${SUPABASE_PROJECT_REF}:${ENCODED_DB_PASSWORD}@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
 
         supabase db push --db-url "$DB_URL" --include-all
 
