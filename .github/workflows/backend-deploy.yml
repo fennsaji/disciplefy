@@ -256,19 +256,19 @@ jobs:
         FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
 
-    - name: 🔗 Link to Supabase production project & Run Migrations
+    - name: 📦 Run DB Migrations
       working-directory: ./backend
       run: |
-        echo "🔗 Linking to Supabase production project..."
+        echo "📦 Running DB migrations..."
 
-        # URL-encode the DB password so special characters don't break the postgres connection URL
+        # URL-encode the DB password so special characters are safe inside the connection URL
         ENCODED_DB_PASSWORD=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$SUPABASE_DB_PASSWORD")
 
-        echo "🔐 Authenticating and linking..."
-        SUPABASE_DB_PASSWORD="$ENCODED_DB_PASSWORD" supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        # Use --db-url directly — skips 'supabase link' which tries to build its own URL
+        # and fails when the raw password contains special characters like @, #, /
+        DB_URL="postgresql://postgres:${ENCODED_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
 
-        echo "📦 Running DB migrations (including all historical migrations)..."
-        SUPABASE_DB_PASSWORD="$ENCODED_DB_PASSWORD" supabase db push --include-all
+        supabase db push --db-url "$DB_URL" --include-all
 
         echo "✅ Migrations applied successfully"
       env:
