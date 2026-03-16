@@ -5,6 +5,16 @@ use std::collections::HashMap;
 use crate::config::Config;
 use crate::error::AppError;
 
+/// Truncate a string to at most `max_chars` Unicode scalar values.
+/// Always cuts at a character boundary, so the result is always valid UTF-8.
+fn truncate_chars(s: &str, max_chars: usize) -> String {
+    s.char_indices()
+        .nth(max_chars)
+        .map(|(byte_idx, _)| &s[..byte_idx])
+        .unwrap_or(s)
+        .to_string()
+}
+
 #[derive(Debug, Clone)]
 pub struct StudyGuideResult {
     pub sections: HashMap<String, String>,
@@ -28,6 +38,12 @@ pub async fn generate_study_guide(
     disciple_level: Option<&str>,
     language: &str,
 ) -> Result<StudyGuideResult, AppError> {
+    // Truncate long fields to prevent URL overflow — same limits as the mobile app.
+    // (Non-Latin scripts URL-encode at up to 9 bytes/char, easily blowing past 8 KB limits.)
+    let topic_description = topic_description.map(|s| truncate_chars(s, 300));
+    let path_title        = path_title.map(|s| truncate_chars(s, 100));
+    let path_description  = path_description.map(|s| truncate_chars(s, 200));
+
     let mut url = format!(
         "{}/functions/v1/study-generate-v2?input_type={}&input_value={}&language={}&mode=standard",
         config.supabase_url,
@@ -36,14 +52,14 @@ pub async fn generate_study_guide(
         urlencoding::encode(language),
     );
 
-    // Add optional params
-    if let Some(desc) = topic_description {
+    // Add optional context params — these are what the LLM uses for full context
+    if let Some(ref desc) = topic_description {
         url.push_str(&format!("&topic_description={}", urlencoding::encode(desc)));
     }
-    if let Some(title) = path_title {
+    if let Some(ref title) = path_title {
         url.push_str(&format!("&path_title={}", urlencoding::encode(title)));
     }
-    if let Some(desc) = path_description {
+    if let Some(ref desc) = path_description {
         url.push_str(&format!("&path_description={}", urlencoding::encode(desc)));
     }
     if let Some(level) = disciple_level {
@@ -51,19 +67,21 @@ pub async fn generate_study_guide(
     }
 
     tracing::info!(
-        language,
-        input_type,
-        input_value,
-        "Calling study-generate-v2"
+        input_type = %input_type,
+        input_value = %input_value,
+        language = %language,
+        mode = "standard",
+        topic_description = %topic_description.as_deref().unwrap_or("(none)"),
+        path_title = %path_title.as_deref().unwrap_or("(none)"),
+        path_description = %path_description.as_deref().unwrap_or("(none)"),
+        disciple_level = %disciple_level.unwrap_or("(none)"),
+        "study-generate-v2 params"
     );
 
     let resp = http
         .get(&url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", config.supabase_service_role_key),
-        )
         .header("apikey", &config.supabase_anon_key)
+        .header("X-Internal-Api-Key", &config.internal_api_key)
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("HTTP request failed: {}", e)))?;
@@ -77,11 +95,12 @@ pub async fn generate_study_guide(
         )));
     }
 
-    // Parse SSE stream
-    let body = resp
-        .text()
+    // Parse SSE stream — use bytes + lossy UTF-8 to handle Malayalam/Hindi characters
+    let raw = resp
+        .bytes()
         .await
         .map_err(|e| AppError::Internal(format!("Failed to read SSE body: {}", e)))?;
+    let body = String::from_utf8_lossy(&raw).into_owned();
     let mut sections = HashMap::new();
 
     for line in body.lines() {
