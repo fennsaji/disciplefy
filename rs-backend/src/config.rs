@@ -7,6 +7,7 @@ pub struct Config {
     pub supabase_url: String,
     pub supabase_anon_key: String,
     pub supabase_service_role_key: String,
+    pub internal_api_key: String,
     pub port: u16,
     pub allowed_origins: Vec<String>,
     pub db_pool_size: u32,
@@ -19,6 +20,7 @@ impl fmt::Debug for Config {
             .field("supabase_url", &self.supabase_url)
             .field("supabase_anon_key", &"[REDACTED]")
             .field("supabase_service_role_key", &"[REDACTED]")
+            .field("internal_api_key", &"[REDACTED]")
             .field("port", &self.port)
             .field("allowed_origins", &self.allowed_origins)
             .field("db_pool_size", &self.db_pool_size)
@@ -35,6 +37,8 @@ impl Config {
                 .expect("SUPABASE_ANON_KEY must be set"),
             supabase_service_role_key: env::var("SUPABASE_SERVICE_ROLE_KEY")
                 .expect("SUPABASE_SERVICE_ROLE_KEY must be set"),
+            internal_api_key: env::var("INTERNAL_API_KEY")
+                .expect("INTERNAL_API_KEY must be set"),
             port: env::var("PORT")
                 .unwrap_or_else(|_| "8080".to_string())
                 .parse()
