@@ -261,11 +261,14 @@ jobs:
       run: |
         echo "🔗 Linking to Supabase production project..."
 
+        # URL-encode the DB password so special characters don't break the postgres connection URL
+        ENCODED_DB_PASSWORD=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$SUPABASE_DB_PASSWORD")
+
         echo "🔐 Authenticating and linking..."
-        supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        SUPABASE_DB_PASSWORD="$ENCODED_DB_PASSWORD" supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
         echo "📦 Running DB migrations (including all historical migrations)..."
-        supabase db push --include-all
+        SUPABASE_DB_PASSWORD="$ENCODED_DB_PASSWORD" supabase db push --include-all
 
         echo "✅ Migrations applied successfully"
       env:
