@@ -240,6 +240,8 @@ import '../../features/community/presentation/bloc/fellowship_members/fellowship
 import '../../features/community/presentation/bloc/fellowship_study/fellowship_study_bloc.dart';
 import '../../features/community/presentation/bloc/discover/discover_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
+import '../../features/walkthrough/domain/walkthrough_repository.dart';
+import '../../features/walkthrough/data/walkthrough_repository_impl.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -1023,5 +1025,10 @@ Future<void> initializeDependencies() async {
 
   sl.registerFactory<FellowshipMeetingsBloc>(
     () => FellowshipMeetingsBloc(repository: sl()),
+  );
+
+  //! Walkthrough
+  sl.registerLazySingleton<WalkthroughRepository>(
+    () => WalkthroughRepositoryImpl(supabase: sl()),
   );
 }

@@ -19,12 +19,16 @@ class CurrentStudyModel {
   /// ISO-8601 timestamp when the study was completed, or null if still active.
   final String? completedAt;
 
+  /// Total number of guides in the learning path, or null if unknown.
+  final int? totalGuides;
+
   const CurrentStudyModel({
     required this.learningPathId,
     this.learningPathTitle,
     required this.currentGuideIndex,
     required this.startedAt,
     this.completedAt,
+    this.totalGuides,
   });
 
   /// Creates a [CurrentStudyModel] from a JSON map (API response).
@@ -35,6 +39,7 @@ class CurrentStudyModel {
       currentGuideIndex: (json['current_guide_index'] as num).toInt(),
       startedAt: json['started_at'] as String,
       completedAt: json['completed_at'] as String?,
+      totalGuides: json['total_guides'] as int?,
     );
   }
 
@@ -45,5 +50,6 @@ class CurrentStudyModel {
         currentGuideIndex: currentGuideIndex,
         startedAt: startedAt,
         completedAt: completedAt,
+        totalGuides: totalGuides,
       );
 }

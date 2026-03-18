@@ -33,7 +33,8 @@ class DiscoverPage {
 /// an [Either] where [Left] is a [Failure] and [Right] is the success value.
 abstract class CommunityRepository {
   /// Returns the list of fellowships the current user belongs to.
-  Future<Either<Failure, List<FellowshipEntity>>> getFellowships();
+  Future<Either<Failure, List<FellowshipEntity>>> getFellowships(
+      String language);
 
   /// Returns the member list for the fellowship identified by [fellowshipId].
   Future<Either<Failure, List<FellowshipMemberEntity>>> getFellowshipMembers(
@@ -144,7 +145,7 @@ abstract class CommunityRepository {
 
   /// Returns full details for the fellowship identified by [fellowshipId].
   Future<Either<Failure, Map<String, dynamic>>> getFellowship(
-      String fellowshipId);
+      String fellowshipId, String language);
 
   /// Updates fellowship settings (mentor only).
   ///

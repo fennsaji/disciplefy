@@ -22,7 +22,9 @@ import {
   JSON_OUTPUT_RULES,
   createLanguageBlock,
   createVerseReferenceBlock,
-  getDiscipleLevelContext
+  getDiscipleLevelContext,
+  createNativeWritingStyle,
+  getLanguageExamples
 } from './prompt-builder.ts'
 
 export type LectioPass = 'pass1' | 'pass2'
@@ -60,7 +62,7 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 
 STUDY MODE: MEDITATIVE READING - PASS 1/2 (Careful Reading + Biblical Reflection)
 This is part 1 of a multi-pass Meditative Reading generation. Focus on slow, careful reading of the biblical text and deep reflection on what Scripture itself says.
-Target output: ~750-850 words for this pass.
+Target output: ~950-1100 words for this pass.
 Tone: Prayerful, warm, Scripture-anchored, clear. All spiritual insight must flow FROM the text, not from feelings, impressions, or inner experiences.
 
 PROTESTANT DISTINCTIVES (MANDATORY):
@@ -68,7 +70,9 @@ PROTESTANT DISTINCTIVES (MANDATORY):
 - "God speaking" means God speaking through His written Word (2 Timothy 3:16-17), not mystical inner voices
 - Prayer is a believer's response to what Scripture reveals, not a technique for achieving spiritual states
 - Silence and stillness are valid postures for reflection, but never as emptying techniques or centering practices
-- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text`
+- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `${taskDescription}
 
@@ -84,7 +88,7 @@ Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
   "summary": "[150-200 words: Title, scripture text (if applicable), central biblical message, what God reveals about Himself, invitation to read His Word carefully]",
   "context": "[40-60 words: MINIMAL - gentle introduction to prayerful Scripture reading as a Protestant spiritual discipline]",
   "passage": "⚠️ MANDATORY - Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused reading (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
-  "interpretationPart1": "[500-650 words: CAREFUL READING (First + Second Reading) + BIBLICAL REFLECTION (What God Reveals)]"
+  "interpretationPart1": "[700-900 words: **[Careful Reading header in ${languageConfig.name}]** + CAREFUL READING (First + Second Reading, 300-400 words) + **[Biblical Reflection header in ${languageConfig.name}]** + BIBLICAL REFLECTION (What God Reveals, 300-400 words). EACH SECTION MUST BEGIN WITH A BOLD **HEADER** IN ${languageConfig.name}.]"
 }
 
 CRITICAL INSTRUCTIONS FOR PASS 1:
@@ -117,10 +121,15 @@ Write MINIMAL introduction to prayerful Scripture reading as a Protestant spirit
 • Heart preparation: quieting distractions, praying for understanding, Holy Spirit dependence (1 Corinthians 2:12-14)
 Keep it SHORT and FOCUSED - only what's essential for entering the study.
 
-**INTERPRETATION PART 1 - CAREFUL READING & BIBLICAL REFLECTION (500-650 words):**
+**INTERPRETATION PART 1 - CAREFUL READING & BIBLICAL REFLECTION (700-900 words):**
 
 This section MUST contain EXACTLY 2 sections of flowing prayerful prose.
 EACH section MUST have 6-8 sentences with CLEAR, SCRIPTURE-ANCHORED guidance.
+
+⚠️ BOLD SECTION HEADERS ARE MANDATORY:
+Each section MUST begin with a **bold header** translated into ${languageConfig.name}:
+- Section 1 starts with: **[Translation of "Careful Reading: Observing the Text"]** (bold, native language)
+- Section 2 starts with: **[Translation of "Biblical Reflection: What God Reveals"]** (bold, native language)
 
 ⚠️ TEXTUAL GROUNDING REQUIREMENTS (MANDATORY):
 - ALL spiritual insights MUST be drawn from and tested by the biblical text
@@ -133,11 +142,11 @@ EACH section MUST have 6-8 sentences with CLEAR, SCRIPTURE-ANCHORED guidance.
 - A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
 - Count each sentence as you write: "1. [sentence]. 2. [sentence]... 7. [sentence]."
 - If you reach 5 sentences, ADD 1-3 MORE SENTENCES to reach 6-8
-- Each section should be 200-280 words of prayerful, text-grounded guidance
+- Each section should be 300-400 words of prayerful, text-grounded guidance
 
 ## CAREFUL READING: First and Second Pass Through the Text
 
-**Section 1 - First Reading: Observation & Understanding (6-8 sentences, 200-280 words):**
+**Section 1 - First Reading: Observation & Understanding (6-8 sentences, 300-400 words):**
 - Invitation to pray first: Ask the Holy Spirit to open your eyes (Psalm 119:18)
 - Observation prompts: What does the text actually SAY? What words are repeated or striking?
 - Immediate context: What comes before and after this passage? How does that shape its meaning?
@@ -145,19 +154,20 @@ EACH section MUST have 6-8 sentences with CLEAR, SCRIPTURE-ANCHORED guidance.
 - Original audience: What was God saying to them? What does that mean for us?
 - Personal alignment: Which commands, promises, or warnings apply directly to you?
 
-Target: 200-280 words, 6-8 complete sentences with observational and interpretive focus.
+Target: 300-400 words, 6-8 complete sentences with observational and interpretive focus.
 
 ## BIBLICAL REFLECTION: What the Text Reveals About God
 
-**Section 2 - What God Reveals (6-8 sentences, 200-280 words):**
+**Section 2 - What God Reveals (6-8 sentences, 300-400 words):**
 Work through the passage focusing on what it reveals about God:
 - God's nature: What does this passage teach about who God is (His attributes, character, ways)?
 - Christ-centered reading: How does this passage point to or find fulfillment in Jesus Christ?
 - Grace and truth: Where is the grace of God visible? Where is the demand of God visible?
 - Doxological response: What about God in this passage moves you to worship, trust, or obedience?
-- Honest prayer: What is your honest prayer to God based on what you have just read?
 
-Target: 200-280 words, 6-8 complete sentences with theological depth.
+⚠️ DO NOT include prayer content here — prayer response belongs ONLY in Pass 2 (Section 3). End this section with a question or reflection that prepares the reader to respond in prayer, but do NOT write the prayer itself.
+
+Target: 300-400 words, 6-8 complete sentences with theological depth.
 
 ⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 1:
 
@@ -167,10 +177,10 @@ Before completing your response, COUNT and verify:
 3. ⚠️ CRITICAL: Does "passage" contain ONLY the Scripture reference (NOT full verse text)? [Format correct: Yes/No]
 4. Does "interpretationPart1" have EXACTLY 2 sections? [Count: ___]
 5. Does EACH section have 6-8 sentences? [Count each: ___ ___]
-6. Is "interpretationPart1" 500-650 words total? [Estimated count: ___]
+6. Is "interpretationPart1" 700-900 words total? [Estimated count: ___]
 7. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Check: Yes/No]
 8. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-9. Is total Pass 1 output ~750-850 words? [Estimated: ___]
+9. Is total Pass 1 output ~950-1100 words? [Estimated: ___]
 
 IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
@@ -178,12 +188,14 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
 
+${getLanguageExamples(language)}
+
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "summary": "[YOUR 150-200 WORD SUMMARY HERE - as specified above]",
   "context": "[YOUR 40-60 WORD CONTEXT HERE - as specified above]",
   "passage": "[Scripture reference ONLY - e.g., 'Psalm 23:1-6' in ${languageConfig.name}]",
-  "interpretationPart1": "[YOUR 500-650 WORD INTERPRETATION PART 1 HERE - 2 sections]"
+  "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 2 sections, each with bold header in ${languageConfig.name}]"
 }`
 
   return { systemMessage, userMessage }
@@ -209,13 +221,15 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 
 STUDY MODE: MEDITATIVE READING - PASS 2/2 (Prayer Response + Application & Commitment)
 This is part 2 of a 2-part Meditative Reading generation. Focus on prayerful response to Scripture and concrete life application.
-Target output: ~300-350 words for this pass.
+Target output: ~600-750 words for this pass.
 Continue the prayerful, Scripture-anchored tone. All prayer and application must flow from the biblical text studied in Pass 1.
 
 PROTESTANT DISTINCTIVES (MANDATORY):
 - Prayer is response to what Scripture reveals — always grounded in the text
 - Application must be specific, concrete, and measurable — not vague spiritual feelings
-- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word`
+- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `═══════════════════════════════════════════════════════════════════════════
 PASS 2: MEDITATIVE READING RESPONSE (Prayer + Application & Commitment + Resources)
@@ -230,7 +244,7 @@ NOW COMPLETE THE MEDITATIVE READING with Prayer Response, Application & Commitme
 Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for optimal streaming):
 
 {
-  "interpretationPart2": "[250-350 words: PRAYER RESPONSE (responding to God in prayer based on the text) + APPLICATION & COMMITMENT (concrete, specific obedience to what Scripture taught)]",
+  "interpretationPart2": "[500-650 words: **[Prayer Response header in ${languageConfig.name}]** + PRAYER RESPONSE (responding to God in prayer, 250-320 words) + **[Application & Commitment header in ${languageConfig.name}]** + APPLICATION & COMMITMENT (concrete, specific obedience, 250-320 words). EACH SECTION MUST BEGIN WITH A BOLD **HEADER** IN ${languageConfig.name}.]",
   "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support or expand the passage studied (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
   "reflectionQuestions": [5-7 reflection questions grounded in the text studied],
   "prayerPoints": [4-5 specific prayer topics arising directly from the passage - each 50-70 words],
@@ -244,10 +258,20 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "prayerQuestion": "[Invitation to respond in prayer based on what Scripture taught - 10-15 words]"
 }
 
-**INTERPRETATION PART 2 - PRAYER RESPONSE & APPLICATION (250-350 words):**
+**INTERPRETATION PART 2 - PRAYER RESPONSE & APPLICATION (500-650 words):**
 
 This section MUST contain EXACTLY 2 focused sections of flowing prayerful prose.
-Each section MUST have 5-7 sentences with CLEAR, TEXT-GROUNDED guidance.
+Each section MUST have 6-8 sentences with CLEAR, TEXT-GROUNDED guidance.
+
+⚠️ BOLD SECTION HEADERS ARE MANDATORY:
+Each section MUST begin with a **bold header** translated into ${languageConfig.name}:
+- Section 1 starts with: **[Translation of "Prayer Response: Speaking to God"]** (bold, native language)
+- Section 2 starts with: **[Translation of "Application & Commitment: Living the Word"]** (bold, native language)
+
+⚠️ CRITICAL DISTINCTION:
+- interpretationPart2 = FLOWING NARRATIVE PROSE (paragraphs, personal guidance for the reader)
+- prayerPoints = BULLET PRAYER TOPICS (short prompts, NOT long paragraphs)
+Do NOT put prayer paragraphs in prayerPoints. They belong in interpretationPart2.
 
 ⚠️ SCRIPTURE-ANCHORED PRAYER REQUIREMENTS (MANDATORY):
 - All prayer topics MUST arise from what the passage actually teaches
@@ -260,13 +284,13 @@ Each section MUST have 5-7 sentences with CLEAR, TEXT-GROUNDED guidance.
 - A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
 - Count each sentence as you write: "1. [sentence]. 2. [sentence]... 6. [sentence]."
 - If you reach 4 sentences, ADD 1-3 MORE SENTENCES to reach 5-7
-- Each section should be 120-170 words of prayerful, grounded guidance
+- Each section should be 250-320 words of prayerful, grounded guidance
 
 ## PRAYER RESPONSE: Responding to God Based on the Text
 
 Guide prayerful response to what Scripture revealed:
 
-**Section 1 - Prayer of Response (5-7 sentences, 120-170 words):**
+**Section 1 - Prayer of Response (6-8 sentences, 250-320 words):**
 - Begin with thanksgiving: Thank God specifically for what this passage reveals about Him
 - Confession: If the passage exposed sin or unbelief, pray honestly for forgiveness (1 John 1:9)
 - Trust and faith: Pray to believe the promises the passage declared — name them specifically
@@ -275,13 +299,13 @@ Guide prayerful response to what Scripture revealed:
 - Surrender: What are you submitting to God in response to His Word? Name it specifically
 - Closing praise: End with worship of God for who He is as revealed in this passage
 
-Target: 120-170 words, 5-7 complete sentences with textually-grounded prayer.
+Target: 250-320 words, 6-8 complete sentences with textually-grounded prayer.
 
 ## APPLICATION & COMMITMENT: Concrete Obedience to What Scripture Taught
 
 Guide specific, measurable life application:
 
-**Section 2 - Commitment to Obey (5-7 sentences, 120-170 words):**
+**Section 2 - Commitment to Obey (6-8 sentences, 250-320 words):**
 - One truth to believe: What specific biblical truth will you commit to trusting this week? Name it.
 - One sin to repent of: What specific sin or attitude does this passage call you to turn from? Be honest.
 - One action to take: What concrete, observable step of obedience will you take in the next 7 days? Be specific (who, what, when, where).
@@ -290,7 +314,7 @@ Guide specific, measurable life application:
 - Scripture to memorize: Which single verse from this passage will you memorize to carry with you?
 - Closing prayer of commitment: Pray aloud your specific commitment to God — a simple, sincere prayer of intention
 
-Target: 120-170 words, 5-7 complete sentences with specific, accountable application.
+Target: 250-320 words, 6-8 complete sentences with specific, accountable application.
 
 **SUPPORTING MATERIALS:**
 - relatedVerses: 5-7 additional verses that support the passage's themes in ${languageConfig.name}
@@ -306,7 +330,7 @@ Target: 120-170 words, 5-7 complete sentences with specific, accountable applica
 Before completing your response, COUNT and verify:
 1. Does "interpretationPart2" have EXACTLY 2 sections? [Count: ___]
 2. Does EACH section have 5-7 sentences? [Count each: ___ ___]
-3. Is "interpretationPart2" 250-350 words total? [Estimated count: ___]
+3. Is "interpretationPart2" 500-650 words total? [Estimated count: ___]
 4. Does "relatedVerses" contain 5-7 verses? [Count: ___]
 5. Are all verses in ${languageConfig.name}? [Check: Yes/No]
 6. Does "reflectionQuestions" contain 5-7 questions? [Count: ___]
@@ -318,16 +342,18 @@ Before completing your response, COUNT and verify:
 12. Are "reflectionAnswers" 4-5 items at 15-20 words each? [Count: ___]
 13. Are all 5 yes/no questions present? [Check: Yes/No]
 14. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Check: Yes/No]
-15. Is total Pass 2 output ~300-350 words? [Estimated: ___]
+15. Is total Pass 2 output ~600-750 words? [Estimated: ___]
 
 IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
 
+${getLanguageExamples(language)}
+
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
-  "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
+  "interpretationPart2": "[YOUR 500-650 WORD INTERPRETATION PART 2 HERE - 2 sections with bold headers in ${languageConfig.name}]",
   "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
   "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
   "prayerPoints": ["[PRAYER 1: 50-70 words]", "[PRAYER 2]", "[PRAYER 3]", "[PRAYER 4]"],

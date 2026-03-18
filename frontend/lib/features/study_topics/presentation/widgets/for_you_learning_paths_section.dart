@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/locked_feature_wrapper.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_state.dart';
@@ -24,10 +29,15 @@ class ForYouLearningPathsSection extends StatelessWidget {
   /// Minimum number of paths to show. Filled with featured/any if needed.
   final int minCount;
 
+  /// Called when the user taps "Got it →" on the step-1 walkthrough tooltip.
+  /// Pass null to skip the walkthrough step entirely.
+  final VoidCallback? onNext;
+
   const ForYouLearningPathsSection({
     super.key,
     required this.onPathTap,
     this.minCount = 3,
+    this.onNext,
   });
 
   // ── Level helpers ────────────────────────────────────────────────────────
@@ -113,69 +123,88 @@ class ForYouLearningPathsSection extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final header = Row(
       children: [
-        // ── Section header ────────────────────────────────────────────────
-        Row(
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            Icons.auto_awesome_rounded,
+            size: 18,
+            color: isDark ? AppColors.brandPrimaryLight : AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                size: 18,
+            Text(
+              AppLocalizations.of(context)!.walkthroughForYouTitle,
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
                 color: isDark
-                    ? AppColors.brandPrimaryLight
-                    : AppTheme.primaryColor,
+                    ? Colors.white.withOpacity(0.9)
+                    : const Color(0xFF1F2937),
               ),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'For You',
-                  style: AppFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.9)
-                        : const Color(0xFF1F2937),
-                  ),
-                ),
-                Text(
-                  'Personalised learning paths',
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : const Color(0xFF6B7280),
-                  ),
-                ),
-              ],
+            Text(
+              AppLocalizations.of(context)!.forYouSectionSubtitle,
+              style: AppFonts.inter(
+                fontSize: 13,
+                color: isDark
+                    ? Colors.white.withOpacity(0.6)
+                    : const Color(0xFF6B7280),
+              ),
             ),
           ],
         ),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Section header (no tooltip — first card is highlighted instead) ──
+        header,
         const SizedBox(height: 16),
 
         // ── Path cards ────────────────────────────────────────────────────
         LockedFeatureWrapper(
           featureKey: 'learning_paths',
           child: Column(
-            children: paths.map((path) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: LearningPathCard(
-                  path: path,
-                  compact: false,
-                  onTap: () => onPathTap(path),
+            children: [
+              for (int i = 0; i < paths.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: i == 0 && onNext != null
+                      ? WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.topicsPathList,
+                          title: AppLocalizations.of(context)!
+                              .walkthroughForYouTitle,
+                          description: AppLocalizations.of(context)!
+                              .walkthroughForYouDesc,
+                          screen: WalkthroughScreen.learningPaths,
+                          stepNumber: 1,
+                          totalSteps: 2,
+                          onNext: onNext!,
+                          tooltipPosition: TooltipPosition.bottom,
+                          child: LearningPathCard(
+                            path: paths[i],
+                            compact: false,
+                            onTap: () => onPathTap(paths[i]),
+                          ),
+                        )
+                      : LearningPathCard(
+                          path: paths[i],
+                          compact: false,
+                          onTap: () => onPathTap(paths[i]),
+                        ),
                 ),
-              );
-            }).toList(),
+            ],
           ),
         ),
       ],

@@ -29,6 +29,7 @@ class AppTranslations {
         'sign_in': 'Sign In',
         'generating_pdf': 'Generating PDF...',
         'pdf_wait_message': 'This may take a few seconds',
+        'pdf_finalizing': 'Finalizing download...',
       },
       'streaming': {
         'loading': 'Loading study guide...',
@@ -415,6 +416,12 @@ class AppTranslations {
       'report_purchase_issue_subtitle': 'Get help with token purchases',
       'contact_us': 'Contact Us',
       'contact_us_subtitle': 'contact@disciplefy.com',
+      'replay_walkthrough': 'Replay App Walkthrough',
+      'replay_walkthrough_subtitle': 'Replay the guided tour for each screen',
+      'replay_walkthrough_success':
+          'Walkthrough reset — visit each screen to replay it',
+      'replay_walkthrough_error':
+          'Could not reset walkthrough — please try again.',
       'study_mode_preference': 'Study Mode Preference',
       'study_mode_preference_current': 'Current: {mode}',
       'ask_every_time': 'Ask Every Time',
@@ -1924,6 +1931,7 @@ class AppTranslations {
         'sign_in': 'साइन इन करें',
         'generating_pdf': 'PDF बना रहे हैं...',
         'pdf_wait_message': 'कुछ सेकंड लग सकते हैं',
+        'pdf_finalizing': 'डाउनलोड तैयार हो रहा है...',
       },
       'streaming': {
         'loading': 'स्टडी गाइड लोड हो रही है...',
@@ -2136,7 +2144,7 @@ class AppTranslations {
       'button_generating': 'बन रहा है...',
       'button_generate': 'अध्ययन गाइड बनाएं',
       'view_saved': 'सेव की गई गाइड देखें',
-      'talk_to_ai_buddy': 'AI शिष्यकर्ता से बात करें',
+      'talk_to_ai_buddy': 'AI शिक्षागुरु से बात करें',
       'talk_to_ai_buddy_subtitle': 'अपने बाइबल गाइड से वॉइस में बात करें',
       'ai_discipler_badge_new': 'नया',
       'in_progress': 'गाइड पहले से बन रही है। थोड़ा इंतज़ार करें...',
@@ -2300,6 +2308,13 @@ class AppTranslations {
       'report_purchase_issue_subtitle': 'टोकन खरीदारी में मदद पाएं',
       'contact_us': 'हमसे संपर्क करें',
       'contact_us_subtitle': 'contact@disciplefy.com',
+      'replay_walkthrough': 'ऐप वॉकथ्रू दोबारा देखें',
+      'replay_walkthrough_subtitle':
+          'प्रत्येक स्क्रीन का निर्देशित दौरा दोबारा चलाएं',
+      'replay_walkthrough_success':
+          'वॉकथ्रू रीसेट हो गया — दोबारा देखने के लिए प्रत्येक स्क्रीन पर जाएं',
+      'replay_walkthrough_error':
+          'वॉकथ्रू रीसेट नहीं हो सका — कृपया फिर से प्रयास करें।',
       'study_mode_preference': 'अध्ययन मोड प्राथमिकता',
       'study_mode_preference_current': 'वर्तमान: {mode}',
       'ask_every_time': 'हर बार पूछें',
@@ -3104,7 +3119,7 @@ class AppTranslations {
       'all_time': 'सभी समय',
     },
     'voice_buddy': {
-      'title': 'AI शिष्यकर्ता',
+      'title': 'AI शिक्षागुरु',
       'description':
           'आपका निजी बाइबल अध्ययन साथी। सवाल पूछें, पवित्रशास्त्र को समझें, और अपनी समझ को गहरा करें।',
       'language_label': 'भाषा',
@@ -3823,6 +3838,7 @@ class AppTranslations {
         'sign_in': 'സൈൻ ഇൻ ചെയ്യൂ',
         'generating_pdf': 'PDF ഉണ്ടാക്കുന്നു...',
         'pdf_wait_message': 'കുറച്ച് സെക്കൻഡ് എടുക്കും',
+        'pdf_finalizing': 'ഡൗൺലോഡ് തയ്യാറാകുന്നു...',
       },
       'streaming': {
         'loading': 'സ്റ്റഡി ഗൈഡ് ലോഡ് ചെയ്യുന്നു...',
@@ -4206,6 +4222,13 @@ class AppTranslations {
       'report_purchase_issue_subtitle': 'ടോക്കൺ വാങ്ങലിൽ സഹായം നേടുക',
       'contact_us': 'ഞങ്ങളെ ബന്ധപ്പെടുക',
       'contact_us_subtitle': 'contact@disciplefy.com',
+      'replay_walkthrough': 'ആപ്പ് ഗൈഡഡ് ടൂർ വീണ്ടും കാണുക',
+      'replay_walkthrough_subtitle':
+          'ഓരോ സ്ക്രീനിലും ഗൈഡഡ് ടൂർ വീണ്ടും ചലിപ്പിക്കുക',
+      'replay_walkthrough_success':
+          'ഗൈഡഡ് ടൂർ റീസെറ്റ് ചെയ്തു — വീണ്ടും കാണാൻ ഓരോ സ്ക്രീൻ സന്ദർശിക്കുക',
+      'replay_walkthrough_error':
+          'ഗൈഡഡ് ടൂർ റീസെറ്റ് ചെയ്യാനായില്ല — ദയവായി വീണ്ടും ശ്രമിക്കുക.',
       'study_mode_preference': 'പഠന രീതി പ്രാതമ്യം',
       'study_mode_preference_current': 'നിലവിലുള്ളത്: {mode}',
       'ask_every_time': 'എല്ലാ സമയവും ചോദിക്കുക',

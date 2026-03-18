@@ -63,7 +63,7 @@ class LearningPathCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Header with icon and status
             Row(
@@ -157,40 +157,23 @@ class LearningPathCard extends StatelessWidget {
 
             const SizedBox(height: 6),
 
-            // Description — fixed height for non-compact so all "For You" cards
-            // are uniform (3 lines × 13px × 1.4 line-height ≈ 55px).
-            // Compact cards use Flexible to fill the constrained card height.
-            if (compact)
-              Flexible(
-                child: Text(
-                  path.description,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.85)
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+            // Description — fixed height so cards are uniform height
+            // (3 lines × 13px × 1.4 line-height ≈ 55px).
+            SizedBox(
+              height: 55,
+              child: Text(
+                path.description,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                  height: 1.4,
                 ),
-              )
-            else
-              SizedBox(
-                height: 55,
-                child: Text(
-                  path.description,
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.85)
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
 
             const SizedBox(height: 12),
 

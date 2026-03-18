@@ -7,6 +7,9 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -27,12 +30,17 @@ class LearningPathsSection extends StatefulWidget {
   /// Content language code used for search API calls (e.g. 'en', 'hi', 'ml').
   final String language;
 
+  /// Called when the user taps "Got it →" on the walkthrough tooltip rendered
+  /// for the first path card. Pass null to skip the walkthrough step entirely.
+  final VoidCallback? onNext;
+
   const LearningPathsSection({
     super.key,
     required this.onPathTap,
     this.onSeeAllTap,
     this.onRetry,
     this.language = 'en',
+    this.onNext,
   });
 
   @override
@@ -167,86 +175,86 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   Widget _buildSection(BuildContext context, {required Widget child}) {
     final theme = Theme.of(context);
 
+    final headerRow = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.route_outlined,
+              color: theme.colorScheme.primary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr(TranslationKeys.learningPathsTitle),
+                  style: AppFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  context.tr(TranslationKeys.learningPathsSubtitle),
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (widget.onSeeAllTap != null)
+            TextButton(
+              onPressed: widget.onSeeAllTap,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'See All',
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.route_outlined,
-                  color: theme.colorScheme.primary,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.learningPathsTitle),
-                      style: AppFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      context.tr(TranslationKeys.learningPathsSubtitle),
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              if (widget.onSeeAllTap != null)
-                TextButton(
-                  onPressed: widget.onSeeAllTap,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'See All',
-                        style: AppFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 12,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
+        headerRow,
         const SizedBox(height: 16),
         child,
       ],
@@ -436,8 +444,13 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           else if (displayCats.isEmpty)
             _buildNoResultsState(context, isSearchActive)
           else ...[
-            for (final category in displayCats)
-              _buildCategoryRow(context, category: category, state: state),
+            for (int catIndex = 0; catIndex < displayCats.length; catIndex++)
+              _buildCategoryRow(
+                context,
+                category: displayCats[catIndex],
+                state: state,
+                isFirstCategory: catIndex == 0,
+              ),
 
             // Spinner while infinite-scroll loads more categories
             if (state.isFetchingMoreCategories && !isSearchActive)
@@ -571,6 +584,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     BuildContext context, {
     required LearningPathCategory category,
     required LearningPathsLoaded state,
+    bool isFirstCategory = false,
   }) {
     final theme = Theme.of(context);
     final hasActive = category.paths.any((p) => p.isInProgress || p.isEnrolled);
@@ -615,59 +629,77 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           ),
           const SizedBox(height: 10),
 
-          // IntrinsicHeight measures the tallest card in the row and
-          // constrains all siblings to that height via CrossAxisAlignment.stretch.
-          IntrinsicHeight(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification is ScrollUpdateNotification &&
-                    category.hasMoreInCategory &&
-                    !isLoadingMore) {
-                  final pos = scrollController.position;
-                  if (pos.pixels >= pos.maxScrollExtent - 80) {
-                    context.read<LearningPathsBloc>().add(
-                          LoadMorePathsForCategory(
-                            category: category.name,
-                            language: widget.language,
-                          ),
-                        );
-                  }
+          NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollUpdateNotification &&
+                  category.hasMoreInCategory &&
+                  !isLoadingMore) {
+                final pos = scrollController.position;
+                if (pos.pixels >= pos.maxScrollExtent - 80) {
+                  context.read<LearningPathsBloc>().add(
+                        LoadMorePathsForCategory(
+                          category: category.name,
+                          language: widget.language,
+                        ),
+                      );
                 }
-                return false;
-              },
-              child: SingleChildScrollView(
-                controller: scrollController,
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (int i = 0; i < category.paths.length; i++) ...[
+              }
+              return false;
+            },
+            child: SingleChildScrollView(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (int i = 0; i < category.paths.length; i++) ...[
+                    if (isFirstCategory && i == 0 && widget.onNext != null)
+                      WalkthroughTooltip(
+                        showcaseKey: ShowcaseKeys.topicsPathCard,
+                        title: AppLocalizations.of(context)!
+                            .walkthroughLearningPathsTitle,
+                        description: AppLocalizations.of(context)!
+                            .walkthroughLearningPathsDesc,
+                        screen: WalkthroughScreen.learningPaths,
+                        stepNumber: 2,
+                        totalSteps: 2,
+                        onNext: widget.onNext!,
+                        child: LearningPathCard(
+                          path: category.paths[i],
+                          onTap: () => widget.onPathTap(category.paths[i]),
+                        ),
+                      )
+                    else if (isFirstCategory && i == 0)
+                      LearningPathCard(
+                        path: category.paths[i],
+                        onTap: () => widget.onPathTap(category.paths[i]),
+                      )
+                    else
                       LearningPathCard(
                         path: category.paths[i],
                         onTap: () => widget.onPathTap(category.paths[i]),
                       ),
-                      const SizedBox(width: 12),
-                    ],
+                    const SizedBox(width: 12),
+                  ],
 
-                    // Inline loading spinner while fetching more
-                    if (isLoadingMore)
-                      SizedBox(
-                        width: 56,
-                        child: Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: theme.colorScheme.primary,
-                            ),
+                  // Inline loading spinner while fetching more
+                  if (isLoadingMore)
+                    SizedBox(
+                      width: 56,
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           ),

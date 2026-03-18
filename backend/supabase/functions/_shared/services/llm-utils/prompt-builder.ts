@@ -11,6 +11,7 @@
 
 import type { LLMGenerationParams, LanguageConfig, StudyMode } from '../llm-types.ts'
 import { getLanguageExamples, type SupportedLanguage } from '../llm-config/language-configs.ts'
+export { getLanguageExamples }
 
 export interface PromptPair {
   systemMessage: string
@@ -199,6 +200,54 @@ AVOID THESE PATTERNS:
 `.trim()
 
 /**
+ * Native-script writing style sentence examples for Hindi and Malayalam.
+ * Provides concrete good/bad sentence patterns to guide the LLM toward
+ * simple, conversational pastoral tone — supplements the English-only WRITING_STYLE block.
+ * Returns empty string for English (WRITING_STYLE already covers it).
+ */
+export function createNativeWritingStyle(language: string): string {
+  if (language === 'hi') {
+    return `
+═══════════════════════════════════════════════════════════════════════════
+हिंदी लेखन शैली — वाक्य उदाहरण (HINDI SENTENCE EXAMPLES)
+═══════════════════════════════════════════════════════════════════════════
+
+✓ सही शैली (सरल, सीधी, बोलचाल की भाषा):
+  GOOD: "जब तुम डरते हो, याद करो — परमेश्वर ने कहा है, 'मैं हमेशा तुम्हारे साथ हूं।'"
+  GOOD: "यह बात तुम्हारी जिंदगी बदल सकती है।"
+  GOOD: "परमेश्वर तुमसे प्रेम करता है — बस यही काफी है।"
+  GOOD: "सोचो — जब सब कुछ ठीक नहीं लगता, तब भी परमेश्वर तुम्हें नहीं छोड़ता।"
+
+✗ गलत शैली (कठिन, साहित्यिक, संस्कृतनिष्ठ — इससे बचें):
+  BAD: "भयजनक परिस्थितियों में परमेश्वर की सर्वव्यापी उपस्थिति का स्मरण अत्यावश्यक है।"
+  BAD: "यह तथ्य जीवन में आमूल परिवर्तन लाने में सक्षम है।"
+  BAD: "ईश्वरीय प्रेम की अनंत गहराइयों का अनुभव करना मानव जीवन की परमावश्यकता है।"
+
+📌 नियम: हर वाक्य छोटा हो। एक वाक्य में एक ही बात। जो शब्द गांव का आदमी, बुजुर्ग, या बच्चा समझे — वही लिखो।`.trim()
+  }
+  if (language === 'ml') {
+    return `
+═══════════════════════════════════════════════════════════════════════════
+മലയാളം എഴുത്ത് ശൈലി — വാക്യ ഉദാഹരണങ്ങൾ (MALAYALAM SENTENCE EXAMPLES)
+═══════════════════════════════════════════════════════════════════════════
+
+✓ ശരിയായ ശൈലി (ലളിതം, നേരിട്ട്, സംസാര ഭാഷ):
+  GOOD: "ഭയം തോന്നുമ്പോൾ ഓർക്കൂ — ദൈവം പറഞ്ഞു, 'ഞാൻ എപ്പോഴും നിന്നോടൊപ്പം ഉണ്ട്.'"
+  GOOD: "ഈ ഒരു കാര്യം നിന്റെ ജീവിതം മാറ്റും."
+  GOOD: "ദൈവം നിന്നെ സ്നേഹിക്കുന്നു — അത് മതി."
+  GOOD: "ആലോചിക്കൂ — എല്ലാം ശരിയല്ലെന്ന് തോന്നുമ്പോഴും ദൈവം നിന്നെ കൈവിടുന്നില്ല."
+
+✗ തെറ്റായ ശൈലി (ബുദ്ധിമുട്ടുള്ളത്, സാഹിത്യ ഭാഷ — ഒഴിവാക്കൂ):
+  BAD: "ഭയജനകമായ സാഹചര്യങ്ങളിൽ ദൈവിക സർവ്വസാന്നിദ്ധ്യത്തെ അനുസ്മരിക്കേണ്ടത് അനിവാര്യമാണ്."
+  BAD: "ഈ സത്യം ജീവിതത്തിൽ സമഗ്രമായ പരിവർത്തനം സാദ്ധ്യമാക്കും."
+  BAD: "ദൈവിക സ്നേഹത്തിന്റെ അഗാധ ആഴങ്ങൾ അനുഭവിക്കുന്നത് മനുഷ്യ ജീവിതത്തിന്റെ ആത്യന്തിക ആവശ്യകതയാണ്."
+
+📌 നിയമം: ഓരോ വാക്യവും ചെറുതാക്കൂ. ഒരു വാക്യത്തിൽ ഒരു കാര്യം മാത്രം. ഗ്രാമത്തിലെ ഒരു സ്ത്രീക്കോ വൃദ്ധനോ കുട്ടിക്കോ മനസ്സിലാകുന്ന വാക്കുകൾ ഉപയോഗിക്കൂ.`.trim()
+  }
+  return '' // English: WRITING_STYLE already covers it
+}
+
+/**
  * Language enforcement block with native script requirements
  */
 export function createLanguageBlock(languageConfig: LanguageConfig, language: string): string {
@@ -216,7 +265,7 @@ NATIVE SCRIPT ENFORCEMENT:
 ${language === 'hi' ? `
 ✓ ALL Hindi content MUST be in Devanagari script
 ✗ NO romanized Hinglish (e.g., "Prabhu" is FORBIDDEN - use "प्रभु")
-✓ Prayer closing: "येशु मसीह के नाम से, आमेन" (NOT "Yeshu Masih ke naam se, Amen")
+✓ Prayer closing: "यीशु मसीह के नाम से, आमेन" (NOT "Yeshu Masih ke naam se, Amen")
 
 ⚠️ CHRISTIAN TERMINOLOGY - MANDATORY:
 ✓ "परमेश्वर" (God) - ALWAYS USE THIS
@@ -274,7 +323,7 @@ ${examples[language as SupportedLanguage] || examples.en}
 function createPrayerFormatBlock(languageConfig: LanguageConfig, language: string, sentenceCount: string = '6-8'): string {
   const closings = {
     en: 'In Jesus\' name, Amen',
-    hi: 'येशु मसीह के नाम से, आमेन',
+    hi: 'यीशु मसीह के नाम से, आमेन',
     ml: 'യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ'
   }
 
@@ -323,15 +372,17 @@ ${JSON_OUTPUT_RULES}
 ${createLanguageBlock(languageConfig, params.language)}
 
 STUDY MODE: STANDARD (10 minutes reading-with-understanding time)
-Reading-with-understanding speed: 140-150 words/minute = 1,500-1,800 words TARGET
+Reading-with-understanding speed: 140-150 words/minute = ${wordTarget} words TARGET
 Tone: Conversational pastor — warm, personal, clear, practically grounding.
 
 ${WRITING_STYLE}
 
+${createNativeWritingStyle(params.language)}
+
 ⚠️ CRITICAL INSTRUCTION: CLEAR AND THOUGHTFUL
 This is a 10-MINUTE study optimized for understanding and reflection.
 Write focused, clear content that readers can grasp and apply in one sitting.
-Target total output: 1,500-1,800 words across all fields.`
+Target total output: ${wordTarget} words across all fields.`
 
   const userMessage = `${taskDescription}
 
@@ -441,8 +492,8 @@ CRITICAL FORMATTING RULES:
 ✓ Write in continuous narrative prose with EXTENSIVE DEPTH
 ✓ Each paragraph explores one theological aspect with COMPREHENSIVE treatment
 ✓ Separate paragraphs with double newline (\\n\\n)
-✓ TARGET: 1400-1800 words for interpretation field alone
-✓ Be THOROUGH, not brief - this is a 10-minute study (2000-2500 total words)
+✓ TARGET: 900-1,200 words for interpretation field
+✓ Be THOROUGH, not brief - this is a 10-minute study (${wordTarget} total words)
 
 MANDATORY PRE-OUTPUT VERIFICATION:
 Before completing your response, COUNT and verify:
@@ -493,12 +544,12 @@ STUDY MODE: QUICK READ (3 minutes = 450-600 words)
 Reading-with-understanding speed: 140-160 words/minute (careful reading, minimal pauses)
 Tone: Direct, warm, immediately actionable — like a pastor's one-minute encouragement.
 
-${WRITING_STYLE}`
+${WRITING_STYLE}
 
-  // Language-specific word limits for Quick Read (Hindi/Malayalam are more verbose)
-  const wordLimits = params.language === 'en'
-    ? { summary: 60, interpretation: 150, context: 70, prayer: 80 }
-    : { summary: 50, interpretation: 120, context: 70, prayer: 65 }
+${createNativeWritingStyle(params.language)}`
+
+  // Word limits for Quick Read — unified across languages (previous HI/ML reduction caused guides to fall short of target)
+  const wordLimits = { summary: 60, interpretation: 150, context: 70, prayer: 80 }
 
   const wordTarget = getWordCountTarget(languageConfig, 'quick')
   const userMessage = `${taskDescription}
@@ -513,13 +564,13 @@ Reading-with-understanding speed: 140-160 words/minute = TARGET: 450-600 words T
 MANDATORY WORD LIMITS (STRICTLY ENFORCED - ${params.language.toUpperCase()}):
 - summary: 50-60 words (EN) / 40-50 words (HI/ML) — 3-4 clear, simple sentences
 - context: 40-70 words — Only essential background to orient the reader
-- interpretation: 120-150 words (EN) / 100-120 words (HI/ML) — 2 short paragraphs, 5-7 sentences total
-- prayer: 60-80 words (EN) / 50-65 words (HI/ML) — 4-5 short, reflective sentences
+- interpretation: 120-150 words — 2 short paragraphs, 5-7 sentences total
+- prayer: 60-80 words — 4-5 short, reflective sentences
 - relatedVerses: EXACTLY 3 verses (NOT 4, NOT 2)
 - reflectionQuestions: EXACTLY 3 questions (NOT 4, NOT 2)
 - All insight arrays: EXACTLY 3 items (NOT 4, NOT 2)
 
-⚠️ ${params.language !== 'en' ? 'HINDI/MALAYALAM SPECIFIC: Reduced word limits due to script efficiency. Be MORE CONCISE than English version.' : 'ENGLISH: Standard word limits for Quick Read mode.'}
+⚠️ Word limits above apply to all languages. Use full limits to produce a complete, substantive 3-minute guide.
 
 CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
 {
@@ -561,7 +612,7 @@ CRITICAL FORMATTING:
 ✓ Separate paragraphs with double newline (\\n\\n)
 ✓ Focus on ONE central truth
 ✓ Brevity is paramount - this is QUICK READ (3 minutes)
-${params.language !== 'en' ? '✓ HINDI/MALAYALAM: Use reduced word counts to match 3-minute target' : ''}
+✓ Aim for the FULL word limits in every field — a guide that is too short is as bad as one that is too long
 
 MANDATORY PRE-OUTPUT VERIFICATION:
 Count and verify BEFORE completing:
@@ -577,10 +628,12 @@ Count and verify BEFORE completing:
 10. "summaryInsights": EXACTLY 3? [Count: ___]
 11. "interpretationInsights": EXACTLY 3? [Count: ___]
 12. "reflectionAnswers": EXACTLY 3? [Count: ___]
-13. All 14 fields present? [Yes/No]
+13. All 15 fields present including passage? [Yes/No]
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
 IF WORD LIMITS ARE EXCEEDED - YOU MUST CUT CONTENT TO MEET LIMITS.
+
+${getLanguageExamples(params.language)}
 
 OUTPUT: Valid JSON starting with { and ending with }`
 
@@ -603,7 +656,6 @@ function createDeepDivePrompt(params: LLMGenerationParams, languageConfig: Langu
     ? `Create a DEEP DIVE study for: "${inputValue}"`
     : `Create a DEEP DIVE study on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const wordTarget = getWordCountTarget(languageConfig, 'deep')
   const systemMessage = `You are an expert biblical scholar creating IN-DEPTH theological studies.
 
 ${THEOLOGICAL_FOUNDATION}
@@ -655,7 +707,7 @@ TARGET WORD COUNTS (MUST MEET):
 - "summary": 120-150 words (Clear theological overview)
 - "context": 40-70 words (SHORT - one punchy paragraph, single most essential background fact only)
 - "prayerPoints": 90-120 words (Gospel-shaped, focused prayer)
-- Total target: ${wordTarget} words
+- Total target: 1,800-2,100 words
 
 INTERPRETATION SECTION MUST contain:
 - EXACTLY 5 or 6 paragraphs of continuous prose
@@ -768,14 +820,14 @@ Count and verify BEFORE completing:
 9. "summary": 120-150 words (6-7 sentences) theological overview? [Count: ___]
 10. "context": 40-70 words (SHORT background)? [Estimate: ___ words]
 11. "prayer": 5-6 sentences (90-120 words)? [Count: ___]
-12. All 14 fields present? [Yes/No]
+12. All 15 fields present including passage? [Yes/No]
 13. Is total output 1,800-2,100 words? [Estimate: ___]
 14. Does interpretation integrate word studies WHERE RELEVANT (not forced)? [Yes/No]
 15. Does this provide comprehensive theological depth beyond Standard mode? [Yes/No]
 16. Would this realistically take 15 minutes with deep theological reflection? [Yes/No]
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
-IF WORD COUNTS ARE TOO LOW OR TOO HIGH - ADJUST TO MEET ${wordTarget} WORD TARGET.
+IF WORD COUNTS ARE TOO LOW OR TOO HIGH - ADJUST TO MEET 1,800-2,100 WORD TARGET.
 This is a 15-MINUTE DEEP DIVE - comprehensive depth within focused timeframe.
 
 ⚠️ CRITICAL: Deep Dive is COMPREHENSIVE THEOLOGICAL EXPLORATION, distinct from Standard mode.
@@ -785,6 +837,8 @@ This is a 15-MINUTE DEEP DIVE - comprehensive depth within focused timeframe.
 - MUST show systematic theology connections and biblical theology framework
 - MUST provide scholarly depth appropriate for serious Bible students
 - This is NOT just Standard mode with word studies added - it's COMPREHENSIVE DEPTH
+
+${getLanguageExamples(params.language)}
 
 OUTPUT: Valid JSON starting with { and ending with }`
 
@@ -804,147 +858,140 @@ function createLectioDivinaPrompt(params: LLMGenerationParams, languageConfig: L
   ].filter(Boolean).join('\\n')
   const pathContext = pathParts ? `\\n\\n${pathParts}` : ''
   const taskDescription = inputType === 'scripture'
-    ? `Create a Lectio Divina meditation guide for: "${inputValue}"`
-    : `Create a Lectio Divina meditation guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
+    ? `Create a MEDITATIVE READING guide for: "${inputValue}"`
+    : `Create a MEDITATIVE READING guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}${pathContext}`
 
   const wordTarget = getWordCountTarget(languageConfig, 'lectio')
-  const systemMessage = `You are a spiritual director guiding Lectio Divina (sacred reading).
+  const systemMessage = `You are a Bible study guide leading prayerful Scripture reading and personal application.
 
 ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, params.language)}
+${createLanguageBlock(languageConfig, params.language)}${getDiscipleLevelContext(params.discipleLevel)}
 
-STUDY MODE: LECTIO DIVINA (10 minutes contemplative reading-with-understanding)
-Reading-with-understanding speed: 110-130 wpm (very slow, silence, rereading, brief meditation)
-Four movements: LECTIO (read) → MEDITATIO (meditate) → ORATIO (pray) → CONTEMPLATIO (rest).
-Tone: Contemplative, gentle, inviting, spiritually nurturing. Focus on personal encounter with God through Scripture.
+STUDY MODE: MEDITATIVE READING (10 minutes prayerful Scripture reading)
+Reading pace: slow and attentive — observation, reflection, prayer, obedience.
+Four Protestant movements: CAREFUL READING (observe) → BIBLICAL REFLECTION (understand) → PRAYER RESPONSE (respond) → APPLICATION (obey).
+Tone: Prayerful, warm, Scripture-anchored, clear. All spiritual insight must flow FROM the text, not from feelings, impressions, or inner experiences.
 
-⚠️ CRITICAL INSTRUCTION: ENCOUNTER, NOT COVERAGE
-This is a 10-MINUTE contemplative meditation optimized for deep spiritual encounter.
-Target total output: 2,200-2,600 words across all fields.
-Goal: Encounter Scripture deeply rather than cover large amounts of content.
-Write with spiritual depth, allowing space for silence, rereading, and contemplation.`
+PROTESTANT DISTINCTIVES (MANDATORY):
+- All discernment is anchored to the biblical text — never to feelings, visions, or subjective impressions alone
+- "God speaking" means God speaking through His written Word (2 Timothy 3:16-17), not mystical inner voices
+- Prayer is a believer's response to what Scripture reveals, not a technique for achieving spiritual states
+- Silence and stillness are valid postures for reflection, but never as emptying techniques or centering practices
+- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text
+
+⚠️ CRITICAL INSTRUCTION: DEPTH, NOT COVERAGE
+This is a 10-MINUTE prayerful meditation on Scripture.
+Target total output: ${wordTarget} words across all fields.
+Goal: Encounter the living Word of God carefully and respond in faith and obedience.
+
+${createNativeWritingStyle(params.language)}`
 
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(params.language)}
 
 ═══════════════════════════════════════════════════════════════════════════
-LECTIO DIVINA STRUCTURE - ALL 14 FIELDS MANDATORY
+MEDITATIVE READING STRUCTURE - ALL 15 FIELDS MANDATORY
 ═══════════════════════════════════════════════════════════════════════════
 
 ⚠️ CRITICAL LENGTH AND DEPTH REQUIREMENTS:
 
 TARGET WORD COUNTS (MUST MEET):
-- "interpretation": 850-1,050 words (contemplative pacing with brief meditation)
-- "summary": 180-220 words (scripture focus with gentle guidance)
-- "context": 30-50 words (BRIEF - simple orientation to Lectio practice)
-- "prayerPoints": 60-80 words (simple prayerful movements)
+- "interpretation": 800-1,000 words (4 paragraphs of Scripture-anchored guidance)
+- "summary": 150-200 words (Scripture focus with prayerful invitation)
+- "context": 40-60 words (BRIEF - heart preparation for meditative reading)
+- "prayerPoints": 50-70 words each (specific, text-grounded prayer)
 - Total target: ${wordTarget} words
 
 INTERPRETATION SECTION MUST contain:
-- EXACTLY 4 or 5 paragraphs of contemplative guidance
-- EACH paragraph follows contemplative pacing (brief meditation, not extensive coverage)
-- Total word count: 850-1,050 words MANDATORY
+- EXACTLY 4 paragraphs of clear, Scripture-anchored guidance
+- EACH paragraph has 6-8 sentences with concrete, text-grounded direction
+- Total word count: 800-1,000 words MANDATORY
 
-⚠️ READING-WITH-UNDERSTANDING MODEL: This is a 10-MINUTE CONTEMPLATIVE MEDITATION.
-Reading speed: 110-130 wpm with very slow reading, silence, brief rereading, and meditation.
-Goal: Create space to meet God in Scripture through stillness, attentiveness, and prayer.
+INTERPRETATION PARAGRAPH STRUCTURE (6-8 sentences EACH):
 
-INTERPRETATION PARAGRAPH STRUCTURE (5-6 sentences EACH):
+Write Paragraph 1 (6-8 sentences): CAREFUL READING — Observation & Understanding
+→ Invite prayer first: Ask the Holy Spirit to open your eyes (Psalm 119:18)
+→ Observation prompts: What does the text actually SAY? What words are repeated or striking?
+→ Immediate context: What comes before and after? How does that shape the meaning?
+→ Theological content: What does this passage teach about God, humanity, sin, or salvation?
+→ Original audience: What was God saying to them? What does that mean for us today?
+→ Personal alignment: Which commands, promises, or warnings apply directly to you?
 
-Write Paragraph 1 (5-6 sentences): LECTIO (Sacred Reading) guidance
-→ Invite slow, prayerful reading of the passage
-→ Encourage noticing particular words or phrases that stand out
-→ Guide attention to one word/phrase that "shimmers" with life
-→ Suggest pausing to let that word rest in the heart
-→ Remind: God speaks through the word that catches attention
-→ [OPTIONAL] Invite recording the word for further meditation
+Write Paragraph 2 (6-8 sentences): BIBLICAL REFLECTION — What God Reveals
+→ God's nature: What does this passage teach about who God is (His character, attributes, ways)?
+→ Christ-centered reading: How does this passage point to or find fulfillment in Jesus Christ?
+→ Grace and truth: Where is the grace of God visible? Where is the demand of God visible?
+→ Scripture interprets Scripture: What other passages illuminate this one?
+→ Doxological response: What about God in this passage moves you to worship, trust, or obedience?
 
-Write Paragraph 2 (5-6 sentences): MEDITATIO (Meditation) guidance
-→ Invite pondering the chosen word/phrase like Mary (Luke 2:19)
-→ Ask: "What does this word reveal about God or my life?"
-→ Encourage exploring the word's resonance and personal meaning
-→ Invite noticing emotions, memories, or thoughts that arise
-→ Suggest considering what God might be forming through this word
-→ [OPTIONAL] Connect to Christ's life and the gospel
+Write Paragraph 3 (6-8 sentences): PRAYER RESPONSE — Responding to God Based on the Text
+→ Thanksgiving: Thank God specifically for what this passage reveals about Him
+→ Confession: If the passage exposed sin or unbelief, pray honestly for forgiveness (1 John 1:9)
+→ Trust: Pray to believe the specific promises the passage declared — name them
+→ Petition: Ask God for what the passage calls you to — strength, obedience, faith, wisdom
+→ Intercession: Who comes to mind as you read this? Pray for them in light of the text
 
-Write Paragraph 3 (5-6 sentences): ORATIO (Prayer) guidance
-→ Transition from hearing God's word to responding in prayer
-→ Invite honest conversation with God about what you've heard
-→ Encourage praying the word/phrase back to God
-→ Guide prayer that flows naturally from meditation
-→ Remind: Prayer is relationship, not performance
-→ [OPTIONAL] Suggest praying with open hands as posture of receptivity
+Write Paragraph 4 (6-8 sentences): APPLICATION & COMMITMENT — Concrete Obedience
+→ One truth to believe: What specific biblical truth will you commit to trusting this week?
+→ One sin to repent of: What specific sin or attitude does this passage call you to turn from?
+→ One action to take: What concrete, observable step of obedience will you take this week?
+→ One person to serve: Who can you serve or encourage based on what you studied?
+→ Scripture to carry: Which single verse from this passage will you memorize or return to today?
 
-Write Paragraph 4 (5-6 sentences): CONTEMPLATIO (Contemplation) guidance
-→ Transition from words to wordless presence with God
-→ Invite simply resting in God's love for 2-3 minutes
-→ Encourage releasing thoughts and simply being with Him
-→ Suggest gently returning to the chosen word if mind wanders
-→ Remind: Contemplation is gift, not achievement
-→ [OPTIONAL] Invite carrying this word through the rest of the day
-
-[OPTIONAL] Write Paragraph 5 (5-6 sentences): Living the Word
-→ Guide brief reflection on living out this meditation
-→ Suggest returning to the word throughout the day
-→ Encourage noticing how God continues speaking through it
-→ Invite sharing insights with a spiritual friend
-→ Remind: Lectio forms us slowly into Christ's image
-→ [OPTIONAL] Suggest keeping a simple Lectio journal
-
-TARGET: 4-5 paragraphs × 5-6 sentences each = 850-1,050 words for interpretation
+TARGET: 4 paragraphs × 6-8 sentences each = 800-1,000 words for interpretation
 
 CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
 {
-  "summary": "**Scripture for Meditation**\\n\\n[Reference]\\n\\n[FULL passage text - write it out completely]\\n\\n*Read slowly, allowing the words to settle in your heart. Let the Spirit guide your attention.*\\n\\n**Focus Words:** [3-5 significant words/phrases from the passage]\\n\\n[Brief guidance on approaching this passage]\\n\\nTarget: 180-220 words with gentle meditative framing",
-  "context": "Brief intro to Lectio Divina (30-50 words): Ancient practice with four movements - LECTIO (read), MEDITATIO (meditate), ORATIO (pray), CONTEMPLATIO (rest). Simple orientation paragraph.",
-  "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused contemplation (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9', '1 John 4:7-12'). Choose a passage inviting deep encounter. Format: Just the reference, no verse text. DO NOT skip this field.",
-  "interpretation": "[EXACTLY 4 or 5 paragraphs as structured above. EACH paragraph with contemplative pacing. Target: 850-1,050 words. GUIDE gently through all four movements: LECTIO → MEDITATIO → ORATIO → CONTEMPLATIO. NO headings, NO bullets. Continuous meditative prose creating space for stillness.]",
-  "relatedVerses": ["4-5 Bible verse REFERENCES ONLY in ${languageConfig.name} for further meditation (e.g., 'Psalm 46:10', 'John 15:5') - NO verse text"],
-  "reflectionQuestions": ["What word or phrase draws your attention? Why?", "What is God saying to you through this word?", "How does this truth invite you to change?", "**CONTEMPLATIO** - Sit in silence for 2-3 minutes. Rest in God's presence.", "How will you carry this word through your day?"],
-  "prayerPoints": ["Simple contemplative prayer (4-5 sentences, 60-80 words). Address God with intimacy. Respond to what He has spoken. Close with appropriate ending for ${languageConfig.name}"],
-  "summaryInsights": ["3-4 gentle resonance themes (12-15 words each)"],
-  "interpretationInsights": ["3-4 contemplative insights (12-15 words each)"],
-  "reflectionAnswers": ["3-4 gentle responses to God's invitation (12-15 words each)"],
-  "contextQuestion": "Gentle yes/no question inviting openness to contemplative practice",
-  "summaryQuestion": "Contemplative question about the word that draws attention (10-15 words)",
-  "relatedVersesQuestion": "Question about which verse to meditate on next (10-15 words)",
-  "reflectionQuestion": "Question about God's personal invitation (12-15 words)",
-  "prayerQuestion": "Gentle question encouraging continued prayer (8-12 words)"
+  "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Prayerful, warm invitation to read this passage carefully — 150-200 words. State what the passage is about and what God reveals through it. Invite the reader to come with open Bible, open heart, and dependence on the Holy Spirit.]",
+  "context": "Brief introduction to prayerful Scripture reading as a Protestant spiritual discipline (40-60 words): coming to God's Word expectantly, asking the Holy Spirit for understanding (1 Corinthians 2:12-14), reading observationally and responding in prayer and obedience.",
+  "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused reading (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9', '1 John 4:7-12'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
+  "interpretation": "[EXACTLY 4 paragraphs as structured above. EACH paragraph with 6-8 sentences of Scripture-anchored guidance. Target: 800-1,000 words. Guide through: CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION & COMMITMENT. NO headings, NO bullets. Flowing prayerful prose grounded in the text.]",
+  "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
+  "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What specific sin or attitude does this passage call you to repent of?", "What one concrete step of obedience will you take this week based on this text?"],
+  "prayerPoints": ["Specific prayer topic arising from the passage (4-5 sentences, 50-70 words). Address God directly. Ground the prayer in what the text reveals. Close with appropriate ending for ${languageConfig.name}"],
+  "summaryInsights": ["4-5 key biblical truths from the passage (15-20 words each)"],
+  "interpretationInsights": ["4-5 theological insights revealed by the text (15-20 words each)"],
+  "reflectionAnswers": ["4-5 concrete life applications from the text (15-20 words each)"],
+  "contextQuestion": "Yes/no question connecting the passage's original context to personal life today",
+  "summaryQuestion": "Question about the central biblical message of the passage (12-18 words)",
+  "relatedVersesQuestion": "Question encouraging further Bible reading on this theme (12-18 words)",
+  "reflectionQuestion": "Question inviting personal reflection on the text (12-18 words)",
+  "prayerQuestion": "Invitation to respond in prayer based on what Scripture taught (10-15 words)"
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
 CRITICAL CONTENT REQUIREMENTS:
-✓ "summary": Scripture text with gentle reading guidance + 3-5 focus words (180-220 words)
-✓ "interpretation": GENTLE GUIDANCE through four movements: LECTIO → MEDITATIO → ORATIO → CONTEMPLATIO (850-1,050 words)
-✓ "context": BRIEF introduction to Lectio Divina practice (30-50 words, 1 simple paragraph)
-✓ All fields MANDATORY - create space for stillness and encounter
-✓ Use meditative, gentle, inviting language - contemplative pacing throughout
+✓ "summary": Warm, prayerful invitation grounded in the passage (150-200 words)
+✓ "interpretation": 4 paragraphs guiding CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION (800-1,000 words)
+✓ "context": BRIEF introduction to prayerful Protestant Scripture reading (40-60 words)
+✓ All reflection questions grounded in the TEXT — not abstract, mystical, or centering-prayer based
+✓ All prayer points specific to what the passage TEACHES — not vague spiritual impressions
 
 MANDATORY PRE-OUTPUT VERIFICATION:
 Count and verify BEFORE completing:
-1. "interpretation": EXACTLY 4 or 5 paragraphs? [Count: ___]
-2. Paragraph 1 (LECTIO): 5-6 sentences? [Count: ___]
-3. Paragraph 2 (MEDITATIO): 5-6 sentences? [Count: ___]
-4. Paragraph 3 (ORATIO): 5-6 sentences? [Count: ___]
-5. Paragraph 4 (CONTEMPLATIO): 5-6 sentences? [Count: ___]
-6. Paragraph 5 (if included - Living the Word): 5-6 sentences? [Count: ___]
-7. "interpretation": 850-1,050 words total? [Estimate: ___ words]
-8. "summary": 180-220 words with scripture + focus words? [Count: ___]
-9. "context": 30-50 words (brief orientation)? [Estimate: ___ words]
-10. "prayer": 4-5 sentences (60-80 words)? [Count: ___]
-11. All 14 fields present? [Yes/No]
-12. Is total output 1300-1600 words? [Estimate: ___]
-13. Does this create space for brief meditation and stillness? [Yes/No]
-14. Would this realistically fit 10 minutes of contemplative reading? [Yes/No]
+1. "interpretation": EXACTLY 4 paragraphs? [Count: ___]
+2. Paragraph 1 (CAREFUL READING): 6-8 sentences? [Count: ___]
+3. Paragraph 2 (BIBLICAL REFLECTION): 6-8 sentences? [Count: ___]
+4. Paragraph 3 (PRAYER RESPONSE): 6-8 sentences? [Count: ___]
+5. Paragraph 4 (APPLICATION): 6-8 sentences? [Count: ___]
+6. "interpretation": 800-1,000 words total? [Estimate: ___ words]
+7. "summary": 150-200 words? [Count: ___]
+8. "context": 40-60 words (brief orientation)? [Estimate: ___ words]
+9. All 15 fields present including passage? [Yes/No]
+10. Is total output ~${wordTarget} words? [Estimate: ___]
+11. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Yes/No]
+12. Are all reflection questions grounded in the TEXT? [Yes/No]
+13. Would this realistically fit 10 minutes of attentive, prayerful reading? [Yes/No]
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
 IF WORD COUNTS ARE TOO LOW OR TOO HIGH - ADJUST TO MEET ${wordTarget} WORD TARGET.
-This is a 10-MINUTE CONTEMPLATIVE MEDITATION - create space for stillness, not extensive coverage.
+
+${getLanguageExamples(params.language)}
 
 OUTPUT: Valid JSON starting with { and ending with }`
 
@@ -1044,7 +1091,9 @@ This is NOT a full manuscript - it's a comprehensive outline that preachers will
 - Provide CORE theological teaching (preachers will elaborate)
 - Give 2-3 key verses per point (not exhaustive lists)
 - Offer 3-4 focused applications (not 5-7)
-Tone: Clear, theologically rich, pastorally wise, suitable for preacher preparation.`
+Tone: Clear, theologically rich, pastorally wise, suitable for preacher preparation.
+
+${createNativeWritingStyle(params.language)}`
 
   // Build sermon outline template
   const outlineTemplate = `**SERMON OUTLINE FORMAT** - Detailed preacher's notes (NOT full speech):
@@ -1115,7 +1164,7 @@ Amen.`
 ${createVerseReferenceBlock(params.language)}
 
 ═══════════════════════════════════════════════════════════════════════════
-SERMON STRUCTURE - ALL 14 FIELDS MANDATORY
+SERMON STRUCTURE - ALL 15 FIELDS MANDATORY
 ═══════════════════════════════════════════════════════════════════════════
 
 ⚠️ CRITICAL LENGTH AND DEPTH REQUIREMENTS:
@@ -1378,6 +1427,8 @@ This is PREACHER-FACING EXPLANATION - provide core theological content with conc
 
 ⚠️ CRITICAL: This outline must equip a pastor with CORE theological content, conceptual hooks, 2-3 key verses per point, and focused applications. Pastors will expand this during live preaching to fill 50-60 minutes.
 
+${getLanguageExamples(params.language)}
+
 OUTPUT: Valid JSON starting with { and ending with }`
 
   return { systemMessage, userMessage }
@@ -1488,7 +1539,7 @@ export function createFullVersePrompt(
 Hindi Requirements:
 ✓ Reference: "यूहन्ना 3:16" (Devanagari script)
 ✓ Verse text: Must be in Devanagari script
-✗ NO romanized Hinglish (e.g., "Yeshu" → use "येशु")
+✗ NO romanized Hinglish (e.g., "Yeshu" → use "यीशु")
 `
     : language === 'ml'
     ? `

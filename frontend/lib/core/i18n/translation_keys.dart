@@ -18,6 +18,10 @@ class TranslationKeys {
   static const studyGuideShare = 'study_guide.actions.share';
   static const studyGuideCopy = 'study_guide.actions.copy';
   static const studyGuideSignIn = 'study_guide.actions.sign_in';
+  static const studyGuideGeneratingPdf = 'study_guide.actions.generating_pdf';
+  static const studyGuidePdfWaitMessage =
+      'study_guide.actions.pdf_wait_message';
+  static const studyGuidePdfFinalizing = 'study_guide.actions.pdf_finalizing';
 
   // Study Guide Streaming
   static const studyGuideStreamingLoading = 'study_guide.streaming.loading';
@@ -378,6 +382,13 @@ class TranslationKeys {
       'settings.report_purchase_issue_subtitle';
   static const settingsContactUs = 'settings.contact_us';
   static const settingsContactUsSubtitle = 'settings.contact_us_subtitle';
+  static const settingsReplayWalkthrough = 'settings.replay_walkthrough';
+  static const settingsReplayWalkthroughSubtitle =
+      'settings.replay_walkthrough_subtitle';
+  static const settingsReplayWalkthroughSuccess =
+      'settings.replay_walkthrough_success';
+  static const settingsReplayWalkthroughError =
+      'settings.replay_walkthrough_error';
 
   // Personalization Questionnaire - Common
   static const questionnaireYourJourney = 'questionnaire.your_journey';

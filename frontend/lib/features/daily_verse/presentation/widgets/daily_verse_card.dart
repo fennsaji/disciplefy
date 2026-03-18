@@ -559,7 +559,7 @@ class DailyVerseCard extends StatelessWidget {
         const SizedBox(width: 8),
 
         // Add to Memory button
-        _buildAddToMemoryButton(context, state),
+        _AddToMemoryButton(verseState: state),
 
         const SizedBox(width: 8),
 
@@ -579,217 +579,6 @@ class DailyVerseCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  /// Builds the Add to Memory button with state awareness
-  Widget _buildAddToMemoryButton(
-    BuildContext context,
-    DailyVerseLoaded state,
-  ) {
-    // White icons on purple gradient background
-    const iconColor = Colors.white;
-
-    return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
-      bloc: sl<MemoryVerseBloc>(),
-      builder: (context, memoryState) {
-        // Show spinner while the add-verse API call is in progress
-        if (memoryState is MemoryVerseLoading) {
-          return SizedBox(
-            width: 44,
-            height: 44,
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    iconColor.withOpacity(0.9),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        // Check if this verse is already in memory (with same language)
-        bool isAlreadyInMemory = false;
-
-        if (memoryState is DueVersesLoaded) {
-          isAlreadyInMemory = memoryState.verses.any(
-            (verse) =>
-                verse.sourceId == state.verse.id &&
-                verse.language == state.currentLanguage.code,
-          );
-        }
-
-        return IconButton(
-          onPressed:
-              isAlreadyInMemory ? null : () => _addToMemory(context, state),
-          icon: Icon(
-            isAlreadyInMemory ? Icons.bookmark : Icons.bookmark_add_outlined,
-            color: isAlreadyInMemory ? iconColor.withOpacity(0.5) : iconColor,
-            size: 22,
-          ),
-          tooltip: isAlreadyInMemory
-              ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
-              : context.tr(TranslationKeys.dailyVerseAddToMemory),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.all(10),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Adds the current verse to memory deck
-  void _addToMemory(BuildContext context, DailyVerseLoaded state) {
-    // Check user plan - Memory Verses is a Standard+ feature
-    final tokenBloc = sl<TokenBloc>();
-    final tokenState = tokenBloc.state;
-
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
-
-    // Check if user has access to memory_verses feature
-    final systemConfigService = sl<SystemConfigService>();
-    final hasAccess =
-        systemConfigService.isFeatureEnabled('memory_verses', userPlan);
-
-    if (!hasAccess) {
-      // Show new upgrade dialog
-      final requiredPlans =
-          systemConfigService.getRequiredPlans('memory_verses');
-      final upgradePlan =
-          systemConfigService.getUpgradePlan('memory_verses', userPlan);
-
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => UpgradeDialog(
-          featureKey: 'memory_verses',
-          currentPlan: userPlan,
-          requiredPlans: requiredPlans,
-          upgradePlan: upgradePlan,
-        ),
-      );
-      return;
-    }
-
-    final memoryVerseBloc = sl<MemoryVerseBloc>();
-    final dailyVerseId = state.verse.id;
-    final languageCode =
-        state.currentLanguage.code; // Get the currently selected language
-
-    // Dispatch add verse event with the selected language
-    memoryVerseBloc.add(AddVerseFromDaily(
-      dailyVerseId,
-      language: languageCode,
-    ));
-
-    // Listen for result and delegate UI to helpers
-    final subscription = memoryVerseBloc.stream.listen((memoryState) {
-      if (memoryState is VerseAdded) {
-        _showAddedSnackBar(context);
-        // Check memory achievements when verse is added
-        sl<GamificationBloc>().add(const CheckMemoryAchievements());
-      } else if (memoryState is MemoryVerseError) {
-        if (memoryState.code == 'VERSE_ALREADY_EXISTS') {
-          _showAlreadyExistsSnackBar(context);
-        } else {
-          _showErrorSnackBar(context, memoryState.message);
-        }
-      } else if (memoryState is OperationQueued) {
-        _showQueuedSnackBar(context, memoryState.message);
-      }
-    });
-
-    // Cancel subscription after 5 seconds
-    // Note: Do NOT close memoryVerseBloc - it's a GetIt-managed shared instance
-    Future.delayed(const Duration(seconds: 5), () {
-      subscription.cancel();
-    });
-  }
-
-  /// Shows success snackbar when verse is added to memory
-  void _showAddedSnackBar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Added to Memory Verses! Start reviewing to memorize this verse.',
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'Review Now',
-          textColor: Colors.white,
-          onPressed: () => GoRouter.of(context).go('/memory-verses'),
-        ),
-      ),
-    );
-  }
-
-  /// Shows error snackbar when adding verse fails
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Something went wrong. Please try again.'),
-        backgroundColor: AppColors.error,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  /// Shows snackbar when the verse is already in the memory deck
-  void _showAlreadyExistsSnackBar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.bookmark, color: Colors.white),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text('Verse already in your memory deck'),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.warning,
-        action: SnackBarAction(
-          label: 'Review',
-          textColor: Colors.white,
-          onPressed: () => GoRouter.of(context).go('/memory-verses'),
-        ),
-      ),
-    );
-  }
-
-  /// Shows queued snackbar when operation is queued offline
-  void _showQueuedSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.cloud_off, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppColors.warning,
-        duration: const Duration(seconds: 3),
-      ),
     );
   }
 
@@ -838,5 +627,189 @@ class DailyVerseCard extends StatelessWidget {
     final text =
         '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
     Share.share(text);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _AddToMemoryButton
+// ---------------------------------------------------------------------------
+
+/// Self-contained button that adds the daily verse to the memory deck.
+///
+/// Uses local [_isLoading] state so the spinner appears **immediately** on tap,
+/// without relying on BLoC state-transition timing.
+class _AddToMemoryButton extends StatefulWidget {
+  final DailyVerseLoaded verseState;
+
+  const _AddToMemoryButton({required this.verseState});
+
+  @override
+  State<_AddToMemoryButton> createState() => _AddToMemoryButtonState();
+}
+
+class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
+  static const _iconColor = Colors.white;
+  bool _isLoading = false;
+
+  void _onTap() {
+    final tokenState = sl<TokenBloc>().state;
+    final userPlan = tokenState is TokenLoaded
+        ? tokenState.tokenStatus.userPlan.name
+        : 'free';
+
+    final configService = sl<SystemConfigService>();
+    if (!configService.isFeatureEnabled('memory_verses', userPlan)) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => UpgradeDialog(
+          featureKey: 'memory_verses',
+          currentPlan: userPlan,
+          requiredPlans: configService.getRequiredPlans('memory_verses'),
+          upgradePlan: configService.getUpgradePlan('memory_verses', userPlan),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final memoryVerseBloc = sl<MemoryVerseBloc>();
+    memoryVerseBloc.add(AddVerseFromDaily(
+      widget.verseState.verse.id,
+      language: widget.verseState.currentLanguage.code,
+    ));
+
+    final subscription = memoryVerseBloc.stream.listen((state) {
+      if (state is VerseAdded) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showAddedSnackBar();
+          sl<GamificationBloc>().add(const CheckMemoryAchievements());
+        }
+      } else if (state is MemoryVerseError) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          if (state.code == 'VERSE_ALREADY_EXISTS') {
+            _showAlreadyExistsSnackBar();
+          } else {
+            _showErrorSnackBar();
+          }
+        }
+      } else if (state is OperationQueued) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showQueuedSnackBar(state.message);
+        }
+      }
+    });
+
+    // Safety timeout — cancel listener and clear spinner after 10 s.
+    Future.delayed(const Duration(seconds: 10), () {
+      subscription.cancel();
+      if (mounted && _isLoading) setState(() => _isLoading = false);
+    });
+  }
+
+  void _showAddedSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: const Row(children: [
+        Icon(Icons.check_circle, color: Colors.white),
+        SizedBox(width: 8),
+        Expanded(
+            child: Text(
+                'Added to Memory Verses! Start reviewing to memorize this verse.')),
+      ]),
+      backgroundColor: AppColors.success,
+      duration: const Duration(seconds: 3),
+      action: SnackBarAction(
+        label: 'Review Now',
+        textColor: Colors.white,
+        onPressed: () => GoRouter.of(context).go('/memory-verses'),
+      ),
+    ));
+  }
+
+  void _showErrorSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Something went wrong. Please try again.'),
+      backgroundColor: AppColors.error,
+      duration: Duration(seconds: 3),
+    ));
+  }
+
+  void _showAlreadyExistsSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: const Row(children: [
+        Icon(Icons.bookmark, color: Colors.white),
+        SizedBox(width: 8),
+        Expanded(child: Text('Verse already in your memory deck')),
+      ]),
+      backgroundColor: AppColors.warning,
+      action: SnackBarAction(
+        label: 'Review',
+        textColor: Colors.white,
+        onPressed: () => GoRouter.of(context).go('/memory-verses'),
+      ),
+    ));
+  }
+
+  void _showQueuedSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        const Icon(Icons.cloud_off, color: Colors.white),
+        const SizedBox(width: 8),
+        Expanded(child: Text(message)),
+      ]),
+      backgroundColor: AppColors.warning,
+      duration: const Duration(seconds: 3),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SizedBox(
+        width: 44,
+        height: 44,
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(_iconColor),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+      bloc: sl<MemoryVerseBloc>(),
+      builder: (context, memoryState) {
+        final isAlreadyInMemory = memoryState is DueVersesLoaded &&
+            memoryState.verses.any((v) =>
+                v.sourceId == widget.verseState.verse.id &&
+                v.language == widget.verseState.currentLanguage.code);
+
+        return IconButton(
+          onPressed: isAlreadyInMemory ? null : _onTap,
+          icon: Icon(
+            isAlreadyInMemory ? Icons.bookmark : Icons.bookmark_add_outlined,
+            color: isAlreadyInMemory ? _iconColor.withOpacity(0.5) : _iconColor,
+            size: 22,
+          ),
+          tooltip: isAlreadyInMemory
+              ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
+              : context.tr(TranslationKeys.dailyVerseAddToMemory),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
+          ),
+        );
+      },
+    );
   }
 }

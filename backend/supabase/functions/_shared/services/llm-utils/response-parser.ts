@@ -20,35 +20,115 @@ export interface VerseReferenceResponse {
 }
 
 /**
+ * Fixes unescaped quote characters inside JSON string values using a state-machine
+ * with lookahead.  When we are already inside a string and encounter a `"` that is
+ * NOT followed (after optional whitespace) by `:`, `,`, `}`, or `]` we treat it as
+ * an interior quote and escape it.  This covers the common case where an LLM embeds
+ * theological inline quotes like `"only begotten"` inside a prose value field.
+ *
+ * @param json - JSON string that may contain unescaped interior quotes
+ * @returns JSON string with interior quotes escaped
+ */
+export function fixUnescapedQuotesInJSON(json: string): string {
+  let result = ''
+  let i = 0
+  let inString = false
+
+  while (i < json.length) {
+    const char = json[i]
+
+    // Propagate already-escaped sequences unchanged
+    if (inString && char === '\\' && i + 1 < json.length) {
+      result += char + json[i + 1]
+      i += 2
+      continue
+    }
+
+    if (char === '"') {
+      if (!inString) {
+        // Opening quote of a key or value
+        inString = true
+        result += char
+        i++
+      } else {
+        // Determine whether this `"` is the closing quote of the current string or
+        // an interior unescaped quote.  We do a lookahead: after skipping whitespace,
+        // if the next structural character is `:`, `,`, `}`, or `]` then it is a
+        // valid closing quote; otherwise we escape it.
+        const trimmedRest = json.slice(i + 1).trimStart()
+        const isClosing =
+          trimmedRest.startsWith(':') ||
+          trimmedRest.startsWith(',') ||
+          trimmedRest.startsWith('}') ||
+          trimmedRest.startsWith(']') ||
+          trimmedRest.length === 0
+
+        if (isClosing) {
+          inString = false
+          result += char
+        } else {
+          result += '\\"'
+        }
+        i++
+      }
+    } else {
+      result += char
+      i++
+    }
+  }
+
+  return result
+}
+
+/**
  * Cleans JSON response to handle common formatting issues with multilingual content.
- * 
+ *
  * @param response - Raw JSON response from LLM
  * @returns Cleaned JSON string
  */
 export function cleanJSONResponse(response: string): string {
   let cleaned = response.trim()
-  
+
   // Remove any markdown code block markers
   cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```$/, '')
-  
+
   try {
     JSON.parse(cleaned)
     return cleaned
-  } catch (error) {
+  } catch {
     console.log('[ResponseParser] Attempting to repair malformed JSON response')
-    
+
     // Try to extract JSON from response if there's additional text
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
       cleaned = jsonMatch[0]
     }
-    
-    // Handle truncated JSON
-    if (error instanceof Error && error.message.includes('Unterminated string')) {
-      console.log('[ResponseParser] Detected truncated JSON, attempting repair')
-      cleaned = repairTruncatedJSON(cleaned)
+
+    // Try parsing again after extraction
+    try {
+      JSON.parse(cleaned)
+      return cleaned
+    } catch (error) {
+      // Handle truncated JSON (Unterminated string)
+      if (error instanceof Error && error.message.includes('Unterminated string')) {
+        console.log('[ResponseParser] Detected truncated JSON, attempting repair')
+        cleaned = repairTruncatedJSON(cleaned)
+      } else {
+        // Mid-value parse error (e.g., unescaped " inside a string value)
+        console.log('[ResponseParser] Detected mid-value parse error, attempting to fix unescaped quotes')
+        const fixed = fixUnescapedQuotesInJSON(cleaned)
+        try {
+          JSON.parse(fixed)
+          console.log('[ResponseParser] Unescaped-quote fix succeeded')
+          return fixed
+        } catch {
+          // Fix did not fully resolve the issue; fall back to truncation repair
+          console.log('[ResponseParser] Unescaped-quote fix insufficient, falling back to truncation repair')
+          cleaned = repairTruncatedJSON(cleaned)
+        }
+      }
     }
-    
+
     return cleaned
   }
 }

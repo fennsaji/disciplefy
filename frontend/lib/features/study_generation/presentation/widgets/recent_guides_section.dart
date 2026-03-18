@@ -309,7 +309,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
 
   void _openGuide(SavedGuideEntity guide) {
     // Navigate to study guide screen with source parameter
-    context.go('/study-guide?source=recent', extra: {
+    context.push('/study-guide?source=recent', extra: {
       'study_guide': {
         'id': guide.id,
         'title': guide.displayTitle,

@@ -17,8 +17,8 @@ import {
   JSON_OUTPUT_RULES,
   createLanguageBlock,
   createVerseReferenceBlock,
-  getWordCountTarget,
-  getDiscipleLevelContext
+  getDiscipleLevelContext,
+  getLanguageExamples
 } from './prompt-builder.ts'
 
 export type DeepPass = 'pass1' | 'pass2'
@@ -36,7 +36,6 @@ export function createDeepPass1Prompt(
   languageConfig: LanguageConfig
 ): PromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
-  const wordTarget = getWordCountTarget(languageConfig, 'deep')
 
   const pathParts = [
     pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
@@ -87,7 +86,7 @@ Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 {
   "summary": "[130-160 words: Study title, central theme, key questions, theological significance, study objectives]",
   "context": "[50-70 words: MINIMAL - essential theological and biblical framing]",
-  "passage": "⚠️ MANDATORY - Scripture reference for deep study. PREFER LONGER passages with rich theological content (e.g., ${passageExamples}). Format: Just the reference, no verse text. DO NOT skip this field.",
+  "passage": "⚠️ MANDATORY - Scripture reference for deep study. PREFER LONGER passages with rich theological content (e.g., ${passageExamples}). If the input is a SINGLE VERSE, select the surrounding pericope (5–20 verses) to provide sufficient exegetical material. Format: Just the reference, no verse text. DO NOT skip this field.",
   "interpretationPart1": "[700-900 words: EXEGETICAL ANALYSIS with textual analysis, original language insights, theological interpretation, doctrinal implications]"
 }
 
@@ -189,6 +188,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
 
 You must generate FULL CONTENT for each field as specified above.
+
+${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
@@ -318,6 +319,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
+
+${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {

@@ -34,6 +34,7 @@ import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and unauthenticated users
@@ -76,17 +77,22 @@ class _SettingsScreenContent extends StatelessWidget {
                   context.go('/');
                 }
               },
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: AppTheme.primaryColor,
-                  size: 18,
-                ),
+              icon: Builder(
+                builder: (ctx) {
+                  final primary = Theme.of(ctx).colorScheme.primary;
+                  return Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_ios_new,
+                      color: primary,
+                      size: 18,
+                    ),
+                  );
+                },
               ),
             ),
             title: Text(
@@ -712,8 +718,53 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             onTap: () => _launchContactEmail(),
           ),
+          _buildDivider(),
+          // Replay App Walkthrough tile
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.replay_rounded,
+            title: context.tr(TranslationKeys.settingsReplayWalkthrough),
+            subtitle:
+                context.tr(TranslationKeys.settingsReplayWalkthroughSubtitle),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () => _replayWalkthrough(context),
+          ),
         ],
       );
+
+  /// Replay app walkthrough by resetting all walkthrough seen states
+  Future<void> _replayWalkthrough(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await sl<WalkthroughRepository>().resetAll();
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // dismiss loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                context.tr(TranslationKeys.settingsReplayWalkthroughSuccess)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // dismiss loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                context.tr(TranslationKeys.settingsReplayWalkthroughError)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   /// Launch contact email
   Future<void> _launchContactEmail() async {

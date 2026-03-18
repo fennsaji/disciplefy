@@ -35,7 +35,6 @@ interface MemoryVerse {
   readonly last_reviewed: string | null
   readonly total_reviews: number
   readonly added_date: string
-  readonly is_fully_mastered: boolean
 }
 
 /**
@@ -46,8 +45,8 @@ interface ReviewStatistics {
   readonly due_verses: number
   readonly reviewed_today: number
   readonly upcoming_reviews: number
-  readonly mastered_verses: number // repetitions >= 5 (basic mastery)
-  readonly fully_mastered_verses: number // comprehensive mastery criteria
+  readonly mastered_verses: number // mastery_level IN ('expert', 'master')
+  readonly fully_mastered_verses: number // mastery_level == 'master'
 }
 
 /**
@@ -111,19 +110,19 @@ async function getReviewStatistics(
     .gt('next_review_date', now)
     .lte('next_review_date', nextWeekStr)
 
-  // Get mastered verses count (repetitions >= 5)
+  // Get mastered verses count (mastery_level IN ('expert', 'master'))
   const { count: masteredCount } = await supabaseClient
     .from('memory_verses')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .gte('repetitions', 5)
+    .in('mastery_level', ['expert', 'master'])
 
-  // Get fully mastered verses count (comprehensive criteria)
+  // Get fully mastered verses count (mastery_level == 'master')
   const { count: fullyMasteredCount } = await supabaseClient
     .from('memory_verses')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .eq('is_fully_mastered', true)
+    .eq('mastery_level', 'master')
 
   return {
     total_verses: totalCount || 0,

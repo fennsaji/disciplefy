@@ -135,9 +135,13 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
         dueVerses: filtered.length,
         reviewedToday: 0,
         upcomingReviews: 0,
-        masteredVerses: filtered.where((v) => v.repetitions >= 5).length,
+        masteredVerses: filtered
+            .where((v) =>
+                v.masteryLevel == MasteryLevel.expert ||
+                v.masteryLevel == MasteryLevel.master)
+            .length,
         fullyMasteredVerses:
-            filtered.where((v) => v.isFullyMasteredCached).length,
+            filtered.where((v) => v.masteryLevel == MasteryLevel.master).length,
       );
       return (verses, stats);
     } catch (_) {
@@ -176,9 +180,14 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
           dueVerses: cachedVerses.length,
           reviewedToday: 0,
           upcomingReviews: 0,
-          masteredVerses: cachedVerses.where((v) => v.repetitions >= 5).length,
-          fullyMasteredVerses:
-              cachedVerses.where((v) => v.isFullyMasteredCached).length,
+          masteredVerses: cachedVerses
+              .where((v) =>
+                  v.masteryLevel == MasteryLevel.expert ||
+                  v.masteryLevel == MasteryLevel.master)
+              .length,
+          fullyMasteredVerses: cachedVerses
+              .where((v) => v.masteryLevel == MasteryLevel.master)
+              .length,
         )
       ));
     } catch (e) {
