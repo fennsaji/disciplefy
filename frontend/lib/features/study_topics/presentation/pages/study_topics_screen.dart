@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
 
@@ -27,6 +28,9 @@ import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -270,10 +274,18 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   bool _isNavigating = false;
   final ScrollController _scrollController = ScrollController();
 
+  // Builder context from ShowCaseWidget — use this for ShowCaseWidget.of() calls.
+  // this.context is an ancestor of ShowCaseWidget; ShowCaseWidget.of(this.context) fails.
+  BuildContext? _showcaseContext;
+
+  /// Advances the showcase to the next step.
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _triggerWalkthroughIfNeeded();
 
     // Handle deep link navigation from notification
     if (widget.topicId != null) {
@@ -281,6 +293,18 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         _handleTopicDeepLink(widget.topicId!);
       });
     }
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.learningPaths)) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase([
+        ShowcaseKeys.topicsPathList,
+        ShowcaseKeys.topicsPathCard,
+      ]);
+    });
   }
 
   @override
@@ -371,19 +395,27 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          context
-              .read<LearningPathsBloc>()
-              .add(RefreshLearningPaths(language: widget.currentLanguage));
-          // Wait for the refresh to complete
-          await Future.delayed(const Duration(milliseconds: 500));
-        },
-        child: _buildBody(context),
-      ),
+    return ShowCaseWidget(
+      enableAutoScroll: true,
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.learningPaths),
+      builder: (showcaseContext) {
+        _showcaseContext = showcaseContext;
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: _buildAppBar(context),
+          body: RefreshIndicator(
+            onRefresh: () async {
+              context
+                  .read<LearningPathsBloc>()
+                  .add(RefreshLearningPaths(language: widget.currentLanguage));
+              // Wait for the refresh to complete
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            child: _buildBody(context),
+          ),
+        );
+      },
     );
   }
 
@@ -421,6 +453,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         // Section 1: For You — in-progress paths first, then recommended
         ForYouLearningPathsSection(
           onPathTap: _navigateToLearningPath,
+          onNext: _showcaseContext != null ? _onNext : null,
         ),
 
         const SizedBox(height: 24),
@@ -439,6 +472,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                   onPathTap: _navigateToLearningPath,
                   onRetry: () => context.read<LearningPathsBloc>().add(
                       RefreshLearningPaths(language: widget.currentLanguage)),
+                  onNext: _showcaseContext != null ? _onNext : null,
                 ),
               const SizedBox(height: 24),
             ],
