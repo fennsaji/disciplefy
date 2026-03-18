@@ -19,7 +19,9 @@ import {
   createVerseReferenceBlock,
   getSermonHeadings,
   getWordCountTarget,
-  getDiscipleLevelContext
+  getDiscipleLevelContext,
+  createNativeWritingStyle,
+  getLanguageExamples
 } from './prompt-builder.ts'
 
 export type SermonPass = 'pass1' | 'pass2' | 'pass3' | 'pass4'
@@ -61,7 +63,9 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 STUDY MODE: SERMON OUTLINE - PASS 1/4 (Introduction + First Point)
 This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
 Target output: ${params.language === 'ml' ? '~600 words for Malayalam (STRICT token limit to avoid timeout)' : '~1,800 words'}
-Tone: Theologically rich, pastorally wise, suitable for preacher preparation.`
+Tone: Theologically rich, pastorally wise, suitable for preacher preparation.
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `${taskDescription}
 
@@ -204,6 +208,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
 
+${getLanguageExamples(language)}
+
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "summary": "[YOUR ${params.language === 'ml' ? '100-130' : '250-350'} WORD SUMMARY HERE]",
@@ -237,7 +243,9 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 STUDY MODE: SERMON OUTLINE - PASS 2/4 (Point 2 Only)
 This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1.
 Target output: ${params.language === 'ml' ? '~400 words for Malayalam (STRICT timeout limit)' : '~1,000-1,200 words'}
-Provide CORE content that preachers will expand during delivery.`
+Provide CORE content that preachers will expand during delivery.
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `═══════════════════════════════════════════════════════════════════════════
 PASS 2/4: MAIN TEACHING POINT 2 (Point 2 Only)
@@ -293,6 +301,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THIS IS A PLACEHOLDER!
 You must generate FULL CONTENT for this field as specified above.
 
+${getLanguageExamples(language)}
+
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "interpretationPart2": "[YOUR 1000-1200 WORD PREACHER-FACING EXPLANATION HERE - Point 2 (core teaching, 2-3 verses, conceptual illustration, 3-4 applications, transition)]"
@@ -324,7 +334,9 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 STUDY MODE: SERMON OUTLINE - PASS 3/4 (Point 3 Only)
 This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1 and Pass 2.
 Target output: ${params.language === 'ml' ? '~350 words for Malayalam (STRICT timeout limit)' : '~700-900 words'}
-Provide CORE content that preachers will expand during delivery.`
+Provide CORE content that preachers will expand during delivery.
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `═══════════════════════════════════════════════════════════════════════════
 PASS 3/4: FINAL TEACHING POINT (Point 3 Only)
@@ -378,6 +390,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THIS IS A PLACEHOLDER!
 You must generate FULL CONTENT for this field as specified above.
 
+${getLanguageExamples(language)}
+
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "interpretationPart3": "[YOUR 700-900 WORD PREACHER-FACING EXPLANATION HERE - Point 3 (core teaching, 2-3 verses, conceptual illustration, 2-3 applications, transition)]"
@@ -408,7 +422,9 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 STUDY MODE: SERMON OUTLINE - PASS 4/4 (Conclusion + Altar Call + Extras)
 This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home powerfully.
 Target output: ${params.language === 'ml' ? '~550 words for Malayalam (STRICT timeout limit)' : '~1,100 words'}
-Provide CORE conclusion and altar call outline that preachers will expand.`
+Provide CORE conclusion and altar call outline that preachers will expand.
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `═══════════════════════════════════════════════════════════════════════════
 PASS 4/4: CONCLUSION + INVITATION + SUPPORTING MATERIALS
@@ -513,6 +529,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
+
+${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
