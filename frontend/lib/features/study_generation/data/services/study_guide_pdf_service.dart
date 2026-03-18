@@ -1,14 +1,15 @@
+import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart' as material;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart'
     show
         Widget,
         BuildContext,
         MediaQuery,
-        Material,
         Colors,
         SizedBox,
         Container,
@@ -34,7 +35,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart'
-    show BuildOwner, RenderObjectToWidgetAdapter, WidgetsBinding;
+    show BuildOwner, ColoredBox, RenderObjectToWidgetAdapter, WidgetsBinding;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
@@ -55,25 +56,45 @@ import '../../../../core/utils/logger.dart';
 /// For Hindi/Malayalam (complex scripts), uses image-based rendering
 /// to ensure proper ligature and character display.
 class StudyGuidePdfService {
-  /// Checks if the language requires image-based rendering.
+  /// Returns 'hi', 'ml', or null by scanning [text] for Devanagari / Malayalam
+  /// Unicode blocks (U+0900–U+097F and U+0D00–U+0D7F respectively).
+  String? _detectComplexScript(String text) {
+    for (final rune in text.runes.take(500)) {
+      if (rune >= 0x0900 && rune <= 0x097F) return 'hi'; // Devanagari
+      if (rune >= 0x0D00 && rune <= 0x0D7F) return 'ml'; // Malayalam
+    }
+    return null;
+  }
+
+  /// Checks if the guide requires image-based rendering.
   ///
-  /// Hindi and Malayalam require complex script rendering (GSUB/ligatures)
-  /// which the dart_pdf package doesn't support natively.
-  bool _requiresImageBasedRendering(String language) {
-    final lang = language.toLowerCase();
-    return lang == 'hi' || lang == 'ml';
+  /// Returns true when:
+  /// • `guide.language` is explicitly 'hi' or 'ml', OR
+  /// • the title/summary contains Devanagari or Malayalam characters
+  ///   (handles guides where the language field is mis-set to 'en' but the
+  ///   LLM produced content in a complex script).
+  bool _requiresImageBasedRendering(StudyGuide guide) {
+    final lang = guide.language.toLowerCase();
+    if (lang == 'hi' || lang == 'ml') return true;
+    return _detectComplexScript('${guide.title} ${guide.summary}') != null;
   }
 
   /// Generates a PDF document from a study guide.
   ///
   /// Returns the PDF as bytes that can be shared, printed, or saved.
   /// For complex scripts (Hindi/Malayalam), uses image-based rendering.
-  Future<Uint8List> generatePdf(StudyGuide guide,
-      {BuildContext? context}) async {
-    if (_requiresImageBasedRendering(guide.language) && context != null) {
-      return _generateImageBasedPdf(guide, context);
+  ///
+  /// [onProgress] is called after each named section is captured, with
+  /// (currentStep, totalSteps). Useful for showing progress in the UI.
+  Future<Uint8List> generatePdf(
+    StudyGuide guide, {
+    BuildContext? context,
+    void Function(int step, int total)? onProgress,
+  }) async {
+    if (_requiresImageBasedRendering(guide) && context != null) {
+      return _generateImageBasedPdf(guide, context, onProgress: onProgress);
     }
-    return _generateTextBasedPdf(guide);
+    return _generateTextBasedPdf(guide, onProgress: onProgress);
   }
 
   /// Generates a text-based PDF (for English and other Latin scripts).
@@ -81,24 +102,37 @@ class StudyGuidePdfService {
   /// Runs PDF construction in a background isolate to avoid blocking the
   /// main thread. Falls back to main-thread execution if the isolate fails
   /// (e.g. on platforms where isolates are unsupported or restricted).
-  Future<Uint8List> _generateTextBasedPdf(StudyGuide guide) async {
+  Future<Uint8List> _generateTextBasedPdf(
+    StudyGuide guide, {
+    void Function(int step, int total)? onProgress,
+  }) async {
     // dart:isolate is unsupported on Flutter Web — skip directly to main thread.
-    if (kIsWeb) return _buildTextPdfOnCurrentThread(guide);
+    if (kIsWeb) {
+      return _buildTextPdfOnCurrentThread(guide, onProgress: onProgress);
+    }
 
     final guideData = _studyGuideToMap(guide);
     try {
-      return await Isolate.run(() => _buildTextPdfInIsolate(guideData));
+      // Signal "building" phase — isolate is doing the heavy work.
+      onProgress?.call(0, 1);
+      final bytes = await Isolate.run(() => _buildTextPdfInIsolate(guideData));
+      // Signal finalizing phase — browser download is about to be triggered.
+      onProgress?.call(1, 1);
+      return bytes;
     } catch (e) {
       Logger.warning(
           '[StudyGuidePdfService] Isolate PDF failed, using main thread: $e');
-      return _buildTextPdfOnCurrentThread(guide);
+      return _buildTextPdfOnCurrentThread(guide, onProgress: onProgress);
     }
   }
 
   /// Builds the text-based PDF on the current (main) thread.
   ///
   /// Used as a fallback when the isolate-based path fails.
-  Future<Uint8List> _buildTextPdfOnCurrentThread(StudyGuide guide) async {
+  Future<Uint8List> _buildTextPdfOnCurrentThread(
+    StudyGuide guide, {
+    void Function(int step, int total)? onProgress,
+  }) async {
     final theme = await _getThemeForLanguage(guide.language);
     final pdf = pw.Document(theme: theme);
 
@@ -127,7 +161,55 @@ class StudyGuidePdfService {
       ),
     );
 
+    // Signal finalizing phase before the (potentially slow) pdf.save() call.
+    onProgress?.call(1, 1);
     return pdf.save();
+  }
+
+  /// Session cache: tracks which complex-script fonts have been downloaded and
+  /// registered with CanvasKit this session so we don't wait again.
+  static final Set<String> _webFontsLoaded = {};
+
+  /// Pre-loads the Google Font for complex scripts on Flutter Web.
+  ///
+  /// Calls `GoogleFonts.notoSansDevanagari()` / `notoSansMalayalam()`, which
+  /// downloads the font from CDN and registers it with Flutter's `FontLoader`.
+  /// Once `FontLoader.load()` completes, `PaintingBinding` fires
+  /// `systemFonts.notifyListeners()`. We await that notification (max 8 s)
+  /// so CanvasKit has the typeface before the off-screen widget captures begin.
+  Future<void> _preloadWebFont(String language) async {
+    if (!kIsWeb) return;
+    final lang = language.toLowerCase();
+    if (lang != 'hi' && lang != 'ml') return;
+    if (_webFontsLoaded.contains(lang)) return; // already loaded this session
+
+    final completer = Completer<void>();
+    void onFontsChanged() {
+      if (!completer.isCompleted) completer.complete();
+    }
+
+    // systemFonts is on PaintingBinding (mixed into WidgetsBinding); it
+    // notifies listeners whenever FontLoader.load() finishes.
+    PaintingBinding.instance.systemFonts.addListener(onFontsChanged);
+
+    // Trigger the CDN download + FontLoader.load()
+    if (lang == 'hi') {
+      GoogleFonts.notoSansDevanagari();
+    } else {
+      GoogleFonts.notoSansMalayalam();
+    }
+
+    // Wait for font registration or timeout
+    await Future.any([
+      completer.future,
+      Future.delayed(const Duration(seconds: 8)),
+    ]);
+
+    PaintingBinding.instance.systemFonts.removeListener(onFontsChanged);
+    _webFontsLoaded.add(lang);
+
+    // One extra frame so CanvasKit can process the newly registered typeface
+    await WidgetsBinding.instance.endOfFrame;
   }
 
   /// Generates an image-based PDF for complex scripts (Hindi/Malayalam).
@@ -135,96 +217,149 @@ class StudyGuidePdfService {
   /// This approach captures Flutter widgets as images to preserve
   /// correct text rendering with ligatures and complex character combinations.
   Future<Uint8List> _generateImageBasedPdf(
-      StudyGuide guide, BuildContext context) async {
+    StudyGuide guide,
+    BuildContext context, {
+    void Function(int step, int total)? onProgress,
+  }) async {
+    // Determine the effective script language.
+    // Guides with language='en' but Devanagari/Malayalam content still need
+    // the correct Noto font — scan title+summary to detect actual script.
+    final effectiveLanguage =
+        _detectComplexScript('${guide.title} ${guide.summary}') ??
+            guide.language.toLowerCase();
+
+    // Ensure the script-specific Google Font is registered with CanvasKit
+    // before any off-screen widget captures happen.
+    await _preloadWebFont(effectiveLanguage);
+
     final pdf = pw.Document();
 
     // Capture each section as an image
     final List<Uint8List> sectionImages = [];
 
-    // Helper to capture with proper frame scheduling to keep UI responsive
-    Future<Uint8List?> captureWithYield(Widget widget) async {
-      // Wait for end of current frame to allow animations to progress
+    // Count named sections upfront so we can report progress accurately.
+    // Chunks (paragraph splits within a section) don't count as separate steps.
+    final contentSections = [
+      (_getLocalizedTitle('Summary', effectiveLanguage), guide.summary),
+      if (guide.passage != null && guide.passage!.isNotEmpty)
+        (_getLocalizedTitle('Passage', effectiveLanguage), guide.passage!),
+      (
+        _getLocalizedTitle('Interpretation', effectiveLanguage),
+        guide.interpretation
+      ),
+      (
+        _getLocalizedTitle('Historical Context', effectiveLanguage),
+        guide.context
+      ),
+    ];
+    final totalSteps = 2 // header + title
+        +
+        contentSections.where((s) => s.$2.isNotEmpty).length +
+        (guide.relatedVerses.isNotEmpty ? 1 : 0) +
+        (guide.reflectionQuestions.isNotEmpty ? 1 : 0) +
+        (guide.prayerPoints.isNotEmpty ? 1 : 0) +
+        (guide.personalNotes?.isNotEmpty == true ? 1 : 0);
+    int step = 0;
+
+    // Yields to the event loop so the UI can update between heavy captures.
+    // Reports progress for named sections (not for continuation chunks).
+    Future<Uint8List?> captureSection(Widget widget) async {
       await WidgetsBinding.instance.endOfFrame;
-      // Use lower pixel ratio (2.0 instead of 3.0) for faster capture
-      // Still provides good quality for PDF
       final result = await _captureWidgetAsImage(widget, context,
           width: 515, pixelRatio: 2.0);
-      // Wait for another frame to let UI catch up
+      step++;
+      onProgress?.call(step, totalSteps);
+      await WidgetsBinding.instance.endOfFrame;
+      return result;
+    }
+
+    // Continuation chunks within a section — no progress tick.
+    Future<Uint8List?> captureChunk(Widget widget) async {
+      await WidgetsBinding.instance.endOfFrame;
+      final result = await _captureWidgetAsImage(widget, context,
+          width: 515, pixelRatio: 2.0);
       await WidgetsBinding.instance.endOfFrame;
       return result;
     }
 
     // Build and capture the header section
-    final headerImage = await captureWithYield(_buildFlutterHeader(guide));
+    final headerImage = await captureSection(_buildFlutterHeader(guide));
     if (headerImage != null) sectionImages.add(headerImage);
 
     // Build and capture the title section
-    final titleImage = await captureWithYield(_buildFlutterTitleSection(guide));
+    final titleImage = await captureSection(
+        _buildFlutterTitleSection(guide, effectiveLanguage));
     if (titleImage != null) sectionImages.add(titleImage);
 
-    // Build and capture content sections
-    final sections = [
-      (_getLocalizedTitle('Summary', guide.language), guide.summary),
-      if (guide.passage != null && guide.passage!.isNotEmpty)
-        (_getLocalizedTitle('Passage', guide.language), guide.passage!),
-      (
-        _getLocalizedTitle('Interpretation', guide.language),
-        guide.interpretation
-      ),
-      (_getLocalizedTitle('Historical Context', guide.language), guide.context),
-    ];
-
-    for (final section in sections) {
-      if (section.$2.isNotEmpty) {
-        final image = await captureWithYield(
-          _buildFlutterSection(section.$1, section.$2, guide.language),
+    for (final section in contentSections) {
+      if (section.$2.isEmpty) continue;
+      // Split long content into paragraph-level chunks so that smaller images
+      // can fill pages more efficiently (avoids large blank gaps when a single
+      // tall image doesn't fit in the remaining page space).
+      final chunks = _splitContentForPdf(section.$2, maxChars: 1500);
+      // First chunk gets the section heading + counts as one progress step
+      final firstImage = await captureSection(
+        _buildFlutterSection(section.$1, chunks.first, effectiveLanguage),
+      );
+      if (firstImage != null) sectionImages.add(firstImage);
+      // Continuation chunks: plain text, no heading, no progress tick
+      for (int i = 1; i < chunks.length; i++) {
+        final chunkImage = await captureChunk(
+          _buildFlutterTextChunk(chunks[i], effectiveLanguage),
         );
-        if (image != null) sectionImages.add(image);
+        if (chunkImage != null) sectionImages.add(chunkImage);
       }
     }
 
     // Related verses
     if (guide.relatedVerses.isNotEmpty) {
-      final image = await captureWithYield(
+      final image = await captureSection(
         _buildFlutterListSection(
-            _getLocalizedTitle('Related Scriptures', guide.language),
+            _getLocalizedTitle('Related Scriptures', effectiveLanguage),
             guide.relatedVerses,
-            guide.language),
+            effectiveLanguage),
       );
       if (image != null) sectionImages.add(image);
     }
 
     // Reflection questions
     if (guide.reflectionQuestions.isNotEmpty) {
-      final image = await captureWithYield(
+      final image = await captureSection(
         _buildFlutterNumberedListSection(
-            _getLocalizedTitle('Reflection Questions', guide.language),
+            _getLocalizedTitle('Reflection Questions', effectiveLanguage),
             guide.reflectionQuestions,
-            guide.language),
+            effectiveLanguage),
       );
       if (image != null) sectionImages.add(image);
     }
 
     // Prayer points
     if (guide.prayerPoints.isNotEmpty) {
-      final image = await captureWithYield(
+      final image = await captureSection(
         _buildFlutterListSection(
-            _getLocalizedTitle('Prayer Points', guide.language),
+            _getLocalizedTitle('Prayer Points', effectiveLanguage),
             guide.prayerPoints,
-            guide.language),
+            effectiveLanguage),
       );
       if (image != null) sectionImages.add(image);
     }
 
     // Personal notes
     if (guide.personalNotes != null && guide.personalNotes!.isNotEmpty) {
-      final image = await captureWithYield(
+      final chunks = _splitContentForPdf(guide.personalNotes!, maxChars: 1500);
+      final firstImage = await captureSection(
         _buildFlutterSection(
-            _getLocalizedTitle('Personal Notes', guide.language),
-            guide.personalNotes!,
-            guide.language),
+            _getLocalizedTitle('Personal Notes', effectiveLanguage),
+            chunks.first,
+            effectiveLanguage),
       );
-      if (image != null) sectionImages.add(image);
+      if (firstImage != null) sectionImages.add(firstImage);
+      for (int i = 1; i < chunks.length; i++) {
+        final chunkImage = await captureChunk(
+          _buildFlutterTextChunk(chunks[i], effectiveLanguage),
+        );
+        if (chunkImage != null) sectionImages.add(chunkImage);
+      }
     }
 
     // Build PDF pages from images
@@ -331,7 +466,10 @@ class StudyGuidePdfService {
           data: MediaQuery.of(context),
           child: material.Directionality(
             textDirection: material.TextDirection.ltr,
-            child: Material(
+            // Use ColoredBox instead of Material to avoid registering
+            // MouseTrackerAnnotations in the off-screen pipeline owner,
+            // which causes mouse_tracker.dart assertion failures on Flutter Web.
+            child: ColoredBox(
               color: Colors.white,
               child: SizedBox(
                 width: width,
@@ -396,7 +534,7 @@ class StudyGuidePdfService {
     );
   }
 
-  Widget _buildFlutterTitleSection(StudyGuide guide) {
+  Widget _buildFlutterTitleSection(StudyGuide guide, String effectiveLanguage) {
     return Container(
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(top: 10),
@@ -409,7 +547,7 @@ class StudyGuidePdfService {
         children: [
           Text(
             guide.title,
-            style: _getFontForLanguage(guide.language)(
+            style: _getFontForLanguage(effectiveLanguage)(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.grey[900],
@@ -439,12 +577,12 @@ class StudyGuidePdfService {
       children: [
         Text(
           '$label: ',
-          style: AppFonts.inter(fontSize: 10, color: Colors.grey[600]),
+          style: AppFonts.inter(fontSize: 11, color: Colors.grey[600]),
         ),
         Text(
           value,
           style: AppFonts.inter(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.bold,
             color: Colors.grey[800],
           ),
@@ -470,7 +608,7 @@ class StudyGuidePdfService {
             child: Text(
               title.toUpperCase(),
               style: AppFonts.inter(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
                 letterSpacing: 1,
@@ -481,13 +619,32 @@ class StudyGuidePdfService {
           Text(
             content,
             style: _getFontForLanguage(language)(
-              fontSize: 11,
+              fontSize: 13,
               color: Colors.grey[900],
-              height: 1.5,
+              height: 1.6,
             ),
             textAlign: TextAlign.justify,
           ),
         ],
+      ),
+    );
+  }
+
+  /// Renders a plain block of text with no section heading.
+  /// Used for continuation chunks of long sections so page breaks happen
+  /// at paragraph boundaries rather than forcing the whole section to a new page.
+  Widget _buildFlutterTextChunk(String content, String language) {
+    if (content.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      child: Text(
+        content,
+        style: _getFontForLanguage(language)(
+          fontSize: 13,
+          color: Colors.grey[900],
+          height: 1.6,
+        ),
+        textAlign: TextAlign.justify,
       ),
     );
   }
@@ -510,7 +667,7 @@ class StudyGuidePdfService {
             child: Text(
               title.toUpperCase(),
               style: AppFonts.inter(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
                 letterSpacing: 1,
@@ -536,9 +693,9 @@ class StudyGuidePdfService {
                       child: Text(
                         item,
                         style: _getFontForLanguage(language)(
-                          fontSize: 11,
+                          fontSize: 13,
                           color: Colors.grey[900],
-                          height: 1.4,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -568,7 +725,7 @@ class StudyGuidePdfService {
             child: Text(
               title.toUpperCase(),
               style: AppFonts.inter(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
                 letterSpacing: 1,
@@ -582,11 +739,11 @@ class StudyGuidePdfService {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      width: 20,
+                      width: 22,
                       child: Text(
                         '${entry.key + 1}.',
                         style: AppFonts.inter(
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.grey[700],
                         ),
@@ -597,9 +754,9 @@ class StudyGuidePdfService {
                       child: Text(
                         entry.value,
                         style: _getFontForLanguage(language)(
-                          fontSize: 11,
+                          fontSize: 13,
                           color: Colors.grey[900],
-                          height: 1.4,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -635,6 +792,11 @@ class StudyGuidePdfService {
   }
 
   /// Gets the appropriate font function for the language.
+  ///
+  /// For Hindi and Malayalam, returns a Google Fonts function that uses
+  /// Noto Sans scripts — these are fetched from Google CDN and registered
+  /// with Flutter's CanvasKit font manager, ensuring Devanagari / Malayalam
+  /// glyphs render correctly in off-screen PDF captures on Flutter Web.
   TextStyle Function({
     double? fontSize,
     FontWeight? fontWeight,
@@ -643,8 +805,42 @@ class StudyGuidePdfService {
     FontStyle? fontStyle,
     double? letterSpacing,
   }) _getFontForLanguage(String language) {
-    // AppFonts.inter works well for all languages in Flutter's text rendering
-    // as Flutter handles complex scripts correctly
+    final lang = language.toLowerCase();
+    if (lang == 'hi') {
+      return ({
+        double? fontSize,
+        FontWeight? fontWeight,
+        Color? color,
+        double? height,
+        FontStyle? fontStyle,
+        double? letterSpacing,
+      }) =>
+          GoogleFonts.notoSansDevanagari(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: color,
+            height: height,
+            fontStyle: fontStyle,
+            letterSpacing: letterSpacing,
+          );
+    } else if (lang == 'ml') {
+      return ({
+        double? fontSize,
+        FontWeight? fontWeight,
+        Color? color,
+        double? height,
+        FontStyle? fontStyle,
+        double? letterSpacing,
+      }) =>
+          GoogleFonts.notoSansMalayalam(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: color,
+            height: height,
+            fontStyle: fontStyle,
+            letterSpacing: letterSpacing,
+          );
+    }
     return AppFonts.inter;
   }
 
@@ -748,8 +944,13 @@ class StudyGuidePdfService {
   }
 
   /// Shares the PDF using the system share sheet.
-  Future<void> sharePdf(StudyGuide guide, {BuildContext? context}) async {
-    final pdfBytes = await generatePdf(guide, context: context);
+  Future<void> sharePdf(
+    StudyGuide guide, {
+    BuildContext? context,
+    void Function(int step, int total)? onProgress,
+  }) async {
+    final pdfBytes =
+        await generatePdf(guide, context: context, onProgress: onProgress);
     final fileName = _generateFileName(guide);
 
     await Printing.sharePdf(
@@ -895,14 +1096,14 @@ class StudyGuidePdfService {
         pw.Text(
           '$label: ',
           style: const pw.TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             color: PdfColors.grey600,
           ),
         ),
         pw.Text(
           value,
           style: pw.TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.grey800,
           ),
@@ -1019,7 +1220,7 @@ class StudyGuidePdfService {
       child: pw.Text(
         title.toUpperCase(),
         style: pw.TextStyle(
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: pw.FontWeight.bold,
           color: PdfColors.grey800,
           letterSpacing: 1,
@@ -1044,9 +1245,9 @@ class StudyGuidePdfService {
           child: pw.Text(
             chunk,
             style: const pw.TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               color: PdfColors.grey900,
-              lineSpacing: 4,
+              lineSpacing: 5,
             ),
             textAlign: pw.TextAlign.justify,
           ),
@@ -1081,9 +1282,9 @@ class StudyGuidePdfService {
                 child: pw.Text(
                   item,
                   style: const pw.TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: PdfColors.grey900,
-                    lineSpacing: 3,
+                    lineSpacing: 4,
                   ),
                 ),
               ),
@@ -1113,7 +1314,7 @@ class StudyGuidePdfService {
                     child: pw.Text(
                       '${entry.key + 1}.',
                       style: pw.TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.grey700,
                       ),
@@ -1123,9 +1324,9 @@ class StudyGuidePdfService {
                     child: pw.Text(
                       entry.value,
                       style: const pw.TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         color: PdfColors.grey900,
-                        lineSpacing: 3,
+                        lineSpacing: 4,
                       ),
                     ),
                   ),

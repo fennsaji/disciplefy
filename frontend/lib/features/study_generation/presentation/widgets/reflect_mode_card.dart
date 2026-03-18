@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../domain/entities/reflection_response.dart';
@@ -554,7 +555,9 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? accentColor : theme.colorScheme.surface,
+              color: isSelected
+                  ? (isDark ? AppColors.darkSurfaceVariant : accentColor)
+                  : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? accentColor : accentColor.withOpacity(0.3),
@@ -563,7 +566,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: accentColor.withOpacity(0.3),
+                        color: accentColor.withOpacity(isDark ? 0.15 : 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -584,7 +587,9 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: isSelected
-                          ? Colors.white
+                          ? (isDark
+                              ? AppColors.brandPrimaryLight
+                              : Colors.white)
                           : theme.colorScheme.onBackground,
                     ),
                     softWrap: true,
@@ -1228,6 +1233,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
     final accentColor = isDark
         ? _lightenColor(theme.colorScheme.primary, 0.10)
         : theme.colorScheme.primary;
+    final buttonBgColor = isDark ? AppColors.brandSecondary : accentColor;
     final isLastCard = widget.cardIndex == widget.totalCards - 1;
     final showBackButton = widget.onBack != null;
 
@@ -1278,7 +1284,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                           ? widget.onContinue
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: accentColor,
+                        backgroundColor: buttonBgColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -1336,7 +1342,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                     ? widget.onContinue
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
+                  backgroundColor: buttonBgColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

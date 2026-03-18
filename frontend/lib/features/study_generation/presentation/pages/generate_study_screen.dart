@@ -7,6 +7,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
@@ -41,19 +42,39 @@ import '../../data/datasources/study_local_data_source.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/constants/bible_books.dart';
 import '../../../../core/constants/bible_book_transliterations.dart';
+import '../../../../core/di/injection_container.dart';
+import 'package:showcaseview/showcaseview.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
-/// Features toggle between modes, input validation, suggestions, and loading states
-/// following the UX specifications and brand guidelines.
-class GenerateStudyScreen extends StatefulWidget {
+/// Wraps [_GenerateStudyScreenContent] in a [ShowCaseWidget] so that walkthrough
+/// tooltips can call [ShowCaseWidget.of(context)] from descendant context.
+class GenerateStudyScreen extends StatelessWidget {
   const GenerateStudyScreen({super.key});
 
   @override
-  State<GenerateStudyScreen> createState() => _GenerateStudyScreenState();
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.generate),
+      builder: (context) => const _GenerateStudyScreenContent(),
+    );
+  }
 }
 
-class _GenerateStudyScreenState extends State<GenerateStudyScreen>
+class _GenerateStudyScreenContent extends StatefulWidget {
+  const _GenerateStudyScreenContent();
+
+  @override
+  State<_GenerateStudyScreenContent> createState() =>
+      _GenerateStudyScreenState();
+}
+
+class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     with WidgetsBindingObserver {
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
@@ -153,6 +174,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Register app lifecycle observer to detect when returning from study guide
     WidgetsBinding.instance.addObserver(this);
 
+    // Trigger walkthrough on first visit
+    _triggerWalkthroughIfNeeded();
+
     // Load initial token status
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -247,6 +271,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         });
         Logger.error(
             '✅ [GENERATE STUDY] Loaded saved study mode preference: $savedMode');
+        // Refresh the token cost badge now that the preference is known.
+        _updateTokenCostDisplay();
       }
     } catch (e) {
       Logger.debug(
@@ -856,12 +882,36 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     const SizedBox(height: 20),
 
                     // Mode Toggle - Compact design
-                    _buildCompactModeToggle(),
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.generateModeToggle,
+                      title: AppLocalizations.of(context)!
+                          .walkthroughGenerateModeTitle,
+                      description: AppLocalizations.of(context)!
+                          .walkthroughGenerateModeDesc,
+                      screen: WalkthroughScreen.generate,
+                      stepNumber: 1,
+                      totalSteps: _totalWalkthroughSteps,
+                      tooltipPosition: TooltipPosition.bottom,
+                      onNext: _onNext,
+                      child: _buildCompactModeToggle(),
+                    ),
 
                     const SizedBox(height: 32),
 
                     // Input Section with inline language selector
-                    _buildInputSection(),
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.generateInput,
+                      title: AppLocalizations.of(context)!
+                          .walkthroughGenerateInputTitle,
+                      description: AppLocalizations.of(context)!
+                          .walkthroughGenerateInputDesc,
+                      screen: WalkthroughScreen.generate,
+                      stepNumber: 2,
+                      totalSteps: _totalWalkthroughSteps,
+                      tooltipPosition: TooltipPosition.bottom,
+                      onNext: _onNext,
+                      child: _buildInputSection(),
+                    ),
 
                     // Show 2-3 suggestions per category
                     const SizedBox(height: 16),
@@ -870,8 +920,20 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     const SizedBox(height: 32),
 
                     // Generate Button and Status
-                    BlocBuilder<StudyBloc, StudyState>(
-                      builder: (context, state) => _buildGenerateButton(state),
+                    WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.generateButton,
+                      title: AppLocalizations.of(context)!
+                          .walkthroughGenerateButtonTitle,
+                      description: AppLocalizations.of(context)!
+                          .walkthroughGenerateButtonDesc,
+                      screen: WalkthroughScreen.generate,
+                      stepNumber: 3,
+                      totalSteps: _totalWalkthroughSteps,
+                      onNext: _onNext,
+                      child: BlocBuilder<StudyBloc, StudyState>(
+                        builder: (context, state) =>
+                            _buildGenerateButton(state),
+                      ),
                     ),
 
                     // 🔧 FIX: Only show additional sections when keyboard is hidden
@@ -880,9 +942,20 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
                       // Compact AI Discipler option - only show if ai_discipler feature is visible (respects display_mode)
                       if (_isAiDisciplerFeatureEnabled()) ...[
-                        LockedFeatureWrapper(
-                          featureKey: 'ai_discipler',
-                          child: _buildCompactAiDisciplerButton(context),
+                        WalkthroughTooltip(
+                          showcaseKey: ShowcaseKeys.disciplerHint,
+                          title: AppLocalizations.of(context)!
+                              .walkthroughDisciplerTitle,
+                          description: AppLocalizations.of(context)!
+                              .walkthroughDisciplerDesc,
+                          screen: WalkthroughScreen.disciplerHint,
+                          stepNumber: 4,
+                          totalSteps: 4,
+                          onNext: _onNext,
+                          child: LockedFeatureWrapper(
+                            featureKey: 'ai_discipler',
+                            child: _buildCompactAiDisciplerButton(context),
+                          ),
                         ),
                         const SizedBox(height: 32),
                       ],
@@ -1839,6 +1912,39 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Walkthrough helpers
+  // ---------------------------------------------------------------------------
+
+  VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
+
+  int get _totalWalkthroughSteps => _isAiDisciplerFeatureEnabled() ? 4 : 3;
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.generate)) return;
+      if (!mounted) return;
+      final keys = [
+        ShowcaseKeys.generateModeToggle,
+        ShowcaseKeys.generateInput,
+        ShowcaseKeys.generateButton,
+        if (_isAiDisciplerFeatureEnabled()) ShowcaseKeys.disciplerHint,
+      ];
+      if (keys.isNotEmpty && mounted) {
+        // Wait for a full frame after the async gap to ensure all Showcase
+        // widgets are laid out before startShowCase accesses their RenderBox.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ShowCaseWidget.of(context).startShowCase(keys);
+        });
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
 
   /// Checks if AI Discipler feature should be visible (respects display_mode)
   /// Returns true if feature should be shown (either with access or with lock overlay)
