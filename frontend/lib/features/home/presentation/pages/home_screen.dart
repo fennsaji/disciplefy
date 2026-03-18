@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../../../features/memory_verses/presentation/bloc/memory_verse_state.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
@@ -61,6 +63,12 @@ import '../../../community/domain/entities/fellowship_meeting_entity.dart';
 import '../../../community/domain/repositories/community_repository.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import '../../../../core/localization/app_localizations.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 ///
@@ -72,7 +80,17 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocProvider.value(
         value: sl<HomeBloc>(),
-        child: const _HomeScreenContent(),
+        child: ShowCaseWidget(
+          onFinish: () {
+            // After home body steps finish, highlight Generate → Topics → Community
+            // nav tabs using the AppShell's ShowCaseWidget.
+            // markSeen is called once the full AppShell sequence completes (see AppShell).
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ShowcaseKeys.triggerNavTabsAndCommunity();
+            });
+          },
+          builder: (context) => const _HomeScreenContent(),
+        ),
       );
 }
 
@@ -102,9 +120,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   late final UsageStatsBloc _usageStatsBloc;
   late final UsageThresholdService _usageThresholdService;
 
+  /// Advances the showcase to the next step.
+  ///
+  /// Uses [this.context] which is [_HomeScreenContent]'s element context —
+  /// a descendant of [ShowCaseWidget], so [ShowCaseWidget.of()] resolves correctly.
+  VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
+
   @override
   void initState() {
     super.initState();
+    // Sync walkthrough seen state from Supabase (no-op for anonymous users)
+    sl<WalkthroughRepository>().syncFromRemote();
+    _triggerWalkthroughIfNeeded();
     _usageStatsBloc = sl<UsageStatsBloc>();
     _usageThresholdService = sl<UsageThresholdService>();
     _loadDailyVerse();
@@ -122,6 +149,67 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (current is! HomeCombinedState || current.activeLearningPath == null) {
       homeBloc.add(const LoadActiveLearningPath());
     }
+  }
+
+  /// Triggers the home screen walkthrough the first time the user sees this screen.
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      // Set up the verse-loaded future FIRST so we don't miss the BLoC event
+      // while the hasSeen check is awaiting. If already loaded this resolves
+      // immediately; if still loading it captures the upcoming emission.
+      final dailyVerseBloc = sl<DailyVerseBloc>();
+      final Future<DailyVerseState> verseFuture;
+      if (dailyVerseBloc.state is DailyVerseLoading ||
+          dailyVerseBloc.state is DailyVerseInitial) {
+        verseFuture = dailyVerseBloc.stream
+            .firstWhere(
+                (s) => s is! DailyVerseLoading && s is! DailyVerseInitial)
+            .timeout(const Duration(seconds: 5),
+                onTimeout: () => dailyVerseBloc.state);
+      } else {
+        verseFuture = Future.value(dailyVerseBloc.state);
+      }
+
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.home)) return;
+
+      // Await the verse future — already resolved if verse loaded during hasSeen.
+      await verseFuture;
+
+      if (!mounted) return;
+      // One extra frame so Flutter rebuilds the card at its final size
+      // before showcaseview calculates the overlay rectangle.
+      await Future<void>.delayed(Duration.zero);
+      if (!mounted) return;
+
+      final keys = _buildWalkthroughKeys();
+      if (keys.isNotEmpty) {
+        ShowCaseWidget.of(context).startShowCase(keys);
+      }
+    });
+  }
+
+  /// Builds the ordered list of showcase keys for the home walkthrough.
+  List<GlobalKey> _buildWalkthroughKeys() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+    final systemConfigService = sl<SystemConfigService>();
+    final showMemoryVerses =
+        !systemConfigService.shouldHideFeature('memory_verses', userPlan);
+
+    // Steps 1-2 run in the home screen's own ShowCaseWidget.
+    // Steps 3-5 (Generate / Topics / Community nav tabs) run in the AppShell's
+    // ShowCaseWidget, triggered via ShowcaseKeys.triggerNavTabsAndCommunity().
+    return [
+      ShowcaseKeys.homeDailyVerse,
+      if (showMemoryVerses) ShowcaseKeys.homeMemoryVerses,
+    ];
   }
 
   /// Listen for app language and study content language preference changes
@@ -557,17 +645,28 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                             SizedBox(height: isLargeScreen ? 16 : 12),
 
                             // Daily Verse Card with click functionality and lock support
-                            LockedFeatureWrapper(
-                              featureKey: 'daily_verse',
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  DailyVerseCard(
-                                    margin: EdgeInsets.zero,
-                                    onTap: _onDailyVerseCardTap,
-                                  ),
-                                  SizedBox(height: isLargeScreen ? 24 : 20),
-                                ],
+                            WalkthroughTooltip(
+                              showcaseKey: ShowcaseKeys.homeDailyVerse,
+                              title: AppLocalizations.of(context)!
+                                  .walkthroughHomeDailyVerseTitle,
+                              description: AppLocalizations.of(context)!
+                                  .walkthroughHomeDailyVerseDesc,
+                              screen: WalkthroughScreen.home,
+                              stepNumber: 1,
+                              totalSteps: 5,
+                              onNext: _onNext,
+                              child: LockedFeatureWrapper(
+                                featureKey: 'daily_verse',
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    DailyVerseCard(
+                                      margin: EdgeInsets.zero,
+                                      onTap: _onDailyVerseCardTap,
+                                    ),
+                                    SizedBox(height: isLargeScreen ? 24 : 20),
+                                  ],
+                                ),
                               ),
                             ),
 
@@ -622,22 +721,78 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     return Row(
       children: [
         _buildLogoWidget(),
-        const Spacer(),
-        if (showMemoryVerses) _buildMemoryVersesIconButton(),
-        _buildSettingsButton(),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (showMemoryVerses)
+                WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.homeMemoryVerses,
+                  title:
+                      AppLocalizations.of(context)!.walkthroughHomeMemoryTitle,
+                  description:
+                      AppLocalizations.of(context)!.walkthroughHomeMemoryDesc,
+                  screen: WalkthroughScreen.home,
+                  stepNumber: 2,
+                  totalSteps: 5,
+                  onNext: _onNext,
+                  // Header element — not enough space above; show tooltip below
+                  tooltipPosition: TooltipPosition.bottom,
+                  child: _buildMemoryVersesIconButton(),
+                ),
+              _buildSettingsButton(),
+            ],
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildMemoryVersesIconButton() {
-    return IconButton(
-      onPressed: () => _handleMemoryVersesTap(),
-      icon: Icon(
-        Icons.psychology_outlined,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        size: 24,
-      ),
-      tooltip: context.tr(TranslationKeys.homeMemoryVerses),
+    return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+      builder: (context, memState) {
+        final dueCount =
+            memState is DueVersesLoaded ? memState.verses.length : 0;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final pillColor =
+            isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+        return ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 140),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _handleMemoryVersesTap,
+                icon: const Icon(Icons.psychology_outlined, size: 18),
+                label: Text(
+                  context.tr(TranslationKeys.homeMemoryVerses),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: pillColor,
+                  side: BorderSide(
+                    color: pillColor.withValues(alpha: 0.5),
+                  ),
+                  backgroundColor: pillColor.withValues(alpha: 0.12),
+                  padding: const EdgeInsets.fromLTRB(8, 6, 12, 6),
+                  shape: const StadiumBorder(),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (dueCount > 0)
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: _DueBadge(count: dueCount),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1940,7 +2095,7 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
   Future<void> _fetchUpcomingMeeting() async {
     try {
       final repo = sl<CommunityRepository>();
-      final fellowshipsResult = await repo.getFellowships();
+      final fellowshipsResult = await repo.getFellowships('en');
       final fellowships = fellowshipsResult.fold(
         (_) => <FellowshipEntity>[],
         (list) => list,
@@ -2152,6 +2307,38 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DueBadge extends StatelessWidget {
+  final int count;
+  const _DueBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count >= 100 ? '99+' : '$count';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          width: 2,
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          height: 1.4,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
