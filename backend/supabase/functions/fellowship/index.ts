@@ -175,11 +175,13 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     }
 
     for (const f of fellowships) {
-      const pathId = f.current_study?.learning_path_id
+      if (!f.current_study) continue
+      const pathId = f.current_study.learning_path_id
       if (!pathId) continue
+      const cs = f.current_study as any
       const translated = translationMap.get(pathId)
-      if (translated) f.current_study.learning_path_title = translated
-      f.current_study.total_guides = topicsCountMap.get(pathId) ?? null
+      if (translated) cs.learning_path_title = translated
+      cs.total_guides = topicsCountMap.get(pathId) ?? null
     }
   }
 
