@@ -100,6 +100,7 @@ async function handleAddMemoryVerseFromDaily(
       .from('memory_verses')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userContext.userId)
+      .not('mastery_level', 'in', '("expert","master")') // exclude mastered verses (expert/master level don't count against slot limit)
 
     if (countError) {
       console.error('[AddMemoryVerseFromDaily] Failed to count existing verses:', countError)
@@ -107,7 +108,7 @@ async function handleAddMemoryVerseFromDaily(
     }
 
     const currentCount = count ?? 0
-    console.log(`📊 [AddMemoryVerseFromDaily] Verse count: ${currentCount}/${verseLimit} (plan: ${userPlan})`)
+    console.log(`📊 [AddMemoryVerseFromDaily] Active (non-mastered) verse count: ${currentCount}/${verseLimit} (plan: ${userPlan})`)
 
     if (currentCount >= verseLimit) {
       throw new AppError(

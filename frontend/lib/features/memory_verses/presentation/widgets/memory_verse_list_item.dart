@@ -204,8 +204,8 @@ class MemoryVerseListItem extends StatelessWidget {
   Widget _buildStatusBadge(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Fully Mastered - Gold trophy (comprehensive mastery criteria met)
-    if (verse.isFullyMasteredCached) {
+    // Fully Mastered - Gold trophy (mastery_level == master)
+    if (verse.masteryLevel == MasteryLevel.master) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -233,8 +233,9 @@ class MemoryVerseListItem extends StatelessWidget {
       );
     }
 
-    // Review Milestone - Gold star (basic mastery: 5+ repetitions)
-    if (verse.isMastered) {
+    // Review Milestone - Gold star (mastery_level == expert or master)
+    if (verse.masteryLevel == MasteryLevel.expert ||
+        verse.masteryLevel == MasteryLevel.master) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(

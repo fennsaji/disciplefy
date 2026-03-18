@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../../../../core/constants/app_fonts.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -39,6 +41,10 @@ import '../widgets/streak_protection_dialog.dart';
 import '../widgets/memory_verse_navigation_bar.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
@@ -54,6 +60,16 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   StreamSubscription<TokenState>? _tokenSubscription;
   MemoryStreakEntity? _memoryStreak;
   DailyGoalEntity? _dailyGoal;
+
+  // Builder context from ShowCaseWidget — use this for ShowCaseWidget.of() calls.
+  // this.context is an ancestor of ShowCaseWidget; ShowCaseWidget.of(this.context) fails.
+  BuildContext? _showcaseContext;
+
+  // Prevents the walkthrough from being triggered more than once per visit.
+  bool _walkthroughTriggered = false;
+
+  /// Advances the showcase to the next step.
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
 
   @override
   void initState() {
@@ -72,6 +88,22 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     // Route is already protected by LockedFeatureWrapper in app_router.dart
     // If user reaches this page, they have access - just load verses
     _loadVerses();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.memoryVerses)) return;
+      // Build key list dynamically — verse card step only if list is non-empty
+      final hasVerses =
+          _lastLoadedState != null && _lastLoadedState!.verses.isNotEmpty;
+      final keys = [
+        ShowcaseKeys.memoryAddVerse,
+        if (hasVerses) ShowcaseKeys.memoryVerseCard,
+      ];
+      ShowCaseWidget.of(_showcaseContext!).startShowCase(keys);
+    });
   }
 
   void _loadVerses({bool forceRefresh = false}) {
@@ -113,219 +145,257 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Determine whether the verse list is non-empty at build time.
+    // Used for both the tooltip totalSteps and the walkthrough key list.
+    final hasVerses =
+        _lastLoadedState != null && _lastLoadedState!.verses.isNotEmpty;
+
     // Route is protected by LockedFeatureWrapper - no need for access checks here
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: _handleBackNavigation,
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new,
-                color: Theme.of(context).colorScheme.primary,
-                size: 18,
-              ),
-            ),
-          ),
-          title: Text(
-            context.tr(TranslationKeys.memoryTitle),
-            style: AppFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 4),
-              child: IconButton(
+    return ShowCaseWidget(
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.memoryVerses),
+      builder: (showcaseContext) {
+        _showcaseContext = showcaseContext;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              elevation: 0,
+              leading: IconButton(
+                onPressed: _handleBackNavigation,
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppTheme.primaryColor, AppTheme.secondaryPurple],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.add,
-                    color: Colors.white,
+                  child: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 18,
                   ),
                 ),
-                onPressed: () => _showAddVerseOptions(context),
-                tooltip: context.tr(TranslationKeys.memoryHomeAddVerse),
               ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.more_vert,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-              ),
-              onPressed: () => _showOptionsMenu(context),
-              tooltip: context.tr(TranslationKeys.memoryHomeOptions),
-            ),
-          ],
-        ),
-        body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
-          listener: (context, state) {
-            // Handle streak data loaded
-            if (state is MemoryStreakLoaded) {
-              setState(() {
-                _memoryStreak = MemoryStreakEntity(
-                  currentStreak: state.currentStreak,
-                  longestStreak: state.longestStreak,
-                  lastPracticeDate: state.lastPracticeDate,
-                  totalPracticeDays: state.totalPracticeDays,
-                  freezeDaysAvailable: state.freezeDaysAvailable,
-                  freezeDaysUsed: state.freezeDaysUsed,
-                  milestones: state.milestones,
-                );
-              });
-            }
-            // Handle daily goal data loaded
-            else if (state is DailyGoalLoaded) {
-              setState(() {
-                _dailyGoal = DailyGoalEntity(
-                  targetReviews: state.targetReviews,
-                  completedReviews: state.completedReviews,
-                  targetNewVerses: state.targetNewVerses,
-                  addedNewVerses: state.addedNewVerses,
-                  goalAchieved: state.goalAchieved,
-                  bonusXpAwarded: state.bonusXpAwarded,
-                );
-              });
-            }
-            // Handle milestone reached
-            else if (state is StreakMilestoneReached) {
-              // Show celebration dialog
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  MilestoneCelebrationDialog.show(
-                    context,
-                    milestoneDays: state.milestone,
-                    xpEarned: state.xpEarned,
-                  );
-                }
-              });
-              // Reload streak to show updated milestone
-              context
-                  .read<MemoryVerseBloc>()
-                  .add(const LoadMemoryStreakEvent());
-            }
-            // Handle streak freeze used
-            else if (state is StreakFreezeUsed) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: AppColors.info,
+              title: Text(
+                context.tr(TranslationKeys.memoryTitle),
+                style: AppFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
-              );
-              // Reload streak to show updated freeze days
-              context
-                  .read<MemoryVerseBloc>()
-                  .add(const LoadMemoryStreakEvent());
-            } else if (state is MemoryVerseError) {
-              if (state.code == 'VERSE_LIMIT_EXCEEDED') {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    VerseLimitExceededDialog.show(
-                      context,
-                      currentTier: _getCurrentPlan(),
-                    );
-                  }
-                });
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Something went wrong. Please try again.'),
-                    backgroundColor: AppColors.error,
-                    action: SnackBarAction(
-                      label: context.tr(TranslationKeys.commonRetry),
-                      textColor: Colors.white,
-                      onPressed: _loadVerses,
+              ),
+              centerTitle: true,
+              actions: [
+                WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.memoryAddVerse,
+                  title:
+                      AppLocalizations.of(context)!.walkthroughMemoryAddTitle,
+                  description:
+                      AppLocalizations.of(context)!.walkthroughMemoryAddDesc,
+                  screen: WalkthroughScreen.memoryVerses,
+                  stepNumber: 1,
+                  totalSteps: hasVerses ? 2 : 1,
+                  tooltipPosition: TooltipPosition.bottom,
+                  arrowAlignment: Alignment.centerRight,
+                  onNext: _onNext,
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    child: IconButton(
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              AppTheme.primaryColor,
+                              AppTheme.secondaryPurple
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                      onPressed: () => _showAddVerseOptions(context),
+                      tooltip: context.tr(TranslationKeys.memoryHomeAddVerse),
                     ),
                   ),
-                );
-              }
-            } else if (state is PracticeSessionSubmitted) {
-              // Silently refresh verse list so stats (review count, next date)
-              // reflect the just-completed practice session.
-              _loadVerses(forceRefresh: true);
-            } else if (state is VerseAdded) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: AppColors.success,
                 ),
-              );
-              _loadVerses(forceRefresh: true);
-              // Check memory achievements when verse is added
-              sl<GamificationBloc>().add(const CheckMemoryAchievements());
-              // Show notification prompt for memory verse reminder after adding first verse
-              _showMemoryVerseReminderPrompt();
-            } else if (state is OperationQueued) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.cloud_off, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(state.message)),
-                    ],
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onBackground
+                        .withOpacity(0.7),
                   ),
-                  backgroundColor: AppColors.warning,
+                  onPressed: () => _showOptionsMenu(context),
+                  tooltip: context.tr(TranslationKeys.memoryHomeOptions),
                 ),
-              );
-            } else if (state is VerseDeleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-              _loadVerses(forceRefresh: true);
-            }
-          },
-          builder: (context, state) {
-            // Track latest loaded state for stale-while-revalidate
-            if (state is DueVersesLoaded) {
-              _lastLoadedState = state;
-            }
+              ],
+            ),
+            body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
+              listener: (context, state) {
+                // Handle streak data loaded
+                if (state is MemoryStreakLoaded) {
+                  setState(() {
+                    _memoryStreak = MemoryStreakEntity(
+                      currentStreak: state.currentStreak,
+                      longestStreak: state.longestStreak,
+                      lastPracticeDate: state.lastPracticeDate,
+                      totalPracticeDays: state.totalPracticeDays,
+                      freezeDaysAvailable: state.freezeDaysAvailable,
+                      freezeDaysUsed: state.freezeDaysUsed,
+                      milestones: state.milestones,
+                    );
+                  });
+                }
+                // Handle daily goal data loaded
+                else if (state is DailyGoalLoaded) {
+                  setState(() {
+                    _dailyGoal = DailyGoalEntity(
+                      targetReviews: state.targetReviews,
+                      completedReviews: state.completedReviews,
+                      targetNewVerses: state.targetNewVerses,
+                      addedNewVerses: state.addedNewVerses,
+                      goalAchieved: state.goalAchieved,
+                      bonusXpAwarded: state.bonusXpAwarded,
+                    );
+                  });
+                }
+                // Handle milestone reached
+                else if (state is StreakMilestoneReached) {
+                  // Show celebration dialog
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      MilestoneCelebrationDialog.show(
+                        context,
+                        milestoneDays: state.milestone,
+                        xpEarned: state.xpEarned,
+                      );
+                    }
+                  });
+                  // Reload streak to show updated milestone
+                  context
+                      .read<MemoryVerseBloc>()
+                      .add(const LoadMemoryStreakEvent());
+                }
+                // Handle streak freeze used
+                else if (state is StreakFreezeUsed) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.info,
+                    ),
+                  );
+                  // Reload streak to show updated freeze days
+                  context
+                      .read<MemoryVerseBloc>()
+                      .add(const LoadMemoryStreakEvent());
+                } else if (state is MemoryVerseError) {
+                  if (state.code == 'VERSE_LIMIT_EXCEEDED') {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        VerseLimitExceededDialog.show(
+                          context,
+                          currentTier: _getCurrentPlan(),
+                        );
+                      }
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text('Something went wrong. Please try again.'),
+                        backgroundColor: AppColors.error,
+                        action: SnackBarAction(
+                          label: context.tr(TranslationKeys.commonRetry),
+                          textColor: Colors.white,
+                          onPressed: _loadVerses,
+                        ),
+                      ),
+                    );
+                  }
+                } else if (state is PracticeSessionSubmitted) {
+                  // Silently refresh verse list so stats (review count, next date)
+                  // reflect the just-completed practice session.
+                  _loadVerses(forceRefresh: true);
+                } else if (state is VerseAdded) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  _loadVerses(forceRefresh: true);
+                  // Check memory achievements when verse is added
+                  sl<GamificationBloc>().add(const CheckMemoryAchievements());
+                  // Show notification prompt for memory verse reminder after adding first verse
+                  _showMemoryVerseReminderPrompt();
+                } else if (state is OperationQueued) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.cloud_off, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(state.message)),
+                        ],
+                      ),
+                      backgroundColor: AppColors.warning,
+                    ),
+                  );
+                } else if (state is VerseDeleted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  _loadVerses(forceRefresh: true);
+                }
+              },
+              builder: (context, state) {
+                // Track latest loaded state for stale-while-revalidate
+                if (state is DueVersesLoaded) {
+                  _lastLoadedState = state;
+                  // Defer walkthrough until after verses load so hasVerses is accurate.
+                  if (!_walkthroughTriggered) {
+                    _walkthroughTriggered = true;
+                    _triggerWalkthroughIfNeeded();
+                  }
+                }
 
-            // Show current loaded state (includes silent background refresh)
-            if (state is DueVersesLoaded) {
-              return _buildLoadedState(state);
-            }
+                // Show current loaded state (includes silent background refresh)
+                if (state is DueVersesLoaded) {
+                  return _buildLoadedState(state, hasVerses: hasVerses);
+                }
 
-            // Preserve loaded state during transient states — no flicker
-            if (_lastLoadedState != null) {
-              return _buildLoadedState(_lastLoadedState!);
-            }
+                // Preserve loaded state during transient states — no flicker
+                if (_lastLoadedState != null) {
+                  return _buildLoadedState(_lastLoadedState!,
+                      hasVerses: hasVerses);
+                }
 
-            // No cached data yet (first visit) — show loader while fetching
-            return _buildLoadingState();
-          },
-        ),
-      ).withAuthProtection(),
+                // No cached data yet (first visit) — show loader while fetching
+                return _buildLoadingState();
+              },
+            ),
+          ).withAuthProtection(),
+        );
+      },
     );
   }
 
@@ -342,7 +412,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     );
   }
 
-  Widget _buildLoadedState(DueVersesLoaded state) {
+  Widget _buildLoadedState(DueVersesLoaded state, {bool hasVerses = false}) {
     // Show full empty state only when user has no verses at all
     if (state.statistics.totalVerses == 0) {
       return _buildEmptyState();
@@ -363,7 +433,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Compact streak + Daily goal + action buttons
-                  _buildCompactProgressSection(state),
+                  _buildCompactProgressSection(state, hasVerses: hasVerses),
                   const SizedBox(height: 24),
                   _buildLanguageFilter(context),
                   const SizedBox(height: 16),
@@ -399,7 +469,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final verse = state.verses[index];
-                    return Padding(
+                    final card = Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: MemoryVerseListItem(
                         verse: verse,
@@ -408,6 +478,21 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                         masteryLevel: verse.masteryLevel,
                       ),
                     );
+                    if (index == 0) {
+                      return WalkthroughTooltip(
+                        showcaseKey: ShowcaseKeys.memoryVerseCard,
+                        title: AppLocalizations.of(context)!
+                            .walkthroughMemoryVerseTitle,
+                        description: AppLocalizations.of(context)!
+                            .walkthroughMemoryVerseDesc,
+                        screen: WalkthroughScreen.memoryVerses,
+                        stepNumber: 2,
+                        totalSteps: 2,
+                        onNext: _onNext,
+                        child: card,
+                      );
+                    }
+                    return card;
                   },
                   childCount: state.verses.length,
                 ),
@@ -464,7 +549,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   /// Builds a compact progress section combining streak, daily goal, and action buttons
-  Widget _buildCompactProgressSection(DueVersesLoaded state) {
+  Widget _buildCompactProgressSection(DueVersesLoaded state,
+      {bool hasVerses = false}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
