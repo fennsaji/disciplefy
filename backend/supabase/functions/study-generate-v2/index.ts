@@ -980,14 +980,15 @@ async function handleStudyGenerateV2(
         let studyGuideData: CompleteStudyGuide | undefined
 
         // Check if we should use multi-pass generation
-        // Multi-pass helps Hindi/Malayalam achieve better word counts due to token inefficiency
+        // Multi-pass splits generation into smaller JSON payloads, preventing JSON parse failures
+        // caused by unescaped characters in long interpretation fields.
         // Sermon: 4-pass (ALL languages - split to avoid Edge Function timeout)
-        // Deep: 2-pass (Hindi + Malayalam)
+        // Deep: 2-pass (ALL languages - interpretation is 1350-1550 words, too large for reliable single-pass JSON)
         // Lectio: 2-pass (Hindi + Malayalam)
         // Standard: 2-pass (Hindi + Malayalam)
         const useMultiPass = (
           (study_mode === 'sermon') ||  // ALWAYS use multi-pass for sermon (4-pass to stay under 200s per pass)
-          (study_mode === 'deep' && (targetLanguage === 'hi' || targetLanguage === 'ml')) ||
+          (study_mode === 'deep') ||    // ALWAYS use multi-pass for deep (prevents LM-E-002 JSON parse failures)
           (study_mode === 'lectio' && (targetLanguage === 'hi' || targetLanguage === 'ml')) ||
           (study_mode === 'standard' && (targetLanguage === 'hi' || targetLanguage === 'ml'))
         )
@@ -1061,6 +1062,20 @@ async function handleStudyGenerateV2(
             console.log(`[LLM-MultiPass] ✅ Pass 1/4 complete (streamed)`)
             console.log(`[LLM-MultiPass] Pass 1 fields:`, Object.keys(pass1Data))
             console.log(`[LLM-MultiPass] Pass 1 interpretationPart1 length:`, pass1Data.interpretationPart1?.length || 0)
+
+            // Safety nets: emit summary/context/passage if streaming parser missed them
+            if (pass1Data.summary && !pass1Result.emittedSections.has('summary')) {
+              console.log(`[LLM-MultiPass] ⚠️ Summary not emitted during streaming, emitting now (safety net)`)
+              emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, 14))
+            }
+            if (pass1Data.context && !pass1Result.emittedSections.has('context')) {
+              console.log(`[LLM-MultiPass] ⚠️ Context not emitted during streaming, emitting now (safety net)`)
+              emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, 14))
+            }
+            if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
+              console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
+              emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))
+            }
 
             // PROGRESSIVE SAVE: Save Pass 1 sections to in-progress table
             await studyGuideRepository.updateInProgressSections(inProgressId, {
@@ -1359,8 +1374,16 @@ async function handleStudyGenerateV2(
               console.log(`[LLM-MultiPass] ✅ ${modeName} Pass 1 complete (streamed)`)
               console.log(`[LLM-MultiPass] Pass 1 fields:`, Object.keys(pass1Data))
 
-              // Safety net: emit passage if LLM generated it but streaming parser missed it
-              // (can happen when LLM omits passage during streaming then includes it in final JSON)
+              // Safety nets: emit summary/context/passage if streaming parser missed them
+              // (can happen when LLM embeds unescaped quotes that confuse the streaming parser)
+              if (pass1Data.summary && !pass1Result.emittedSections.has('summary')) {
+                console.log(`[LLM-MultiPass] ⚠️ Summary not emitted during streaming, emitting now (safety net)`)
+                emit(createSectionEvent({ type: 'summary', content: pass1Data.summary, index: 0 }, 14))
+              }
+              if (pass1Data.context && !pass1Result.emittedSections.has('context')) {
+                console.log(`[LLM-MultiPass] ⚠️ Context not emitted during streaming, emitting now (safety net)`)
+                emit(createSectionEvent({ type: 'context', content: pass1Data.context, index: 1 }, 14))
+              }
               if (pass1Data.passage && !pass1Result.emittedSections.has('passage')) {
                 console.log(`[LLM-MultiPass] ⚠️ Passage not emitted during streaming, emitting now (safety net)`)
                 emit(createSectionEvent({ type: 'passage', content: pass1Data.passage, index: 1 }, 14))

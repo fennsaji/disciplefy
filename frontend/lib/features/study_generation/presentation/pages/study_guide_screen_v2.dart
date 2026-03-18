@@ -26,6 +26,7 @@ import '../../data/datasources/study_local_data_source.dart';
 import '../../../study_topics/domain/repositories/topic_progress_repository.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/widgets/locked_feature_wrapper.dart';
@@ -58,6 +59,11 @@ import '../../../../core/utils/logger.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
 import '../../../community/domain/repositories/community_repository.dart';
 import '../../../community/presentation/screens/share_guide_sheet.dart';
+import 'package:showcaseview/showcaseview.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -227,6 +233,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   final TextEditingController _notesController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  // Walkthrough state
+  WalkthroughScreen? _pendingMarkSeen;
+  // Keys to show once read-mode content is rendered (set when keys not yet in tree)
+  // Stores the builder context from ShowCaseWidget — required for ShowCaseWidget.of() calls.
+  // State.context is an ancestor of ShowCaseWidget, so ShowCaseWidget.of(this.context) fails.
+  // The builder context is a descendant and resolves correctly.
+  BuildContext? _showcaseContext;
+
   StudyGuide? _currentStudyGuide;
   bool _isLoading = true;
 
@@ -331,12 +345,37 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _initializeStudyGuide();
     _loadUserFellowships();
     if (!kIsWeb) _setupScreenshotDetection();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      final seenHint = await repo.hasSeen(WalkthroughScreen.disciplerHint);
+
+      if (!seenHint) {
+        if (!mounted || _showcaseContext == null) return;
+        // Wait for a full frame after the async gap to ensure Showcase widgets
+        // are laid out before startShowCase accesses their RenderBox.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _showcaseContext == null) return;
+          // Second+ visit: show AI Discipler cross-promo if button is in tree
+          if (ShowcaseKeys.disciplerHintStudyGuide.currentContext != null) {
+            _pendingMarkSeen = WalkthroughScreen.disciplerHint;
+            ShowCaseWidget.of(_showcaseContext!)
+                .startShowCase([ShowcaseKeys.disciplerHintStudyGuide]);
+          }
+          // If button absent (feature flag / plan restriction): skip silently
+        });
+      }
+    });
   }
 
   /// Loads the fellowships the current user belongs to so the
   /// [_ReflectionCommentSection] can offer an optional share toggle.
   Future<void> _loadUserFellowships() async {
-    final result = await sl<CommunityRepository>().getFellowships();
+    final result = await sl<CommunityRepository>().getFellowships('en');
     if (!mounted) return;
     result.fold(
       (_) => setState(() => _userFellowships = []),
@@ -1544,136 +1583,149 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
+    return ShowCaseWidget(
+      onFinish: () {
+        if (_pendingMarkSeen != null) {
+          sl<WalkthroughRepository>().markSeen(_pendingMarkSeen!);
+          _pendingMarkSeen = null;
+        }
       },
-      child: BlocListener<StudyBloc, StudyState>(
-        listener: (context, state) {
-          // Handle study guide generation states
-          if (state is StudyGenerationInProgress) {
-            if (!mounted) return;
-            setState(() {
-              _isLoading = true;
-              _hasError = false;
-            });
-          } else if (state is StudyGenerationStreaming) {
-            // Handle streaming state - UI will rebuild with BlocBuilder
-            if (!mounted) return;
-            setState(() {
-              _isLoading = false;
-              _hasError = false;
-            });
+      builder: (showcaseContext) {
+        _showcaseContext = showcaseContext; // capture for use in trigger
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: BlocListener<StudyBloc, StudyState>(
+            listener: (context, state) {
+              // Handle study guide generation states
+              if (state is StudyGenerationInProgress) {
+                if (!mounted) return;
+                setState(() {
+                  _isLoading = true;
+                  _hasError = false;
+                });
+              } else if (state is StudyGenerationStreaming) {
+                // Handle streaming state - UI will rebuild with BlocBuilder
+                if (!mounted) return;
+                setState(() {
+                  _isLoading = false;
+                  _hasError = false;
+                });
 
-            // Start completion tracking as soon as we have the first section
-            if (state.content.sectionsLoaded > 0 &&
-                !_isCompletionTrackingStarted) {
-              _startCompletionTracking();
-            }
-          } else if (state is StudyGenerationStreamingFailed) {
-            _handleStreamingFailure(state);
-          } else if (state is StudyGenerationSuccess) {
-            _handleGenerationSuccess(state.studyGuide);
-          } else if (state is StudyGenerationFailure) {
-            _handleGenerationFailure(state.failure,
-                isRetryable: state.isRetryable);
-          }
-          // Handle save operations
-          else if (state is StudyEnhancedSaveSuccess) {
-            if (!mounted) return;
-            setState(() {
-              _isSaved = state.guideSaved;
-              if (state.notesSaved && state.savedNotes != null) {
-                _loadedNotes = state.savedNotes;
+                // Start completion tracking as soon as we have the first section
+                if (state.content.sectionsLoaded > 0 &&
+                    !_isCompletionTrackingStarted) {
+                  _startCompletionTracking();
+                }
+                // Start deferred walkthrough once read-mode content is visible
+              } else if (state is StudyGenerationStreamingFailed) {
+                _handleStreamingFailure(state);
+              } else if (state is StudyGenerationSuccess) {
+                _handleGenerationSuccess(state.studyGuide);
+              } else if (state is StudyGenerationFailure) {
+                _handleGenerationFailure(state.failure,
+                    isRetryable: state.isRetryable);
               }
-            });
-            _showSnackBar(
-              state.message,
-              AppColors.success,
-              icon: Icons.check_circle,
-            );
-            if (state.guideSaved) {
-              _setupAutoSave();
-              // Check saved achievements when guide is saved
-              sl<GamificationBloc>().add(const CheckSavedAchievements());
-            }
-          } else if (state is StudyEnhancedSaveFailure) {
-            _handleEnhancedSaveError(state);
-          } else if (state is StudyEnhancedAuthenticationRequired) {
-            _showEnhancedAuthenticationRequiredDialog(state);
-          }
-          // Handle personal notes operations
-          else if (state is StudyPersonalNotesLoaded) {
-            if (!mounted) return;
-            setState(() {
-              _notesLoaded = true;
-              _loadedNotes = state.notes;
-              if (state.notes != null) {
-                _notesController.text = state.notes!;
+              // Handle save operations
+              else if (state is StudyEnhancedSaveSuccess) {
+                if (!mounted) return;
+                setState(() {
+                  _isSaved = state.guideSaved;
+                  if (state.notesSaved && state.savedNotes != null) {
+                    _loadedNotes = state.savedNotes;
+                  }
+                });
+                _showSnackBar(
+                  state.message,
+                  AppColors.success,
+                  icon: Icons.check_circle,
+                );
+                if (state.guideSaved) {
+                  _setupAutoSave();
+                  // Check saved achievements when guide is saved
+                  sl<GamificationBloc>().add(const CheckSavedAchievements());
+                }
+              } else if (state is StudyEnhancedSaveFailure) {
+                _handleEnhancedSaveError(state);
+              } else if (state is StudyEnhancedAuthenticationRequired) {
+                _showEnhancedAuthenticationRequiredDialog(state);
               }
-            });
-            // Always setup auto-save when notes are loaded
-            _setupAutoSave();
-            // Update Hive cache with loaded notes
-            if (_currentStudyGuide != null && state.notes != null) {
-              sl<StudyLocalDataSource>().cacheStudyGuide(
-                _currentStudyGuide!.copyWith(personalNotes: state.notes),
-              );
-            }
-          } else if (state is StudyPersonalNotesSuccess) {
-            _showSnackBar(
-              state.isAutoSave
-                  ? 'Notes saved'
-                  : (state.message ?? 'Personal notes saved!'),
-              AppColors.success,
-              icon: state.isAutoSave ? Icons.check : Icons.note_add,
-              duration: state.isAutoSave
-                  ? const Duration(milliseconds: 1500)
-                  : const Duration(seconds: 3),
-            );
-            if (!mounted) return;
-            setState(() {
-              _loadedNotes = state.savedNotes;
-            });
-            // Update Hive cache with saved notes
-            if (_currentStudyGuide != null) {
-              sl<StudyLocalDataSource>().cacheStudyGuide(
-                _currentStudyGuide!.copyWith(personalNotes: state.savedNotes),
-              );
-            }
-          } else if (state is StudyPersonalNotesFailure) {
-            if (!state.isAutoSave) {
-              _showSnackBar(
-                'Something went wrong. Please try again.',
-                Theme.of(context).colorScheme.error,
-                icon: Icons.error_outline,
-              );
-            }
-          }
-          // Handle study completion - show notification prompt and invalidate cache
-          else if (state is StudyCompletionSuccess) {
-            // Invalidate the "For You" cache so completed topics don't show again
-            sl<RecommendedGuidesService>().clearForYouCache();
+              // Handle personal notes operations
+              else if (state is StudyPersonalNotesLoaded) {
+                if (!mounted) return;
+                setState(() {
+                  _notesLoaded = true;
+                  _loadedNotes = state.notes;
+                  if (state.notes != null) {
+                    _notesController.text = state.notes!;
+                  }
+                });
+                // Always setup auto-save when notes are loaded
+                _setupAutoSave();
+                // Update Hive cache with loaded notes
+                if (_currentStudyGuide != null && state.notes != null) {
+                  sl<StudyLocalDataSource>().cacheStudyGuide(
+                    _currentStudyGuide!.copyWith(personalNotes: state.notes),
+                  );
+                }
+              } else if (state is StudyPersonalNotesSuccess) {
+                _showSnackBar(
+                  state.isAutoSave
+                      ? 'Notes saved'
+                      : (state.message ?? 'Personal notes saved!'),
+                  AppColors.success,
+                  icon: state.isAutoSave ? Icons.check : Icons.note_add,
+                  duration: state.isAutoSave
+                      ? const Duration(milliseconds: 1500)
+                      : const Duration(seconds: 3),
+                );
+                if (!mounted) return;
+                setState(() {
+                  _loadedNotes = state.savedNotes;
+                });
+                // Update Hive cache with saved notes
+                if (_currentStudyGuide != null) {
+                  sl<StudyLocalDataSource>().cacheStudyGuide(
+                    _currentStudyGuide!
+                        .copyWith(personalNotes: state.savedNotes),
+                  );
+                }
+              } else if (state is StudyPersonalNotesFailure) {
+                if (!state.isAutoSave) {
+                  _showSnackBar(
+                    'Something went wrong. Please try again.',
+                    Theme.of(context).colorScheme.error,
+                    icon: Icons.error_outline,
+                  );
+                }
+              }
+              // Handle study completion - show notification prompt and invalidate cache
+              else if (state is StudyCompletionSuccess) {
+                // Invalidate the "For You" cache so completed topics don't show again
+                sl<RecommendedGuidesService>().clearForYouCache();
 
-            // Track topic progress completion (XP, first-completion badge, etc.)
-            _completeTopicProgress();
+                // Track topic progress completion (XP, first-completion badge, etc.)
+                _completeTopicProgress();
 
-            // Update study streak and check achievements
-            sl<GamificationBloc>().add(const UpdateStudyStreak());
-            sl<GamificationBloc>().add(const CheckStudyAchievements());
+                // Update study streak and check achievements
+                sl<GamificationBloc>().add(const UpdateStudyStreak());
+                sl<GamificationBloc>().add(const CheckStudyAchievements());
 
-            _showRecommendedTopicNotificationPrompt();
-          }
-        },
-        child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _buildAppBar(),
-          body: _buildBody(),
-        ),
-      ),
-    );
+                _showRecommendedTopicNotificationPrompt();
+              }
+            },
+            child: Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              appBar: _buildAppBar(),
+              body: _buildBody(),
+            ),
+          ),
+        ); // end PopScope
+      }, // end ShowCaseWidget builder
+    ); // end ShowCaseWidget
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -3467,68 +3519,127 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             Expanded(
               child: SizedBox(
                 height: 56,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Expand chat first if collapsed
-                        if (!_isChatExpanded) {
-                          setState(() {
-                            _isChatExpanded = true;
-                          });
-                        }
-
-                        // Then scroll to Follow-up Chat section after a brief delay
-                        // to allow the expand animation to start
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          final chatContext = _followUpChatKey.currentContext;
-                          if (chatContext != null && mounted) {
-                            Scrollable.ensureVisible(
-                              chatContext,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeInOut,
-                              alignment: 0.1, // Position near top of viewport
-                            );
-                          }
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.auto_awesome_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              context.tr(TranslationKeys.studyGuideAskAi),
-                              style: AppFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                child: Showcase.withWidget(
+                  key: ShowcaseKeys.disciplerHintStudyGuide,
+                  height: 160,
+                  width: 280,
+                  container: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Color(0x1A000000),
+                            blurRadius: 16,
+                            offset: Offset(0, 4))
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Go Deeper',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: Color(0xFF1E1E1E))),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Want to explore this topic further? Chat with the AI Discipler for personalized Bible guidance',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF555555),
+                              height: 1.4),
+                        ),
+                        const SizedBox(height: 12),
+                        // No "Watch video" button for disciplerHint — single-step nudge only
+                        Builder(
+                          builder: (innerCtx) => GestureDetector(
+                            onTap: () => ShowCaseWidget.of(innerCtx).next(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFF4F46E5),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: const Text('Got it →',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600)),
                             ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  overlayOpacity: 0,
+                  targetBorderRadius: BorderRadius.circular(8),
+                  targetPadding: const EdgeInsets.all(4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          // Expand chat first if collapsed
+                          if (!_isChatExpanded) {
+                            setState(() {
+                              _isChatExpanded = true;
+                            });
+                          }
+
+                          // Then scroll to Follow-up Chat section after a brief delay
+                          // to allow the expand animation to start
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            final chatContext = _followUpChatKey.currentContext;
+                            if (chatContext != null && mounted) {
+                              Scrollable.ensureVisible(
+                                chatContext,
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.easeInOut,
+                                alignment: 0.1, // Position near top of viewport
+                              );
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                context.tr(TranslationKeys.studyGuideAskAi),
+                                style: AppFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -3838,8 +3949,50 @@ ${_currentStudyGuide!.prayerPoints.map((p) => '• $p').join('\n')}
 $appLink
 ''';
 
+    // WhatsApp truncates pasted text at ~65 536 Unicode code points (same limit
+    // for all languages — Hindi/Malayalam characters count the same as English).
+    // Prompt to use PDF when approaching that limit.
+    const int longGuideThreshold = 50000;
+    if (shareText.length > longGuideThreshold && mounted) {
+      final usePdf = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Study guide is long'),
+          content: const Text(
+            'This guide may be cut off when pasted into messaging apps like WhatsApp. '
+            'Share as a PDF to send the complete guide.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Continue anyway'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Share as PDF'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (usePdf == true) {
+        _exportToPdf();
+        return;
+      }
+    }
+
+    // Android Binder IPC safety cap (rare — guides are typically < 25 000 chars).
+    const int maxShareChars = 200000;
+    final String textToShare;
+    if (shareText.length > maxShareChars) {
+      textToShare =
+          '${shareText.substring(0, maxShareChars)}\n\n[... content truncated — open Disciplefy to read the full guide]\n📱 Android: https://play.google.com/store/apps/details?id=com.disciplefy.bible_study\n🌐 Web: https://app.disciplefy.in/';
+    } else {
+      textToShare = shareText;
+    }
+
     Share.share(
-      shareText,
+      textToShare,
       subject: 'Bible Study: ${_getDisplayTitle()}',
     );
   }
@@ -3852,136 +4005,111 @@ $appLink
   Future<void> _exportToPdf() async {
     if (_currentStudyGuide == null) return;
 
-    // Show loading dialog for Hindi/Malayalam (image-based rendering takes time)
-    final isComplexScript =
-        _currentStudyGuide!.language.toLowerCase() == 'hi' ||
-            _currentStudyGuide!.language.toLowerCase() == 'ml';
+    setState(() => _isExportingPdf = true);
 
-    setState(() {
-      _isExportingPdf = true;
-    });
+    // Mutable progress state; updated via StatefulBuilder's setState.
+    int pdfStep = 0;
+    int pdfTotal = 0;
+    StateSetter? updateDialog;
 
-    if (isComplexScript && mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => PopScope(
-          canPop: false,
-          child: AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Use a static icon instead of animated spinner
-                // since the main thread will be busy with rendering
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Theme.of(ctx).colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            updateDialog = setDialogState;
+            final fraction = pdfTotal > 0 ? pdfStep / pdfTotal : 0.0;
+            final primary = Theme.of(ctx).colorScheme.primary;
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 4),
+                  // Static icon — no animation (main thread is busy rendering)
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.picture_as_pdf_outlined,
+                        color: primary, size: 28),
                   ),
-                  child: Icon(
-                    Icons.picture_as_pdf,
-                    color: Theme.of(ctx).colorScheme.primary,
-                    size: 28,
+                  const SizedBox(height: 16),
+                  Text(
+                    context.tr(TranslationKeys.studyGuideGeneratingPdf),
+                    style: Theme.of(ctx).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  context.tr('study_guide.actions.generating_pdf'),
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  context.tr('study_guide.actions.pdf_wait_message'),
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                ),
-              ],
-            ),
-          ),
+                  const SizedBox(height: 14),
+                  // Determinate bar — snaps between sections (no animation needed)
+                  LinearProgressIndicator(
+                    value: pdfTotal > 0 ? fraction.clamp(0.0, 1.0) : null,
+                    backgroundColor: primary.withOpacity(0.12),
+                    valueColor: AlwaysStoppedAnimation<Color>(primary),
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    pdfTotal > 0 && pdfStep < pdfTotal
+                        ? '$pdfStep / $pdfTotal'
+                        : pdfTotal > 0 && pdfStep == pdfTotal
+                            ? context
+                                .tr(TranslationKeys.studyGuidePdfFinalizing)
+                            : context
+                                .tr(TranslationKeys.studyGuidePdfWaitMessage),
+                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(ctx)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.5),
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                ],
+              ),
+            );
+          },
         ),
-      );
+      ),
+    );
 
-      // Wait for dialog to fully render before starting heavy work
-      await Future.delayed(const Duration(milliseconds: 150));
-    }
+    // Wait for the dialog to fully render before starting heavy work.
+    await Future.delayed(const Duration(milliseconds: 200));
 
     try {
       final pdfService = StudyGuidePdfService();
-      // Pass context for image-based rendering (needed for Hindi/Malayalam)
-      await pdfService.sharePdf(_currentStudyGuide!, context: context);
+      await pdfService.sharePdf(
+        _currentStudyGuide!,
+        context: context,
+        onProgress: (step, total) {
+          pdfStep = step;
+          pdfTotal = total;
+          updateDialog?.call(() {}); // Trigger StatefulBuilder rebuild
+        },
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
     } finally {
-      // Close loading dialog if it was shown
-      if (isComplexScript && mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
       if (mounted) {
-        setState(() {
-          _isExportingPdf = false;
-        });
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => _isExportingPdf = false);
       }
     }
-  }
-
-  /// Shows a dialog explaining PDF export limitation for non-English languages.
-  /// This method is kept for potential future use but currently all languages
-  /// are supported via image-based rendering.
-  void _showPdfLanguageNotSupportedDialog() {
-    final languageName = _currentStudyGuide!.language.toLowerCase() == 'hi'
-        ? 'Hindi'
-        : 'Malayalam';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            const Text('PDF Export'),
-          ],
-        ),
-        content: Text(
-          'PDF export is currently available only for English study guides. '
-          '$languageName text requires special rendering that isn\'t supported yet.\n\n'
-          'Would you like to share as text instead?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _shareStudyGuide();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: context.appInteractive,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Share as Text'),
-          ),
-        ],
-      ),
-    );
   }
 }
 
