@@ -489,3 +489,5 @@ github-secrets-*.txt
 target/
 
 .worktrees/
+
+.guides/
