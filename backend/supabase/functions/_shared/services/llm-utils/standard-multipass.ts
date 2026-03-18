@@ -17,7 +17,9 @@ import {
   createLanguageBlock,
   createVerseReferenceBlock,
   getWordCountTarget,
-  getDiscipleLevelContext
+  getDiscipleLevelContext,
+  createNativeWritingStyle,
+  getLanguageExamples
 } from './prompt-builder.ts'
 
 export type StandardPass = 'pass1' | 'pass2'
@@ -57,7 +59,9 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 STUDY MODE: STANDARD STUDY - PASS 1/2 (Foundation + Teaching)
 This is part 1 of a multi-pass standard study generation. Focus on solid teaching.
 Target output: ~700 words for this pass.
-Tone: Clear, accessible, biblically grounded, practical.`
+Tone: Clear, accessible, biblically grounded, practical.
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `${taskDescription}
 
@@ -110,6 +114,15 @@ Keep it SHORT and FOCUSED - only what's essential to understand the study.
 This section MUST contain EXACTLY 2 paragraphs of continuous narrative prose.
 EACH paragraph MUST have 6-8 sentences.
 
+⚠️ SINGLE-VERSE INPUT — MANDATORY EXPANSION:
+If the study input is a single verse (e.g., "John 3:16"), you MUST reach the full word count by:
+- Expanding with CROSS-REFERENCES: cite 3-4 related passages and explain each one exegetically
+- Adding SYSTEMATIC THEOLOGY connections: show how this verse fits broader biblical doctrine
+- Examining the verse's place in REDEMPTIVE HISTORY: what came before, what points forward to Christ
+- Analyzing ORIGINAL LANGUAGE details (Greek/Hebrew keywords, grammatical forms)
+- Showing the verse's role in its LITERARY CONTEXT (surrounding chapter/book)
+Do NOT stop early because one verse "runs out" of material. Cross-references and doctrinal connections are required to fill the target length.
+
 ⚠️ SENTENCE COUNTING IS MANDATORY:
 - A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
 - Count each sentence as you write: "1. [sentence]. 2. [sentence]... 6. [sentence]."
@@ -161,6 +174,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
 
+${getLanguageExamples(language)}
+
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "summary": "[YOUR 80-100 WORD SUMMARY HERE - as specified above]",
@@ -193,7 +208,9 @@ ${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discip
 STUDY MODE: STANDARD STUDY - PASS 2/2 (Application + Resources)
 This is part 2 of a 2-part standard study generation. Focus on practical life change.
 Target output: ~500 words for this pass.
-Continue the clear, practical, biblically grounded tone.`
+Continue the clear, practical, biblically grounded tone.
+
+${createNativeWritingStyle(language)}`
 
   const userMessage = `═══════════════════════════════════════════════════════════════════════════
 PASS 2: STANDARD STUDY APPLICATION (Life Application + Resources)
@@ -282,6 +299,8 @@ IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
 
 ⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
 You must generate FULL CONTENT for each field as specified above.
+
+${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
