@@ -95,6 +95,10 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   // Track if we've already triggered a token refresh to prevent loops
   bool _isRefreshingTokens = false;
 
+  // Router listener for detecting tab-switch back to this screen
+  GoRouter? _goRouter;
+  String? _lastListenedPath;
+
   // Timer to ensure loading state doesn't get stuck
   Timer? _generationTimeoutTimer;
 
@@ -280,9 +284,34 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     }
   }
 
+  void _onRouterChanged() {
+    if (!mounted || _goRouter == null) return;
+    final currentPath = _goRouter!.routerDelegate.currentConfiguration.uri.path;
+    final wasElsewhere = _lastListenedPath != null &&
+        _lastListenedPath != AppRoutes.generateStudy;
+    _lastListenedPath = currentPath;
+    if (currentPath == AppRoutes.generateStudy &&
+        wasElsewhere &&
+        !_isRefreshingTokens) {
+      _isRefreshingTokens = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<TokenBloc>().add(const GetTokenStatus());
+        }
+      });
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Set up the router listener once so we can detect tab-switch back to this screen
+    if (_goRouter == null && mounted) {
+      _goRouter = GoRouter.of(context);
+      _lastListenedPath =
+          _goRouter!.routerDelegate.currentConfiguration.uri.path;
+      _goRouter!.routerDelegate.addListener(_onRouterChanged);
+    }
     Logger.debug(
         '🔄 [DEBUG] didChangeDependencies called, _hasNavigatedAway: $_hasNavigatedAway, mounted: $mounted');
     // Always refresh tokens when dependencies change and we don't have current status
@@ -321,6 +350,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   void dispose() {
     // Remove app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
+    _goRouter?.routerDelegate.removeListener(_onRouterChanged);
     _generationTimeoutTimer?.cancel();
     _languageChangeSubscription?.cancel();
     _inputController.dispose();
