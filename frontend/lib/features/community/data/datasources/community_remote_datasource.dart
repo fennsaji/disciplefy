@@ -18,7 +18,7 @@ import '../models/public_fellowship_model.dart';
 /// wrapped as [ServerException] with a domain-specific error code.
 abstract class CommunityRemoteDatasource {
   /// Returns the list of fellowships the current user belongs to.
-  Future<List<FellowshipModel>> getFellowships();
+  Future<List<FellowshipModel>> getFellowships(String language);
 
   /// Returns the member list for [fellowshipId].
   Future<List<FellowshipMemberModel>> getFellowshipMembers(String fellowshipId);
@@ -131,7 +131,8 @@ abstract class CommunityRemoteDatasource {
   Future<Map<String, dynamic>> createInvite(String fellowshipId);
 
   /// Returns full details for the fellowship identified by [fellowshipId].
-  Future<Map<String, dynamic>> getFellowship(String fellowshipId);
+  Future<Map<String, dynamic>> getFellowship(
+      String fellowshipId, String language);
 
   /// Updates fellowship settings (mentor only).
   Future<void> updateFellowship({
@@ -335,11 +336,12 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<List<FellowshipModel>> getFellowships() async {
+  Future<List<FellowshipModel>> getFellowships(String language) async {
     try {
-      final url = '$_baseUrl$_fellowshipListEndpoint';
+      final uri = Uri.parse('$_baseUrl$_fellowshipListEndpoint')
+          .replace(queryParameters: {'language': language});
       final headers = await _httpService.createHeaders();
-      final response = await _httpService.get(url, headers: headers);
+      final response = await _httpService.get(uri.toString(), headers: headers);
 
       if (response.statusCode != 200) {
         throw ServerException(
@@ -1109,10 +1111,14 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, dynamic>> getFellowship(String fellowshipId) async {
+  Future<Map<String, dynamic>> getFellowship(
+      String fellowshipId, String language) async {
     try {
-      final uri = Uri.parse('$_baseUrl$_fellowshipGetEndpoint')
-          .replace(queryParameters: {'fellowship_id': fellowshipId});
+      final uri = Uri.parse('$_baseUrl$_fellowshipGetEndpoint').replace(
+          queryParameters: {
+            'fellowship_id': fellowshipId,
+            'language': language
+          });
 
       final headers = await _httpService.createHeaders();
       final response = await _httpService.get(uri.toString(), headers: headers);

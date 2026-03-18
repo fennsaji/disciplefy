@@ -21,12 +21,16 @@ class CurrentStudyEntity extends Equatable {
   /// ISO-8601 timestamp when the study was completed, or null if still active.
   final String? completedAt;
 
+  /// Total number of guides in the learning path, or null if unknown.
+  final int? totalGuides;
+
   const CurrentStudyEntity({
     required this.learningPathId,
     this.learningPathTitle,
     required this.currentGuideIndex,
     required this.startedAt,
     this.completedAt,
+    this.totalGuides,
   });
 
   @override
@@ -36,5 +40,6 @@ class CurrentStudyEntity extends Equatable {
         currentGuideIndex,
         startedAt,
         completedAt,
+        totalGuides,
       ];
 }

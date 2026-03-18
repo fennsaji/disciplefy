@@ -246,8 +246,18 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
 
       const startsAtDate = new Date(meeting.starts_at)
       const endsAtDate = new Date(meeting.ends_at)
-      const dateStr = startsAtDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: body.time_zone })
-      const timeStr = startsAtDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: body.time_zone })
+      // Extract the UTC offset from the original starts_at sent by the client
+      // (e.g. "2026-03-17T23:30:00+05:30" → +330 minutes).  This is more
+      // reliable than body.time_zone which can fall back to "UTC" on Android
+      // when the OS returns a non-IANA string like "IST" instead of "Asia/Kolkata".
+      const offsetMatch = body.starts_at.match(/([+-])(\d{2}):(\d{2})$/)
+      const offsetMinutes = offsetMatch
+        ? (offsetMatch[1] === '+' ? 1 : -1) * (parseInt(offsetMatch[2]) * 60 + parseInt(offsetMatch[3]))
+        : 0
+      // Shift by the offset so we can safely format using timeZone:'UTC'.
+      const localStartsAt = new Date(startsAtDate.getTime() + offsetMinutes * 60000)
+      const dateStr = localStartsAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
+      const timeStr = localStartsAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' })
       const dur = Math.round((endsAtDate.getTime() - startsAtDate.getTime()) / 60000)
       const durationLabel = dur < 60 ? `${dur} min` : dur % 60 === 0 ? `${dur / 60} hr` : `${Math.floor(dur / 60)} hr ${dur % 60} min`
       const gcalDateFmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')

@@ -22,6 +22,11 @@ import '../bloc/discover/discover_state.dart';
 import '../bloc/fellowship_list/fellowship_list_bloc.dart';
 import '../bloc/fellowship_list/fellowship_list_event.dart';
 import '../bloc/fellowship_list/fellowship_list_state.dart';
+import 'package:showcaseview/showcaseview.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 class CommunityTabScreen extends StatefulWidget {
   const CommunityTabScreen({super.key});
@@ -43,7 +48,11 @@ class _CommunityTabScreenState extends State<CommunityTabScreen> {
           create: (_) => sl<DiscoverBloc>(),
         ),
       ],
-      child: const _CommunityTabContent(),
+      child: ShowCaseWidget(
+        onFinish: () =>
+            sl<WalkthroughRepository>().markSeen(WalkthroughScreen.community),
+        builder: (context) => const _CommunityTabContent(),
+      ),
     );
   }
 }
@@ -64,6 +73,34 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
 
   GoRouter? _router;
   bool _wasInFellowshipDetail = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  VoidCallback get _onNext => () => ShowCaseWidget.of(context).next();
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.community)) return;
+
+      // Always show both steps: tabs (step 1) + FAB/join (step 2).
+      final keys = <GlobalKey>[
+        ShowcaseKeys.communityTabs,
+        ShowcaseKeys.communityFab,
+      ];
+
+      // Wait one frame so all tooltip widgets are in the tree before
+      // showcaseview tries to resolve their GlobalKeys.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ShowCaseWidget.of(context).startShowCase(keys);
+      });
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -205,38 +242,50 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Pill tabs ────────────────────────────────────────────────────
+          // Padding is outside the tooltip so only the pill bar is highlighted.
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            child: _PillTabs(
-              selected: _selectedTab,
-              onChanged: (i) {
-                setState(() => _selectedTab = i);
-                if (i == 1) {
-                  final discoverBloc = context.read<DiscoverBloc>();
-                  if (discoverBloc.state.status == DiscoverStatus.initial) {
-                    // Default the language filter to the user's current app
-                    // locale, bounded to the set of supported fellowship languages.
-                    final localeCode =
-                        AppLocalizations.of(context)!.locale.languageCode;
-                    final initialLang = ['en', 'hi', 'ml'].contains(localeCode)
-                        ? localeCode
-                        : null;
-                    discoverBloc
-                        .add(DiscoverLoadRequested(language: initialLang));
+            child: WalkthroughTooltip(
+              showcaseKey: ShowcaseKeys.communityTabs,
+              title: l10n.walkthroughCommunityTabsTitle,
+              description: l10n.walkthroughCommunityTabsDesc,
+              screen: WalkthroughScreen.community,
+              stepNumber: 1,
+              totalSteps: 2,
+              tooltipPosition: TooltipPosition.bottom,
+              onNext: _onNext,
+              child: _PillTabs(
+                selected: _selectedTab,
+                onChanged: (i) {
+                  setState(() => _selectedTab = i);
+                  if (i == 1) {
+                    final discoverBloc = context.read<DiscoverBloc>();
+                    if (discoverBloc.state.status == DiscoverStatus.initial) {
+                      // Default the language filter to the user's current app
+                      // locale, bounded to the set of supported fellowship languages.
+                      final localeCode =
+                          AppLocalizations.of(context)!.locale.languageCode;
+                      final initialLang =
+                          ['en', 'hi', 'ml'].contains(localeCode)
+                              ? localeCode
+                              : null;
+                      discoverBloc
+                          .add(DiscoverLoadRequested(language: initialLang));
+                    }
                   }
-                }
-              },
-              tabs: [
-                Text(l10n.communityMyFellowships),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.public_rounded),
-                    SizedBox(width: 5),
-                    Text('Discover'),
-                  ],
-                ),
-              ],
+                },
+                tabs: [
+                  Text(l10n.communityMyFellowships),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.public_rounded),
+                      SizedBox(width: 5),
+                      Text('Discover'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -251,31 +300,29 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
           ),
         ],
       ),
-      // Hide FAB when the user has no fellowships — the empty state has its own CTAs.
       floatingActionButton: _selectedTab == 0
-          ? BlocBuilder<FellowshipListBloc, FellowshipListState>(
-              buildWhen: (prev, curr) =>
-                  prev.fellowships.isEmpty != curr.fellowships.isEmpty ||
-                  prev.status != curr.status,
-              builder: (context, state) {
-                if (state.status != FellowshipListStatus.success ||
-                    state.fellowships.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-                return FloatingActionButton.extended(
-                  onPressed: _onJoinPressed,
-                  backgroundColor: context.appInteractive,
-                  foregroundColor: Colors.white,
-                  icon: const Icon(Icons.group_add_rounded),
-                  label: Text(
-                    l10n.communityJoinFellowship,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                    ),
+          ? WalkthroughTooltip(
+              showcaseKey: ShowcaseKeys.communityFab,
+              title: AppLocalizations.of(context)!.walkthroughCommunityFabTitle,
+              description:
+                  AppLocalizations.of(context)!.walkthroughCommunityFabDesc,
+              screen: WalkthroughScreen.community,
+              stepNumber: 2,
+              totalSteps: 2,
+              onNext: _onNext,
+              child: FloatingActionButton.extended(
+                onPressed: _onJoinPressed,
+                backgroundColor: context.appInteractive,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.group_add_rounded),
+                label: Text(
+                  l10n.communityJoinFellowship,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
                   ),
-                );
-              },
+                ),
+              ),
             )
           : null,
     );

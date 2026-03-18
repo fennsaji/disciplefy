@@ -24,12 +24,16 @@ class FellowshipStudyInitialized extends FellowshipStudyEvent {
   /// Zero-based index of the guide currently being worked through.
   final int? currentGuideIndex;
 
+  /// Total number of guides in the learning path, or null if unknown.
+  final int? currentTotalGuides;
+
   const FellowshipStudyInitialized({
     required this.fellowshipId,
     required this.isMentor,
     this.currentLearningPathId,
     this.currentPathTitle,
     this.currentGuideIndex,
+    this.currentTotalGuides,
   });
 
   @override
@@ -39,6 +43,7 @@ class FellowshipStudyInitialized extends FellowshipStudyEvent {
         currentLearningPathId,
         currentPathTitle,
         currentGuideIndex,
+        currentTotalGuides,
       ];
 }
 

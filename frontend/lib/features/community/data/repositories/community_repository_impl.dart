@@ -29,9 +29,10 @@ class CommunityRepositoryImpl implements CommunityRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Either<Failure, List<FellowshipEntity>>> getFellowships() async {
+  Future<Either<Failure, List<FellowshipEntity>>> getFellowships(
+      String language) async {
     try {
-      final models = await _datasource.getFellowships();
+      final models = await _datasource.getFellowships(language);
       return Right(models.map((m) => m.toEntity()).toList());
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
@@ -425,9 +426,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> getFellowship(
-      String fellowshipId) async {
+      String fellowshipId, String language) async {
     try {
-      final result = await _datasource.getFellowship(fellowshipId);
+      final result = await _datasource.getFellowship(fellowshipId, language);
       return Right(result);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));

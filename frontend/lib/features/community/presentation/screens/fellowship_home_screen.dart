@@ -8,7 +8,6 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
-import '../../../../features/study_topics/presentation/bloc/learning_paths_event.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_state.dart';
 import '../../domain/entities/fellowship_entity.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
@@ -96,19 +95,12 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
               currentLearningPathId: fellowship?.currentStudy?.learningPathId,
               currentPathTitle: fellowship?.currentStudy?.learningPathTitle,
               currentGuideIndex: fellowship?.currentStudy?.currentGuideIndex,
+              currentTotalGuides: fellowship?.currentStudy?.totalGuides,
             ))
             ..add(const FellowshipStudyRefreshRequested()),
         ),
         BlocProvider<LearningPathsBloc>(
-          create: (_) {
-            final bloc = sl<LearningPathsBloc>();
-            final pathId = fellowship?.currentStudy?.learningPathId;
-            if (pathId != null) {
-              bloc.add(
-                  LoadLearningPathDetails(pathId: pathId, forceRefresh: true));
-            }
-            return bloc;
-          },
+          create: (_) => sl<LearningPathsBloc>(),
         ),
         BlocProvider<FellowshipMeetingsBloc>(
           create: (_) => sl<FellowshipMeetingsBloc>()
@@ -284,16 +276,6 @@ class _FellowshipHomeContent extends StatelessWidget {
 
     return MultiBlocListener(
       listeners: [
-        BlocListener<FellowshipStudyBloc, FellowshipStudyState>(
-          listenWhen: (prev, curr) =>
-              prev.currentLearningPathId != curr.currentLearningPathId &&
-              curr.currentLearningPathId != null,
-          listener: (context, state) {
-            context.read<LearningPathsBloc>().add(
-                  LoadLearningPathDetails(pathId: state.currentLearningPathId!),
-                );
-          },
-        ),
         BlocListener<FellowshipMembersBloc, FellowshipMembersState>(
           listenWhen: (prev, curr) =>
               prev.status != curr.status ||

@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../core/di/injection_container.dart';
+import '../../../../../core/services/language_preference_service.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_list_event.dart';
 import 'fellowship_list_state.dart';
@@ -34,7 +36,9 @@ class FellowshipListBloc
       clearErrorMessage: true,
     ));
 
-    final result = await _repository.getFellowships();
+    final lang =
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+    final result = await _repository.getFellowships(lang.code);
 
     result.fold(
       (failure) => emit(state.copyWith(

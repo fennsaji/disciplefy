@@ -31,6 +31,10 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
+  const url = new URL(req.url)
+  const langParam = url.searchParams.get('language') ?? 'en'
+  const language = (VALID_LANGUAGES.includes(langParam as Language) ? langParam : 'en') as Language
+
   const db = services.supabaseServiceClient
 
   const { data: memberships, error: membershipsError } = await db
@@ -98,7 +102,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
           .eq('fellowship_id', fellowshipId)
           .eq('is_active', true),
         db.from('fellowship_study')
-          .select('learning_path_id, current_guide_index, started_at, completed_at, learning_paths(title)')
+          .select('learning_path_id, current_guide_index, started_at, completed_at, learning_paths(id, title)')
           .eq('fellowship_id', fellowshipId)
           .is('completed_at', null)
           .order('started_at', { ascending: false })
@@ -140,6 +144,45 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     })
   )
 
+  // Batch-fetch translations + topic counts for active studies
+  const pathIds = [...new Set(
+    fellowships
+      .map(f => f.current_study?.learning_path_id)
+      .filter((id): id is string => !!id)
+  )]
+
+  if (pathIds.length > 0) {
+    const [translationsResult, topicsResult] = await Promise.all([
+      language !== 'en'
+        ? db.from('learning_path_translations')
+            .select('learning_path_id, title')
+            .in('learning_path_id', pathIds)
+            .eq('lang_code', language)
+        : Promise.resolve({ data: [] }),
+      db.from('learning_path_topics')
+        .select('learning_path_id')
+        .in('learning_path_id', pathIds),
+    ])
+
+    const translationMap = new Map<string, string>()
+    for (const t of (translationsResult.data ?? [])) {
+      translationMap.set(t.learning_path_id, t.title)
+    }
+
+    const topicsCountMap = new Map<string, number>()
+    for (const t of (topicsResult.data ?? [])) {
+      topicsCountMap.set(t.learning_path_id, (topicsCountMap.get(t.learning_path_id) ?? 0) + 1)
+    }
+
+    for (const f of fellowships) {
+      const pathId = f.current_study?.learning_path_id
+      if (!pathId) continue
+      const translated = translationMap.get(pathId)
+      if (translated) f.current_study.learning_path_title = translated
+      f.current_study.total_guides = topicsCountMap.get(pathId) ?? null
+    }
+  }
+
   return new Response(
     JSON.stringify({ success: true, data: { fellowships } }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -154,6 +197,9 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
   const url = new URL(req.url)
   const fellowshipId = url.searchParams.get('fellowship_id')
   if (!fellowshipId) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+
+  const langParam = url.searchParams.get('language') ?? 'en'
+  const language = (VALID_LANGUAGES.includes(langParam as Language) ? langParam : 'en') as Language
 
   const db = services.supabaseServiceClient
 
@@ -179,6 +225,34 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
     .eq('fellowship_id', fellowshipId)
     .is('completed_at', null)
     .maybeSingle()
+
+  let learningPathTitle = (study?.learning_paths as any)?.title ?? null
+  const learningPathId = (study?.learning_paths as any)?.id ?? null
+
+  // Fetch translated title and topic count in parallel when a path is active
+  let totalGuides: number | null = null
+  await Promise.all([
+    (async () => {
+      if (study && language !== 'en' && learningPathId) {
+        const { data: translation } = await db
+          .from('learning_path_translations')
+          .select('title')
+          .eq('learning_path_id', learningPathId)
+          .eq('lang_code', language)
+          .maybeSingle()
+        if (translation?.title) learningPathTitle = translation.title
+      }
+    })(),
+    (async () => {
+      if (learningPathId) {
+        const { count } = await db
+          .from('learning_path_topics')
+          .select('*', { count: 'exact', head: true })
+          .eq('learning_path_id', learningPathId)
+        totalGuides = count ?? null
+      }
+    })(),
+  ])
 
   let isMember = false
   let callerRole: string | null = null
@@ -211,10 +285,11 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
         member_count: memberCount || 0,
         is_active: fellowship.is_active,
         active_study: study ? {
-          learning_path_id: (study.learning_paths as any)?.id,
-          learning_path_title: (study.learning_paths as any)?.title,
+          learning_path_id: learningPathId,
+          learning_path_title: learningPathTitle,
           current_guide_index: study.current_guide_index,
-          started_at: study.started_at
+          started_at: study.started_at,
+          total_guides: totalGuides,
         } : null,
         caller_is_member: isMember,
         caller_role: callerRole,
