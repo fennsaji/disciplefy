@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../memory_verses/models/memory_verse_config.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -17,6 +19,10 @@ import '../widgets/practice_mode_card.dart';
 import '../widgets/unlock_limit_exceeded_dialog.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Practice mode selection page.
 ///
@@ -54,6 +60,9 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   bool _isLoading = true;
   bool _hasError = false;
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   /// Map of mode type to stats from database
   final Map<PracticeModeType, PracticeModeEntity> _modeStatsMap = {};
 
@@ -64,6 +73,21 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   void initState() {
     super.initState();
     _loadData();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    // Wait for data to load and the grid to render before starting showcase.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceModes)) return;
+      // Extra delay so mode cards are rendered before showcase starts.
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!)
+          .startShowCase([ShowcaseKeys.memoryPracticeMode]);
+    });
   }
 
   /// Load verse info and practice mode stats in parallel
@@ -385,234 +409,264 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth >= 600 ? 3 : 2;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackNavigation,
-          ),
-          title: Text(context.tr(TranslationKeys.practiceSelectionTitle)),
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Verse Reference Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                color: theme.colorScheme.primaryContainer,
-                child: Column(
-                  children: [
-                    if (_isLoading)
-                      SizedBox(
-                        height: 28,
-                        width: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      )
-                    else if (_hasError)
-                      Text(
-                        context.tr(TranslationKeys.practiceSelectionLoadError),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                    else
-                      Text(
-                        currentVerse?.verseReference ??
+    return ShowCaseWidget(
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.practiceModes),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _handleBackNavigation,
+              ),
+              title: Text(context.tr(TranslationKeys.practiceSelectionTitle)),
+            ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Verse Reference Header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: theme.colorScheme.primaryContainer,
+                    child: Column(
+                      children: [
+                        if (_isLoading)
+                          SizedBox(
+                            height: 28,
+                            width: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          )
+                        else if (_hasError)
+                          Text(
                             context
-                                .tr(TranslationKeys.practiceSelectionLoading),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.tr(TranslationKeys.practiceSelectionSubtitle),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer
-                            .withAlpha((0.7 * 255).round()),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Difficulty Filter (fixed, above scrollable area)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Text(
-                      context.tr(TranslationKeys.practiceSelectionFilter),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: DifficultyFilter.values.map((filter) {
-                            final isSelected = selectedFilter == filter;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: FilterChip(
-                                label: Text(
-                                    _getDifficultyFilterLabel(context, filter)),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setState(() => selectedFilter = filter);
-                                },
-                                selectedColor:
-                                    theme.colorScheme.primaryContainer,
-                                checkmarkColor: theme.colorScheme.primary,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Scrollable: Unlocked Modes Indicator + Practice Mode Grid
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : CustomScrollView(
-                        slivers: [
-                          // Daily Unlocked Modes Indicator (scrolls with content)
-                          if (!_hasError)
-                            SliverToBoxAdapter(
-                              child: _buildUnlockedModesIndicator(theme),
+                                .tr(TranslationKeys.practiceSelectionLoadError),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.error,
                             ),
+                            textAlign: TextAlign.center,
+                          )
+                        else
+                          Text(
+                            currentVerse?.verseReference ??
+                                context.tr(
+                                    TranslationKeys.practiceSelectionLoading),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.tr(TranslationKeys.practiceSelectionSubtitle),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer
+                                .withAlpha((0.7 * 255).round()),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                          // Practice Mode Grid or empty state
-                          if (filteredModes.isEmpty)
-                            SliverFillRemaining(
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.filter_alt_off,
-                                      size: 64,
-                                      color: theme.colorScheme.onSurfaceVariant
-                                          .withAlpha((0.5 * 255).round()),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      context.tr(TranslationKeys
-                                          .practiceSelectionNoModes),
-                                      style:
-                                          theme.textTheme.titleMedium?.copyWith(
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          else
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              sliver: SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, rowIndex) {
-                                    final startIndex =
-                                        rowIndex * crossAxisCount;
-                                    final rowItems = <Widget>[];
-                                    for (int i = 0; i < crossAxisCount; i++) {
-                                      final index = startIndex + i;
-                                      if (index < filteredModes.length) {
-                                        final mode = filteredModes[index];
-                                        final isRecommended =
-                                            mode.modeType == recommendedMode;
-                                        final isTierLocked =
-                                            _isModeTierLocked(mode.modeType);
-                                        final isUnlockLimitReached =
-                                            _isModeUnlockLimitReached(
-                                                mode.modeType);
-                                        rowItems.add(Expanded(
-                                          child: PracticeModeCard(
-                                            mode: mode,
-                                            isRecommended: isRecommended,
-                                            isFirstRecommended: isRecommended &&
-                                                _isFirstRecommendation,
-                                            isTierLocked: isTierLocked,
-                                            isUnlockLimitReached:
-                                                isUnlockLimitReached,
-                                            onTap: () =>
-                                                _selectMode(mode.modeType),
-                                            onLockedTap: isTierLocked
-                                                ? () => context
-                                                    .push(AppRoutes.pricing)
-                                                : () =>
-                                                    UnlockLimitExceededDialog
-                                                        .show(
-                                                      context,
-                                                      unlockedModes:
-                                                          _unlockedModesToday,
-                                                      unlockedCount:
-                                                          _unlockedModesToday
-                                                              .length,
-                                                      limit: _getUnlockLimit(),
-                                                      tier: _userTier,
-                                                      verseReference: currentVerse
-                                                              ?.verseReference ??
-                                                          '',
-                                                    ),
+                  // Difficulty Filter (fixed, above scrollable area)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          context.tr(TranslationKeys.practiceSelectionFilter),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: DifficultyFilter.values.map((filter) {
+                                final isSelected = selectedFilter == filter;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: FilterChip(
+                                    label: Text(_getDifficultyFilterLabel(
+                                        context, filter)),
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      setState(() => selectedFilter = filter);
+                                    },
+                                    selectedColor:
+                                        theme.colorScheme.primaryContainer,
+                                    checkmarkColor: theme.colorScheme.primary,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Scrollable: Unlocked Modes Indicator + Practice Mode Grid
+                  Expanded(
+                    child: WalkthroughTooltip(
+                      showcaseKey: ShowcaseKeys.memoryPracticeMode,
+                      title: AppLocalizations.of(context)!
+                          .walkthroughPracticeModesTitle,
+                      description: AppLocalizations.of(context)!
+                          .walkthroughPracticeModesDesc,
+                      screen: WalkthroughScreen.practiceModes,
+                      stepNumber: 1,
+                      totalSteps: 1,
+                      onNext: _onNext,
+                      child: _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : CustomScrollView(
+                              slivers: [
+                                // Daily Unlocked Modes Indicator (scrolls with content)
+                                if (!_hasError)
+                                  SliverToBoxAdapter(
+                                    child: _buildUnlockedModesIndicator(theme),
+                                  ),
+
+                                // Practice Mode Grid or empty state
+                                if (filteredModes.isEmpty)
+                                  SliverFillRemaining(
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.filter_alt_off,
+                                            size: 64,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant
+                                                .withAlpha((0.5 * 255).round()),
                                           ),
-                                        ));
-                                      } else {
-                                        rowItems.add(const Expanded(
-                                            child: SizedBox.shrink()));
-                                      }
-                                      if (i < crossAxisCount - 1) {
-                                        rowItems.add(const SizedBox(width: 12));
-                                      }
-                                    }
-                                    return Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 12),
-                                      child: IntrinsicHeight(
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: rowItems,
-                                        ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            context.tr(TranslationKeys
+                                                .practiceSelectionNoModes),
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    );
-                                  },
-                                  childCount:
-                                      (filteredModes.length / crossAxisCount)
-                                          .ceil(),
-                                ),
-                              ),
+                                    ),
+                                  )
+                                else
+                                  SliverPadding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 0, 16, 16),
+                                    sliver: SliverList(
+                                      delegate: SliverChildBuilderDelegate(
+                                        (context, rowIndex) {
+                                          final startIndex =
+                                              rowIndex * crossAxisCount;
+                                          final rowItems = <Widget>[];
+                                          for (int i = 0;
+                                              i < crossAxisCount;
+                                              i++) {
+                                            final index = startIndex + i;
+                                            if (index < filteredModes.length) {
+                                              final mode = filteredModes[index];
+                                              final isRecommended =
+                                                  mode.modeType ==
+                                                      recommendedMode;
+                                              final isTierLocked =
+                                                  _isModeTierLocked(
+                                                      mode.modeType);
+                                              final isUnlockLimitReached =
+                                                  _isModeUnlockLimitReached(
+                                                      mode.modeType);
+                                              rowItems.add(Expanded(
+                                                child: PracticeModeCard(
+                                                  mode: mode,
+                                                  isRecommended: isRecommended,
+                                                  isFirstRecommended:
+                                                      isRecommended &&
+                                                          _isFirstRecommendation,
+                                                  isTierLocked: isTierLocked,
+                                                  isUnlockLimitReached:
+                                                      isUnlockLimitReached,
+                                                  onTap: () => _selectMode(
+                                                      mode.modeType),
+                                                  onLockedTap: isTierLocked
+                                                      ? () => context.push(
+                                                          AppRoutes.pricing)
+                                                      : () =>
+                                                          UnlockLimitExceededDialog
+                                                              .show(
+                                                            context,
+                                                            unlockedModes:
+                                                                _unlockedModesToday,
+                                                            unlockedCount:
+                                                                _unlockedModesToday
+                                                                    .length,
+                                                            limit:
+                                                                _getUnlockLimit(),
+                                                            tier: _userTier,
+                                                            verseReference:
+                                                                currentVerse
+                                                                        ?.verseReference ??
+                                                                    '',
+                                                          ),
+                                                ),
+                                              ));
+                                            } else {
+                                              rowItems.add(const Expanded(
+                                                  child: SizedBox.shrink()));
+                                            }
+                                            if (i < crossAxisCount - 1) {
+                                              rowItems.add(
+                                                  const SizedBox(width: 12));
+                                            }
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 12),
+                                            child: IntrinsicHeight(
+                                              child: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: rowItems,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        childCount: (filteredModes.length /
+                                                crossAxisCount)
+                                            .ceil(),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
-                        ],
-                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ).withAuthProtection();
+        ).withAuthProtection();
+      },
+    );
   }
 
   /// Returns a dark-mode-safe text color for a given base color.

@@ -22,7 +22,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
     super.lastReviewed,
     required super.totalReviews,
     required super.createdAt,
-    super.isFullyMasteredCached,
     super.masteryLevel,
   });
 
@@ -43,7 +42,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
       lastReviewed: entity.lastReviewed,
       totalReviews: entity.totalReviews,
       createdAt: entity.createdAt,
-      isFullyMasteredCached: entity.isFullyMasteredCached,
       masteryLevel: entity.masteryLevel,
     );
   }
@@ -67,7 +65,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
           : null,
       totalReviews: json['total_reviews'] as int,
       createdAt: DateTime.parse(json['created_at'] as String),
-      isFullyMasteredCached: json['is_fully_mastered'] as bool? ?? false,
       masteryLevel: json['mastery_level'] != null
           ? MasteryLevelExtension.fromJson(json['mastery_level'] as String)
           : null,
@@ -91,7 +88,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
       'last_reviewed': lastReviewed?.toIso8601String(),
       'total_reviews': totalReviews,
       'created_at': createdAt.toIso8601String(),
-      'is_fully_mastered': isFullyMasteredCached,
       'mastery_level': masteryLevel?.toJson(),
     };
   }
@@ -113,7 +109,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
       lastReviewed: lastReviewed,
       totalReviews: totalReviews,
       createdAt: createdAt,
-      isFullyMasteredCached: isFullyMasteredCached,
       masteryLevel: masteryLevel,
     );
   }
@@ -140,7 +135,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
     Object? lastReviewed = unsetValue,
     int? totalReviews,
     DateTime? createdAt,
-    bool? isFullyMasteredCached,
     Object? masteryLevel = unsetValue,
   }) {
     return MemoryVerseModel(
@@ -160,8 +154,6 @@ class MemoryVerseModel extends MemoryVerseEntity {
           : lastReviewed as DateTime?,
       totalReviews: totalReviews ?? this.totalReviews,
       createdAt: createdAt ?? this.createdAt,
-      isFullyMasteredCached:
-          isFullyMasteredCached ?? this.isFullyMasteredCached,
       masteryLevel: masteryLevel == unsetValue
           ? this.masteryLevel
           : masteryLevel as MasteryLevel?,
