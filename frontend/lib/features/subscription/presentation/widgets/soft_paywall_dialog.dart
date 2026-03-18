@@ -3,26 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 
 /// Soft paywall dialog shown at usage thresholds (80%, 100%)
-///
-/// Implements psychological principles:
-/// - Loss aversion: "Don't lose your streak"
-/// - Urgency: Token count and remaining usage
 class SoftPaywallDialog extends StatelessWidget {
   final int percentage;
   final int tokensRemaining;
-  final int streakDays;
   final String userPlan;
 
   const SoftPaywallDialog({
     required this.percentage,
     required this.tokensRemaining,
-    this.streakDays = 0,
     this.userPlan = 'free',
     super.key,
   });
@@ -32,7 +25,7 @@ class SoftPaywallDialog extends StatelessWidget {
     BuildContext context, {
     required int percentage,
     required int tokensRemaining,
-    int streakDays = 0,
+    int streakDays = 0, // kept for API compatibility, no longer used
     String userPlan = 'free',
   }) {
     return showDialog<void>(
@@ -40,35 +33,49 @@ class SoftPaywallDialog extends StatelessWidget {
       builder: (context) => SoftPaywallDialog(
         percentage: percentage,
         tokensRemaining: tokensRemaining,
-        streakDays: streakDays,
         userPlan: userPlan,
       ),
     );
   }
 
-  String get _planDisplayName {
-    final name = userPlan.toLowerCase();
-    return name.substring(0, 1).toUpperCase() + name.substring(1);
+  /// Returns a friendly "resets in X hours" string based on time until midnight.
+  String _resetText() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final diff = tomorrow.difference(now);
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes;
+
+    if (minutes < 60) return 'in less than an hour';
+    if (hours == 1) return 'in about 1 hour';
+    return 'in about $hours hours';
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const color = AppColors.warning;
+    final textPrimary = isDark ? Colors.white.withOpacity(0.9) : Colors.black87;
+    final textSecondary =
+        isDark ? Colors.white.withOpacity(0.65) : Colors.black54;
+    final resetTime = _resetText();
 
     final String title;
     final String message;
+    final IconData titleIcon;
+    final Color iconColor;
 
     if (percentage >= 100) {
-      title = '🚫 No Study Tokens Left';
-      message = streakDays > 0
-          ? 'You\'ve used all your tokens today. Don\'t lose your $streakDays-day streak!'
-          : 'You\'ve used all your daily study tokens. Purchase more or upgrade for unlimited access.';
+      title = 'Tokens used up for today';
+      message =
+          'Great studying today! 🎉 Your tokens will reset $resetTime — come back tomorrow for more.';
+      titleIcon = Icons.nightlight_round;
+      iconColor = const Color(0xFF6366F1); // indigo
     } else {
-      title = '⚠️ Running Low on Study Tokens';
-      message = streakDays > 0
-          ? 'Only $tokensRemaining tokens left today. Don\'t lose your $streakDays-day streak!'
-          : 'Only $tokensRemaining tokens left today. Upgrade for unlimited access.';
+      title = 'Running low on tokens';
+      message =
+          'Only $tokensRemaining tokens left today. They reset $resetTime.';
+      titleIcon = Icons.battery_2_bar_rounded;
+      iconColor = const Color(0xFFF59E0B); // amber
     }
 
     return AlertDialog(
@@ -76,15 +83,15 @@ class SoftPaywallDialog extends StatelessWidget {
       backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
       title: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: color, size: 28),
-          const SizedBox(width: 12),
+          Icon(titleIcon, color: iconColor, size: 26),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               title,
               style: AppFonts.inter(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                color: textPrimary,
               ),
             ),
           ),
@@ -96,39 +103,9 @@ class SoftPaywallDialog extends StatelessWidget {
         children: [
           Text(
             message,
-            style: AppFonts.inter(
-              fontSize: 14,
-              color: isDark ? Colors.white.withOpacity(0.7) : Colors.black87,
-            ),
+            style: AppFonts.inter(fontSize: 14, color: textSecondary),
           ),
-          if (streakDays > 0) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Text('🔥', style: TextStyle(fontSize: 24)),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$streakDays-day study streak',
-                    style: AppFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.9)
-                          : Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          // Action buttons stacked vertically
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -141,19 +118,16 @@ class SoftPaywallDialog extends StatelessWidget {
                 backgroundColor: AppTheme.primaryColor,
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
                 'See Plans',
                 style: AppFonts.inter(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+                    color: Colors.white, fontWeight: FontWeight.w600),
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -169,15 +143,12 @@ class SoftPaywallDialog extends StatelessWidget {
                 side: BorderSide(color: AppTheme.primaryColor),
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
                 'Purchase Tokens',
                 style: AppFonts.inter(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                    color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -189,16 +160,11 @@ class SoftPaywallDialog extends StatelessWidget {
               style: TextButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                'Skip',
-                style: AppFonts.inter(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.7)
-                      : Colors.grey.shade700,
-                ),
+                'Maybe later',
+                style: AppFonts.inter(color: textSecondary),
               ),
             ),
           ),
