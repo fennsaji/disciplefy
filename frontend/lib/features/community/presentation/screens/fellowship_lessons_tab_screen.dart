@@ -47,7 +47,6 @@ class FellowshipLessonsTabScreen extends StatefulWidget {
 
 class _FellowshipLessonsTabScreenState
     extends State<FellowshipLessonsTabScreen> {
-  /// The user's study content language, fetched once on first load.
   String _contentLanguage = 'en';
   bool _initialized = false;
 
@@ -56,31 +55,25 @@ class _FellowshipLessonsTabScreenState
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      _loadLanguageAndDetails();
+      _loadPathDetails();
     }
   }
 
-  /// Fetches the user's content language, then triggers the initial
-  /// [LoadLearningPathDetails] with the correct language code.
-  Future<void> _loadLanguageAndDetails() async {
+  /// Fetches the user's content language (always fresh) and loads path details.
+  /// Using [pathId] override is for when a new path is assigned and we already
+  /// know the ID, e.g. from the [BlocListener] callback.
+  Future<void> _loadPathDetails({String? pathId}) async {
     final lang =
         await sl<LanguagePreferenceService>().getStudyContentLanguage();
     if (!mounted) return;
-    _contentLanguage = lang.code;
-    final pathId =
+    setState(() => _contentLanguage = lang.code);
+    final id = pathId ??
         context.read<FellowshipStudyBloc>().state.currentLearningPathId;
-    if (pathId != null) {
+    if (id != null) {
       context.read<LearningPathsBloc>().add(
-            LoadLearningPathDetails(pathId: pathId, language: _contentLanguage),
+            LoadLearningPathDetails(pathId: id, language: lang.code),
           );
     }
-  }
-
-  /// Reloads path details when the mentor assigns a new learning path.
-  void _reloadPathDetails(String pathId) {
-    context.read<LearningPathsBloc>().add(
-          LoadLearningPathDetails(pathId: pathId, language: _contentLanguage),
-        );
   }
 
   @override
@@ -92,7 +85,7 @@ class _FellowshipLessonsTabScreenState
           prev.currentLearningPathId != curr.currentLearningPathId,
       listener: (context, state) {
         if (state.currentLearningPathId != null) {
-          _reloadPathDetails(state.currentLearningPathId!);
+          _loadPathDetails(pathId: state.currentLearningPathId!);
         }
       },
       child: BlocConsumer<FellowshipStudyBloc, FellowshipStudyState>(
@@ -354,6 +347,9 @@ class _StudyContent extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: BlocBuilder<LearningPathsBloc, LearningPathsState>(
               builder: (ctx, pathsState) {
+                final pathTitle = pathsState is LearningPathDetailLoaded
+                    ? pathsState.pathDetail.title
+                    : state.currentPathTitle ?? '';
                 final pathDescription = pathsState is LearningPathDetailLoaded
                     ? pathsState.pathDetail.description
                     : '';
@@ -363,7 +359,7 @@ class _StudyContent extends StatelessWidget {
                 return _GuideList(
                   currentGuideIndex: state.currentGuideIndex ?? 0,
                   fellowshipId: fellowshipId,
-                  pathTitle: state.currentPathTitle ?? '',
+                  pathTitle: pathTitle,
                   pathDescription: pathDescription,
                   pathDiscipleLevel: pathDiscipleLevel,
                   contentLanguage: contentLanguage,

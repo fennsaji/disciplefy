@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../features/study_generation/domain/entities/study_mode.dart';
 import '../../../../features/study_topics/domain/entities/learning_path.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
@@ -162,9 +164,20 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
     _focusNode.unfocus();
   }
 
-  void _openStudyGuide() {
+  Future<void> _openStudyGuide() async {
     final topic = _topic;
+
+    // Fetch content language and study mode preference — same as learning path
+    final languageService = sl<LanguagePreferenceService>();
+    final lang = await languageService.getStudyContentLanguage();
+    final language = lang.code;
+    final studyMode =
+        await languageService.getStudyModePreference() ?? StudyMode.standard;
+
+    if (!mounted) return;
+
     final encodedTitle = Uri.encodeComponent(topic.title);
+    final inputType = topic.inputType.isNotEmpty ? topic.inputType : 'topic';
     final topicIdParam =
         topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
     final descParam = topic.description.isNotEmpty
@@ -180,7 +193,7 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
         ? '&disciple_level=${Uri.encodeComponent(widget.pathDiscipleLevel)}'
         : '';
     context.push(
-      '/study-guide-v2?input=$encodedTitle&type=topic&language=${widget.contentLanguage}&mode=standard&source=fellowship'
+      '/study-guide-v2?input=$encodedTitle&type=$inputType&language=$language&mode=${studyMode.name}&source=fellowship'
       '$topicIdParam$descParam$pathTitleParam$pathDescParam$discipleLevelParam',
     );
   }

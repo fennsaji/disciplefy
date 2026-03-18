@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/study_topics/domain/entities/learning_path.dart';
@@ -416,8 +418,34 @@ class _StudyNoteLink extends StatelessWidget {
     final bgColor = accentColor.withAlpha(isDark ? 18 : 10);
     final canNavigate = post.topicId != null;
 
-    void onTap() {
+    Future<void> onTap() async {
       if (!canNavigate) return;
+      final lang =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+
+      // Fetch the translated path title for the current content language.
+      String translatedPathTitle = post.guideTitle ?? '';
+      try {
+        final joinRow = await Supabase.instance.client
+            .from('learning_path_topics')
+            .select('learning_path_id')
+            .eq('topic_id', post.topicId!)
+            .maybeSingle();
+        if (joinRow != null) {
+          final pathId = joinRow['learning_path_id'] as String;
+          final transRow = await Supabase.instance.client
+              .from('learning_path_translations')
+              .select('title')
+              .eq('learning_path_id', pathId)
+              .eq('lang_code', lang.code)
+              .maybeSingle();
+          final t = transRow?['title'] as String?;
+          if (t != null && t.isNotEmpty) translatedPathTitle = t;
+        }
+      } catch (_) {
+        // Fall back to stored guideTitle
+      }
+
       final topic = LearningPathTopic(
         topicId: post.topicId!,
         title: post.topicTitle ?? '',
@@ -427,15 +455,17 @@ class _StudyNoteLink extends StatelessWidget {
         isMilestone: false,
         xpValue: 0,
       );
+      if (!context.mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => FellowshipGuideDetailScreen(
             fellowshipId: fellowshipId,
             topic: topic,
-            pathTitle: post.guideTitle ?? '',
+            pathTitle: translatedPathTitle,
             pathDescription: '',
             pathDiscipleLevel: '',
             isMentor: isMentor,
+            contentLanguage: lang.code,
           ),
         ),
       );

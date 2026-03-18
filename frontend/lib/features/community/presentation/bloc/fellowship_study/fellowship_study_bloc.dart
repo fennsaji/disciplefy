@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../core/di/injection_container.dart';
+import '../../../../../core/services/language_preference_service.dart';
 import '../../../../community/domain/repositories/community_repository.dart';
 import 'fellowship_study_event.dart';
 import 'fellowship_study_state.dart';
@@ -37,6 +39,7 @@ class FellowshipStudyBloc
       clearCurrentPathTitle: event.currentLearningPathId == null,
       currentPathTitle: event.currentPathTitle,
       currentGuideIndex: event.currentGuideIndex,
+      totalGuides: event.currentTotalGuides,
     ));
   }
 
@@ -47,7 +50,9 @@ class FellowshipStudyBloc
     final fellowshipId = state.fellowshipId;
     if (fellowshipId.isEmpty) return;
 
-    final result = await _repository.getFellowship(fellowshipId);
+    final lang =
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+    final result = await _repository.getFellowship(fellowshipId, lang.code);
     result.fold(
       (_) {
         // Silently keep existing state on failure — screen already shows data.
@@ -59,6 +64,7 @@ class FellowshipStudyBloc
             currentLearningPathId: activeStudy['learning_path_id'] as String?,
             currentPathTitle: activeStudy['learning_path_title'] as String?,
             currentGuideIndex: activeStudy['current_guide_index'] as int?,
+            totalGuides: activeStudy['total_guides'] as int?,
           ));
         } else {
           emit(state.copyWith(
