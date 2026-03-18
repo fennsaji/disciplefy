@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../voice_buddy/data/services/speech_service.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Input widget for sending follow-up questions with voice support
 class ChatInput extends StatefulWidget {
@@ -16,6 +21,10 @@ class ChatInput extends StatefulWidget {
   final VoidCallback? onCancel;
   final bool enableVoiceInput;
 
+  /// Called when the user taps "Got it →" on a walkthrough tooltip inside
+  /// this input widget. Pass null to skip walkthrough entirely.
+  final VoidCallback? onNext;
+
   const ChatInput({
     super.key,
     required this.onSendMessage,
@@ -23,6 +32,7 @@ class ChatInput extends StatefulWidget {
     this.isProcessing = false,
     this.onCancel,
     this.enableVoiceInput = false,
+    this.onNext,
   });
 
   @override
@@ -503,6 +513,50 @@ class _ChatInputState extends State<ChatInput>
 
   /// Builds the text input field
   Widget _buildTextField(ThemeData theme) {
+    if (widget.onNext == null) {
+      return Container(
+        constraints: const BoxConstraints(
+          minHeight: 48,
+          maxHeight: 120,
+        ),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppConstants.LARGE_BORDER_RADIUS),
+          border: Border.all(
+            color: _isFocused
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outline.withOpacity(0.3),
+            width: _isFocused ? 2 : 1,
+          ),
+        ),
+        child: TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          enabled: widget.isEnabled && !widget.isProcessing && !_isListening,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.send,
+          onSubmitted: (_) => _sendMessage(),
+          decoration: InputDecoration(
+            hintText: _isListening
+                ? context.tr(TranslationKeys.followUpChatListening)
+                : context.tr(TranslationKeys.followUpChatInputHint),
+            hintStyle: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.DEFAULT_PADDING,
+              vertical: AppConstants.SMALL_PADDING,
+            ),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+          ),
+          style: theme.textTheme.bodyMedium,
+        ),
+      );
+    }
     return Container(
       constraints: const BoxConstraints(
         minHeight: 48,
@@ -554,7 +608,7 @@ class _ChatInputState extends State<ChatInput>
         !widget.isProcessing &&
         !_isListening;
 
-    return Container(
+    final sendButtonChild = Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
@@ -578,6 +632,8 @@ class _ChatInputState extends State<ChatInput>
         ),
       ),
     );
+
+    return sendButtonChild;
   }
 
   /// Builds help text below the input

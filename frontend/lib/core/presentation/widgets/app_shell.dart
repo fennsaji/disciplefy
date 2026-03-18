@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
-import '../../../core/animations/app_animations.dart';
-import '../../../core/di/injection_container.dart';
-import '../../../core/services/system_config_service.dart';
+import '../../animations/app_animations.dart';
+import '../../di/injection_container.dart';
+import '../../services/system_config_service.dart';
 import '../../../features/tokens/presentation/bloc/token_bloc.dart';
 import '../../../features/tokens/presentation/bloc/token_state.dart';
+import '../../../features/walkthrough/domain/walkthrough_screen.dart';
+import '../../../features/walkthrough/domain/walkthrough_repository.dart';
+import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import 'bottom_nav.dart' as bottom_nav;
 
 /// Main App Shell with Bottom Navigation
@@ -247,50 +251,61 @@ class _AppShellState extends State<AppShell>
 
     // Note: Achievement unlock dialog is handled globally in main.dart
     // to ensure it works for ALL routes including Memory Verses outside AppShell
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
-          _handleBackNavigation();
-        }
+    return ShowCaseWidget(
+      onFinish: () {
+        // Mark home walkthrough as seen once ALL 5 steps (body + nav tabs) finish.
+        sl<WalkthroughRepository>().markSeen(WalkthroughScreen.home);
       },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Stack(
-          children: [
-            // Main content with animation
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: widget.navigationShell,
-              ),
-            ),
-            // Loading indicator overlay - shown during async navigation
-            if (_showLoadingIndicator)
-              Semantics(
-                label: 'Loading content',
-                liveRegion: true,
-                container: true,
-                child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                      strokeWidth: 3,
-                      semanticsLabel: 'Loading',
-                    ),
+      builder: (context) {
+        // Register state so home screen can trigger the nav-tab steps
+        // from its onFinish callback (no BuildContext available there).
+        ShowcaseKeys.registerAppShell(ShowCaseWidget.of(context));
+        return PopScope(
+          canPop: false,
+          onPopInvoked: (didPop) {
+            if (!didPop) {
+              _handleBackNavigation();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: Stack(
+              children: [
+                // Main content with animation
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: widget.navigationShell,
                   ),
                 ),
-              ),
-          ],
-        ),
-        bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
-          currentIndex: _mapBranchIndexToTabIndex(currentIndex),
-          tabs: _getFilteredTabs(),
-          onTap: _onTabChange,
-        ),
-      ),
+                // Loading indicator overlay - shown during async navigation
+                if (_showLoadingIndicator)
+                  Semantics(
+                    label: 'Loading content',
+                    liveRegion: true,
+                    container: true,
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 3,
+                          semanticsLabel: 'Loading',
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
+              currentIndex: _mapBranchIndexToTabIndex(currentIndex),
+              tabs: _getFilteredTabs(),
+              onTap: _onTabChange,
+            ),
+          ),
+        );
+      },
     );
   }
 

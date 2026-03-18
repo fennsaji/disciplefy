@@ -93,7 +93,7 @@ echo -e ""
 
 flutter run -d chrome \
   --web-port=59641 \
-  --web-browser-flag="--profile-directory=Default" \
+  --web-browser-flag="--profile-directory=Default --disk-cache-size=1" \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
   --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \

@@ -61,6 +61,7 @@ import '../../features/memory_verses/presentation/pages/type_it_out_practice_pag
 import '../../features/memory_verses/presentation/pages/practice_results_page.dart';
 import '../../features/memory_verses/domain/entities/practice_result_params.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../features/memory_verses/presentation/bloc/memory_verse_event.dart';
 import '../../features/voice_buddy/presentation/pages/voice_conversation_page.dart';
 import '../../features/voice_buddy/presentation/pages/voice_preferences_page.dart';
 import '../../features/voice_buddy/presentation/pages/voice_preferences_page_wrapper.dart';
@@ -166,7 +167,11 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.home,
                 name: 'home',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => BlocProvider<MemoryVerseBloc>(
+                  create: (_) =>
+                      sl<MemoryVerseBloc>()..add(const LoadDueVerses()),
+                  child: const HomeScreen(),
+                ),
               ),
             ],
           ),

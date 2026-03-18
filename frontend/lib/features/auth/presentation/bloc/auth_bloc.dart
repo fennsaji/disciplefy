@@ -18,6 +18,7 @@ import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/usecases/clear_user_data_usecase.dart';
 import '../../domain/utils/auth_validator.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart' as auth_states;
 import '../../../../core/utils/logger.dart';
@@ -512,6 +513,24 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
           // Load user profile with caching
           final profile = await _getProfileWithCache(user.id);
+
+          // Anonymous → full-account upgrade: migrate local walkthrough state
+          // to Supabase and pull down any remote state.
+          // A full account has at least one non-anonymous provider.
+          final providers = user.appMetadata['providers'];
+          final isFullAccount = providers is List &&
+              providers.isNotEmpty &&
+              !providers.every((p) => p == 'anonymous');
+          if (isFullAccount) {
+            try {
+              final walkthroughRepo = sl<WalkthroughRepository>();
+              await walkthroughRepo.syncFromRemote();
+              await walkthroughRepo.migrateToRemote();
+            } catch (e) {
+              Logger.debug(
+                  '[AUTH BLOC] Walkthrough migration failed silently: $e');
+            }
+          }
 
           emit(auth_states.AuthenticatedState(
             user: user,

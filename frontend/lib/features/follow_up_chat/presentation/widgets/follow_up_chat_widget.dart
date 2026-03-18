@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection_container.dart';
@@ -10,6 +11,9 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/follow_up_chat_bloc.dart';
 import '../bloc/follow_up_chat_event.dart';
 import '../bloc/follow_up_chat_state.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
 import 'chat_bubble.dart';
 import 'chat_input.dart';
 
@@ -41,6 +45,12 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   late Animation<double> _expandAnimation;
   bool _hasInitialized = false;
 
+  // Builder context from ShowCaseWidget — use this for ShowCaseWidget.of() calls.
+  BuildContext? _showcaseContext;
+
+  /// Advances the showcase to the next step.
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +69,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     }
 
     _initializeConversation();
+    _triggerWalkthroughIfNeeded();
   }
 
   /// Dispatches StartConversationEvent once on widget initialization.
@@ -76,6 +87,18 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
           // Silently handle BLoC access errors during initialization
         }
       }
+    });
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.discipler)) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase([
+        ShowcaseKeys.disciplerInput,
+        ShowcaseKeys.disciplerSend,
+      ]);
     });
   }
 
@@ -116,16 +139,26 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     // DO NOT dispatch events in build() - it causes rebuilds on every state change!
 
     // Check if there's already a FollowUpChatBloc in the context
+    Widget chatContent;
     try {
       context.read<FollowUpChatBloc>();
-      return _buildChatInterface();
+      chatContent = _buildChatInterface();
     } catch (e) {
       // No existing bloc, create a new one
-      return BlocProvider(
+      chatContent = BlocProvider(
         create: (context) => sl<FollowUpChatBloc>(),
         child: _buildChatInterface(),
       );
     }
+
+    return ShowCaseWidget(
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.discipler),
+      builder: (showcaseContext) {
+        _showcaseContext = showcaseContext;
+        return chatContent;
+      },
+    );
   }
 
   Widget _buildChatInterface() {
@@ -704,6 +737,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
               context.read<FollowUpChatBloc>().add(const CancelRequestEvent())
           : null,
       enableVoiceInput: widget.enableVoiceInput,
+      onNext: _showcaseContext != null ? _onNext : null,
     );
   }
 }

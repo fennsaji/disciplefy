@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as flutter_services;
+import 'package:showcaseview/showcaseview.dart';
 import '../../constants/app_fonts.dart';
 import '../../animations/app_animations.dart';
+import '../../localization/app_localizations.dart';
+import '../../../features/walkthrough/domain/walkthrough_screen.dart';
+import '../../../features/walkthrough/presentation/showcase_keys.dart';
+import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Navigation tab data model for bottom navigation
 class NavTab {
@@ -73,45 +78,120 @@ class DisciplefyBottomNav extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false, // Don't apply SafeArea to top
-          child: SizedBox(
-            height: 60, // Fixed height to prevent overflow
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: tabs.asMap().entries.map((entry) {
-                final index = entry.key;
-                final tab = entry.value;
-                final isSelected = currentIndex == index;
+  Widget build(BuildContext context) {
+    // Compute arrow alignment for Community tab dynamically so the arrow
+    // accurately points at the tab icon regardless of screen width.
+    const double tooltipWidth = 280.0;
+    const double arrowWidth = 20.0;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    // Community is the 4th of 4 equal tabs → center at 7/8 of screen width.
+    final double tabCenterX = screenWidth * 7.0 / 8.0;
+    // showcaseview clamps the tooltip so its right edge ≤ screen width.
+    final double tooltipLeft =
+        (screenWidth - tooltipWidth).clamp(0.0, screenWidth);
+    final double fromLeft = (tabCenterX - tooltipLeft)
+        .clamp(arrowWidth / 2, tooltipWidth - arrowWidth / 2);
+    final double ax =
+        ((fromLeft - arrowWidth / 2) / (tooltipWidth - arrowWidth) * 2 - 1)
+            .clamp(-1.0, 1.0);
+    final Alignment communityArrowAlignment = Alignment(ax, 0.0);
 
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false, // Don't apply SafeArea to top
+        child: SizedBox(
+          height: 60, // Fixed height to prevent overflow
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: tabs.asMap().entries.map((entry) {
+              final index = entry.key;
+              final tab = entry.value;
+              final isSelected = currentIndex == index;
+
+              final navItem = _BottomNavItem(
+                tab: tab,
+                isSelected: isSelected,
+                onTap: () => _handleTap(context, index),
+              );
+
+              // Wrap Generate, Topics, and Community tabs with walkthrough
+              // tooltips so the home screen walkthrough highlights each nav item.
+              if (tab.label == 'Generate') {
                 return Expanded(
-                  child: _BottomNavItem(
-                    tab: tab,
-                    isSelected: isSelected,
-                    onTap: () => _handleTap(context, index),
+                  child: WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.homeGenerateTab,
+                    title: AppLocalizations.of(context)!
+                        .walkthroughHomeGenerateTitle,
+                    description: AppLocalizations.of(context)!
+                        .walkthroughHomeGenerateDesc,
+                    screen: WalkthroughScreen.home,
+                    stepNumber: 3,
+                    totalSteps: 5,
+                    onNext: () => ShowCaseWidget.of(context).next(),
+                    child: navItem,
                   ),
                 );
-              }).toList(),
-            ),
+              }
+
+              if (tab.label == 'Topics') {
+                return Expanded(
+                  child: WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.homeTopicsTab,
+                    title: AppLocalizations.of(context)!
+                        .walkthroughHomeTopicsTitle,
+                    description:
+                        AppLocalizations.of(context)!.walkthroughHomeTopicsDesc,
+                    screen: WalkthroughScreen.home,
+                    stepNumber: 4,
+                    totalSteps: 5,
+                    onNext: () => ShowCaseWidget.of(context).next(),
+                    child: navItem,
+                  ),
+                );
+              }
+
+              if (tab.label == 'Community') {
+                return Expanded(
+                  child: WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.homeCommunityTab,
+                    title: AppLocalizations.of(context)!
+                        .walkthroughCommunityNavTitle,
+                    description: AppLocalizations.of(context)!
+                        .walkthroughCommunityNavDesc,
+                    screen: WalkthroughScreen.home,
+                    stepNumber: 5,
+                    totalSteps: 5,
+                    // Community tab is rightmost — shift arrow right so it
+                    // points accurately at the tab icon.
+                    arrowAlignment: communityArrowAlignment,
+                    onNext: () => ShowCaseWidget.of(context).next(),
+                    child: navItem,
+                  ),
+                );
+              }
+
+              return Expanded(child: navItem);
+            }).toList(),
           ),
         ),
-      );
+      ),
+    );
+  }
 
   void _handleTap(BuildContext context, int index) {
     if (index != currentIndex) {
