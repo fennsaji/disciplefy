@@ -60,6 +60,54 @@ export interface DailyCost {
   total_tokens: number
 }
 
+export interface AggregateBreakdown {
+  operations: number
+  cost_usd: number
+  avg_cost_per_operation: number
+  input_tokens: number
+  output_tokens: number
+}
+
+export interface CrossBreakdownItem {
+  language: string
+  study_mode: string
+  operations: number
+  cost_usd: number
+  avg_cost_per_operation: number
+}
+
+export interface DetailedLogItem {
+  id: string
+  created_at: string
+  user_id: string
+  tier: string
+  language: string | null
+  study_mode: string | null
+  input_type: string | null
+  llm_model: string | null
+  llm_provider: string | null
+  llm_input_tokens: number | null
+  llm_output_tokens: number | null
+  llm_cost_usd: number | null
+}
+
+export interface UsageLogsRequest {
+  start_date?: string
+  end_date?: string
+  language?: string
+  study_mode?: string
+  tier?: string
+  page: number
+  limit: number
+}
+
+export interface UsageLogsResponse {
+  items: DetailedLogItem[]
+  total: number
+  page: number
+  limit: number
+}
+
 export interface UsageAnalyticsResponse {
   overview: UsageOverview
   by_feature: Record<string, FeatureBreakdown>
@@ -67,6 +115,9 @@ export interface UsageAnalyticsResponse {
   by_provider: Record<string, ProviderBreakdown>
   by_model: Record<string, ModelBreakdown>
   daily_costs: DailyCost[]
+  by_language?: Record<string, AggregateBreakdown>
+  by_study_mode?: Record<string, AggregateBreakdown>
+  by_language_x_study_mode?: CrossBreakdownItem[]
 }
 
 // ============================================================================
@@ -779,4 +830,35 @@ export interface DeleteBlogPostResponse {
 
 export interface TriggerCronResponse {
   message: string
+}
+
+// ============================================================================
+// P&L Analytics Types
+// ============================================================================
+
+export interface PlByTierItem {
+  plan_code: string
+  active_users: number
+  revenue_inr: number
+  llm_cost_inr: number
+  gross_profit_inr: number
+  margin_pct: number | null   // null for free tier (zero revenue); blended for 'total' row
+}
+
+export interface HeavyUserItem {
+  rank: number
+  user_id: string             // UUID serialized as string
+  email: string
+  tier: string
+  operations: number
+  llm_cost_inr: number
+  revenue_inr: number         // always 0 or positive (COALESCE in RPC)
+  is_profitable: boolean
+}
+
+export interface PlAnalyticsResponse {
+  pl_by_tier: PlByTierItem[]
+  top_heavy_users: HeavyUserItem[]
+  exchange_rate_used: number
+  exchange_rate_is_live: boolean
 }
