@@ -66,7 +66,7 @@ function ComparisonTable() {
 export default function VsYouversionPage() {
   if (process.env.NEXT_PUBLIC_VS_PAGES_ENABLED !== 'true') notFound();
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <Navbar />
       <main className="max-w-3xl mx-auto px-6 sm:px-8 py-16">
         <h1 className="font-display font-extrabold text-4xl sm:text-5xl mb-4">

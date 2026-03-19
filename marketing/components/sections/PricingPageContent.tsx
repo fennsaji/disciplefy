@@ -1,75 +1,28 @@
 // marketing/components/sections/PricingPageContent.tsx
 "use client";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
+interface PricingPlan {
+  name: string;
+  price: number;
+  tokens: string;
+  popular: boolean;
+  features: string[];
+}
 
-const plans = [
-  {
-    name: "Free",
-    price: 0,
-    tokens: "8 tokens/day",
-    features: [
-      "Quick Read study guide mode",
-      "3 memory verses",
-      "2 practice modes",
-      "1 practice per verse/day",
-      "Token top-ups available",
-      "Daily verse",
-    ],
-  },
-  {
-    name: "Standard",
-    price: 79,
-    tokens: "20 tokens/day",
-    features: [
-      "All study guide modes",
-      "5 follow-up questions/day",
-      "3 AI Discipler calls/month",
-      "5 memory verses",
-      "2 practices per verse/day",
-      "Token top-ups available",
-    ],
-  },
-  {
-    name: "Plus",
-    price: 149,
-    tokens: "50 tokens/day",
-    popular: true,
-    features: [
-      "All study guide modes",
-      "10 follow-up questions/day",
-      "10 AI Discipler calls/month",
-      "10 memory verses",
-      "3 practices per verse/day",
-      "Token top-ups available",
-    ],
-  },
-  {
-    name: "Premium",
-    price: 499,
-    tokens: "Unlimited tokens",
-    features: [
-      "All study guide modes",
-      "Unlimited follow-up questions",
-      "Unlimited AI Discipler calls",
-      "Unlimited memory verses",
-      "Unlimited practice",
-      "Priority support",
-    ],
-  },
-];
-
-const faqs = [
-  { q: "What is a token?", a: "Tokens are the currency for AI features in Disciplefy. Each study guide, follow-up, or AI Discipler call uses a small number of tokens. Your plan resets your token count daily." },
-  { q: "Can I switch plans?", a: "Yes, you can upgrade or downgrade at any time. Changes take effect at the start of your next billing cycle." },
-  { q: "How does payment work?", a: "Payments are processed securely via Razorpay. We accept UPI, debit/credit cards, and net banking." },
-  { q: "Is my data safe?", a: "Yes. We use Supabase Auth and follow India's DPDP 2023 guidelines. We never sell your data." },
-  { q: "What languages are supported?", a: "English, Hindi, and Malayalam. All AI features including study guides and Voice Buddy work in all three languages." },
-];
+interface FAQ {
+  q: string;
+  a: string;
+}
 
 export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
+  const t = useTranslations("pricingPage");
+  const plans = t.raw("plans") as PricingPlan[];
+  const faqs = t.raw("faqs") as FAQ[];
+
   return (
     <>
       <Navbar />
@@ -85,7 +38,7 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
           transition={{ duration: 0.5 }}
           className="font-display font-extrabold text-4xl sm:text-5xl text-center mb-4"
         >
-          Simple, Affordable Plans
+          {t("pageTitle")}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -93,7 +46,7 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-[var(--muted)] text-center text-lg mb-16"
         >
-          Start free. Upgrade when you need more.
+          {t("pageSubtitle")}
         </motion.p>
 
         {/* Pricing grid */}
@@ -114,13 +67,13 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
             >
               {plan.popular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-                  Most Popular
+                  {t("mostPopular")}
                 </span>
               )}
               <p className="font-display font-bold text-xl mb-1">{plan.name}</p>
               <p className="text-3xl font-extrabold text-primary mb-1">
                 ₹{plan.price}
-                <span className="text-sm font-normal text-[var(--muted)]">/mo</span>
+                <span className="text-sm font-normal text-[var(--muted)]">{t("perMonth")}</span>
               </p>
               <p className="text-xs text-[var(--muted)] mb-6">{plan.tokens}</p>
               <ul className="space-y-2 flex-1 mb-8">
@@ -138,7 +91,7 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
                     : "border border-[var(--border)] hover:border-primary text-[var(--text)]"
                 }`}
               >
-                {plan.price === 0 ? "Start Free" : "Get Started"}
+                {plan.price === 0 ? t("startFree") : t("getStarted")}
               </a>
             </motion.div>
           ))}
@@ -153,7 +106,7 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
             transition={{ duration: 0.5 }}
             className="font-display font-bold text-2xl text-center mb-10"
           >
-            Frequently Asked Questions
+            {t("faqTitle")}
           </motion.h2>
           <div className="space-y-6">
             {faqs.map((faq, index) => (
@@ -177,9 +130,12 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-center mt-12"
           >
-            <p className="text-sm text-[var(--muted)] mb-4">Ready to start your Bible study journey?</p>
-            <a href="https://app.disciplefy.in" className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-hover transition-colors">
-              Start Free — No Credit Card Required
+            <p className="text-sm text-[var(--muted)] mb-4">{t("ctaText")}</p>
+            <a
+              href="https://app.disciplefy.in"
+              className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-hover transition-colors"
+            >
+              {t("startFreeNoCard")}
             </a>
           </motion.div>
         </div>

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function FollowUpChatPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Follow-Up Chat — Go Deeper"
         description="After reading a study guide, ask any follow-up question you have. The AI remembers the passage and context so you get precise, relevant answers — not generic responses."

@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   const raw = fs.readFileSync(path.join(process.cwd(), "content/privacy/en.mdx"), "utf-8");
   const { content } = matter(raw);
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <MDXRemote source={content} components={mdxComponents} />

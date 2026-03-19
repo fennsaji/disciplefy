@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function VoiceBuddyPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Voice Buddy — Talk About Scripture"
         description="Have real voice conversations about any Bible passage or spiritual question with your AI Voice Discipler. Speaks naturally in English, Hindi, and Malayalam."
