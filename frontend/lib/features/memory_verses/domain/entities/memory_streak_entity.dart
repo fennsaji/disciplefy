@@ -60,7 +60,11 @@ class MemoryStreakEntity extends Equatable {
     if (lastPracticeDate == null) return false;
 
     final now = DateTime.now();
-    final lastPractice = lastPracticeDate!;
+    // Convert UTC timestamp to local time before comparing calendar date fields.
+    // lastPracticeDate is parsed from a UTC ISO string; comparing .day/.month/.year
+    // directly against DateTime.now() would give wrong results for users in
+    // timezones ahead of UTC (e.g. IST +5:30) after local midnight.
+    final lastPractice = lastPracticeDate!.toLocal();
 
     return now.year == lastPractice.year &&
         now.month == lastPractice.month &&

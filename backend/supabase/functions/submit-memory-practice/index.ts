@@ -46,6 +46,7 @@ interface SubmitPracticeRequest {
   readonly accuracy_percentage?: number // 0-100 for typing/cloze modes
   readonly time_spent_seconds?: number
   readonly hints_used?: number
+  readonly user_local_date?: string // YYYY-MM-DD in user's local timezone (fixes UTC vs local date mismatch)
 }
 
 /**
@@ -423,10 +424,14 @@ async function updateMasteryProgress(
  */
 async function updateDailyGoal(
   supabaseClient: any,
-  userId: string
+  userId: string,
+  userLocalDate?: string
 ): Promise<{ reviewsCompleted: number; targetReviews: number; goalAchieved: boolean }> {
-  
-  const today = new Date().toISOString().split('T')[0]
+
+  // Use the user's local date if provided (fixes UTC vs local timezone mismatch
+  // for users in timezones like IST where midnight local != midnight UTC).
+  // Falls back to UTC date for backwards compatibility.
+  const today = userLocalDate ?? new Date().toISOString().split('T')[0]
   
   // Get or create today's goal
   const { data: dailyGoal } = await supabaseClient
@@ -739,8 +744,11 @@ async function handleSubmitMemoryPractice(
   }
   // ========== END NEW CODE ==========
 
-  // Check if already reviewed today (same UTC date) — prevent SM-2 inflation from
+  // Check if already reviewed today (UTC date) — prevent SM-2 inflation from
   // multiple same-day practice sessions pushing the next review date further each time.
+  // Note: last_reviewed is stored as a UTC timestamp, so comparing UTC dates here
+  // is intentional and consistent. This check is about session-level deduplication,
+  // not the user's calendar day (handled separately via user_local_date).
   const todayUtc = new Date().toISOString().split('T')[0] // YYYY-MM-DD
   const alreadyReviewedToday = memoryVerse.last_reviewed
     ? memoryVerse.last_reviewed.split('T')[0] === todayUtc
@@ -812,7 +820,8 @@ async function handleSubmitMemoryPractice(
   // Update daily goal progress
   const dailyGoalProgress = await updateDailyGoal(
     services.supabaseServiceClient,
-    userContext.userId
+    userContext.userId,
+    body.user_local_date
   )
 
   // Update memory streak
