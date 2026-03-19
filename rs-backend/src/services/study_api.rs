@@ -37,6 +37,7 @@ pub async fn generate_study_guide(
     path_description: Option<&str>,
     disciple_level: Option<&str>,
     language: &str,
+    mode: &str,
 ) -> Result<StudyGuideResult, AppError> {
     // Truncate long fields to prevent URL overflow — same limits as the mobile app.
     // (Non-Latin scripts URL-encode at up to 9 bytes/char, easily blowing past 8 KB limits.)
@@ -45,11 +46,12 @@ pub async fn generate_study_guide(
     let path_description = path_description.map(|s| truncate_chars(s, 200));
 
     let mut url = format!(
-        "{}/functions/v1/study-generate-v2?input_type={}&input_value={}&language={}&mode=standard",
+        "{}/functions/v1/study-generate-v2?input_type={}&input_value={}&language={}&mode={}",
         config.supabase_url,
         urlencoding::encode(input_type),
         urlencoding::encode(input_value),
         urlencoding::encode(language),
+        urlencoding::encode(mode),
     );
 
     // Add optional context params — these are what the LLM uses for full context
@@ -70,7 +72,7 @@ pub async fn generate_study_guide(
         input_type = %input_type,
         input_value = %input_value,
         language = %language,
-        mode = "standard",
+        mode = %mode,
         topic_description = %topic_description.as_deref().unwrap_or("(none)"),
         path_title = %path_title.as_deref().unwrap_or("(none)"),
         path_description = %path_description.as_deref().unwrap_or("(none)"),
