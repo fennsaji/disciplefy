@@ -86,6 +86,30 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
     ml: !!verseData.translations.ml
   })
 
+  // Log to usage_logs when LLM was actually invoked (cache miss, successful generation).
+  // Use strict equality === false to avoid logging on cache hits or undefined fromCache.
+  // Token counts are not surfaced by DailyVerseService; logged as null until threading is added.
+  if (verseData.fromCache === false) {
+    try {
+      await services.supabaseServiceClient.from('usage_logs').insert({
+        user_id: null,              // system-level call; no requesting user
+        feature_name: 'daily_verse',
+        operation_type: 'create',
+        tier: 'system',             // sentinel for system operations (no CHECK constraint)
+        llm_model: null,
+        llm_provider: null,
+        llm_input_tokens: null,
+        llm_output_tokens: null,
+        llm_cost_usd: null,
+        language: language,
+      })
+      console.log('[daily-verse] Logged cache-miss LLM call to usage_logs')
+    } catch (logErr) {
+      // Non-fatal: analytics failure must never break the verse response
+      console.warn('[daily-verse] Failed to log usage_logs entry:', logErr)
+    }
+  }
+
   // Create response data with additional fields
   // Only include translations that have content (non-empty strings)
   const responseData: DailyVerseData = {
@@ -102,7 +126,7 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
       ...(verseData.translations.hi ? { hindi: verseData.translations.hi } : {}),
       ...(verseData.translations.ml ? { malayalam: verseData.translations.ml } : {})
     },
-    fromCache: false, // TODO: Implement cache tracking
+    fromCache: verseData.fromCache ?? false,
     timestamp: new Date().toISOString()
   }
 
