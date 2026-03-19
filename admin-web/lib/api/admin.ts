@@ -49,7 +49,10 @@ import type {
   UpdateBlogPostRequest,
   BlogPostResponse,
   DeleteBlogPostResponse,
-  TriggerCronResponse
+  TriggerCronResponse,
+  UsageLogsRequest,
+  UsageLogsResponse,
+  PlAnalyticsResponse
 } from '@/types/admin'
 
 export async function fetchUsageAnalytics(
@@ -59,8 +62,8 @@ export async function fetchUsageAnalytics(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(params),
   })
 
@@ -79,8 +82,8 @@ export async function searchUsers(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(params),
   })
 
@@ -139,8 +142,8 @@ export async function listPromoCodes(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(params),
   })
 
@@ -159,8 +162,8 @@ export async function createPromoCode(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(params),
   })
 
@@ -179,8 +182,8 @@ export async function togglePromoCode(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(params),
   })
 
@@ -201,8 +204,8 @@ export async function listLearningPaths(): Promise<ListLearningPathsResponse> {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -218,8 +221,8 @@ export async function getLearningPath(id: string): Promise<GetLearningPathRespon
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -237,8 +240,8 @@ export async function createLearningPath(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -258,8 +261,8 @@ export async function updateLearningPath(
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -276,8 +279,8 @@ export async function deleteLearningPath(id: string): Promise<DeleteLearningPath
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -296,8 +299,8 @@ export async function reorderLearningPath(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -317,8 +320,8 @@ export async function toggleLearningPath(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -346,8 +349,8 @@ export async function listTopics(params?: ListTopicsRequest): Promise<ListTopics
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -370,8 +373,8 @@ export async function listTopicsWithGuides(params?: ListTopicsRequest): Promise<
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -387,8 +390,8 @@ export async function getTopic(id: string): Promise<GetTopicResponse> {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -404,8 +407,8 @@ export async function createTopic(data: CreateTopicRequest): Promise<CreateTopic
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -425,8 +428,8 @@ export async function updateTopic(
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -443,8 +446,8 @@ export async function deleteTopic(id: string): Promise<DeleteTopicResponse> {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -460,8 +463,8 @@ export async function bulkImportTopics(data: BulkImportRequest): Promise<BulkImp
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -482,8 +485,8 @@ export async function addTopicToPath(data: AddTopicToPathRequest): Promise<AddTo
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -502,8 +505,8 @@ export async function removeTopicFromPath(
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -520,8 +523,8 @@ export async function reorderPathTopics(data: ReorderTopicsRequest): Promise<Reo
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -542,8 +545,8 @@ export async function toggleTopicMilestone(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -564,8 +567,8 @@ export async function loadStudyGuide(id: string): Promise<LoadStudyGuideResponse
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -584,8 +587,8 @@ export async function updateStudyGuide(
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include', // Include cookies for authentication
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -706,6 +709,47 @@ export async function triggerBlogCron(): Promise<TriggerCronResponse> {
   if (!response.ok) {
     const error = await response.json()
     throw new Error(error.error || 'Failed to trigger blog generation')
+  }
+  return response.json()
+}
+
+export async function fetchUsageLogs(
+  params: UsageLogsRequest
+): Promise<UsageLogsResponse> {
+  const response = await fetch('/api/admin/usage-logs', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to fetch usage logs')
+  }
+
+  return response.json()
+}
+
+// ── P&L Analytics ─────────────────────────────────────────────────────────
+
+export async function fetchPlAnalytics(params: {
+  start_date: string
+  end_date: string
+}): Promise<PlAnalyticsResponse> {
+  // Note: credentials: 'include' is a top-level option, NOT inside headers.
+  // Several existing functions in this file have this incorrectly nested — do not replicate.
+  const response = await fetch('/api/admin/pl-analytics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error((error as { error?: string })?.error || 'Failed to fetch P&L analytics')
   }
   return response.json()
 }
