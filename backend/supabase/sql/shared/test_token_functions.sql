@@ -28,8 +28,8 @@ BEGIN
     SELECT * INTO result FROM get_or_create_user_tokens('test_free_user', 'free');
 
     -- Verify free plan limits
-    ASSERT result.daily_limit = 8, 'Free plan should have 8 token daily limit';
-    ASSERT result.available_tokens = 8, 'New free user should start with 8 tokens';
+    ASSERT result.daily_limit = 15, 'Free plan should have 15 token daily limit';
+    ASSERT result.available_tokens = 15, 'New free user should start with 15 tokens';
     ASSERT result.purchased_tokens = 0, 'New user should have 0 purchased tokens';
     ASSERT result.user_plan = 'free', 'Plan should be set to free';
     
@@ -46,8 +46,8 @@ BEGIN
     SELECT * INTO result FROM get_or_create_user_tokens('test_standard_user', 'standard');
 
     -- Verify standard plan limits
-    ASSERT result.daily_limit = 20, 'Standard plan should have 20 token daily limit';
-    ASSERT result.available_tokens = 20, 'New standard user should start with 20 tokens';
+    ASSERT result.daily_limit = 40, 'Standard plan should have 40 token daily limit';
+    ASSERT result.available_tokens = 40, 'New standard user should start with 40 tokens';
     ASSERT result.purchased_tokens = 0, 'New user should have 0 purchased tokens';
     ASSERT result.user_plan = 'standard', 'Plan should be set to standard';
     

@@ -9,7 +9,7 @@
  * - region: Region code (default: IN)
  *
  * Returns:
- * - tokensPerRupee: Current exchange rate (e.g., 4)
+ * - tokensPerRupee: Current exchange rate (e.g., 2)
  * - packages: Array of available token packages with pricing
  * - effectiveFrom: When current pricing became active
  */

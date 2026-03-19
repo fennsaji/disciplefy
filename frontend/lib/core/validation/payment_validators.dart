@@ -411,7 +411,7 @@ class TokenPurchaseValidator {
   }
 
   /// Token pricing configuration
-  static const int tokensPerRupee = 4; // 4 tokens = ₹1
+  static const int tokensPerRupee = 2; // 2 tokens = ₹1
   static const int paisePerRupee = 100; // 100 paise = ₹1
 
   /// Validate token to amount conversion with precise pricing calculation
