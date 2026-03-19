@@ -1,4 +1,7 @@
 // marketing/app/blog/[slug]/page.tsx
+// Force SSR so newly published posts are immediately visible.
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
