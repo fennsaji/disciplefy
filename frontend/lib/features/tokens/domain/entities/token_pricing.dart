@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// Token pricing configuration entity
 class TokenPricing extends Equatable {
-  /// Exchange rate: number of tokens per rupee (e.g., 4 tokens = ₹1)
+  /// Exchange rate: number of tokens per rupee (e.g., 2 tokens = ₹1)
   final int tokensPerRupee;
 
   /// Available token packages with pricing

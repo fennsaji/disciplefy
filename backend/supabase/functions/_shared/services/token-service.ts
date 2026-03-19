@@ -271,15 +271,11 @@ export class TokenService {
   /**
    * Calculates token cost for a language and study mode
    *
-   * Returns the number of tokens required for generating content
-   * in the specified language based on complexity and model requirements.
+   * Looks up the exact cost from the TOKEN_COST_MAP flat table.
+   * Costs are derived from production LLM cost data — see
+   * docs/analysis/token_economy_analysis.md.
    *
-   * Special pricing for sermon mode:
-   * - English: 20 tokens (2x base cost of 10)
-   * - Hindi/Malayalam: 30 tokens (1.5x base cost of 20)
-   * - All other modes: base language cost (EN: 10, HI/ML: 20)
-   *
-   * @param language - Target language code
+   * @param language - Target language code ('en' | 'hi' | 'ml')
    * @param mode - Study mode (default: 'standard')
    * @returns Number of tokens required
    */
@@ -287,17 +283,12 @@ export class TokenService {
     language: SupportedLanguage | string,
     mode: StudyMode = 'standard'
   ): number {
-    const languageCode = language as SupportedLanguage
-
-    // Get base language cost
-    const baseCost = languageCode in this.config.tokenCosts.costs
-      ? this.config.tokenCosts.costs[languageCode]
-      : this.config.tokenCosts.defaultCost
-
-    // Apply mode multiplier uniformly across all languages
-    // Quick: 0.5x, Standard: 1.0x, Deep: 1.5x, Lectio: 1.2x, Sermon: 2.0x
-    const multiplier = this.config.tokenCosts.modeMultipliers[mode] || 1.0
-    return Math.round(baseCost * multiplier)
+    const lang = language as SupportedLanguage
+    const langCosts = this.config.tokenCosts.costMap[lang]
+    if (langCosts && mode in langCosts) {
+      return langCosts[mode as StudyMode]
+    }
+    return this.config.tokenCosts.defaultCost
   }
 
   /**

@@ -95,9 +95,9 @@ export async function GET(request: NextRequest) {
     const config = {
       // Token System - from subscription_plans table
       token_system: {
-        daily_free_tokens: planTokens.free || 8,
-        standard_daily_tokens: planTokens.standard || 20,
-        plus_daily_tokens: planTokens.plus || 50,
+        daily_free_tokens: planTokens.free || 15,
+        standard_daily_tokens: planTokens.standard || 40,
+        plus_daily_tokens: planTokens.plus || 60,
         premium_daily_tokens: planTokens.premium || 999999999,
       },
       // Voice Features - from subscription_plans.features.voice_conversations_monthly

@@ -36,7 +36,7 @@ class PlanFeaturesExtractor {
     if (dailyTokens != null) {
       if (dailyTokens == -1) {
         features.add('Unlimited AI tokens (all study modes)');
-      } else if (dailyTokens == 8) {
+      } else if (dailyTokens == 15) {
         features.add('$dailyTokens AI tokens daily (Quick Read only)');
       } else {
         features.add('$dailyTokens AI tokens daily (all study modes)');
@@ -47,7 +47,7 @@ class PlanFeaturesExtractor {
     features.add('Learning paths & Study topics');
 
     if (dailyTokens != null && dailyTokens != -1) {
-      features.add('Purchase additional tokens (4 tokens/₹1)');
+      features.add('Purchase additional tokens (2 tokens/₹1)');
     }
 
     if (followUps != null && followUps > 0) {
@@ -89,7 +89,7 @@ class PlanFeaturesExtractor {
 
     final practiceModes = featuresJson['practice_modes'] as int?;
     if (practiceModes != null) {
-      if (dailyTokens == 8) {
+      if (dailyTokens == 15) {
         features.add('2 practice modes (Flip Card, Type It Out)');
       } else if (practiceModes == 8) {
         features.add('All 8 practice modes');
@@ -117,7 +117,7 @@ class PlanFeaturesExtractor {
       _addFallbackPracticeLimit(features, planCodeLower);
     }
 
-    if (dailyTokens != null && dailyTokens > 8) {
+    if (dailyTokens != null && dailyTokens > 15) {
       features.add('Study guide history');
     }
 

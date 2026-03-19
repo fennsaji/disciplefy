@@ -147,13 +147,13 @@ export default function EditFeatureFlagDialog({
                       {plan}
                     </span>
                     {plan === 'free' && (
-                      <span className="text-xs text-gray-500 ml-2">8 tokens/day</span>
+                      <span className="text-xs text-gray-500 ml-2">15 tokens/day</span>
                     )}
                     {plan === 'standard' && (
-                      <span className="text-xs text-blue-600 ml-2">20 tokens/day</span>
+                      <span className="text-xs text-blue-600 ml-2">40 tokens/day</span>
                     )}
                     {plan === 'plus' && (
-                      <span className="text-xs text-indigo-600 ml-2">50 tokens/day</span>
+                      <span className="text-xs text-indigo-600 ml-2">60 tokens/day</span>
                     )}
                     {plan === 'premium' && (
                       <span className="text-xs text-purple-600 ml-2">∞ Unlimited</span>

@@ -10,9 +10,9 @@ import { LoadingState } from '@/components/ui/loading-spinner'
 import { ErrorState } from '@/components/ui/empty-state'
 
 const TIER_OPTIONS: { value: SubscriptionTier; label: string; icon: string; description: string }[] = [
-  { value: 'free', label: 'Free', icon: '🆓', description: '8 tokens per day - Basic access' },
-  { value: 'standard', label: 'Standard', icon: '⭐', description: '20 tokens per day - Standard features' },
-  { value: 'plus', label: 'Plus', icon: '✨', description: '50 tokens per day - Enhanced features' },
+  { value: 'free', label: 'Free', icon: '🆓', description: '15 tokens per day - Basic access' },
+  { value: 'standard', label: 'Standard', icon: '⭐', description: '40 tokens per day - Standard features' },
+  { value: 'plus', label: 'Plus', icon: '✨', description: '60 tokens per day - Enhanced features' },
   { value: 'premium', label: 'Premium', icon: '👑', description: 'Unlimited tokens - Full access' },
 ]
 
