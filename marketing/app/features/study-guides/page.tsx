@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function StudyGuidesPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Bible Study Guides — Free & AI-Powered"
         description="Access AI-generated study guides for any Bible passage. Save, revisit, and grow in your faith. Free on Android."

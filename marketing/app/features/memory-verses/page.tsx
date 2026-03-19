@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function MemoryVersesPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Memory Verses — Actually Memorize God's Word"
         description="Memorize Bible verses using proven spaced repetition — the same technique used by language learners. With audio pronunciation in your language."

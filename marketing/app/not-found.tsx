@@ -7,7 +7,7 @@ import messages from "@/messages/en.json";
 
 export default function NotFound() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <Navbar />
       <main className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center">

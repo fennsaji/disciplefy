@@ -51,6 +51,7 @@ export default async function LocaleBlogPage({
       tag={searchParams.tag}
       query={query}
       tags={tags}
+      locale={params.locale}
     />
   );
 }

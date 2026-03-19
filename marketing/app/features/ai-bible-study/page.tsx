@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function AiBibleStudyPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="AI Bible Study Guide App"
         description="Get instant, personalised Bible study guides powered by AI. Study any verse or topic in English, Hindi, or Malayalam."

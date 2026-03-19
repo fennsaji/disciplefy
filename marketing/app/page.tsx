@@ -7,7 +7,7 @@ import messages from "@/messages/en.json";
 
 export default function Page() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <HomePage />
     </NextIntlClientProvider>
   );
