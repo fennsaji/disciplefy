@@ -415,6 +415,9 @@ class MemoryVerseRemoteDataSource {
           'accuracy_percentage': accuracyPercentage,
         'time_spent_seconds': timeSpentSeconds,
         if (hintsUsed != null) 'hints_used': hintsUsed,
+        // Pass local date so the backend updates the goal for the user's
+        // calendar day, not the UTC day (fixes IST after-midnight bug).
+        'user_local_date': _localDateString(),
       });
 
       final headers = await _httpService.createHeaders();
@@ -609,9 +612,14 @@ class MemoryVerseRemoteDataSource {
     try {
       _errorHandler.logDebug('Fetching daily goal');
 
-      final url = '$_baseUrl$_getDailyGoalEndpoint';
+      // Pass the user's local date so the backend creates/queries the goal
+      // for the correct calendar day regardless of server timezone (UTC).
+      final localDate = _localDateString();
+      final uri = Uri.parse('$_baseUrl$_getDailyGoalEndpoint')
+          .replace(queryParameters: {'date': localDate});
+
       final headers = await _httpService.createHeaders();
-      final response = await _httpService.get(url, headers: headers);
+      final response = await _httpService.get(uri.toString(), headers: headers);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -820,6 +828,15 @@ class MemoryVerseRemoteDataSource {
   // ==========================================================================
   // SUGGESTED VERSES METHODS
   // ==========================================================================
+
+  /// Returns today's date in YYYY-MM-DD format using the device's local timezone.
+  ///
+  /// Used to pass the user's local calendar date to backend functions so that
+  /// "today" is always the user's date, not the UTC server date.
+  String _localDateString() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
 
   /// Fetches suggested/popular Bible verses
   ///
