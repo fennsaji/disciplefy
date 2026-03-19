@@ -47,7 +47,9 @@ export function BreakdownTables({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {Object.entries(byFeature).map(([feature, data]) => (
+              {Object.entries(byFeature).filter(([, d]) => d.operations > 0).length === 0 ? (
+                <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
+              ) : Object.entries(byFeature).filter(([, d]) => d.operations > 0).map(([feature, data]) => (
                 <tr key={feature}>
                   <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
                     {formatFeatureName(feature)}
@@ -92,7 +94,10 @@ export function BreakdownTables({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {Object.entries(byTier).map(([tier, data]) => (
+              {Object.entries(byTier).filter(([, d]) => d.operations > 0).length === 0 && (
+                <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
+              )}
+              {Object.entries(byTier).filter(([, d]) => d.operations > 0).map(([tier, data]) => (
                 <tr key={tier}>
                   <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
                     <span className={`inline-flex items-center gap-2`}>
@@ -140,6 +145,9 @@ export function BreakdownTables({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {Object.entries(byProvider).length === 0 && (
+                <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
+              )}
               {Object.entries(byProvider).map(([provider, data]) => (
                 <tr key={provider}>
                   <td className="py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -185,6 +193,9 @@ export function BreakdownTables({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {Object.entries(byModel).length === 0 && (
+                <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
+              )}
               {Object.entries(byModel).map(([model, data]) => (
                 <tr key={model}>
                   <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
@@ -220,6 +231,9 @@ function formatFeatureName(feature: string): string {
     study_generate: 'Study Generation',
     study_followup: 'Follow-up Questions',
     voice_conversation: 'Voice Conversations',
+    memory_practice: 'Memory Practice',
+    memory_verse_add: 'Memory Verse Add',
+    daily_verse: 'Daily Verse',
   }
   return names[feature] || feature
 }

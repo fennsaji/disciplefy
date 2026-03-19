@@ -35,7 +35,7 @@ export function getDateRangePreset(preset: DateRangePreset): DateRange {
 }
 
 export function formatDateForAPI(date: Date): string {
-  return format(date, 'yyyy-MM-dd')
+  return date.toISOString()
 }
 
 export function formatCurrency(amount: number): string {
