@@ -94,6 +94,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
           RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+          RS_BACKEND_URL=${{ secrets.RS_BACKEND_URL }}
           NODE_ENV=production
           EOF
           echo "✅ Production environment file created"
