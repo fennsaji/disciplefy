@@ -421,6 +421,7 @@ pub async fn find_next_ungenerated_topic(
 ) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
     let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
         "SELECT lpt.id, rt.title, rt.description, rt.input_type,
+                COALESCE(lp.recommended_mode, 'standard') AS study_mode,
                 lp.id AS path_id, lp.title AS path_title, lp.description AS path_description,
                 lp.disciple_level, lp.category,
                 hi_t.title       AS hi_title,
