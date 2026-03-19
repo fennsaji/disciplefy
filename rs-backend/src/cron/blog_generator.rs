@@ -31,6 +31,7 @@ pub struct LearningPathTopic {
     ml_path_title: Option<String>,
     hi_path_description: Option<String>,
     ml_path_description: Option<String>,
+    study_mode: String,
 }
 
 /// Main blog generation function -- called by CRON scheduler or manual trigger.
@@ -94,6 +95,12 @@ pub async fn run_blog_generation(
             _ => &topic.path_description,
         };
 
+        // 'recommended' and 'ask' are interactive modes — fall back to 'standard' for batch generation
+        let mode = match topic.study_mode.as_str() {
+            "recommended" | "ask" => "standard",
+            m => m,
+        };
+
         let guide = match study_api::generate_study_guide(
             http,
             config,
@@ -104,6 +111,7 @@ pub async fn run_blog_generation(
             Some(display_path_description),
             Some(&topic.disciple_level),
             locale,
+            mode,
         )
         .await
         {

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function FellowshipPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Fellowship — Group Bible Study Together"
         description="Study the Bible together with friends and your church community. Share prayer requests and praise reports in your fellowship group."

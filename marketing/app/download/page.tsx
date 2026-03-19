@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function DownloadPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <DownloadPageContent jsonLd={JSON.stringify(downloadPageJsonLd)} />
     </NextIntlClientProvider>
   );

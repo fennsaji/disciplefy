@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function DailyVersePage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Bible Verse of the Day App"
         description="Start every day with a fresh Bible verse and short devotional in your language. Free on Android."

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <PricingPageContent jsonLd={JSON.stringify(pricingJsonLd)} />
     </NextIntlClientProvider>
   );

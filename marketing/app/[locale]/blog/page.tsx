@@ -1,4 +1,9 @@
 // marketing/app/[locale]/blog/page.tsx
+// Force SSR so this page is never pre-built with stale API data.
+// (The [locale]/layout has generateStaticParams which would otherwise pre-render
+// this page at build time; if posts didn't exist yet the cache would serve empty.)
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { BlogList } from "@/components/blog/BlogList";
 import { getAllPosts, searchPosts, getTags } from "@/lib/blog";
@@ -46,6 +51,7 @@ export default async function LocaleBlogPage({
       tag={searchParams.tag}
       query={query}
       tags={tags}
+      locale={params.locale}
     />
   );
 }

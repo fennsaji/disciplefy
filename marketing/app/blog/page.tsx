@@ -41,6 +41,7 @@ export default async function BlogPage({
       tag={searchParams.tag}
       query={query}
       tags={tags}
+      locale="en"
     />
   );
 }

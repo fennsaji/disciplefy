@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function LearningPathsPage() {
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Learning Paths — Grow With Purpose"
         description="Structured discipleship journeys on Grace, Prayer, Faith, and more. Each path walks you through a curated sequence of lessons so you're growing with direction, not just studying random verses."
