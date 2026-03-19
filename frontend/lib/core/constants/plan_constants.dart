@@ -34,22 +34,23 @@ class PlanConstants {
   /// Plan configurations matching backend DEFAULT_PLAN_CONFIGS
   static const Map<UserPlan, PlanConfig> configs = {
     UserPlan.free: PlanConfig(
-      dailyLimit: 8,
+      dailyLimit: 15,
       isUnlimited: false,
       canPurchaseTokens: true,
-      description: 'Free plan with 8 daily tokens',
+      description: 'Free plan — 15 daily tokens (1 Quick in any language)',
     ),
     UserPlan.standard: PlanConfig(
-      dailyLimit: 20,
+      dailyLimit: 40,
       isUnlimited: false,
       canPurchaseTokens: true,
-      description: 'Authenticated users with 20 daily tokens + purchase option',
+      description:
+          'Standard plan — 40 daily tokens (1 Standard in any language)',
     ),
     UserPlan.plus: PlanConfig(
-      dailyLimit: 50,
+      dailyLimit: 60,
       isUnlimited: false,
       canPurchaseTokens: true,
-      description: 'Plus plan users with 50 daily tokens + purchase option',
+      description: 'Plus plan — 60 daily tokens (1 Deep in any language)',
     ),
     UserPlan.premium: PlanConfig(
       dailyLimit: -1, // Unlimited

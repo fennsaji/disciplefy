@@ -23,6 +23,7 @@ interface DailyVerseData {
     ml: string
   }
   date: string
+  fromCache?: boolean // signals whether this came from cache (true) or was LLM-generated (false)
 }
 
 interface BibleApiResponse {
@@ -132,7 +133,7 @@ export class DailyVerseService {
       const cachedVerse = await this.getCachedVerse(dateKey)
       if (cachedVerse) {
         console.log(`Daily verse cache hit for date: ${dateKey}`)
-        return cachedVerse
+        return { ...cachedVerse, fromCache: true }
       }
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
@@ -151,14 +152,14 @@ export class DailyVerseService {
       }
 
       console.log(`Daily verse generated for date: ${dateKey}, reference: ${newVerse.reference}`)
-      return newVerse
+      return { ...newVerse, fromCache: false }
 
     } catch (error) {
       console.error('Error getting daily verse:', error)
       console.log('Falling back to deterministic verse selection')
       
       // Return fallback verse based on date
-      return this.getFallbackVerse(targetDate)
+      return { ...this.getFallbackVerse(targetDate), fromCache: false }
     }
   }
 

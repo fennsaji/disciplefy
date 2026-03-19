@@ -19,37 +19,24 @@ export type UserPlan = 'free' | 'standard' | 'plus' | 'premium'
 export type SupportedLanguage = 'en' | 'hi' | 'ml'
 
 /**
- * Mode-based token cost multipliers
- * Applied to base language cost to support premium/expensive modes
- */
-export interface TokenCostMultiplier {
-  readonly quick: number
-  readonly standard: number
-  readonly deep: number
-  readonly lectio: number
-  readonly sermon: number
-}
-
-/**
- * Default mode multipliers for token costs
+ * Per-language, per-mode flat token costs (no multipliers)
  *
- * Multipliers based on study duration and complexity:
- * - Quick (3 min): 0.5x - Brief overview, minimal depth
- * - Standard (10 min): 1.0x - Baseline, moderate content
- * - Deep Dive (25 min): 1.5x - Extensive word studies, cross-references
- * - Lectio Divina (15 min): 1.2x - Contemplative + guided reflection
- * - Sermon (55 min): 2.0x - Most comprehensive content, all languages
+ * Costs derived from actual LLM cost data (2026-03-18 production logs):
+ * - EN base = 15 tokens, HI base = 25 tokens, ML base = 30 tokens
+ * - Malayalam costs more due to ~7–8× script token inefficiency vs English
+ * - No-overlap constraint: max Quick (ML=15) < min Standard (EN=20) ✅
  *
- * Multipliers are applied uniformly across languages.
- * Varying final costs result from different base language costs (EN=10, HI/ML=15).
- * Final costs: Quick=5/8, Standard=10/15, Deep=15/23, Lectio=12/18, Sermon=20/30 (EN/HI,ML)
+ * At 2 tokens = ₹1:
+ *   Quick:    EN=₹5,   HI=₹6.5, ML=₹7.5
+ *   Standard: EN=₹10,  HI=₹15,  ML=₹17.5
+ *   Deep:     EN=₹15,  HI=₹22,  ML=₹26
+ *   Lectio:   EN=₹12,  HI=₹18,  ML=₹21
+ *   Sermon:   EN=₹20,  HI=₹30,  ML=₹35
  */
-export const MODE_MULTIPLIERS: TokenCostMultiplier = {
-  quick: 0.5,      // Half cost - encourages quick studies
-  standard: 1.0,   // Baseline - no change
-  deep: 1.5,       // Premium content - 50% more
-  lectio: 1.2,     // Moderate premium - 20% more
-  sermon: 2.0      // Most expensive - 2x for all languages
+export const TOKEN_COST_MAP: Record<SupportedLanguage, Record<StudyMode, number>> = {
+  en: { quick: 10, standard: 20, deep: 30, lectio: 24, sermon: 40 },
+  hi: { quick: 13, standard: 30, deep: 44, lectio: 36, sermon: 60 },
+  ml: { quick: 15, standard: 35, deep: 52, lectio: 42, sermon: 70 },
 } as const
 
 /**
@@ -101,44 +88,30 @@ export interface TokenPurchaseResult {
   readonly success: boolean
   readonly tokens_purchased: number
   readonly cost_paid: number            // Amount in rupees
-  readonly tokens_per_rupee: number     // Exchange rate (4 tokens = ₹1)
+  readonly tokens_per_rupee: number     // Exchange rate (2 tokens = ₹1)
   readonly new_token_balance: TokenInfo
   readonly payment_id: string
   readonly error_message?: string
 }
 
 /**
- * Configuration for language-based token costs
- *
- * Defines how many tokens each language costs for
- * study guide generation operations, including mode-based multipliers.
+ * Configuration for token costs per language and study mode.
+ * Uses a flat costMap (no multipliers) for precise per-combination control.
  */
 export interface TokenCostConfig {
-  readonly costs: Record<SupportedLanguage, number>
-  readonly modeMultipliers: TokenCostMultiplier
-  readonly defaultCost: number          // Fallback cost for unknown languages
+  readonly costMap: Record<SupportedLanguage, Record<StudyMode, number>>
+  readonly defaultCost: number          // Fallback cost for unknown language/mode
 }
 
 /**
- * Default token cost configuration
+ * Default token cost configuration (revised 2026-03-19)
  *
- * Based on LLM complexity and language processing requirements:
- * - English: 10 tokens base (simpler, well-supported)
- * - Hindi/Malayalam: 15 tokens base (moderate complexity, specialized models)
- *
- * Mode multipliers are applied uniformly across all languages:
- * - Quick: 0.5x, Standard: 1.0x, Deep: 1.5x, Lectio: 1.2x, Sermon: 2.0x
- * - Example costs: EN Quick=5, Standard=10, Sermon=20
- *                  HI/ML Quick=8, Standard=15, Sermon=30
+ * Uses TOKEN_COST_MAP — a flat per-language/per-mode table derived from
+ * actual LLM cost data. See docs/analysis/token_economy_analysis.md.
  */
 export const DEFAULT_TOKEN_COSTS: TokenCostConfig = {
-  costs: {
-    'en': 10,    // English
-    'hi': 15,    // Hindi (reduced from 20)
-    'ml': 15     // Malayalam (reduced from 20)
-  },
-  modeMultipliers: MODE_MULTIPLIERS,
-  defaultCost: 10 // Default to English cost
+  costMap: TOKEN_COST_MAP,
+  defaultCost: 20 // Fallback (EN Standard equivalent)
 } as const
 
 /**
@@ -155,38 +128,38 @@ export interface UserPlanConfig {
 }
 
 /**
- * Default user plan configurations
+ * Default user plan configurations (revised 2026-03-19)
  *
- * Defines the token allocation and features for each plan:
- * - Free: 8 tokens daily (anonymous users)
- * - Standard: 20 tokens daily (authenticated users)
- * - Plus: 50 tokens daily (subscription users)
- * - Premium: Unlimited tokens (admin/subscription users)
+ * Daily token allocations sized to cover at least 1 generation per day:
+ * - Free: 15 tokens (= 1 Quick in any language; ML Quick = 15 exactly)
+ * - Standard: 40 tokens (= 1 Standard any language; ML Standard = 35 fits)
+ * - Plus: 60 tokens (= 1 Deep any language; ML Deep = 52 fits with 8 spare)
+ * - Premium: Unlimited (avg ~1,500 tokens/month fresh usage)
  */
 export const DEFAULT_PLAN_CONFIGS: Record<UserPlan, UserPlanConfig> = {
   free: {
-    dailyLimit: 8,
+    dailyLimit: 15,
     isUnlimited: false,
-    canPurchaseTokens: true,     // Free authenticated users can purchase tokens
-    description: 'Free plan users with 8 daily tokens'
+    canPurchaseTokens: true,
+    description: 'Free plan — 15 daily tokens (1 Quick in any language)'
   },
   standard: {
-    dailyLimit: 20,
+    dailyLimit: 40,
     isUnlimited: false,
-    canPurchaseTokens: true,     // Can purchase additional tokens
-    description: 'Authenticated users with 20 daily tokens + purchase option'
+    canPurchaseTokens: true,
+    description: 'Standard plan — 40 daily tokens (1 Standard in any language)'
   },
   plus: {
-    dailyLimit: 50,
+    dailyLimit: 60,
     isUnlimited: false,
-    canPurchaseTokens: true,     // Can purchase additional tokens
-    description: 'Plus plan users with 50 daily tokens + purchase option'
+    canPurchaseTokens: true,
+    description: 'Plus plan — 60 daily tokens (1 Deep in any language)'
   },
   premium: {
     dailyLimit: 999999999,       // Effectively unlimited
     isUnlimited: true,
-    canPurchaseTokens: false,    // No need to purchase tokens
-    description: 'Unlimited access for admin and subscription users'
+    canPurchaseTokens: false,
+    description: 'Premium — unlimited tokens (avg ~1,500/month fresh)'
   }
 } as const
 
@@ -237,7 +210,7 @@ export interface TokenServiceConfig {
   readonly tokenCosts: TokenCostConfig
   readonly planConfigs: Record<UserPlan, UserPlanConfig>
   readonly purchaseConfig: {
-    readonly tokensPerRupee: number     // 4 tokens = ₹1
+    readonly tokensPerRupee: number     // 2 tokens = ₹1 (₹0.50/token)
     readonly minPurchase: number        // Minimum tokens purchasable
     readonly maxPurchase: number        // Maximum tokens purchasable
   }
@@ -250,7 +223,7 @@ export const DEFAULT_TOKEN_SERVICE_CONFIG: TokenServiceConfig = {
   tokenCosts: DEFAULT_TOKEN_COSTS,
   planConfigs: DEFAULT_PLAN_CONFIGS,
   purchaseConfig: {
-    tokensPerRupee: 4,
+    tokensPerRupee: 2,
     minPurchase: 1,
     maxPurchase: 10000
   }
