@@ -90,6 +90,7 @@ jobs:
         run: |
           cat > .env.local << EOF
           NEXT_PUBLIC_APP_URL=https://app.disciplefy.in
+          BLOG_API_URL=${{ secrets.RS_BACKEND_URL }}
           EOF
           echo "✅ Production environment file created"
 
