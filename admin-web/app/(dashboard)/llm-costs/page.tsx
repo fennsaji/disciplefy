@@ -7,7 +7,13 @@ import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { StatsCard } from '@/components/ui/stats-card'
 import { CostTrendChart } from '@/components/charts/cost-trend-chart'
 import { BreakdownTables } from '@/components/tables/breakdown-tables'
-import { fetchUsageAnalytics } from '@/lib/api/admin'
+import { CostByLanguageTable } from '@/components/tables/cost-by-language-table'
+import { CostByStudyModeTable } from '@/components/tables/cost-by-study-mode-table'
+import { CostCrossBreakdownTable } from '@/components/tables/cost-cross-breakdown-table'
+import { DetailedLogsTable } from '@/components/tables/detailed-logs-table'
+import { PlByTierTable } from '@/components/tables/pl-by-tier-table'
+import { TopHeavyUsersTable } from '@/components/tables/top-heavy-users-table'
+import { fetchUsageAnalytics, fetchPlAnalytics } from '@/lib/api/admin'
 import { getDateRangePreset, formatCurrency, formatCompactNumber, formatDateForAPI } from '@/lib/utils/date'
 import type { DateRange } from '@/lib/utils/date'
 import { LoadingState } from '@/components/ui/loading-spinner'
@@ -27,6 +33,17 @@ export default function LLMCostsPage() {
         end_date: formatDateForAPI(dateRange.to),
       }),
     refetchInterval: 60000, // Refetch every minute
+  })
+
+  // P&L analytics query — runs in parallel with the above
+  const { data: plData, isLoading: plLoading } = useQuery({
+    queryKey: ['pl-analytics', dateRange],
+    queryFn: () =>
+      fetchPlAnalytics({
+        start_date: formatDateForAPI(dateRange.from),
+        end_date: formatDateForAPI(dateRange.to),
+      }),
+    refetchInterval: 60000,
   })
 
   // Calculate top provider
@@ -90,6 +107,18 @@ export default function LLMCostsPage() {
             <CostTrendChart data={data.daily_costs} />
           )}
 
+          {/* P&L by Tier — full width, after chart */}
+          {plLoading && !plData && (
+            <LoadingState label="Loading P&L data..." />
+          )}
+          {plData && (
+            <PlByTierTable
+              data={plData.pl_by_tier}
+              exchangeRateUsed={plData.exchange_rate_used}
+              exchangeRateIsLive={plData.exchange_rate_is_live}
+            />
+          )}
+
           {/* Breakdown Tables */}
           <BreakdownTables
             byFeature={data.by_feature}
@@ -97,6 +126,21 @@ export default function LLMCostsPage() {
             byProvider={data.by_provider}
             byModel={data.by_model}
           />
+
+          {/* Cost by Language & Study Mode */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <CostByLanguageTable data={data.by_language ?? {}} />
+            <CostByStudyModeTable data={data.by_study_mode ?? {}} />
+          </div>
+
+          {/* Cross-breakdown + Top Heavy Users — side by side */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <CostCrossBreakdownTable data={data.by_language_x_study_mode ?? []} />
+            {plData && <TopHeavyUsersTable data={plData.top_heavy_users} />}
+          </div>
+
+          {/* Detailed Generation Logs */}
+          <DetailedLogsTable dateRange={dateRange} />
         </>
       )}
 
