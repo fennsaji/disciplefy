@@ -1,4 +1,7 @@
 // marketing/components/sections/LanguageShowcase.tsx
+// PERFORMANCE: Outer motion.div removed (was SSR'd opacity:0).
+// Inner AnimatePresence kept for verse tab switching (client-side only).
+// layoutId motion.div for tab indicator kept (triggered by user click, not SSR).
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
