@@ -1,7 +1,7 @@
 // marketing/lib/seo.ts
 import { locales } from "@/i18n";
 
-const BASE = "https://disciplefy.in";
+const BASE = "https://www.disciplefy.in";
 
 /** Returns alternates.languages metadata for all locales for a given path */
 export function getAlternates(path: string) {
