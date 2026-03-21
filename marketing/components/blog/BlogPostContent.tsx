@@ -36,8 +36,6 @@ export function BlogPostContent({
   locale?: string;
 }) {
   const gradient = getGradient(post.tags);
-  const localePath = locale === "en" ? "" : `/${locale}`;
-
   return (
     <>
       <Navbar />
@@ -66,7 +64,7 @@ export function BlogPostContent({
           <nav className="flex items-center gap-1.5 text-xs text-[var(--muted)] mb-6" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-primary dark:hover:text-indigo-300 transition-colors">Home</Link>
             <span className="opacity-40">/</span>
-            <Link href={`${localePath}/blog`} className="hover:text-primary dark:hover:text-indigo-300 transition-colors">Blog</Link>
+            <Link href="/blog" className="hover:text-primary dark:hover:text-indigo-300 transition-colors">Blog</Link>
             <span className="opacity-40">/</span>
             <span className="text-[var(--text)] font-medium truncate max-w-[220px]">{post.title}</span>
           </nav>
