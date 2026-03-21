@@ -393,21 +393,42 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         final currentSession = Supabase.instance.client.auth.currentSession;
 
         if (currentUser == null || currentSession == null) {
-          Logger.error(
-              '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found - clearing stale data');
+          // On Android, give Supabase a brief window to restore the in-memory
+          // session after a cold start or deep background kill before deciding
+          // the user is really unauthenticated.
+          Logger.warning(
+              '🔍 [SESSION VALIDATION] ⚠️ Session null on resume — waiting 1s before logout');
+          await Future.delayed(const Duration(milliseconds: 1000));
 
-          // Clear stale data and force re-authentication
-          await _clearUserDataUseCase.execute();
-          emit(const auth_states.UnauthenticatedState());
-          return;
+          final retryUser = _authService.currentUser;
+          final retrySession = Supabase.instance.client.auth.currentSession;
+          if (retryUser == null || retrySession == null) {
+            Logger.error(
+                '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found after grace period - clearing stale data');
+            await _clearUserDataUseCase.execute();
+            emit(const auth_states.UnauthenticatedState());
+            return;
+          }
+          Logger.info(
+              '🔍 [SESSION VALIDATION] ✅ Session recovered after grace period');
         }
 
-        // Validate token expiration and attempt refresh if needed
-        // ANDROID FIX: Use ensureTokenValid() to attempt refresh instead of just checking
-        final isTokenValid = await _authService.ensureTokenValid();
+        // Validate token expiration and attempt refresh with retries.
+        // Android network may not be ready immediately on resume, so we retry
+        // up to 3 times with 2-second gaps before giving up and logging out.
+        bool isTokenValid = false;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+          isTokenValid = await _authService.ensureTokenValid();
+          if (isTokenValid) break;
+          if (attempt < 3) {
+            Logger.warning(
+                '🔍 [SESSION VALIDATION] ⚠️ Token refresh attempt $attempt failed — retrying in 2s');
+            await Future.delayed(const Duration(seconds: 2));
+          }
+        }
         if (!isTokenValid) {
           Logger.error(
-              '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
+              '🔍 [SESSION VALIDATION] ❌ Token refresh failed after 3 attempts - triggering logout');
           add(const TokenRefreshFailed(
               reason:
                   'Token expired and refresh failed during session validation'));
@@ -426,10 +447,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             // Email was just verified - fetch fresh profile (bypass cache)
             Logger.debug(
                 '🔍 [SESSION VALIDATION] 📧 Email verified! Refreshing profile...');
-            final profile =
-                await _userProfileService.getUserProfileAsMap(currentUser.id);
+            final profile = await _userProfileService
+                .getUserProfileAsMap(currentState.user.id);
             emit(auth_states.AuthenticatedState(
-              user: currentUser,
+              user: currentState.user,
               profile: profile,
             ));
           }
@@ -538,7 +559,28 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           ));
         }
       } else if (authState.event == AuthChangeEvent.signedOut) {
-        emit(const auth_states.UnauthenticatedState());
+        // Supabase emits signedOut when its internal token auto-refresh fails
+        // (e.g., no network on Android resume). Guard against spurious logouts
+        // by only emitting UnauthenticatedState if the BLoC thinks the user is
+        // currently authenticated — i.e., ignore if we never had a session.
+        if (state is auth_states.AuthenticatedState) {
+          Logger.warning(
+              '🔐 [AUTH BLOC] Supabase signedOut event — verifying before logout');
+          // Small delay: if this is triggered by a transient network error during
+          // auto-refresh, SessionValidationRequested (with retries) will recover
+          // the session and re-authenticate correctly. Only emit unauthenticated
+          // if there truly is no valid session after the delay.
+          await Future.delayed(const Duration(milliseconds: 500));
+          final hasSession = _authService.currentUser != null;
+          if (!hasSession) {
+            Logger.error(
+                '🔐 [AUTH BLOC] Confirmed no session after signedOut — emitting unauthenticated');
+            emit(const auth_states.UnauthenticatedState());
+          } else {
+            Logger.info(
+                '🔐 [AUTH BLOC] Session recovered — ignoring spurious signedOut event');
+          }
+        }
       }
     } catch (e) {
       Logger.debug('Auth state change error: $e');

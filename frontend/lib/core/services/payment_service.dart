@@ -213,7 +213,10 @@ class PaymentService {
       });
 
       options['modal'] = {
-        'ondismiss': PaymentServiceWeb.allowInterop(() {
+        // Razorpay calls ondismiss with 1 argument (null or error object).
+        // The Dart callback must accept that argument or JS interop throws
+        // "NoSuchMethodError: too many positional arguments".
+        'ondismiss': PaymentServiceWeb.allowInterop(([dynamic _]) {
           Logger.debug('[PaymentService] ❌ WEB PAYMENT DISMISSED BY USER');
           final paymentFailureResponse = PaymentFailureResponse(
             0, // User cancelled

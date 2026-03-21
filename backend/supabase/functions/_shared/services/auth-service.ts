@@ -310,9 +310,12 @@ export class AuthService {
   /**
    * Fetches the user's active subscription from the database
    *
-   * Returns a valid subscription if:
-   * - Status is 'active', 'trial', 'authenticated', or 'pending_cancellation'
-   * - Status is 'cancelled' but still within the billing period
+   * Returns the most recently created subscription with an active status:
+   * 'trial', 'active', 'in_progress', 'created', or 'pending_cancellation'
+   *
+   * Note: 'cancelled' is intentionally excluded — after a plan upgrade the old
+   * subscription is cancelled and a new one is created. Including 'cancelled'
+   * would return the stale record instead of the new active one.
    *
    * @param userId - User ID to fetch subscription for
    * @returns Promise resolving to active subscription or null
@@ -325,14 +328,15 @@ export class AuthService {
 
     console.log('[AuthService] getActiveSubscription - querying for userId:', userId)
 
-    // Query subscription - each user has exactly ONE subscription record (enforced by unique constraint)
-    // No need for .limit(1) or .order() since uniqueness is guaranteed at database level
-    // NOW INCLUDES 'trial' status for users in trial period
+    // Order by created_at DESC so the newest subscription wins during upgrade transitions
+    // (brief window where old cancelled + new active both exist)
     const { data: subscription, error } = await this.supabaseServiceClient
       .from('subscriptions')
       .select('status, plan_type, current_period_end, cancel_at_cycle_end')
       .eq('user_id', userId)
-      .in('status', ['trial', 'active', 'authenticated', 'pending_cancellation', 'cancelled'])
+      .in('status', ['trial', 'active', 'in_progress', 'created', 'pending_cancellation'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     console.log('[AuthService] getActiveSubscription - query result:', {
@@ -346,20 +350,8 @@ export class AuthService {
       return null
     }
 
-    // Validate subscription is currently active
-    const isActive =
-      subscription.status === 'trial' ||  // NEW: Trial subscriptions are active
-      subscription.status === 'active' ||
-      subscription.status === 'authenticated' ||
-      subscription.status === 'pending_cancellation' ||
-      // Cancelled but still within billing period
-      (subscription.status === 'cancelled' &&
-       subscription.cancel_at_cycle_end &&
-       subscription.current_period_end &&
-       new Date(subscription.current_period_end) > new Date())
-
-    console.log('[AuthService] getActiveSubscription - isActive:', isActive)
-    return isActive ? subscription : null
+    console.log('[AuthService] getActiveSubscription - isActive: true (status:', subscription.status, ')')
+    return subscription
   }
 
   /**

@@ -38,6 +38,7 @@ abstract class TokenRemoteDataSource {
   /// Creates a payment order for token purchase (step 1 of new flow)
   ///
   /// [tokenAmount] - Number of tokens to purchase (must be positive)
+  /// [rupeeAmount] - Discounted price in rupees from the loaded pricing packages
   ///
   /// Returns order ID for Razorpay payment gateway
   ///
@@ -47,6 +48,7 @@ abstract class TokenRemoteDataSource {
   /// Throws [ClientException] if order creation fails.
   Future<PaymentOrderResponse> createPaymentOrder({
     required int tokenAmount,
+    required int rupeeAmount,
   });
 
   /// Confirms payment after successful Razorpay transaction (step 2 of new flow)
@@ -386,6 +388,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   @override
   Future<PaymentOrderResponse> createPaymentOrder({
     required int tokenAmount,
+    required int rupeeAmount,
   }) async {
     try {
       // Validate token before making authenticated request
@@ -395,7 +398,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       final headers = await ApiAuthHelper.getAuthHeaders();
 
       Logger.debug(
-          '🪙 [TOKEN_API] Creating payment order for $tokenAmount tokens...');
+          '🪙 [TOKEN_API] Creating payment order for $tokenAmount tokens (₹$rupeeAmount)...');
 
       // Validate input parameters
       if (tokenAmount <= 0) {
@@ -410,7 +413,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         'purchase-tokens',
         body: {
           'token_amount': tokenAmount,
-          // No payment details - this is just order creation
+          'rupee_amount': rupeeAmount, // Pass discounted price to backend
         },
         headers: headers,
       );
@@ -473,6 +476,23 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
           code: 'ORDER_CREATION_FAILED',
         );
       }
+    } on FunctionException catch (e) {
+      // Extract user-facing error message from Supabase FunctionException details
+      final details = e.details;
+      if (details is Map<String, dynamic>) {
+        final error = details['error'] as String?;
+        final code = details['code'] as String?;
+        throw ServerException(
+          message: error ?? 'Order creation failed. Please try again later.',
+          code: code ?? 'ORDER_CREATION_FAILED',
+        );
+      }
+      Logger.error(
+          '🚨 [TOKEN_API] FunctionException in createPaymentOrder: $e');
+      throw const ServerException(
+        message: 'Order creation failed. Please try again later.',
+        code: 'ORDER_CREATION_FAILED',
+      );
     } on NetworkException {
       rethrow;
     } on ServerException {
@@ -562,6 +582,23 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       Logger.debug(
           '🧹 [TOKEN_API] Payment $paymentId removed from processing set (ClientException)');
       rethrow;
+    } on FunctionException catch (e) {
+      _processingPayments.remove(paymentId);
+      Logger.debug(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (FunctionException)');
+      final details = e.details;
+      if (details is Map<String, dynamic>) {
+        final error = details['error'] as String?;
+        final code = details['code'] as String?;
+        throw ServerException(
+          message: error ?? 'Payment confirmation failed. Please try again.',
+          code: code ?? 'CONFIRMATION_FAILED',
+        );
+      }
+      throw const ServerException(
+        message: 'Payment confirmation failed. Please try again.',
+        code: 'CONFIRMATION_FAILED',
+      );
     } on TokenValidationException {
       _processingPayments.remove(paymentId);
       Logger.debug(

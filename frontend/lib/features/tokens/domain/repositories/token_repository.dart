@@ -19,11 +19,13 @@ abstract class TokenRepository {
   /// Creates a payment order for token purchase (step 1 of new flow)
   ///
   /// [tokenAmount] - Number of tokens to purchase (must be positive)
+  /// [rupeeAmount] - Discounted price in rupees from the pricing packages
   ///
   /// Returns complete payment order response with order ID and key ID on success.
   /// Returns [Failure] on error (network, server, authentication, validation, etc.).
   Future<Either<Failure, PaymentOrderResponse>> createPaymentOrder({
     required int tokenAmount,
+    required int rupeeAmount,
   });
 
   /// Confirms payment after successful Razorpay transaction (step 2 of new flow)
