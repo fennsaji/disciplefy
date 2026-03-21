@@ -1,8 +1,12 @@
 // marketing/app/blog/page.tsx
+// Fallback for /blog when middleware doesn't rewrite to /[locale]/blog.
+// Must wrap with NextIntlClientProvider so Navbar/Footer useTranslations works.
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
 import { BlogList } from "@/components/blog/BlogList";
 import { getAllPosts, searchPosts, getTags } from "@/lib/blog";
 import { getAlternates } from "@/lib/seo";
+import messages from "@/messages/en.json";
 
 export const metadata: Metadata = {
   title: "Bible Study Blog — Disciplefy",
@@ -34,14 +38,16 @@ export default async function BlogPage({
   ]);
 
   return (
-    <BlogList
-      posts={posts}
-      pagination={pagination}
-      basePath="/blog"
-      tag={searchParams.tag}
-      query={query}
-      tags={tags}
-      locale="en"
-    />
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
+      <BlogList
+        posts={posts}
+        pagination={pagination}
+        basePath="/blog"
+        tag={searchParams.tag}
+        query={query}
+        tags={tags}
+        locale="en"
+      />
+    </NextIntlClientProvider>
   );
 }

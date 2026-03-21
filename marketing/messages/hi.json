@@ -28,7 +28,7 @@
   "downloadSection": { "title": "आज बाइबल अध्ययन शुरू करें", "subtitle": "Android पर मुफ्त — English, हिन्दी & मलयालम", "cta": "Google Play पर मुफ्त डाउनलोड करें", "openWebApp": "या वेब ऐप खोलें →" },
   "downloadCTA": { "title": "आज अपनी बाइबल अध्ययन यात्रा शुरू करें", "subtitle": "डाउनलोड करने के लिए मुफ्त। मिनटों में शुरू करें।", "webApp": "या वेब ऐप खोलें →" },
   "footer": { "tagline": "आपका बाइबल अध्ययन साथी", "product": "उत्पाद", "company": "कंपनी", "legal": "कानूनी", "features": "सुविधाएं", "aiStudy": "AI बाइबल अध्ययन", "dailyVerse": "दैनिक पद", "studyGuides": "अध्ययन गाइड", "fellowship": "फेलोशिप", "voiceBuddy": "वॉइस बडी", "memoryVerses": "स्मृति पद", "learningPaths": "लर्निंग पाथ्स", "followUpChat": "फॉलो-अप चैट", "pricing": "योजनाएं", "download": "डाउनलोड", "about": "हमारे बारे में", "blog": "ब्लॉग", "contact": "संपर्क करें", "privacy": "गोपनीयता नीति", "terms": "सेवा की शर्तें", "refund": "वापसी नीति", "copyright": "भारतीय ईसाइयों के लिए ✝ के साथ बनाया गया" },
-  "cookieConsent": { "message": "हम आपके अनुभव को बेहतर बनाने के लिए कुकीज़ का उपयोग करते हैं।", "learnMore": "और जानें", "accept": "स्वीकार करें", "decline": "अस्वीकार करें" },
+  "cookieConsent": { "message": "हम आपके अनुभव को बेहतर बनाने के लिए कुकीज़ का उपयोग करते हैं।", "learnMore": "गोपनीयता नीति", "accept": "स्वीकार करें", "decline": "अस्वीकार करें" },
   "blog": { "title": "ब्लॉग", "readMore": "और पढ़ें →", "backToBlog": "← ब्लॉग पर वापस जाएं", "searchPlaceholder": "लेख खोजें…", "allTag": "सभी" },
   "notFound": { "title": "पृष्ठ नहीं मिला", "subtitle": "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।", "home": "होम पर जाएं" },
   "featurePage": { "howItWorksTitle": "यह कैसे काम करता है", "exploreOtherFeatures": "अन्य सुविधाएं देखें" },

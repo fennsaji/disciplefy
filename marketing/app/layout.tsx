@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Disciplefy — AI Bible Study in English, Hindi & Malayalam",
   description:
     "Study the Bible deeper with AI-powered study guides in your language. Free to download.",
-  metadataBase: new URL("https://disciplefy.in"),
+  metadataBase: new URL("https://www.disciplefy.in"),
   alternates: getAlternates("/"),
   openGraph: {
     siteName: "Disciplefy",
