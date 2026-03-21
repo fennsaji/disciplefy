@@ -87,7 +87,7 @@ function escHtml(s: string): string {
 
 function buildMeetingInviteEmail(opts: {
   title: string; description?: string | null; dateStr: string; timeStr: string;
-  durationLabel: string; meetLink: string; addToCalendarUrl: string; recurrence?: string | null
+  durationLabel: string; meetLink: string; addToCalendarUrl: string; recurrence?: string | null; location?: string | null
 }): string {
   const recurrenceBadge = opts.recurrence
     ? `<span style="display:inline-block;background:#4338ca22;color:#6366f1;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:0.5px;margin-left:10px;text-transform:capitalize;">${opts.recurrence}</span>`
@@ -121,10 +121,10 @@ function buildMeetingInviteEmail(opts: {
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#12122a;border-radius:12px;overflow:hidden;">
                 <tr><td style="padding:14px 18px;border-bottom:1px solid #2a2a40;"><span style="font-size:12px;color:#6366f1;margin-right:8px;">📅</span><span style="font-size:13px;font-weight:600;color:#e0e0f0;">${opts.dateStr}</span></td></tr>
                 <tr><td style="padding:14px 18px;border-bottom:1px solid #2a2a40;"><span style="font-size:12px;color:#6366f1;margin-right:8px;">🕐</span><span style="font-size:13px;font-weight:600;color:#e0e0f0;">${opts.timeStr}</span><span style="font-size:12px;color:#6060a0;margin-left:10px;">· ${opts.durationLabel}</span></td></tr>
-                <tr><td style="padding:14px 18px;"><span style="font-size:12px;color:#6366f1;margin-right:8px;">🔗</span><a href="${opts.meetLink}" style="font-size:13px;font-weight:600;color:#6366f1;text-decoration:none;">${opts.meetLink}</a></td></tr>
+                ${opts.location ? `<tr><td style="padding:14px 18px;"><span style="font-size:12px;color:#6366f1;margin-right:8px;">📍</span><span style="font-size:13px;font-weight:600;color:#e0e0f0;">${escHtml(opts.location)}</span></td></tr>` : `<tr><td style="padding:14px 18px;"><span style="font-size:12px;color:#6366f1;margin-right:8px;">🔗</span><a href="${opts.meetLink}" style="font-size:13px;font-weight:600;color:#6366f1;text-decoration:none;">${opts.meetLink}</a></td></tr>`}
               </table>
             </td></tr>
-            <tr><td style="padding-bottom:14px;"><a href="${opts.meetLink}" style="display:block;background:#ffeec0;color:#1a1a2e;text-align:center;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none;">▶ Join Meeting</a></td></tr>
+            ${!opts.location ? `<tr><td style="padding-bottom:14px;"><a href="${opts.meetLink}" style="display:block;background:#ffeec0;color:#1a1a2e;text-align:center;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none;">▶ Join Meeting</a></td></tr>` : ''}
             <tr><td><a href="${opts.addToCalendarUrl}" style="display:block;background:transparent;color:#6366f1;text-align:center;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;border:1.5px solid #6366f1;">📆 Add to Google Calendar</a></td></tr>
           </table>
         </td></tr>
@@ -261,8 +261,9 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       const dur = Math.round((endsAtDate.getTime() - startsAtDate.getTime()) / 60000)
       const durationLabel = dur < 60 ? `${dur} min` : dur % 60 === 0 ? `${dur / 60} hr` : `${Math.floor(dur / 60)} hr ${dur % 60} min`
       const gcalDateFmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
-      const gcalDetails = encodeURIComponent([meeting.description, `Join meeting: ${meeting.meet_link}`].filter(Boolean).join('\n\n'))
-      const addToCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meeting.title)}&dates=${gcalDateFmt(startsAtDate)}/${gcalDateFmt(endsAtDate)}&details=${gcalDetails}&location=${encodeURIComponent(meeting.meet_link)}`
+      const gcalDetails = encodeURIComponent([meeting.description, meeting.location ? null : `Join meeting: ${meeting.meet_link}`].filter(Boolean).join('\n\n'))
+      const gcalLocation = meeting.location ?? meeting.meet_link ?? ''
+      const addToCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meeting.title)}&dates=${gcalDateFmt(startsAtDate)}/${gcalDateFmt(endsAtDate)}&details=${gcalDetails}&location=${encodeURIComponent(gcalLocation)}`
 
       try {
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', allMemberIds)
@@ -287,7 +288,7 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       const emails = emailEntries.filter((e): e is string => e !== null)
       if (emails.length === 0) return
 
-      const html = buildMeetingInviteEmail({ title: meeting.title, description: meeting.description, dateStr, timeStr, durationLabel, meetLink: meeting.meet_link, addToCalendarUrl, recurrence: meeting.recurrence })
+      const html = buildMeetingInviteEmail({ title: meeting.title, description: meeting.description, dateStr, timeStr, durationLabel, meetLink: meeting.meet_link, addToCalendarUrl, recurrence: meeting.recurrence, location: meeting.location })
       await Promise.allSettled(
         emails.map(email =>
           fetch('https://api.resend.com/emails', {

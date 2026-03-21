@@ -18,6 +18,7 @@ import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../utils/plan_features_extractor.dart';
+import '../widgets/promo_code_input.dart';
 
 class PlusUpgradePage extends StatefulWidget {
   const PlusUpgradePage({super.key});
@@ -30,9 +31,14 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     with WidgetsBindingObserver {
   bool _hasOpenedPayment = false;
   bool _isLoadingPlan = true;
+  bool _isDowngrade = false; // true when current plan tier > Plus
+  bool _isSubmitting = false; // prevents double-tap on upgrade button
+  bool _hasShownSuccess = false; // prevents repeated success snackbar
 
+  PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _plusPlan;
-  SubscriptionPlanModel? _standardPlan; // for comparison
+  SubscriptionPlanModel?
+      _comparisonPlan; // Standard (upgrade) or Premium (downgrade)
   List<String> _features = [];
   List<PlanComparisonRow> _comparisonRows = [];
 
@@ -42,9 +48,20 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    context
-        .read<SubscriptionBloc>()
-        .add(const CheckSubscriptionEligibility(targetPlanCode: 'plus'));
+
+    // Detect downgrade: if current active subscription is at a higher tier than Plus
+    final subState = context.read<SubscriptionBloc>().state;
+    if (subState is SubscriptionLoaded) {
+      final planType = subState.activeSubscription?.planType ?? '';
+      _isDowngrade = planType.contains('premium');
+    }
+
+    if (!_isDowngrade) {
+      // Only check eligibility for upgrades — downgrades bypass this check
+      context
+          .read<SubscriptionBloc>()
+          .add(const CheckSubscriptionEligibility(targetPlanCode: 'plus'));
+    }
     _loadPlanData();
   }
 
@@ -61,19 +78,24 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
 
       SubscriptionPlanModel? plus;
       SubscriptionPlanModel? standard;
+      SubscriptionPlanModel? premium;
 
       for (final plan in response.plans) {
         if (plan.planCode.toLowerCase() == 'plus') plus = plan;
         if (plan.planCode.toLowerCase() == 'standard') standard = plan;
+        if (plan.planCode.toLowerCase() == 'premium') premium = plan;
       }
+
+      // For downgrades, compare Premium vs Plus; for upgrades, compare Standard vs Plus
+      final comparisonPlan = _isDowngrade ? premium : standard;
 
       if (mounted && plus != null) {
         setState(() {
           _plusPlan = plus;
-          _standardPlan = standard;
+          _comparisonPlan = comparisonPlan;
           _features = PlanFeaturesExtractor.extractFeaturesFromPlan(plus!);
           _comparisonRows =
-              PlanFeaturesExtractor.buildComparisonRows(standard, plus);
+              PlanFeaturesExtractor.buildComparisonRows(comparisonPlan, plus);
           _isLoadingPlan = false;
         });
       } else if (mounted) {
@@ -121,7 +143,9 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          context.tr(TranslationKeys.upgradeToPlus),
+          context.tr(_isDowngrade
+              ? TranslationKeys.downgradeToPlus
+              : TranslationKeys.upgradeToPlus),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: _plusColor,
@@ -143,6 +167,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
+            setState(() => _isSubmitting = false);
             if (state.authorizationUrl.isNotEmpty) {
               // Razorpay flow — redirect user to payment page in browser
               ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +192,13 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
               );
             }
           } else if (state is SubscriptionLoaded) {
-            if (state.activeSubscription?.isActive == true) {
+            // Only react if the user actually went through the payment flow on
+            // this page — prevents auto-pop when a background GetActiveSubscription
+            // fires and the user already has a trial/other active subscription.
+            if (_hasOpenedPayment &&
+                !_hasShownSuccess &&
+                state.activeSubscription?.isActive == true) {
+              _hasShownSuccess = true;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text(
@@ -187,10 +218,12 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
             _hasOpenedPayment = true;
             _openAuthorizationUrl(state.authorizationUrl!);
           } else if (state is SubscriptionError) {
+            setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Something went wrong. Please try again.'),
+                content: Text(state.failure.message),
                 backgroundColor: AppTheme.errorColor,
+                duration: const Duration(seconds: 5),
               ),
             );
           }
@@ -219,6 +252,14 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                   _buildComparison(),
                   const SizedBox(height: 32),
                 ],
+                PromoCodeInput(
+                  planCode: 'plus',
+                  initialPromo: _appliedPromo,
+                  onValidate: _validatePromoCode,
+                  onPromoApplied: _handlePromoApplied,
+                  onPromoRemoved: _handlePromoRemoved,
+                ),
+                const SizedBox(height: 24),
                 _buildActionButton(state),
                 const SizedBox(height: 16),
                 _buildTermsInfo(),
@@ -423,7 +464,8 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   }
 
   Widget _buildComparison() {
-    final prevName = _standardPlan?.planName ?? 'Standard';
+    final prevName =
+        _comparisonPlan?.planName ?? (_isDowngrade ? 'Premium' : 'Standard');
 
     return Card(
       elevation: 2,
@@ -496,7 +538,10 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   }
 
   Widget _buildActionButton(SubscriptionState state) {
-    if (state is SubscriptionEligibilityChecked && !state.canSubscribe) {
+    // Only show the blocking info card for upgrades (not downgrades)
+    if (!_isDowngrade &&
+        state is SubscriptionEligibilityChecked &&
+        !state.canSubscribe) {
       return Card(
         color: _plusColor.withOpacity(0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -521,9 +566,9 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
       );
     }
 
-    final isLoading = state is SubscriptionLoading &&
-        (state.operation?.contains('creating') == true ||
-            state.operation == 'creating');
+    final isLoading = _isSubmitting ||
+        (state is SubscriptionLoading &&
+            state.operation?.contains('creating') == true);
 
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,
@@ -549,7 +594,9 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 const Icon(Icons.diamond_rounded),
                 const SizedBox(width: 8),
                 Text(
-                  context.tr(TranslationKeys.upgradeToPlus),
+                  context.tr(_isDowngrade
+                      ? TranslationKeys.downgradeToPlus
+                      : TranslationKeys.upgradeToPlus),
                   style:
                       AppFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
@@ -558,7 +605,52 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     );
   }
 
+  Future<PromotionalCampaignModel?> _validatePromoCode(String code) async {
+    try {
+      final dataSource = sl<SubscriptionRemoteDataSource>();
+      final platformService = PlatformDetectionService();
+      final provider = platformService
+          .providerToString(platformService.getPreferredProvider());
+      final response = await dataSource.validatePromoCode(
+        promoCode: code,
+        provider: provider,
+      );
+      if (response.valid && response.campaign != null) {
+        return response.campaign!.toPromotionalCampaignModel();
+      }
+      return null;
+    } catch (e) {
+      Logger.error('[PlusUpgrade] Failed to validate promo code', error: e);
+      return null;
+    }
+  }
+
+  Future<void> _handlePromoApplied(PromotionalCampaignModel campaign) async {
+    setState(() => _appliedPromo = campaign);
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      await box.put('pending_promo_code', campaign.code);
+    } catch (e) {
+      Logger.debug('[PlusUpgrade] Failed to save promo to Hive: $e');
+    }
+  }
+
+  Future<void> _handlePromoRemoved() async {
+    setState(() => _appliedPromo = null);
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      await box.delete('pending_promo_code');
+    } catch (e) {
+      Logger.debug('[PlusUpgrade] Failed to clear promo from Hive: $e');
+    }
+  }
+
   Future<void> _handleUpgrade() async {
+    setState(() => _isSubmitting = true);
     String? promoCode;
     int? planPrice;
     try {

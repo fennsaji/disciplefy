@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/models/app_language.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
@@ -852,10 +854,22 @@ class _FellowshipFullFeedPage extends StatelessWidget {
   }
 }
 
-class _FellowshipLessonsPage extends StatelessWidget {
+class _FellowshipLessonsPage extends StatefulWidget {
   final String fellowshipId;
 
   const _FellowshipLessonsPage({required this.fellowshipId});
+
+  @override
+  State<_FellowshipLessonsPage> createState() => _FellowshipLessonsPageState();
+}
+
+class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
+  AppLanguage? _selectedLanguage;
+
+  Future<void> _onLanguageSelected(AppLanguage lang) async {
+    await sl<LanguagePreferenceService>().saveStudyContentLanguage(lang);
+    if (mounted) setState(() => _selectedLanguage = lang);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -876,8 +890,46 @@ class _FellowshipLessonsPage extends StatelessWidget {
             color: context.appTextPrimary,
           ),
         ),
+        actions: [
+          PopupMenuButton<AppLanguage>(
+            icon: Icon(Icons.more_vert, color: context.appTextPrimary),
+            color: context.appSurface,
+            onSelected: _onLanguageSelected,
+            itemBuilder: (_) => AppLanguage.values.map((lang) {
+              final isCurrent = _selectedLanguage == lang;
+              return PopupMenuItem<AppLanguage>(
+                value: lang,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        lang.displayName,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight:
+                              isCurrent ? FontWeight.w700 : FontWeight.w400,
+                          color: isCurrent
+                              ? Theme.of(context).colorScheme.primary
+                              : context.appTextPrimary,
+                        ),
+                      ),
+                    ),
+                    if (isCurrent)
+                      Icon(Icons.check,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
-      body: FellowshipLessonsTabScreen(fellowshipId: fellowshipId),
+      body: FellowshipLessonsTabScreen(
+        fellowshipId: widget.fellowshipId,
+        languageOverride: _selectedLanguage?.code,
+      ),
     );
   }
 }

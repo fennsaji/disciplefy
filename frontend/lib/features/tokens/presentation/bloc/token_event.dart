@@ -175,12 +175,18 @@ class PrefetchTokenStatus extends TokenEvent {
 class CreatePaymentOrder extends TokenEvent {
   final int tokenAmount;
 
+  /// Discounted rupee amount for this purchase (from the loaded pricing packages).
+  /// Passed to the backend so the Razorpay order reflects the package discount
+  /// rather than the flat per-token rate.
+  final int rupeeAmount;
+
   const CreatePaymentOrder({
     required this.tokenAmount,
+    required this.rupeeAmount,
   });
 
   @override
-  List<Object?> get props => [tokenAmount];
+  List<Object?> get props => [tokenAmount, rupeeAmount];
 }
 
 /// Event to confirm payment with signature verification

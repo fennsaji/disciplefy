@@ -11,8 +11,8 @@ const config: Config = {
     extend: {
       colors: {
         // Brand tokens
-        primary: "#4F46E5",
-        "primary-hover": "#4338CA",
+        primary: "var(--primary)",
+        "primary-hover": "var(--primary-hover)",
         accent: "#FFEEC0",
         gold: "#D4930A",
         "gold-light": "#FFEEC0",

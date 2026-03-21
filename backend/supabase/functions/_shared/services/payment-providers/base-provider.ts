@@ -26,8 +26,10 @@ export interface CreateSubscriptionParams {
   currency: string
   discountedPriceMinor?: number
   promotionalCampaignId?: string | null
+  offerId?: string | null  // Razorpay offer_id — applied natively on Razorpay checkout
   userEmail?: string
   notes?: Record<string, unknown>
+  startAt?: number  // Unix timestamp — schedules subscription start (used for downgrade at cycle end)
 }
 
 /**

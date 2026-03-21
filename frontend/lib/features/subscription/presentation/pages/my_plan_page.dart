@@ -1202,9 +1202,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
     SubscriptionState state,
     UserSubscriptionStatus? subscriptionStatus,
   ) {
-    final isLoading = state is SubscriptionLoading;
+    final isLoading = state is SubscriptionLoading &&
+        (state.operation == 'cancelling' || state.operation == 'resuming');
 
-    // Pending cancellation: resume button + view plans
+    // Pending cancellation: resume button + upgrade (downgrade blocked until cycle ends)
     if (subscription?.status == SubscriptionStatus.pending_cancellation) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1220,19 +1221,25 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 .add(const ResumeSubscription()),
           ),
           const SizedBox(height: 12),
-          _buildViewPlansButton(),
+          _buildViewPlansButton(label: 'Upgrade Plan'),
         ],
       );
     }
 
-    // Active subscription: view plans (if standard, for upgrade) + cancel
+    // Active subscription: contextual plan-change button + cancel
     if (subscription != null && subscription.isActive) {
       final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (userPlan == UserPlan.standard) ...[
+            // Standard: can upgrade to Plus or Premium
             _buildViewPlansButton(),
+            const SizedBox(height: 12),
+          ] else if (userPlan == UserPlan.plus ||
+              userPlan == UserPlan.premium) ...[
+            // Plus/Premium: can only downgrade (no higher tier exists)
+            _buildDowngradeButton(),
             const SizedBox(height: 12),
           ],
           _buildActionButton(
@@ -1248,11 +1255,11 @@ class _MyPlanPageState extends State<MyPlanPage> {
       );
     }
 
-    // All other states (trial, expired, free, grace period): single View Plans button
+    // All other states (trial, expired, free, grace period): Upgrade button
     return _buildViewPlansButton();
   }
 
-  Widget _buildViewPlansButton() {
+  Widget _buildViewPlansButton({String label = 'Upgrade'}) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -1268,7 +1275,32 @@ class _MyPlanPageState extends State<MyPlanPage> {
         ),
         icon: const Icon(Icons.auto_awesome, size: 20),
         label: Text(
-          'Upgrade',
+          label,
+          style: AppFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDowngradeButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => context.push(AppRoutes.pricing),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppTheme.primaryColor),
+          foregroundColor: AppTheme.primaryColor,
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: const Icon(Icons.arrow_downward_rounded, size: 20),
+        label: Text(
+          'Downgrade Plan',
           style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,

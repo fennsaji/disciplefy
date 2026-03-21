@@ -91,8 +91,8 @@ export class SubscriptionService {
   }> {
     this.validateConfiguration()
 
-    // Check for existing active subscription
-    await this.ensureNoActiveSubscription(options.userId)
+    // Check for existing active subscription (allows upgrades from pending_cancellation)
+    await this.ensureNoActiveSubscription(options.userId, options.planType)
 
     // Capture Razorpay subscription in outer scope for cleanup on failure
     let razorpaySubscription: RazorpaySubscriptionResponse | undefined
@@ -203,7 +203,7 @@ export class SubscriptionService {
         // Cancel at cycle end: Set flag in Razorpay, subscription stays active
         console.log('[SubscriptionService] Cancelling at cycle end in Razorpay:', subscription.id)
         await this.cancelRazorpaySubscription(
-          subscription.razorpay_subscription_id,
+          subscription.provider_subscription_id,
           true  // cancel_at_cycle_end = 1
         )
 
@@ -240,7 +240,7 @@ export class SubscriptionService {
         // Cancel immediately: Cancel in Razorpay, subscription ends now
         console.log('[SubscriptionService] Cancelling immediately in Razorpay:', subscription.id)
         await this.cancelRazorpaySubscription(
-          subscription.razorpay_subscription_id,
+          subscription.provider_subscription_id,
           false  // cancel_at_cycle_end = 0
         )
 
@@ -337,12 +337,8 @@ export class SubscriptionService {
     }
 
     try {
-      // Validate configuration before calling Razorpay
-      this.validateConfiguration()
-
-      // Remove cancel_at_cycle_end flag in Razorpay
-      console.log('[SubscriptionService] Removing cancel_at_cycle_end flag in Razorpay:', subscription.id)
-      await this.resumeRazorpaySubscription(subscription.razorpay_subscription_id)
+      // Log the resume attempt (no Razorpay API call — see resumeRazorpaySubscription)
+      await this.resumeRazorpaySubscription(subscription.provider_subscription_id)
 
       // Update database - set status back to active and clear cancellation fields
       const updatedSubscription = await this.updateSubscriptionStatus(
@@ -421,8 +417,8 @@ export class SubscriptionService {
   /**
    * Gets active subscription for a user
    *
-   * Note: Includes 'pending_cancellation' to prevent duplicate subscriptions.
-   * A user with pending_cancellation still has an active subscription until period end.
+   * Note: Includes 'in_progress' (authorized, awaiting activation) and
+   * 'pending_cancellation' (active until period end).
    *
    * @param userId - User UUID
    * @returns Promise resolving to active subscription or null
@@ -432,7 +428,7 @@ export class SubscriptionService {
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .in('status', ['active', 'authenticated', 'pending_cancellation'])
+      .in('status', ['active', 'in_progress', 'pending_cancellation'])
       .maybeSingle() as { data: Subscription | null, error: PostgrestError | null }
 
     if (error && error.code !== 'PGRST116') {
@@ -458,9 +454,9 @@ export class SubscriptionService {
 
     const { data: subscription } = await this.supabaseClient
       .from('subscriptions')
-      .select('razorpay_subscription_id, user_id')
+      .select('provider_subscription_id, user_id')
       .eq('id', subscriptionId)
-      .single() as { data: { razorpay_subscription_id: string, user_id: string } | null }
+      .single() as { data: { provider_subscription_id: string, user_id: string } | null }
 
     if (!subscription) {
       throw new AppError(
@@ -472,7 +468,7 @@ export class SubscriptionService {
 
     try {
       const razorpayData = await this.fetchRazorpaySubscription(
-        subscription.razorpay_subscription_id
+        subscription.provider_subscription_id
       )
 
       return await this.updateSubscriptionFromRazorpay(
@@ -662,35 +658,23 @@ export class SubscriptionService {
   }
 
   /**
-   * Resumes a cancelled Razorpay subscription
+   * Resumes a pending_cancellation subscription at the DB level only.
    *
-   * Removes the cancel_at_cycle_end flag by calling cancel with 0
+   * NOTE: Razorpay has no "undo cancel_at_cycle_end" API endpoint.
+   * Calling cancel(id, false) would cancel the subscription IMMEDIATELY and
+   * fire subscription.cancelled webhook — the opposite of what we want.
+   *
+   * Strategy: Only update our DB. Razorpay may still cancel at cycle end, in
+   * which case subscription.cancelled webhook will fire and mark it cancelled
+   * again. If Razorpay auto-renews (subscription was still active), it will
+   * fire subscription.charged and the subscription continues normally.
    */
   private async resumeRazorpaySubscription(
     razorpaySubscriptionId: string
   ): Promise<void> {
-    if (!this.razorpay) {
-      throw new AppError(
-        'PAYMENT_SERVICE_ERROR',
-        'Payment service not configured',
-        500
-      )
-    }
-
-    try {
-      // Call cancel endpoint with false to remove the cancel_at_cycle_end flag
-      // This is the same API used to cancel, but with false it resumes the subscription
-      await this.razorpay.subscriptions.cancel(razorpaySubscriptionId, false)
-
-      console.log('[SubscriptionService] Razorpay subscription resumed:', razorpaySubscriptionId)
-    } catch (error: any) {
-      console.error('[SubscriptionService] Razorpay resume error:', error)
-      throw new AppError(
-        'RAZORPAY_ERROR',
-        error?.error?.description || 'Failed to resume subscription with payment provider',
-        500
-      )
-    }
+    // No Razorpay API call — cancelling with false causes immediate cancellation.
+    // DB-only resume is handled by the caller (resumeSubscription).
+    console.log('[SubscriptionService] Razorpay subscription resumed (DB-only):', razorpaySubscriptionId)
   }
 
   /**
@@ -735,9 +719,9 @@ export class SubscriptionService {
       .from('subscriptions')
       .insert({
         user_id: userId,
-        razorpay_subscription_id: razorpaySubscription.id,
-        razorpay_plan_id: razorpaySubscription.plan_id,
-        razorpay_customer_id: razorpaySubscription.customer_id || null,
+        provider_subscription_id: razorpaySubscription.id,
+        provider_plan_id: razorpaySubscription.plan_id,
+        provider_customer_id: razorpaySubscription.customer_id || null,
         status: this.mapRazorpayStatus(razorpaySubscription.status),
         plan_type: `${planType}_monthly`,
         current_period_start: razorpaySubscription.current_start
@@ -876,18 +860,63 @@ export class SubscriptionService {
   }
 
   /**
-   * Ensures user has no existing active subscription
+   * Plan rank for upgrade/downgrade comparison.
+   * Higher number = higher tier plan.
    */
-  private async ensureNoActiveSubscription(userId: string): Promise<void> {
+  private getPlanRank(planType: string): number {
+    if (planType.startsWith('premium')) return 3
+    if (planType.startsWith('plus')) return 2
+    if (planType.startsWith('standard')) return 1
+    return 0
+  }
+
+  /**
+   * Ensures user has no conflicting active subscription.
+   *
+   * Rules:
+   * - No existing subscription → proceed
+   * - Existing active/in_progress → block (can't have two active subs)
+   * - Existing pending_cancellation + upgrade (new plan is higher) → cancel existing in DB only, allow
+   * - Existing pending_cancellation + same/downgrade → throw DOWNGRADE_PENDING error
+   */
+  private async ensureNoActiveSubscription(
+    userId: string,
+    newPlanType: SubscriptionPlanType
+  ): Promise<void> {
     const activeSubscription = await this.getActiveSubscription(userId)
 
-    if (activeSubscription) {
+    if (!activeSubscription) return
+
+    if (activeSubscription.status === 'pending_cancellation') {
+      const existingRank = this.getPlanRank(activeSubscription.plan_type)
+      const newRank = this.getPlanRank(`${newPlanType}_monthly`)
+
+      if (newRank > existingRank) {
+        // Upgrade from pending_cancellation: cancel existing in DB and allow new
+        console.log(
+          `[SubscriptionService] Upgrading from pending_cancellation (${activeSubscription.plan_type}) to ${newPlanType}`
+        )
+        await this.updateSubscriptionStatus(activeSubscription.id, 'cancelled', {
+          cancelled_at: new Date().toISOString(),
+          cancel_at_cycle_end: false,
+          cancellation_reason: `Cancelled due to upgrade to ${newPlanType}`
+        })
+        return
+      }
+
+      // Same plan or downgrade — access continues until billing cycle ends
       throw new AppError(
-        'SUBSCRIPTION_ALREADY_EXISTS',
-        'User already has an active subscription',
+        'DOWNGRADE_PENDING_CANCELLATION',
+        `Your current plan access continues until the end of the billing cycle. You can subscribe to ${newPlanType} after that.`,
         409
       )
     }
+
+    throw new AppError(
+      'SUBSCRIPTION_ALREADY_EXISTS',
+      'User already has an active subscription',
+      409
+    )
   }
 
   /**

@@ -533,15 +533,39 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         );
       }
 
-      // Query subscriptions table for active subscription
-      // Include 'cancelled' status to handle subscriptions that are cancelled
-      // but still active until the end of the billing period
-      // Use .limit(1) to ensure only one row is returned when multiple exist
-      final response = await _supabaseClient
+      // Query subscriptions with explicit status priority to handle downgrade scenarios:
+      // Priority 1: pending_cancellation / active — the plan the user is currently on and
+      //   paying for. During a downgrade-at-cycle-end, the old plan is in
+      //   pending_cancellation and MUST be shown as the current plan (not the new
+      //   lower-tier in_progress sub that hasn't started billing yet).
+      // Priority 2: in_progress / authenticated / trial — a newly authorized subscription
+      //   that hasn't started billing yet (normal new-signup flow).
+      // Priority 3: created — awaiting payment authorisation (fallback).
+      Map<String, dynamic>? response = await _supabaseClient
           .from('subscriptions')
           .select()
           .eq('user_id', user.id)
-          .inFilter('status', ['active', 'authenticated', 'cancelled', 'trial'])
+          .inFilter('status', ['active', 'pending_cancellation'])
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      // Priority 2: in_progress / trial (newly authorized, not yet billing)
+      response ??= await _supabaseClient
+          .from('subscriptions')
+          .select()
+          .eq('user_id', user.id)
+          .inFilter('status', ['in_progress', 'trial'])
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      // Priority 3: created (awaiting payment authorisation)
+      response ??= await _supabaseClient
+          .from('subscriptions')
+          .select()
+          .eq('user_id', user.id)
+          .eq('status', 'created')
           .order('created_at', ascending: false)
           .limit(1)
           .maybeSingle();
@@ -550,34 +574,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           '💎 [SUBSCRIPTION_API] Active subscription response: $response');
 
       if (response != null) {
-        final subscription = SubscriptionModel.fromJson(response);
-
-        // For cancelled subscriptions, check if they're still active
-        if (subscription.status == SubscriptionStatus.cancelled) {
-          if (subscription.cancelAtCycleEnd &&
-              subscription.currentPeriodEnd != null) {
-            final periodEnd = subscription.currentPeriodEnd!;
-            final now = DateTime.now();
-
-            // Only return if still within the active period
-            if (periodEnd.isAfter(now)) {
-              Logger.debug(
-                  '💎 [SUBSCRIPTION_API] Cancelled subscription still active until $periodEnd');
-              return subscription;
-            } else {
-              Logger.debug(
-                  '💎 [SUBSCRIPTION_API] Cancelled subscription has expired');
-              return null;
-            }
-          } else {
-            // Immediate cancellation - not active
-            Logger.debug(
-                '💎 [SUBSCRIPTION_API] Subscription was cancelled immediately');
-            return null;
-          }
-        }
-
-        return subscription;
+        return SubscriptionModel.fromJson(response);
       } else {
         return null; // No active subscription
       }
@@ -1336,6 +1333,23 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       throw const AuthenticationException(
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
+      );
+    } on FunctionException catch (e) {
+      // Extract user-facing error message from Supabase FunctionException details
+      final details = e.details;
+      if (details is Map<String, dynamic>) {
+        final error = details['error'] as String?;
+        final code = details['code'] as String?;
+        throw ServerException(
+          message: error ?? 'Server error occurred. Please try again later.',
+          code: code ?? 'SERVER_ERROR',
+        );
+      }
+      Logger.error(
+          '🚨 [SUBSCRIPTION_API] Unexpected error creating subscription V2: $e');
+      throw const ServerException(
+        message: 'Server error occurred. Please try again later.',
+        code: 'SERVER_ERROR',
       );
     } catch (e) {
       Logger.error(

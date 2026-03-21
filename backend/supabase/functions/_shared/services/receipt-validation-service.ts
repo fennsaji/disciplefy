@@ -139,23 +139,25 @@ export async function validateAndProcessReceipt(
       .single()
 
     if (subError) {
-      console.error('[RECEIPT_VALIDATION] Failed to create subscription:', subError)
-    } else {
-      subscriptionId = subscription.id
+      // Throw so the caller returns HTTP 500. The receipt is stored but NOT acknowledged,
+      // so Google Play will re-deliver the purchase event and the user can retry.
+      throw new Error(`[RECEIPT_VALIDATION] Failed to create subscription record: ${subError.message}`)
+    }
 
-      // Update receipt with subscription ID
-      await supabase
-        .from('iap_receipts')
-        .update({ subscription_id: subscriptionId })
-        .eq('id', receiptRecord.id)
+    subscriptionId = subscription.id
 
-      // Step 5: Acknowledge purchase ONLY after successful subscription creation.
-      // If we acknowledge before the subscription exists, Google Play won't
-      // re-deliver the purchase and the user loses their entitlement.
-      if (request.provider === 'google_play') {
-        const receiptData: GooglePlayReceipt = JSON.parse(request.receiptData)
-        await acknowledgeGooglePlayPurchase(supabase, receiptData, environment)
-      }
+    // Update receipt with subscription ID
+    await supabase
+      .from('iap_receipts')
+      .update({ subscription_id: subscriptionId })
+      .eq('id', receiptRecord.id)
+
+    // Step 5: Acknowledge purchase ONLY after successful subscription creation.
+    // If we acknowledge before the subscription exists, Google Play won't
+    // re-deliver the purchase and the user loses their entitlement.
+    if (request.provider === 'google_play') {
+      const receiptData: GooglePlayReceipt = JSON.parse(request.receiptData)
+      await acknowledgeGooglePlayPurchase(supabase, receiptData, environment)
     }
   }
 

@@ -139,17 +139,32 @@ serve(async (req) => {
     // Check for existing active subscription
     const { data: existingSubs, error: existingError } = await supabase
       .from('subscriptions')
-      .select('id, status, plan_type, provider, plan_id, is_iap_subscription')
+      .select('id, status, plan_type, provider, plan_id, is_iap_subscription, provider_subscription_id, current_period_start, current_period_end, amount_paise')
       .eq('user_id', user.id)
-      .in('status', ['active', 'authenticated', 'created', 'pending_cancellation', 'trial', 'paused'])
+      .in('status', ['active', 'in_progress', 'created', 'pending_cancellation', 'trial', 'paused'])
 
     if (existingError) {
       console.error('[create-subscription-v2] Existing sub check error:', JSON.stringify(existingError))
       throw new Error('Failed to check existing subscriptions')
     }
 
-    // Track old IAP subscription to cancel AFTER successful validation (atomicity)
+    // Track old subscription to cancel before creating new one
     let oldSubIdToCancel: string | null = null
+    let oldProviderSubId: string | null = null // Razorpay sub ID to cancel via API
+    let oldSubForRefund: { periodStart: string; periodEnd: string; amountPaise: number } | null = null
+
+    // Downgrade-specific state (cancel at cycle end, new sub starts at period end)
+    let isDowngradeCase = false
+    let oldSubIdToScheduleCancel: string | null = null  // pending_cancellation instead of cancelled
+    let downgradeStartAtUnix: number | null = null      // Unix ts for new sub's start_at
+
+    // Sort by status priority so the "most active" sub is always existingSubs[0].
+    // This matters during downgrade when both a pending_cancellation old sub and a
+    // created new sub exist simultaneously.
+    const STATUS_PRIORITY: Record<string, number> = {
+      active: 1, pending_cancellation: 2, in_progress: 3, trial: 4, created: 5, paused: 6
+    }
+    existingSubs?.sort((a, b) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99))
 
     if (existingSubs && existingSubs.length > 0) {
       const existing = existingSubs[0]
@@ -188,6 +203,51 @@ serve(async (req) => {
         // Switching payment provider (e.g. Razorpay → Google Play) — cancel old
         console.log('[create-subscription-v2] Provider switch:', { from: existing.provider, to: provider })
         oldSubIdToCancel = existing.id
+        oldProviderSubId = existing.provider_subscription_id ?? null
+      } else if (!isIAPProvider && isDifferentPlan) {
+        // Razorpay plan change — split into upgrade (immediate) vs downgrade (at cycle end)
+        const PLAN_TIERS: Record<string, number> = { free: 0, standard: 1, plus: 2, premium: 3 }
+        const normalizePlan = (code: string) => code.replace('_monthly', '')
+        const existingTier = PLAN_TIERS[normalizePlan(existingPlanCode)] ?? 0
+        const newTier = PLAN_TIERS[normalizePlan(plan_code)] ?? 0
+
+        if (newTier < existingTier) {
+          // Downgrade: keep old sub active until cycle end, schedule new sub to start then
+          if (existing.status === 'pending_cancellation') {
+            // Downgrade already scheduled — don't allow a second one
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'A downgrade is already scheduled for the end of your billing period.',
+                code: 'DOWNGRADE_ALREADY_SCHEDULED'
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            )
+          }
+          console.log('[create-subscription-v2] Razorpay downgrade (at cycle end):', { from: existingPlanCode, to: plan_code })
+          isDowngradeCase = true
+          oldSubIdToScheduleCancel = existing.id
+          oldProviderSubId = existing.provider_subscription_id ?? null
+          if (existing.current_period_end) {
+            downgradeStartAtUnix = Math.floor(new Date(existing.current_period_end).getTime() / 1000)
+          }
+        } else {
+          // Upgrade: immediate cancellation + prorated refund
+          console.log('[create-subscription-v2] Razorpay upgrade (immediate):', { from: existingPlanCode, to: plan_code })
+          oldSubIdToCancel = existing.id
+          oldProviderSubId = existing.provider_subscription_id ?? null
+          // Capture billing period for prorated refund calculation
+          if (existing.current_period_start && existing.current_period_end && existing.amount_paise) {
+            oldSubForRefund = {
+              periodStart: existing.current_period_start,
+              periodEnd: existing.current_period_end,
+              amountPaise: existing.amount_paise
+            }
+          }
+        }
       } else {
         // Genuinely duplicate: same active subscription on same plan and provider
         return new Response(
@@ -319,6 +379,21 @@ serve(async (req) => {
     let basePriceMinor = planProviderData.base_price_minor
     let discountedPriceMinor: number | undefined
     let promotionalCampaignId: string | null = null
+    let razorpayOfferId: string | null = null
+
+    // Env var override for provider_plan_id — allows test vs prod plan IDs without DB changes.
+    // Local dev sets RAZORPAY_PLUS_PLAN_ID etc. in .env.local (test mode IDs).
+    // Production sets them in Supabase project secrets (live mode IDs).
+    // Falls back to DB value if env var is not set.
+    const planIdEnvKey = `RAZORPAY_${plan_code.toUpperCase()}_PLAN_ID`
+    const effectiveProviderPlanId = Deno.env.get(planIdEnvKey) || planProviderData.provider_plan_id
+    console.log('[create-subscription-v2] Plan ID resolution:', {
+      plan_code,
+      envKey: planIdEnvKey,
+      fromEnv: Deno.env.get(planIdEnvKey) ?? null,
+      fromDb: planProviderData.provider_plan_id,
+      effective: effectiveProviderPlanId
+    })
 
     // Validate and apply promo code
     if (promo_code) {
@@ -339,19 +414,68 @@ serve(async (req) => {
           promoData.applicable_providers.includes(provider)
 
         if (appliesToPlan && appliesToProvider) {
-          // Calculate discount
-          if (promoData.discount_type === 'percentage') {
-            const clampedPct = Math.min(100, Math.max(0, promoData.discount_value))
-            discountedPriceMinor = Math.round(basePriceMinor * (1 - clampedPct / 100))
-          } else if (promoData.discount_type === 'fixed_amount') {
-            discountedPriceMinor = Math.max(0, basePriceMinor - promoData.discount_value)
-          }
+          // Enforce per-user redemption limit (default: 1 use per user)
+          const maxUsesPerUser = promoData.max_uses_per_user ?? 1
+          const { count: existingRedemptions, error: redemptionCheckError } = await supabase
+            .from('promotional_redemptions')
+            .select('id', { count: 'exact', head: true })
+            .eq('campaign_id', promoData.id)
+            .eq('user_id', user.id)
+
+          if (redemptionCheckError) {
+            console.error('[create-subscription-v2] Failed to check promo redemptions:', redemptionCheckError)
+          } else if (existingRedemptions !== null && existingRedemptions >= maxUsesPerUser) {
+            console.warn('[create-subscription-v2] Promo code already used by user:', {
+              promo_code,
+              user_id: user.id,
+              existingRedemptions,
+              maxUsesPerUser
+            })
+            // Skip promo — treat as if no promo was provided
+          } else {
+
           promotionalCampaignId = promoData.id
+
+          // Resolve per-plan offer ID and discount from razorpay_offer_ids JSONB first,
+          // then fall back to the scalar razorpay_offer_id / discount_value fields.
+          const planOffer = promoData.razorpay_offer_ids?.[plan_code]
+          if (planOffer?.offer_id) {
+            razorpayOfferId = planOffer.offer_id
+            // Use plan-specific discount percentage for DB tracking
+            if (typeof planOffer.discount_pct === 'number') {
+              const clampedPct = Math.min(100, Math.max(0, planOffer.discount_pct))
+              discountedPriceMinor = Math.round(basePriceMinor * (1 - clampedPct / 100))
+            }
+          } else {
+            // Fallback: scalar offer_id + campaign-level discount
+            razorpayOfferId = promoData.razorpay_offer_id ?? null
+            if (promoData.discount_type === 'percentage') {
+              const clampedPct = Math.min(100, Math.max(0, promoData.discount_value))
+              discountedPriceMinor = Math.round(basePriceMinor * (1 - clampedPct / 100))
+            } else if (promoData.discount_type === 'fixed_amount') {
+              discountedPriceMinor = Math.max(0, basePriceMinor - promoData.discount_value)
+            }
+          }
+
+          // Env var override for offer ID — allows test vs prod offer IDs without DB changes.
+          // Pattern: RAZORPAY_{CAMPAIGN_CODE}_{PLAN_CODE}_OFFER_ID
+          // e.g. RAZORPAY_FIRSTMONTH_PLUS_OFFER_ID
+          if (razorpayOfferId) {
+            const offerEnvKey = `RAZORPAY_${promo_code.toUpperCase()}_${plan_code.toUpperCase()}_OFFER_ID`
+            const envOfferId = Deno.env.get(offerEnvKey)
+            if (envOfferId) {
+              console.log('[create-subscription-v2] Offer ID overridden from env:', { offerEnvKey, envOfferId })
+              razorpayOfferId = envOfferId
+            }
+          }
+
           console.log('[create-subscription-v2] Applied promo:', {
             code: promo_code,
-            discount: promoData.discount_value,
-            type: promoData.discount_type
+            plan_code,
+            discountedPriceMinor,
+            razorpay_offer_id: razorpayOfferId
           })
+          } // end: per-user redemption limit check (else branch)
         }
       }
     }
@@ -390,24 +514,50 @@ serve(async (req) => {
       authorizationUrl = null
 
     } else if (provider === 'razorpay') {
+      // Guard: reject placeholder plan IDs (plan not yet configured in Razorpay)
+      if (planProviderData.provider_plan_id.includes('placeholder')) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'This plan is not yet available for purchase. Please try another plan.',
+            code: 'PLAN_NOT_CONFIGURED'
+          }),
+          {
+            status: 503,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
       // Razorpay: Create subscription and get authorization URL
+      console.log('[create-subscription-v2] Creating Razorpay subscription with params:', {
+        providerPlanId: effectiveProviderPlanId,
+        plan_code,
+        razorpayOfferId,
+        basePriceMinor,
+        discountedPriceMinor
+      })
+
       providerResponse = await paymentProvider!.createSubscription({
         userId: user.id,
         planCode: plan_code,
         planId: planData.id,
-        providerPlanId: planProviderData.provider_plan_id,
+        providerPlanId: effectiveProviderPlanId,
         basePriceMinor,
         currency: planProviderData.currency,
         discountedPriceMinor,
         promotionalCampaignId,
+        offerId: razorpayOfferId,
         userEmail: user.email,
         notes: {
           user_id: user.id,
           plan_code: plan_code
-        }
+        },
+        // For downgrade: schedule new sub to start when old sub's billing period ends
+        ...(isDowngradeCase && downgradeStartAtUnix && { startAt: downgradeStartAtUnix })
       })
       subscriptionStatus = 'created' // User needs to authorize
-      authorizationUrl = providerResponse.short_url
+      authorizationUrl = providerResponse.authorizationUrl ?? null
 
     } else if (provider === 'google_play' || provider === 'apple_appstore') {
       // IAP: Validate receipt using new validation service
@@ -513,6 +663,117 @@ serve(async (req) => {
       }
     }
 
+    // Cancel old subscription before inserting new one.
+    // Must happen before INSERT to satisfy the unique-per-active-user constraint.
+    if (oldSubIdToCancel) {
+      // Issue prorated refund for Razorpay plan upgrades
+      if (oldSubForRefund && oldProviderSubId && provider === 'razorpay') {
+        try {
+          const now = new Date()
+          const periodStart = new Date(oldSubForRefund.periodStart)
+          const periodEnd = new Date(oldSubForRefund.periodEnd)
+          const totalDays = Math.max(1, Math.round((periodEnd.getTime() - periodStart.getTime()) / 86400000))
+          const remainingDays = Math.max(0, Math.round((periodEnd.getTime() - now.getTime()) / 86400000))
+          const refundAmountPaise = Math.round(oldSubForRefund.amountPaise * remainingDays / totalDays)
+
+          console.log('[create-subscription-v2] Prorated refund calculation:', {
+            totalDays, remainingDays, amountPaise: oldSubForRefund.amountPaise, refundAmountPaise
+          })
+
+          if (refundAmountPaise > 0) {
+            // Fetch last paid invoice to get the Razorpay payment ID
+            const { data: lastInvoice } = await supabase
+              .from('subscription_invoices')
+              .select('razorpay_payment_id')
+              .eq('subscription_id', oldSubIdToCancel)
+              .eq('status', 'paid')
+              .order('paid_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (lastInvoice?.razorpay_payment_id) {
+              const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+              const refundId = await (razorpayProvider as any).issueRefund(
+                lastInvoice.razorpay_payment_id,
+                refundAmountPaise,
+                { reason: 'Plan upgrade — prorated refund', remaining_days: String(remainingDays) }
+              )
+              console.log('[create-subscription-v2] Prorated refund issued:', { refundId, refundAmountPaise })
+            } else {
+              console.log('[create-subscription-v2] No paid invoice found for refund — skipping')
+            }
+          } else {
+            console.log('[create-subscription-v2] No remaining days — skipping refund')
+          }
+        } catch (refundError) {
+          // Log but don't block the upgrade — refund failure shouldn't prevent plan change
+          console.error('[create-subscription-v2] Prorated refund failed (non-fatal):', refundError)
+        }
+      }
+
+      // Cancel on Razorpay side (immediate)
+      if (oldProviderSubId && provider === 'razorpay') {
+        try {
+          const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+          await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
+          console.log('[create-subscription-v2] Old Razorpay subscription cancelled via API:', oldProviderSubId)
+        } catch (cancelApiError) {
+          console.error('[create-subscription-v2] Razorpay API cancellation failed (non-fatal):', cancelApiError)
+        }
+      }
+
+      const { error: cancelError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: 'Superseded by new subscription',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', oldSubIdToCancel)
+
+      if (cancelError) {
+        console.error('[create-subscription-v2] Failed to cancel old subscription:', cancelError)
+        throw new Error('Failed to cancel existing subscription before upgrade')
+      }
+
+      console.log('[create-subscription-v2] Old subscription cancelled in DB:', oldSubIdToCancel)
+    }
+
+    // For downgrade: cancel old Razorpay sub at cycle end + mark as pending_cancellation in DB.
+    // The new (lower-tier) sub will be created with start_at = old period end.
+    if (oldSubIdToScheduleCancel) {
+      // Cancel on Razorpay side with cancelAtCycleEnd=true (user keeps access until period ends)
+      if (oldProviderSubId && provider === 'razorpay') {
+        try {
+          const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+          await razorpayProvider.cancelSubscription(oldProviderSubId, true)
+          console.log('[create-subscription-v2] Old Razorpay sub scheduled for cancellation at cycle end:', oldProviderSubId)
+        } catch (cancelApiError) {
+          // Non-fatal: old sub may already be in a terminal state or Razorpay may reject
+          console.error('[create-subscription-v2] Razorpay cycle-end cancellation failed (non-fatal):', cancelApiError)
+        }
+      }
+
+      // Mark old sub as pending_cancellation in DB — access continues until current_period_end
+      const { error: pendingCancelError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'pending_cancellation',
+          cancel_at_cycle_end: true,
+          cancellation_reason: `Scheduled downgrade to ${plan_code}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', oldSubIdToScheduleCancel)
+
+      if (pendingCancelError) {
+        console.error('[create-subscription-v2] Failed to mark old sub as pending_cancellation:', pendingCancelError)
+        throw new Error('Failed to schedule subscription cancellation for downgrade')
+      }
+
+      console.log('[create-subscription-v2] Old sub marked as pending_cancellation for downgrade:', oldSubIdToScheduleCancel)
+    }
+
     // Store subscription in database
     const now = new Date()
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
@@ -537,15 +798,76 @@ serve(async (req) => {
           current_period_end: periodEnd.toISOString()
         }),
         ...(provider === 'razorpay' && !isFreeSubscription && {
-          razorpay_subscription_id: providerResponse.providerSubscriptionId,
-          razorpay_plan_id: planProviderData.provider_plan_id
+          provider_plan_id: effectiveProviderPlanId
         })
       })
       .select()
       .single()
 
     if (subError) {
-      console.error('[create-subscription-v2] Database error:', subError)
+      console.error('[create-subscription-v2] Database error inserting new subscription:', subError)
+
+      // Compensating transaction: attempt to restore the old cancelled subscription so the user
+      // is not left without an active plan. This is a best-effort rollback — if it also fails
+      // the user will need manual recovery, but this covers the common single-failure case.
+      if (oldSubIdToCancel) {
+        const { error: restoreError } = await supabase
+          .from('subscriptions')
+          .update({
+            status: 'active',
+            cancelled_at: null,
+            cancellation_reason: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', oldSubIdToCancel)
+        if (restoreError) {
+          console.error('[create-subscription-v2] CRITICAL: Failed to restore old subscription after insert failure — manual recovery needed:', {
+            oldSubId: oldSubIdToCancel,
+            restoreError
+          })
+        } else {
+          console.log('[create-subscription-v2] Restored old subscription after insert failure:', oldSubIdToCancel)
+        }
+      }
+
+      // Downgrade rollback: cancel orphaned Razorpay sub and restore old sub's DB status.
+      // Without this, the new Razorpay subscription is left dangling (never stored in DB)
+      // and the old sub remains stuck in pending_cancellation, preventing future retries.
+      if (oldSubIdToScheduleCancel) {
+        // 1. Cancel the newly created (orphaned) Razorpay subscription immediately
+        try {
+          const newProviderSubId = isFreeSubscription
+            ? (providerResponse as any).id
+            : (providerResponse as any).providerSubscriptionId
+          if (newProviderSubId && provider === 'razorpay') {
+            const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+            await razorpayProvider.cancelSubscription(newProviderSubId, false)
+            console.log('[create-subscription-v2] Rollback: cancelled orphaned Razorpay sub:', newProviderSubId)
+          }
+        } catch (cancelErr) {
+          console.error('[create-subscription-v2] Rollback: failed to cancel orphaned Razorpay sub (manual cleanup needed):', cancelErr)
+        }
+
+        // 2. Restore old DB sub from pending_cancellation back to in_progress
+        const { error: restoreErr } = await supabase
+          .from('subscriptions')
+          .update({
+            status: 'in_progress',
+            cancel_at_cycle_end: false,
+            cancellation_reason: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', oldSubIdToScheduleCancel)
+        if (restoreErr) {
+          console.error('[create-subscription-v2] CRITICAL: Failed to restore downgrade sub after insert failure — manual recovery needed:', {
+            oldSubId: oldSubIdToScheduleCancel,
+            restoreErr
+          })
+        } else {
+          console.log('[create-subscription-v2] Rollback: restored old subscription to in_progress:', oldSubIdToScheduleCancel)
+        }
+      }
+
       throw new Error('Failed to store subscription')
     }
 
@@ -578,7 +900,9 @@ serve(async (req) => {
       status: subscriptionStatus,
       message: isFreeSubscription
         ? 'Free subscription activated successfully'
-        : 'Subscription created successfully. Complete payment authorization.'
+        : isDowngradeCase
+          ? 'Downgrade scheduled. Authorize the new plan — it will start at the end of your current billing period.'
+          : 'Subscription created successfully. Complete payment authorization.'
     }
 
     // Add authorization URL for paid subscriptions

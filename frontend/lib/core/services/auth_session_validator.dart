@@ -27,8 +27,12 @@ class AuthSessionValidator extends WidgetsBindingObserver {
       Logger.debug(
           '🔄 [APP LIFECYCLE] App resumed - triggering session validation');
 
-      // Trigger session validation to ensure auth state is still valid
-      _authBloc.add(const SessionValidationRequested());
+      // Delay validation slightly on Android: network interfaces need ~1-2s to
+      // re-establish after resume. Without the delay, token refresh fails on the
+      // first attempt (no network) and the user gets logged out unnecessarily.
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        _authBloc.add(const SessionValidationRequested());
+      });
     } else if (state == AppLifecycleState.paused) {
       Logger.debug(
           '🔄 [APP LIFECYCLE] App paused - session will be validated on resume');

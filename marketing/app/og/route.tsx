@@ -20,67 +20,108 @@ export async function GET(req: NextRequest) {
     // Font not available yet — OG image renders with system font
   }
 
+  // Load the splash image from the public folder
+  let splashSrc: string | null = null;
+  try {
+    const res = await fetch(new URL("/splash-og.png", req.url));
+    if (res.ok) {
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const b64 = btoa(binary);
+      splashSrc = `data:image/png;base64,${b64}`;
+    }
+  } catch {
+    // Image not available — renders without it
+  }
+
   return new ImageResponse(
     (
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "flex-start",
           width: "100%",
           height: "100%",
           background: "#0F172A",
-          padding: "60px",
+          overflow: "hidden",
         }}
       >
+        {/* Left — text content */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            marginBottom: "32px",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            flex: 1,
+            padding: "60px 48px 60px 60px",
           }}
         >
           <div
             style={{
               fontSize: 28,
               fontWeight: 700,
-              color: "#4F46E5",
+              color: "#A5B4FC",
               fontFamily: "Poppins",
+              marginBottom: 32,
             }}
           >
             Disciplefy
           </div>
+          <div
+            style={{
+              fontSize: 52,
+              fontWeight: 800,
+              color: "#A5B4FC",
+              lineHeight: 1.1,
+              marginBottom: 20,
+              fontFamily: "Poppins",
+            }}
+          >
+            {title}
+          </div>
+          <div
+            style={{ fontSize: 22, color: "#94A3B8", fontFamily: "Poppins" }}
+          >
+            {subtitle}
+          </div>
+          <div
+            style={{
+              marginTop: 40,
+              fontSize: 16,
+              color: "#A5B4FC",
+              fontFamily: "Poppins",
+            }}
+          >
+            disciplefy.in
+          </div>
         </div>
-        <div
-          style={{
-            fontSize: 56,
-            fontWeight: 800,
-            color: "#F8FAFC",
-            lineHeight: 1.1,
-            marginBottom: 16,
-            fontFamily: "Poppins",
-          }}
-        >
-          {title}
-        </div>
-        <div
-          style={{ fontSize: 24, color: "#94A3B8", fontFamily: "Poppins" }}
-        >
-          {subtitle}
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            bottom: 60,
-            right: 60,
-            fontSize: 120,
-            opacity: 0.05,
-            color: "#FFEEC0",
-          }}
-        >
-          ✝
-        </div>
+
+        {/* Right — splash image */}
+        {splashSrc && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              paddingRight: 40,
+              flexShrink: 0,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={splashSrc}
+              alt=""
+              style={{
+                width: 300,
+                height: 300,
+                objectFit: "cover",
+                objectPosition: "center top",
+                borderRadius: 24,
+              }}
+            />
+          </div>
+        )}
       </div>
     ),
     {

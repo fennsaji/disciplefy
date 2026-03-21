@@ -34,9 +34,11 @@ import '../bloc/fellowship_study/fellowship_study_state.dart';
 /// mentor to assign or change the fellowship's study path.
 class FellowshipLessonsTabScreen extends StatefulWidget {
   final String fellowshipId;
+  final String? languageOverride;
 
   const FellowshipLessonsTabScreen({
     required this.fellowshipId,
+    this.languageOverride,
     super.key,
   });
 
@@ -63,16 +65,30 @@ class _FellowshipLessonsTabScreenState
   /// Using [pathId] override is for when a new path is assigned and we already
   /// know the ID, e.g. from the [BlocListener] callback.
   Future<void> _loadPathDetails({String? pathId}) async {
-    final lang =
-        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+    final String langCode;
+    if (widget.languageOverride != null) {
+      langCode = widget.languageOverride!;
+    } else {
+      final lang =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+      langCode = lang.code;
+    }
     if (!mounted) return;
-    setState(() => _contentLanguage = lang.code);
+    setState(() => _contentLanguage = langCode);
     final id = pathId ??
         context.read<FellowshipStudyBloc>().state.currentLearningPathId;
     if (id != null) {
       context.read<LearningPathsBloc>().add(
-            LoadLearningPathDetails(pathId: id, language: lang.code),
+            LoadLearningPathDetails(pathId: id, language: langCode),
           );
+    }
+  }
+
+  @override
+  void didUpdateWidget(FellowshipLessonsTabScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.languageOverride != widget.languageOverride) {
+      _loadPathDetails();
     }
   }
 

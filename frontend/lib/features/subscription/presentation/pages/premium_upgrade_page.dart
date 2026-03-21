@@ -17,6 +17,7 @@ import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../utils/plan_features_extractor.dart';
+import '../widgets/promo_code_input.dart';
 
 class PremiumUpgradePage extends StatefulWidget {
   const PremiumUpgradePage({super.key});
@@ -30,6 +31,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   bool _hasOpenedPayment = false;
   bool _isLoadingPlan = true;
 
+  PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _premiumPlan;
   SubscriptionPlanModel? _plusPlan; // for comparison
   List<String> _features = [];
@@ -173,7 +175,8 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               );
             }
           } else if (state is SubscriptionLoaded) {
-            if (state.activeSubscription?.isActive == true) {
+            if (_hasOpenedPayment &&
+                state.activeSubscription?.isActive == true) {
               Logger.debug(
                   '[PremiumUpgrade] Subscription is now active - navigating back');
               ScaffoldMessenger.of(context).showSnackBar(
@@ -221,6 +224,14 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   _buildComparison(),
                   const SizedBox(height: 32),
                 ],
+                PromoCodeInput(
+                  planCode: 'premium',
+                  initialPromo: _appliedPromo,
+                  onValidate: _validatePromoCode,
+                  onPromoApplied: _handlePromoApplied,
+                  onPromoRemoved: _handlePromoRemoved,
+                ),
+                const SizedBox(height: 24),
                 _buildActionButton(state),
                 const SizedBox(height: 16),
                 _buildTermsInfo(),
@@ -579,6 +590,50 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               ],
             ),
     );
+  }
+
+  Future<PromotionalCampaignModel?> _validatePromoCode(String code) async {
+    try {
+      final dataSource = sl<SubscriptionRemoteDataSource>();
+      final platformService = PlatformDetectionService();
+      final provider = platformService
+          .providerToString(platformService.getPreferredProvider());
+      final response = await dataSource.validatePromoCode(
+        promoCode: code,
+        provider: provider,
+      );
+      if (response.valid && response.campaign != null) {
+        return response.campaign!.toPromotionalCampaignModel();
+      }
+      return null;
+    } catch (e) {
+      Logger.error('[PremiumUpgrade] Failed to validate promo code', error: e);
+      return null;
+    }
+  }
+
+  Future<void> _handlePromoApplied(PromotionalCampaignModel campaign) async {
+    setState(() => _appliedPromo = campaign);
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      await box.put('pending_promo_code', campaign.code);
+    } catch (e) {
+      Logger.debug('[PremiumUpgrade] Failed to save promo to Hive: $e');
+    }
+  }
+
+  Future<void> _handlePromoRemoved() async {
+    setState(() => _appliedPromo = null);
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      await box.delete('pending_promo_code');
+    } catch (e) {
+      Logger.debug('[PremiumUpgrade] Failed to clear promo from Hive: $e');
+    }
   }
 
   Future<void> _handleUpgrade() async {

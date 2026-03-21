@@ -34,7 +34,13 @@ class SubscriptionModel extends Subscription {
           '',
       provider: json['provider'] as String? ?? 'razorpay',
       status: SubscriptionStatus.values.firstWhere(
-        (e) => e.name == json['status'] as String,
+        // DB stores 'in_progress' for the authenticated state
+        // (set by subscription.authenticated Razorpay webhook)
+        (e) =>
+            e.name ==
+            (json['status'] == 'in_progress'
+                ? 'authenticated'
+                : json['status'] as String),
         orElse: () => SubscriptionStatus.created,
       ),
       planType: json['plan_type'] as String? ?? '',

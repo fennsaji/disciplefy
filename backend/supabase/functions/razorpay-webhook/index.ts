@@ -260,8 +260,9 @@ async function handlePaymentCaptured(
     .single()
   
   if (error || !pendingPurchase) {
-    console.error(`[Webhook] Pending purchase not found for order: ${orderId}`, error)
-    throw new Error(`Pending purchase not found: ${orderId}`)
+    // Not a token purchase — likely a subscription payment, skip gracefully
+    console.log(`[Webhook] No pending token purchase for order: ${orderId} — may be a subscription payment, skipping`)
+    return
   }
   
   // Atomic claim for processing to prevent race condition with manual confirmation
@@ -450,10 +451,10 @@ async function handleSubscriptionAuthenticated(
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
-      status: 'authenticated',
+      status: 'in_progress',
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
-      razorpay_customer_id: subscriptionEntity.customer_id,
+      provider_customer_id: subscriptionEntity.customer_id,
       // subscription_plan removed - plan code is accessed via plan_id → subscription_plans.plan_code
       provider_metadata: {
         customer_id: subscriptionEntity.customer_id,
@@ -464,7 +465,7 @@ async function handleSubscriptionAuthenticated(
       },
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
 
   if (error) {
     console.error('[Webhook] Failed to update subscription:', error)
@@ -535,7 +536,7 @@ async function handleSubscriptionActivated(
       },
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
 
   if (error) {
     console.error('[Webhook] Failed to activate subscription:', error)
@@ -582,7 +583,7 @@ async function handleSubscriptionCharged(
   const { data: subscription } = await supabaseServiceClient
     .from('subscriptions')
     .select('id, user_id')
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
     .single()
 
   if (!subscription) {
@@ -712,7 +713,7 @@ async function handleSubscriptionCancelled(
       },
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
 
   if (error) {
     console.error('[Webhook] Failed to cancel subscription:', error)
@@ -762,7 +763,7 @@ async function handleSubscriptionPaused(
       },
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
 
   if (error) {
     console.error('[Webhook] Failed to pause subscription:', error)
@@ -811,7 +812,7 @@ async function handleSubscriptionResumed(
       },
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
 
   if (error) {
     console.error('[Webhook] Failed to resume subscription:', error)
@@ -861,7 +862,7 @@ async function handleSubscriptionCompleted(
       },
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_subscription_id', razorpaySubId)
+    .eq('provider_subscription_id', razorpaySubId)
 
   if (error) {
     console.error('[Webhook] Failed to complete subscription:', error)
