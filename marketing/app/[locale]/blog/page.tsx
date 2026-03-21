@@ -47,7 +47,7 @@ export default async function LocaleBlogPage({
     <BlogList
       posts={posts}
       pagination={pagination}
-      basePath={`/${params.locale}/blog`}
+      basePath="/blog"
       tag={searchParams.tag}
       query={query}
       tags={tags}
