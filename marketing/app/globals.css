@@ -28,6 +28,40 @@
   }
 }
 
+/* Hero entrance animations — CSS-only, no JS dependency.
+   IMPORTANT: The LCP element (H1 headline) must NEVER start at opacity:0.
+   Lighthouse does not count invisible elements as painted — opacity:0 delays LCP.
+   Rules:
+     - H1 and body text: render immediately, no opacity animation on ancestors
+     - Supporting elements (eyebrow chip, subtitle, CTA, phone): can fade in
+*/
+@keyframes hero-fade-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-fade-up-sub {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-fade-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+/* Eyebrow chip: slides in from above */
+.animate-hero-eyebrow { animation: hero-fade-down   0.5s ease-out both; }
+/* Subtitle & CTA: subtle fade-up after H1 is visible */
+.animate-hero-sub     { animation: hero-fade-up-sub 0.5s ease-out 0.15s both; }
+/* Phone mockup: scale fade, no delay so image paints ASAP */
+.animate-hero-phone   { animation: hero-fade-scale  0.4s ease-out both; }
+/* Navbar: slide in from above — CSS-only, no framer-motion */
+.animate-navbar       { animation: hero-fade-down   0.4s ease-out both; }
+/* Headline: transform-only slide-up — opacity stays 1 so LCP is not delayed */
+@keyframes hero-slide-up {
+  from { transform: translateY(20px); }
+  to   { transform: translateY(0); }
+}
+.animate-hero-headline { animation: hero-slide-up 0.55s ease-out both; }
+
 /* Prose styles for MDX pages */
 @layer components {
   .prose-disciplefy {

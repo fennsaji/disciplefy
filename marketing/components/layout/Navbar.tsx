@@ -1,10 +1,13 @@
 // marketing/components/layout/Navbar.tsx
+// PERFORMANCE NOTES:
+// 1. No framer-motion — removed to eliminate SSR opacity:0 that caused 3-second black screen.
+// 2. Mobile menu uses CSS max-height transition instead of AnimatePresence.
+// 3. Navbar slides in via CSS animation (animate-navbar) — no JS dependency.
 "use client";
 import { useTranslations } from "next-intl";
-import { Link } from "@/lib/navigation"; // locale-aware Link — auto-prefixes /hi/ /ml/
+import { Link } from "@/lib/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
 import { Button } from "@/components/ui/Button";
@@ -30,7 +33,7 @@ export function Navbar() {
       setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // check initial position
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -42,11 +45,8 @@ export function Navbar() {
   ];
 
   return (
-    <motion.nav
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className={`sticky top-0 z-50 border-b border-[var(--border)] transition-colors duration-300 ${
+    <nav
+      className={`animate-navbar sticky top-0 z-50 border-b border-[var(--border)] transition-colors duration-300 ${
         scrolled
           ? "backdrop-blur-md bg-[var(--bg)]/80"
           : "bg-[var(--bg)]/90 backdrop-blur-sm"
@@ -109,47 +109,29 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="md:hidden overflow-hidden border-t border-[var(--border)]"
-            >
-              <div className="py-4 flex flex-col gap-3">
-                {navLinks.map((link, index) => (
-                  <motion.div
-                    key={link.href}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: 0.05 + index * 0.07 }}
-                  >
-                    <Link
-                      href={link.href}
-                      className="text-sm text-[var(--muted)] hover:text-[var(--text)] py-1 block"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  </motion.div>
-                ))}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2, delay: 0.05 + navLinks.length * 0.07 }}
-                >
-                  <Button href={downloadUrl} size="sm" className="w-full mt-2">
-                    {buttonLabel}
-                  </Button>
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Mobile menu — CSS max-height transition, no framer-motion */}
+        <div
+          className={`md:hidden overflow-hidden border-t border-[var(--border)] transition-all duration-300 ease-in-out ${
+            menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="py-4 flex flex-col gap-3">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-[var(--muted)] hover:text-[var(--text)] py-1 block transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Button href={downloadUrl} size="sm" className="w-full mt-2">
+              {buttonLabel}
+            </Button>
+          </div>
+        </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 }

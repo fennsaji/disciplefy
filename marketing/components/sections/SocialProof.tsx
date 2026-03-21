@@ -1,4 +1,6 @@
 // marketing/components/sections/SocialProof.tsx
+// PERFORMANCE: Outer motion.div removed — it was SSR'd with opacity:0 causing blank page.
+// Inner AnimatePresence kept for verse cycling (client-side only, no SSR opacity issue).
 "use client";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,7 +34,6 @@ export function SocialProof() {
           <span className="hidden sm:block text-xs font-semibold text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/50">
             Theologically Sound · Orthodox Christian
           </span>
-
         </div>
         <AnimatePresence mode="wait">
           <motion.div

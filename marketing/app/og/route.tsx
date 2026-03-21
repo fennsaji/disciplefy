@@ -20,6 +20,19 @@ export async function GET(req: NextRequest) {
     // Font not available yet — OG image renders with system font
   }
 
+  // Devanagari (Hindi) and Malayalam fonts for non-Latin script support
+  let devanagariFont: ArrayBuffer | null = null;
+  try {
+    const res = await fetch(new URL("/fonts/NotoSansDevanagari-Bold.woff", req.url));
+    if (res.ok) devanagariFont = await res.arrayBuffer();
+  } catch { /* skip */ }
+
+  let malayalamFont: ArrayBuffer | null = null;
+  try {
+    const res = await fetch(new URL("/fonts/NotoSansMalayalam-Bold.woff", req.url));
+    if (res.ok) malayalamFont = await res.arrayBuffer();
+  } catch { /* skip */ }
+
   // Load the splash image from the public folder
   let splashSrc: string | null = null;
   try {
@@ -76,13 +89,13 @@ export async function GET(req: NextRequest) {
               color: "#A5B4FC",
               lineHeight: 1.1,
               marginBottom: 20,
-              fontFamily: "Poppins",
+              fontFamily: "Poppins, Noto Sans Devanagari, Noto Sans Malayalam",
             }}
           >
             {title}
           </div>
           <div
-            style={{ fontSize: 22, color: "#94A3B8", fontFamily: "Poppins" }}
+            style={{ fontSize: 22, color: "#94A3B8", fontFamily: "Poppins, Noto Sans Devanagari, Noto Sans Malayalam" }}
           >
             {subtitle}
           </div>
@@ -127,9 +140,11 @@ export async function GET(req: NextRequest) {
     {
       width: 1200,
       height: 630,
-      ...(fontData
-        ? { fonts: [{ name: "Poppins", data: fontData, weight: 800 as const }] }
-        : {}),
+      fonts: [
+        ...(fontData ? [{ name: "Poppins", data: fontData, weight: 800 as const }] : []),
+        ...(devanagariFont ? [{ name: "Noto Sans Devanagari", data: devanagariFont, weight: 700 as const }] : []),
+        ...(malayalamFont ? [{ name: "Noto Sans Malayalam", data: malayalamFont, weight: 700 as const }] : []),
+      ],
     }
   );
 }
