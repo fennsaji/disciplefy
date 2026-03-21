@@ -12,8 +12,10 @@ import { Testimonials } from "@/components/sections/Testimonials";
 import { PricingPreview } from "@/components/sections/PricingPreview";
 import { DownloadSection } from "@/components/sections/DownloadSection";
 import { DownloadCTA } from "@/components/sections/DownloadCTA";
+import { HomeBlogPreview } from "@/components/sections/HomeBlogPreview";
+import type { PostMeta } from "@/lib/blog";
 
-export function HomePage() {
+export function HomePage({ posts = [] }: { posts?: PostMeta[] }) {
   return (
     <>
       <Navbar />
@@ -26,6 +28,7 @@ export function HomePage() {
         <LanguageShowcase />
         <Testimonials />
         <PricingPreview />
+        <HomeBlogPreview posts={posts} />
         <DownloadCTA />
       </main>
       <Footer />
