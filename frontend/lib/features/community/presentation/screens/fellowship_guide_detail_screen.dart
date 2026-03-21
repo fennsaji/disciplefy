@@ -95,6 +95,7 @@ class _GuideDetailContent extends StatefulWidget {
 class _GuideDetailContentState extends State<_GuideDetailContent> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  bool _isOpeningStudyGuide = false;
 
   /// Lazily resolved topic — populated when widget.topic.description is empty.
   LearningPathTopic? _resolvedTopic;
@@ -165,37 +166,44 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
   }
 
   Future<void> _openStudyGuide() async {
-    final topic = _topic;
+    if (_isOpeningStudyGuide) return;
+    setState(() => _isOpeningStudyGuide = true);
 
-    // Fetch content language and study mode preference — same as learning path
-    final languageService = sl<LanguagePreferenceService>();
-    final lang = await languageService.getStudyContentLanguage();
-    final language = lang.code;
-    final studyMode =
-        await languageService.getStudyModePreference() ?? StudyMode.standard;
+    try {
+      final topic = _topic;
 
-    if (!mounted) return;
+      // Fetch content language and study mode preference — same as learning path
+      final languageService = sl<LanguagePreferenceService>();
+      final lang = await languageService.getStudyContentLanguage();
+      final language = lang.code;
+      final studyMode =
+          await languageService.getStudyModePreference() ?? StudyMode.standard;
 
-    final encodedTitle = Uri.encodeComponent(topic.title);
-    final inputType = topic.inputType.isNotEmpty ? topic.inputType : 'topic';
-    final topicIdParam =
-        topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
-    final descParam = topic.description.isNotEmpty
-        ? '&description=${Uri.encodeComponent(topic.description)}'
-        : '';
-    final pathTitleParam = widget.pathTitle.isNotEmpty
-        ? '&path_title=${Uri.encodeComponent(widget.pathTitle)}'
-        : '';
-    final pathDescParam = widget.pathDescription.isNotEmpty
-        ? '&path_description=${Uri.encodeComponent(widget.pathDescription)}'
-        : '';
-    final discipleLevelParam = widget.pathDiscipleLevel.isNotEmpty
-        ? '&disciple_level=${Uri.encodeComponent(widget.pathDiscipleLevel)}'
-        : '';
-    context.push(
-      '/study-guide-v2?input=$encodedTitle&type=$inputType&language=$language&mode=${studyMode.name}&source=fellowship'
-      '$topicIdParam$descParam$pathTitleParam$pathDescParam$discipleLevelParam',
-    );
+      if (!mounted) return;
+
+      final encodedTitle = Uri.encodeComponent(topic.title);
+      final inputType = topic.inputType.isNotEmpty ? topic.inputType : 'topic';
+      final topicIdParam =
+          topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
+      final descParam = topic.description.isNotEmpty
+          ? '&description=${Uri.encodeComponent(topic.description)}'
+          : '';
+      final pathTitleParam = widget.pathTitle.isNotEmpty
+          ? '&path_title=${Uri.encodeComponent(widget.pathTitle)}'
+          : '';
+      final pathDescParam = widget.pathDescription.isNotEmpty
+          ? '&path_description=${Uri.encodeComponent(widget.pathDescription)}'
+          : '';
+      final discipleLevelParam = widget.pathDiscipleLevel.isNotEmpty
+          ? '&disciple_level=${Uri.encodeComponent(widget.pathDiscipleLevel)}'
+          : '';
+      await context.push(
+        '/study-guide-v2?input=$encodedTitle&type=$inputType&language=$language&mode=${studyMode.name}&source=fellowship'
+        '$topicIdParam$descParam$pathTitleParam$pathDescParam$discipleLevelParam',
+      );
+    } finally {
+      if (mounted) setState(() => _isOpeningStudyGuide = false);
+    }
   }
 
   @override
@@ -231,6 +239,7 @@ class _GuideDetailContentState extends State<_GuideDetailContent> {
                       topic: _topic,
                       pathTitle: widget.pathTitle,
                       isDark: isDark,
+                      isLoading: _isOpeningStudyGuide,
                       onOpenStudyGuide: _openStudyGuide,
                     ),
                   ),
@@ -347,6 +356,7 @@ class _GuideInfoCard extends StatelessWidget {
   final LearningPathTopic topic;
   final String pathTitle;
   final bool isDark;
+  final bool isLoading;
   final VoidCallback onOpenStudyGuide;
 
   const _GuideInfoCard({
@@ -354,6 +364,7 @@ class _GuideInfoCard extends StatelessWidget {
     required this.pathTitle,
     required this.isDark,
     required this.onOpenStudyGuide,
+    this.isLoading = false,
   });
 
   @override
@@ -474,7 +485,7 @@ class _GuideInfoCard extends StatelessWidget {
 
           // Open Study Guide button
           InkWell(
-            onTap: onOpenStudyGuide,
+            onTap: isLoading ? null : onOpenStudyGuide,
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(16),
               bottomRight: Radius.circular(16),
@@ -484,8 +495,20 @@ class _GuideInfoCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.menu_book_rounded, size: 18, color: brandColor),
-                  const SizedBox(width: 8),
+                  if (isLoading) ...[
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(brandColor),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else ...[
+                    Icon(Icons.menu_book_rounded, size: 18, color: brandColor),
+                    const SizedBox(width: 8),
+                  ],
                   Text(
                     'Open Study Guide',
                     style: TextStyle(
@@ -495,8 +518,10 @@ class _GuideInfoCard extends StatelessWidget {
                       color: brandColor,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: brandColor),
+                  if (!isLoading) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_ios, size: 14, color: brandColor),
+                  ],
                 ],
               ),
             ),
