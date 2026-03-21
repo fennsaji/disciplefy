@@ -48,9 +48,9 @@ export type InvoiceStatus =
 export interface Subscription {
   readonly id: string
   readonly user_id: string
-  readonly razorpay_subscription_id: string
-  readonly razorpay_plan_id: string
-  readonly razorpay_customer_id: string | null
+  readonly provider_subscription_id: string
+  readonly provider_plan_id: string
+  readonly provider_customer_id: string | null
   readonly status: SubscriptionStatus
   readonly plan_type: string
   readonly current_period_start: string | null
