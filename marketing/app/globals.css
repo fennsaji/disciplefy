@@ -9,6 +9,8 @@
     --border: theme("colors.light.border");
     --text: theme("colors.light.text");
     --muted: theme("colors.light.muted");
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
   }
 
   .dark {
@@ -17,6 +19,8 @@
     --border: theme("colors.dark.border");
     --text: theme("colors.dark.text");
     --muted: theme("colors.dark.muted");
+    --primary: #818CF8;
+    --primary-hover: #A5B4FC;
   }
 
   body {

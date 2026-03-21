@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/react";
+import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { inter, poppins, notoDevanagari, notoMalayalam } from "@/lib/fonts";
 import { getAlternates, homepageJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default function RootLayout({
           enableSystem
           storageKey="disciplefy-theme"
         >
+          <NavigationProgress />
           {children}
           <Analytics />
         </ThemeProvider>
