@@ -1,6 +1,9 @@
 // marketing/lib/blog.ts
 import { type Locale } from "@/i18n";
 
+
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 const BLOG_API_URL = process.env.BLOG_API_URL || "http://localhost:8080";
 
 export interface PostMeta {
@@ -60,18 +63,32 @@ export async function getAllPosts(
 }
 
 export async function getPost(slug: string): Promise<Post | null> {
-  try {
-    const res = await fetch(`${BLOG_API_URL}/api/v1/posts/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 3600 },
-    });
+  const url = `${BLOG_API_URL}/api/v1/posts/${encodeURIComponent(slug)}`;
+  // Retry up to 3 times on transient failures (5xx / network errors).
+  // A genuine 404 from the API is returned immediately — no retry needed.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url, { next: { revalidate: 3600 } });
 
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data ?? null;
-  } catch (err) {
-    console.error("Failed to fetch post:", err);
-    return null;
+      // Post genuinely doesn't exist → stop immediately, let caller notFound()
+      if (res.status === 404) return null;
+
+      // Transient server error → retry (unless last attempt)
+      if (!res.ok) {
+        if (attempt < 3) { await delay(300 * attempt); continue; }
+        return null;
+      }
+
+      const json = await res.json();
+      return json.data ?? null;
+    } catch (err) {
+      // Network / timeout error → retry
+      if (attempt < 3) { await delay(300 * attempt); continue; }
+      console.error("Failed to fetch post after retries:", err);
+      return null;
+    }
   }
+  return null;
 }
 
 export async function searchPosts(query: string, locale: Locale): Promise<PostMeta[]> {
