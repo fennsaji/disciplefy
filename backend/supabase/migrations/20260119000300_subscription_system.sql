@@ -543,7 +543,7 @@ INSERT INTO public.subscription_plan_providers (plan_id, provider, provider_plan
 VALUES (
   (SELECT id FROM public.subscription_plans WHERE plan_code = 'standard'),
   'razorpay',
-  COALESCE(current_setting('app.razorpay_standard_plan_id', true), 'plan_RoJtEiu7dU8Xgz'),
+  COALESCE(current_setting('app.razorpay_standard_plan_id', true), 'plan_STUJSJekdifoS0'),
   7900,  -- ₹79.00
   'INR',
   'IN'
@@ -556,7 +556,7 @@ INSERT INTO public.subscription_plan_providers (plan_id, provider, provider_plan
 VALUES (
   (SELECT id FROM public.subscription_plans WHERE plan_code = 'plus'),
   'razorpay',
-  COALESCE(current_setting('app.razorpay_plus_plan_id', true), 'plan_plus_placeholder'),
+  COALESCE(current_setting('app.razorpay_plus_plan_id', true), 'plan_STUG3w878ioVTt'),
   14900,  -- ₹149.00
   'INR',
   'IN'
@@ -569,7 +569,7 @@ INSERT INTO public.subscription_plan_providers (plan_id, provider, provider_plan
 VALUES (
   (SELECT id FROM public.subscription_plans WHERE plan_code = 'premium'),
   'razorpay',
-  COALESCE(current_setting('app.razorpay_premium_plan_id', true), 'plan_RcMPwlqIkuiMQb'),
+  COALESCE(current_setting('app.razorpay_premium_plan_id', true), 'plan_STUJqwDef6XAH8'),
   49900,  -- ₹499.00
   'INR',
   'IN'
