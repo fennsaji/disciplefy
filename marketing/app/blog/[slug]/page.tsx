@@ -1,12 +1,15 @@
 // marketing/app/blog/[slug]/page.tsx
-// Force SSR so newly published posts are immediately visible.
+// Fallback for /blog/[slug] when middleware doesn't rewrite to /[locale]/blog/[slug].
+// Must wrap with NextIntlClientProvider so Navbar/Footer useTranslations works.
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { getPost } from "@/lib/blog";
 import { getAlternates } from "@/lib/seo";
+import messages from "@/messages/en.json";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await getPost(params.slug);
@@ -37,5 +40,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   const post = await getPost(params.slug);
   if (!post) notFound();
 
-  return <BlogPostContent post={post} />;
+  return (
+    <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
+      <BlogPostContent post={post} />
+    </NextIntlClientProvider>
+  );
 }
