@@ -101,7 +101,7 @@ async function handleResumeSubscription(
       'subscription_resumed',
       {
         subscription_id: resumedSubscription.id,
-        razorpay_subscription_id: resumedSubscription.razorpay_subscription_id,
+        razorpay_subscription_id: resumedSubscription.provider_subscription_id,
         resumed_at: new Date().toISOString(),
         user_id: userId
       }

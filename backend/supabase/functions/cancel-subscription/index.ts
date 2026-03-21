@@ -71,7 +71,7 @@ async function handleCancelSubscription(
       'subscription_cancelled',
       {
         subscription_id: cancelledSubscription.id,
-        razorpay_subscription_id: cancelledSubscription.razorpay_subscription_id,
+        razorpay_subscription_id: cancelledSubscription.provider_subscription_id,
         cancel_at_cycle_end: body.cancel_at_cycle_end,
         reason: body.reason || 'not_provided',
         cancelled_at: cancelledSubscription.cancelled_at,

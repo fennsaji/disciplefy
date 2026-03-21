@@ -93,7 +93,7 @@ async function handleCreatePlusSubscription(
       'plus_subscription_created',
       {
         subscription_id: subscription.id,
-        razorpay_subscription_id: subscription.razorpay_subscription_id,
+        razorpay_subscription_id: subscription.provider_subscription_id,
         amount_rupees: planConfig.price,
         status: subscription.status,
         user_id: userId
@@ -104,7 +104,7 @@ async function handleCreatePlusSubscription(
     const response: CreateSubscriptionResponse = {
       success: true,
       subscription_id: subscription.id,
-      razorpay_subscription_id: subscription.razorpay_subscription_id,
+      razorpay_subscription_id: subscription.provider_subscription_id,
       short_url: shortUrl,
       amount_rupees: planConfig.price,
       status: subscription.status,
