@@ -12,12 +12,6 @@ import '../bloc/leaderboard_bloc.dart';
 import '../bloc/leaderboard_event.dart';
 import '../bloc/leaderboard_state.dart';
 
-/// Full-screen leaderboard page showing XP rankings.
-///
-/// Displays top 10 users with 200+ XP, fills remaining spots with placeholder data.
-/// Always shows current user's rank at the bottom.
-///
-/// Uses BLoC pattern for state management following Clean Architecture.
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
 
@@ -29,65 +23,28 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   @override
   void initState() {
     super.initState();
-    // Dispatch load event on init
     context.read<LeaderboardBloc>().add(const LoadLeaderboard());
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(AppRoutes.studyTopics);
-            }
-          },
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.emoji_events,
-              color: Colors.amber,
-              size: 28,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              context.tr(TranslationKeys.leaderboardTitle),
-              style: AppFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: BlocBuilder<LeaderboardBloc, LeaderboardState>(
         builder: (context, state) {
           if (state is LeaderboardInitial || state is LeaderboardLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (state is LeaderboardError) {
             return _buildErrorState(context, state.message);
           }
-
           if (state is LeaderboardLoaded) {
-            return _buildContent(context, state.entries, state.userRank);
+            return _buildContent(
+                context, state.entries, state.userRank, isDark);
           }
-
-          // Fallback for unknown states
           return const Center(child: CircularProgressIndicator());
         },
       ),
@@ -96,32 +53,25 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   Widget _buildErrorState(BuildContext context, String message) {
     final theme = Theme.of(context);
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: theme.colorScheme.error,
-              size: 64,
-            ),
+            Icon(Icons.error_outline, color: theme.colorScheme.error, size: 64),
             const SizedBox(height: 16),
             Text(
               context.tr(TranslationKeys.leaderboardError),
               style: AppFonts.inter(
-                fontSize: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+                  fontSize: 16, color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () {
-                context.read<LeaderboardBloc>().add(const RefreshLeaderboard());
-              },
+              onPressed: () => context
+                  .read<LeaderboardBloc>()
+                  .add(const RefreshLeaderboard()),
               icon: const Icon(Icons.refresh),
               label: Text(context.tr(TranslationKeys.commonRetry)),
             ),
@@ -135,112 +85,138 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     BuildContext context,
     List<LeaderboardEntry> entries,
     UserXpRank userRank,
+    bool isDark,
   ) {
     return Column(
       children: [
-        // Top 3 podium section
-        _buildPodiumSection(context, entries),
-
-        // Divider
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Divider(
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-
-        // Remaining rankings list
+        _buildHeader(context, entries, isDark),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             itemCount: entries.length > 3 ? entries.length - 3 : 0,
-            itemBuilder: (context, index) {
-              return _buildLeaderboardRow(context, entries[index + 3]);
-            },
+            itemBuilder: (context, index) =>
+                _buildLeaderboardRow(context, entries[index + 3], isDark),
           ),
         ),
-
-        // Current user rank section (sticky at bottom)
-        _buildUserRankSection(context, userRank),
+        _buildUserRankSection(context, userRank, isDark),
       ],
     );
   }
 
+  Widget _buildHeader(
+      BuildContext context, List<LeaderboardEntry> entries, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [const Color(0xFF1A1040), const Color(0xFF0F1729)]
+              : [const Color(0xFF4F46E5).withOpacity(0.08), Colors.transparent],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // AppBar row
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 16, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(AppRoutes.studyTopics);
+                      }
+                    },
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🏆', style: TextStyle(fontSize: 22)),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.tr(TranslationKeys.leaderboardTitle),
+                        style: AppFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildPodiumSection(context, entries, isDark),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPodiumSection(
-      BuildContext context, List<LeaderboardEntry> entries) {
+      BuildContext context, List<LeaderboardEntry> entries, bool isDark) {
     if (entries.isEmpty) return const SizedBox(height: 20);
 
-    // Get top 3 entries (or fewer if not enough)
     final first = entries.isNotEmpty ? entries[0] : null;
     final second = entries.length > 1 ? entries[1] : null;
     final third = entries.length > 2 ? entries[2] : null;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+    const goldColor = Color(0xFFFFD700);
+    const silverColor = Color(0xFFB0BEC5);
+    const bronzeColor = Color(0xFFCD8B5A);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 2nd place (left)
-          if (second != null)
-            Expanded(
-              child: _buildPodiumCard(
-                context,
-                entry: second,
-                height: 100,
-                medalColor: const Color(0xFFC0C0C0), // Silver
-                rank: 2,
-              ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-
-          const SizedBox(width: 8),
-
-          // 1st place (center, tallest)
-          if (first != null)
-            Expanded(
-              child: _buildPodiumCard(
-                context,
-                entry: first,
-                height: 130,
-                medalColor: const Color(0xFFFFD700), // Gold
-                rank: 1,
-              ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-
-          const SizedBox(width: 8),
-
-          // 3rd place (right)
-          if (third != null)
-            Expanded(
-              child: _buildPodiumCard(
-                context,
-                entry: third,
-                height: 80,
-                medalColor: const Color(0xFFCD7F32), // Bronze
-                rank: 3,
-              ),
-            )
-          else
-            const Expanded(child: SizedBox()),
+          // 2nd place
+          Expanded(
+            child: second != null
+                ? _buildPodiumItem(context, second, 2, silverColor, 88, isDark)
+                : const SizedBox(),
+          ),
+          const SizedBox(width: 6),
+          // 1st place
+          Expanded(
+            child: first != null
+                ? _buildPodiumItem(context, first, 1, goldColor, 120, isDark)
+                : const SizedBox(),
+          ),
+          const SizedBox(width: 6),
+          // 3rd place
+          Expanded(
+            child: third != null
+                ? _buildPodiumItem(context, third, 3, bronzeColor, 68, isDark)
+                : const SizedBox(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPodiumCard(
-    BuildContext context, {
-    required LeaderboardEntry entry,
-    required double height,
-    required Color medalColor,
-    required int rank,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final avatarTextColor =
+  Widget _buildPodiumItem(
+    BuildContext context,
+    LeaderboardEntry entry,
+    int rank,
+    Color color,
+    double platformHeight,
+    bool isDark,
+  ) {
+    final avatarRadius = rank == 1 ? 34.0 : 27.0;
+    final fontSize = rank == 1 ? 26.0 : 20.0;
+    final lightIndigo =
         isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
 
     return Column(
@@ -248,81 +224,118 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       children: [
         // Crown for 1st place
         if (rank == 1)
-          const Icon(
-            Icons.auto_awesome,
-            color: Color(0xFFFFD700),
-            size: 24,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text('👑', style: TextStyle(fontSize: rank == 1 ? 22 : 0)),
+          )
+        else
+          const SizedBox(height: 26),
+
+        // Avatar with glow for 1st
+        Container(
+          decoration: rank == 1
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                        color: color.withOpacity(0.45),
+                        blurRadius: 16,
+                        spreadRadius: 2),
+                  ],
+                )
+              : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: color.withOpacity(isDark ? 0.22 : 0.15),
+                child: Text(
+                  entry.displayName.isNotEmpty
+                      ? entry.displayName[0].toUpperCase()
+                      : '?',
+                  style: AppFonts.poppins(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w700,
+                    color: lightIndigo,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -4,
+                right: -4,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF0F1729) : Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$rank',
+                    style: AppFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: rank == 1 ? const Color(0xFF7A5C00) : Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-
-        const SizedBox(height: 4),
-
-        // Avatar with medal
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            CircleAvatar(
-              radius: rank == 1 ? 36 : 30,
-              backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-              child: Text(
-                entry.displayName.isNotEmpty
-                    ? entry.displayName[0].toUpperCase()
-                    : '?',
-                style: AppFonts.poppins(
-                  fontSize: rank == 1 ? 28 : 22,
-                  fontWeight: FontWeight.w600,
-                  color: avatarTextColor,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: medalColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: Text(
-                '$rank',
-                style: AppFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
 
         // Name
         Text(
           entry.displayName,
           style: AppFonts.inter(
-            fontSize: 13,
-            fontWeight: entry.isCurrentUser ? FontWeight.w700 : FontWeight.w600,
-            color: theme.colorScheme.onSurface,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
 
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
 
-        // XP
+        // Podium platform
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          height: platformHeight,
           decoration: BoxDecoration(
-            color: medalColor.withOpacity(0.25),
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [color.withOpacity(0.7), color.withOpacity(0.4)],
+            ),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(8),
+              topRight: Radius.circular(8),
+            ),
           ),
-          child: Text(
-            '${entry.totalXp} XP',
-            style: AppFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.only(top: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${entry.totalXp} XP',
+              style: AppFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
@@ -330,57 +343,61 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     );
   }
 
-  Widget _buildLeaderboardRow(BuildContext context, LeaderboardEntry entry) {
+  Widget _buildLeaderboardRow(
+      BuildContext context, LeaderboardEntry entry, bool isDark) {
     final theme = Theme.of(context);
+    final lightIndigo =
+        isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: entry.isCurrentUser
-            ? AppTheme.primaryColor.withOpacity(0.1)
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+            ? AppTheme.primaryColor.withOpacity(isDark ? 0.15 : 0.08)
+            : (isDark
+                ? const Color(0xFF1E293B)
+                : theme.colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(14),
         border: entry.isCurrentUser
-            ? Border.all(color: AppTheme.primaryColor, width: 1.5)
-            : null,
+            ? Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.5), width: 1.5)
+            : Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.06)
+                    : Colors.black.withOpacity(0.04),
+              ),
       ),
       child: Row(
         children: [
-          // Rank number
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              shape: BoxShape.circle,
-            ),
+          // Rank
+          SizedBox(
+            width: 28,
             child: Text(
               '${entry.rank}',
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+              style: AppFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
 
           // Avatar
           CircleAvatar(
-            radius: 18,
-            backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+            radius: 17,
+            backgroundColor:
+                AppTheme.primaryColor.withOpacity(isDark ? 0.2 : 0.12),
             child: Text(
               entry.displayName.isNotEmpty
                   ? entry.displayName[0].toUpperCase()
                   : '?',
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: theme.brightness == Brightness.dark
-                    ? const Color(0xFFA5B4FC) // Light indigo for dark mode
-                    : AppTheme.primaryColor,
+              style: AppFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: lightIndigo,
               ),
             ),
           ),
@@ -391,29 +408,28 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             child: Text(
               entry.displayName,
               style: AppFonts.inter(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight:
                     entry.isCurrentUser ? FontWeight.w600 : FontWeight.w500,
                 color: theme.colorScheme.onSurface,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
           // XP badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
+              color: lightIndigo.withOpacity(isDark ? 0.15 : 0.1),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '${entry.totalXp} XP',
               style: AppFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: theme.brightness == Brightness.dark
-                    ? const Color(0xFFA5B4FC) // Light indigo for dark mode
-                    : AppTheme.primaryColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: lightIndigo,
               ),
             ),
           ),
@@ -422,95 +438,93 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     );
   }
 
-  Widget _buildUserRankSection(BuildContext context, UserXpRank userRank) {
+  Widget _buildUserRankSection(
+      BuildContext context, UserXpRank userRank, bool isDark) {
     final theme = Theme.of(context);
+    final lightIndigo =
+        isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.06),
           ),
-        ],
+        ),
       ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: SafeArea(
         top: false,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
+            color: AppTheme.primaryColor.withOpacity(isDark ? 0.12 : 0.07),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withOpacity(0.25),
             ),
           ),
           child: Row(
             children: [
-              // User icon
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: theme.brightness == Brightness.dark
-                      ? const Color(0xFFA5B4FC)
-                      : AppTheme.primaryColor,
-                  size: 24,
-                ),
+              CircleAvatar(
+                radius: 20,
+                backgroundColor:
+                    AppTheme.primaryColor.withOpacity(isDark ? 0.25 : 0.15),
+                child: Icon(Icons.person_rounded, color: lightIndigo, size: 22),
               ),
-              const SizedBox(width: 16),
-
-              // Label
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   context.tr(TranslationKeys.leaderboardYourRank),
                   style: AppFonts.inter(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
-
-              // Rank and XP display
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                  ),
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      userRank.isRanked ? '#${userRank.rank}' : '-',
-                      style: AppFonts.inter(
-                        fontSize: 16,
+                      userRank.isRanked ? '#${userRank.rank}' : '–',
+                      style: AppFonts.poppins(
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
                     Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
                       width: 1,
-                      height: 16,
-                      color: Colors.white.withOpacity(0.4),
+                      height: 14,
+                      color: Colors.white.withOpacity(0.35),
                     ),
                     Text(
                       '${userRank.totalXp} XP',
                       style: AppFonts.inter(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                     ),
                   ],
