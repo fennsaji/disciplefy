@@ -951,7 +951,7 @@ class AppTranslations {
         'manage': 'Manage',
         'continue_subscription': 'Continue Subscription',
         'cancelled_notice':
-            'Subscription cancelled. Premium access continues until the end of current billing cycle.',
+            'Subscription cancelled. Your access continues until the end of the current billing cycle.',
         'comparison': 'Compare Plans',
       },
       'history': {
@@ -1879,6 +1879,7 @@ class AppTranslations {
     },
     'upgrade': {
       'to_plus': 'Upgrade to Plus',
+      'downgrade_to_plus': 'Downgrade to Plus',
       'to_standard': 'Upgrade to Standard',
       'what_you_get_plus': 'What you get with Plus',
       'what_you_get_standard': 'What you get with Standard',
@@ -2852,7 +2853,7 @@ class AppTranslations {
         'manage': 'प्रबंधित करें',
         'continue_subscription': 'सब्सक्रिप्शन जारी रखें',
         'cancelled_notice':
-            'सब्सक्रिप्शन रद्द कर दी गई। प्रीमियम एक्सेस वर्तमान बिलिंग साइकिल के अंत तक जारी रहेगा।',
+            'सब्सक्रिप्शन रद्द कर दी गई। आपकी एक्सेस वर्तमान बिलिंग साइकिल के अंत तक जारी रहेगी।',
         'comparison': 'प्लान की तुलना',
       },
       'history': {
@@ -3786,6 +3787,7 @@ class AppTranslations {
     },
     'upgrade': {
       'to_plus': 'प्लस में अपग्रेड करें',
+      'downgrade_to_plus': 'प्लस में डाउनग्रेड करें',
       'to_standard': 'स्टैंडर्ड में अपग्रेड करें',
       'what_you_get_plus': 'प्लस के साथ आपको क्या मिलता है',
       'what_you_get_standard': 'स्टैंडर्ड के साथ आपको क्या मिलता है',
@@ -4772,7 +4774,7 @@ class AppTranslations {
         'manage': 'മാനേജ് ചെയ്യൂ',
         'continue_subscription': 'സബ്‌സ്‌ക്രിപ്‌ഷൻ തുടരൂ',
         'cancelled_notice':
-            'സബ്‌സ്‌ക്രിപ്‌ഷൻ റദ്ദാക്കി. നിലവിലെ ബില്ലിംഗ് സൈക്കിളിന്റെ അവസാനം വരെ പ്രീമിയം ആക്‌സസ് തുടരും.',
+            'സബ്‌സ്‌ക്രിപ്‌ഷൻ റദ്ദാക്കി. നിലവിലെ ബില്ലിംഗ് സൈക്കിളിന്റെ അവസാനം വരെ നിങ്ങളുടെ ആക്‌സസ് തുടരും.',
         'comparison': 'പ്ലാന്റെ തുലനം',
       },
       'history': {
@@ -5776,6 +5778,7 @@ class AppTranslations {
     },
     'upgrade': {
       'to_plus': 'Plus-ലേക്ക് അപ്ഗ്രേഡ് ചെയ്യൂ',
+      'downgrade_to_plus': 'Plus-ലേക്ക് ഡൗൺഗ്രേഡ് ചെയ്യൂ',
       'to_standard': 'Standard-ലേക്ക് അപ്ഗ്രേഡ് ചെയ്യൂ',
       'what_you_get_plus': 'Plus-ൽ നിങ്ങൾക്ക് ലഭിക്കുന്നത്',
       'what_you_get_standard': 'Standard-ൽ നിങ്ങൾക്ക് ലഭിക്കുന്നത്',
