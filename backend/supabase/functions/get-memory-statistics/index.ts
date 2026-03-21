@@ -116,76 +116,26 @@ async function getActivityData(
 }
 
 /**
- * Get streak data (calculated from review_sessions since memory_verse_streaks doesn't exist yet)
+ * Get streak data from the memory_verse_streaks table via RPC (single source of truth)
  */
 async function getStreakData(
   supabaseClient: SupabaseClient,
   userId: string
 ): Promise<{ current_streak: number; longest_streak: number; total_practice_days: number }> {
 
-  // Fetch all review sessions ordered by date
-  const { data: sessions, error } = await supabaseClient
-    .from('review_sessions')
-    .select('review_date')
-    .eq('user_id', userId)
-    .order('review_date', { ascending: true })
+  const { data, error } = await supabaseClient
+    .rpc('get_or_create_memory_streak', { p_user_id: userId })
+    .single()
 
   if (error) {
-    console.error('[Statistics] Review sessions fetch error:', error)
-    throw new AppError('DATABASE_ERROR', 'Failed to fetch review data for streak calculation', 500)
+    console.error('[Statistics] Streak RPC error:', error)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch streak data', 500)
   }
-
-  if (!sessions || sessions.length === 0) {
-    return {
-      current_streak: 0,
-      longest_streak: 0,
-      total_practice_days: 0
-    }
-  }
-
-  // Get unique practice dates
-  const uniqueDates = new Set<string>()
-  for (const session of sessions) {
-    const date = session.review_date.split('T')[0] // Extract YYYY-MM-DD
-    uniqueDates.add(date)
-  }
-
-  const sortedDates = Array.from(uniqueDates).sort()
-  const totalPracticeDays = sortedDates.length
-
-  // Calculate current and longest streaks
-  let currentStreak = 0
-  let longestStreak = 0
-  let tempStreak = 1
-
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-
-  // Check if user practiced today or yesterday for current streak
-  const lastPracticeDate = sortedDates[sortedDates.length - 1]
-  const isStreakActive = lastPracticeDate === today || lastPracticeDate === yesterday
-
-  // Calculate streaks
-  for (let i = 1; i < sortedDates.length; i++) {
-    const prevDate = new Date(sortedDates[i - 1])
-    const currDate = new Date(sortedDates[i])
-    const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 1) {
-      tempStreak++
-    } else {
-      longestStreak = Math.max(longestStreak, tempStreak)
-      tempStreak = 1
-    }
-  }
-
-  longestStreak = Math.max(longestStreak, tempStreak)
-  currentStreak = isStreakActive ? tempStreak : 0
 
   return {
-    current_streak: currentStreak,
-    longest_streak: longestStreak,
-    total_practice_days: totalPracticeDays
+    current_streak: (data as { out_current_streak: number }).out_current_streak ?? 0,
+    longest_streak: (data as { out_longest_streak: number }).out_longest_streak ?? 0,
+    total_practice_days: (data as { out_total_practice_days: number }).out_total_practice_days ?? 0,
   }
 }
 
