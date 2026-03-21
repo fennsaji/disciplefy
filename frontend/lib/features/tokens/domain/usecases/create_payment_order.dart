@@ -31,6 +31,7 @@ class CreatePaymentOrder
 
     return await _repository.createPaymentOrder(
       tokenAmount: params.tokenAmount,
+      rupeeAmount: params.rupeeAmount,
     );
   }
 }
@@ -39,10 +40,14 @@ class CreatePaymentOrder
 class CreatePaymentOrderParams extends Equatable {
   final int tokenAmount;
 
+  /// Discounted rupee amount from the loaded pricing packages.
+  final int rupeeAmount;
+
   const CreatePaymentOrderParams({
     required this.tokenAmount,
+    required this.rupeeAmount,
   });
 
   @override
-  List<Object?> get props => [tokenAmount];
+  List<Object?> get props => [tokenAmount, rupeeAmount];
 }

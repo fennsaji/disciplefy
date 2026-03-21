@@ -9,7 +9,7 @@
  */
 
 import Razorpay from 'npm:razorpay'
-import { generateHmacSha256 } from '../../utils/crypto-utils.ts'
+import { verifyHmacSha256 } from '../../utils/crypto-utils.ts'
 import {
   PaymentProvider,
   ProviderType,
@@ -108,6 +108,8 @@ export class RazorpayProvider extends PaymentProvider {
         quantity: number
         customer_notify: 0 | 1
         notes: Record<string, string | number>
+        offer_id?: string
+        start_at?: number
       } = {
         plan_id: params.providerPlanId,
         total_count: 360, // 30 years (360 months)
@@ -120,7 +122,11 @@ export class RazorpayProvider extends PaymentProvider {
             promotional_campaign_id: params.promotionalCampaignId
           }),
           ...(params.notes as Record<string, string | number> || {})
-        }
+        },
+        // Pass Razorpay offer_id if provided — applies discount natively on checkout
+        ...(params.offerId && { offer_id: params.offerId }),
+        // Schedule subscription start (for downgrade at cycle end)
+        ...(params.startAt && { start_at: params.startAt })
       }
 
       console.log('[RazorpayProvider] Creating subscription:', {
@@ -145,13 +151,22 @@ export class RazorpayProvider extends PaymentProvider {
         }
       }
     } catch (error: unknown) {
-      console.error('[RazorpayProvider] Failed to create subscription:', error)
-
       // Extract Razorpay error details
       const razorpayError = error as {
         statusCode?: number
-        error?: { code?: string; description?: string }
+        error?: { code?: string; description?: string; field?: string; source?: string; step?: string; reason?: string }
       }
+
+      console.error('[RazorpayProvider] Failed to create subscription:', JSON.stringify({
+        statusCode: razorpayError.statusCode,
+        code: razorpayError.error?.code,
+        description: razorpayError.error?.description,
+        field: razorpayError.error?.field,
+        source: razorpayError.error?.source,
+        step: razorpayError.error?.step,
+        reason: razorpayError.error?.reason,
+        raw: error
+      }))
 
       throw new ProviderError(
         razorpayError.error?.description || 'Failed to create Razorpay subscription',
@@ -252,6 +267,56 @@ export class RazorpayProvider extends PaymentProvider {
   }
 
   /**
+   * Issue a refund for a Razorpay payment
+   *
+   * @param paymentId - Razorpay payment ID (pay_xxx)
+   * @param amountPaise - Refund amount in paise (partial refund if less than original)
+   * @param notes - Optional notes for the refund record
+   * @returns Razorpay refund ID
+   */
+  async issueRefund(
+    paymentId: string,
+    amountPaise: number,
+    notes?: Record<string, string>
+  ): Promise<string> {
+    if (!this.razorpay) {
+      throw new ProviderError(
+        'Razorpay client not initialized',
+        'razorpay',
+        'RAZORPAY_NOT_INITIALIZED',
+        500
+      )
+    }
+
+    try {
+      console.log('[RazorpayProvider] Issuing refund:', { paymentId, amountPaise })
+
+      const refund = await (this.razorpay.payments as any).refund(paymentId, {
+        amount: amountPaise,
+        speed: 'normal',
+        notes: notes ?? {}
+      })
+
+      console.log('[RazorpayProvider] Refund issued successfully:', refund.id)
+      return refund.id as string
+    } catch (error: unknown) {
+      console.error('[RazorpayProvider] Failed to issue refund:', error)
+
+      const razorpayError = error as {
+        statusCode?: number
+        error?: { code?: string; description?: string }
+      }
+
+      throw new ProviderError(
+        razorpayError.error?.description || 'Failed to issue Razorpay refund',
+        'razorpay',
+        razorpayError.error?.code || 'RAZORPAY_REFUND_FAILED',
+        razorpayError.statusCode || 500
+      )
+    }
+  }
+
+  /**
    * Fetch subscription details from Razorpay
    *
    * @param providerSubscriptionId - Razorpay subscription ID
@@ -331,11 +396,7 @@ export class RazorpayProvider extends PaymentProvider {
     }
 
     try {
-      // Generate expected signature using Web Crypto API
-      const expectedSignature = await generateHmacSha256(webhookSecret, payload)
-
-      // Constant-time comparison to prevent timing attacks
-      const isValid = signature === expectedSignature
+      const isValid = await verifyHmacSha256(webhookSecret, payload, signature)
 
       if (!isValid) {
         console.warn('[RazorpayProvider] Webhook signature verification failed')

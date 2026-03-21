@@ -70,6 +70,7 @@ class TokenRepositoryImpl implements TokenRepository {
   @override
   Future<Either<Failure, PaymentOrderResponse>> createPaymentOrder({
     required int tokenAmount,
+    required int rupeeAmount,
   }) async {
     // Comprehensive input validation using TokenPurchaseValidator
     final validationResult =
@@ -101,6 +102,7 @@ class TokenRepositoryImpl implements TokenRepository {
       () async {
         return await _remoteDataSource.createPaymentOrder(
           tokenAmount: tokenAmount,
+          rupeeAmount: rupeeAmount,
         );
       },
       'payment order creation',

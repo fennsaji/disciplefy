@@ -478,12 +478,13 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     emit(TokenOrderCreating(
       currentTokenStatus: _cachedTokenStatus!,
       tokensToPurchase: event.tokenAmount,
-      amount: event.tokenAmount / 10.0, // 10 tokens = ₹1
+      amount: event.rupeeAmount.toDouble(),
     ));
 
     // Create payment order
     final orderParams = create_payment_order.CreatePaymentOrderParams(
       tokenAmount: event.tokenAmount,
+      rupeeAmount: event.rupeeAmount,
     );
 
     final result = await _createPaymentOrder(orderParams);
@@ -497,7 +498,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       (orderResponse) => emit(TokenOrderCreated(
         currentTokenStatus: _cachedTokenStatus!,
         tokensToPurchase: event.tokenAmount,
-        amount: event.tokenAmount / 10.0,
+        amount: event.rupeeAmount.toDouble(),
         orderId: orderResponse.orderId,
         keyId: orderResponse.keyId,
       )),

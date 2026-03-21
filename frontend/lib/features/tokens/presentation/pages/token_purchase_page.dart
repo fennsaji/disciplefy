@@ -169,6 +169,9 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           ),
         );
 
+        // Refresh token balance - tokens may have been credited by webhook
+        context.read<TokenBloc>().add(const RefreshTokenStatus());
+
         // Still close the page - tokens will be credited by webhook
         Navigator.of(context).pop(true);
       }
@@ -223,12 +226,31 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
       return;
     }
 
+    // Determine the discounted rupee amount for this purchase.
+    // For a selected package, use its pre-loaded discounted price.
+    // For a custom amount, compute from the base rate (no discount).
+    // Avoid firstWhere+orElse — at runtime _packages holds TokenPackageModel
+    // objects, and DDC (web) enforces the generic element type on orElse,
+    // causing a TypeError when orElse returns the base TokenPackage class.
+    TokenPackage? selectedPackage;
+    for (final p in _packages) {
+      if (p.tokens == _selectedPackageTokens) {
+        selectedPackage = p;
+        break;
+      }
+    }
+    final int rupeeAmount =
+        selectedPackage?.rupees ?? (_customTokens / _tokensPerRupee).ceil();
+
     setState(() {
       _isLoading = true;
     });
 
-    // Create order via BLoC
-    context.read<TokenBloc>().add(CreatePaymentOrder(tokenAmount: tokenAmount));
+    // Create order via BLoC, passing the discounted price so Razorpay charges correctly.
+    context.read<TokenBloc>().add(CreatePaymentOrder(
+          tokenAmount: tokenAmount,
+          rupeeAmount: rupeeAmount,
+        ));
   }
 
   @override
@@ -261,6 +283,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
             description: '${state.tokensToPurchase} Tokens',
             userEmail: widget.userEmail,
             userPhone: widget.userPhone,
+            keyId: state.keyId,
             onSuccess: _handlePaymentSuccess,
             onError: _handlePaymentError,
             onExternalWallet: _handleExternalWallet,
@@ -272,8 +295,9 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: Text(state.failure.message),
               backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 5),
             ),
           );
         }

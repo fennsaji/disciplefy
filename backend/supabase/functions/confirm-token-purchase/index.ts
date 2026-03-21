@@ -8,7 +8,7 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { generateHmacSha256 } from '../_shared/utils/crypto-utils.ts'
+import { verifyHmacSha256 } from '../_shared/utils/crypto-utils.ts'
 import type { UserContext } from '../_shared/types/index.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { TokenService } from '../_shared/services/token-service.ts'
@@ -486,9 +486,7 @@ async function verifyPaymentSignature({
   }
 
   const body = `${orderId}|${paymentId}`
-  const expectedSignature = await generateHmacSha256(keySecret, body)
-
-  return signature === expectedSignature
+  return verifyHmacSha256(keySecret, body, signature)
 }
 
 createSimpleFunction(handleConfirmPurchase, {
