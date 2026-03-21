@@ -27,6 +27,7 @@ export function PostCard({ post }: { post: PostMeta }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
+      prefetch={false}
       className="group flex flex-col rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
     >
       {/* Gradient accent stripe */}
