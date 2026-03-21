@@ -171,6 +171,7 @@ class _PricingPageState extends State<PricingPage> {
         locale: locale,
       );
 
+      if (!mounted) return;
       setState(() {
         _plans = response.plans;
         if (response.promotionalCampaign != null) {
@@ -184,6 +185,7 @@ class _PricingPageState extends State<PricingPage> {
         tag: 'PRICING',
         error: e,
       );
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to load pricing plans. Please try again.';
         _isLoading = false;

@@ -911,7 +911,16 @@ class _SubscriptionManagementPageState
                         .read<SubscriptionBloc>()
                         .add(const ResumeSubscription());
                   },
-            icon: const Icon(Icons.restart_alt_rounded),
+            icon: isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.restart_alt_rounded),
             label: Text(
               context.tr(TranslationKeys.subscriptionContinueButton),
               style: AppFonts.inter(
@@ -950,13 +959,35 @@ class _SubscriptionManagementPageState
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          child: Text(
-            context.tr(TranslationKeys.subscriptionCancelAtEnd),
-            style: AppFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: isLoading
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.errorColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr(TranslationKeys.subscriptionCancelAtEnd),
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  context.tr(TranslationKeys.subscriptionCancelAtEnd),
+                  style: AppFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
         ),
         const SizedBox(height: 12),
         TextButton(
@@ -966,13 +997,35 @@ class _SubscriptionManagementPageState
             foregroundColor: AppTheme.errorColor,
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
-          child: Text(
-            context.tr(TranslationKeys.subscriptionCancelImmediately),
-            style: AppFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          child: isLoading
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.errorColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr(TranslationKeys.subscriptionCancelImmediately),
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  context.tr(TranslationKeys.subscriptionCancelImmediately),
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
         ),
       ],
     );

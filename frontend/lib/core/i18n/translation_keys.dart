@@ -2063,6 +2063,7 @@ class TranslationKeys {
 
   // Upgrade Pages (Plus / Standard)
   static const upgradeToPlus = 'upgrade.to_plus';
+  static const downgradeToPlus = 'upgrade.downgrade_to_plus';
   static const upgradeToStandard = 'upgrade.to_standard';
   static const whatYouGetPlus = 'upgrade.what_you_get_plus';
   static const whatYouGetStandard = 'upgrade.what_you_get_standard';

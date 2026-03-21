@@ -18,6 +18,7 @@ import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../utils/plan_features_extractor.dart';
+import '../widgets/promo_code_input.dart';
 
 class StandardUpgradePage extends StatefulWidget {
   const StandardUpgradePage({super.key});
@@ -31,6 +32,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   bool _hasOpenedPayment = false;
   bool _isLoadingPlan = true;
 
+  PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _standardPlan;
   SubscriptionPlanModel? _freePlan; // for comparison
   List<String> _features = [];
@@ -166,7 +168,8 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
               );
             }
           } else if (state is SubscriptionLoaded) {
-            if (state.activeSubscription?.isActive == true) {
+            if (_hasOpenedPayment &&
+                state.activeSubscription?.isActive == true) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text(
@@ -218,6 +221,14 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
                   _buildComparison(),
                   const SizedBox(height: 32),
                 ],
+                PromoCodeInput(
+                  planCode: 'standard',
+                  initialPromo: _appliedPromo,
+                  onValidate: _validatePromoCode,
+                  onPromoApplied: _handlePromoApplied,
+                  onPromoRemoved: _handlePromoRemoved,
+                ),
+                const SizedBox(height: 24),
                 _buildActionButton(state),
                 const SizedBox(height: 16),
                 _buildTermsInfo(),
@@ -563,6 +574,50 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
               ],
             ),
     );
+  }
+
+  Future<PromotionalCampaignModel?> _validatePromoCode(String code) async {
+    try {
+      final dataSource = sl<SubscriptionRemoteDataSource>();
+      final platformService = PlatformDetectionService();
+      final provider = platformService
+          .providerToString(platformService.getPreferredProvider());
+      final response = await dataSource.validatePromoCode(
+        promoCode: code,
+        provider: provider,
+      );
+      if (response.valid && response.campaign != null) {
+        return response.campaign!.toPromotionalCampaignModel();
+      }
+      return null;
+    } catch (e) {
+      Logger.error('[StandardUpgrade] Failed to validate promo code', error: e);
+      return null;
+    }
+  }
+
+  Future<void> _handlePromoApplied(PromotionalCampaignModel campaign) async {
+    setState(() => _appliedPromo = campaign);
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      await box.put('pending_promo_code', campaign.code);
+    } catch (e) {
+      Logger.debug('[StandardUpgrade] Failed to save promo to Hive: $e');
+    }
+  }
+
+  Future<void> _handlePromoRemoved() async {
+    setState(() => _appliedPromo = null);
+    try {
+      final box = Hive.isBoxOpen('app_settings')
+          ? Hive.box('app_settings')
+          : await Hive.openBox('app_settings');
+      await box.delete('pending_promo_code');
+    } catch (e) {
+      Logger.debug('[StandardUpgrade] Failed to clear promo from Hive: $e');
+    }
   }
 
   Future<void> _handleUpgrade() async {
