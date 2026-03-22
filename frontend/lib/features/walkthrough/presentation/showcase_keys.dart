@@ -75,4 +75,16 @@ class ShowcaseKeys {
   // Community screen
   static final GlobalKey communityTabs = GlobalKey(debugLabel: 'communityTabs');
   static final GlobalKey communityFab = GlobalKey(debugLabel: 'communityFab');
+
+  // Study Guide screen
+  static final GlobalKey studyGuideMenuButton =
+      GlobalKey(debugLabel: 'studyGuideMenuButton');
+  static final GlobalKey studyGuideListen =
+      GlobalKey(debugLabel: 'studyGuideListen');
+  static final GlobalKey studyGuideFellowshipShare =
+      GlobalKey(debugLabel: 'studyGuideFellowshipShare');
+  static final GlobalKey studyGuideFollowUpChat =
+      GlobalKey(debugLabel: 'studyGuideFollowUpChat');
+  static final GlobalKey studyGuideNotes =
+      GlobalKey(debugLabel: 'studyGuideNotes');
 }
