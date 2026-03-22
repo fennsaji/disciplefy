@@ -521,8 +521,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
 
                 final scaledChild = MediaQuery(
                   data: mq.copyWith(
-                    textScaler:
-                        TextScaler.linear(fontScaleService.scaleFactor),
+                    textScaler: TextScaler.linear(fontScaleService.scaleFactor),
                   ),
                   child: child!,
                 );
