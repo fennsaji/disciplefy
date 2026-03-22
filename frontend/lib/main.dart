@@ -511,13 +511,31 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
               // Navigation
               routerConfig: AppRouter.router,
 
-              // Font scaling — applies user's preferred text size app-wide
-              builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.linear(fontScaleService.scaleFactor),
-                ),
-                child: child!,
-              ),
+              // Font scaling + responsive max-width centering for large screens
+              builder: (context, child) {
+                const maxContentWidth = 900.0;
+                final mq = MediaQuery.of(context);
+                final sidePadding = mq.size.width > maxContentWidth
+                    ? (mq.size.width - maxContentWidth) / 2
+                    : 0.0;
+
+                final scaledChild = MediaQuery(
+                  data: mq.copyWith(
+                    textScaler: TextScaler.linear(fontScaleService.scaleFactor),
+                  ),
+                  child: child!,
+                );
+
+                if (sidePadding == 0) return scaledChild;
+
+                return ColoredBox(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: sidePadding),
+                    child: scaledChild,
+                  ),
+                );
+              },
             ),
           ),
         ),

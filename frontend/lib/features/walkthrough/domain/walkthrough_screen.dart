@@ -13,6 +13,12 @@ enum WalkthroughScreen {
   /// Cross-promo hint on Generate tab. No video URL — omit "Watch video" button.
   disciplerHint,
   community,
+
+  /// Phase 1: 3-dot menu + Listen button (shown when guide first loads).
+  studyGuide,
+
+  /// Phase 2: fellowship share + follow-up chat + notes (shown on completion).
+  studyGuideCompletion,
 }
 
 extension WalkthroughScreenName on WalkthroughScreen {

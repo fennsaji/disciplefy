@@ -60,11 +60,39 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
   // Per-category horizontal scroll controllers for auto-load-more
   final Map<String, ScrollController> _scrollControllers = {};
 
+  /// Categories already pre-loaded for wide-screen fill.
+  final Set<String> _preloadedCategories = {};
+
   ScrollController _scrollControllerFor(String category) {
     return _scrollControllers.putIfAbsent(
       category,
       () => ScrollController(),
     );
+  }
+
+  /// On tablet/desktop screens the initial 3 paths per category don't fill
+  /// the viewport, so there is no scroll overflow to trigger the lazy-load
+  /// listener. This method pre-fetches more paths for every category that
+  /// still has more, so the row overflows the screen and users can scroll.
+  void _preloadWideScreenCategories(
+      BuildContext context, LearningPathsLoaded state) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Only needed when the screen is wide enough that 3 cards fit without overflow
+    if (screenWidth <= 700) return;
+
+    for (final cat in state.categories) {
+      if (cat.hasMoreInCategory &&
+          !_preloadedCategories.contains(cat.name) &&
+          !state.loadingCategories.contains(cat.name)) {
+        _preloadedCategories.add(cat.name);
+        context.read<LearningPathsBloc>().add(
+              LoadMorePathsForCategory(
+                category: cat.name,
+                language: widget.language,
+              ),
+            );
+      }
+    }
   }
 
   @override
@@ -152,7 +180,18 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<LearningPathsBloc, LearningPathsState>(
+    return BlocConsumer<LearningPathsBloc, LearningPathsState>(
+      listener: (context, state) {
+        if (state is LearningPathsLoading || state is LearningPathsInitial) {
+          _preloadedCategories.clear();
+        }
+        if (state is LearningPathsLoaded) {
+          // Schedule after the frame so MediaQuery and layout are ready.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _preloadWideScreenCategories(context, state);
+          });
+        }
+      },
       builder: (context, state) {
         if (state is LearningPathsInitial) return const SizedBox.shrink();
         if (state is LearningPathsLoading) return _buildLoadingState(context);

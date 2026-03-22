@@ -231,7 +231,11 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
 class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     with RouteAware {
   final TextEditingController _notesController = TextEditingController();
+  final FocusNode _notesFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+
+  // Delayed completion-sheet timer (cancelled if user taps notes)
+  Timer? _completionSheetTimer;
 
   // Walkthrough state
   WalkthroughScreen? _pendingMarkSeen;
@@ -306,6 +310,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
+  // True once Phase 2 walkthrough has been triggered. Prevents the completion
+  // sheet from appearing after the walkthrough has already started.
+  bool _phase2WalkthroughStarted = false;
 
   // Notification prompt state
   bool _hasTriggeredNotificationPrompt = false;
@@ -346,6 +353,14 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _loadUserFellowships();
     if (!kIsWeb) _setupScreenshotDetection();
     _triggerWalkthroughIfNeeded();
+    _notesFocusNode.addListener(_onNotesFocusChanged);
+  }
+
+  void _onNotesFocusChanged() {
+    if (_notesFocusNode.hasFocus) {
+      _completionSheetTimer?.cancel();
+      _completionSheetTimer = null;
+    }
   }
 
   Future<void> _triggerWalkthroughIfNeeded() async {
@@ -353,8 +368,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       if (!mounted || _showcaseContext == null) return;
       final repo = sl<WalkthroughRepository>();
       final seenHint = await repo.hasSeen(WalkthroughScreen.disciplerHint);
+      // Only show disciplerHint after Phase 1 (menu+listen) has been seen,
+      // so the walkthroughs don't compete on the first visit.
+      final seenPhase1 = await repo.hasSeen(WalkthroughScreen.studyGuide);
 
-      if (!seenHint) {
+      if (!seenHint && seenPhase1) {
         if (!mounted || _showcaseContext == null) return;
         // Wait for a full frame after the async gap to ensure Showcase widgets
         // are laid out before startShowCase accesses their RenderBox.
@@ -372,8 +390,90 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     });
   }
 
+  /// Triggers the Phase 1 study guide walkthrough (menu + listen) the first
+  /// time a guide loads for this user.
+  Future<void> _triggerStudyGuideWalkthrough() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      final seen = await repo.hasSeen(WalkthroughScreen.studyGuide);
+      if (seen || !mounted || _showcaseContext == null) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _showcaseContext == null) return;
+        if (ShowcaseKeys.studyGuideMenuButton.currentContext != null) {
+          _pendingMarkSeen = WalkthroughScreen.studyGuide;
+          ShowCaseWidget.of(_showcaseContext!).startShowCase([
+            ShowcaseKeys.studyGuideMenuButton,
+            ShowcaseKeys.studyGuideListen,
+          ]);
+        }
+      });
+    });
+  }
+
+  /// Triggers the Phase 2 study guide walkthrough (fellowship + chat + notes)
+  /// the first time the user completes a study guide.
+  Future<void> _triggerStudyGuideCompletionWalkthrough() async {
+    // Mark as started synchronously so no new sheet timer can be created,
+    // and cancel any timer that is already pending.
+    _phase2WalkthroughStarted = true;
+    _completionSheetTimer?.cancel();
+    _completionSheetTimer = null;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      final seen = await repo.hasSeen(WalkthroughScreen.studyGuideCompletion);
+      if (seen || !mounted || _showcaseContext == null) return;
+
+      // Determine which keys are in the tree
+      final keys = <GlobalKey>[];
+      if (ShowcaseKeys.studyGuideFellowshipShare.currentContext != null) {
+        keys.add(ShowcaseKeys.studyGuideFellowshipShare);
+      }
+      if (ShowcaseKeys.studyGuideFollowUpChat.currentContext != null) {
+        keys.add(ShowcaseKeys.studyGuideFollowUpChat);
+      }
+      if (ShowcaseKeys.studyGuideNotes.currentContext != null) {
+        keys.add(ShowcaseKeys.studyGuideNotes);
+      }
+      if (keys.isEmpty || !mounted) return;
+
+      // Scroll so the first target sits at ~30% from the top of the screen.
+      // We cannot use Scrollable.ensureVisible because it skips scrolling when
+      // the widget is already visible — which is the common case here (the user
+      // is already at the bottom).  Instead we compute the delta manually.
+      final firstCtx = keys.first.currentContext;
+      if (firstCtx != null && _scrollController.hasClients) {
+        final renderObj = firstCtx.findRenderObject();
+        if (renderObj is RenderBox) {
+          final widgetScreenY = renderObj.localToGlobal(Offset.zero).dy;
+          final screenHeight = MediaQuery.of(context).size.height;
+          // Target: widget top at 30% from top (leaves room for tooltip above)
+          final targetScreenY = screenHeight * 0.30;
+          final delta = widgetScreenY - targetScreenY;
+          final newOffset = (_scrollController.offset + delta)
+              .clamp(0.0, _scrollController.position.maxScrollExtent);
+          await _scrollController.animateTo(
+            newOffset,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+
+      // One more frame after scroll settles, then start the showcase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _showcaseContext == null) return;
+        _pendingMarkSeen = WalkthroughScreen.studyGuideCompletion;
+        ShowCaseWidget.of(_showcaseContext!).startShowCase(keys);
+      });
+    });
+  }
+
   /// Loads the fellowships the current user belongs to so the
-  /// [_ReflectionCommentSection] can offer an optional share toggle.
+  /// [_FellowshipShareSection] can be shown.
   Future<void> _loadUserFellowships() async {
     final result = await sl<CommunityRepository>().getFellowships('en');
     if (!mounted) return;
@@ -591,10 +691,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _screenshotSubscription?.cancel();
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
+    _completionSheetTimer?.cancel();
     _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
     }
+    _notesFocusNode.removeListener(_onNotesFocusChanged);
+    _notesFocusNode.dispose();
     _notesController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -1008,6 +1111,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           .read<StudyBloc>()
           .add(LoadPersonalNotesRequested(guideId: guideWithMode.id));
     }
+
+    // Trigger Phase 1 walkthrough (first time only) now that guide is visible
+    _triggerStudyGuideWalkthrough();
   }
 
   /// Handle study guide generation failure
@@ -1344,6 +1450,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     // Cancel the tracking timer since completion is marked
     _timeTrackingTimer?.cancel();
+
+    // If a completion sheet timer is pending, Phase 2 walkthrough will fire
+    // via the sheet's onDismissed callback — don't also trigger it here.
+    // If no timer is running (user not yet at absolute bottom), start Phase 2
+    // directly now so it isn't deferred indefinitely.
+    if (!_isTopicCompletedFromPath &&
+        !(_completionSheetTimer?.isActive ?? false)) {
+      _triggerStudyGuideCompletionWalkthrough();
+    }
+    // (Sheet path: _showLearningPathCompletionSheet triggers the walkthrough
+    //  via onDismissed so it fires only after the sheet closes.)
   }
 
   /// Complete topic progress tracking when study guide is finished.
@@ -1438,14 +1555,29 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// source.
   void _maybeShowLearningPathSheet() {
     if (_isTopicCompletedFromPath) return;
+    if (_phase2WalkthroughStarted) return; // walkthrough already running
     if (!_completionMarked) return;
     if (!_isScrolledToAbsoluteBottom()) return;
-    _showLearningPathCompletionSheet();
+    // Don't stack timers if one is already pending
+    if (_completionSheetTimer?.isActive ?? false) return;
+    // Wait a few seconds — if the user taps the notes field, the timer is
+    // cancelled via _onNotesFocusChanged so the sheet never appears.
+    _completionSheetTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted || _isTopicCompletedFromPath || _phase2WalkthroughStarted) {
+        return;
+      }
+      _showLearningPathCompletionSheet(
+        onDismissed: _triggerStudyGuideCompletionWalkthrough,
+      );
+    });
   }
 
   /// Shows a bottom sheet prompting the user after the guide is completed and
   /// the user has scrolled to the very bottom.
-  void _showLearningPathCompletionSheet() {
+  ///
+  /// [onDismissed] is called after the sheet closes so callers can chain
+  /// follow-up actions (e.g. Phase 2 walkthrough) without visual overlap.
+  void _showLearningPathCompletionSheet({VoidCallback? onDismissed}) {
     if (!mounted) return;
     // Guard: only show once
     if (_isTopicCompletedFromPath) return;
@@ -1578,7 +1710,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           ),
         );
       },
-    );
+    ).then((_) => onDismissed?.call());
   }
 
   @override
@@ -1757,109 +1889,99 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       centerTitle: true,
       actions: _currentStudyGuide != null
           ? [
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: accentColor,
-                ),
-                tooltip: 'More options',
-                onSelected: (value) {
-                  switch (value) {
-                    case 'font_size':
-                      _showFontSizeSheet();
-                      break;
-                    case 'share':
-                      _shareStudyGuide();
-                      break;
-                    case 'share_fellowship':
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => ShareGuideSheet(
-                          studyGuideId: _currentStudyGuide!.id,
-                          guideTitle: _getDisplayTitle(),
-                          guideInputType: _currentStudyGuide!.inputType,
-                          guideLanguage: _currentStudyGuide!.language,
-                          fellowships: _userFellowships!,
-                        ),
-                      );
-                      break;
-                    case 'pdf':
-                      _exportToPdf();
-                      break;
-                    case 'save':
-                      _saveStudyGuide();
-                      break;
-                    case 'complete':
-                      _markStudyGuideComplete(isManual: true);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'font_size',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.text_fields,
-                          size: 20,
-                          color: accentColor,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Text Size',
-                          style: AppFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${_contentFontSize.toInt()}px',
-                          style: AppFonts.inter(
-                            fontSize: 13,
-                            color: accentColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+              WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.studyGuideMenuButton,
+                title: 'More Options',
+                description:
+                    'Change text size, share, save, or download a PDF of your study guide.',
+                screen: WalkthroughScreen.studyGuide,
+                stepNumber: 1,
+                totalSteps: 2,
+                tooltipPosition: TooltipPosition.bottom,
+                arrowAlignment: Alignment.centerRight,
+                onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                child: PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: accentColor,
                   ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem(
-                    value: 'share',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.share_outlined,
-                          size: 20,
-                          color: accentColor,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Share',
-                          style: AppFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                  tooltip: 'More options',
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'font_size':
+                        _showFontSizeSheet();
+                        break;
+                      case 'share':
+                        _shareStudyGuide();
+                        break;
+                      case 'share_fellowship':
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => ShareGuideSheet(
+                            studyGuideId: _currentStudyGuide!.id,
+                            guideTitle: _getDisplayTitle(),
+                            guideInputType: _currentStudyGuide!.inputType,
+                            guideLanguage: _currentStudyGuide!.language,
+                            fellowships: _userFellowships!,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_userFellowships?.isNotEmpty == true)
+                        );
+                        break;
+                      case 'pdf':
+                        _exportToPdf();
+                        break;
+                      case 'save':
+                        _saveStudyGuide();
+                        break;
+                      case 'complete':
+                        _markStudyGuideComplete(isManual: true);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
                     PopupMenuItem(
-                      value: 'share_fellowship',
+                      value: 'font_size',
                       child: Row(
                         children: [
                           Icon(
-                            Icons.group_rounded,
+                            Icons.text_fields,
                             size: 20,
                             color: accentColor,
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Share to Fellowship',
+                            'Text Size',
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${_contentFontSize.toInt()}px',
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              color: accentColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 'share',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.share_outlined,
+                            size: 20,
+                            color: accentColor,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Share',
                             style: AppFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
@@ -1868,85 +1990,108 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         ],
                       ),
                     ),
-                  PopupMenuItem(
-                    value: 'pdf',
-                    enabled: !_isExportingPdf,
-                    child: Row(
-                      children: [
-                        _isExportingPdf
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                    if (_userFellowships?.isNotEmpty == true)
+                      PopupMenuItem(
+                        value: 'share_fellowship',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.group_rounded,
+                              size: 20,
+                              color: accentColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Share to Fellowship',
+                              style: AppFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'pdf',
+                      enabled: !_isExportingPdf,
+                      child: Row(
+                        children: [
+                          _isExportingPdf
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: accentColor,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.picture_as_pdf_outlined,
+                                  size: 20,
                                   color: accentColor,
                                 ),
-                              )
-                            : Icon(
-                                Icons.picture_as_pdf_outlined,
-                                size: 20,
-                                color: accentColor,
-                              ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Download PDF',
-                          style: AppFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(width: 12),
+                          Text(
+                            'Download PDF',
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'save',
-                    child: Row(
-                      children: [
-                        Icon(
-                          _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                          size: 20,
-                          color: _isSaved ? AppColors.success : accentColor,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _isSaved ? 'Saved' : 'Save Study',
-                          style: AppFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: _isSaved ? AppColors.success : null,
+                    PopupMenuItem(
+                      value: 'save',
+                      child: Row(
+                        children: [
+                          Icon(
+                            _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                            size: 20,
+                            color: _isSaved ? AppColors.success : accentColor,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'complete',
-                    enabled: !_completionMarked,
-                    child: Row(
-                      children: [
-                        Icon(
-                          _completionMarked
-                              ? Icons.check_circle
-                              : Icons.check_circle_outlined,
-                          size: 20,
-                          color: _completionMarked
-                              ? AppColors.success
-                              : accentColor,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _completionMarked ? 'Completed' : 'Complete Study',
-                          style: AppFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: _completionMarked ? AppColors.success : null,
+                          const SizedBox(width: 12),
+                          Text(
+                            _isSaved ? 'Saved' : 'Save Study',
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: _isSaved ? AppColors.success : null,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    PopupMenuItem(
+                      value: 'complete',
+                      enabled: !_completionMarked,
+                      child: Row(
+                        children: [
+                          Icon(
+                            _completionMarked
+                                ? Icons.check_circle
+                                : Icons.check_circle_outlined,
+                            size: 20,
+                            color: _completionMarked
+                                ? AppColors.success
+                                : accentColor,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _completionMarked ? 'Completed' : 'Complete Study',
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  _completionMarked ? AppColors.success : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ), // WalkthroughTooltip
             ]
           : null,
     );
@@ -2369,40 +2514,27 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
           SizedBox(height: isLargeScreen ? 16 : 12),
 
-          // Share to Fellowship banner — only shown when user has fellowships
-          if (_userFellowships?.isNotEmpty == true)
-            _ShareFellowshipBanner(
-              onShare: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => ShareGuideSheet(
-                    studyGuideId: _currentStudyGuide!.id,
-                    guideTitle: _getDisplayTitle(),
-                    guideInputType: _currentStudyGuide!.inputType,
-                    guideLanguage: _currentStudyGuide!.language,
-                    fellowships: _userFellowships!,
-                  ),
-                );
-              },
+          // Share with fellowship section — write a reflection, question, or insight
+          if (_userFellowships?.isNotEmpty == true) ...[
+            WalkthroughTooltip(
+              showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
+              title: 'Share with Fellowship',
+              description:
+                  'Write a reflection, prayer, or insight and share it with your fellowship group.',
+              screen: WalkthroughScreen.studyGuideCompletion,
+              stepNumber: 1,
+              totalSteps: 3,
+              onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+              child: _FellowshipShareSection(
+                studyGuideId: _currentStudyGuide!.id,
+                guideTitle: _getDisplayTitle(),
+                guideInputType: _currentStudyGuide!.inputType,
+                guideLanguage: _currentStudyGuide!.language,
+                userFellowships: _userFellowships!,
+              ),
             ),
-
-          if (_userFellowships?.isNotEmpty == true)
-            SizedBox(height: isLargeScreen ? 24 : 16),
-
-          // Reflection comment section — only shown when user has fellowships
-          if (_userFellowships != null && _userFellowships!.isNotEmpty)
-            _ReflectionCommentSection(
-              studyGuideId: _currentStudyGuide!.id,
-              guideTitle: _getDisplayTitle(),
-              guideInputType: _currentStudyGuide!.inputType,
-              guideLanguage: _currentStudyGuide!.language,
-              userFellowships: _userFellowships!,
-            ),
-
-          if (_userFellowships != null && _userFellowships!.isNotEmpty)
             SizedBox(height: isLargeScreen ? 32 : 24),
+          ],
 
           // Follow-up Chat Section - with lock support for study_chat feature
           LockedFeatureWrapper(
@@ -2410,36 +2542,56 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  key: _followUpChatKey,
-                  child: BlocProvider(
-                    create: (context) {
-                      final bloc = sl<FollowUpChatBloc>();
-                      bloc.add(StartConversationEvent(
+                WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
+                  title: 'Follow-Up Chat',
+                  description:
+                      'Ask questions about what you just studied and get personalized Bible guidance.',
+                  screen: WalkthroughScreen.studyGuideCompletion,
+                  stepNumber: 2,
+                  totalSteps: 3,
+                  onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                  child: Container(
+                    key: _followUpChatKey,
+                    child: BlocProvider(
+                      create: (context) {
+                        final bloc = sl<FollowUpChatBloc>();
+                        bloc.add(StartConversationEvent(
+                          studyGuideId: _currentStudyGuide!.id,
+                          studyGuideTitle: _getDisplayTitle(),
+                        ));
+                        return bloc;
+                      },
+                      child: FollowUpChatWidget(
                         studyGuideId: _currentStudyGuide!.id,
                         studyGuideTitle: _getDisplayTitle(),
-                      ));
-                      return bloc;
-                    },
-                    child: FollowUpChatWidget(
-                      studyGuideId: _currentStudyGuide!.id,
-                      studyGuideTitle: _getDisplayTitle(),
-                      isExpanded: _isChatExpanded,
-                      onToggleExpanded: () {
-                        setState(() {
-                          _isChatExpanded = !_isChatExpanded;
-                        });
-                      },
+                        isExpanded: _isChatExpanded,
+                        onToggleExpanded: () {
+                          setState(() {
+                            _isChatExpanded = !_isChatExpanded;
+                          });
+                        },
+                      ),
                     ),
                   ),
-                ),
+                ), // WalkthroughTooltip
                 SizedBox(height: isLargeScreen ? 32 : 24),
               ],
             ),
           ),
 
           // Notes Section
-          _buildNotesSection(),
+          WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.studyGuideNotes,
+            title: 'Personal Notes',
+            description:
+                'Write your thoughts, prayers, and insights. Notes are saved automatically.',
+            screen: WalkthroughScreen.studyGuideCompletion,
+            stepNumber: 3,
+            totalSteps: 3,
+            onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+            child: _buildNotesSection(),
+          ),
 
           SizedBox(height: isLargeScreen ? 32 : 24),
         ],
@@ -3330,6 +3482,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           ),
           child: TextField(
             controller: _notesController,
+            focusNode: _notesFocusNode,
             maxLines: 6,
             style: AppFonts.inter(
               fontSize: 16,
@@ -3374,209 +3527,173 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         children: [
           // Listen Button (Left) - with lock support for voice_buddy feature
           Expanded(
-            child: LockedFeatureWrapper(
-              featureKey: 'voice_buddy',
-              child: SizedBox(
-                height: 56,
-                child: ValueListenableBuilder<StudyGuideTtsState>(
-                  valueListenable: ttsService.state,
-                  builder: (context, ttsState, child) {
-                    final isPlaying = ttsState.status == TtsStatus.playing;
-                    final isPaused = ttsState.status == TtsStatus.paused;
-                    final isLoading = ttsState.status == TtsStatus.loading;
-                    final showControls = isPlaying || isPaused;
+            child: WalkthroughTooltip(
+              showcaseKey: ShowcaseKeys.studyGuideListen,
+              title: 'Listen to Your Study',
+              description:
+                  'Tap to hear your study guide read aloud. Great for hands-free devotional time.',
+              screen: WalkthroughScreen.studyGuide,
+              stepNumber: 2,
+              totalSteps: 2,
+              onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+              child: LockedFeatureWrapper(
+                featureKey: 'voice_buddy',
+                child: SizedBox(
+                  height: 56,
+                  child: ValueListenableBuilder<StudyGuideTtsState>(
+                    valueListenable: ttsService.state,
+                    builder: (context, ttsState, child) {
+                      final isPlaying = ttsState.status == TtsStatus.playing;
+                      final isPaused = ttsState.status == TtsStatus.paused;
+                      final isLoading = ttsState.status == TtsStatus.loading;
+                      final showControls = isPlaying || isPaused;
 
-                    if (showControls) {
-                      // Show split button with pause/resume + settings
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: accentColor, width: 2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            // Main play/pause button
-                            Expanded(
-                              child: InkWell(
-                                onTap: () => ttsService.togglePlayPause(),
-                                borderRadius: const BorderRadius.horizontal(
-                                  left: Radius.circular(10),
-                                ),
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        isPlaying
-                                            ? Icons.pause_rounded
-                                            : Icons.play_arrow_rounded,
-                                        color: accentColor,
-                                        size: 22,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Flexible(
-                                        child: Text(
-                                          isPlaying ? 'Pause' : 'Resume',
-                                          style: AppFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: accentColor,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
+                      if (showControls) {
+                        // Show split button with pause/resume + settings
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: accentColor, width: 2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              // Main play/pause button
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => ttsService.togglePlayPause(),
+                                  borderRadius: const BorderRadius.horizontal(
+                                    left: Radius.circular(10),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          isPlaying
+                                              ? Icons.pause_rounded
+                                              : Icons.play_arrow_rounded,
+                                          color: accentColor,
+                                          size: 22,
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            isPlaying ? 'Pause' : 'Resume',
+                                            style: AppFonts.inter(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: accentColor,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            // Divider
-                            Container(
-                              width: 1,
-                              height: 32,
-                              color: accentColor.withOpacity(0.3),
-                            ),
-                            // Settings button
-                            InkWell(
-                              onTap: () => showTtsControlSheet(context),
-                              borderRadius: const BorderRadius.horizontal(
-                                right: Radius.circular(10),
+                              // Divider
+                              Container(
+                                width: 1,
+                                height: 32,
+                                color: accentColor.withOpacity(0.3),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 16),
-                                child: Icon(
-                                  Icons.tune,
-                                  color: accentColor,
+                              // Settings button
+                              InkWell(
+                                onTap: () => showTtsControlSheet(context),
+                                borderRadius: const BorderRadius.horizontal(
+                                  right: Radius.circular(10),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 16),
+                                  child: Icon(
+                                    Icons.tune,
+                                    color: accentColor,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        // Show regular Listen button
+                        return OutlinedButton.icon(
+                          onPressed: () {
+                            if (_currentStudyGuide != null) {
+                              // Load and start reading the study guide if not already playing
+                              final status = ttsService.state.value.status;
+                              if (status == TtsStatus.idle ||
+                                  status == TtsStatus.error) {
+                                ttsService.startReading(_currentStudyGuide!,
+                                    mode: widget.studyMode);
+                              }
+                              // Open the control sheet
+                              showTtsControlSheet(context);
+                            }
+                          },
+                          icon: isLoading
+                              ? SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: accentColor,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.headphones_rounded,
                                   size: 22,
                                 ),
-                              ),
+                          label: Text(
+                            isLoading
+                                ? context.tr(TranslationKeys.studyGuideLoading)
+                                : context.tr(TranslationKeys.studyGuideListen),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      // Show regular Listen button
-                      return OutlinedButton.icon(
-                        onPressed: () {
-                          if (_currentStudyGuide != null) {
-                            // Load and start reading the study guide if not already playing
-                            final status = ttsService.state.value.status;
-                            if (status == TtsStatus.idle ||
-                                status == TtsStatus.error) {
-                              ttsService.startReading(_currentStudyGuide!,
-                                  mode: widget.studyMode);
-                            }
-                            // Open the control sheet
-                            showTtsControlSheet(context);
-                          }
-                        },
-                        icon: isLoading
-                            ? SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: accentColor,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.headphones_rounded,
-                                size: 22,
-                              ),
-                        label: Text(
-                          isLoading
-                              ? context.tr(TranslationKeys.studyGuideLoading)
-                              : context.tr(TranslationKeys.studyGuideListen),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: accentColor,
-                          side: BorderSide(
-                            color: accentColor,
-                            width: 2,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: accentColor,
+                            side: BorderSide(
+                              color: accentColor,
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                    }
-                  },
+                        );
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
+            ), // WalkthroughTooltip
           ),
           // Ask AI Button (Right) - only show if ai_discipler is enabled and study_chat is not hidden
           if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
             // Add spacing (Listen button is always shown with lock support)
             const SizedBox(width: 16),
             Expanded(
-              child: SizedBox(
-                height: 56,
-                child: Showcase.withWidget(
-                  key: ShowcaseKeys.disciplerHintStudyGuide,
-                  height: 160,
-                  width: 280,
-                  container: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                            color: Color(0x1A000000),
-                            blurRadius: 16,
-                            offset: Offset(0, 4))
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Go Deeper',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                color: Color(0xFF1E1E1E))),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Want to explore this topic further? Chat with the AI Discipler for personalized Bible guidance',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF555555),
-                              height: 1.4),
-                        ),
-                        const SizedBox(height: 12),
-                        // No "Watch video" button for disciplerHint — single-step nudge only
-                        Builder(
-                          builder: (innerCtx) => GestureDetector(
-                            onTap: () => ShowCaseWidget.of(innerCtx).next(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFF4F46E5),
-                                  borderRadius: BorderRadius.circular(8)),
-                              child: const Text('Got it →',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  overlayOpacity: 0,
-                  targetBorderRadius: BorderRadius.circular(8),
-                  targetPadding: const EdgeInsets.all(4),
+              child: WalkthroughTooltip(
+                showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
+                title: 'Go Deeper',
+                description:
+                    'Want to explore this topic further? Chat with the AI Discipler for personalized Bible guidance.',
+                screen: WalkthroughScreen.disciplerHint,
+                stepNumber: 1,
+                totalSteps: 1,
+                arrowAlignment: Alignment.centerRight,
+                highlightBorderRadius: 12,
+                onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                child: SizedBox(
+                  height: 56,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: AppTheme.primaryGradient,
@@ -4598,19 +4715,16 @@ class _LectioStudySection extends StatelessWidget {
 // Reflection Comment Section
 // =============================================================================
 
-/// A card that lets users write a short reflection on the current study guide.
-///
-/// When the user belongs to at least one fellowship, a toggle is shown that
-/// opens [ShareGuideSheet] so they can also post the reflection to a fellowship
-/// feed as a `study_note` post.
-class _ReflectionCommentSection extends StatefulWidget {
+/// A combined card that lets users share a reflection, question, or insight
+/// directly to their fellowship feed.
+class _FellowshipShareSection extends StatefulWidget {
   final String studyGuideId;
   final String guideTitle;
   final String guideInputType;
   final String guideLanguage;
   final List<FellowshipEntity> userFellowships;
 
-  const _ReflectionCommentSection({
+  const _FellowshipShareSection({
     required this.studyGuideId,
     required this.guideTitle,
     required this.guideInputType,
@@ -4619,114 +4733,140 @@ class _ReflectionCommentSection extends StatefulWidget {
   });
 
   @override
-  State<_ReflectionCommentSection> createState() =>
-      _ReflectionCommentSectionState();
+  State<_FellowshipShareSection> createState() =>
+      _FellowshipShareSectionState();
 }
 
-class _ReflectionCommentSectionState extends State<_ReflectionCommentSection> {
-  final TextEditingController _reflectionController = TextEditingController();
-  bool _postToFellowship = false;
+class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
+  final TextEditingController _controller = TextEditingController();
   bool _isPosting = false;
 
   @override
   void dispose() {
-    _reflectionController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _handlePost() async {
-    final text = _reflectionController.text.trim();
+  Future<void> _handleShare() async {
+    final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    if (_postToFellowship) {
-      // Open the ShareGuideSheet to let the user pick fellowship(s)
-      final result = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (_) => ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: ShareGuideSheet(
-              studyGuideId: widget.studyGuideId,
-              guideTitle: widget.guideTitle,
-              guideInputType: widget.guideInputType,
-              guideLanguage: widget.guideLanguage,
-              fellowships: widget.userFellowships,
-            ),
-          ),
-        ),
-      );
-
-      if (!mounted) return;
-      if (result == true) {
-        _reflectionController.clear();
-        setState(() => _postToFellowship = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Shared to fellowship feed!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-      return;
-    }
-
-    // Toggle OFF — show a simple success snackbar (no remote call).
     setState(() => _isPosting = true);
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    setState(() => _isPosting = false);
-    _reflectionController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reflection saved!'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          color: Theme.of(context).colorScheme.surface,
+          child: ShareGuideSheet(
+            studyGuideId: widget.studyGuideId,
+            guideTitle: widget.guideTitle,
+            guideInputType: widget.guideInputType,
+            guideLanguage: widget.guideLanguage,
+            fellowships: widget.userFellowships,
+            content: text,
+          ),
+        ),
       ),
     );
+
+    if (!mounted) return;
+    setState(() => _isPosting = false);
+    if (result == true) {
+      _controller.clear();
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Shared to fellowship feed!'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasText = _reflectionController.text.trim().isNotEmpty;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final hasText = _controller.text.trim().isNotEmpty;
+
+    final backgroundColor = isDark
+        ? AppColors.brandSecondary.withValues(alpha: 0.15)
+        : AppColors.brandSecondary.withValues(alpha: 0.10);
+    final borderColor = isDark
+        ? AppColors.brandSecondary.withValues(alpha: 0.30)
+        : AppColors.brandSecondary.withValues(alpha: 0.25);
 
     return Container(
       decoration: BoxDecoration(
-        color: context.appSurface,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appBorder),
+        border: Border.all(color: borderColor),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section heading
-          Text(
-            'Share a Reflection',
-            style: AppFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: context.appTextPrimary,
-            ),
+          // Header row
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.brandPrimary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.group_rounded,
+                  size: 18,
+                  color: AppColors.brandPrimary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Share with Your Fellowship',
+                      style: AppFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: context.appTextPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Ask a question or share your insight',
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Multi-line text input
           TextField(
-            controller: _reflectionController,
+            controller: _controller,
             maxLines: 4,
             maxLength: 500,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'What stood out to you in this study?',
+              hintText:
+                  'What stood out to you? Share a thought or ask a question...',
               hintStyle: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13,
@@ -4757,29 +4897,9 @@ class _ReflectionCommentSectionState extends State<_ReflectionCommentSection> {
             ),
           ),
 
-          // "Also post to fellowship feed" toggle
-          if (widget.userFellowships.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: Text(
-                'Also post to fellowship feed',
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: context.appTextPrimary,
-                ),
-              ),
-              value: _postToFellowship,
-              activeColor: AppColors.brandPrimary,
-              onChanged: (v) => setState(() => _postToFellowship = v),
-            ),
-          ],
-
           const SizedBox(height: 12),
 
-          // Post button
+          // Share button
           SizedBox(
             width: double.infinity,
             child: DecoratedBox(
@@ -4789,7 +4909,7 @@ class _ReflectionCommentSectionState extends State<_ReflectionCommentSection> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ElevatedButton(
-                onPressed: (hasText && !_isPosting) ? _handlePost : null,
+                onPressed: (hasText && !_isPosting) ? _handleShare : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -4809,9 +4929,7 @@ class _ReflectionCommentSectionState extends State<_ReflectionCommentSection> {
                         ),
                       )
                     : Text(
-                        _postToFellowship
-                            ? 'Post Reflection to Fellowship'
-                            : 'Post Reflection',
+                        'Share with Fellowship',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
@@ -4821,112 +4939,6 @@ class _ReflectionCommentSectionState extends State<_ReflectionCommentSection> {
                         ),
                       ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A compact banner encouraging the user to share the current study guide with
-/// one of their fellowships.  Only rendered when the user has at least one
-/// fellowship (controlled by the caller).
-class _ShareFellowshipBanner extends StatelessWidget {
-  /// Called when the user taps the "Share" button.
-  final VoidCallback onShare;
-
-  const _ShareFellowshipBanner({required this.onShare});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final backgroundColor = isDark
-        ? AppColors.brandSecondary.withValues(alpha: 0.15)
-        : AppColors.brandSecondary.withValues(alpha: 0.10);
-
-    final borderColor = isDark
-        ? AppColors.brandSecondary.withValues(alpha: 0.30)
-        : AppColors.brandSecondary.withValues(alpha: 0.25);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.brandPrimary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.group_rounded,
-              size: 20,
-              color: AppColors.brandPrimary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Share with your fellowship',
-                  style: AppFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Let your group study this guide together.',
-                  style: AppFonts.inter(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          TextButton(
-            onPressed: onShare,
-            style: TextButton.styleFrom(
-              foregroundColor:
-                  theme.colorScheme.onSurface.withValues(alpha: 0.50),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: const Size(0, 36),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Share',
-                  style: AppFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 14,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
-                ),
-              ],
             ),
           ),
         ],

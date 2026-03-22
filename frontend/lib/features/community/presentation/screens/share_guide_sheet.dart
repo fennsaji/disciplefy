@@ -26,12 +26,17 @@ class ShareGuideSheet extends StatefulWidget {
   /// The caller's fellowship memberships — the user picks from these.
   final List<FellowshipEntity> fellowships;
 
+  /// Pre-filled content to post. When provided, the message input field is
+  /// hidden and this value is used directly as the post content.
+  final String? content;
+
   const ShareGuideSheet({
     required this.studyGuideId,
     required this.guideTitle,
     required this.guideInputType,
     required this.guideLanguage,
     required this.fellowships,
+    this.content,
     super.key,
   });
 
@@ -89,7 +94,7 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
     setState(() => _submitting = true);
 
     final repo = sl<CommunityRepository>();
-    final message = _messageController.text.trim();
+    final message = widget.content ?? _messageController.text.trim();
     final selectedFellowships =
         widget.fellowships.where((f) => _selectedIds.contains(f.id)).toList();
 
@@ -189,8 +194,10 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
                   }
                 }),
               ),
-            const SizedBox(height: 16),
-            _MessageField(controller: _messageController),
+            if (widget.content == null) ...[
+              const SizedBox(height: 16),
+              _MessageField(controller: _messageController),
+            ],
             const SizedBox(height: 24),
             _ShareButton(
               selectedCount: _selectedIds.length,
