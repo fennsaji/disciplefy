@@ -52,7 +52,10 @@ class ForYouLearningPathsSection extends StatefulWidget {
 }
 
 class _ForYouLearningPathsSectionState
-    extends State<ForYouLearningPathsSection> {
+    extends State<ForYouLearningPathsSection>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   /// The learning path from the user's best active fellowship study.
   /// Null if the user has no fellowship with an active study.
   LearningPath? _fellowshipPath;
@@ -205,6 +208,7 @@ class _ForYouLearningPathsSectionState
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return BlocBuilder<LearningPathsBloc, LearningPathsState>(
       builder: (context, state) {
         if (state is LearningPathsLoading ||
