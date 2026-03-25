@@ -3,11 +3,21 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { mdxComponents } from "@/components/blog/MDXComponents";
 import { ReadingProgress } from "@/components/blog/ReadingProgress";
+import { BlogPostCTA } from "@/components/blog/BlogPostCTA";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { formatDate } from "@/lib/format";
 import { getBlogPostingJsonLd, getBreadcrumbJsonLd } from "@/lib/seo";
 import type { Post } from "@/lib/blog";
 import { Link } from "@/lib/navigation";
+
+// Minimal server-side UI strings — avoids async getTranslations in a server component
+// while keeping the component usable from both the locale and fallback routes.
+const UI_STRINGS = {
+  en: { home: "Home",    blog: "Blog",    minRead: (n: number) => `${n} min read` },
+  hi: { home: "होम",     blog: "ब्लॉग",   minRead: (n: number) => `${n} मिनट पढ़ें` },
+  ml: { home: "ഹോം",    blog: "ബ്ലോഗ്",  minRead: (n: number) => `${n} മിനിറ്റ് വായന` },
+} as const;
+type UILocale = keyof typeof UI_STRINGS;
 
 const TAG_GRADIENT: Record<string, string> = {
   foundations:   "from-indigo-500 to-violet-500",
@@ -36,6 +46,7 @@ export function BlogPostContent({
   locale?: string;
 }) {
   const gradient = getGradient(post.tags);
+  const ui = UI_STRINGS[(locale as UILocale) in UI_STRINGS ? (locale as UILocale) : "en"];
   return (
     <>
       <Navbar />
@@ -62,9 +73,9 @@ export function BlogPostContent({
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-[var(--muted)] mb-6" aria-label="Breadcrumb">
-            <Link href="/" className="hover:text-primary dark:hover:text-indigo-300 transition-colors">Home</Link>
+            <Link href="/" className="hover:text-primary dark:hover:text-indigo-300 transition-colors">{ui.home}</Link>
             <span className="opacity-40">/</span>
-            <Link href="/blog" className="hover:text-primary dark:hover:text-indigo-300 transition-colors">Blog</Link>
+            <Link href="/blog" className="hover:text-primary dark:hover:text-indigo-300 transition-colors">{ui.blog}</Link>
             <span className="opacity-40">/</span>
             <span className="text-[var(--text)] font-medium truncate max-w-[220px]">{post.title}</span>
           </nav>
@@ -98,7 +109,7 @@ export function BlogPostContent({
               <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {post.read_time} min read
+              {ui.minRead(post.read_time)}
             </span>
           </div>
         </div>
@@ -114,23 +125,7 @@ export function BlogPostContent({
         </article>
 
         {/* ── App CTA ──────────────────────────────────── */}
-        <div className="mt-16 rounded-2xl overflow-hidden border border-primary/20 dark:border-indigo-500/20">
-          <div className={`h-1 bg-gradient-to-r ${gradient}`} />
-          <div className="p-6 sm:p-8 bg-primary/5 dark:bg-indigo-500/5 text-center">
-            <p className="font-display font-bold text-xl mb-2 text-gray-900 dark:text-white">
-              Study this in the Disciplefy app
-            </p>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mb-5 max-w-md mx-auto">
-              Interactive study guides, follow-up chats, practice modes &amp; audio — in English, Hindi &amp; Malayalam.
-            </p>
-            <a
-              href="https://play.google.com/store/apps/details?id=com.disciplefy.bible_study"
-              className={`inline-block bg-gradient-to-r ${gradient} text-white text-sm font-semibold px-7 py-3 rounded-xl shadow-md hover:shadow-lg hover:opacity-90 transition-all`}
-            >
-              Download Free on Android →
-            </a>
-          </div>
-        </div>
+        <BlogPostCTA gradient={gradient} />
       </main>
 
       <Footer />
