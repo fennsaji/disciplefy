@@ -86,6 +86,7 @@ class FellowshipPostCard extends StatelessWidget {
                 _PostAvatar(
                   displayName: post.authorDisplayName,
                   accentColor: accentColor,
+                  avatarUrl: post.authorAvatarUrl,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -286,8 +287,13 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
 class _PostAvatar extends StatelessWidget {
   final String displayName;
   final Color accentColor;
+  final String? avatarUrl;
 
-  const _PostAvatar({required this.displayName, required this.accentColor});
+  const _PostAvatar({
+    required this.displayName,
+    required this.accentColor,
+    this.avatarUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -295,15 +301,20 @@ class _PostAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: 20,
       backgroundColor: accentColor.withAlpha(36),
-      child: Text(
-        initial,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: accentColor,
-        ),
-      ),
+      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+          ? NetworkImage(avatarUrl!)
+          : null,
+      child: avatarUrl == null || avatarUrl!.isEmpty
+          ? Text(
+              initial,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: accentColor,
+              ),
+            )
+          : null,
     );
   }
 }

@@ -332,6 +332,31 @@ class _FellowshipHomeContent extends StatelessWidget {
       ],
       child: Scaffold(
         backgroundColor: context.appScaffold,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            final feedBloc = context.read<FellowshipFeedBloc>();
+            showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => BlocProvider.value(
+                value: feedBloc,
+                child: FellowshipCreatePostSheet(fellowshipId: fellowshipId),
+              ),
+            );
+          },
+          backgroundColor: context.appInteractive,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add),
+          label: Text(
+            l10n.feedNewPost,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+        ),
         appBar: AppBar(
           backgroundColor: context.appScaffold,
           elevation: 0,
@@ -426,7 +451,7 @@ class _FellowshipHomeContent extends StatelessWidget {
                 onViewAll: () => _openFullFeed(context),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),
