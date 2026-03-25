@@ -620,28 +620,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                               child: const EmailVerificationBanner(),
                             ),
 
-                            // Standard Subscription Banner (shown when trial ending/ended)
-                            BlocBuilder<SubscriptionBloc, SubscriptionState>(
-                              bloc: sl<SubscriptionBloc>(),
-                              builder: (context, state) {
-                                if (state is UserSubscriptionStatusLoaded &&
-                                    state.subscriptionStatus
-                                        .shouldShowSubscriptionBanner) {
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                        top: isLargeScreen ? 16 : 12),
-                                    child: StandardSubscriptionBannerCompact(
-                                      status: state.subscriptionStatus,
-                                      onSubscribe: () =>
-                                          _showStandardSubscriptionSheet(
-                                              context),
-                                    ),
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-
                             SizedBox(height: isLargeScreen ? 16 : 12),
 
                             // Daily Verse Card with click functionality and lock support
