@@ -205,7 +205,10 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.community,
                 name: 'community',
-                builder: (context, state) => const CommunityTabScreen(),
+                builder: (context, state) => BlocProvider.value(
+                  value: sl<SubscriptionBloc>(),
+                  child: const CommunityTabScreen(),
+                ),
                 routes: [
                   // IMPORTANT: /community/join and /community/create MUST be listed before
                   // /community/:fellowshipId to prevent GoRouter treating literal segments as IDs.

@@ -505,6 +505,21 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
 
   const db = services.supabaseServiceClient
 
+  // Permission check: admin, existing mentor, or plus/premium subscriber
+  const [planResult, mentorResult] = await Promise.all([
+    db.rpc('get_user_plan_with_subscription', { p_user_id: user.id }),
+    db.from('fellowship_members').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('role', 'mentor'),
+  ])
+
+  const userPlan: string = planResult.data ?? 'free'
+  const isMentor = (mentorResult.count ?? 0) > 0
+  // Admins resolve to 'premium' via get_user_plan_with_subscription, so no separate admin check needed
+  const isPaidEligible = userPlan === 'plus' || userPlan === 'premium'
+
+  if (!isMentor && !isPaidEligible) {
+    throw new AppError('PERMISSION_DENIED', 'A Plus or Premium subscription is required to create a fellowship', 403)
+  }
+
   const { count: nameCount, error: nameCheckError } = await db
     .from('fellowships')
     .select('*', { count: 'exact', head: true })
@@ -517,17 +532,8 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   }
   if ((nameCount || 0) > 0) throw new AppError('CONFLICT', 'A fellowship with this name already exists', 409)
 
-  if (body.is_public === true) {
-    const { data: profile, error: profileError } = await services.supabaseServiceClient
-      .from('user_profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (profileError) {
-      console.error('[fellowship/create] Profile lookup error:', profileError)
-      throw new AppError('DATABASE_ERROR', 'Failed to verify admin status', 500)
-    }
-    if (!profile?.is_admin) throw new AppError('PERMISSION_DENIED', 'Only admins can create public fellowships', 403)
+  if (body.is_public === true && !isAdmin) {
+    throw new AppError('PERMISSION_DENIED', 'Only admins can create public fellowships', 403)
   }
 
   const { data: fellowship, error: createError } = await db

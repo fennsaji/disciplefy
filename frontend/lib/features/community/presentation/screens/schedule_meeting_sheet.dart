@@ -194,6 +194,34 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
           AppConfig.googleClientId,
           userEmail: userEmail,
         );
+        if (!context.mounted) return;
+        if (googleAccessToken == null) {
+          // Auth failed — inform user and let them decide whether to continue.
+          final continueAnyway = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text('Could not connect Google Calendar'),
+              content: const Text(
+                'We couldn\'t get access to your Google Calendar. The meeting will be created without a Google Meet link.\n\nYou can share a custom link with members after creating the meeting.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Create anyway'),
+                ),
+              ],
+            ),
+          );
+          if (!context.mounted) return;
+          if (continueAnyway != true) return;
+        }
       }
     }
 
