@@ -444,13 +444,27 @@ pub async fn find_next_ungenerated_topic(
          LEFT JOIN learning_path_translations ml_lp
                ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
          WHERE lp.is_active = true AND rt.is_active = true
-           AND NOT EXISTS (
-               SELECT 1 FROM blog_posts bp WHERE bp.source_topic_id = lpt.id
-           )
+           AND (
+               SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
+               WHERE bp.source_topic_id = lpt.id
+               AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])
+           ) < 3
          ORDER BY lp.display_order, lpt.position
          LIMIT 1",
     )
     .fetch_optional(pool)
     .await?;
     Ok(topic)
+}
+
+/// Returns the list of locales that already have blog posts for the given topic.
+pub async fn get_generated_locales(pool: &PgPool, topic_id: Uuid) -> Result<Vec<String>, AppError> {
+    let locales: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT locale FROM blog_posts
+         WHERE source_topic_id = $1 AND locale = ANY(ARRAY['en', 'hi', 'ml'])",
+    )
+    .bind(topic_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(locales)
 }

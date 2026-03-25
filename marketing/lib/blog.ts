@@ -49,7 +49,7 @@ export async function getAllPosts(
 
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/posts?${params}`, {
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
 
     if (!res.ok) return { posts: [], pagination: EMPTY_PAGINATION };
@@ -107,7 +107,7 @@ export async function searchPosts(query: string, locale: Locale): Promise<PostMe
 export async function getTags(locale: Locale): Promise<string[]> {
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/posts/tags?locale=${locale}`, {
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
     if (!res.ok) return [];
     const json = await res.json();
