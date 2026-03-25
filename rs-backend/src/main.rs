@@ -7,21 +7,27 @@ mod models;
 mod routes;
 mod services;
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use axum::extract::DefaultBodyLimit;
 use config::Config;
 use reqwest::Client;
 use sqlx::PgPool;
+use tokio_cron_scheduler::JobScheduler;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing_subscriber::EnvFilter;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
     pub config: Config,
     pub http: Client,
+    pub scheduler: JobScheduler,
+    pub cron_job_ids: Arc<Mutex<HashMap<String, Uuid>>>,
 }
 
 #[tokio::main]
@@ -45,13 +51,16 @@ async fn main() {
         .expect("Database ping failed");
     tracing::info!("rs-backend: Database connected");
 
+    // Start scheduler — needs pool to read DB configs
+    let (scheduler, cron_job_ids) = cron::start_scheduler(&pool, &config, &http).await;
+
     let state = AppState {
         pool: pool.clone(),
         config: config.clone(),
         http: http.clone(),
+        scheduler,
+        cron_job_ids: Arc::new(Mutex::new(cron_job_ids)),
     };
-
-    cron::start_scheduler(pool.clone(), config.clone(), http.clone()).await;
 
     let origins: Vec<_> = config
         .allowed_origins

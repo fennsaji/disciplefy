@@ -1,12 +1,16 @@
+use std::sync::atomic::Ordering;
+
 use axum::extract::{Path, State};
 use axum::http::HeaderMap;
 use axum::Json;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::auth;
+use crate::cron::CRON_RUNNING;
 use crate::error::AppError;
-use crate::models::post;
+use crate::models::{cron_config, post};
 use crate::AppState;
 
 async fn verify_admin(headers: &HeaderMap, state: &AppState) -> Result<auth::AdminUser, AppError> {
@@ -89,4 +93,154 @@ pub async fn trigger_cron(
     Ok(Json(
         json!({ "success": true, "message": "Blog generation triggered" }),
     ))
+}
+
+pub async fn cron_status(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    let crons = cron_config::list(&state.pool).await?;
+    let is_running = CRON_RUNNING.load(Ordering::SeqCst);
+    Ok(Json(json!({
+        "is_running": is_running,
+        "crons": crons.iter().map(|c| json!({
+            "name": c.name,
+            "enabled": c.enabled,
+            "schedule": c.schedule,
+            "label": c.label,
+            "updated_at": c.updated_at,
+        })).collect::<Vec<_>>()
+    })))
+}
+
+pub async fn cron_enable(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(name): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    let cfg = cron_config::set_enabled(&state.pool, &name, true).await?;
+    Ok(Json(json!({ "success": true, "data": {
+        "name": cfg.name, "enabled": cfg.enabled,
+        "schedule": cfg.schedule, "label": cfg.label, "updated_at": cfg.updated_at
+    }})))
+}
+
+pub async fn cron_disable(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(name): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    let cfg = cron_config::set_enabled(&state.pool, &name, false).await?;
+    Ok(Json(json!({ "success": true, "data": {
+        "name": cfg.name, "enabled": cfg.enabled,
+        "schedule": cfg.schedule, "label": cfg.label, "updated_at": cfg.updated_at
+    }})))
+}
+
+#[derive(Deserialize)]
+pub struct UpdateScheduleBody {
+    pub schedule: String,
+    pub label: String,
+}
+
+pub async fn cron_update_schedule(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(name): Path<String>,
+    Json(body): Json<UpdateScheduleBody>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+
+    // 1. Validate cron expression
+    croner::Cron::new(&body.schedule)
+        .with_seconds_required()
+        .with_dom_and_dow()
+        .parse()
+        .map_err(|e| AppError::BadRequest(format!("Invalid cron expression: {}", e)))?;
+
+    // 2. Update DB
+    let cfg = cron_config::set_schedule(&state.pool, &name, &body.schedule, &body.label).await?;
+
+    // 3. Hot-reload: remove old job, add new one
+    let old_uuid = {
+        let ids = state.cron_job_ids.lock().unwrap();
+        ids.get(&name).copied()
+    };
+
+    match old_uuid {
+        None => {
+            tracing::error!(
+                name = name.as_str(),
+                "Job UUID not tracked — schedule saved to DB but will apply on next restart"
+            );
+            return Err(AppError::Internal(
+                "Job UUID not tracked — schedule saved to DB but will apply on next restart"
+                    .into(),
+            ));
+        }
+        Some(uuid) => {
+            if let Err(e) = state.scheduler.remove(&uuid).await {
+                tracing::warn!(name = name.as_str(), "Failed to remove old job: {} — proceeding with add", e);
+            }
+
+            let pool = state.pool.clone();
+            let config = state.config.clone();
+            let http = state.http.clone();
+            let new_schedule = body.schedule.clone();
+            let job_name = name.clone();
+
+            let new_job = tokio_cron_scheduler::Job::new_async(
+                new_schedule.as_str(),
+                move |_uuid, _lock| {
+                    let p = pool.clone();
+                    let c = std::sync::Arc::new(config.clone());
+                    let h = http.clone();
+                    let n = job_name.clone();
+                    Box::pin(async move {
+                        // Per-run enabled check
+                        match cron_config::get(&p, &n).await {
+                            Ok(cfg) if !cfg.enabled => {
+                                tracing::info!("{} cron disabled — skipping", n);
+                                return;
+                            }
+                            Err(e) => tracing::warn!(
+                                "Could not read cron_config: {} — proceeding anyway",
+                                e
+                            ),
+                            _ => {}
+                        }
+                        let _guard = match crate::cron::CronGuard::try_acquire() {
+                            Some(g) => g,
+                            None => {
+                                tracing::warn!("CRON skipped: previous run still in progress");
+                                return;
+                            }
+                        };
+                        if let Err(e) =
+                            crate::cron::blog_generator::run_blog_generation(&p, &c, &h).await
+                        {
+                            tracing::error!("CRON failed: {}", e);
+                        }
+                    })
+                },
+            )
+            .map_err(|e| AppError::Internal(format!("Failed to create new job: {}", e)))?;
+
+            let new_uuid = state
+                .scheduler
+                .add(new_job)
+                .await
+                .map_err(|e| AppError::Internal(format!("Failed to add new job: {}", e)))?;
+
+            state.cron_job_ids.lock().unwrap().insert(name.clone(), new_uuid);
+        }
+    }
+
+    Ok(Json(json!({ "success": true, "data": {
+        "name": cfg.name, "enabled": cfg.enabled,
+        "schedule": cfg.schedule, "label": cfg.label, "updated_at": cfg.updated_at
+    }})))
 }
