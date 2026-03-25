@@ -39,6 +39,11 @@ class TTSService {
   /// Callback when all queued sentences are done
   void Function()? _onStreamingComplete;
 
+  /// State for chunked device TTS playback (long text workaround for Android ~4000 char limit)
+  List<String> _pendingChunks = [];
+  int _chunkPlaybackIndex = 0;
+  void Function()? _chunkOnComplete;
+
   /// Current state of TTS playback.
   TtsState get currentState => _currentState;
 
@@ -105,18 +110,9 @@ class TTSService {
         );
       } else if (isAndroid) {
         Logger.debug('🔊 [TTS] Android platform - using native TTS engine');
-        // Android uses native TTS engine (typically Google TTS)
-        // Try to use Google TTS if available, otherwise use default engine
-        try {
-          final engines = await _flutterTts.getEngines;
-          Logger.debug('🔊 [TTS] Available engines: $engines');
-          if (engines.contains('com.google.android.tts')) {
-            await _flutterTts.setEngine('com.google.android.tts');
-            Logger.debug('🔊 [TTS] Using Google TTS engine');
-          }
-        } catch (e) {
-          Logger.debug('🔊 [TTS] Could not set engine, using default: $e');
-        }
+        // Do NOT call setEngine() — it triggers async engine re-init which
+        // causes ConcurrentModificationException in the plugin's onInitListenerWithCallback.
+        // Google TTS is the default engine on most Android devices already.
       }
     }
 
@@ -557,18 +553,32 @@ class TTSService {
       await _selectVoiceByGender(languageCode, voiceGender);
     }
 
-    // Set completion callback if provided
-    if (onComplete != null) {
-      _flutterTts.setCompletionHandler(() {
-        _currentState = TtsState.stopped;
-        onComplete();
-      });
-    }
+    final textChunks = _chunkText(text);
 
-    Logger.debug(
-        '🔊 [TTS] Calling speak() with text: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
-    await speak(text);
-    Logger.debug('🔊 [TTS] speak() call completed');
+    if (textChunks.length == 1) {
+      // Normal path — text fits in a single utterance
+      if (onComplete != null) {
+        _flutterTts.setCompletionHandler(() {
+          _currentState = TtsState.stopped;
+          onComplete();
+        });
+      }
+      Logger.debug(
+          '🔊 [TTS] Calling speak() with text: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
+      await speak(text);
+      Logger.debug('🔊 [TTS] speak() call completed');
+    } else {
+      // Chunked path — split long text to avoid Android ~4000 char limit (error -8)
+      Logger.debug(
+          '🔊 [TTS] Text too long (${text.length} chars), splitting into ${textChunks.length} chunks');
+      _pendingChunks = textChunks;
+      _chunkPlaybackIndex = 0;
+      _chunkOnComplete = onComplete;
+      _flutterTts.setCompletionHandler(_playNextChunk);
+      Logger.debug(
+          '🔊 [TTS] Playing chunk 1/${textChunks.length} (len=${textChunks[0].length})');
+      await speak(textChunks[0]);
+    }
   }
 
   /// Select a voice based on language and gender preference.
@@ -595,6 +605,52 @@ class TTSService {
     }
   }
 
+  /// Split [text] into chunks of at most [maxLength] chars, breaking at sentence boundaries.
+  List<String> _chunkText(String text, {int maxLength = 3800}) {
+    if (text.length <= maxLength) return [text];
+
+    final chunks = <String>[];
+    var remaining = text;
+
+    while (remaining.length > maxLength) {
+      final window = remaining.substring(0, maxLength);
+      // Find last sentence-ending punctuation followed by whitespace
+      final matches = RegExp(r'[.!?]\s').allMatches(window);
+      final lastMatch = matches.isEmpty ? null : matches.last;
+      int splitAt =
+          lastMatch != null ? lastMatch.start + 1 : window.lastIndexOf(' ');
+      if (splitAt <= 0) splitAt = maxLength;
+      chunks.add(remaining.substring(0, splitAt).trim());
+      remaining = remaining.substring(splitAt).trim();
+    }
+
+    if (remaining.isNotEmpty) chunks.add(remaining);
+    return chunks;
+  }
+
+  /// Completion handler for chunk-by-chunk device TTS playback.
+  void _playNextChunk() {
+    if (_isIntentionallyStopping) {
+      _pendingChunks = [];
+      _chunkOnComplete = null;
+      return;
+    }
+    _chunkPlaybackIndex++;
+    if (_chunkPlaybackIndex < _pendingChunks.length) {
+      final sanitized =
+          _sanitizeTextForTTS(_pendingChunks[_chunkPlaybackIndex]);
+      Logger.debug(
+          '🔊 [TTS] Playing chunk ${_chunkPlaybackIndex + 1}/${_pendingChunks.length} (len=${sanitized.length})');
+      _flutterTts.speak(sanitized);
+    } else {
+      _currentState = TtsState.stopped;
+      final cb = _chunkOnComplete;
+      _pendingChunks = [];
+      _chunkOnComplete = null;
+      cb?.call();
+    }
+  }
+
   /// Stop speaking.
   Future<void> stop() async {
     if (_currentState == TtsState.playing) {
@@ -605,6 +661,10 @@ class TTSService {
     await _cloudTts.stop();
     await _flutterTts.stop();
     _currentState = TtsState.stopped;
+
+    // Clear chunked playback state
+    _pendingChunks = [];
+    _chunkOnComplete = null;
 
     // Also clear streaming queue
     _sentenceQueue.clear();
