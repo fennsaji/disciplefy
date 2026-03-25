@@ -173,19 +173,16 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
   Future<void> _submit(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Only request calendar access when the user signed in with Google.
-    // Non-Google users (email/password, Apple) skip this — the meeting is
-    // still created but without a Google Meet link.
     final supabaseUser = Supabase.instance.client.auth.currentUser;
-    final isGoogleUser =
-        supabaseUser?.identities?.any((id) => id.provider == 'google') ?? false;
     final userEmail = supabaseUser?.email;
 
     final location = _isInPerson ? _locationController.text.trim() : null;
 
     String? googleAccessToken;
     // Skip Google Calendar entirely for in-person gatherings.
-    if (!_isInPerson && isGoogleUser) {
+    // Any user (not just Google sign-in users) can connect Google Calendar to
+    // generate a Meet link — they may have a separate Google account.
+    if (!_isInPerson) {
       // Show explanation dialog so the user knows why Google is opening.
       final proceed = await _showCalendarPermissionDialog(context);
       if (!context.mounted) return;
