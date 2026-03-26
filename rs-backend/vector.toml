@@ -1,6 +1,6 @@
 [sources.docker]
 type = "docker_logs"
-include_labels = { "com.docker.compose.project" = "disciplefy" }
+include_containers = ["disciplefy-backend-1"]
 
 [sinks.axiom]
 type = "axiom"
