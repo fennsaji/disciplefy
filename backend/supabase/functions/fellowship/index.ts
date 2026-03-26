@@ -506,13 +506,15 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   const db = services.supabaseServiceClient
 
   // Permission check: admin, existing mentor, or plus/premium subscriber
-  const [planResult, mentorResult] = await Promise.all([
+  const [planResult, mentorResult, profileResult] = await Promise.all([
     db.rpc('get_user_plan_with_subscription', { p_user_id: user.id }),
     db.from('fellowship_members').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('role', 'mentor'),
+    db.from('user_profiles').select('is_admin').eq('id', user.id).single(),
   ])
 
   const userPlan: string = planResult.data ?? 'free'
   const isMentor = (mentorResult.count ?? 0) > 0
+  const isAdmin = profileResult.data?.is_admin === true
   // Admins resolve to 'premium' via get_user_plan_with_subscription, so no separate admin check needed
   const isPaidEligible = userPlan === 'plus' || userPlan === 'premium'
 
