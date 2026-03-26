@@ -1,153 +1,215 @@
 // marketing/app/og/route.tsx
-// Puppeteer-based OG image renderer for proper Indic script shaping.
-// Chrome's built-in HarfBuzz engine handles Devanagari/Malayalam natively —
-// no custom fonts needed.
-import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer-core";
-import fs from "fs";
-import path from "path";
+// Edge-based OG image using @vercel/og (ImageResponse / satori).
+// Fonts are loaded from /public/fonts/ — no Puppeteer or Chromium required.
+//
+// NOTE: satori/@resvg-wasm does not support Devanagari/Malayalam complex-script
+// shaping. For Indic-script titles we show a branded fallback; the actual title
+// still appears as text in the social-card meta tags.
+import { ImageResponse } from "@vercel/og";
+import type { NextRequest } from "next/server";
 
-// Node.js runtime — Puppeteer cannot run on edge
-export const runtime = "nodejs";
+export const runtime = "edge";
 
-async function getLaunchOptions(): Promise<{ executablePath: string; args: string[] }> {
-  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
-    const chromium = (await import("@sparticuz/chromium")).default;
-    return {
-      executablePath: await chromium.executablePath(),
-      args: chromium.args,
-    };
-  }
-  // macOS local dev
-  const candidates = [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-  ];
-  const executablePath = candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
-  return { executablePath, args: [] };
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function buildHtml(title: string, subtitle: string, splashB64: string | null): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 1200px; height: 630px; overflow: hidden; }
-  body {
-    display: flex;
-    width: 1200px;
-    height: 630px;
-    background: #0F172A;
-  }
-  .left {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    flex: 1;
-    padding: 60px 48px 60px 60px;
-  }
-  .brand {
-    font-size: 28px;
-    font-weight: 700;
-    color: #A5B4FC;
-    margin-bottom: 32px;
-    letter-spacing: -0.3px;
-  }
-  .title {
-    font-size: 52px;
-    font-weight: 800;
-    color: #A5B4FC;
-    line-height: 1.15;
-    margin-bottom: 20px;
-  }
-  .subtitle {
-    font-size: 22px;
-    color: #94A3B8;
-    line-height: 1.4;
-  }
-  .domain {
-    margin-top: 40px;
-    font-size: 16px;
-    color: #A5B4FC;
-  }
-  .right {
-    display: flex;
-    align-items: center;
-    padding-right: 40px;
-    flex-shrink: 0;
-  }
-  .splash {
-    width: 300px;
-    height: 300px;
-    object-fit: cover;
-    object-position: center top;
-    border-radius: 24px;
-  }
-</style>
-</head>
-<body>
-  <div class="left">
-    <div class="brand">Disciplefy</div>
-    <div class="title">${escapeHtml(title)}</div>
-    <div class="subtitle">${escapeHtml(subtitle)}</div>
-    <div class="domain">disciplefy.in</div>
-  </div>
-  ${splashB64 ? `<div class="right"><img class="splash" src="data:image/png;base64,${splashB64}" /></div>` : ""}
-</body>
-</html>`;
+function isIndicScript(text: string): boolean {
+  return /[\u0900-\u097F\u0D00-\u0D7F]/.test(text);
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  const { searchParams, origin } = new URL(req.url);
   const title = searchParams.get("title") ?? "Disciplefy";
-  const subtitle = searchParams.get("subtitle") ?? "AI Bible Study in Your Language";
+  const subtitle = searchParams.get("subtitle") ?? "Bible Study in Your Language";
 
-  // Splash image embedded as data URI (no external requests during render)
-  let splashB64: string | null = null;
-  try {
-    const splashPath = path.join(process.cwd(), "public", "splash-og.png");
-    if (fs.existsSync(splashPath)) splashB64 = fs.readFileSync(splashPath).toString("base64");
-  } catch { /* skip */ }
+  const indic = isIndicScript(title);
 
-  const html = buildHtml(title, subtitle, splashB64);
-  const { executablePath, args } = await getLaunchOptions();
+  const poppinsData = await fetch(
+    new URL("/fonts/Poppins-ExtraBold.ttf", origin)
+  ).then((r) => r.arrayBuffer());
 
-  const browser = await puppeteer.launch({
-    executablePath,
-    args: [
-      ...args,
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-    ],
-    headless: true,
-  });
+  // Shorten long titles so they don't overflow
+  const displayTitle = title.length > 50 ? title.slice(0, 48) + "…" : title;
+  const titleFontSize = displayTitle.length > 35 ? 42 : 54;
 
-  try {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });
-    await page.setContent(html, { waitUntil: "load" });
-    const screenshot = await page.screenshot({ type: "png" });
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          width: "1200px",
+          height: "630px",
+          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+          fontFamily: "Poppins",
+        }}
+      >
+        {/* ── Left panel ─────────────────────────────────────────── */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            flex: 1,
+            padding: "64px 56px 64px 64px",
+          }}
+        >
+          {/* Category badge */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 28,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                background: "rgba(165,180,252,0.15)",
+                border: "1px solid rgba(165,180,252,0.35)",
+                borderRadius: "20px",
+                padding: "6px 16px",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#A5B4FC",
+                letterSpacing: "1.5px",
+              }}
+            >
+              DISCIPLEFY BLOG
+            </div>
+          </div>
 
-    return new NextResponse(screenshot as unknown as BodyInit, {
+          {indic ? (
+            /* Indic fallback — clean branded headline */
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 56,
+                  fontWeight: 700,
+                  color: "#E2E8F0",
+                  lineHeight: 1.1,
+                  marginBottom: 16,
+                }}
+              >
+                Bible Study
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 34,
+                  fontWeight: 700,
+                  color: "#A5B4FC",
+                  lineHeight: 1.2,
+                  marginBottom: 24,
+                }}
+              >
+                in Your Language
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 18,
+                  color: "#94A3B8",
+                  lineHeight: 1.5,
+                }}
+              >
+                Hindi · Malayalam · English
+              </div>
+            </div>
+          ) : (
+            /* Latin title */
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: titleFontSize,
+                  fontWeight: 700,
+                  color: "#E2E8F0",
+                  lineHeight: 1.15,
+                  marginBottom: 20,
+                }}
+              >
+                {displayTitle}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 20,
+                  color: "#94A3B8",
+                  lineHeight: 1.5,
+                }}
+              >
+                {subtitle}
+              </div>
+            </div>
+          )}
+
+          {/* Domain */}
+          <div
+            style={{
+              display: "flex",
+              marginTop: 44,
+              fontSize: 15,
+              color: "#475569",
+              letterSpacing: "0.5px",
+            }}
+          >
+            disciplefy.in
+          </div>
+        </div>
+
+        {/* ── Right panel ────────────────────────────────────────── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "340px",
+            padding: "40px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              background: "rgba(165,180,252,0.06)",
+              border: "1px solid rgba(165,180,252,0.15)",
+              borderRadius: "28px",
+              overflow: "hidden",
+              width: "260px",
+              height: "260px",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${origin}/splash-og.png`}
+              width={260}
+              height={260}
+              style={{ objectFit: "cover", objectPosition: "center top" }}
+              alt=""
+            />
+          </div>
+        </div>
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+      fonts: [{ name: "Poppins", data: poppinsData, weight: 700 }],
       headers: {
-        "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        "Cache-Control":
+          "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
       },
-    });
-  } finally {
-    await browser.close();
-  }
+    }
+  );
 }
