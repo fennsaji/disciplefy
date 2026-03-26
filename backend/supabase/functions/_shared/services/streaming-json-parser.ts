@@ -109,8 +109,47 @@ const REQUIRED_SECTIONS: SectionType[] = [
 ]
 
 /**
+ * Escapes literal control characters (newlines, tabs, etc.) inside JSON string values.
+ *
+ * LLMs sometimes output actual newline/carriage-return characters inside JSON string
+ * values instead of the escaped sequences (\n, \r). This makes JSON.parse() throw
+ * "Unterminated string" errors. This function fixes those characters while leaving
+ * structural JSON whitespace (between fields) completely untouched.
+ */
+function sanitizeJsonStringLiterals(json: string): string {
+  let inString = false
+  let escaped = false
+  let result = ''
+
+  for (let i = 0; i < json.length; i++) {
+    const char = json[i]
+
+    if (escaped) {
+      result += char
+      escaped = false
+    } else if (char === '\\' && inString) {
+      result += char
+      escaped = true
+    } else if (char === '"') {
+      inString = !inString
+      result += char
+    } else if (inString && char === '\n') {
+      result += '\\n'
+    } else if (inString && char === '\r') {
+      result += '\\r'
+    } else if (inString && char === '\t') {
+      result += '\\t'
+    } else {
+      result += char
+    }
+  }
+
+  return result
+}
+
+/**
  * Streaming JSON Parser
- * 
+ *
  * Accumulates LLM chunks and emits complete sections as they're detected.
  * Uses regex-based detection to find complete JSON field values.
  */
@@ -440,6 +479,12 @@ export class StreamingJsonParser {
         if (endIndex === -1) return null
         cleanBuffer = cleanBuffer.substring(0, endIndex + 1)
       }
+
+      // Sanitize literal control characters inside JSON string values.
+      // LLMs (especially Anthropic) sometimes emit actual newlines/tabs inside string values,
+      // which is invalid JSON. This state-machine sanitizer fixes only characters that are
+      // inside strings, leaving structural JSON whitespace untouched.
+      cleanBuffer = sanitizeJsonStringLiterals(cleanBuffer)
 
       // First attempt: parse the cleaned buffer directly
       // LLM should return properly escaped JSON; additional escaping corrupts valid sequences
