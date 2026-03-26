@@ -138,7 +138,9 @@ pub async fn run_blog_generation(
     let topic = match post::find_next_ungenerated_topic(pool).await? {
         Some(t) => t,
         None => {
-            tracing::info!("All topics already have blog posts for all locales — nothing to generate");
+            tracing::info!(
+                "All topics already have blog posts for all locales — nothing to generate"
+            );
             return Ok(());
         }
     };

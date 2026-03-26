@@ -177,13 +177,16 @@ pub async fn cron_update_schedule(
                 "Job UUID not tracked — schedule saved to DB but will apply on next restart"
             );
             return Err(AppError::Internal(
-                "Job UUID not tracked — schedule saved to DB but will apply on next restart"
-                    .into(),
+                "Job UUID not tracked — schedule saved to DB but will apply on next restart".into(),
             ));
         }
         Some(uuid) => {
             if let Err(e) = state.scheduler.remove(&uuid).await {
-                tracing::warn!(name = name.as_str(), "Failed to remove old job: {} — proceeding with add", e);
+                tracing::warn!(
+                    name = name.as_str(),
+                    "Failed to remove old job: {} — proceeding with add",
+                    e
+                );
             }
 
             let pool = state.pool.clone();
@@ -192,9 +195,8 @@ pub async fn cron_update_schedule(
             let new_schedule = body.schedule.clone();
             let job_name = name.clone();
 
-            let new_job = tokio_cron_scheduler::Job::new_async(
-                new_schedule.as_str(),
-                move |_uuid, _lock| {
+            let new_job =
+                tokio_cron_scheduler::Job::new_async(new_schedule.as_str(), move |_uuid, _lock| {
                     let p = pool.clone();
                     let c = std::sync::Arc::new(config.clone());
                     let h = http.clone();
@@ -225,9 +227,8 @@ pub async fn cron_update_schedule(
                             tracing::error!("CRON failed: {}", e);
                         }
                     })
-                },
-            )
-            .map_err(|e| AppError::Internal(format!("Failed to create new job: {}", e)))?;
+                })
+                .map_err(|e| AppError::Internal(format!("Failed to create new job: {}", e)))?;
 
             let new_uuid = state
                 .scheduler
@@ -235,7 +236,11 @@ pub async fn cron_update_schedule(
                 .await
                 .map_err(|e| AppError::Internal(format!("Failed to add new job: {}", e)))?;
 
-            state.cron_job_ids.lock().unwrap().insert(name.clone(), new_uuid);
+            state
+                .cron_job_ids
+                .lock()
+                .unwrap()
+                .insert(name.clone(), new_uuid);
         }
     }
 

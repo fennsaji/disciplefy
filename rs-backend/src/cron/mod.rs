@@ -44,7 +44,10 @@ pub async fn start_scheduler(
     http: &Client,
 ) -> (JobScheduler, HashMap<String, Uuid>) {
     let configs = cron_config::list(pool).await.unwrap_or_else(|e| {
-        tracing::warn!("Could not load cron_config from DB ({}), using hardcoded defaults", e);
+        tracing::warn!(
+            "Could not load cron_config from DB ({}), using hardcoded defaults",
+            e
+        );
         vec![
             CronConfig {
                 name: "blog_generation".into(),
@@ -63,7 +66,9 @@ pub async fn start_scheduler(
         ]
     });
 
-    let sched = JobScheduler::new().await.expect("Failed to create scheduler");
+    let sched = JobScheduler::new()
+        .await
+        .expect("Failed to create scheduler");
     let mut job_ids: HashMap<String, Uuid> = HashMap::new();
 
     // Blog generation CRON
@@ -103,7 +108,10 @@ pub async fn start_scheduler(
     })
     .expect("Failed to create blog CRON job");
 
-    let blog_uuid = sched.add(blog_job).await.expect("Failed to add blog CRON job");
+    let blog_uuid = sched
+        .add(blog_job)
+        .await
+        .expect("Failed to add blog CRON job");
     job_ids.insert("blog_generation".into(), blog_uuid);
 
     // Blog retry CRON
@@ -143,7 +151,10 @@ pub async fn start_scheduler(
     })
     .expect("Failed to create blog retry CRON job");
 
-    let retry_uuid = sched.add(retry_job).await.expect("Failed to add blog retry CRON job");
+    let retry_uuid = sched
+        .add(retry_job)
+        .await
+        .expect("Failed to add blog retry CRON job");
     job_ids.insert("blog_retry".into(), retry_uuid);
 
     sched.start().await.expect("Failed to start CRON scheduler");
