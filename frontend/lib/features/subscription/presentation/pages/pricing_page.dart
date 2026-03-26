@@ -351,11 +351,39 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   Widget _buildMainContent(BuildContext context, bool isWideScreen) {
+    final newSubscriptionsEnabled =
+        sl<SystemConfigService>().isNewSubscriptionsEnabled;
+
     return Column(
       children: [
         // Header
         _buildHeader(context),
         const SizedBox(height: 32),
+
+        // Kill switch banner: new subscriptions temporarily disabled
+        if (!newSubscriptionsEnabled) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.warning),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'New subscriptions are temporarily unavailable. Please check back later.',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         // Promo Code Input
         PromoCodeInput(
@@ -521,6 +549,9 @@ class _PricingPageState extends State<PricingPage> {
         ? context.tr(TranslationKeys.pricingLimitedTimeOffer)
         : null;
 
+    final newSubscriptionsEnabled =
+        sl<SystemConfigService>().isNewSubscriptionsEnabled;
+
     return PricingCard(
       planName: plan.planName,
       price: price,
@@ -532,7 +563,7 @@ class _PricingPageState extends State<PricingPage> {
       badgeColor: badgeColor,
       features: features,
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
-      onPressed: isCurrentPlan
+      onPressed: (isCurrentPlan || !newSubscriptionsEnabled)
           ? null
           : isPremium
               ? () => _handlePremiumPlanPress(context)

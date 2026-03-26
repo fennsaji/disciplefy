@@ -122,10 +122,10 @@ export async function GET(request: NextRequest) {
       },
       // Trial Configuration - from system_config table
       trial_config: {
-        standard_trial_end_date: systemConfigMap.standard_trial_end_date || '2026-03-31T23:59:59+05:30',
-        premium_trial_days: systemConfigMap.premium_trial_days || 7,
-        premium_trial_start_date: systemConfigMap.premium_trial_start_date || '2026-04-01T00:00:00+05:30',
-        grace_period_days: systemConfigMap.grace_period_days || 7,
+        standard_trial_end_date: systemConfigMap.standard_trial_end_date ?? null,
+        premium_trial_days: systemConfigMap.premium_trial_days ?? null,
+        premium_trial_start_date: systemConfigMap.premium_trial_start_date ?? null,
+        grace_period_days: systemConfigMap.grace_period_days ?? null,
       },
     }
 

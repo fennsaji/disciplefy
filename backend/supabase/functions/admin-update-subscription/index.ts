@@ -76,12 +76,16 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get current subscription (any status - there can only be one per user)
-    const { data: currentSub } = await adminSupabase
+    // Get most recent subscription for this user.
+    // Using order+limit instead of maybeSingle() because maybeSingle() throws PGRST116
+    // when the user has multiple subscription records (e.g. from previous admin operations).
+    const { data: currentSubRows } = await adminSupabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', body.target_user_id)
-      .maybeSingle() // Use maybeSingle instead of single to avoid error if no subscription exists
+      .order('created_at', { ascending: false })
+      .limit(1)
+    const currentSub = currentSubRows?.[0] ?? null
 
     const effectiveDate = body.effective_date || new Date().toISOString()
 
@@ -222,6 +226,16 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'Failed to update subscription', details: subError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Clean up any extra duplicate subscription records for this user (keep only the one we just updated/created)
+    if (newSub?.id) {
+      await adminSupabase
+        .from('subscriptions')
+        .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+        .eq('user_id', body.target_user_id)
+        .neq('id', newSub.id)
+        .not('status', 'in', '("cancelled","expired","completed")')
     }
 
     // Log admin action to audit log (if table exists)

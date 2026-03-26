@@ -21,6 +21,7 @@ services:
     image: timberio/vector:0.43.0-alpine
     restart: unless-stopped
     user: root
+    command: ["--config", "/etc/vector/vector.toml"]
     environment:
       AXIOM_API_KEY: ${AXIOM_API_KEY}
       AXIOM_DATASET: ${AXIOM_DATASET}

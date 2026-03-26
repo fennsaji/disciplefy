@@ -101,20 +101,6 @@ export function clearTrialConfigCache(): void {
  */
 export const GRACE_PERIOD_DAYS = 7
 
-/**
- * @deprecated Use getDynamicTrialConfig().standardTrialEndDate instead
- */
-export const STANDARD_TRIAL_END_DATE = new Date('2026-03-31T23:59:59+05:30')
-
-/**
- * @deprecated Calculated dynamically as standardTrialEndDate + gracePeriodDays
- */
-export const GRACE_PERIOD_END_DATE = new Date('2026-04-07T23:59:59+05:30')
-
-/**
- * @deprecated Use getDynamicTrialConfig().premiumTrialStartDate instead
- */
-export const PREMIUM_TRIAL_START_DATE = new Date('2026-04-01T00:00:00+05:30')
 
 /**
  * @deprecated Use getDynamicTrialConfig().premiumTrialDays instead
