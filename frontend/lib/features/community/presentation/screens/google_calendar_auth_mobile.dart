@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 const _calendarScope = 'https://www.googleapis.com/auth/calendar.events';
@@ -20,30 +21,53 @@ Future<String?> requestCalendarAccessToken(
   try {
     final signIn = GoogleSignIn.instance;
 
+    // google_sign_in 7.x on Android requires serverClientId (the web OAuth
+    // client ID). initialize() must be called before the first use and is a
+    // no-op if the instance is already initialized.
+    await signIn.initialize(serverClientId: clientId);
+
     // Reuse existing signed-in session silently.
     GoogleSignInAccount? account;
     final silentFuture = signIn.attemptLightweightAuthentication();
+    debugPrint(
+        '[CalendarAuth] attemptLightweightAuthentication future: ${silentFuture != null}');
     if (silentFuture != null) {
       account = await silentFuture;
+      debugPrint('[CalendarAuth] silent account: ${account?.email}');
     }
-    account ??= await signIn.authenticate();
+
+    if (account == null) {
+      debugPrint('[CalendarAuth] calling authenticate()...');
+      account = await signIn.authenticate();
+      debugPrint('[CalendarAuth] authenticate() returned: ${account.email}');
+    }
 
     // Reject if the authenticated Google account is not the one signed into
     // the app — prevents calendar access leaking to a different account.
-    if (userEmail != null && account.email != userEmail) return null;
+    if (userEmail != null && account.email != userEmail) {
+      debugPrint(
+          '[CalendarAuth] email mismatch: account=${account.email}, app=$userEmail');
+      return null;
+    }
 
     final authClient = account.authorizationClient;
 
-    // Silent path: returns immediately if calendar scope already granted.
-    // No popup, no UI — completely transparent to the user.
+    debugPrint('[CalendarAuth] checking existing scope authorization...');
     GoogleSignInClientAuthorization? authz =
         await authClient.authorizationForScopes([_calendarScope]);
+    debugPrint('[CalendarAuth] silent authz: ${authz != null}');
 
-    // Interactive fallback: only shown on first use or after grant is revoked.
-    authz ??= await authClient.authorizeScopes([_calendarScope]);
+    if (authz == null) {
+      debugPrint('[CalendarAuth] requesting scope interactively...');
+      authz = await authClient.authorizeScopes([_calendarScope]);
+      debugPrint('[CalendarAuth] interactive authz obtained');
+    }
 
+    debugPrint(
+        '[CalendarAuth] success — token length: ${authz.accessToken.length}');
     return authz.accessToken;
-  } catch (_) {
+  } catch (e, st) {
+    debugPrint('[CalendarAuth] ERROR: $e\n$st');
     return null;
   }
 }

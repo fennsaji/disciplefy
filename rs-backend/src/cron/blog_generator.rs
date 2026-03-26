@@ -8,34 +8,125 @@ use crate::models::post;
 use crate::services::{content_formatter, study_api};
 
 const LOCALES: &[&str] = &["en", "hi", "ml"];
-const DELAY_BETWEEN_CALLS_SECS: u64 = 5;
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct LearningPathTopic {
-    id: Uuid,
-    title: String,
-    description: Option<String>,
-    input_type: String,
-    path_id: Uuid,
-    path_title: String,
-    path_description: String,
-    disciple_level: String,
-    category: Option<String>,
+    pub id: Uuid,
+    pub title: String,
+    pub description: Option<String>,
+    pub input_type: String,
+    pub path_id: Uuid,
+    pub path_title: String,
+    pub path_description: String,
+    pub disciple_level: String,
+    pub category: Option<String>,
     // Localized fields from recommended_topics_translations
-    hi_title: Option<String>,
-    ml_title: Option<String>,
-    hi_description: Option<String>,
-    ml_description: Option<String>,
+    pub hi_title: Option<String>,
+    pub ml_title: Option<String>,
+    pub hi_description: Option<String>,
+    pub ml_description: Option<String>,
     // Localized fields from learning_path_translations
-    hi_path_title: Option<String>,
-    ml_path_title: Option<String>,
-    hi_path_description: Option<String>,
-    ml_path_description: Option<String>,
-    study_mode: String,
+    pub hi_path_title: Option<String>,
+    pub ml_path_title: Option<String>,
+    pub hi_path_description: Option<String>,
+    pub ml_path_description: Option<String>,
+    pub study_mode: String,
+}
+
+/// Generate and save a blog post for a single locale. Returns Ok(()) on success.
+async fn generate_for_locale(
+    http: &Client,
+    config: &Config,
+    pool: &PgPool,
+    topic: &LearningPathTopic,
+    locale: &str,
+) -> Result<(), AppError> {
+    let display_title: &str = match locale {
+        "hi" => topic.hi_title.as_deref().unwrap_or(&topic.title),
+        "ml" => topic.ml_title.as_deref().unwrap_or(&topic.title),
+        _ => &topic.title,
+    };
+    let display_description: Option<&str> = match locale {
+        "hi" => topic
+            .hi_description
+            .as_deref()
+            .or(topic.description.as_deref()),
+        "ml" => topic
+            .ml_description
+            .as_deref()
+            .or(topic.description.as_deref()),
+        _ => topic.description.as_deref(),
+    };
+    let display_path_title: &str = match locale {
+        "hi" => topic.hi_path_title.as_deref().unwrap_or(&topic.path_title),
+        "ml" => topic.ml_path_title.as_deref().unwrap_or(&topic.path_title),
+        _ => &topic.path_title,
+    };
+    let display_path_description: &str = match locale {
+        "hi" => topic
+            .hi_path_description
+            .as_deref()
+            .unwrap_or(&topic.path_description),
+        "ml" => topic
+            .ml_path_description
+            .as_deref()
+            .unwrap_or(&topic.path_description),
+        _ => &topic.path_description,
+    };
+
+    // 'recommended' and 'ask' are interactive modes — fall back to 'standard' for batch generation
+    let mode = match topic.study_mode.as_str() {
+        "recommended" | "ask" => "standard",
+        m => m,
+    };
+
+    let guide = study_api::generate_study_guide(
+        http,
+        config,
+        &topic.input_type,
+        display_title,
+        display_description,
+        Some(display_path_title),
+        Some(display_path_description),
+        Some(&topic.disciple_level),
+        locale,
+        mode,
+    )
+    .await?;
+
+    let blog = content_formatter::format_blog_post(
+        display_title,
+        &guide,
+        topic.category.as_deref().unwrap_or(""),
+        &topic.disciple_level,
+        locale,
+    );
+
+    // Always derive the slug from the English title so it stays URL-friendly
+    let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+
+    let input = post::CreatePostInput {
+        title: blog.title,
+        content: blog.content,
+        excerpt: blog.excerpt,
+        locale: locale.to_string(),
+        tags: blog.tags,
+        featured: false,
+        status: "published".to_string(),
+        slug: Some(slug),
+        source_type: Some("learning_path_topic".to_string()),
+        source_topic_id: Some(topic.id),
+        source_learning_path_id: Some(topic.path_id),
+    };
+
+    let p = post::create_post(pool, input).await?;
+    tracing::info!(slug = %p.slug, locale, "Blog post created");
+    Ok(())
 }
 
 /// Main blog generation function -- called by CRON scheduler or manual trigger.
-/// Generates posts for ONE topic per run (all 3 locales), picking the next ungenerated topic.
+/// Generates posts for ONE topic per run (all missing locales in parallel),
+/// picking the next topic that is missing at least one locale.
 pub async fn run_blog_generation(
     pool: &PgPool,
     config: &Config,
@@ -43,126 +134,82 @@ pub async fn run_blog_generation(
 ) -> Result<(), AppError> {
     tracing::info!("Starting blog generation CRON job");
 
-    // 1. Find the next topic that has no posts in any locale yet
+    // 1. Find the next topic that is missing at least one locale
     let topic = match post::find_next_ungenerated_topic(pool).await? {
         Some(t) => t,
         None => {
-            tracing::info!("All topics already have blog posts — nothing to generate");
+            tracing::info!(
+                "All topics already have blog posts for all locales — nothing to generate"
+            );
             return Ok(());
         }
     };
 
-    tracing::info!(topic = %topic.title, "Generating blog post for today's topic");
+    tracing::info!(topic = %topic.title, "Found topic with missing locales");
 
-    let mut generated = 0;
-    let mut failed = 0;
+    // 2. Determine which locales are still missing
+    let already_generated = post::get_generated_locales(pool, topic.id).await?;
+    let missing_locales: Vec<&str> = LOCALES
+        .iter()
+        .copied()
+        .filter(|l| !already_generated.contains(&l.to_string()))
+        .collect();
 
-    // 2. Generate all 3 locales for this one topic
-    for locale in LOCALES {
-        tracing::info!(topic = %topic.title, locale, "Generating blog post");
+    if missing_locales.is_empty() {
+        tracing::info!(topic = %topic.title, "All locales already generated, skipping");
+        return Ok(());
+    }
 
-        // Pick localized fields; fall back to English for unknown locales
-        let display_title: &str = match *locale {
-            "hi" => topic.hi_title.as_deref().unwrap_or(&topic.title),
-            "ml" => topic.ml_title.as_deref().unwrap_or(&topic.title),
-            _ => &topic.title,
-        };
-        let display_description: Option<&str> = match *locale {
-            "hi" => topic
-                .hi_description
-                .as_deref()
-                .or(topic.description.as_deref()),
-            "ml" => topic
-                .ml_description
-                .as_deref()
-                .or(topic.description.as_deref()),
-            _ => topic.description.as_deref(),
-        };
-        let display_path_title: &str = match *locale {
-            "hi" => topic.hi_path_title.as_deref().unwrap_or(&topic.path_title),
-            "ml" => topic.ml_path_title.as_deref().unwrap_or(&topic.path_title),
-            _ => &topic.path_title,
-        };
-        let display_path_description: &str = match *locale {
-            "hi" => topic
-                .hi_path_description
-                .as_deref()
-                .unwrap_or(&topic.path_description),
-            "ml" => topic
-                .ml_path_description
-                .as_deref()
-                .unwrap_or(&topic.path_description),
-            _ => &topic.path_description,
-        };
+    tracing::info!(
+        topic = %topic.title,
+        missing = ?missing_locales,
+        already_done = ?already_generated,
+        "Generating missing locales in parallel"
+    );
 
-        // 'recommended' and 'ask' are interactive modes — fall back to 'standard' for batch generation
-        let mode = match topic.study_mode.as_str() {
-            "recommended" | "ask" => "standard",
-            m => m,
-        };
+    // 3. Spawn one task per missing locale and run them in parallel
+    let mut handles = Vec::with_capacity(missing_locales.len());
 
-        let guide = match study_api::generate_study_guide(
-            http,
-            config,
-            &topic.input_type,
-            display_title,
-            display_description,
-            Some(display_path_title),
-            Some(display_path_description),
-            Some(&topic.disciple_level),
-            locale,
-            mode,
-        )
-        .await
-        {
-            Ok(g) => g,
-            Err(e) => {
-                tracing::error!(topic = %topic.title, locale, "Study API failed: {}", e);
-                failed += 1;
-                tokio::time::sleep(std::time::Duration::from_secs(DELAY_BETWEEN_CALLS_SECS)).await;
-                continue;
-            }
-        };
+    for locale in missing_locales {
+        let locale = locale.to_string();
+        let http = http.clone();
+        let config = config.clone();
+        let pool = pool.clone();
+        let topic = topic.clone();
 
-        let blog = content_formatter::format_blog_post(
-            display_title,
-            &guide,
-            topic.category.as_deref().unwrap_or(""),
-            &topic.disciple_level,
-            locale,
-        );
+        let handle = tokio::spawn(async move {
+            let result = generate_for_locale(&http, &config, &pool, &topic, &locale).await;
+            (locale, result)
+        });
+        handles.push(handle);
+    }
 
-        // Always derive the slug from the English title so it stays URL-friendly
-        let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+    let mut generated = 0usize;
+    let mut failed = 0usize;
 
-        let input = post::CreatePostInput {
-            title: blog.title,
-            content: blog.content,
-            excerpt: blog.excerpt,
-            locale: locale.to_string(),
-            tags: blog.tags,
-            featured: false,
-            status: "published".to_string(),
-            slug: Some(slug),
-            source_type: Some("learning_path_topic".to_string()),
-            source_topic_id: Some(topic.id),
-            source_learning_path_id: Some(topic.path_id),
-        };
-
-        match post::create_post(pool, input).await {
-            Ok(p) => {
-                tracing::info!(slug = %p.slug, locale, "Blog post created");
+    for handle in handles {
+        match handle.await {
+            Ok((locale, Ok(()))) => {
+                tracing::info!(locale, "Locale generated successfully");
                 generated += 1;
             }
+            Ok((locale, Err(e))) => {
+                tracing::error!(locale, "Study API failed: {}", e);
+                failed += 1;
+            }
             Err(e) => {
-                tracing::error!(topic = %topic.title, locale, "Insert failed: {}", e);
+                tracing::error!("Generation task panicked: {}", e);
                 failed += 1;
             }
         }
-
-        tokio::time::sleep(std::time::Duration::from_secs(DELAY_BETWEEN_CALLS_SECS)).await;
     }
 
-    tracing::info!(generated, failed, topic = %topic.title, "Blog generation complete");
+    tracing::info!(
+        generated,
+        failed,
+        topic = %topic.title,
+        "Blog generation complete"
+    );
+
     Ok(())
 }

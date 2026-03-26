@@ -90,7 +90,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider.value(
         value: context.read<FellowshipFeedBloc>(),
-        child: _CreatePostSheet(fellowshipId: widget.fellowshipId),
+        child: FellowshipCreatePostSheet(fellowshipId: widget.fellowshipId),
       ),
     );
   }
@@ -617,19 +617,20 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 }
 
 // ---------------------------------------------------------------------------
-// _CreatePostSheet
+// FellowshipCreatePostSheet (public — shared with home screen)
 // ---------------------------------------------------------------------------
 
-class _CreatePostSheet extends StatefulWidget {
+class FellowshipCreatePostSheet extends StatefulWidget {
   final String fellowshipId;
 
-  const _CreatePostSheet({required this.fellowshipId});
+  const FellowshipCreatePostSheet({required this.fellowshipId, super.key});
 
   @override
-  State<_CreatePostSheet> createState() => _CreatePostSheetState();
+  State<FellowshipCreatePostSheet> createState() =>
+      _FellowshipCreatePostSheetState();
 }
 
-class _CreatePostSheetState extends State<_CreatePostSheet> {
+class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   final TextEditingController _contentController = TextEditingController();
   String _selectedType = 'general';
 

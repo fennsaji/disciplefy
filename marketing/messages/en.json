@@ -51,6 +51,7 @@
     "cta": "Download Free on Google Play",
     "or": "or",
     "openWebApp": "open the web app",
+    "webAppCta": "Open Web App →",
     "faqTitle": "Frequently Asked Questions",
     "feature1": { "title": "AI Study Guides", "desc": "Instant verse-by-verse guides with context and life application" },
     "feature2": { "title": "Voice Discipler", "desc": "Have real voice conversations about Scripture in your language" },
@@ -113,6 +114,13 @@
     "title": "Page Not Found",
     "subtitle": "The page you're looking for doesn't exist.",
     "home": "Go Home"
+  },
+  "blogPost": {
+    "home": "Home",
+    "minRead": "{n} min read",
+    "ctaTitle": "Study this in the Disciplefy app",
+    "ctaSubtitle": "Interactive study guides, follow-up chats, practice modes & audio — in English, Hindi & Malayalam.",
+    "getApp": "Get the App — Free →"
   },
   "featurePage": {
     "howItWorksTitle": "How It Works",

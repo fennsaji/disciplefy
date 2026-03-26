@@ -450,14 +450,14 @@ class StudyGuideTTSService {
         section: StudyGuideSection.summary,
       ),
       TtsSection(
-        title: titles[StudyGuideSection.interpretation]!,
-        content: guide.interpretation,
-        section: StudyGuideSection.interpretation,
-      ),
-      TtsSection(
         title: titles[StudyGuideSection.context]!,
         content: guide.context,
         section: StudyGuideSection.context,
+      ),
+      TtsSection(
+        title: titles[StudyGuideSection.interpretation]!,
+        content: guide.interpretation,
+        section: StudyGuideSection.interpretation,
       ),
       TtsSection(
         title: titles[StudyGuideSection.relatedVerses]!,

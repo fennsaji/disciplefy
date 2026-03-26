@@ -173,19 +173,16 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
   Future<void> _submit(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Only request calendar access when the user signed in with Google.
-    // Non-Google users (email/password, Apple) skip this — the meeting is
-    // still created but without a Google Meet link.
     final supabaseUser = Supabase.instance.client.auth.currentUser;
-    final isGoogleUser =
-        supabaseUser?.identities?.any((id) => id.provider == 'google') ?? false;
     final userEmail = supabaseUser?.email;
 
     final location = _isInPerson ? _locationController.text.trim() : null;
 
     String? googleAccessToken;
     // Skip Google Calendar entirely for in-person gatherings.
-    if (!_isInPerson && isGoogleUser) {
+    // Any user (not just Google sign-in users) can connect Google Calendar to
+    // generate a Meet link — they may have a separate Google account.
+    if (!_isInPerson) {
       // Show explanation dialog so the user knows why Google is opening.
       final proceed = await _showCalendarPermissionDialog(context);
       if (!context.mounted) return;
@@ -194,6 +191,34 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
           AppConfig.googleClientId,
           userEmail: userEmail,
         );
+        if (!context.mounted) return;
+        if (googleAccessToken == null) {
+          // Auth failed — inform user and let them decide whether to continue.
+          final continueAnyway = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text('Could not connect Google Calendar'),
+              content: const Text(
+                'We couldn\'t get access to your Google Calendar. The meeting will be created without a Google Meet link.\n\nYou can share a custom link with members after creating the meeting.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Create anyway'),
+                ),
+              ],
+            ),
+          );
+          if (!context.mounted) return;
+          if (continueAnyway != true) return;
+        }
       }
     }
 

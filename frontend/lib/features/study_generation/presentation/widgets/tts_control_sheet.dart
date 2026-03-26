@@ -154,6 +154,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
   Widget _buildPlaybackControls(StudyGuideTtsState state, bool isDark) {
     final isPlaying = state.status == TtsStatus.playing;
     final isPaused = state.status == TtsStatus.paused;
+    final isLoading = state.status == TtsStatus.loading;
     final canGoBack = state.currentSectionIndex > 0;
     final canGoForward =
         state.currentSectionIndex < _ttsService.totalSections - 1;
@@ -174,18 +175,21 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             semanticLabel: 'Previous section',
           ),
           const SizedBox(width: 24),
-          // Play/Pause button (larger)
-          _buildControlButton(
-            icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-            onPressed: (isPlaying || isPaused)
-                ? () => _ttsService.togglePlayPause()
-                : null,
-            isDark: isDark,
-            size: 64,
-            iconSize: 36,
-            semanticLabel: isPlaying ? 'Pause' : 'Play',
-            isPrimary: true,
-          ),
+          // Play/Pause/Loading button (larger)
+          if (isLoading)
+            _buildLoadingButton(isDark: isDark)
+          else
+            _buildControlButton(
+              icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              onPressed: (isPlaying || isPaused)
+                  ? () => _ttsService.togglePlayPause()
+                  : null,
+              isDark: isDark,
+              size: 64,
+              iconSize: 36,
+              semanticLabel: isPlaying ? 'Pause' : 'Play',
+              isPrimary: true,
+            ),
           const SizedBox(width: 24),
           // Next section button
           _buildControlButton(
@@ -198,6 +202,34 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             semanticLabel: 'Next section',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingButton({required bool isDark}) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppTheme.primaryColor,
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

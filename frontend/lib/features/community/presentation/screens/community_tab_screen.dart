@@ -155,73 +155,54 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
           ),
         ),
         actions: [
-          BlocBuilder<FellowshipListBloc, FellowshipListState>(
-            buildWhen: (prev, curr) =>
-                prev.fellowships != curr.fellowships ||
-                prev.status != curr.status,
-            builder: (context, listState) {
-              final canCreate = _canCreateFellowship(context, listState);
-              return PopupMenuButton<_CommunityAction>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: context.appTextPrimary,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                color: context.appSurface,
-                elevation: 4,
-                onSelected: (action) async {
-                  if (action == _CommunityAction.join) {
-                    final joined =
-                        await context.push<bool>(AppRoutes.communityJoin);
-                    if (joined == true && context.mounted) {
-                      context
-                          .read<FellowshipListBloc>()
-                          .add(const FellowshipListLoadRequested());
-                    }
-                  } else if (action == _CommunityAction.create) {
-                    final created =
-                        await context.push<bool>(AppRoutes.communityCreate);
-                    if (created == true && context.mounted) {
-                      context
-                          .read<FellowshipListBloc>()
-                          .add(const FellowshipListLoadRequested());
-                    }
-                  }
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: _CommunityAction.join,
-                    child: Row(
-                      children: [
-                        Icon(Icons.vpn_key_outlined,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 12),
-                        Text(
-                          l10n.communityJoinButton,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: context.appTextPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
+          BlocBuilder<SubscriptionBloc, SubscriptionState>(
+            builder: (context, _) =>
+                BlocBuilder<FellowshipListBloc, FellowshipListState>(
+              buildWhen: (prev, curr) =>
+                  prev.fellowships != curr.fellowships ||
+                  prev.status != curr.status,
+              builder: (context, listState) {
+                final canCreate = _canCreateFellowship(context, listState);
+                return PopupMenuButton<_CommunityAction>(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: context.appTextPrimary,
                   ),
-                  if (canCreate)
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  color: context.appSurface,
+                  elevation: 4,
+                  onSelected: (action) async {
+                    if (action == _CommunityAction.join) {
+                      final joined =
+                          await context.push<bool>(AppRoutes.communityJoin);
+                      if (joined == true && context.mounted) {
+                        context
+                            .read<FellowshipListBloc>()
+                            .add(const FellowshipListLoadRequested());
+                      }
+                    } else if (action == _CommunityAction.create) {
+                      final created =
+                          await context.push<bool>(AppRoutes.communityCreate);
+                      if (created == true && context.mounted) {
+                        context
+                            .read<FellowshipListBloc>()
+                            .add(const FellowshipListLoadRequested());
+                      }
+                    }
+                  },
+                  itemBuilder: (_) => [
                     PopupMenuItem(
-                      value: _CommunityAction.create,
+                      value: _CommunityAction.join,
                       child: Row(
                         children: [
-                          Icon(Icons.groups_2_rounded,
+                          Icon(Icons.vpn_key_outlined,
                               size: 18,
                               color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 12),
                           Text(
-                            l10n.createFellowshipTitle,
+                            l10n.communityJoinButton,
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 14,
@@ -232,9 +213,31 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
                         ],
                       ),
                     ),
-                ],
-              );
-            },
+                    if (canCreate)
+                      PopupMenuItem(
+                        value: _CommunityAction.create,
+                        child: Row(
+                          children: [
+                            Icon(Icons.groups_2_rounded,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 12),
+                            Text(
+                              l10n.createFellowshipTitle,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: context.appTextPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -295,6 +298,7 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
                 ? _MyFellowshipsTab(
                     onJoinPressed: _onJoinPressed,
                     onDiscover: () => setState(() => _selectedTab = 1),
+                    onCreatePressed: _onCreatePressed,
                   )
                 : _DiscoverTab(),
           ),
@@ -331,6 +335,15 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
   Future<void> _onJoinPressed() async {
     final joined = await context.push<bool>(AppRoutes.communityJoin);
     if (joined == true && mounted) {
+      context
+          .read<FellowshipListBloc>()
+          .add(const FellowshipListLoadRequested());
+    }
+  }
+
+  Future<void> _onCreatePressed() async {
+    final created = await context.push<bool>(AppRoutes.communityCreate);
+    if (created == true && mounted) {
       context
           .read<FellowshipListBloc>()
           .add(const FellowshipListLoadRequested());
@@ -408,71 +421,85 @@ class _PillTabs extends StatelessWidget {
 class _MyFellowshipsTab extends StatelessWidget {
   final Future<void> Function() onJoinPressed;
   final VoidCallback onDiscover;
+  final Future<void> Function() onCreatePressed;
 
   const _MyFellowshipsTab({
     required this.onJoinPressed,
     required this.onDiscover,
+    required this.onCreatePressed,
   });
+
+  bool _computeCanCreate(BuildContext context, FellowshipListState listState) {
+    return _canCreateFellowship(context, listState);
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return BlocConsumer<FellowshipListBloc, FellowshipListState>(
-      listenWhen: (previous, current) =>
-          previous.joinStatus != current.joinStatus,
-      listener: (context, state) {
-        if (state.joinStatus == FellowshipJoinStatus.success) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(l10n.communityJoinedSuccess),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ));
-        } else if (state.joinStatus == FellowshipJoinStatus.failure) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(state.joinError ?? l10n.communityJoinFailed),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ));
-        }
-      },
-      builder: (context, state) {
-        switch (state.status) {
-          case FellowshipListStatus.initial:
-          case FellowshipListStatus.loading:
-            return Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary),
-              ),
-            );
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      builder: (context, _) =>
+          BlocConsumer<FellowshipListBloc, FellowshipListState>(
+        listenWhen: (previous, current) =>
+            previous.joinStatus != current.joinStatus,
+        listener: (context, state) {
+          if (state.joinStatus == FellowshipJoinStatus.success) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(
+                content: Text(l10n.communityJoinedSuccess),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ));
+          } else if (state.joinStatus == FellowshipJoinStatus.failure) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(
+                content: Text(state.joinError ?? l10n.communityJoinFailed),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ));
+          }
+        },
+        builder: (context, state) {
+          switch (state.status) {
+            case FellowshipListStatus.initial:
+            case FellowshipListStatus.loading:
+              return Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary),
+                ),
+              );
 
-          case FellowshipListStatus.failure:
-            return _ErrorState(
-              message: state.errorMessage ?? l10n.communityJoinFailed,
-              onRetry: () => context
-                  .read<FellowshipListBloc>()
-                  .add(const FellowshipListLoadRequested()),
-            );
+            case FellowshipListStatus.failure:
+              return _ErrorState(
+                message: state.errorMessage ?? l10n.communityJoinFailed,
+                onRetry: () => context
+                    .read<FellowshipListBloc>()
+                    .add(const FellowshipListLoadRequested()),
+              );
 
-          case FellowshipListStatus.success:
-            if (state.fellowships.isEmpty) {
-              return _EmptyState(onJoin: onJoinPressed, onDiscover: onDiscover);
-            }
-            return _FellowshipList(
-              fellowships: state.fellowships,
-            );
-        }
-      },
+            case FellowshipListStatus.success:
+              if (state.fellowships.isEmpty) {
+                return _EmptyState(
+                  onJoin: onJoinPressed,
+                  onDiscover: onDiscover,
+                  onCreateFellowship: onCreatePressed,
+                  canCreate: _computeCanCreate(context, state),
+                );
+              }
+              return _FellowshipList(
+                fellowships: state.fellowships,
+              );
+          }
+        },
+      ),
     );
   }
 }
@@ -939,8 +966,15 @@ class _DiscoverTabState extends State<_DiscoverTab> {
 class _EmptyState extends StatelessWidget {
   final Future<void> Function() onJoin;
   final VoidCallback onDiscover;
+  final Future<void> Function() onCreateFellowship;
+  final bool canCreate;
 
-  const _EmptyState({required this.onJoin, required this.onDiscover});
+  const _EmptyState({
+    required this.onJoin,
+    required this.onDiscover,
+    required this.onCreateFellowship,
+    required this.canCreate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1057,6 +1091,33 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
           ),
+          if (canCreate) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: onCreateFellowship,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: Icon(Icons.groups_2_rounded,
+                    size: 20, color: Theme.of(context).colorScheme.primary),
+                label: Text(
+                  l10n.createFellowshipTitle,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1662,7 +1723,7 @@ bool _canCreateFellowship(BuildContext context, FellowshipListState listState) {
     final subState = context.read<SubscriptionBloc>().state;
     if (subState is UserSubscriptionStatusLoaded) {
       final plan = subState.currentPlan;
-      if (plan == 'standard' || plan == 'plus' || plan == 'premium') {
+      if (plan == 'plus' || plan == 'premium') {
         return true;
       }
     }
