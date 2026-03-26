@@ -1,7 +1,7 @@
 // marketing/app/og/route.tsx
 // Puppeteer-based OG image renderer for proper Indic script shaping.
-// @vercel/og (Satori) lacks HarfBuzz, so Devanagari/Malayalam glyphs are misordered.
-// Chrome renders the same HTML with full OpenType shaping.
+// Chrome's built-in HarfBuzz engine handles Devanagari/Malayalam natively —
+// no custom fonts needed.
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer-core";
 import fs from "fs";
@@ -27,13 +27,6 @@ async function getLaunchOptions(): Promise<{ executablePath: string; args: strin
   return { executablePath, args: [] };
 }
 
-function readFileBase64(filePath: string): string | null {
-  try {
-    if (fs.existsSync(filePath)) return fs.readFileSync(filePath).toString("base64");
-  } catch { /* skip */ }
-  return null;
-}
-
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -42,33 +35,12 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function buildHtml(params: {
-  title: string;
-  subtitle: string;
-  poppinsB64: string | null;
-  devanagariB64: string | null;
-  malayalamB64: string | null;
-  splashB64: string | null;
-}): string {
-  const { title, subtitle, poppinsB64, devanagariB64, malayalamB64, splashB64 } = params;
-
-  const fontFaces = [
-    poppinsB64 &&
-      `@font-face { font-family: 'Poppins'; src: url('data:font/ttf;base64,${poppinsB64}') format('truetype'); font-weight: 800; }`,
-    devanagariB64 &&
-      `@font-face { font-family: 'Noto Sans Devanagari'; src: url('data:font/ttf;base64,${devanagariB64}') format('truetype'); font-weight: 700; }`,
-    malayalamB64 &&
-      `@font-face { font-family: 'Noto Sans Malayalam'; src: url('data:font/ttf;base64,${malayalamB64}') format('truetype'); font-weight: 700; }`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
+function buildHtml(title: string, subtitle: string, splashB64: string | null): string {
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-  ${fontFaces}
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 1200px; height: 630px; overflow: hidden; }
   body {
@@ -89,7 +61,6 @@ function buildHtml(params: {
     font-size: 28px;
     font-weight: 700;
     color: #A5B4FC;
-    font-family: 'Poppins', sans-serif;
     margin-bottom: 32px;
     letter-spacing: -0.3px;
   }
@@ -99,19 +70,16 @@ function buildHtml(params: {
     color: #A5B4FC;
     line-height: 1.15;
     margin-bottom: 20px;
-    font-family: 'Poppins', 'Noto Sans Devanagari', 'Noto Sans Malayalam', sans-serif;
   }
   .subtitle {
     font-size: 22px;
     color: #94A3B8;
     line-height: 1.4;
-    font-family: 'Poppins', 'Noto Sans Devanagari', 'Noto Sans Malayalam', sans-serif;
   }
   .domain {
     margin-top: 40px;
     font-size: 16px;
     color: #A5B4FC;
-    font-family: 'Poppins', sans-serif;
   }
   .right {
     display: flex;
@@ -145,14 +113,14 @@ export async function GET(req: NextRequest) {
   const title = searchParams.get("title") ?? "Disciplefy";
   const subtitle = searchParams.get("subtitle") ?? "AI Bible Study in Your Language";
 
-  const fontsDir = path.join(process.cwd(), "public", "fonts");
-  const poppinsB64 = readFileBase64(path.join(fontsDir, "Poppins-ExtraBold.ttf"));
-  const devanagariB64 = readFileBase64(path.join(fontsDir, "NotoSansDevanagari-Bold.ttf"));
-  const malayalamB64 = readFileBase64(path.join(fontsDir, "NotoSansMalayalam-Bold.ttf"));
-  const splashB64 = readFileBase64(path.join(process.cwd(), "public", "splash-og.png"));
+  // Splash image embedded as data URI (no external requests during render)
+  let splashB64: string | null = null;
+  try {
+    const splashPath = path.join(process.cwd(), "public", "splash-og.png");
+    if (fs.existsSync(splashPath)) splashB64 = fs.readFileSync(splashPath).toString("base64");
+  } catch { /* skip */ }
 
-  const html = buildHtml({ title, subtitle, poppinsB64, devanagariB64, malayalamB64, splashB64 });
-
+  const html = buildHtml(title, subtitle, splashB64);
   const { executablePath, args } = await getLaunchOptions();
 
   const browser = await puppeteer.launch({
@@ -171,15 +139,11 @@ export async function GET(req: NextRequest) {
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });
     await page.setContent(html, { waitUntil: "load" });
-    // Wait for @font-face data URIs to finish loading before screenshotting
-    await page.evaluateHandle(() => document.fonts.ready);
     const screenshot = await page.screenshot({ type: "png" });
 
     return new NextResponse(screenshot as unknown as BodyInit, {
       headers: {
         "Content-Type": "image/png",
-        // CDN caches for 24 h; stale-while-revalidate keeps the old image
-        // serving while regenerating — avoids cold-start latency for visitors.
         "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
       },
     });
