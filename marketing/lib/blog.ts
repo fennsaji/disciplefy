@@ -1,6 +1,6 @@
 // marketing/lib/blog.ts
+import { cache } from "react";
 import { type Locale } from "@/i18n";
-
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -47,28 +47,37 @@ export async function getAllPosts(
   });
   if (tag) params.set("tag", tag);
 
-  try {
-    const res = await fetch(`${BLOG_API_URL}/api/v1/posts?${params}`, {
-      cache: "no-store",
-    });
+  const url = `${BLOG_API_URL}/api/v1/posts?${params}`;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
 
-    if (!res.ok) return { posts: [], pagination: EMPTY_PAGINATION };
+      if (!res.ok) {
+        if (attempt < 3) { await delay(300 * attempt); continue; }
+        return { posts: [], pagination: EMPTY_PAGINATION };
+      }
 
-    const json = await res.json();
-    return { posts: json.data ?? [], pagination: json.pagination ?? EMPTY_PAGINATION };
-  } catch (err) {
-    console.error("Failed to fetch posts:", err);
-    return { posts: [], pagination: EMPTY_PAGINATION };
+      const json = await res.json();
+      return { posts: json.data ?? [], pagination: json.pagination ?? EMPTY_PAGINATION };
+    } catch (err) {
+      if (attempt < 3) { await delay(300 * attempt); continue; }
+      console.error("Failed to fetch posts after retries:", err);
+      return { posts: [], pagination: EMPTY_PAGINATION };
+    }
   }
+  return { posts: [], pagination: EMPTY_PAGINATION };
 }
 
-export async function getPost(slug: string): Promise<Post | null> {
+// cache() deduplicates concurrent calls with the same slug within a single request
+// (e.g. generateMetadata + page component both call getPost for the same slug).
+export const getPost = cache(async function getPost(slug: string): Promise<Post | null> {
   const url = `${BLOG_API_URL}/api/v1/posts/${encodeURIComponent(slug)}`;
   // Retry up to 3 times on transient failures (5xx / network errors).
   // A genuine 404 from the API is returned immediately — no retry needed.
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(url, { next: { revalidate: 3600 } });
+      // cache: "no-store" is consistent with the page's force-dynamic setting.
+      const res = await fetch(url, { cache: "no-store" });
 
       // Post genuinely doesn't exist → stop immediately, let caller notFound()
       if (res.status === 404) return null;
@@ -89,7 +98,7 @@ export async function getPost(slug: string): Promise<Post | null> {
     }
   }
   return null;
-}
+});
 
 export async function searchPosts(query: string, locale: Locale): Promise<PostMeta[]> {
   const params = new URLSearchParams({ q: query, locale });
