@@ -9,6 +9,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/services/platform_detection_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/logger.dart';
@@ -537,7 +538,34 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     );
   }
 
+  Widget _buildSubscriptionsDisabledCard() {
+    return Card(
+      color: AppColors.warning.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: AppColors.warning),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'New subscriptions are temporarily unavailable. Please check back later.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButton(SubscriptionState state) {
+    // Kill switch: new subscriptions disabled by admin
+    if (!sl<SystemConfigService>().isNewSubscriptionsEnabled) {
+      return _buildSubscriptionsDisabledCard();
+    }
+
     // Only show the blocking info card for upgrades (not downgrades)
     if (!_isDowngrade &&
         state is SubscriptionEligibilityChecked &&
