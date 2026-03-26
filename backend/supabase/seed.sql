@@ -127,18 +127,23 @@ DECLARE
 BEGIN
   RAISE NOTICE '🔄 Backfilling trial subscriptions for existing users...';
 
-  -- Get trial configuration
+  -- Get trial configuration from system_config (single source of truth)
   SELECT value::TIMESTAMPTZ INTO v_trial_end_date
-  FROM subscription_config
-  WHERE key = 'standard_trial_end_date';
+  FROM system_config
+  WHERE key = 'standard_trial_end_date' AND is_active = true;
 
-  SELECT value::TIMESTAMPTZ INTO v_grace_end_date
-  FROM subscription_config
-  WHERE key = 'grace_period_end_date';
+  -- Compute grace end date dynamically: trial end + grace_period_days
+  SELECT v_trial_end_date + INTERVAL '1 day' * value::INTEGER INTO v_grace_end_date
+  FROM system_config
+  WHERE key = 'grace_period_days' AND is_active = true;
 
-  -- Default values if not configured
-  v_trial_end_date := COALESCE(v_trial_end_date, '2026-03-31T23:59:59+05:30'::TIMESTAMPTZ);
-  v_grace_end_date := COALESCE(v_grace_end_date, '2026-04-07T23:59:59+05:30'::TIMESTAMPTZ);
+  -- Fail loudly if trial config is missing from DB — no hardcoded fallbacks
+  IF v_trial_end_date IS NULL THEN
+    RAISE EXCEPTION 'standard_trial_end_date missing from system_config';
+  END IF;
+  IF v_grace_end_date IS NULL THEN
+    RAISE EXCEPTION 'grace_period_days missing from system_config';
+  END IF;
 
   -- Get standard plan ID
   SELECT id INTO v_standard_plan_id

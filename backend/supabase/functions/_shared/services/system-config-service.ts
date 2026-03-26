@@ -122,13 +122,16 @@ async function fetchSystemConfigFromDB(): Promise<SystemConfig> {
     latestAppVersion: configMap.get('latest_app_version') || '1.0.0',
     forceUpdateEnabled: configMap.get('force_update_enabled') === 'true',
     trialConfig: {
-      standardTrialEndDate: new Date(
-        configMap.get('standard_trial_end_date') || '2026-03-31T23:59:59+05:30'
-      ),
+      standardTrialEndDate: (() => {
+        const v = configMap.get('standard_trial_end_date')
+        if (!v) throw new Error('[system-config] standard_trial_end_date missing from DB')
+        return new Date(v)
+      })(),
       premiumTrialDays: parseInt(configMap.get('premium_trial_days') || '7', 10),
-      premiumTrialStartDate: new Date(
-        configMap.get('premium_trial_start_date') || '2026-04-01T00:00:00+05:30'
-      ),
+      premiumTrialStartDate: (() => {
+        const v = configMap.get('premium_trial_start_date')
+        return v ? new Date(v) : new Date()  // Deprecated: premium trial is now on-demand
+      })(),
       gracePeriodDays: parseInt(configMap.get('grace_period_days') || '7', 10),
     },
   }
