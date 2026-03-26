@@ -9,6 +9,11 @@ const nextConfig = {
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
   experimental: { mdxRs: true },
 
+  // ── Puppeteer / Chromium (OG image generation) ─────────────────────────────
+  // Prevent Next.js / webpack from trying to bundle native binaries.
+  // These packages are loaded at runtime by the /og serverless function.
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+
   // ── Image optimisation ─────────────────────────────────────────────────────
   // Serve AVIF then WebP (30-50% smaller than JPEG on mobile).
   // Explicit device/image sizes avoid generating unnecessary responsive variants.
