@@ -248,6 +248,21 @@ class SystemConfigService extends ChangeNotifier {
   /// Check if force update is enabled
   bool get isForceUpdateEnabled => _config?.versionControl.forceUpdate ?? false;
 
+  /// Whether token purchase is currently enabled (admin kill switch).
+  /// Returns true if the flag is missing (safe default — keeps purchase open).
+  bool get isTokenPurchaseEnabled {
+    final feature = _config?.featureFlags['enable_token_purchase'];
+    return feature?.enabled ?? true;
+  }
+
+  /// Whether new subscription creation is currently enabled (admin kill switch).
+  /// Returns true if the flag is missing (safe default — keeps subscriptions open).
+  /// NOTE: Does NOT affect existing paid subscribers managing their subscription.
+  bool get isNewSubscriptionsEnabled {
+    final feature = _config?.featureFlags['enable_new_subscriptions'];
+    return feature?.enabled ?? true;
+  }
+
   // Private helper methods
 
   bool _shouldRefresh() {

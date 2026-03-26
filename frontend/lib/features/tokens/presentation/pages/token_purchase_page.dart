@@ -15,6 +15,7 @@ import '../bloc/token_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/system_config_service.dart';
 
 /// Token Purchase Page
 ///
@@ -257,6 +258,11 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Kill switch: token purchase disabled by admin
+    if (!sl<SystemConfigService>().isTokenPurchaseEnabled) {
+      return _buildTokenPurchaseDisabledPage(context);
+    }
+
     // Premium users cannot purchase (they have unlimited)
     if (widget.tokenStatus.userPlan == UserPlan.premium) {
       return _buildRestrictedPage(context);
@@ -353,6 +359,41 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
               label: Text('Retry'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTokenPurchaseDisabledPage(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(context.tr(TranslationKeys.tokenPurchaseTitle)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.shopping_cart_outlined,
+                  size: 64, color: AppColors.warning),
+              const SizedBox(height: 16),
+              const Text(
+                'Token purchase is temporarily unavailable',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please check back later.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -9,6 +9,7 @@ import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/platform_detection_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
@@ -527,7 +528,34 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     );
   }
 
+  Widget _buildSubscriptionsDisabledCard() {
+    return Card(
+      color: AppTheme.secondaryColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: AppTheme.primaryColor),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'New subscriptions are temporarily unavailable. Please check back later.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButton(SubscriptionState state) {
+    // Kill switch: new subscriptions disabled by admin
+    if (!sl<SystemConfigService>().isNewSubscriptionsEnabled) {
+      return _buildSubscriptionsDisabledCard();
+    }
+
     if (state is SubscriptionEligibilityChecked) {
       if (!state.canSubscribe) {
         return Card(

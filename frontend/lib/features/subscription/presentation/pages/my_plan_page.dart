@@ -23,6 +23,7 @@ import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 import '../widgets/premium_trial_banner.dart';
+import '../../../../core/services/system_config_service.dart';
 
 /// Unified "My Plan" Page
 ///
@@ -1260,6 +1261,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
   }
 
   Widget _buildViewPlansButton({String label = 'Upgrade'}) {
+    // Kill switch: hide upgrade button when new subscriptions are disabled
+    if (!sl<SystemConfigService>().isNewSubscriptionsEnabled) {
+      return const SizedBox.shrink();
+    }
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(

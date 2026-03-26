@@ -5,6 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/system_config_service.dart';
 
 /// Widget that displays action buttons for token-related operations
 class TokenActionsSection extends StatelessWidget {
@@ -25,6 +27,11 @@ class TokenActionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokenPurchaseEnabled =
+        sl<SystemConfigService>().isTokenPurchaseEnabled;
+    final newSubscriptionsEnabled =
+        sl<SystemConfigService>().isNewSubscriptionsEnabled;
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -41,7 +48,7 @@ class TokenActionsSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            if (tokenStatus.canPurchaseTokens) ...[
+            if (tokenStatus.canPurchaseTokens && tokenPurchaseEnabled) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -57,9 +64,10 @@ class TokenActionsSection extends StatelessWidget {
               ),
               const SizedBox(height: 12),
             ],
-            if (tokenStatus.userPlan == UserPlan.free ||
-                tokenStatus.userPlan == UserPlan.standard ||
-                tokenStatus.userPlan == UserPlan.plus) ...[
+            if (newSubscriptionsEnabled &&
+                (tokenStatus.userPlan == UserPlan.free ||
+                    tokenStatus.userPlan == UserPlan.standard ||
+                    tokenStatus.userPlan == UserPlan.plus)) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
