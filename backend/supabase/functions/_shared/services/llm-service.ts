@@ -679,28 +679,11 @@ Return ONLY the numeric score, nothing else.`
 
     try {
       // Import Bible API service dynamically
-      const { fetchVerseAllLanguages, getCachedVerses, cacheVerses } = await import('./bible-api-service.ts')
+      const { fetchVerseAllLanguages } = await import('./bible-api-service.ts')
 
-      // Check cache first
-      const today = new Date()
-      const cachedVerses = await getCachedVerses(today)
-
-      if (cachedVerses) {
-        console.log(`[LLM] Using cached verses from ${today.toISOString().split('T')[0]}`)
-        return {
-          reference: cachedVerses.en.reference,
-          referenceTranslations: {
-            en: cachedVerses.en.reference,
-            hi: cachedVerses.hi.reference,
-            ml: cachedVerses.ml.reference,
-          },
-          translations: {
-            esv: cachedVerses.en.text,
-            hi: cachedVerses.hi.text,
-            ml: cachedVerses.ml.text,
-          }
-        }
-      }
+      // NOTE: No cache check here — caching is handled by DailyVerseService with the
+      // correct per-date key. A cache here used new Date() (always today), which caused
+      // all dates generated on the same day to return the same verse, bypassing exclusions.
 
       // Generate reference using LLM
       const prompt = createVerseReferencePrompt(excludeReferences, language)
@@ -726,8 +709,6 @@ Return ONLY the numeric score, nothing else.`
         console.warn(`[LLM] Bible API returned incomplete translations, falling back to LLM`)
         return this.generateDailyVerseLLMFallback(excludeReferences, language)
       }
-
-      await cacheVerses(allVerses, today)
 
       return {
         reference: parsedReference.reference,
