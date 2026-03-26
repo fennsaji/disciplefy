@@ -84,11 +84,10 @@ function getCacheAge(entry: CacheEntry | null): number {
 async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
   const supabase = getSupabaseClient()
 
-  // Fetch all enabled feature flags
+  // Fetch ALL feature flags (enabled and disabled) so the client can act on disabled flags too
   const { data, error } = await supabase
     .from('feature_flags')
     .select('*')
-    .eq('is_enabled', true)
     .order('feature_key')
 
   if (error) {
@@ -98,7 +97,7 @@ async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
   }
 
   if (!data || data.length === 0) {
-    console.warn('[FeatureFlags] No enabled feature flags found')
+    console.warn('[FeatureFlags] No feature flags found in database')
     return []
   }
 
