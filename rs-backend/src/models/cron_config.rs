@@ -31,11 +31,7 @@ pub async fn get(pool: &PgPool, name: &str) -> Result<CronConfig, AppError> {
     .ok_or_else(|| AppError::NotFound(format!("Cron '{}' not found", name)))
 }
 
-pub async fn set_enabled(
-    pool: &PgPool,
-    name: &str,
-    enabled: bool,
-) -> Result<CronConfig, AppError> {
+pub async fn set_enabled(pool: &PgPool, name: &str, enabled: bool) -> Result<CronConfig, AppError> {
     sqlx::query_as::<_, CronConfig>(
         "UPDATE cron_config SET enabled = $2 WHERE name = $1
          RETURNING name, enabled, schedule, label, updated_at",
