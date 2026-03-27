@@ -196,16 +196,21 @@ export class SubscriptionService {
     }
 
     try {
-      // Validate configuration before calling Razorpay
-      this.validateConfiguration()
+      const isIapProvider = subscription.provider === 'google_play' || subscription.provider === 'apple_iap'
 
       if (options.cancelAtCycleEnd) {
-        // Cancel at cycle end: Set flag in Razorpay, subscription stays active
-        console.log('[SubscriptionService] Cancelling at cycle end in Razorpay:', subscription.id)
-        await this.cancelRazorpaySubscription(
-          subscription.provider_subscription_id,
-          true  // cancel_at_cycle_end = 1
-        )
+        if (!isIapProvider) {
+          // Razorpay: cancel at cycle end via API
+          this.validateConfiguration()
+          console.log('[SubscriptionService] Cancelling at cycle end in Razorpay:', subscription.id)
+          await this.cancelRazorpaySubscription(
+            subscription.provider_subscription_id,
+            true  // cancel_at_cycle_end = 1
+          )
+        } else {
+          // IAP (Google Play / Apple): managed by the store — just update DB
+          console.log('[SubscriptionService] IAP subscription — skipping provider API, updating DB only:', subscription.id)
+        }
 
         // Update database to pending_cancellation (still active with premium)
         const updatedSubscription = await this.updateSubscriptionStatus(
@@ -231,18 +236,25 @@ export class SubscriptionService {
           {
             cancel_at_cycle_end: true,
             reason: options.reason,
-            razorpay_cancel_at_cycle_end_set: true
+            provider: subscription.provider,
+            ...(isIapProvider ? { iap_db_only: true } : { razorpay_cancel_at_cycle_end_set: true })
           }
         )
 
         return updatedSubscription
       } else {
-        // Cancel immediately: Cancel in Razorpay, subscription ends now
-        console.log('[SubscriptionService] Cancelling immediately in Razorpay:', subscription.id)
-        await this.cancelRazorpaySubscription(
-          subscription.provider_subscription_id,
-          false  // cancel_at_cycle_end = 0
-        )
+        if (!isIapProvider) {
+          // Razorpay: cancel immediately via API
+          this.validateConfiguration()
+          console.log('[SubscriptionService] Cancelling immediately in Razorpay:', subscription.id)
+          await this.cancelRazorpaySubscription(
+            subscription.provider_subscription_id,
+            false  // cancel_at_cycle_end = 0
+          )
+        } else {
+          // IAP (Google Play / Apple): managed by the store — just update DB
+          console.log('[SubscriptionService] IAP subscription — skipping provider API, updating DB only:', subscription.id)
+        }
 
         // Update database to cancelled (no longer active)
         const updatedSubscription = await this.updateSubscriptionStatus(
@@ -268,7 +280,8 @@ export class SubscriptionService {
           {
             cancel_at_cycle_end: false,
             reason: options.reason,
-            razorpay_cancelled_immediately: true
+            provider: subscription.provider,
+            ...(isIapProvider ? { iap_db_only: true } : { razorpay_cancelled_immediately: true })
           }
         )
 
