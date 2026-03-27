@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/auth_flow_service.dart';
@@ -114,7 +115,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         context.read<AuthBloc>().add(const SessionCheckRequested());
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
-            context.go('/');
+            _navigateAfterAuth();
           }
         });
       } else {
@@ -186,13 +187,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
             Logger.debug(
                 '🔍 [AUTH CALLBACK] ⏱️ Adding 100ms delay for storage completion...');
             Future.delayed(const Duration(milliseconds: 100), () {
-              Logger.debug(
-                  '🔍 [AUTH CALLBACK] - About to call context.go("/")');
-              // Clear any URL fragments and navigate to home
-              // This ensures OAuth callback properly redirects regardless of preserved fragments
-              context.go('/');
-              Logger.debug(
-                  '🔍 [AUTH CALLBACK] - context.go("/") completed at: ${DateTime.now().millisecondsSinceEpoch}');
+              _navigateAfterAuth();
             });
           } else if (state is auth_states.AuthErrorState) {
             // Error - show message and redirect to login
@@ -344,6 +339,19 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         ),
       );
 
+  /// Navigates after auth — checks Hive for a pending deep-link redirect first.
+  void _navigateAfterAuth() {
+    if (!mounted) return;
+    final box = Hive.box('app_settings');
+    final redirect = box.get('pending_deep_link_redirect') as String?;
+    if (redirect != null && redirect.isNotEmpty) {
+      box.delete('pending_deep_link_redirect');
+      context.go(Uri.decodeComponent(redirect));
+    } else {
+      context.go('/');
+    }
+  }
+
   void _checkLanguageSelectionAndRedirect() async {
     try {
       // Check if user needs language selection
@@ -355,7 +363,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
           if (shouldShowLanguageSelection) {
             context.go('/language-selection');
           } else {
-            context.go('/');
+            _navigateAfterAuth();
           }
         }
       });
@@ -364,7 +372,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
       // Fallback to home on error
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
-          context.go('/');
+          _navigateAfterAuth();
         }
       });
     }
