@@ -65,6 +65,7 @@ export interface Subscription {
   readonly cancelled_at: string | null
   readonly cancel_at_cycle_end: boolean
   readonly cancellation_reason: string | null
+  readonly iap_product_id: string | null
   readonly created_at: string
   readonly updated_at: string
 }
