@@ -50,6 +50,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
     // Load subscription and invoices when page opens
     context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     context.read<SubscriptionBloc>().add(const GetSubscriptionInvoices());
+    context.read<SubscriptionBloc>().add(const LoadSubscriptionStatus());
+    // Force-refresh token status to avoid showing stale plan data from cache
+    // (race condition can occur during subscription switches)
+    context.read<TokenBloc>().add(const RefreshTokenStatus());
     _loadPlanFeatures();
   }
 
@@ -92,164 +96,191 @@ class _MyPlanPageState extends State<MyPlanPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.tr(TranslationKeys.myPlanTitle),
-          style: AppFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go(AppRoutes.tokenManagement);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            context.tr(TranslationKeys.myPlanTitle),
+            style: AppFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryColor,
+            ),
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
             onPressed: () {
-              context.read<SubscriptionBloc>().add(const RefreshSubscription());
-              context
-                  .read<SubscriptionBloc>()
-                  .add(const RefreshSubscriptionInvoices());
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRoutes.tokenManagement);
+              }
             },
-            tooltip: context.tr(TranslationKeys.myPlanRefresh),
           ),
-        ],
-      ),
-      body: BlocBuilder<TokenBloc, TokenState>(
-        builder: (context, tokenState) {
-          TokenStatus? tokenStatus;
-          if (tokenState is TokenLoaded) {
-            tokenStatus = tokenState.tokenStatus;
-          }
-
-          // Determine plan status
-          final trialEndDate = DateTime(2026, 3, 31);
-          final isTrialActive = DateTime.now().isBefore(trialEndDate);
-
-          return BlocConsumer<SubscriptionBloc, SubscriptionState>(
-            listener: (context, state) {
-              if (state is SubscriptionCancelled) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.warningColor,
-                  ),
-                );
-              } else if (state is SubscriptionResumed) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.successColor,
-                  ),
-                );
-              } else if (state is PremiumTrialStarted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppTheme.successColor,
-                  ),
-                );
-                // Refresh token status to reflect new Premium access
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () {
+                context
+                    .read<SubscriptionBloc>()
+                    .add(const RefreshSubscription());
+                context
+                    .read<SubscriptionBloc>()
+                    .add(const RefreshSubscriptionInvoices());
                 context.read<TokenBloc>().add(const RefreshTokenStatus());
-              } else if (state is SubscriptionError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Something went wrong. Please try again.'),
-                    backgroundColor: AppTheme.errorColor,
+              },
+              tooltip: context.tr(TranslationKeys.myPlanRefresh),
+            ),
+          ],
+        ),
+        body: BlocBuilder<TokenBloc, TokenState>(
+          builder: (context, tokenState) {
+            TokenStatus? tokenStatus;
+            if (tokenState is TokenLoaded) {
+              tokenStatus = tokenState.tokenStatus;
+            }
+
+            return BlocConsumer<SubscriptionBloc, SubscriptionState>(
+              listener: (context, state) {
+                if (state is SubscriptionCancelled) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppTheme.warningColor,
+                    ),
+                  );
+                } else if (state is SubscriptionResumed) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppTheme.successColor,
+                    ),
+                  );
+                } else if (state is PremiumTrialStarted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppTheme.successColor,
+                    ),
+                  );
+                  // Refresh token status to reflect new Premium access
+                  context.read<TokenBloc>().add(const RefreshTokenStatus());
+                } else if (state is SubscriptionError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Something went wrong. Please try again.'),
+                      backgroundColor: AppTheme.errorColor,
+                    ),
+                  );
+                } else if (state is UserSubscriptionStatusLoaded &&
+                    state.authorizationUrl != null) {
+                  // Open Razorpay payment URL
+                  _openPaymentUrl(state.authorizationUrl!);
+                } else if (state is SubscriptionCreated) {
+                  // Open Razorpay payment URL from create result (skip for IAP where URL is empty)
+                  if (state.authorizationUrl.isNotEmpty) {
+                    _openPaymentUrl(state.authorizationUrl);
+                  }
+                }
+              },
+              builder: (context, state) {
+                if (state is SubscriptionLoading &&
+                    state.operation == 'fetching') {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                Subscription? subscription;
+                List<SubscriptionInvoice> invoices = [];
+
+                // Get subscription status for trial/grace period info
+                final subscriptionStatus = state is UserSubscriptionStatusLoaded
+                    ? state.subscriptionStatus
+                    : null;
+
+                // Use backend trial end date when available (populated by LoadSubscriptionStatus)
+                final trialEndDate =
+                    subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
+                final isTrialActive = DateTime.now().isBefore(trialEndDate);
+
+                if (state is SubscriptionLoaded) {
+                  subscription = state.activeSubscription;
+                  invoices = state.invoices ?? [];
+                } else if (state is SubscriptionError &&
+                    state.previousSubscription != null) {
+                  subscription = state.previousSubscription;
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    context
+                        .read<SubscriptionBloc>()
+                        .add(const RefreshSubscription());
+                    context
+                        .read<SubscriptionBloc>()
+                        .add(const RefreshSubscriptionInvoices());
+                    await Future.delayed(const Duration(seconds: 1));
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Plan Status Card (always shown)
+                        _buildPlanStatusCard(
+                          tokenStatus,
+                          subscription,
+                          isTrialActive,
+                          trialEndDate,
+                          subscriptionStatus,
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Plan Features Section (always shown)
+                        _buildPlanFeaturesCard(tokenStatus),
+                        const SizedBox(height: 20),
+
+                        // Subscription Details (if has subscription)
+                        if (subscription != null) ...[
+                          _buildSubscriptionDetailsCard(subscription),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Payment History Section (if has invoices)
+                        if (invoices.isNotEmpty) ...[
+                          _buildPaymentHistoryCard(invoices),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Actions Section (contextual)
+                        _buildActionsSection(
+                          tokenStatus,
+                          subscription,
+                          isTrialActive,
+                          state,
+                          subscriptionStatus,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 );
-              } else if (state is UserSubscriptionStatusLoaded &&
-                  state.authorizationUrl != null) {
-                // Open Razorpay payment URL
-                _openPaymentUrl(state.authorizationUrl!);
-              } else if (state is SubscriptionCreated) {
-                // Open Razorpay payment URL from create result
-                _openPaymentUrl(state.authorizationUrl);
-              }
-            },
-            builder: (context, state) {
-              if (state is SubscriptionLoading &&
-                  state.operation == 'fetching') {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              Subscription? subscription;
-              List<SubscriptionInvoice> invoices = [];
-
-              // Get subscription status for trial/grace period info
-              final subscriptionStatus = state is UserSubscriptionStatusLoaded
-                  ? state.subscriptionStatus
-                  : null;
-
-              if (state is SubscriptionLoaded) {
-                subscription = state.activeSubscription;
-                invoices = state.invoices ?? [];
-              } else if (state is SubscriptionError &&
-                  state.previousSubscription != null) {
-                subscription = state.previousSubscription;
-              }
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context
-                      .read<SubscriptionBloc>()
-                      .add(const RefreshSubscription());
-                  context
-                      .read<SubscriptionBloc>()
-                      .add(const RefreshSubscriptionInvoices());
-                  await Future.delayed(const Duration(seconds: 1));
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Plan Status Card (always shown)
-                      _buildPlanStatusCard(
-                        tokenStatus,
-                        subscription,
-                        isTrialActive,
-                        trialEndDate,
-                        subscriptionStatus,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Plan Features Section (always shown)
-                      _buildPlanFeaturesCard(tokenStatus),
-                      const SizedBox(height: 20),
-
-                      // Subscription Details (if has subscription)
-                      if (subscription != null) ...[
-                        _buildSubscriptionDetailsCard(subscription),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Payment History Section (if has invoices)
-                      if (invoices.isNotEmpty) ...[
-                        _buildPaymentHistoryCard(invoices),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Actions Section (contextual)
-                      _buildActionsSection(
-                        tokenStatus,
-                        subscription,
-                        isTrialActive,
-                        state,
-                        subscriptionStatus,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+              },
+            );
+          },
+        ),
+      ), // PopScope
     );
   }
 
