@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import '../utils/logger.dart';
@@ -94,17 +95,37 @@ class IAPService {
     return response.productDetails;
   }
 
-  /// Purchase a product
-  Future<void> purchaseProduct(ProductDetails productDetails) async {
+  /// Purchase a product.
+  ///
+  /// [oldPurchaseDetails] — provide when upgrading/downgrading an existing
+  /// Google Play subscription. Passing the old purchase tells Google Play to
+  /// replace that subscription instead of creating an independent new one,
+  /// which prevents two active subscriptions appearing simultaneously.
+  Future<void> purchaseProduct(
+    ProductDetails productDetails, {
+    GooglePlayPurchaseDetails? oldPurchaseDetails,
+  }) async {
     Logger.debug('🛒 [IAP] Initiating purchase: ${productDetails.id}');
 
     late PurchaseParam purchaseParam;
 
     if (Platform.isAndroid) {
+      ChangeSubscriptionParam? changeParam;
+      if (oldPurchaseDetails != null) {
+        changeParam = ChangeSubscriptionParam(
+          oldPurchaseDetails: oldPurchaseDetails,
+          replacementMode: ReplacementMode.withTimeProration,
+        );
+        Logger.debug(
+            '🛒 [IAP] changeSubscriptionParam set — replacing ${oldPurchaseDetails.productID}');
+      }
       // GooglePlayPurchaseParam automatically surfaces the offerToken from
       // GooglePlayProductDetails.offerToken (via subscriptionIndex) inside the
       // platform layer — no explicit offerToken parameter is needed here.
-      purchaseParam = GooglePlayPurchaseParam(productDetails: productDetails);
+      purchaseParam = GooglePlayPurchaseParam(
+        productDetails: productDetails,
+        changeSubscriptionParam: changeParam,
+      );
     } else {
       purchaseParam = PurchaseParam(productDetails: productDetails);
     }
@@ -120,6 +141,33 @@ class IAPService {
       Logger.debug('🛒 [IAP] Purchase error: $e');
       onPurchaseError?.call(e.toString());
     }
+  }
+
+  /// Query existing Google Play purchases to find one matching [productId].
+  ///
+  /// Used when upgrading/downgrading a subscription so the old purchase can be
+  /// passed as [ChangeSubscriptionParam.oldPurchaseDetails].
+  /// Returns null if not on Android, if the product is not found, or if the
+  /// query fails (caller should proceed without the param).
+  Future<GooglePlayPurchaseDetails?> findExistingGooglePlayPurchase(
+      String productId) async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final androidAddition =
+          _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+      final response = await androidAddition.queryPastPurchases();
+      for (final GooglePlayPurchaseDetails purchase in response.pastPurchases) {
+        if (purchase.productID == productId) {
+          Logger.debug(
+              '🛒 [IAP] Found existing purchase for $productId: ${purchase.purchaseID}');
+          return purchase;
+        }
+      }
+      Logger.debug('🛒 [IAP] No existing purchase found for $productId');
+    } catch (e) {
+      Logger.debug('🛒 [IAP] queryPastPurchases failed (non-fatal): $e');
+    }
+    return null;
   }
 
   /// Restore previous purchases
