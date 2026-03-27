@@ -9,6 +9,37 @@ const nextConfig = {
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
   experimental: { mdxRs: true },
 
+  // ── policies.disciplefy.in redirects ──────────────────────────────────────
+  // Redirects old policy subdomain URLs to canonical marketing site paths.
+  async redirects() {
+    return [
+      {
+        source: "/privacy-policy",
+        destination: "https://www.disciplefy.in/privacy",
+        permanent: true,
+        has: [{ type: "host", value: "policies.disciplefy.in" }],
+      },
+      {
+        source: "/terms-of-service",
+        destination: "https://www.disciplefy.in/terms",
+        permanent: true,
+        has: [{ type: "host", value: "policies.disciplefy.in" }],
+      },
+      {
+        source: "/cancellation-refund-policy",
+        destination: "https://www.disciplefy.in/refund",
+        permanent: true,
+        has: [{ type: "host", value: "policies.disciplefy.in" }],
+      },
+      {
+        source: "/",
+        destination: "https://www.disciplefy.in/privacy",
+        permanent: true,
+        has: [{ type: "host", value: "policies.disciplefy.in" }],
+      },
+    ];
+  },
+
   // ── Image optimisation ─────────────────────────────────────────────────────
   // Serve AVIF then WebP (30-50% smaller than JPEG on mobile).
   // Explicit device/image sizes avoid generating unnecessary responsive variants.
