@@ -1,7 +1,8 @@
 🙏 Disciplefy - Beta Update
 
 ✨ What's New:
-• Smoother subscription and token management experience
-• Improved app reliability and backend stability
+• Fixed Google Play subscription cancellation not reflecting in Play Console
+• Loading spinners now show instantly when subscribing or cancelling
+• Billing amount on My Plan now always shows the correct price after upgrades
 
 📖 Keep growing in your faith!
