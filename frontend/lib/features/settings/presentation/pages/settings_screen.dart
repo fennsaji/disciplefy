@@ -769,7 +769,7 @@ class _SettingsScreenContent extends StatelessWidget {
   /// Launch contact email
   Future<void> _launchContactEmail() async {
     final uri = Uri.parse(
-        'mailto:contact@disciplefy.com?subject=Disciplefy Support Request');
+        'mailto:contact@disciplefy.in?subject=Disciplefy Support Request');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
@@ -887,6 +887,32 @@ class _SettingsScreenContent extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             onTap: () => _launchPrivacyPolicy(),
+          ),
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.gavel_outlined,
+            title: 'Terms of Service',
+            subtitle: 'View our terms of service',
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => _launchTermsOfService(),
+          ),
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.receipt_long_outlined,
+            title: 'Refund Policy',
+            subtitle: 'View our cancellation & refund policy',
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => _launchRefundPolicy(),
           ),
         ],
       );
@@ -2610,7 +2636,21 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   Future<void> _launchPrivacyPolicy() async {
-    final uri = Uri.parse('https://policies.disciplefy.in/privacy-policy');
+    final uri = Uri.parse('https://www.disciplefy.in/privacy');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchTermsOfService() async {
+    final uri = Uri.parse('https://www.disciplefy.in/terms');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchRefundPolicy() async {
+    final uri = Uri.parse('https://www.disciplefy.in/refund');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
