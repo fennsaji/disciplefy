@@ -316,11 +316,18 @@ if [ "$NO_NGROK" = false ]; then
         echo -e "   Or pass ${CYAN}--no-ngrok${NC} to suppress this warning."
     else
         echo -e ""
-        echo -e "${BLUE}🔗 Starting ngrok tunnel → http://127.0.0.1:54321${NC}"
-        pkill -f "ngrok http 54321" 2>/dev/null || true
-        sleep 1
-
-        ngrok http 54321 --log=stdout > /tmp/ngrok_iap.log 2>&1 &
+        _NGROK_DOMAIN=$(read_env NGROK_DOMAIN)
+        if [ -n "$_NGROK_DOMAIN" ]; then
+            echo -e "${BLUE}🔗 Starting ngrok tunnel (static domain: ${_NGROK_DOMAIN}) → http://127.0.0.1:54321${NC}"
+            pkill -f "ngrok http" 2>/dev/null || true
+            sleep 1
+            ngrok http --domain="$_NGROK_DOMAIN" 54321 --log=stdout > /tmp/ngrok_iap.log 2>&1 &
+        else
+            echo -e "${BLUE}🔗 Starting ngrok tunnel → http://127.0.0.1:54321${NC}"
+            pkill -f "ngrok http 54321" 2>/dev/null || true
+            sleep 1
+            ngrok http 54321 --log=stdout > /tmp/ngrok_iap.log 2>&1 &
+        fi
         NGROK_PID=$!
 
         echo -e "${BLUE}⏳ Waiting for ngrok...${NC}"
@@ -416,8 +423,8 @@ if [ -n "$WEBHOOK_URL" ]; then
     echo -e "    3. Paste URL above → Save"
     echo -e "    4. Play Console sends a test ping — watch logs below to confirm"
     echo ""
-    echo -e "  ${CYAN}Note: ngrok URL changes every session.${NC}"
-    echo -e "  ${CYAN}      Upgrade to ngrok paid plan for a stable domain.${NC}"
+    echo -e "  ${CYAN}Note: URL changes every session unless NGROK_DOMAIN is set in .env.iap.${NC}"
+    echo -e "  ${CYAN}      Free static domain: ngrok dashboard → Cloud Edge → Domains.${NC}"
     echo ""
 
     if [ "$NO_PAUSE" = false ]; then

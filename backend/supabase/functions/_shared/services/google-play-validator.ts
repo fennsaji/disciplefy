@@ -231,6 +231,61 @@ async function signJWT(claims: any, privateKey: string): Promise<string> {
 /**
  * Acknowledge Google Play purchase
  */
+/**
+ * Cancel a Google Play subscription via the Android Publisher API.
+ *
+ * @param supabase - Supabase client (for reading service account credentials from iap_config)
+ * @param packageName - App package name (e.g. com.disciplefy.bible_study)
+ * @param productId   - Subscription product ID (e.g. plus_monthly)
+ * @param purchaseToken - The purchase token from the original IAP purchase
+ * @param environment - 'sandbox' or 'production'
+ * @returns true on success, false on failure (non-throwing)
+ */
+export async function cancelGooglePlaySubscription(
+  supabase: SupabaseClient,
+  packageName: string,
+  productId: string,
+  purchaseToken: string,
+  environment: 'sandbox' | 'production'
+): Promise<boolean> {
+  console.log('[GOOGLE_PLAY] Cancelling subscription:', { packageName, productId })
+
+  if (Deno.env.get('USE_MOCK') === 'true') {
+    console.log('[GOOGLE_PLAY] USE_MOCK=true — skipping cancel API call')
+    return true
+  }
+
+  try {
+    const config = await getIAPConfig(supabase, 'google_play', environment)
+    const accessToken = await getGoogleAccessToken(
+      config.serviceAccountEmail!,
+      config.serviceAccountKey!
+    )
+
+    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}:cancel`
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error('[GOOGLE_PLAY] Cancel subscription failed:', response.status, errorBody)
+      return false
+    }
+
+    console.log('[GOOGLE_PLAY] Subscription cancelled successfully')
+    return true
+  } catch (error) {
+    console.error('[GOOGLE_PLAY] Cancel subscription error:', error)
+    return false
+  }
+}
+
 export async function acknowledgeGooglePlayPurchase(
   supabase: SupabaseClient,
   receipt: GooglePlayReceipt,
