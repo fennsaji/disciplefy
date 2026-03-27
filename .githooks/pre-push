@@ -114,6 +114,38 @@ fi
 
 echo ""
 
+# Rust Backend Validation
+echo -e "${YELLOW}🦀 Rust Backend Validation...${NC}"
+if [ -d "rs-backend" ] && has_changes_since_push "rs-backend"; then
+    cd "$REPO_ROOT/rs-backend"
+
+    if ! command -v cargo &> /dev/null; then
+        echo -e "${RED}❌ cargo not found${NC}"
+        OVERALL_SUCCESS=false
+    else
+        echo "🔍 Checking Rust formatting..."
+        if cargo fmt --check >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ cargo fmt: PASSED${NC}"
+        else
+            echo -e "${RED}❌ cargo fmt: FAILED${NC}"
+            echo ""
+            echo -e "${RED}Rust files need formatting. Please run:${NC}"
+            echo -e "${RED}   cd rs-backend && cargo fmt${NC}"
+            echo -e "${RED}   git add rs-backend/${NC}"
+            echo -e "${RED}   git commit -m \"Fix Rust formatting\"${NC}"
+            echo ""
+            cargo fmt --check 2>&1 | sed 's/^/   /' | head -20
+            OVERALL_SUCCESS=false
+        fi
+    fi
+
+    cd "$REPO_ROOT"
+else
+    echo -e "${BLUE}ℹ️  No rs-backend changes since last push - skipping Rust validation${NC}"
+fi
+
+echo ""
+
 # Enhanced Frontend Validation
 echo -e "${YELLOW}📱 Frontend Validation (Enhanced)...${NC}"
 if [ -d "frontend" ] && (has_changes_since_push "frontend" || git diff --name-only HEAD~1..HEAD | grep -q "\.dart$"); then
