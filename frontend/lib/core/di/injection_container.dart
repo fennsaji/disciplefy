@@ -26,6 +26,7 @@ import '../../features/auth/presentation/bloc/phone_auth_bloc.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
 import '../../features/study_generation/data/repositories/token_cost_repository.dart';
+import '../../features/study_generation/data/services/tts_notification_service.dart';
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
 import '../../features/study_generation/data/datasources/study_local_data_source.dart';
 import '../../features/study_generation/domain/usecases/generate_study_guide.dart';
@@ -919,9 +920,12 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => TTSService());
 
   //! Study Guide TTS
+  sl.registerLazySingleton(() => TtsNotificationService());
+
   sl.registerLazySingleton(() => StudyGuideTTSService(
         ttsService: sl<TTSService>(),
         prefs: sl<SharedPreferences>(),
+        notificationService: sl<TtsNotificationService>(),
       ));
 
   // Data Source
