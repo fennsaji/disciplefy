@@ -525,8 +525,7 @@ class RouterGuard {
         path.startsWith('/auth/callback') ||
         path.startsWith('/phone-auth') || // Allow all phone auth related routes
         path.startsWith('/email-auth') || // Allow email auth routes
-        path.startsWith('/password-reset') || // Allow password reset routes
-        path.startsWith('/fellowship/join'); // Fellowship invite deep links
+        path.startsWith('/password-reset'); // Allow password reset routes
   }
 
   /// Check if the route requires full authentication (not guest/anonymous)
@@ -685,6 +684,15 @@ class RouterGuard {
   static String _determineUnauthenticatedRedirect(RouteAnalysis routeAnalysis) {
     final onboardingState = _getOnboardingState();
 
+    // Helper: login URL with return path encoded as query param
+    String loginWithRedirect() {
+      final path = routeAnalysis.currentPath;
+      if (path.isNotEmpty && path != '/' && path != AppRoutes.home) {
+        return '${AppRoutes.login}?redirect=${Uri.encodeComponent(path)}';
+      }
+      return AppRoutes.login;
+    }
+
     // Special handling for logout scenarios - ensure we go to login
     // even if there are temporary inconsistencies in storage
     if (routeAnalysis.currentPath == AppRoutes.settings ||
@@ -705,8 +713,10 @@ class RouterGuard {
       return routeAnalysis.currentPath; // Stay on onboarding route
     }
 
-    // Default: new users to onboarding, others to login
-    return onboardingState.isCompleted ? AppRoutes.login : AppRoutes.onboarding;
+    // Default — include redirect param so deep links survive login
+    return onboardingState.isCompleted
+        ? loginWithRedirect()
+        : AppRoutes.onboarding;
   }
 
   /// Phase 2: Get reason for unauthenticated user redirect
@@ -778,6 +788,23 @@ class RouterGuard {
     // This should happen BEFORE checking for pending upgrades
     if (routeAnalysis.currentPath == AppRoutes.home) {
       await _checkAutoActivateFreePlanAsync();
+    }
+
+    // Check for pending deep-link redirect (e.g. fellowship join after OAuth round-trip)
+    // Supabase handles OAuth natively so the app starts authenticated at "/",
+    // never passing through AuthCallbackPage or LoginScreen — consume the Hive key here.
+    if (routeAnalysis.currentPath == AppRoutes.home) {
+      final box = Hive.box(_hiveBboxName);
+      final deepLinkRedirect = box.get('pending_deep_link_redirect') as String?;
+      if (deepLinkRedirect != null && deepLinkRedirect.isNotEmpty) {
+        await box.delete('pending_deep_link_redirect');
+        Logger.info(
+          'Consuming pending deep-link redirect after auth',
+          tag: 'ROUTER',
+          context: {'target': deepLinkRedirect},
+        );
+        return Uri.decodeComponent(deepLinkRedirect);
+      }
     }
 
     // Check for pending plan upgrade from pricing page
