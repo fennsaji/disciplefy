@@ -415,7 +415,7 @@ class AppTranslations {
       'report_purchase_issue': 'Report Purchase Issue',
       'report_purchase_issue_subtitle': 'Get help with token purchases',
       'contact_us': 'Contact Us',
-      'contact_us_subtitle': 'contact@disciplefy.com',
+      'contact_us_subtitle': 'contact@disciplefy.in',
       'replay_walkthrough': 'Replay App Walkthrough',
       'replay_walkthrough_subtitle': 'Replay the guided tour for each screen',
       'replay_walkthrough_success':
@@ -2308,7 +2308,7 @@ class AppTranslations {
       'report_purchase_issue': 'खरीदारी समस्या रिपोर्ट करें',
       'report_purchase_issue_subtitle': 'टोकन खरीदारी में मदद पाएं',
       'contact_us': 'हमसे संपर्क करें',
-      'contact_us_subtitle': 'contact@disciplefy.com',
+      'contact_us_subtitle': 'contact@disciplefy.in',
       'replay_walkthrough': 'ऐप वॉकथ्रू दोबारा देखें',
       'replay_walkthrough_subtitle':
           'प्रत्येक स्क्रीन का निर्देशित दौरा दोबारा चलाएं',
@@ -4223,7 +4223,7 @@ class AppTranslations {
       'report_purchase_issue': 'വാങ്ങൽ പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക',
       'report_purchase_issue_subtitle': 'ടോക്കൺ വാങ്ങലിൽ സഹായം നേടുക',
       'contact_us': 'ഞങ്ങളെ ബന്ധപ്പെടുക',
-      'contact_us_subtitle': 'contact@disciplefy.com',
+      'contact_us_subtitle': 'contact@disciplefy.in',
       'replay_walkthrough': 'ആപ്പ് ഗൈഡഡ് ടൂർ വീണ്ടും കാണുക',
       'replay_walkthrough_subtitle':
           'ഓരോ സ്ക്രീനിലും ഗൈഡഡ് ടൂർ വീണ്ടും ചലിപ്പിക്കുക',

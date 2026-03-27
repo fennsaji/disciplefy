@@ -223,7 +223,7 @@ class DeleteAccountPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'contact@disciplefy.com',
+                      'contact@disciplefy.in',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
@@ -275,14 +275,13 @@ class DeleteAccountPage extends StatelessWidget {
   }
 
   Future<void> _launchDeletionEmail() async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: 'contact@disciplefy.com',
-      queryParameters: {
-        'subject': 'Account Deletion Request',
-        'body':
-            'Hello,\n\nI would like to request the permanent deletion of my Disciplefy account and all associated data.\n\nRegistered email: \nReason (optional): \n\nThank you.',
-      },
+    const subject = 'Account Deletion Request';
+    const body =
+        'Hello,\n\nI would like to request the permanent deletion of my Disciplefy account and all associated data.\n\nRegistered email: \nReason (optional): \n\nThank you.';
+    final uri = Uri.parse(
+      'mailto:contact@disciplefy.in'
+      '?subject=${Uri.encodeComponent(subject)}'
+      '&body=${Uri.encodeComponent(body)}',
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -305,6 +304,7 @@ class DeleteAccountPage extends StatelessWidget {
     'Fellowship memberships and posts',
     'Learning path progress',
     'All personal notes and reflections',
+    'Google Calendar connection and access (if previously granted)',
   ];
 }
 
