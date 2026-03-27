@@ -6,16 +6,16 @@ import { FeaturePageContent } from "@/components/sections/FeaturePageContent";
 import messages from "@/messages/en.json";
 
 export const metadata: Metadata = {
-  title: "Christian Group Bible Study App — Disciplefy Fellowship",
+  title: "Christian Fellowship Groups — Study the Bible Together | Disciplefy",
   description:
-    "Study the Bible together with friends. Share prayer requests and praise reports in your fellowship group.",
+    "Create or join a fellowship group, schedule Google Meet Bible study sessions, share prayer requests, praise reports, and study notes with your church community.",
   alternates: getAlternates("/features/fellowship"),
   openGraph: {
     images: [{
-      url: `/og?title=Fellowship&subtitle=Group+Bible+Study+Together`,
+      url: `/og?title=Fellowship&subtitle=Group+Bible+Study+with+Google+Meet`,
       width: 1200,
       height: 630,
-      alt: "Christian Group Bible Study App — Disciplefy Fellowship",
+      alt: "Christian Fellowship Groups — Disciplefy",
     }],
   },
 };
@@ -24,17 +24,19 @@ export default function FellowshipPage() {
   return (
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
-        title="Fellowship — Group Bible Study Together"
-        description="Study the Bible together with friends and your church community. Share prayer requests and praise reports in your fellowship group."
+        title="Fellowship — Study the Bible Together"
+        description="Create or join a fellowship group and study Scripture with your church community. Mentors can schedule Google Meet sessions, track member progress, and lead group learning paths — while members share prayer requests, praise reports, and study notes in a shared feed."
         howItWorks={[
-          "Create a fellowship group or join one from your church",
-          "Study the same Bible passage together and share notes",
-          "Post prayer requests and praise reports with your group",
+          "Create a fellowship group or join one using an invite code from your church",
+          "Work through the same Bible learning path together and track each other's progress",
+          "Post prayer requests, praise reports, questions, and study notes in the group feed",
+          "Mentors schedule Google Meet sessions directly from the app — invites sent automatically",
+          "React, comment, and encourage one another as you grow in faith together",
         ]}
         downloadCta="Download Free on Android"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
-          { href: "/features/daily-verse", label: "Daily Verse" },
+          { href: "/features/learning-paths", label: "Learning Paths" },
           { href: "/features/study-guides", label: "Study Guides" },
         ]}
       />

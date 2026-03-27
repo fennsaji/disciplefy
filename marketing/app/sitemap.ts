@@ -13,6 +13,7 @@ const staticPages = [
   "/blog",
   "/privacy",
   "/terms",
+  "/refund",
   "/contact",
   "/features/ai-bible-study",
   "/features/daily-verse",
