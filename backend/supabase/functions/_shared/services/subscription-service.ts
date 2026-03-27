@@ -21,6 +21,7 @@ import {
   SubscriptionPlanType
 } from '../types/subscription-types.ts'
 import { getPlanConfig, PlanType } from '../config/subscription-config.ts'
+import { cancelGooglePlaySubscription } from './google-play-validator.ts'
 
 /**
  * SubscriptionService implementation
@@ -196,16 +197,33 @@ export class SubscriptionService {
     }
 
     try {
-      // Validate configuration before calling Razorpay
-      this.validateConfiguration()
+      const isIapProvider = subscription.provider === 'google_play' || subscription.provider === 'apple_iap'
 
       if (options.cancelAtCycleEnd) {
-        // Cancel at cycle end: Set flag in Razorpay, subscription stays active
-        console.log('[SubscriptionService] Cancelling at cycle end in Razorpay:', subscription.id)
-        await this.cancelRazorpaySubscription(
-          subscription.provider_subscription_id,
-          true  // cancel_at_cycle_end = 1
-        )
+        if (!isIapProvider) {
+          // Razorpay: cancel at cycle end via API
+          this.validateConfiguration()
+          console.log('[SubscriptionService] Cancelling at cycle end in Razorpay:', subscription.id)
+          await this.cancelRazorpaySubscription(
+            subscription.provider_subscription_id,
+            true  // cancel_at_cycle_end = 1
+          )
+        } else if (subscription.provider === 'google_play') {
+          // Google Play: call cancel API so Play Store reflects the cancellation
+          const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+          const gpEnv: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+          const gpProductId = subscription.iap_product_id
+          const gpPurchaseToken = subscription.provider_subscription_id
+          if (gpProductId && gpPurchaseToken) {
+            console.log('[SubscriptionService] Cancelling Google Play subscription via API:', subscription.id)
+            await cancelGooglePlaySubscription(this.supabaseClient, gpPackageName, gpProductId, gpPurchaseToken, gpEnv)
+          } else {
+            console.warn('[SubscriptionService] Cannot cancel Google Play sub — missing product ID or token:', subscription.id)
+          }
+        } else {
+          // Apple IAP: managed by Apple — just update DB (no server-side cancel API)
+          console.log('[SubscriptionService] Apple IAP — skipping provider API, updating DB only:', subscription.id)
+        }
 
         // Update database to pending_cancellation (still active with premium)
         const updatedSubscription = await this.updateSubscriptionStatus(
@@ -231,18 +249,37 @@ export class SubscriptionService {
           {
             cancel_at_cycle_end: true,
             reason: options.reason,
-            razorpay_cancel_at_cycle_end_set: true
+            provider: subscription.provider,
+            ...(isIapProvider ? { iap_db_only: true } : { razorpay_cancel_at_cycle_end_set: true })
           }
         )
 
         return updatedSubscription
       } else {
-        // Cancel immediately: Cancel in Razorpay, subscription ends now
-        console.log('[SubscriptionService] Cancelling immediately in Razorpay:', subscription.id)
-        await this.cancelRazorpaySubscription(
-          subscription.provider_subscription_id,
-          false  // cancel_at_cycle_end = 0
-        )
+        if (!isIapProvider) {
+          // Razorpay: cancel immediately via API
+          this.validateConfiguration()
+          console.log('[SubscriptionService] Cancelling immediately in Razorpay:', subscription.id)
+          await this.cancelRazorpaySubscription(
+            subscription.provider_subscription_id,
+            false  // cancel_at_cycle_end = 0
+          )
+        } else if (subscription.provider === 'google_play') {
+          // Google Play: call cancel API so Play Store reflects the cancellation
+          const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+          const gpEnv: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+          const gpProductId = subscription.iap_product_id
+          const gpPurchaseToken = subscription.provider_subscription_id
+          if (gpProductId && gpPurchaseToken) {
+            console.log('[SubscriptionService] Cancelling Google Play subscription via API (immediate):', subscription.id)
+            await cancelGooglePlaySubscription(this.supabaseClient, gpPackageName, gpProductId, gpPurchaseToken, gpEnv)
+          } else {
+            console.warn('[SubscriptionService] Cannot cancel Google Play sub — missing product ID or token:', subscription.id)
+          }
+        } else {
+          // Apple IAP: managed by Apple — just update DB (no server-side cancel API)
+          console.log('[SubscriptionService] Apple IAP — skipping provider API, updating DB only:', subscription.id)
+        }
 
         // Update database to cancelled (no longer active)
         const updatedSubscription = await this.updateSubscriptionStatus(
@@ -268,7 +305,8 @@ export class SubscriptionService {
           {
             cancel_at_cycle_end: false,
             reason: options.reason,
-            razorpay_cancelled_immediately: true
+            provider: subscription.provider,
+            ...(isIapProvider ? { iap_db_only: true } : { razorpay_cancelled_immediately: true })
           }
         )
 

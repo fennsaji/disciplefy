@@ -861,15 +861,17 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
             message: 'Subscription activated successfully',
           );
 
+          // Acknowledge ONLY after backend confirms — keeps purchase in queue
+          // on failure so Google Play re-delivers it automatically next launch.
+          // IMPORTANT: acknowledge BEFORE the isClosed guard so it always runs
+          // once backend success is confirmed, even if the bloc was closed.
+          _iapService.acknowledgePurchase(purchase);
+
           if (isClosed) return;
           emit(SubscriptionCreated(
             result: createResult,
             createdAt: DateTime.now(),
           ));
-
-          // Acknowledge ONLY after backend confirms — keeps purchase in queue
-          // on failure so Google Play re-delivers it automatically next launch.
-          _iapService.acknowledgePurchase(purchase);
 
           // Clear pending purchase tracking
           _pendingPurchasePlanCode = null;
@@ -1269,8 +1271,34 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       Logger.debug(
           '🛒 [BLOC] Product found: ${product.title} - ${product.price}');
 
+      // For Google Play upgrades/downgrades, pass the old purchase so Google
+      // Play replaces the existing subscription instead of creating a new one.
+      GooglePlayPurchaseDetails? oldPurchaseDetails;
+      if (!kIsWeb &&
+          Platform.isAndroid &&
+          _cachedSubscription != null &&
+          _cachedSubscription!.provider == 'google_play') {
+        // Normalize 'plus_monthly' → 'plus' to match pricing service keys
+        final oldPlanCode = _cachedSubscription!.planType
+            .replaceAll('_monthly', '')
+            .replaceAll('_yearly', '');
+        final oldProductId = _pricingService.getProductId(
+          oldPlanCode,
+          provider: 'google_play',
+        );
+        if (oldProductId != null && oldProductId.isNotEmpty) {
+          Logger.debug(
+              '🛒 [BLOC] Upgrade detected — looking up old purchase for $oldProductId');
+          oldPurchaseDetails =
+              await _iapService.findExistingGooglePlayPurchase(oldProductId);
+        }
+      }
+
       // Initiate purchase
-      await _iapService.purchaseProduct(product);
+      await _iapService.purchaseProduct(
+        product,
+        oldPurchaseDetails: oldPurchaseDetails,
+      );
 
       Logger.debug('✅ [BLOC] Purchase initiated successfully');
     } catch (e) {

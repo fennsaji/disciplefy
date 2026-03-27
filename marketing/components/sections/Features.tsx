@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Link } from "@/lib/navigation";
 
-const featureIcons = ["🤖", "🌅", "🎙️", "🧠", "📚", "💬"];
-const featureKeys = ["aiGuides", "dailyVerse", "voiceBuddy", "memory", "paths", "chat"] as const;
+const featureIcons = ["🤖", "🌅", "🎙️", "🧠", "📚", "💬", "🤝"];
+const featureKeys = ["aiGuides", "dailyVerse", "voiceBuddy", "memory", "paths", "chat", "fellowship"] as const;
 const featureHrefs: Record<typeof featureKeys[number], string> = {
   aiGuides: "/features/ai-bible-study",
   dailyVerse: "/features/daily-verse",
@@ -13,6 +13,7 @@ const featureHrefs: Record<typeof featureKeys[number], string> = {
   memory: "/features/memory-verses",
   paths: "/features/learning-paths",
   chat: "/features/follow-up-chat",
+  fellowship: "/features/fellowship",
 };
 
 export function Features() {

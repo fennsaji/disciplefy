@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -109,6 +111,11 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   void initState() {
     super.initState();
 
+    // Prevent screen from turning off during AI generation
+    if (!kIsWeb) {
+      WakelockPlus.enable();
+    }
+
     // Initialize with safe default (will be properly bounded in didChangeDependencies)
     // Use 0 as safe default since we don't have context yet to get actual facts
     _currentFactIndex = 0;
@@ -182,6 +189,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
   @override
   void dispose() {
+    if (!kIsWeb) {
+      WakelockPlus.disable();
+    }
     _pulseController.dispose();
     _rotationController.dispose();
     _stageTimer?.cancel();

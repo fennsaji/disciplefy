@@ -27,6 +27,7 @@ import { corsHeaders } from '../_shared/utils/cors.ts'
 import { PaymentProviderFactory } from '../_shared/services/payment-providers/provider-factory.ts'
 import { ProviderType } from '../_shared/services/payment-providers/base-provider.ts'
 import { validateAndProcessReceipt } from '../_shared/services/receipt-validation-service.ts'
+import { cancelGooglePlaySubscription } from '../_shared/services/google-play-validator.ts'
 
 interface CreateSubscriptionRequest {
   plan_code: string
@@ -139,7 +140,7 @@ serve(async (req) => {
     // Check for existing active subscription
     const { data: existingSubs, error: existingError } = await supabase
       .from('subscriptions')
-      .select('id, status, plan_type, provider, plan_id, is_iap_subscription, provider_subscription_id, current_period_start, current_period_end, amount_paise')
+      .select('id, status, plan_type, provider, plan_id, is_iap_subscription, provider_subscription_id, iap_product_id, current_period_start, current_period_end, amount_paise')
       .eq('user_id', user.id)
       .in('status', ['active', 'in_progress', 'created', 'pending_cancellation', 'trial', 'paused'])
 
@@ -150,7 +151,9 @@ serve(async (req) => {
 
     // Track old subscription to cancel before creating new one
     let oldSubIdToCancel: string | null = null
-    let oldProviderSubId: string | null = null // Razorpay sub ID to cancel via API
+    let oldProviderSubId: string | null = null // Provider sub ID to cancel via API
+    let oldSubProvider: string | null = null   // Provider of the OLD subscription (for correct API cancel)
+    let oldIapProductId: string | null = null  // Google Play product ID of old subscription (for cancel API)
     let oldSubForRefund: { periodStart: string; periodEnd: string; amountPaise: number } | null = null
 
     // Downgrade-specific state (cancel at cycle end, new sub starts at period end)
@@ -173,7 +176,7 @@ serve(async (req) => {
       const existingPlanCode = existing.plan_type
       const isDifferentPlan = existingPlanCode !== plan_code
       const isStaleCreated = existing.status === 'created'
-      const isProviderSwitch = (isIAPProvider && !existingIsIAP) || (!isIAPProvider && existingIsIAP)
+      const isProviderSwitch = existing.provider !== provider
 
       console.log('[create-subscription-v2] Existing sub found:', {
         id: existing.id,
@@ -199,11 +202,16 @@ serve(async (req) => {
         // IAP plan upgrade / downgrade — cancel old after new receipt validates
         console.log('[create-subscription-v2] IAP plan change:', { from: existingPlanCode, to: plan_code })
         oldSubIdToCancel = existing.id
+        oldProviderSubId = existing.provider_subscription_id ?? null
+        oldSubProvider = existing.provider
+        oldIapProductId = (existing as any).iap_product_id ?? null
       } else if (isProviderSwitch) {
         // Switching payment provider (e.g. Razorpay → Google Play) — cancel old
         console.log('[create-subscription-v2] Provider switch:', { from: existing.provider, to: provider })
         oldSubIdToCancel = existing.id
         oldProviderSubId = existing.provider_subscription_id ?? null
+        oldSubProvider = existing.provider
+        oldIapProductId = (existing as any).iap_product_id ?? null
       } else if (!isIAPProvider && isDifferentPlan) {
         // Razorpay plan change — split into upgrade (immediate) vs downgrade (at cycle end)
         const PLAN_TIERS: Record<string, number> = { free: 0, standard: 1, plus: 2, premium: 3 }
@@ -231,6 +239,7 @@ serve(async (req) => {
           isDowngradeCase = true
           oldSubIdToScheduleCancel = existing.id
           oldProviderSubId = existing.provider_subscription_id ?? null
+          oldSubProvider = existing.provider
           if (existing.current_period_end) {
             downgradeStartAtUnix = Math.floor(new Date(existing.current_period_end).getTime() / 1000)
           }
@@ -239,6 +248,7 @@ serve(async (req) => {
           console.log('[create-subscription-v2] Razorpay upgrade (immediate):', { from: existingPlanCode, to: plan_code })
           oldSubIdToCancel = existing.id
           oldProviderSubId = existing.provider_subscription_id ?? null
+          oldSubProvider = existing.provider
           // Capture billing period for prorated refund calculation
           if (existing.current_period_start && existing.current_period_end && existing.amount_paise) {
             oldSubForRefund = {
@@ -266,6 +276,37 @@ serve(async (req) => {
 
     // Special handling for free plan (no provider configuration needed)
     if (plan_code === 'free') {
+      // Cancel any existing paid subscription immediately.
+      // Downgrade to free is always immediate — no billing period to preserve since free costs nothing.
+      const cancelTargetId = oldSubIdToCancel || oldSubIdToScheduleCancel
+      if (cancelTargetId) {
+        // Cancel on Razorpay API side if the old sub was Razorpay
+        if (oldProviderSubId) {
+          try {
+            const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+            await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
+            console.log('[create-subscription-v2] Cancelled old Razorpay sub for free plan downgrade:', oldProviderSubId)
+          } catch (cancelApiError) {
+            console.error('[create-subscription-v2] Razorpay API cancel failed (non-fatal) on free downgrade:', cancelApiError)
+          }
+        }
+        const { error: cancelError } = await supabase
+          .from('subscriptions')
+          .update({
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancellation_reason: 'Downgraded to free plan',
+            cancel_at_cycle_end: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', cancelTargetId)
+        if (cancelError) {
+          console.error('[create-subscription-v2] Failed to cancel old sub for free plan downgrade:', cancelError)
+          throw new Error('Failed to cancel existing subscription before downgrade to free')
+        }
+        console.log('[create-subscription-v2] Cancelled old subscription for free plan downgrade:', cancelTargetId)
+      }
+
       // Fetch free plan details without provider config
       const { data: freePlanData, error: freePlanError } = await supabase
         .from('subscription_plans')
@@ -563,6 +604,10 @@ serve(async (req) => {
       // IAP: Validate receipt using new validation service
       console.log('[create-subscription-v2] Processing IAP receipt for provider:', provider)
 
+      // Hoisted outside try so the catch block can access them for rollback.
+      let cancelledSubSnapshot: Record<string, unknown> | null = null
+      let cancelledSubId: string | null = oldSubIdToCancel
+
       try {
         // Get product_id from plan providers table
         const { data: productData, error: productError } = await supabase
@@ -591,7 +636,17 @@ serve(async (req) => {
         // For IAP, the purchase has already occurred on the device — cancel any
         // existing subscription BEFORE inserting the new one so the unique-per-user
         // constraint doesn't block the INSERT inside validateAndProcessReceipt.
+        // IMPORTANT: snapshot the old sub first so we can restore it if validation fails.
+
         if (oldSubIdToCancel) {
+          // Snapshot the current state for rollback
+          const { data: snapData } = await supabase
+            .from('subscriptions')
+            .select('status, cancelled_at, cancellation_reason')
+            .eq('id', oldSubIdToCancel)
+            .single()
+          cancelledSubSnapshot = snapData
+
           await supabase
             .from('subscriptions')
             .update({
@@ -616,6 +671,19 @@ serve(async (req) => {
         })
 
         if (!validationResult.success || !validationResult.isValid) {
+          // Rollback: restore old subscription so user isn't left with nothing
+          if (cancelledSubId && cancelledSubSnapshot) {
+            await supabase
+              .from('subscriptions')
+              .update({
+                status: (cancelledSubSnapshot as any).status ?? 'active',
+                cancelled_at: (cancelledSubSnapshot as any).cancelled_at ?? null,
+                cancellation_reason: (cancelledSubSnapshot as any).cancellation_reason ?? null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', cancelledSubId)
+            console.log('[create-subscription-v2] Rolled back old subscription — IAP validation failed')
+          }
           return new Response(
             JSON.stringify({
               success: false,
@@ -630,6 +698,36 @@ serve(async (req) => {
         }
 
         console.log('[create-subscription-v2] IAP subscription created:', validationResult.subscriptionId)
+
+        // Cancel the old subscription at the provider level after IAP activation.
+        // DB cancellation already happened above; this ensures the old provider
+        // stops billing the user immediately.
+        if (oldProviderSubId && oldSubProvider) {
+          try {
+            if (oldSubProvider === 'razorpay') {
+              const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+              await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
+              console.log('[create-subscription-v2] Old Razorpay subscription cancelled via API after IAP activation:', oldProviderSubId)
+            } else if (oldSubProvider === 'google_play') {
+              // provider_subscription_id stores the raw purchase token.
+              // oldIapProductId holds the Google Play product ID (e.g. com.disciplefy.plus_monthly).
+              const gpPurchaseToken = oldProviderSubId
+              const gpProductId = oldIapProductId
+              if (gpProductId && gpPurchaseToken) {
+                const gpEnv = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+                const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || Deno.env.get('GOOGLE_PLAY_SANDBOX_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+                await cancelGooglePlaySubscription(supabase, gpPackageName, gpProductId, gpPurchaseToken, gpEnv as 'sandbox' | 'production')
+                console.log('[create-subscription-v2] Old Google Play subscription cancelled via API after IAP upgrade:', oldProviderSubId)
+              } else {
+                console.warn('[create-subscription-v2] Cannot cancel old Google Play sub — missing product ID or purchase token', { gpProductId, hasPurchaseToken: !!gpPurchaseToken })
+              }
+            }
+            // Apple App Store: server-side cancellation not supported
+          } catch (cancelApiError) {
+            // Non-fatal: DB is already updated, log for manual follow-up if needed
+            console.error('[create-subscription-v2] Old provider API cancellation failed (non-fatal):', cancelApiError)
+          }
+        }
 
         return new Response(
           JSON.stringify({
@@ -649,6 +747,23 @@ serve(async (req) => {
         )
       } catch (iapError) {
         console.error('[create-subscription-v2] IAP validation error:', iapError)
+        // Rollback: restore old subscription if we cancelled it before the error
+        if (cancelledSubId && cancelledSubSnapshot) {
+          try {
+            await supabase
+              .from('subscriptions')
+              .update({
+                status: (cancelledSubSnapshot as any).status ?? 'active',
+                cancelled_at: (cancelledSubSnapshot as any).cancelled_at ?? null,
+                cancellation_reason: (cancelledSubSnapshot as any).cancellation_reason ?? null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', cancelledSubId)
+            console.log('[create-subscription-v2] Rolled back old subscription after IAP error')
+          } catch (rollbackErr) {
+            console.error('[create-subscription-v2] Rollback failed:', rollbackErr)
+          }
+        }
         return new Response(
           JSON.stringify({
             success: false,
@@ -711,15 +826,30 @@ serve(async (req) => {
         }
       }
 
-      // Cancel on Razorpay side (immediate)
-      if (oldProviderSubId && provider === 'razorpay') {
-        try {
-          const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
-          await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
-          console.log('[create-subscription-v2] Old Razorpay subscription cancelled via API:', oldProviderSubId)
-        } catch (cancelApiError) {
-          console.error('[create-subscription-v2] Razorpay API cancellation failed (non-fatal):', cancelApiError)
+      // Cancel on the old provider's side (immediate)
+      if (oldProviderSubId && oldSubProvider) {
+        if (oldSubProvider === 'razorpay') {
+          try {
+            const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+            await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
+            console.log('[create-subscription-v2] Old Razorpay subscription cancelled via API:', oldProviderSubId)
+          } catch (cancelApiError) {
+            console.error('[create-subscription-v2] Razorpay API cancellation failed (non-fatal):', cancelApiError)
+          }
+        } else if (oldSubProvider === 'google_play') {
+          // Cancel via Android Publisher API so Google stops billing the user.
+          // providerSubscriptionId format: "{productId}:{purchaseToken}"
+          const [productId, purchaseToken] = oldProviderSubId.split(':')
+          if (productId && purchaseToken) {
+            const gpEnvironment = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+            const packageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || Deno.env.get('GOOGLE_PLAY_SANDBOX_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+            await cancelGooglePlaySubscription(supabase, packageName, productId, purchaseToken, gpEnvironment)
+            console.log('[create-subscription-v2] Old Google Play subscription cancelled via API:', productId)
+          } else {
+            console.warn('[create-subscription-v2] Could not parse Google Play providerSubscriptionId for cancellation:', oldProviderSubId)
+          }
         }
+        // Note: Apple App Store cancellation is not supported via server API — user must cancel from App Store.
       }
 
       const { error: cancelError } = await supabase
@@ -744,7 +874,7 @@ serve(async (req) => {
     // The new (lower-tier) sub will be created with start_at = old period end.
     if (oldSubIdToScheduleCancel) {
       // Cancel on Razorpay side with cancelAtCycleEnd=true (user keeps access until period ends)
-      if (oldProviderSubId && provider === 'razorpay') {
+      if (oldProviderSubId && oldSubProvider === 'razorpay') {
         try {
           const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
           await razorpayProvider.cancelSubscription(oldProviderSubId, true)
@@ -848,11 +978,11 @@ serve(async (req) => {
           console.error('[create-subscription-v2] Rollback: failed to cancel orphaned Razorpay sub (manual cleanup needed):', cancelErr)
         }
 
-        // 2. Restore old DB sub from pending_cancellation back to in_progress
+        // 2. Restore old DB sub from pending_cancellation back to active
         const { error: restoreErr } = await supabase
           .from('subscriptions')
           .update({
-            status: 'in_progress',
+            status: 'active',
             cancel_at_cycle_end: false,
             cancellation_reason: null,
             updated_at: new Date().toISOString()

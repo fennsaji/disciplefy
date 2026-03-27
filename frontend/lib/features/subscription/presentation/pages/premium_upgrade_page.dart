@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -30,7 +32,10 @@ class PremiumUpgradePage extends StatefulWidget {
 class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     with WidgetsBindingObserver {
   bool _hasOpenedPayment = false;
+  bool _hasShownSuccess =
+      false; // prevents double-pop when SubscriptionLoaded fires multiple times
   bool _isLoadingPlan = true;
+  bool _isSubmitting = false;
 
   PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _premiumPlan;
@@ -152,6 +157,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
+            setState(() => _isSubmitting = false);
             if (state.authorizationUrl.isNotEmpty) {
               // Razorpay flow — redirect user to payment page in browser
               ScaffoldMessenger.of(context).showSnackBar(
@@ -165,7 +171,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               _hasOpenedPayment = true;
               _openAuthorizationUrl(state.authorizationUrl);
             } else {
-              // Google Play flow — purchase already processed, no redirect needed
+              // Google Play IAP flow — purchase already processed, mark as complete
+              // so the SubscriptionLoaded listener below can navigate away.
+              _hasOpenedPayment = true;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text(
@@ -177,7 +185,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             }
           } else if (state is SubscriptionLoaded) {
             if (_hasOpenedPayment &&
+                !_hasShownSuccess &&
                 state.activeSubscription?.isActive == true) {
+              _hasShownSuccess = true;
               Logger.debug(
                   '[PremiumUpgrade] Subscription is now active - navigating back');
               ScaffoldMessenger.of(context).showSnackBar(
@@ -189,10 +199,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 ),
               );
               Future.delayed(const Duration(seconds: 1), () {
-                if (mounted) Navigator.of(context).pop();
+                if (mounted) context.go(AppRoutes.myPlan);
               });
             }
           } else if (state is SubscriptionError) {
+            setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Something went wrong. Please try again.'),
@@ -584,8 +595,8 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       }
     }
 
-    final isLoading =
-        state is SubscriptionLoading && state.operation == 'creating';
+    final isLoading = _isSubmitting ||
+        (state is SubscriptionLoading && state.operation == 'creating');
 
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,
@@ -665,6 +676,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   }
 
   Future<void> _handleUpgrade() async {
+    setState(() => _isSubmitting = true);
     String? promoCode;
     int? planPrice;
     try {

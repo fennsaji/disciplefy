@@ -196,7 +196,7 @@
 **Platform Availability:**
 - Android (Google Play Store)
 - iOS (App Store)
-- Web (app.disciplefy.com)
+- Web (app.disciplefy.in)
 
 **Authentication Options:**
 - Google Sign-In
@@ -278,7 +278,7 @@
 
 For questions about this document or feature clarifications:
 - **Product:** Fenn Ignatius Saji
-- **Email:** contact@disciplefy.com
+- **Email:** contact@disciplefy.in
 
 ---
 

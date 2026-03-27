@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -31,7 +33,10 @@ class StandardUpgradePage extends StatefulWidget {
 class _StandardUpgradePageState extends State<StandardUpgradePage>
     with WidgetsBindingObserver {
   bool _hasOpenedPayment = false;
+  bool _hasShownSuccess =
+      false; // prevents double-pop when SubscriptionLoaded fires multiple times
   bool _isLoadingPlan = true;
+  bool _isSubmitting = false;
 
   PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _standardPlan;
@@ -145,6 +150,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
+            setState(() => _isSubmitting = false);
             if (state.authorizationUrl.isNotEmpty) {
               // Razorpay flow — redirect user to payment page in browser
               ScaffoldMessenger.of(context).showSnackBar(
@@ -158,7 +164,9 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
               _hasOpenedPayment = true;
               _openAuthorizationUrl(state.authorizationUrl);
             } else {
-              // Google Play flow — purchase already processed, no redirect needed
+              // Google Play IAP flow — purchase already processed, mark as complete
+              // so the SubscriptionLoaded listener below can navigate away.
+              _hasOpenedPayment = true;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text(
@@ -170,7 +178,9 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
             }
           } else if (state is SubscriptionLoaded) {
             if (_hasOpenedPayment &&
+                !_hasShownSuccess &&
                 state.activeSubscription?.isActive == true) {
+              _hasShownSuccess = true;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text(
@@ -180,7 +190,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
                 ),
               );
               Future.delayed(const Duration(seconds: 1), () {
-                if (mounted) Navigator.of(context).pop();
+                if (mounted) context.go(AppRoutes.myPlan);
               });
             }
           } else if (state is UserSubscriptionStatusLoaded &&
@@ -190,6 +200,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
             _hasOpenedPayment = true;
             _openAuthorizationUrl(state.authorizationUrl!);
           } else if (state is SubscriptionError) {
+            setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Something went wrong. Please try again.'),
@@ -545,9 +556,10 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
       );
     }
 
-    final isLoading = state is SubscriptionLoading &&
-        (state.operation?.contains('creating') == true ||
-            state.operation == 'creating');
+    final isLoading = _isSubmitting ||
+        (state is SubscriptionLoading &&
+            (state.operation?.contains('creating') == true ||
+                state.operation == 'creating'));
 
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,
@@ -627,6 +639,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   }
 
   Future<void> _handleUpgrade() async {
+    setState(() => _isSubmitting = true);
     String? promoCode;
     int? planPrice;
     try {

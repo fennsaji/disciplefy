@@ -409,6 +409,12 @@ verify_jwt = false
 [functions.token-status]
 verify_jwt = false
 
+[functions.google-play-webhook]
+verify_jwt = false
+
+[functions.razorpay-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

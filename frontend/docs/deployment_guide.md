@@ -10,7 +10,7 @@ This guide covers deploying the Flutter web app to multiple platforms, including
 - **Platform**: Vercel
 - **URL**: `https://app.disciplefy.in`
 - **CDN**: Vercel Edge Network
-- **Custom Domain**: `disciplefy.com` (optional)
+- **Custom Domain**: `disciplefy.in` (optional)
 - **SSL**: Automatic HTTPS with Let's Encrypt
 
 ### **Alternative Production (Supabase Storage)**

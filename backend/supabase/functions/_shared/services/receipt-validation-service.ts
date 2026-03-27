@@ -250,13 +250,20 @@ export async function revalidateReceipt(
   let subscriptionId: string | undefined
 
   if (validationResult.isValid) {
+    // For Google Play, purchase tokens rotate on renewal — iap_original_transaction_id
+    // was set from originalTransactionId (stable) during initial purchase.
+    // Use originalTransactionId for lookup; fall back to transactionId for Apple.
+    const lookupTransactionId = 'originalTransactionId' in validationResult
+      ? (validationResult as any).originalTransactionId
+      : validationResult.transactionId
+
     // Find the existing subscription by receipt or by original transaction id
     const { data: existingSub } = await supabase
       .from('subscriptions')
       .select('id')
       .eq('user_id', receipt.user_id)
       .eq('provider', receipt.provider)
-      .eq('iap_original_transaction_id', validationResult.transactionId)
+      .eq('iap_original_transaction_id', lookupTransactionId)
       .maybeSingle()
 
     const subId = existingSub?.id ?? receipt.subscription_id

@@ -20,7 +20,8 @@
     "voiceBuddy": { "title": "Voice Buddy", "desc": "Speak and listen — have conversations about Scripture" },
     "memory": { "title": "Memory Verses", "desc": "Spaced repetition flashcards to actually memorize God's Word" },
     "paths": { "title": "Learning Paths", "desc": "Structured journeys: Grace, Discipleship, Prayer & more" },
-    "chat": { "title": "Follow-Up Chat", "desc": "Ask deeper questions about any study guide, keep the context" }
+    "chat": { "title": "Follow-Up Chat", "desc": "Ask deeper questions about any study guide, keep the context" },
+    "fellowship": { "title": "Fellowship Groups", "desc": "Study together, schedule Google Meet sessions, share prayer requests and praise reports with your group" }
   },
   "howItWorks": {
     "title": "How It Works",
@@ -148,7 +149,8 @@
           "2 practice modes",
           "1 practice per verse/day",
           "Token top-ups available",
-          "Daily verse"
+          "Daily verse",
+          "Join fellowship groups"
         ]
       },
       {
@@ -162,7 +164,9 @@
           "3 AI Discipler calls/month",
           "5 memory verses",
           "2 practices per verse/day",
-          "Token top-ups available"
+          "Token top-ups available",
+          "Create & lead fellowship groups",
+          "Schedule fellowship meetings"
         ]
       },
       {
@@ -176,7 +180,9 @@
           "10 AI Discipler calls/month",
           "10 memory verses",
           "3 practices per verse/day",
-          "Token top-ups available"
+          "Token top-ups available",
+          "Create & lead fellowship groups",
+          "Schedule Google Meet sessions"
         ]
       },
       {
@@ -190,7 +196,9 @@
           "Unlimited AI Discipler calls",
           "Unlimited memory verses",
           "Unlimited practice",
-          "Priority support"
+          "Priority support",
+          "Create & lead fellowship groups",
+          "Schedule Google Meet sessions"
         ]
       }
     ],
