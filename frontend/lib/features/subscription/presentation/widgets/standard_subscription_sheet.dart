@@ -280,7 +280,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                 Text(
                   status.needsSubscription
                       ? 'Your trial has ended. Subscribe to continue.'
-                      : 'Free until ${status.formattedTrialEndDate ?? "March 31, 2025"}',
+                      : 'Free until ${status.formattedTrialEndDate ?? "March 31, 2027"}',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
