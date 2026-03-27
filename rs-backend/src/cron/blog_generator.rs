@@ -126,11 +126,7 @@ async fn generate_for_locale(
 
 /// Retry function -- only retries topics that already have at least one locale generated but are
 /// missing others (i.e., a previous run partially failed). Does NOT pick up never-attempted topics.
-pub async fn run_blog_retry(
-    pool: &PgPool,
-    config: &Config,
-    http: &Client,
-) -> Result<(), AppError> {
+pub async fn run_blog_retry(pool: &PgPool, config: &Config, http: &Client) -> Result<(), AppError> {
     tracing::info!("Starting blog retry CRON job");
 
     let topic = match post::find_next_partially_generated_topic(pool).await? {
