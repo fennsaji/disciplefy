@@ -55,6 +55,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     context.read<TokenBloc>().add(const GetTokenStatus());
     // Load subscription status to check if user has active/cancelled subscription
     context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+    context.read<SubscriptionBloc>().add(const LoadSubscriptionStatus());
   }
 
   @override
@@ -473,8 +474,13 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       hasActiveSubscription &&
                       subscriptionPlanType?.contains('standard') == true);
 
-          // Trial end date for Standard plan
-          final trialEndDate = DateTime(2026, 3, 31);
+          // Trial end date for Standard plan — use backend value when available
+          final subscriptionStatus =
+              subscriptionState is UserSubscriptionStatusLoaded
+                  ? subscriptionState.subscriptionStatus
+                  : null;
+          final trialEndDate =
+              subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
           final isTrialActive = DateTime.now().isBefore(trialEndDate);
 
           // Standard user in trial (no subscription yet)
