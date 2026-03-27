@@ -35,6 +35,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   bool _hasShownSuccess =
       false; // prevents double-pop when SubscriptionLoaded fires multiple times
   bool _isLoadingPlan = true;
+  bool _isSubmitting = false;
 
   PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _premiumPlan;
@@ -156,6 +157,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: (context, state) {
           if (state is SubscriptionCreated) {
+            setState(() => _isSubmitting = false);
             if (state.authorizationUrl.isNotEmpty) {
               // Razorpay flow — redirect user to payment page in browser
               ScaffoldMessenger.of(context).showSnackBar(
@@ -201,6 +203,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               });
             }
           } else if (state is SubscriptionError) {
+            setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Something went wrong. Please try again.'),
@@ -592,8 +595,8 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       }
     }
 
-    final isLoading =
-        state is SubscriptionLoading && state.operation == 'creating';
+    final isLoading = _isSubmitting ||
+        (state is SubscriptionLoading && state.operation == 'creating');
 
     return ElevatedButton(
       onPressed: isLoading ? null : _handleUpgrade,
@@ -673,6 +676,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
   }
 
   Future<void> _handleUpgrade() async {
+    setState(() => _isSubmitting = true);
     String? promoCode;
     int? planPrice;
     try {

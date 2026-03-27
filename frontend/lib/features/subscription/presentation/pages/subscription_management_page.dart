@@ -120,7 +120,9 @@ class _SubscriptionManagementPageState
             },
             builder: (context, state) {
               if (state is SubscriptionLoading &&
-                  state.operation == 'fetching') {
+                  (state.operation == 'fetching' ||
+                      state.operation == 'cancelling' ||
+                      state.operation == 'resuming')) {
                 return const Center(child: CircularProgressIndicator());
               }
 
