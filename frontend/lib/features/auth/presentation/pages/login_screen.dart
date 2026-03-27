@@ -36,7 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Clears Hive storage after reading so it is not reused.
   String? _consumeRedirectTarget(BuildContext context) {
     // URL param is present for same-page flows (email auth)
-    final fromUrl = GoRouterState.of(context).uri.queryParameters['redirect'];
+    String? fromUrl;
+    try {
+      fromUrl = GoRouterState.of(context).uri.queryParameters['redirect'];
+    } catch (_) {}
     if (fromUrl != null && fromUrl.isNotEmpty) {
       return Uri.decodeComponent(fromUrl);
     }
@@ -564,8 +567,10 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleGoogleSignIn(BuildContext context) {
     // Persist redirect target before OAuth so it survives the browser round-trip
     // to Google and back (the ?redirect= URL param is lost after the callback).
-    final redirectTo =
-        GoRouterState.of(context).uri.queryParameters['redirect'];
+    String? redirectTo;
+    try {
+      redirectTo = GoRouterState.of(context).uri.queryParameters['redirect'];
+    } catch (_) {}
     if (redirectTo != null && redirectTo.isNotEmpty) {
       Hive.box('app_settings').put('pending_deep_link_redirect', redirectTo);
     }
