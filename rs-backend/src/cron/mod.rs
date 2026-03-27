@@ -144,7 +144,7 @@ pub async fn start_scheduler(
                     return;
                 }
             };
-            if let Err(e) = blog_generator::run_blog_generation(&p, &c, &h).await {
+            if let Err(e) = blog_generator::run_blog_retry(&p, &c, &h).await {
                 tracing::error!("Blog retry CRON failed: {}", e);
             }
         })
