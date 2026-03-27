@@ -604,6 +604,10 @@ serve(async (req) => {
       // IAP: Validate receipt using new validation service
       console.log('[create-subscription-v2] Processing IAP receipt for provider:', provider)
 
+      // Hoisted outside try so the catch block can access them for rollback.
+      let cancelledSubSnapshot: Record<string, unknown> | null = null
+      let cancelledSubId: string | null = oldSubIdToCancel
+
       try {
         // Get product_id from plan providers table
         const { data: productData, error: productError } = await supabase
@@ -633,8 +637,6 @@ serve(async (req) => {
         // existing subscription BEFORE inserting the new one so the unique-per-user
         // constraint doesn't block the INSERT inside validateAndProcessReceipt.
         // IMPORTANT: snapshot the old sub first so we can restore it if validation fails.
-        let cancelledSubSnapshot: Record<string, unknown> | null = null
-        const cancelledSubId = oldSubIdToCancel
 
         if (oldSubIdToCancel) {
           // Snapshot the current state for rollback

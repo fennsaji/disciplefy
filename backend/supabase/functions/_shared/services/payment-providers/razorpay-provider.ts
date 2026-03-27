@@ -244,9 +244,11 @@ export class RazorpayProvider extends PaymentProvider {
       // Un-schedule the pending cancellation by clearing cancel_at_cycle_end.
       // This is the correct way to "resume" a subscription that was set to
       // cancel at the end of the billing cycle (cancel_at_cycle_end=1).
+      // cancel_at_cycle_end is a valid Razorpay API field but missing from
+      // the SDK's TypeScript type definitions, so we cast to any here.
       await this.razorpay.subscriptions.update(providerSubscriptionId, {
         cancel_at_cycle_end: 0
-      })
+      } as any)
 
       console.log('[RazorpayProvider] Subscription resumed successfully')
     } catch (error: unknown) {
