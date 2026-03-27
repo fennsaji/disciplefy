@@ -258,7 +258,7 @@ Proprietary - Disciplefy © 2026
 
 For issues or questions:
 - Documentation: `/docs` folder
-- Email: support@disciplefy.com
+- Email: support@disciplefy.in
 
 ---
 

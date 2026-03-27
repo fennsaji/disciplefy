@@ -179,7 +179,7 @@ const apiSecurity = {
   
   security: {
     cors: {
-      origin: ['https://disciplefy.com', 'https://admin.disciplefy.com'],
+      origin: ['https://disciplefy.in', 'https://admin.disciplefy.in'],
       credentials: true
     },
     helmet: {
