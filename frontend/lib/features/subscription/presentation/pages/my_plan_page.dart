@@ -1034,10 +1034,16 @@ class _MyPlanPageState extends State<MyPlanPage> {
   }
 
   /// Returns the formatted amount string for the billing row.
-  /// Prefers the subscription's own amountPaise (Razorpay stores this).
-  /// Falls back to the plan price fetched from the pricing API, which covers
-  /// Google Play / Apple IAP subscriptions where amountPaise is stored as 0.
+  /// For IAP (Google Play / Apple) subscriptions, always use the pricing API
+  /// price because amount_paise can be stale after plan upgrades/downgrades.
+  /// For Razorpay, use the stored amount (accurate at all times).
   String _resolveDisplayAmount(Subscription subscription) {
+    if (subscription.isIAPSubscription) {
+      if (_planDisplayPrice != null && _planDisplayPrice! > 0) {
+        return _planDisplayPrice!.toStringAsFixed(0);
+      }
+      return '—';
+    }
     if (subscription.amountPaise > 0) {
       return subscription.amountRupees.toStringAsFixed(0);
     }
@@ -1236,6 +1242,17 @@ class _MyPlanPageState extends State<MyPlanPage> {
   ) {
     final isLoading = state is SubscriptionLoading &&
         (state.operation == 'cancelling' || state.operation == 'resuming');
+
+    // Show spinner while cancel/resume API call is in progress (subscription becomes
+    // null during SubscriptionLoading state, so buttons would disappear otherwise)
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     // Pending cancellation: resume button + upgrade (downgrade blocked until cycle ends)
     if (subscription?.status == SubscriptionStatus.pending_cancellation) {
