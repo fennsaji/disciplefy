@@ -7,6 +7,7 @@ import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../../../core/utils/logger.dart';
+import 'tts_notification_service.dart';
 
 /// Represents a section of the study guide for TTS reading.
 class TtsSection {
@@ -107,6 +108,7 @@ class StudyGuideTtsState {
 class StudyGuideTTSService {
   final TTSService _ttsService;
   final SharedPreferences _prefs;
+  final TtsNotificationService _notificationService;
 
   static const String _speechRateKey = 'study_guide_tts_speed';
   static const double _defaultSpeechRate = 1.0;
@@ -143,8 +145,10 @@ class StudyGuideTTSService {
   StudyGuideTTSService({
     required TTSService ttsService,
     required SharedPreferences prefs,
+    required TtsNotificationService notificationService,
   })  : _ttsService = ttsService,
         _prefs = prefs,
+        _notificationService = notificationService,
         state = ValueNotifier(StudyGuideTtsState(
           speechRate: prefs.getDouble(_speechRateKey) ?? _defaultSpeechRate,
         ));
@@ -518,6 +522,7 @@ class StudyGuideTTSService {
     if (_currentSectionIndex >= _sections.length) {
       // All sections read
       Logger.debug('🔊 [StudyGuideTTS] All sections completed');
+      _notificationService.dismissNotification();
       _resetProgress();
       state.value = state.value.copyWith(
         status: TtsStatus.idle,
@@ -548,6 +553,9 @@ class StudyGuideTTSService {
       estimatedDurationSeconds: _currentSectionDuration,
       elapsedSeconds: 0,
     );
+
+    // Show/update ongoing notification so user can return to app from lock screen
+    _notificationService.updateSection(section.title);
 
     // Start progress tracking
     _startProgressTimer();
@@ -653,6 +661,7 @@ class StudyGuideTTSService {
     _resetProgress();
     _isIntentionallyStopping = true;
     await _ttsService.stop();
+    _notificationService.dismissNotification();
     _currentSectionIndex = 0;
     state.value = state.value.copyWith(
       status: TtsStatus.idle,

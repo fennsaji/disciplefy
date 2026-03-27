@@ -17,6 +17,8 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:go_router/go_router.dart';
 import '../utils/logger.dart';
+import '../di/injection_container.dart';
+import '../../features/study_generation/data/services/tts_notification_service.dart';
 
 /// Background message handler (must be top-level function)
 @pragma('vm:entry-point')
@@ -167,6 +169,11 @@ class NotificationService {
       _isInitialized = true;
       if (kDebugMode) {
         Logger.debug('[NotificationService] ✅ Initialization complete');
+      }
+
+      // Initialize TTS playback notification channel
+      if (!kIsWeb) {
+        await sl<TtsNotificationService>().initialize();
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
