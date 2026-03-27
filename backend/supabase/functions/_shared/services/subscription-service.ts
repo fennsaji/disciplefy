@@ -21,6 +21,7 @@ import {
   SubscriptionPlanType
 } from '../types/subscription-types.ts'
 import { getPlanConfig, PlanType } from '../config/subscription-config.ts'
+import { cancelGooglePlaySubscription } from './google-play-validator.ts'
 
 /**
  * SubscriptionService implementation
@@ -207,9 +208,21 @@ export class SubscriptionService {
             subscription.provider_subscription_id,
             true  // cancel_at_cycle_end = 1
           )
+        } else if (subscription.provider === 'google_play') {
+          // Google Play: call cancel API so Play Store reflects the cancellation
+          const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+          const gpEnv: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+          const gpProductId = subscription.iap_product_id
+          const gpPurchaseToken = subscription.provider_subscription_id
+          if (gpProductId && gpPurchaseToken) {
+            console.log('[SubscriptionService] Cancelling Google Play subscription via API:', subscription.id)
+            await cancelGooglePlaySubscription(this.supabaseClient, gpPackageName, gpProductId, gpPurchaseToken, gpEnv)
+          } else {
+            console.warn('[SubscriptionService] Cannot cancel Google Play sub — missing product ID or token:', subscription.id)
+          }
         } else {
-          // IAP (Google Play / Apple): managed by the store — just update DB
-          console.log('[SubscriptionService] IAP subscription — skipping provider API, updating DB only:', subscription.id)
+          // Apple IAP: managed by Apple — just update DB (no server-side cancel API)
+          console.log('[SubscriptionService] Apple IAP — skipping provider API, updating DB only:', subscription.id)
         }
 
         // Update database to pending_cancellation (still active with premium)
@@ -251,9 +264,21 @@ export class SubscriptionService {
             subscription.provider_subscription_id,
             false  // cancel_at_cycle_end = 0
           )
+        } else if (subscription.provider === 'google_play') {
+          // Google Play: call cancel API so Play Store reflects the cancellation
+          const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+          const gpEnv: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+          const gpProductId = subscription.iap_product_id
+          const gpPurchaseToken = subscription.provider_subscription_id
+          if (gpProductId && gpPurchaseToken) {
+            console.log('[SubscriptionService] Cancelling Google Play subscription via API (immediate):', subscription.id)
+            await cancelGooglePlaySubscription(this.supabaseClient, gpPackageName, gpProductId, gpPurchaseToken, gpEnv)
+          } else {
+            console.warn('[SubscriptionService] Cannot cancel Google Play sub — missing product ID or token:', subscription.id)
+          }
         } else {
-          // IAP (Google Play / Apple): managed by the store — just update DB
-          console.log('[SubscriptionService] IAP subscription — skipping provider API, updating DB only:', subscription.id)
+          // Apple IAP: managed by Apple — just update DB (no server-side cancel API)
+          console.log('[SubscriptionService] Apple IAP — skipping provider API, updating DB only:', subscription.id)
         }
 
         // Update database to cancelled (no longer active)
