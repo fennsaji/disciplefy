@@ -249,7 +249,11 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       recurrence: body.recurrence ?? null, location: body.location?.trim() ?? null,
       meet_link: calendarResult.meetLink, calendar_event_id: calendarResult.eventId,
       calendar_type: calendarResult.calendarType,
-      google_refresh_token: body.google_refresh_token ?? null,
+      google_refresh_token: await (async () => {
+        if (!body.google_refresh_token) return null
+        const { data: encrypted } = await db.rpc('encrypt_payment_token', { p_token: body.google_refresh_token })
+        return encrypted ?? null
+      })(),
     })
     .select().single()
 
@@ -792,7 +796,19 @@ async function handleSyncCalendar(req: Request, services: ServiceContainer): Pro
 
   for (const meeting of meetings) {
     const calendarEventId = meeting.calendar_event_id as string
-    const storedRefreshToken = meeting.google_refresh_token as string | null
+    const rawStoredToken = meeting.google_refresh_token as string | null
+
+    // Decrypt the stored refresh token (encrypted at rest via encrypt_payment_token).
+    // Falls back to the raw value for any legacy unencrypted rows.
+    let storedRefreshToken: string | null = null
+    if (rawStoredToken) {
+      try {
+        const { data: decrypted } = await db.rpc('decrypt_payment_token', { p_encrypted_token: rawStoredToken })
+        storedRefreshToken = decrypted ?? rawStoredToken
+      } catch {
+        storedRefreshToken = rawStoredToken
+      }
+    }
 
     let accessToken: string
     if (body.googleAccessToken) {
