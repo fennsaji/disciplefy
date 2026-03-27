@@ -2,7 +2,7 @@
  * Feedback Edge Function
  *
  * Refactored to use clean architecture with function factory
- * Enhanced with email notification to contact@disciplefy.com
+ * Enhanced with email notification to contact@disciplefy.in
  */
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
@@ -216,7 +216,7 @@ async function sendResendEmail(
  */
 function handleLocalDevMode(feedback: FeedbackEmailData): { success: boolean } {
   console.log('[FEEDBACK] RESEND_API_KEY not configured - LOCAL DEV MODE')
-  console.log('[FEEDBACK] Email would be sent to: contact@disciplefy.com')
+  console.log('[FEEDBACK] Email would be sent to: contact@disciplefy.in')
   console.log('[FEEDBACK] Category:', feedback.category)
   console.log('[FEEDBACK] Was Helpful:', feedback.wasHelpful)
   console.log('[FEEDBACK] Message:', feedback.message)
@@ -248,7 +248,7 @@ function buildFeedbackPayload(feedback: FeedbackEmailData, htmlContent: string):
   const categoryLabel = getCategoryLabel(feedback.category)
   return {
     from: 'Disciplefy Feedback <feedback@disciplefy.in>',
-    to: ['contact@disciplefy.com'],
+    to: ['contact@disciplefy.in'],
     subject: `[Feedback] ${categoryLabel} - ${feedback.wasHelpful ? 'Positive' : 'Negative'}`,
     html: htmlContent,
   }

@@ -241,11 +241,11 @@ export class RazorpayProvider extends PaymentProvider {
     try {
       console.log('[RazorpayProvider] Resuming subscription:', providerSubscriptionId)
 
-      // Update subscription - Razorpay automatically resumes when fetched
-      // Note: Razorpay doesn't have a direct resume API, subscription is auto-resumed
-      // when cancel_at_cycle_end status is cleared
+      // Un-schedule the pending cancellation by clearing cancel_at_cycle_end.
+      // This is the correct way to "resume" a subscription that was set to
+      // cancel at the end of the billing cycle (cancel_at_cycle_end=1).
       await this.razorpay.subscriptions.update(providerSubscriptionId, {
-        customer_notify: 1
+        cancel_at_cycle_end: 0
       })
 
       console.log('[RazorpayProvider] Subscription resumed successfully')
