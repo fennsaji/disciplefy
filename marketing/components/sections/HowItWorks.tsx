@@ -52,13 +52,24 @@ function IconTrending({ className }: { className?: string }) {
   );
 }
 
+function IconUsers({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
 type IconComponent = ({ className }: { className?: string }) => React.JSX.Element;
 
 /* ── Step data ─────────────────────────────────────────── */
 
-const STEP_KEYS = ["step1", "step2", "step3", "step4", "step5"] as const;
+const STEP_KEYS = ["step1", "step2", "step3", "step4", "step5", "step6"] as const;
 
-const STEP_ICONS: IconComponent[] = [IconBookOpen, IconSparkles, IconMic, IconCompass, IconTrending];
+const STEP_ICONS: IconComponent[] = [IconBookOpen, IconSparkles, IconMic, IconCompass, IconTrending, IconUsers];
 
 // Placeholder gradient tints per step (used until real screenshots exist)
 const STEP_TINTS = [
@@ -67,6 +78,7 @@ const STEP_TINTS = [
   "from-emerald-400/20 to-emerald-200/5",
   "from-cyan-400/20 to-cyan-200/5",
   "from-violet-400/20 to-violet-200/5",
+  "from-rose-400/20 to-rose-200/5",
 ];
 
 /* ── Phone shell (shared) ──────────────────────────────── */
@@ -241,43 +253,49 @@ export function HowItWorks() {
     offset: ["start start", "end end"],
   });
 
-  // Per-screenshot opacity transforms with crossfade zones (5 steps)
-  // Each step occupies ~20% of scroll. Crossfade zone ~4%.
+  // Per-screenshot opacity transforms with crossfade zones (6 steps)
+  // Each step occupies ~16.67% of scroll. Crossfade zone ~3%.
   const opacity0 = useTransform(
     scrollYProgress,
-    [0, 0.04, 0.16, 0.2],
+    [0, 0.03, 0.13, 0.167],
     [1, 1, 1, 0]
   );
   const opacity1 = useTransform(
     scrollYProgress,
-    [0.16, 0.2, 0.36, 0.4],
+    [0.13, 0.167, 0.3, 0.333],
     [0, 1, 1, 0]
   );
   const opacity2 = useTransform(
     scrollYProgress,
-    [0.36, 0.4, 0.56, 0.6],
+    [0.3, 0.333, 0.467, 0.5],
     [0, 1, 1, 0]
   );
   const opacity3 = useTransform(
     scrollYProgress,
-    [0.56, 0.6, 0.76, 0.8],
+    [0.467, 0.5, 0.633, 0.667],
     [0, 1, 1, 0]
   );
   const opacity4 = useTransform(
     scrollYProgress,
-    [0.76, 0.8, 1.0],
+    [0.633, 0.667, 0.8, 0.833],
+    [0, 1, 1, 0]
+  );
+  const opacity5 = useTransform(
+    scrollYProgress,
+    [0.8, 0.833, 1.0],
     [0, 1, 1]
   );
 
-  const screenshotOpacities = [opacity0, opacity1, opacity2, opacity3, opacity4];
+  const screenshotOpacities = [opacity0, opacity1, opacity2, opacity3, opacity4, opacity5];
 
   // Track active step for text highlighting
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (v < 0.2) setActiveStep(0);
-    else if (v < 0.4) setActiveStep(1);
-    else if (v < 0.6) setActiveStep(2);
-    else if (v < 0.8) setActiveStep(3);
-    else setActiveStep(4);
+    if (v < 0.167) setActiveStep(0);
+    else if (v < 0.333) setActiveStep(1);
+    else if (v < 0.5) setActiveStep(2);
+    else if (v < 0.667) setActiveStep(3);
+    else if (v < 0.833) setActiveStep(4);
+    else setActiveStep(5);
   });
 
   return (
@@ -297,8 +315,8 @@ export function HowItWorks() {
 
       {/* ─── Desktop layout (lg+) ─── */}
       <div ref={sectionRef} className="hidden lg:block relative">
-        {/* Height = 5 panels × 85vh + some padding */}
-        <div className="max-w-7xl mx-auto px-8" style={{ minHeight: "425vh" }}>
+        {/* Height = 6 panels × 85vh + some padding */}
+        <div className="max-w-7xl mx-auto px-8" style={{ minHeight: "510vh" }}>
           <div className="grid grid-cols-2 gap-16">
             {/* Left: Sticky phone mockup */}
             <div className="relative">
