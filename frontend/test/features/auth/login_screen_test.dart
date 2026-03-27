@@ -110,19 +110,18 @@ void main() {
       // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      // Only Email OutlinedButton should exist (Guest button removed)
+      // Both Google and Email buttons are OutlinedButton (2 total)
       final outlinedButtons = find.byType(OutlinedButton);
-      expect(outlinedButtons, findsNWidgets(1)); // Email button only
+      expect(outlinedButtons, findsNWidgets(2));
 
-      // Verify the Email OutlinedButton is disabled during loading
+      // Verify both OutlinedButtons are disabled during loading
       for (final element in outlinedButtons.evaluate()) {
         final button = element.widget as OutlinedButton;
         expect(button.onPressed, isNull,
             reason: 'OutlinedButton should be disabled during loading');
       }
 
-      // Google button uses InkWell - verify it exists but doesn't show the text
-      // (shows loading indicator instead)
+      // Google button shows spinner instead of text during loading
       expect(find.text('Continue with Google'), findsNothing);
     });
 
