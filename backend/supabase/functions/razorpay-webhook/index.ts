@@ -697,6 +697,13 @@ async function handleSubscriptionCancelled(
 
   console.log(`[Webhook] Subscription cancelled: ${razorpaySubId}`)
 
+  // Fetch existing metadata so we can merge (not overwrite) it
+  const { data: existingSubC } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
   // Update subscription status to cancelled (final state)
   // Clear cancel_at_cycle_end flag as it's now actually cancelled
   const { error } = await supabaseServiceClient
@@ -708,6 +715,7 @@ async function handleSubscriptionCancelled(
       cancelled_at: new Date().toISOString(),
       cancel_at_cycle_end: false,  // Clear flag as it's now actually cancelled
       provider_metadata: {
+        ...(existingSubC?.provider_metadata ?? {}),
         cancelled_at: new Date().toISOString(),
         cancellation_source: 'razorpay_webhook'
       },
@@ -750,6 +758,13 @@ async function handleSubscriptionPaused(
 
   console.log(`[Webhook] Subscription paused: ${razorpaySubId}`)
 
+  // Fetch existing metadata so we can merge (not overwrite) it
+  const { data: existingSubP } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
   // Update subscription status and provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
@@ -758,6 +773,7 @@ async function handleSubscriptionPaused(
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
+        ...(existingSubP?.provider_metadata ?? {}),
         paused_at: new Date().toISOString(),
         pause_reason: 'payment_failure'
       },
@@ -798,6 +814,13 @@ async function handleSubscriptionResumed(
 
   console.log(`[Webhook] Subscription resumed: ${razorpaySubId}`)
 
+  // Fetch existing metadata so we can merge (not overwrite) it
+  const { data: existingSubR } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
   // Update subscription status back to active and update provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
@@ -807,6 +830,7 @@ async function handleSubscriptionResumed(
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
+        ...(existingSubR?.provider_metadata ?? {}),
         resumed_at: new Date().toISOString(),
         previous_status: 'paused'
       },
@@ -849,6 +873,13 @@ async function handleSubscriptionCompleted(
 
   console.log(`[Webhook] Subscription completed: ${razorpaySubId}`)
 
+  // Fetch existing metadata so we can merge (not overwrite) it
+  const { data: existingSubCo } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
   // Update subscription status and provider metadata
   const { error } = await supabaseServiceClient
     .from('subscriptions')
@@ -857,6 +888,7 @@ async function handleSubscriptionCompleted(
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
+        ...(existingSubCo?.provider_metadata ?? {}),
         completed_at: new Date().toISOString(),
         total_cycles_completed: subscriptionEntity.paid_count || 0
       },

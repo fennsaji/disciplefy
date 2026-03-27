@@ -62,8 +62,8 @@ const COMPANY_INFO = {
   name: 'Disciplefy Bible Study App',
   address: '[Company Address]', // TODO: Add actual address
   gstin: '[GST Number]', // TODO: Add actual GSTIN
-  email: 'support@disciplefy.com',
-  website: 'https://disciplefy.com',
+  email: 'support@disciplefy.in',
+  website: 'https://disciplefy.in',
 }
 
 // Brand colors
