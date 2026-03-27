@@ -41,8 +41,9 @@ class _MyPlanPageState extends State<MyPlanPage> {
   List<String> _planFeatures = [];
   bool _featuresLoading = true;
   // Plan display price fetched from the pricing API (provider-aware).
-  // Used as a fallback when subscription.amountPaise == 0 (e.g. Google Play).
   double? _planDisplayPrice;
+  // True while the pricing API call is in flight (shows spinner in amount row).
+  bool _isPriceLoading = true;
 
   @override
   void initState() {
@@ -57,14 +58,27 @@ class _MyPlanPageState extends State<MyPlanPage> {
     _loadPlanFeatures();
   }
 
-  /// Fetch plan features from the DB via get-plans Edge Function,
-  /// using the same data source as PricingPage for consistency.
-  Future<void> _loadPlanFeatures() async {
+  // The plan code used for the most recent _loadPlanFeatures call — used to
+  // detect when the subscription plan changes (e.g. upgrade) and re-fetch.
+  String? _loadedForPlanCode;
+
+  /// Fetch plan features and display price from the get-plans Edge Function.
+  ///
+  /// [planCode] overrides the token-state plan code. Pass the subscription's
+  /// planType when available so the price is always correct after upgrades/
+  /// downgrades (token state can be stale at page-open time).
+  Future<void> _loadPlanFeatures({String? planCode}) async {
     try {
-      final tokenState = sl<TokenBloc>().state;
-      final userPlan = tokenState is TokenLoaded
-          ? tokenState.tokenStatus.userPlan
-          : UserPlan.free;
+      String resolvedPlanCode;
+      if (planCode != null && planCode.isNotEmpty) {
+        resolvedPlanCode = planCode;
+      } else {
+        final tokenState = sl<TokenBloc>().state;
+        final userPlan = tokenState is TokenLoaded
+            ? tokenState.tokenStatus.userPlan
+            : UserPlan.free;
+        resolvedPlanCode = userPlan.name;
+      }
 
       // Use the platform's preferred provider so the price matches what the
       // user was actually charged (e.g. Google Play price on Android, not
@@ -77,20 +91,32 @@ class _MyPlanPageState extends State<MyPlanPage> {
       final response = await sl<SubscriptionRemoteDataSource>()
           .getPlans(provider: providerString, locale: locale);
 
-      final plan = response.plans.firstWhere(
-        (p) => p.planCode == userPlan.name,
-        orElse: () => response.plans.first,
-      );
+      final matchingPlans =
+          response.plans.where((p) => p.planCode == resolvedPlanCode).toList();
+      // Fall back to the first plan only for features (not price) when the
+      // exact plan code isn't found (e.g. free users or unexpected plan codes).
+      final plan =
+          matchingPlans.isNotEmpty ? matchingPlans.first : response.plans.first;
+      final exactMatch = matchingPlans.isNotEmpty;
 
       if (mounted) {
         setState(() {
+          _loadedForPlanCode = resolvedPlanCode;
           _planFeatures = PlanFeaturesExtractor.extractFeaturesFromPlan(plan);
-          _planDisplayPrice = plan.displayPrice;
+          // Only set display price when we found the exact plan — don't show
+          // a fallback plan's price as it would be wrong.
+          _planDisplayPrice = exactMatch ? plan.displayPrice : null;
           _featuresLoading = false;
+          _isPriceLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _featuresLoading = false);
+      if (mounted) {
+        setState(() {
+          _featuresLoading = false;
+          _isPriceLoading = false;
+        });
+      }
     }
   }
 
@@ -153,7 +179,21 @@ class _MyPlanPageState extends State<MyPlanPage> {
 
             return BlocConsumer<SubscriptionBloc, SubscriptionState>(
               listener: (context, state) {
-                if (state is SubscriptionCancelled) {
+                if (state is SubscriptionLoaded &&
+                    state.activeSubscription != null) {
+                  // Re-fetch plan price if the loaded plan differs from what
+                  // was used at initState (e.g. after an upgrade/downgrade).
+                  // planType is stored as '<code>_monthly' (e.g. 'premium_monthly'),
+                  // but get-plans API uses the plain code ('premium').
+                  final rawPlanType = state.activeSubscription!.planType;
+                  final subPlanCode = rawPlanType.endsWith('_monthly')
+                      ? rawPlanType.replaceFirst('_monthly', '')
+                      : rawPlanType;
+                  if (subPlanCode != _loadedForPlanCode) {
+                    setState(() => _isPriceLoading = true);
+                    _loadPlanFeatures(planCode: subPlanCode);
+                  }
+                } else if (state is SubscriptionCancelled) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(state.message),
@@ -1015,10 +1055,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 12),
-            _buildDetailRow(
-              context.tr(TranslationKeys.myPlanAmount),
-              '\u20b9${_resolveDisplayAmount(subscription)}/month',
-            ),
+            _buildAmountRow(subscription),
             _buildBillingDateRow(subscription),
             _buildDetailRow(
               context.tr(TranslationKeys.myPlanStatus),
@@ -1033,24 +1070,51 @@ class _MyPlanPageState extends State<MyPlanPage> {
     );
   }
 
-  /// Returns the formatted amount string for the billing row.
-  /// For IAP (Google Play / Apple) subscriptions, always use the pricing API
-  /// price because amount_paise can be stale after plan upgrades/downgrades.
-  /// For Razorpay, use the stored amount (accurate at all times).
-  String _resolveDisplayAmount(Subscription subscription) {
-    if (subscription.isIAPSubscription) {
-      if (_planDisplayPrice != null && _planDisplayPrice! > 0) {
-        return _planDisplayPrice!.toStringAsFixed(0);
-      }
-      return '—';
+  /// Builds the Amount billing row.
+  /// For IAP subscriptions: shows a spinner while the pricing API is in
+  /// flight, then the correct plan price (never the stale stored amount).
+  /// For Razorpay: the stored amount is always accurate — no loading needed.
+  Widget _buildAmountRow(Subscription subscription) {
+    final label = context.tr(TranslationKeys.myPlanAmount);
+
+    // Razorpay: stored amount is accurate at all times.
+    if (!subscription.isIAPSubscription) {
+      final amount = subscription.amountPaise > 0
+          ? '\u20b9${subscription.amountRupees.toStringAsFixed(0)}/month'
+          : (_planDisplayPrice != null && _planDisplayPrice! > 0
+              ? '\u20b9${_planDisplayPrice!.toStringAsFixed(0)}/month'
+              : '—');
+      return _buildDetailRow(label, amount);
     }
-    if (subscription.amountPaise > 0) {
-      return subscription.amountRupees.toStringAsFixed(0);
+
+    // IAP: show spinner until the pricing API responds.
+    if (_isPriceLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
+        ),
+      );
     }
-    if (_planDisplayPrice != null && _planDisplayPrice! > 0) {
-      return _planDisplayPrice!.toStringAsFixed(0);
-    }
-    return '—';
+
+    final amount = (_planDisplayPrice != null && _planDisplayPrice! > 0)
+        ? '\u20b9${_planDisplayPrice!.toStringAsFixed(0)}/month'
+        : '—';
+    return _buildDetailRow(label, amount);
   }
 
   /// Billing date row — shows next billing / access-until date.
