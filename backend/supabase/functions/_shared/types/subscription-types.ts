@@ -48,6 +48,7 @@ export type InvoiceStatus =
 export interface Subscription {
   readonly id: string
   readonly user_id: string
+  readonly provider: string | null
   readonly provider_subscription_id: string
   readonly provider_plan_id: string
   readonly provider_customer_id: string | null
