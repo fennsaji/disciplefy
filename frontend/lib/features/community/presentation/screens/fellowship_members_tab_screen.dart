@@ -996,10 +996,7 @@ class _ShareLinkButton extends StatelessWidget {
         final name = fellowshipName?.isNotEmpty == true
             ? fellowshipName!
             : 'my fellowship';
-        Share.share(
-          'Join $name on Disciplefy:\n$url',
-          subject: 'Join $name on Disciplefy',
-        );
+        Share.share('Join $name on Disciplefy:\n$url');
       },
       tooltip: 'Share invite link',
       icon: Icon(
