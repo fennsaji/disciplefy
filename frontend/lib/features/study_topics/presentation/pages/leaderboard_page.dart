@@ -31,23 +31,34 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: BlocBuilder<LeaderboardBloc, LeaderboardState>(
-        builder: (context, state) {
-          if (state is LeaderboardInitial || state is LeaderboardLoading) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go(AppRoutes.studyTopics);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: BlocBuilder<LeaderboardBloc, LeaderboardState>(
+          builder: (context, state) {
+            if (state is LeaderboardInitial || state is LeaderboardLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is LeaderboardError) {
+              return _buildErrorState(context, state.message);
+            }
+            if (state is LeaderboardLoaded) {
+              return _buildContent(
+                  context, state.entries, state.userRank, isDark);
+            }
             return const Center(child: CircularProgressIndicator());
-          }
-          if (state is LeaderboardError) {
-            return _buildErrorState(context, state.message);
-          }
-          if (state is LeaderboardLoaded) {
-            return _buildContent(
-                context, state.entries, state.userRank, isDark);
-          }
-          return const Center(child: CircularProgressIndicator());
-        },
-      ),
+          },
+        ),
+      ), // PopScope
     );
   }
 
