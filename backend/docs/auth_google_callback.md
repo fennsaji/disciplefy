@@ -29,7 +29,7 @@ The function processes incoming requests through the following steps:
 5.  **OAuth Error Handling**: If the request contains an `error` parameter (indicating an OAuth failure from Google), it logs the OAuth error and throws an `OAUTH_ERROR`.
 6.  **Authorization Code Validation**: Checks if the `code` parameter is present and is a valid string.
 7.  **Security Validation**:
-    *   Calls `SecurityValidator.validateRequest` to perform checks such as rate limiting (max 30 requests per hour) and referer validation (allowing Google, localhost, and `disciplefy.com`).
+    *   Calls `SecurityValidator.validateRequest` to perform checks such as rate limiting (max 30 requests per hour) and referer validation (allowing Google, localhost, and `disciplefy.in`).
     *   If security validation fails, it logs a `SECURITY_VIOLATION` event and throws an `AppError`.
 8.  **CSRF Protection (State Parameter Validation)**:
     *   If a `state` parameter is present in the request, it calls `validateStateParameter` to ensure it's a valid UUID format.
@@ -72,7 +72,7 @@ The function processes incoming requests through the following steps:
     *   Determines the appropriate URL to redirect the user to after successful authentication.
     *   Prioritizes a `x-redirect-url` header if provided.
     *   For mobile clients (identified by user agent or lack of referer), it constructs a deep link (`com.disciplefy.bible_study_app://auth/callback`).
-    *   For web clients, it uses `http://localhost:59641/auth/callback` for local development and `https://disciplefy.com/auth/callback` for production.
+    *   For web clients, it uses `http://localhost:59641/auth/callback` for local development and `https://disciplefy.in/auth/callback` for production.
 
 ## 5. Security Considerations
 
