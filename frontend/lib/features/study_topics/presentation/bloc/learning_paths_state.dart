@@ -49,6 +49,10 @@ class LearningPathsLoaded extends LearningPathsState {
   /// True while a search API call is in flight.
   final bool isSearching;
 
+  /// Questionnaire-based personalized paths for the "For You" section.
+  /// Empty if personalization has not loaded yet or failed.
+  final List<LearningPath> personalizedPaths;
+
   const LearningPathsLoaded({
     required this.categories,
     this.enrolledPaths = const [],
@@ -59,6 +63,7 @@ class LearningPathsLoaded extends LearningPathsState {
     this.searchQuery,
     this.searchResults,
     this.isSearching = false,
+    this.personalizedPaths = const [],
   });
 
   @override
@@ -72,6 +77,7 @@ class LearningPathsLoaded extends LearningPathsState {
         searchQuery,
         searchResults,
         isSearching,
+        personalizedPaths,
       ];
 
   /// Whether there are any paths to display
@@ -107,6 +113,7 @@ class LearningPathsLoaded extends LearningPathsState {
     List<LearningPath>? searchResults,
     bool? isSearching,
     bool clearSearch = false,
+    List<LearningPath>? personalizedPaths,
   }) {
     return LearningPathsLoaded(
       categories: categories ?? this.categories,
@@ -119,6 +126,7 @@ class LearningPathsLoaded extends LearningPathsState {
       searchQuery: clearSearch ? null : (searchQuery ?? this.searchQuery),
       searchResults: clearSearch ? null : (searchResults ?? this.searchResults),
       isSearching: clearSearch ? false : (isSearching ?? this.isSearching),
+      personalizedPaths: personalizedPaths ?? this.personalizedPaths,
     );
   }
 }

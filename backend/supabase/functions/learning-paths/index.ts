@@ -266,6 +266,11 @@ async function handleLearningPaths(
   const method = req.method.toUpperCase();
   const action = url.searchParams.get('action');
 
+  // Check if this is a recommended paths (plural) request
+  if ((method === 'GET' || method === 'POST') && action === 'recommended_paths') {
+    return handleGetRecommendedPaths(req, services, userContext);
+  }
+
   // Check if this is a recommended path request
   const isRecommendedRequest = pathSegments.includes('recommended') ||
     action === 'recommended';
@@ -753,6 +758,151 @@ async function handleEnroll(
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }
+  );
+}
+
+// ============================================================================
+// Get Recommended Learning Paths (plural — For You section)
+// ============================================================================
+
+/**
+ * Returns top N personalized learning paths based on the user's questionnaire.
+ * Used by the "For You" section to show multiple scored recommendations.
+ *
+ * - Authenticated + questionnaire completed → top N from scoring algorithm
+ * - Otherwise → top N featured paths
+ */
+async function handleGetRecommendedPaths(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext,
+  limit = 5
+): Promise<Response> {
+  const { supabaseServiceClient } = services;
+
+  let language = 'en';
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json() as { language?: string; limit?: number };
+      language = body.language || 'en';
+      if (body.limit) limit = body.limit;
+    } catch { /* use defaults */ }
+  } else {
+    const url = new URL(req.url);
+    language = url.searchParams.get('language') || 'en';
+    const limitParam = url.searchParams.get('limit');
+    if (limitParam) limit = parseInt(limitParam, 10);
+  }
+
+  const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
+  console.log(`[RECOMMENDED_PATHS] userId=${userId || 'anonymous'}, language=${language}, limit=${limit}`);
+
+  // Personalized paths for authenticated users with completed questionnaire
+  if (userId) {
+    const { data: personalization } = await supabaseServiceClient
+      .from('user_personalization')
+      .select('faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed')
+      .eq('user_id', userId)
+      .single();
+
+    if (personalization?.questionnaire_completed && personalization?.faith_stage) {
+      const { data: allPaths } = await supabaseServiceClient
+        .from('learning_paths')
+        .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, display_order')
+        .eq('is_active', true);
+
+      if (allPaths && allPaths.length > 0) {
+        const { data: completedPaths } = await supabaseServiceClient
+          .from('user_learning_path_progress')
+          .select('learning_path_id')
+          .eq('user_id', userId)
+          .not('completed_at', 'is', null);
+
+        const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
+
+        const responses: QuestionnaireResponses = {
+          faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
+          spiritual_goals: personalization.spiritual_goals || [],
+          time_availability: personalization.time_availability as QuestionnaireResponses['time_availability'],
+          learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
+          life_stage_focus: personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
+          biggest_challenge: personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
+        };
+
+        const scoredPaths = calculatePathScores(responses, allPaths as ScoringLearningPath[], completedPathIds);
+        const topPaths = scoredPaths.slice(0, limit);
+
+        if (topPaths.length > 0) {
+          // Fetch enrollment info for the user in one query
+          const { data: enrollments } = await supabaseServiceClient
+            .from('user_learning_path_progress')
+            .select('learning_path_id, topics_completed')
+            .eq('user_id', userId)
+            .is('completed_at', null);
+
+          const enrollmentMap = new Map(
+            (enrollments || []).map((e) => [e.learning_path_id, e.topics_completed as number])
+          );
+
+          const pathObjects: LearningPath[] = [];
+          for (const scored of topPaths) {
+            const { data: pathData } = await supabaseServiceClient
+              .from('learning_paths')
+              .select('*')
+              .eq('id', scored.pathId)
+              .single();
+
+            if (!pathData) continue;
+
+            const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+            const localized = await getLocalizedTitleDescription(
+              supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
+            );
+
+            const enrolledTopicsCompleted = enrollmentMap.get(pathData.id);
+            const isEnrolled = enrolledTopicsCompleted !== undefined;
+            const progressPercentage = isEnrolled && topicsCountNum > 0
+              ? Math.round((enrolledTopicsCompleted! / topicsCountNum) * 100)
+              : 0;
+
+            pathObjects.push(buildLearningPathResponse(
+              pathData, topicsCountNum, isEnrolled, progressPercentage,
+              localized.title, localized.description
+            ));
+          }
+
+          if (pathObjects.length > 0) {
+            return new Response(
+              JSON.stringify({ success: true, data: { paths: pathObjects, reason: 'personalized' } }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Fallback: return top featured paths
+  const { data: featuredPaths } = await supabaseServiceClient
+    .from('learning_paths')
+    .select('*')
+    .eq('is_featured', true)
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+    .limit(limit);
+
+  const fallbackObjects: LearningPath[] = [];
+  for (const pathData of (featuredPaths || [])) {
+    const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+    const localized = await getLocalizedTitleDescription(
+      supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
+    );
+    fallbackObjects.push(buildLearningPathResponse(pathData, topicsCountNum, false, 0, localized.title, localized.description));
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, data: { paths: fallbackObjects, reason: 'featured' } }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
 

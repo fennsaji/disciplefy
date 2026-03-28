@@ -327,6 +327,30 @@ class LearningPathCategoryPathsResponseModel {
   }
 }
 
+/// Model for parsing the personalized paths list response from API.
+class PersonalizedPathsResponseModel {
+  final List<LearningPathModel> paths;
+  final String reason;
+
+  const PersonalizedPathsResponseModel({
+    required this.paths,
+    required this.reason,
+  });
+
+  factory PersonalizedPathsResponseModel.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>;
+    final pathsJson = data['paths'] as List<dynamic>? ?? [];
+    return PersonalizedPathsResponseModel(
+      paths: pathsJson
+          .map((p) => LearningPathModel.fromJson(p as Map<String, dynamic>))
+          .toList(),
+      reason: data['reason'] as String? ?? 'featured',
+    );
+  }
+
+  List<LearningPath> toEntity() => paths;
+}
+
 /// Model for parsing recommended learning path response from API.
 class RecommendedPathResponseModel {
   final LearningPathModel? path;

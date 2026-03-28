@@ -156,36 +156,22 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
       ..sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
     result.addAll(inProgress);
 
-    // Derive minimum level from the user's in-progress paths.
-    final minLevelRank = inProgress.isNotEmpty
-        ? inProgress
-            .map((p) => _levelRank(p.discipleLevel))
-            .reduce((a, b) => a > b ? a : b)
-        : 0;
+    // 2. Fill remaining slots from questionnaire-personalized paths (scored by
+    //    the backend algorithm based on faith_stage, spiritual_goals, etc.).
+    //    Falls back to featured paths when personalizedPaths is empty
+    //    (e.g. not yet loaded, unauthenticated, or questionnaire not completed).
+    final personalizedSource = state.personalizedPaths.isNotEmpty
+        ? state.personalizedPaths
+        : state.allPaths.where((p) => p.isFeatured).toList();
 
-    // 2. Featured paths not yet in result, at or above the user's current level
     if (result.length < widget.minCount) {
-      final featured = state.allPaths
-          .where((p) =>
-              p.isFeatured &&
-              !result.any((r) => r.id == p.id) &&
-              _levelRank(p.discipleLevel) >= minLevelRank)
+      final candidates = personalizedSource
+          .where((p) => !p.isCompleted && !result.any((r) => r.id == p.id))
           .toList();
-      result.addAll(featured.take(widget.minCount - result.length));
+      result.addAll(candidates.take(widget.minCount - result.length));
     }
 
-    // 3. Fill with any non-completed path at or above the user's current level
-    if (result.length < widget.minCount) {
-      final remaining = state.allPaths
-          .where((p) =>
-              !p.isCompleted &&
-              !result.any((r) => r.id == p.id) &&
-              _levelRank(p.discipleLevel) >= minLevelRank)
-          .toList();
-      result.addAll(remaining.take(widget.minCount - result.length));
-    }
-
-    // 4. Fallback without level filter (edge case: not enough paths at user's level)
+    // 3. Final fallback: any non-completed path (edge case)
     if (result.length < widget.minCount) {
       final fallback = state.allPaths
           .where((p) => !p.isCompleted && !result.any((r) => r.id == p.id))
