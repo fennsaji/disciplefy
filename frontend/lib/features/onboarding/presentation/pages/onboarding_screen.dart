@@ -48,13 +48,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Daily Inspiration & Study',
       subtitle: 'Start each day with God\'s Word',
       description:
-          'Receive daily verses with instant study guides. Tap any verse to dive deeper with AI-powered insights, context, and practical applications.',
+          'Receive daily verses with instant study guides. Tap any verse to dive deeper with personalized insights, context, and practical applications.',
       iconData: Icons.wb_sunny,
       verse:
           '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
     ),
     OnboardingSlide(
-      title: 'AI-Powered Study Guides',
+      title: 'Personalized Study Guides',
       subtitle: 'Personalized insights for your journey',
       description:
           'Enter any scripture or topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
@@ -64,7 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
     OnboardingSlide(
       title: 'Voice Discipler',
-      subtitle: 'Talk with your AI Bible companion',
+      subtitle: 'Talk with your Bible companion',
       description:
           'Have natural voice conversations about Scripture. Ask questions, get answers, and deepen your understanding through guided dialogue.',
       iconData: Icons.mic,

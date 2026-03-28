@@ -163,9 +163,9 @@ class _OnboardingPurposeContent extends StatelessWidget {
                         const SizedBox(height: 12),
                         const _StepItem(
                           number: '2',
-                          title: 'AI Generation',
+                          title: 'Study Generation',
                           description:
-                              'Our AI creates a detailed study guide using  methodology',
+                              'Creates a detailed study guide using  methodology',
                         ),
                         const SizedBox(height: 12),
                         const _StepItem(

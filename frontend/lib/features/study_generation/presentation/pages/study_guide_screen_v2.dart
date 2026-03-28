@@ -3708,7 +3708,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
                 title: 'Go Deeper',
                 description:
-                    'Want to explore this topic further? Chat with the AI Discipler for personalized Bible guidance.',
+                    'Want to explore this topic further? Chat with the Discipler for personalized Bible guidance.',
                 screen: WalkthroughScreen.disciplerHint,
                 stepNumber: 1,
                 totalSteps: 1,

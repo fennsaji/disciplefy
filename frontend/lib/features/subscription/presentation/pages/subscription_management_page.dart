@@ -713,7 +713,7 @@ class _SubscriptionManagementPageState
             ? [
                 '50 daily tokens (all study modes)',
                 '10 follow-ups per guide',
-                '10 AI Discipler conversations/month',
+                '10 Discipler conversations/month',
                 '10 active memory verses',
                 '3 practice sessions per verse per day',
                 'All 8 practice modes',
