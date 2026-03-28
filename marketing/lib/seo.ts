@@ -1,5 +1,6 @@
 // marketing/lib/seo.ts
 import { locales } from "@/i18n";
+import { PLAY_STORE_URL } from "@/lib/app-links";
 
 const BASE = "https://www.disciplefy.in";
 
@@ -33,7 +34,7 @@ export const homepageJsonLd = {
       operatingSystem: "Android",
       applicationCategory: "LifestyleApplication",
       description: "AI-powered Bible study app in English, Hindi, and Malayalam for Indian Christians.",
-      installUrl: "https://play.google.com/store/apps/details?id=com.disciplefy.bible_study",
+      installUrl: PLAY_STORE_URL,
       offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
       url: BASE,
     },
@@ -121,7 +122,7 @@ export const downloadPageJsonLd = {
       operatingSystem: "Android",
       applicationCategory: "LifestyleApplication",
       description: "AI-powered Bible study app in English, Hindi, and Malayalam for Indian Christians.",
-      installUrl: "https://play.google.com/store/apps/details?id=com.disciplefy.bible_study",
+      installUrl: PLAY_STORE_URL,
       offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
       url: BASE,
     },
