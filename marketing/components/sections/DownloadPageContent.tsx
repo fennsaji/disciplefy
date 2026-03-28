@@ -3,9 +3,7 @@
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
-
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.disciplefy.bible_study&hl=en_IN";
+import { PLAY_STORE_URL } from "@/lib/app-links";
 
 const FEATURES = [
   { icon: "✝", key: "feature1" },

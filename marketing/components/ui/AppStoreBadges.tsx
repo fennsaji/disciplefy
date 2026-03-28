@@ -1,10 +1,12 @@
 // marketing/components/ui/AppStoreBadges.tsx
+import { PLAY_STORE_URL, WEB_APP_URL } from "@/lib/app-links";
+
 export function AppStoreBadges({ className }: { className?: string }) {
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
       {/* Google Play — live */}
       <a
-        href="https://play.google.com/store/apps/details?id=com.disciplefy.bible_study&hl=en_IN"
+        href={PLAY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
@@ -18,7 +20,7 @@ export function AppStoreBadges({ className }: { className?: string }) {
 
       {/* Web App */}
       <a
-        href="https://app.disciplefy.in"
+        href={WEB_APP_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"

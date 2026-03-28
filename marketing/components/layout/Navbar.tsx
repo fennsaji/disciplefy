@@ -11,9 +11,7 @@ import Image from "next/image";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
 import { Button } from "@/components/ui/Button";
-
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.disciplefy.app";
-const WEB_APP_URL = "https://app.disciplefy.in";
+import { PLAY_STORE_URL, WEB_APP_URL } from "@/lib/app-links";
 
 export function Navbar() {
   const t = useTranslations("nav");
