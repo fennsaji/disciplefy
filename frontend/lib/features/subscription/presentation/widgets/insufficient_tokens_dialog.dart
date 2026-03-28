@@ -94,7 +94,7 @@ class InsufficientTokensDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Not Enough Tokens',
+                'No Credits Left Today',
                 style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -105,7 +105,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'You need tokens to generate a study guide.',
+                'You\'ve used all your study credits for today!',
                 style: AppFonts.inter(
                   fontSize: 13,
                   color: isDark
@@ -148,8 +148,8 @@ class InsufficientTokensDialog extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Your balance', style: labelStyle),
-              Text('${tokenStatus.totalTokens} tokens', style: valueStyle),
+              Text('Your credits', style: labelStyle),
+              Text('${tokenStatus.totalTokens} credits', style: valueStyle),
             ],
           ),
           if (requiredTokens != null) ...[
@@ -157,8 +157,8 @@ class InsufficientTokensDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Required', style: labelStyle),
-                Text('$requiredTokens tokens',
+                Text('Needed', style: labelStyle),
+                Text('$requiredTokens credits',
                     style: AppFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -180,7 +180,7 @@ class InsufficientTokensDialog extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Upgrade for more tokens:',
+          'Get more credits:',
           style: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -196,7 +196,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.radio_button_unchecked,
           iconColor: isDark ? Colors.white54 : Colors.black45,
           label: 'Standard',
-          detail: '20 tokens/day  ₹79/month',
+          detail: '20 credits/day — ₹79/month',
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
@@ -205,7 +205,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.info_outline,
           iconColor: colorScheme.primary,
           label: 'Plus',
-          detail: '50 tokens/day  ₹149/month',
+          detail: '50 credits/day — ₹149/month',
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
@@ -214,7 +214,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.info_outline,
           iconColor: colorScheme.primary,
           label: 'Premium',
-          detail: 'Unlimited  ₹499/month',
+          detail: 'Unlimited credits — ₹499/month',
         ),
       ],
     );
@@ -283,7 +283,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Your daily tokens reset at midnight. You can also purchase additional tokens anytime.',
+              'Credits refresh daily at midnight — come back tomorrow to generate more study guides! Or get more credits now to keep going.',
               style: AppFonts.inter(
                 fontSize: 13,
                 color: isDark
@@ -319,7 +319,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Purchase Tokens',
+          'Get More Credits',
           style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
