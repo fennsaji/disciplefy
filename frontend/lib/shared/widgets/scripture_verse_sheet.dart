@@ -45,6 +45,7 @@ class ScriptureVerseSheet extends StatefulWidget {
 
 class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   bool _isLoading = true;
+  bool _isAddingToMemory = false;
   String? _verseText;
   String? _localizedReference;
   String? _errorMessage;
@@ -427,7 +428,9 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   }
 
   Future<void> _addToMemoryVerses() async {
-    if (_verseText == null) return;
+    if (_verseText == null || _isAddingToMemory) return;
+
+    setState(() => _isAddingToMemory = true);
 
     final addVerseManually = GetIt.instance<AddVerseManually>();
     final languageService = GetIt.instance<LanguagePreferenceService>();
@@ -440,6 +443,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     );
 
     if (mounted) {
+      setState(() => _isAddingToMemory = false);
       result.fold(
         (failure) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -480,7 +484,8 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         _ActionButton(
           icon: Icons.bookmark_add_rounded,
           label: context.tr(TranslationKeys.verseSheetMemory),
-          onTap: _addToMemoryVerses,
+          onTap: _isAddingToMemory ? null : _addToMemoryVerses,
+          isLoading: _isAddingToMemory,
           theme: theme,
         ),
         const SizedBox(width: 24),
@@ -515,14 +520,16 @@ class _ParsedReference {
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final ThemeData theme;
+  final bool isLoading;
 
   const _ActionButton({
     required this.icon,
     required this.label,
     required this.onTap,
     required this.theme,
+    this.isLoading = false,
   });
 
   @override
@@ -536,16 +543,25 @@ class _ActionButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: 24,
-                color: theme.colorScheme.primary,
-              ),
+              child: isLoading
+                  ? Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
+                  : Icon(
+                      icon,
+                      size: 24,
+                      color: theme.colorScheme.primary,
+                    ),
             ),
             const SizedBox(height: 6),
             Text(
