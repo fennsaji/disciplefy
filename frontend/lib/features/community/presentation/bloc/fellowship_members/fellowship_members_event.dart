@@ -101,6 +101,11 @@ class FellowshipMembersRemoveRequested extends FellowshipMembersEvent {
   List<Object?> get props => [userId];
 }
 
+/// Mentor permanently deletes the fellowship.
+class FellowshipDeleteRequested extends FellowshipMembersEvent {
+  const FellowshipDeleteRequested();
+}
+
 /// Mentor transfers the mentor role to [newMentorUserId].
 class FellowshipTransferMentorRequested extends FellowshipMembersEvent {
   final String newMentorUserId;

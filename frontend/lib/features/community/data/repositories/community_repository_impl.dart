@@ -344,6 +344,20 @@ class CommunityRepositoryImpl implements CommunityRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> deleteFellowship(String fellowshipId) async {
+    try {
+      await _datasource.deleteFellowship(fellowshipId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to delete fellowship: $e'));
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Fellowship members — mute / unmute
   // ---------------------------------------------------------------------------

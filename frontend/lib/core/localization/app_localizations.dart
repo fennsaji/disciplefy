@@ -336,6 +336,10 @@ class AppLocalizations {
       'editFellowshipTitle': 'Edit Fellowship',
       'editFellowshipSave': 'Save Changes',
       'editFellowshipSuccess': 'Fellowship updated',
+      'deleteFellowshipTitle': 'Delete Fellowship',
+      'deleteFellowshipConfirm':
+          'This will permanently delete the fellowship and remove all members. This cannot be undone.',
+      'deleteFellowshipSuccess': 'Fellowship deleted',
       // Invite list + revoke
       'inviteListEmpty': 'No active invite links',
       'inviteRevoke': 'Revoke',
@@ -779,6 +783,10 @@ class AppLocalizations {
       'editFellowshipTitle': 'संगति संपादित करें',
       'editFellowshipSave': 'परिवर्तन सहेजें',
       'editFellowshipSuccess': 'संगति अपडेट हुई',
+      'deleteFellowshipTitle': 'संगति हटाएं',
+      'deleteFellowshipConfirm':
+          'इससे संगति स्थायी रूप से हटा दी जाएगी और सभी सदस्य हटा दिए जाएंगे। यह पूर्ववत नहीं किया जा सकता।',
+      'deleteFellowshipSuccess': 'संगति हटाई गई',
       // Invite list + revoke
       'inviteListEmpty': 'कोई सक्रिय आमंत्रण लिंक नहीं',
       'inviteRevoke': 'रद्द करें',
@@ -1225,6 +1233,10 @@ class AppLocalizations {
       'editFellowshipTitle': 'കൂട്ടായ്മ തിരുത്തുക',
       'editFellowshipSave': 'മാറ്റങ്ങൾ സംരക്ഷിക്കുക',
       'editFellowshipSuccess': 'കൂട്ടായ്മ അപ്ഡേറ്റ് ചെയ്തു',
+      'deleteFellowshipTitle': 'കൂട്ടായ്മ ഇല്ലാതാക്കുക',
+      'deleteFellowshipConfirm':
+          'ഇത് കൂട്ടായ്മ സ്ഥിരമായി ഇല്ലാതാക്കും, എല്ലാ അംഗങ്ങളെയും നീക്കും. ഇത് പഴയപടിയാക്കാൻ കഴിയില്ല.',
+      'deleteFellowshipSuccess': 'കൂട്ടായ്മ ഇല്ലാതാക്കി',
       // Invite list + revoke
       'inviteListEmpty': 'സജീവ ക്ഷണ ലിങ്കുകൾ ഇല്ല',
       'inviteRevoke': 'റദ്ദാക്കുക',
@@ -1688,6 +1700,12 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['editFellowshipSave']!;
   String get editFellowshipSuccess =>
       _localizedValues[locale.languageCode]!['editFellowshipSuccess']!;
+  String get deleteFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['deleteFellowshipTitle']!;
+  String get deleteFellowshipConfirm =>
+      _localizedValues[locale.languageCode]!['deleteFellowshipConfirm']!;
+  String get deleteFellowshipSuccess =>
+      _localizedValues[locale.languageCode]!['deleteFellowshipSuccess']!;
   // Invite list + revoke
   String get inviteListEmpty =>
       _localizedValues[locale.languageCode]!['inviteListEmpty']!;
