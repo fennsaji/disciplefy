@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { locales, type Locale } from "@/i18n";
 import { getAllPosts } from "@/lib/blog";
 
-const BASE = "https://disciplefy.in";
+const BASE = "https://www.disciplefy.in";
 
 const staticPages = [
   "",
