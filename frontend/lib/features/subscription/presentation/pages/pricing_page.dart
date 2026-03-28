@@ -785,7 +785,7 @@ class _PricingPageState extends State<PricingPage> {
       features: [
         '50 daily tokens (all study modes)',
         '10 follow-ups per study guide',
-        '10 AI Discipler conversations/month',
+        '10 Discipler conversations/month',
         '10 active memory verses',
         'All 8 practice modes',
         '3 practice sessions per verse per day',

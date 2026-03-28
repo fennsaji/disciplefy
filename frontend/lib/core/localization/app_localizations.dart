@@ -41,7 +41,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'Welcome to Disciplefy',
       'onboarding_welcome_subtitle':
-          'AI-powered Bible study guides following  methodology',
+          'Personalized Bible study guides following  methodology',
       'onboarding_language_title': 'Choose Your Language',
       'onboarding_language_subtitle':
           'Select your preferred language for the app',
@@ -430,7 +430,7 @@ class AppLocalizations {
           'Try something like "Forgiveness", "John 3:16", or "How do I deal with anxiety?"',
       'walkthroughGenerateButtonTitle': 'Generate Your Study',
       'walkthroughGenerateButtonDesc': 'Tap to create your Bible study guide',
-      'walkthroughDisciplerTitle': 'AI Discipler',
+      'walkthroughDisciplerTitle': 'Discipler',
       'walkthroughDisciplerDesc':
           'Ask any Bible question and get an answer — like having a Bible teacher available any time',
       'walkthroughStudyGuideInputTitle': 'Enter Your Topic',
@@ -466,7 +466,7 @@ class AppLocalizations {
       'walkthroughChatInputTitle': 'Ask Anything',
       'walkthroughChatInputDesc':
           'Ask anything — like "What does the Bible say about forgiveness?"',
-      'walkthroughDisciplerChatTitle': 'Your AI Bible Teacher',
+      'walkthroughDisciplerChatTitle': 'Your Bible Teacher',
       'walkthroughDisciplerChatDesc':
           'Answers from Scripture, available any time — like having a Bible teacher in your pocket',
     },
@@ -485,7 +485,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'डिसाइपलफाई में आपका स्वागत है',
       'onboarding_welcome_subtitle':
-          'जेफ रीड पद्धति के अनुसार AI-संचालित बाइबल अध्ययन गाइड',
+          'जेफ रीड पद्धति के अनुसार व्यक्तिगत बाइबल अध्ययन गाइड',
       'onboarding_language_title': 'अपनी भाषा चुनें',
       'onboarding_language_subtitle': 'ऐप के लिए अपनी पसंदीदा भाषा चुनें',
       'onboarding_purpose_title': 'अपने बाइबल अध्ययन को बदलें',
@@ -875,7 +875,7 @@ class AppLocalizations {
       'walkthroughGenerateButtonTitle': 'अपना अध्ययन बनाएं',
       'walkthroughGenerateButtonDesc':
           'अपनी बाइबल अध्ययन गाइड बनाने के लिए दबाएं',
-      'walkthroughDisciplerTitle': 'AI शिष्य गुरु',
+      'walkthroughDisciplerTitle': 'शिष्य गुरु',
       'walkthroughDisciplerDesc':
           'कोई भी बाइबल सवाल पूछें और जवाब पाएं — जैसे हमेशा एक बाइबल शिक्षक उपलब्ध हो',
       'walkthroughStudyGuideInputTitle': 'अपना विषय दर्ज करें',
@@ -911,7 +911,7 @@ class AppLocalizations {
       'walkthroughChatInputTitle': 'कुछ भी पूछें',
       'walkthroughChatInputDesc':
           'कुछ भी पूछें — जैसे "बाइबल में क्षमा के बारे में क्या लिखा है?"',
-      'walkthroughDisciplerChatTitle': 'आपका AI बाइबल शिक्षक',
+      'walkthroughDisciplerChatTitle': 'आपका बाइबल शिक्षक',
       'walkthroughDisciplerChatDesc':
           'बाइबल से जवाब, कभी भी — जैसे आपकी जेब में एक बाइबल शिक्षक हो',
     },
@@ -931,7 +931,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'ഡിസൈപ്പിൾഫൈയിലേക്ക് സ്വാഗതം',
       'onboarding_welcome_subtitle':
-          'ജെഫ് റീഡ് രീതി പിന്തുടർന്ന് AI-നയിക്കുന്ന ബൈബിൾ പഠന ഗൈഡുകൾ',
+          'ജെഫ് റീഡ് രീതി പിന്തുടർന്ന് വ്യക്തിഗത ബൈബിൾ പഠന ഗൈഡുകൾ',
       'onboarding_language_title': 'നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക',
       'onboarding_language_subtitle':
           'ആപ്പിനായി നിങ്ങളുടെ പ്രിയപ്പെട്ട ഭാഷ തിരഞ്ഞെടുക്കുക',
@@ -1326,7 +1326,7 @@ class AppLocalizations {
       'walkthroughGenerateButtonTitle': 'നിങ്ങളുടെ പഠനം ഉണ്ടാക്കുക',
       'walkthroughGenerateButtonDesc':
           'ടാപ്പ് ചെയ്ത് ബൈബിൾ പഠന ഗൈഡ് ഉണ്ടാക്കുക',
-      'walkthroughDisciplerTitle': 'AI ശിഷ്യൻ',
+      'walkthroughDisciplerTitle': 'Discipler',
       'walkthroughDisciplerDesc':
           'ഏത് ബൈബിൾ ചോദ്യവും ചോദിക്കുക, ഉത്തരം ലഭിക്കും — ഒരു ബൈബിൾ ടീച്ചർ എപ്പോഴും ലഭ്യമായതുപോലെ',
       'walkthroughStudyGuideInputTitle': 'നിങ്ങളുടെ വിഷയം നൽകുക',
@@ -1362,7 +1362,7 @@ class AppLocalizations {
       'walkthroughChatInputTitle': 'എന്തും ചോദിക്കുക',
       'walkthroughChatInputDesc':
           'എന്തും ചോദിക്കുക — ഉദാ: "ക്ഷമയെക്കുറിച്ച് ബൈബിൾ എന്ത് പറയുന്നു?"',
-      'walkthroughDisciplerChatTitle': 'നിങ്ങളുടെ AI ബൈബിൾ ടീച്ചർ',
+      'walkthroughDisciplerChatTitle': 'നിങ്ങളുടെ ബൈബിൾ ടീച്ചർ',
       'walkthroughDisciplerChatDesc':
           'തിരുവചനത്തിൽ നിന്ന് ഉത്തരം, ഏത് സമയത്തും — ഒരു ബൈബിൾ ടീച്ചർ കൂടെ ഉള്ളതുപോലെ',
     },

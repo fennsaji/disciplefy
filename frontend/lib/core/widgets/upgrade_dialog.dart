@@ -338,9 +338,9 @@ class UpgradeDialog extends StatelessWidget {
     switch (featureKey) {
       case 'ai_discipler':
         return _FeatureInfo(
-          name: 'AI Discipler',
+          name: 'Discipler',
           description:
-              'Have natural voice conversations about Bible topics with your AI study companion.',
+              'Have natural voice conversations about Bible topics with your Bible companion.',
           icon: Icons.mic_rounded,
         );
       case 'learning_paths':
@@ -456,7 +456,7 @@ class UpgradeDialog extends StatelessWidget {
         );
       case 'voice_buddy':
         return _FeatureInfo(
-          name: 'Voice Buddy',
+          name: 'Voice Listener',
           description:
               'Listen to your study guides with natural text-to-speech narration.',
           icon: Icons.volume_up_rounded,

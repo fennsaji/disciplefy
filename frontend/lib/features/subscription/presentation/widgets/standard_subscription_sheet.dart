@@ -192,7 +192,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                 _buildFeatureItem(
                   context,
                   Icons.book_outlined,
-                  'AI-Powered Bible Studies',
+                  'In-depth Bible Studies',
                   'Get personalized study guides for any verse or topic',
                 ),
                 _buildFeatureItem(
