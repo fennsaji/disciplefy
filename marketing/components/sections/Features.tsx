@@ -4,15 +4,14 @@ import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Link } from "@/lib/navigation";
 
-const featureIcons = ["🤖", "🌅", "🎙️", "🧠", "📚", "💬", "🤝"];
-const featureKeys = ["aiGuides", "dailyVerse", "voiceBuddy", "memory", "paths", "chat", "fellowship"] as const;
+const featureIcons = ["📚", "🧠", "🤖", "🌅", "🎙️", "🤝"];
+const featureKeys = ["paths", "memory", "aiGuides", "dailyVerse", "voiceBuddy", "fellowship"] as const;
 const featureHrefs: Record<typeof featureKeys[number], string> = {
+  paths: "/features/learning-paths",
+  memory: "/features/memory-verses",
   aiGuides: "/features/ai-bible-study",
   dailyVerse: "/features/daily-verse",
   voiceBuddy: "/features/voice-buddy",
-  memory: "/features/memory-verses",
-  paths: "/features/learning-paths",
-  chat: "/features/follow-up-chat",
   fellowship: "/features/fellowship",
 };
 

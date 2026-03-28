@@ -124,6 +124,86 @@ async fn generate_for_locale(
     Ok(())
 }
 
+/// Retry function -- only retries topics that already have at least one locale generated but are
+/// missing others (i.e., a previous run partially failed). Does NOT pick up never-attempted topics.
+pub async fn run_blog_retry(pool: &PgPool, config: &Config, http: &Client) -> Result<(), AppError> {
+    tracing::info!("Starting blog retry CRON job");
+
+    let topic = match post::find_next_partially_generated_topic(pool).await? {
+        Some(t) => t,
+        None => {
+            tracing::info!("No partially-generated topics found — nothing to retry");
+            return Ok(());
+        }
+    };
+
+    tracing::info!(topic = %topic.title, "Found partially-generated topic, retrying missing locales");
+
+    let already_generated = post::get_generated_locales(pool, topic.id).await?;
+    let missing_locales: Vec<&str> = LOCALES
+        .iter()
+        .copied()
+        .filter(|l| !already_generated.contains(&l.to_string()))
+        .collect();
+
+    if missing_locales.is_empty() {
+        tracing::info!(topic = %topic.title, "All locales already generated, skipping");
+        return Ok(());
+    }
+
+    tracing::info!(
+        topic = %topic.title,
+        missing = ?missing_locales,
+        already_done = ?already_generated,
+        "Retrying missing locales in parallel"
+    );
+
+    let mut handles = Vec::with_capacity(missing_locales.len());
+
+    for locale in missing_locales {
+        let locale = locale.to_string();
+        let http = http.clone();
+        let config = config.clone();
+        let pool = pool.clone();
+        let topic = topic.clone();
+
+        let handle = tokio::spawn(async move {
+            let result = generate_for_locale(&http, &config, &pool, &topic, &locale).await;
+            (locale, result)
+        });
+        handles.push(handle);
+    }
+
+    let mut generated = 0usize;
+    let mut failed = 0usize;
+
+    for handle in handles {
+        match handle.await {
+            Ok((locale, Ok(()))) => {
+                tracing::info!(locale, "Locale retried successfully");
+                generated += 1;
+            }
+            Ok((locale, Err(e))) => {
+                tracing::error!(locale, "Retry failed: {}", e);
+                failed += 1;
+            }
+            Err(e) => {
+                tracing::error!("Retry task panicked: {}", e);
+                failed += 1;
+            }
+        }
+    }
+
+    tracing::info!(
+        generated,
+        failed,
+        topic = %topic.title,
+        "Blog retry complete"
+    );
+
+    Ok(())
+}
+
 /// Main blog generation function -- called by CRON scheduler or manual trigger.
 /// Generates posts for ONE topic per run (all missing locales in parallel),
 /// picking the next topic that is missing at least one locale.

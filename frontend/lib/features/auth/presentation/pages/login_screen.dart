@@ -31,6 +31,29 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkAuthenticationStatus();
   }
 
+  /// Returns the pending deep-link redirect target, checking URL param first
+  /// (works for email auth) then Hive storage (survives OAuth round-trip).
+  /// Clears Hive storage after reading so it is not reused.
+  String? _consumeRedirectTarget(BuildContext context) {
+    // URL param is present for same-page flows (email auth)
+    String? fromUrl;
+    try {
+      fromUrl = GoRouterState.of(context).uri.queryParameters['redirect'];
+    } catch (_) {}
+    if (fromUrl != null && fromUrl.isNotEmpty) {
+      return Uri.decodeComponent(fromUrl);
+    }
+    // Hive key is written before launching Google OAuth so it survives the
+    // browser round-trip to Google and back to the OAuth callback URL.
+    final box = Hive.box('app_settings');
+    final fromHive = box.get('pending_deep_link_redirect') as String?;
+    if (fromHive != null && fromHive.isNotEmpty) {
+      box.delete('pending_deep_link_redirect');
+      return Uri.decodeComponent(fromHive);
+    }
+    return null;
+  }
+
   /// Check if user is already authenticated and redirect if needed
   void _checkAuthenticationStatus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,6 +85,11 @@ class _LoginScreenState extends State<LoginScreen> {
               'redirect_reason': 'already_authenticated',
             },
           );
+          final redirectTo = _consumeRedirectTarget(context);
+          if (redirectTo != null) {
+            context.go(redirectTo);
+            return;
+          }
           // Use AuthAwareNavigationService for proper stack management
           context.navigateAfterAuth();
         }
@@ -93,6 +121,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               );
               context.go(AppRoutes.premiumUpgrade);
+              return;
+            }
+
+            // Check for deep link redirect (URL param or Hive, OAuth-safe)
+            final redirectTo = _consumeRedirectTarget(context);
+            if (redirectTo != null) {
+              context.go(redirectTo);
               return;
             }
 
@@ -530,6 +565,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
+    // Persist redirect target before OAuth so it survives the browser round-trip
+    // to Google and back (the ?redirect= URL param is lost after the callback).
+    String? redirectTo;
+    try {
+      redirectTo = GoRouterState.of(context).uri.queryParameters['redirect'];
+    } catch (_) {}
+    if (redirectTo != null && redirectTo.isNotEmpty) {
+      Hive.box('app_settings').put('pending_deep_link_redirect', redirectTo);
+    }
     context.read<AuthBloc>().add(const GoogleSignInRequested());
   }
 

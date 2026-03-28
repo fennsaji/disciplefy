@@ -457,6 +457,49 @@ pub async fn find_next_ungenerated_topic(
     Ok(topic)
 }
 
+/// Finds the next topic that was partially generated (at least one locale succeeded, but not all
+/// three). Used by the retry cron to avoid generating brand-new topics.
+pub async fn find_next_partially_generated_topic(
+    pool: &PgPool,
+) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
+    let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
+        "SELECT lpt.id, rt.title, rt.description, rt.input_type,
+                COALESCE(lp.recommended_mode, 'standard') AS study_mode,
+                lp.id AS path_id, lp.title AS path_title, lp.description AS path_description,
+                lp.disciple_level, lp.category,
+                hi_t.title       AS hi_title,
+                ml_t.title       AS ml_title,
+                hi_t.description AS hi_description,
+                ml_t.description AS ml_description,
+                hi_lp.title      AS hi_path_title,
+                ml_lp.title      AS ml_path_title,
+                hi_lp.description AS hi_path_description,
+                ml_lp.description AS ml_path_description
+         FROM learning_path_topics lpt
+         JOIN recommended_topics rt ON lpt.topic_id = rt.id
+         JOIN learning_paths lp ON lpt.learning_path_id = lp.id
+         LEFT JOIN recommended_topics_translations hi_t
+               ON hi_t.topic_id = rt.id AND hi_t.language_code = 'hi'
+         LEFT JOIN recommended_topics_translations ml_t
+               ON ml_t.topic_id = rt.id AND ml_t.language_code = 'ml'
+         LEFT JOIN learning_path_translations hi_lp
+               ON hi_lp.learning_path_id = lp.id AND hi_lp.lang_code = 'hi'
+         LEFT JOIN learning_path_translations ml_lp
+               ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
+         WHERE lp.is_active = true AND rt.is_active = true
+           AND (
+               SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
+               WHERE bp.source_topic_id = lpt.id
+               AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])
+           ) BETWEEN 1 AND 2
+         ORDER BY lp.display_order, lpt.position
+         LIMIT 1",
+    )
+    .fetch_optional(pool)
+    .await?;
+    Ok(topic)
+}
+
 /// Returns the list of locales that already have blog posts for the given topic.
 pub async fn get_generated_locales(pool: &PgPool, topic_id: Uuid) -> Result<Vec<String>, AppError> {
     let locales: Vec<String> = sqlx::query_scalar(
