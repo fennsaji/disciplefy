@@ -189,6 +189,11 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         forceRefresh: true,
       ));
 
+      // Load personalized paths for the For You section (questionnaire-based)
+      _learningPathsBloc.add(LoadPersonalizedPaths(
+        language: _currentLanguage,
+      ));
+
       // Mark that data loading has started
       if (!_dataLoadingStarted) {
         setState(() {

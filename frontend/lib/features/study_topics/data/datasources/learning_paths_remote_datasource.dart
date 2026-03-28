@@ -53,6 +53,15 @@ abstract class LearningPathsRemoteDataSource {
   Future<RecommendedPathResponseModel> getRecommendedPath({
     String language = 'en',
   });
+
+  /// Get top N personalized learning paths for the current user.
+  ///
+  /// Returns paths scored by the questionnaire algorithm, or featured paths
+  /// for unauthenticated / non-personalized users.
+  Future<PersonalizedPathsResponseModel> getPersonalizedPaths({
+    String language = 'en',
+    int limit = 5,
+  });
 }
 
 /// Implementation of [LearningPathsRemoteDataSource] using Edge Functions.
@@ -460,6 +469,54 @@ class LearningPathsRemoteDataSourceImpl
       throw NetworkException(
         message: 'Failed to connect to learning paths service',
         code: 'RECOMMENDED_PATH_NETWORK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<PersonalizedPathsResponseModel> getPersonalizedPaths({
+    String language = 'en',
+    int limit = 5,
+  }) async {
+    try {
+      _logDebug(
+          'Fetching personalized paths (language: $language, limit: $limit)');
+
+      final headers = await _httpService.createHeaders();
+      final body = jsonEncode({'language': language, 'limit': limit});
+
+      final response = await _httpService.post(
+        '$_baseUrl$_endpoint?action=recommended_paths',
+        headers: headers,
+        body: body,
+      );
+
+      _logDebug('Personalized paths API response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body) as Map<String, dynamic>;
+        if (jsonData['success'] != true) {
+          throw const ClientException(
+            message: 'API returned unsuccessful response',
+            code: 'PERSONALIZED_PATHS_API_FAILURE',
+          );
+        }
+        return PersonalizedPathsResponseModel.fromJson(jsonData);
+      } else {
+        throw ServerException(
+          message: 'Failed to fetch personalized paths: ${response.statusCode}',
+          code: 'PERSONALIZED_PATHS_API_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } catch (e) {
+      _logDebug('Exception in getPersonalizedPaths: $e');
+      throw NetworkException(
+        message: 'Failed to connect to learning paths service',
+        code: 'PERSONALIZED_PATHS_NETWORK_ERROR',
       );
     }
   }
