@@ -2833,11 +2833,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             _StudySection(
               title: context.tr(TranslationKeys.studyGuidePrayerPoints),
               icon: Icons.favorite,
-              content: _currentStudyGuide!.prayerPoints
-                  .asMap()
-                  .entries
-                  .map((entry) => '• ${entry.value}')
-                  .join('\n'),
+              content: _currentStudyGuide!.prayerPoints.length == 1
+                  ? _currentStudyGuide!.prayerPoints.first
+                  : _currentStudyGuide!.prayerPoints
+                      .map((p) => '• $p')
+                      .join('\n'),
               contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 6,
             ),
@@ -3031,11 +3031,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         if (_currentStudyGuide!.prayerPoints.isNotEmpty)
           _QuickStudySection(
             title: context.tr(TranslationKeys.studyGuidePrayerPoints),
-            content: _currentStudyGuide!.prayerPoints
-                .asMap()
-                .entries
-                .map((entry) => '• ${entry.value}')
-                .join('\n'),
+            content: _currentStudyGuide!.prayerPoints.length == 1
+                ? _currentStudyGuide!.prayerPoints.first
+                : _currentStudyGuide!.prayerPoints
+                    .asMap()
+                    .entries
+                    .map((entry) => '• ${entry.value}')
+                    .join('\n'),
             icon: Icons.volunteer_activism_outlined,
             contentFontSize: _contentFontSize,
           ),
@@ -3173,11 +3175,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             _StudySection(
               title: context.tr(TranslationKeys.studyGuidePrayerForApplication),
               icon: Icons.favorite,
-              content: _currentStudyGuide!.prayerPoints
-                  .asMap()
-                  .entries
-                  .map((entry) => '• ${entry.value}')
-                  .join('\n'),
+              content: _currentStudyGuide!.prayerPoints.length == 1
+                  ? _currentStudyGuide!.prayerPoints.first
+                  : _currentStudyGuide!.prayerPoints
+                      .asMap()
+                      .entries
+                      .map((entry) => '• ${entry.value}')
+                      .join('\n'),
               contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 6,
             ),
