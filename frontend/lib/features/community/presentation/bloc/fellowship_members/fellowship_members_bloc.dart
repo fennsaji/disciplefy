@@ -24,6 +24,7 @@ class FellowshipMembersBloc
     on<FellowshipInviteRevokeRequested>(_onInviteRevokeRequested);
     on<FellowshipMembersRemoveRequested>(_onRemoveRequested);
     on<FellowshipTransferMentorRequested>(_onTransferMentorRequested);
+    on<FellowshipDeleteRequested>(_onDeleteRequested);
   }
 
   Future<void> _onInitialized(
@@ -249,6 +250,26 @@ class FellowshipMembersBloc
             state.members.where((m) => m.userId != event.userId).toList();
         emit(state.copyWith(members: updated, clearErrorMessage: true));
       },
+    );
+  }
+
+  Future<void> _onDeleteRequested(
+    FellowshipDeleteRequested event,
+    Emitter<FellowshipMembersState> emit,
+  ) async {
+    emit(state.copyWith(deleteStatus: FellowshipDeleteStatus.loading));
+
+    final result = await _repository.deleteFellowship(state.fellowshipId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        deleteStatus: FellowshipDeleteStatus.failure,
+        errorMessage: failure.message,
+      )),
+      (_) => emit(state.copyWith(
+        deleteStatus: FellowshipDeleteStatus.success,
+        clearErrorMessage: true,
+      )),
     );
   }
 

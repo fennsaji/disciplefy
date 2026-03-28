@@ -252,6 +252,46 @@ class _FellowshipHomeContent extends StatelessWidget {
     );
   }
 
+  void _showDeleteConfirm(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          l10n.deleteFellowshipTitle,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w700,
+            color: context.appTextPrimary,
+          ),
+        ),
+        content: Text(
+          l10n.deleteFellowshipConfirm,
+          style:
+              TextStyle(fontFamily: 'Inter', color: context.appTextSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context
+                  .read<FellowshipMembersBloc>()
+                  .add(const FellowshipDeleteRequested());
+            },
+            child: Text(
+              l10n.deleteFellowshipTitle,
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showEditSheet(BuildContext context) {
     final bloc = context.read<FellowshipMembersBloc>();
     showModalBottomSheet<void>(
@@ -284,7 +324,8 @@ class _FellowshipHomeContent extends StatelessWidget {
               prev.errorMessage != curr.errorMessage ||
               prev.editStatus != curr.editStatus ||
               prev.transferStatus != curr.transferStatus ||
-              prev.leaveStatus != curr.leaveStatus,
+              prev.leaveStatus != curr.leaveStatus ||
+              prev.deleteStatus != curr.deleteStatus,
           listener: (context, state) {
             // Left the fellowship — navigate back to list.
             if (state.leaveStatus == FellowshipLeaveStatus.success) {
@@ -293,6 +334,28 @@ class _FellowshipHomeContent extends StatelessWidget {
             // Mentor transferred — navigate back.
             if (state.transferStatus == FellowshipTransferStatus.success) {
               context.go('/community');
+            }
+            // Fellowship deleted — navigate back and show confirmation.
+            if (state.deleteStatus == FellowshipDeleteStatus.success) {
+              context.go('/community');
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(
+                  content: Text(l10n.deleteFellowshipSuccess),
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                ));
+            }
+            if (state.deleteStatus == FellowshipDeleteStatus.failure &&
+                state.errorMessage != null) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(
+                  content: Text(state.errorMessage!),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                ));
             }
             // Edit success snackbar.
             if (state.editStatus == FellowshipEditStatus.success) {
@@ -385,6 +448,7 @@ class _FellowshipHomeContent extends StatelessWidget {
               onSelected: (value) {
                 if (value == 'leave') _showLeaveConfirm(context);
                 if (value == 'edit') _showEditSheet(context);
+                if (value == 'delete') _showDeleteConfirm(context);
               },
               itemBuilder: (_) => [
                 if (isMentor)
@@ -396,6 +460,17 @@ class _FellowshipHomeContent extends StatelessWidget {
                       const SizedBox(width: 10),
                       Text(l10n.editFellowshipTitle,
                           style: TextStyle(color: context.appTextPrimary)),
+                    ]),
+                  ),
+                if (isMentor)
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(children: [
+                      const Icon(Icons.delete_outline,
+                          color: AppColors.error, size: 18),
+                      const SizedBox(width: 10),
+                      Text(l10n.deleteFellowshipTitle,
+                          style: const TextStyle(color: AppColors.error)),
                     ]),
                   ),
                 if (!isMentor)
