@@ -2096,4 +2096,40 @@ class TranslationKeys {
   static const memoryStatsPerfectRecalls = 'memory_stats_page.perfect_recalls';
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
+
+  // Fellowship share section (study guide screen)
+  static const studyGuideFellowshipShareTitle =
+      'study_guide.fellowship.share_title';
+  static const studyGuideFellowshipCardTitle =
+      'study_guide.fellowship.card_title';
+  static const studyGuideFellowshipCardSubtitle =
+      'study_guide.fellowship.card_subtitle';
+  static const studyGuideFellowshipInputHint =
+      'study_guide.fellowship.input_hint';
+  static const studyGuideFellowshipWalkthroughDesc =
+      'study_guide.fellowship.walkthrough_desc';
+
+  // Soft paywall dialog
+  static const tokenSoftPaywallUsedTitle = 'tokens.soft_paywall.used_title';
+  static const tokenSoftPaywallUsedMessage = 'tokens.soft_paywall.used_message';
+  static const tokenSoftPaywallLowTitle = 'tokens.soft_paywall.low_title';
+  static const tokenSoftPaywallLowMessage = 'tokens.soft_paywall.low_message';
+  static const tokenSoftPaywallSeePlans = 'tokens.soft_paywall.see_plans';
+  static const tokenSoftPaywallPurchase = 'tokens.soft_paywall.purchase';
+  static const tokenSoftPaywallMaybeLater = 'tokens.soft_paywall.maybe_later';
+  static const tokenSoftPaywallResetHour = 'tokens.soft_paywall.reset_hour';
+  static const tokenSoftPaywallResetHours = 'tokens.soft_paywall.reset_hours';
+  static const tokenSoftPaywallResetSoon = 'tokens.soft_paywall.reset_soon';
+
+  // Insufficient tokens dialog
+  static const tokenDialogTitle = 'tokens.dialog.title';
+  static const tokenDialogSubtitle = 'tokens.dialog.subtitle';
+  static const tokenDialogYourCredits = 'tokens.dialog.your_credits';
+  static const tokenDialogNeeded = 'tokens.dialog.needed';
+  static const tokenDialogCreditsUnit = 'tokens.dialog.credits_unit';
+  static const tokenDialogGetMore = 'tokens.dialog.get_more';
+  static const tokenDialogInfoBox = 'tokens.dialog.info_box';
+  static const tokenDialogPurchase = 'tokens.dialog.purchase';
+  static const tokenDialogMaybeLater = 'tokens.dialog.maybe_later';
+  static const tokenDialogViewPlans = 'tokens.dialog.view_plans';
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
@@ -38,17 +40,24 @@ class SoftPaywallDialog extends StatelessWidget {
     );
   }
 
-  /// Returns a friendly "resets in X hours" string based on time until midnight.
-  String _resetText() {
+  /// Returns a localized "resets in X hours" string based on time until midnight.
+  String _resetKey(BuildContext context) {
     final now = DateTime.now();
     final tomorrow = DateTime(now.year, now.month, now.day + 1);
     final diff = tomorrow.difference(now);
     final hours = diff.inHours;
     final minutes = diff.inMinutes;
 
-    if (minutes < 60) return 'in less than an hour';
-    if (hours == 1) return 'in about 1 hour';
-    return 'in about $hours hours';
+    if (minutes < 60) {
+      return context.tr(TranslationKeys.tokenSoftPaywallResetSoon);
+    }
+    if (hours == 1) {
+      return context.tr(TranslationKeys.tokenSoftPaywallResetHour);
+    }
+    return context.tr(
+      TranslationKeys.tokenSoftPaywallResetHours,
+      {'hours': '$hours'},
+    );
   }
 
   @override
@@ -57,7 +66,7 @@ class SoftPaywallDialog extends StatelessWidget {
     final textPrimary = isDark ? Colors.white.withOpacity(0.9) : Colors.black87;
     final textSecondary =
         isDark ? Colors.white.withOpacity(0.65) : Colors.black54;
-    final resetTime = _resetText();
+    final resetTime = _resetKey(context);
 
     final String title;
     final String message;
@@ -65,15 +74,22 @@ class SoftPaywallDialog extends StatelessWidget {
     final Color iconColor;
 
     if (percentage >= 100) {
-      title = 'Tokens used up for today';
-      message =
-          'Great studying today! 🎉 Your tokens will reset $resetTime — come back tomorrow for more.';
+      title = context.tr(TranslationKeys.tokenSoftPaywallUsedTitle);
+      message = context.tr(
+        TranslationKeys.tokenSoftPaywallUsedMessage,
+        {'resetTime': resetTime},
+      );
       titleIcon = Icons.nightlight_round;
       iconColor = const Color(0xFF6366F1); // indigo
     } else {
-      title = 'Running low on tokens';
-      message =
-          'Only $tokensRemaining tokens left today. They reset $resetTime.';
+      title = context.tr(TranslationKeys.tokenSoftPaywallLowTitle);
+      message = context.tr(
+        TranslationKeys.tokenSoftPaywallLowMessage,
+        {
+          'count': '$tokensRemaining',
+          'resetTime': resetTime,
+        },
+      );
       titleIcon = Icons.battery_2_bar_rounded;
       iconColor = const Color(0xFFF59E0B); // amber
     }
@@ -121,7 +137,7 @@ class SoftPaywallDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                'See Plans',
+                context.tr(TranslationKeys.tokenSoftPaywallSeePlans),
                 style: AppFonts.inter(
                     color: Colors.white, fontWeight: FontWeight.w600),
               ),
@@ -146,7 +162,7 @@ class SoftPaywallDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                'Purchase Tokens',
+                context.tr(TranslationKeys.tokenSoftPaywallPurchase),
                 style: AppFonts.inter(
                     color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
               ),
@@ -163,7 +179,7 @@ class SoftPaywallDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                'Maybe later',
+                context.tr(TranslationKeys.tokenSoftPaywallMaybeLater),
                 style: AppFonts.inter(color: textSecondary),
               ),
             ),

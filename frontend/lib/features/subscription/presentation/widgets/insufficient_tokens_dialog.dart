@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../tokens/domain/entities/token_status.dart';
@@ -53,13 +55,13 @@ class InsufficientTokensDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(isDark, colorScheme),
+            _buildHeader(context, isDark, colorScheme),
             const SizedBox(height: 16),
-            _buildTokenBalance(isDark, colorScheme),
+            _buildTokenBalance(context, isDark, colorScheme),
             const SizedBox(height: 16),
-            _buildUpgradePlans(isDark, colorScheme, theme),
+            _buildUpgradePlans(context, isDark, colorScheme, theme),
             const SizedBox(height: 16),
-            _buildInfoBox(isDark, colorScheme),
+            _buildInfoBox(context, isDark, colorScheme),
             const SizedBox(height: 20),
             if (tokenStatus.canPurchaseTokens) ...[
               _buildPurchaseTokensButton(context, isDark, colorScheme),
@@ -72,7 +74,8 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(bool isDark, ColorScheme colorScheme) {
+  Widget _buildHeader(
+      BuildContext context, bool isDark, ColorScheme colorScheme) {
     return Row(
       children: [
         Container(
@@ -94,7 +97,7 @@ class InsufficientTokensDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'No Credits Left Today',
+                context.tr(TranslationKeys.tokenDialogTitle),
                 style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -105,7 +108,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'You\'ve used all your study credits for today!',
+                context.tr(TranslationKeys.tokenDialogSubtitle),
                 style: AppFonts.inter(
                   fontSize: 13,
                   color: isDark
@@ -120,7 +123,8 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildTokenBalance(bool isDark, ColorScheme colorScheme) {
+  Widget _buildTokenBalance(
+      BuildContext context, bool isDark, ColorScheme colorScheme) {
     final bgColor = isDark
         ? Colors.white.withOpacity(0.07)
         : colorScheme.onSurface.withOpacity(0.06);
@@ -148,8 +152,12 @@ class InsufficientTokensDialog extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Your credits', style: labelStyle),
-              Text('${tokenStatus.totalTokens} credits', style: valueStyle),
+              Text(context.tr(TranslationKeys.tokenDialogYourCredits),
+                  style: labelStyle),
+              Text(
+                '${tokenStatus.totalTokens} ${context.tr(TranslationKeys.tokenDialogCreditsUnit)}',
+                style: valueStyle,
+              ),
             ],
           ),
           if (requiredTokens != null) ...[
@@ -157,15 +165,18 @@ class InsufficientTokensDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Needed', style: labelStyle),
-                Text('$requiredTokens credits',
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.85)
-                          : colorScheme.onSurface,
-                    )),
+                Text(context.tr(TranslationKeys.tokenDialogNeeded),
+                    style: labelStyle),
+                Text(
+                  '$requiredTokens ${context.tr(TranslationKeys.tokenDialogCreditsUnit)}',
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.85)
+                        : colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
           ],
@@ -174,13 +185,13 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildUpgradePlans(
-      bool isDark, ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildUpgradePlans(BuildContext context, bool isDark,
+      ColorScheme colorScheme, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Get more credits:',
+          context.tr(TranslationKeys.tokenDialogGetMore),
           style: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -262,7 +273,8 @@ class InsufficientTokensDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBox(bool isDark, ColorScheme colorScheme) {
+  Widget _buildInfoBox(
+      BuildContext context, bool isDark, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -283,7 +295,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Credits refresh daily at midnight — come back tomorrow to generate more study guides! Or get more credits now to keep going.',
+              context.tr(TranslationKeys.tokenDialogInfoBox),
               style: AppFonts.inter(
                 fontSize: 13,
                 color: isDark
@@ -319,7 +331,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Get More Credits',
+          context.tr(TranslationKeys.tokenDialogPurchase),
           style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -347,7 +359,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Maybe Later',
+              context.tr(TranslationKeys.tokenDialogMaybeLater),
               style: AppFonts.inter(
                 fontSize: 14,
                 color: isDark
@@ -375,7 +387,7 @@ class InsufficientTokensDialog extends StatelessWidget {
               elevation: 0,
             ),
             child: Text(
-              'View Plans',
+              context.tr(TranslationKeys.tokenDialogViewPlans),
               style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,

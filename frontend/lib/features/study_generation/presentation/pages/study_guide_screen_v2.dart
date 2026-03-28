@@ -2537,9 +2537,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           if (_userFellowships?.isNotEmpty == true) ...[
             WalkthroughTooltip(
               showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
-              title: 'Share with Fellowship',
-              description:
-                  'Write a reflection, prayer, or insight and share it with your fellowship group.',
+              title: context.tr(TranslationKeys.studyGuideFellowshipShareTitle),
+              description: context
+                  .tr(TranslationKeys.studyGuideFellowshipWalkthroughDesc),
               screen: WalkthroughScreen.studyGuideCompletion,
               stepNumber: 1,
               totalSteps: 3,
@@ -4859,7 +4859,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Share with Your Fellowship',
+                      context.tr(TranslationKeys.studyGuideFellowshipCardTitle),
                       style: AppFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -4867,7 +4867,8 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                       ),
                     ),
                     Text(
-                      'Ask a question or share your insight',
+                      context
+                          .tr(TranslationKeys.studyGuideFellowshipCardSubtitle),
                       style: AppFonts.inter(
                         fontSize: 12,
                         color:
@@ -4889,7 +4890,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText:
-                  'What stood out to you? Share a thought or ask a question...',
+                  context.tr(TranslationKeys.studyGuideFellowshipInputHint),
               hintStyle: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13,
@@ -4952,7 +4953,8 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                         ),
                       )
                     : Text(
-                        'Share with Fellowship',
+                        context
+                            .tr(TranslationKeys.studyGuideFellowshipShareTitle),
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,

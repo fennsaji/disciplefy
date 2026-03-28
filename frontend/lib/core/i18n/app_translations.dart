@@ -56,6 +56,15 @@ class AppTranslations {
       'scripture_connections': 'Scripture Connections',
       'deep_reflection': 'Deep Reflection & Journaling',
       'prayer_for_application': 'Prayer for Deep Application',
+      'fellowship': {
+        'share_title': 'Share with Fellowship',
+        'card_title': 'Share with Your Fellowship',
+        'card_subtitle': 'Ask a question or share your insight',
+        'input_hint':
+            'What stood out to you? Share a thought or ask a question...',
+        'walkthrough_desc':
+            'Write a reflection, prayer, or insight and share it with your fellowship group.',
+      },
       'messages': {
         'auth_required': 'Authentication Required',
         'auth_required_message':
@@ -1080,6 +1089,33 @@ class AppTranslations {
         'payment_method_wallet': 'Mobile Wallet',
         'payment_method': 'Payment Method',
       },
+      'soft_paywall': {
+        'used_title': 'Credits used up for today',
+        'used_message':
+            'Great studying today! 🎉 Your credits will refresh {resetTime} — come back tomorrow for more.',
+        'low_title': 'Running low on credits',
+        'low_message':
+            'Only {count} credits left today. They refresh {resetTime}.',
+        'see_plans': 'See Plans',
+        'purchase': 'Get More Credits',
+        'maybe_later': 'Maybe later',
+        'reset_soon': 'in less than an hour',
+        'reset_hour': 'in about 1 hour',
+        'reset_hours': 'in about {hours} hours',
+      },
+      'dialog': {
+        'title': 'No Credits Left Today',
+        'subtitle': 'You\'ve used all your study credits for today!',
+        'your_credits': 'Your credits',
+        'needed': 'Needed',
+        'credits_unit': 'credits',
+        'get_more': 'Get more credits:',
+        'info_box':
+            'Credits refresh daily at midnight — come back tomorrow to generate more study guides! Or get more credits now to keep going.',
+        'purchase': 'Get More Credits',
+        'maybe_later': 'Maybe Later',
+        'view_plans': 'View Plans',
+      },
     },
     'subscription': {
       'title': 'My Subscription',
@@ -1964,6 +2000,14 @@ class AppTranslations {
       'scripture_connections': 'पवित्र वचन संबंध',
       'deep_reflection': 'गहरा चिंतन और लेखन',
       'prayer_for_application': 'प्रार्थना (गहरा उपयोग)',
+      'fellowship': {
+        'share_title': 'फेलोशिप में साझा करें',
+        'card_title': 'अपनी फेलोशिप के साथ साझा करें',
+        'card_subtitle': 'सवाल पूछें या अपनी बात बताएं',
+        'input_hint': 'क्या आपको प्रभावित किया? कोई विचार या सवाल साझा करें...',
+        'walkthrough_desc':
+            'अपनी प्रार्थना, विचार या अंतर्दृष्टि लिखें और अपनी फेलोशिप के साथ साझा करें।',
+      },
       'messages': {
         'auth_required': 'साइन इन करें',
         'auth_required_message': 'इसे सेव करने के लिए साइन इन करें',
@@ -2986,6 +3030,33 @@ class AppTranslations {
         'payment_method_wallet': 'मोबाइल वॉलेट',
         'payment_method': 'भुगतान विधि',
       },
+      'soft_paywall': {
+        'used_title': 'आज के क्रेडिट खत्म हो गए',
+        'used_message':
+            'आज अच्छी पढ़ाई! 🎉 क्रेडिट {resetTime} वापस आएंगे — कल और गाइड बनाएं।',
+        'low_title': 'क्रेडिट कम हो रहे हैं',
+        'low_message':
+            'आज सिर्फ {count} क्रेडिट बचे हैं। ये {resetTime} वापस आएंगे।',
+        'see_plans': 'प्लान देखें',
+        'purchase': 'और क्रेडिट लें',
+        'maybe_later': 'बाद में',
+        'reset_soon': 'एक घंटे से कम में',
+        'reset_hour': 'लगभग 1 घंटे में',
+        'reset_hours': 'लगभग {hours} घंटे में',
+      },
+      'dialog': {
+        'title': 'आज के क्रेडिट खत्म',
+        'subtitle': 'आपके आज के सभी अध्ययन क्रेडिट खत्म हो गए!',
+        'your_credits': 'आपके क्रेडिट',
+        'needed': 'जरूरी',
+        'credits_unit': 'क्रेडिट',
+        'get_more': 'और क्रेडिट पाएं:',
+        'info_box':
+            'क्रेडिट हर रात 12 बजे वापस आते हैं — कल और गाइड बनाएं! या अभी और क्रेडिट लें।',
+        'purchase': 'और क्रेडिट लें',
+        'maybe_later': 'बाद में',
+        'view_plans': 'प्लान देखें',
+      },
     },
     'subscription': {
       'title': 'मेरी सब्सक्रिप्शन',
@@ -3877,6 +3948,16 @@ class AppTranslations {
       'scripture_connections': 'വേദഭാഗ ബന്ധങ്ങൾ',
       'deep_reflection': 'ആഴത്തിലുള്ള ചിന്തയും എഴുത്തും',
       'prayer_for_application': 'ആഴത്തിലുള്ള പ്രയോഗത്തിനുള്ള പ്രാർത്ഥന',
+      'fellowship': {
+        'share_title': 'ഫെല്ലോഷിപ്പിൽ പങ്കിടുക',
+        'card_title': 'നിങ്ങളുടെ ഫെല്ലോഷിപ്പുമായി പങ്കിടുക',
+        'card_subtitle':
+            'ഒരു ചോദ്യം ചോദിക്കൂ അല്ലെങ്കിൽ നിങ്ങളുടെ അഭിപ്രായം പങ്കിടൂ',
+        'input_hint':
+            'നിങ്ങൾക്ക് ഏറ്റവും മനസ്സിൽ തോന്നിയത് എന്ത്? ഒരു ചിന്ത അല്ലെങ്കിൽ ചോദ്യം പങ്കിടൂ...',
+        'walkthrough_desc':
+            'ഒരു ധ്യാനം, പ്രാർത്ഥന, അല്ലെങ്കിൽ ഉൾക്കാഴ്ച എഴുതി നിങ്ങളുടെ ഫെല്ലോഷിപ്പ് ഗ്രൂപ്പുമായി പങ്കിടൂ.',
+      },
       'messages': {
         'auth_required': 'സൈൻ ഇൻ ചെയ്യൂ',
         'auth_required_message': 'ഇത് സേവ് ചെയ്യാൻ സൈൻ ഇൻ ചെയ്യൂ',
@@ -4943,6 +5024,33 @@ class AppTranslations {
         'view_history': 'ചരിത്രം കാണുക',
         'secure_payment': 'സുരക്ഷിത പേയ്‌മെന്റ്',
         'payment_method': 'പേയ്‌മെന്റ് മാർഗ്ഗം',
+      },
+      'soft_paywall': {
+        'used_title': 'ഇന്നത്തെ ക്രെഡിറ്റ് തീർന്നു',
+        'used_message':
+            'ഇന്ന് നല്ല പഠനം! 🎉 ക്രെഡിറ്റ് {resetTime} പുതുക്കുന്നു — നാളെ വീണ്ടും ഗൈഡ് ഉണ്ടാക്കൂ.',
+        'low_title': 'ക്രെഡിറ്റ് കുറവുന്നു',
+        'low_message':
+            'ഇന്ന് {count} ക്രെഡിറ്റ് മാത്രം ബാക്കി. {resetTime} പുതുക്കുന്നു.',
+        'see_plans': 'പ്ലാൻ കാണൂ',
+        'purchase': 'കൂടുതൽ ക്രെഡിറ്റ് നേടൂ',
+        'maybe_later': 'പിന്നെ',
+        'reset_soon': 'ഒരു മണിക്കൂറിൽ താഴെ',
+        'reset_hour': 'ഏകദേശം 1 മണിക്കൂറിൽ',
+        'reset_hours': 'ഏകദേശം {hours} മണിക്കൂറിൽ',
+      },
+      'dialog': {
+        'title': 'ഇന്നത്തെ ക്രെഡിറ്റ് തീർന്നു',
+        'subtitle': 'ഇന്നത്തെ പഠന ക്രെഡിറ്റ് മുഴുവൻ ഉപയോഗിച്ചു!',
+        'your_credits': 'നിങ്ങളുടെ ക്രെഡിറ്റ്',
+        'needed': 'വേണ്ടത്',
+        'credits_unit': 'ക്രെഡിറ്റ്',
+        'get_more': 'കൂടുതൽ ക്രെഡിറ്റ് നേടൂ:',
+        'info_box':
+            'ക്രെഡിറ്റ് ദിവസേന അർദ്ധരാത്രി പുതുക്കുന്നു — നാളെ വീണ്ടും ഗൈഡ് ഉണ്ടാക്കൂ! അല്ലെങ്കിൽ ഇപ്പോൾ കൂടുതൽ ക്രെഡിറ്റ് നേടൂ.',
+        'purchase': 'കൂടുതൽ ക്രെഡിറ്റ് നേടൂ',
+        'maybe_later': 'പിന്നെ ആകട്ടെ',
+        'view_plans': 'പ്ലാൻ കാണൂ',
       },
     },
     'premium': {
