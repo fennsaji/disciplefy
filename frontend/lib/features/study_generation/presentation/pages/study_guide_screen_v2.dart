@@ -50,6 +50,7 @@ import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../../gamification/presentation/bloc/gamification_state.dart';
 import '../../domain/entities/study_mode.dart';
 import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
@@ -426,6 +427,24 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       final repo = sl<WalkthroughRepository>();
       final seen = await repo.hasSeen(WalkthroughScreen.studyGuideCompletion);
       if (seen || !mounted || _showcaseContext == null) return;
+
+      // Wait for any pending achievement popups to be dismissed before starting
+      // the walkthrough — completing a study fires CheckStudyAchievements which
+      // can trigger an achievement dialog that would overlap the tooltip.
+      final gamificationBloc = sl<GamificationBloc>();
+      if (gamificationBloc.state.hasPendingNotifications) {
+        try {
+          await gamificationBloc.stream
+              .firstWhere((s) => !s.hasPendingNotifications)
+              .timeout(const Duration(seconds: 30));
+        } catch (_) {
+          // Timeout — proceed anyway so the walkthrough is never blocked forever
+        }
+        if (!mounted || _showcaseContext == null) return;
+        // Extra pause so the dialog dismiss animation fully completes
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (!mounted || _showcaseContext == null) return;
+      }
 
       // Determine which keys are in the tree
       final keys = <GlobalKey>[];
