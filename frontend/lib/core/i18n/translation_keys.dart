@@ -338,6 +338,11 @@ class TranslationKeys {
   static const settingsPrivacyPolicy = 'settings.privacy_policy';
   static const settingsPrivacyPolicySubtitle =
       'settings.privacy_policy_subtitle';
+  static const settingsTermsOfService = 'settings.terms_of_service';
+  static const settingsTermsOfServiceSubtitle =
+      'settings.terms_of_service_subtitle';
+  static const settingsRefundPolicy = 'settings.refund_policy';
+  static const settingsRefundPolicySubtitle = 'settings.refund_policy_subtitle';
   static const settingsFeedback = 'settings.feedback';
   static const settingsFeedbackSubtitle = 'settings.feedback_subtitle';
   static const settingsFailedToLoad = 'settings.failed_to_load';
