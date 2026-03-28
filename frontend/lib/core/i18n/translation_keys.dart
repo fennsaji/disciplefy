@@ -118,6 +118,7 @@ class TranslationKeys {
   static const homeContinueJourney = 'home.continue_journey';
   static const homeMemoryVerses = 'home.memory_verses';
   static const homeGenerateStudyGuide = 'home.generate_study_guide';
+  static const homeExploreLearningPaths = 'home.explore_learning_paths';
   static const homeResumeLastStudy = 'home.resume_last_study';
   static const homeContinueStudying = 'home.continue_studying';
   static const homeRecommendedTopics = 'home.recommended_topics';
