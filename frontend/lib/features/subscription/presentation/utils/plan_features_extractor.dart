@@ -35,11 +35,11 @@ class PlanFeaturesExtractor {
 
     if (dailyTokens != null) {
       if (dailyTokens == -1) {
-        features.add('Unlimited AI tokens (all study modes)');
+        features.add('Unlimited study credits (all study modes)');
       } else if (dailyTokens == 15) {
-        features.add('$dailyTokens AI tokens daily (Quick Read only)');
+        features.add('$dailyTokens study credits daily (Quick Read only)');
       } else {
-        features.add('$dailyTokens AI tokens daily (all study modes)');
+        features.add('$dailyTokens study credits daily (all study modes)');
       }
     }
 
@@ -61,9 +61,9 @@ class PlanFeaturesExtractor {
     final aiDiscipler = featuresJson['ai_discipler'] as int?;
     if (aiDiscipler != null) {
       if (aiDiscipler == -1) {
-        features.add('Unlimited AI Discipler conversations');
+        features.add('Unlimited Discipler conversations');
       } else {
-        features.add('$aiDiscipler AI Discipler conversations/month');
+        features.add('$aiDiscipler Discipler conversations/month');
       }
     }
 
@@ -147,7 +147,7 @@ class PlanFeaturesExtractor {
     final currDiscipler = currentPlan.features['ai_discipler'] as int?;
     if (currDiscipler != null) {
       rows.add(PlanComparisonRow(
-        label: 'AI Discipler',
+        label: 'Discipler',
         previousValue: prevDiscipler != null
             ? (prevDiscipler == -1 ? 'Unlimited' : '$prevDiscipler/month')
             : '✗',

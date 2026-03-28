@@ -28,6 +28,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<LoadMorePathsForCategory>(_onLoadMorePathsForCategory);
     on<SearchLearningPaths>(_onSearchLearningPaths);
     on<LoadFlatLearningPaths>(_onLoadFlatLearningPaths);
+    on<LoadPersonalizedPaths>(_onLoadPersonalizedPaths);
   }
 
   Future<void> _onLoadLearningPaths(
@@ -46,6 +47,12 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       forceRefresh: event.forceRefresh,
     );
 
+    // Preserve personalizedPaths from prior state (if any) so they survive
+    // the LoadLearningPaths re-emission.
+    final priorPersonalizedPaths = state is LearningPathsLoaded
+        ? (state as LearningPathsLoaded).personalizedPaths
+        : <LearningPath>[];
+
     result.fold(
       (failure) => emit(LearningPathsError(message: failure.message)),
       (categoriesResult) {
@@ -61,6 +68,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
             enrolledPaths: enrolledPaths,
             hasMoreCategories: categoriesResult.hasMoreCategories,
             nextCategoryOffset: categoriesResult.nextCategoryOffset,
+            personalizedPaths: priorPersonalizedPaths,
           ));
         }
       },
@@ -107,6 +115,9 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     Emitter<LearningPathsState> emit,
   ) async {
     final hadData = state is LearningPathsLoaded;
+    final priorPersonalizedPaths = hadData
+        ? (state as LearningPathsLoaded).personalizedPaths
+        : <LearningPath>[];
     if (!hadData) {
       emit(const LearningPathsLoading());
     }
@@ -136,6 +147,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
             enrolledPaths: enrolledPaths,
             hasMoreCategories: categoriesResult.hasMoreCategories,
             nextCategoryOffset: categoriesResult.nextCategoryOffset,
+            personalizedPaths: priorPersonalizedPaths,
           ));
         }
       },
@@ -183,6 +195,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
           enrolledPaths: enrolledPaths,
           hasMoreCategories: categoriesResult.hasMoreCategories,
           nextCategoryOffset: categoriesResult.nextCategoryOffset,
+          personalizedPaths: current.personalizedPaths,
         ));
       },
     );
@@ -253,6 +266,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
           loadingCategories: updated.loadingCategories
               .where((c) => c != event.category)
               .toList(),
+          personalizedPaths: updated.personalizedPaths,
         ));
       },
     );
@@ -286,6 +300,30 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
         searchResults: data.paths,
         searchQuery: '',
       )),
+    );
+  }
+
+  /// Fetches personalized paths and stores them in the current loaded state.
+  ///
+  /// Fires-and-forgets if the BLoC is not yet in [LearningPathsLoaded].
+  /// The For You section will pick up the update on the next rebuild.
+  Future<void> _onLoadPersonalizedPaths(
+    LoadPersonalizedPaths event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    final result = await _repository.getPersonalizedPaths(
+      language: event.language,
+      limit: event.limit,
+    );
+
+    result.fold(
+      (_) => null, // Personalization is supplementary — never block the UI
+      (paths) {
+        final current = state;
+        if (current is LearningPathsLoaded) {
+          emit(current.copyWith(personalizedPaths: paths));
+        }
+      },
     );
   }
 

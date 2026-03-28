@@ -121,6 +121,9 @@ abstract class CommunityRepository {
   /// Leaves the fellowship identified by [fellowshipId].
   Future<Either<Failure, void>> leaveFellowship(String fellowshipId);
 
+  /// Permanently deletes the fellowship (mentor only).
+  Future<Either<Failure, void>> deleteFellowship(String fellowshipId);
+
   /// Mutes [userId] in [fellowshipId] (mentor only).
   Future<Either<Failure, void>> muteMember({
     required String fellowshipId,

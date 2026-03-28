@@ -50,6 +50,7 @@ import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../../gamification/presentation/bloc/gamification_state.dart';
 import '../../domain/entities/study_mode.dart';
 import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
@@ -426,6 +427,24 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       final repo = sl<WalkthroughRepository>();
       final seen = await repo.hasSeen(WalkthroughScreen.studyGuideCompletion);
       if (seen || !mounted || _showcaseContext == null) return;
+
+      // Wait for any pending achievement popups to be dismissed before starting
+      // the walkthrough — completing a study fires CheckStudyAchievements which
+      // can trigger an achievement dialog that would overlap the tooltip.
+      final gamificationBloc = sl<GamificationBloc>();
+      if (gamificationBloc.state.hasPendingNotifications) {
+        try {
+          await gamificationBloc.stream
+              .firstWhere((s) => !s.hasPendingNotifications)
+              .timeout(const Duration(seconds: 30));
+        } catch (_) {
+          // Timeout — proceed anyway so the walkthrough is never blocked forever
+        }
+        if (!mounted || _showcaseContext == null) return;
+        // Extra pause so the dialog dismiss animation fully completes
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (!mounted || _showcaseContext == null) return;
+      }
 
       // Determine which keys are in the tree
       final keys = <GlobalKey>[];
@@ -2518,9 +2537,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           if (_userFellowships?.isNotEmpty == true) ...[
             WalkthroughTooltip(
               showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
-              title: 'Share with Fellowship',
-              description:
-                  'Write a reflection, prayer, or insight and share it with your fellowship group.',
+              title: context.tr(TranslationKeys.studyGuideFellowshipShareTitle),
+              description: context
+                  .tr(TranslationKeys.studyGuideFellowshipWalkthroughDesc),
               screen: WalkthroughScreen.studyGuideCompletion,
               stepNumber: 1,
               totalSteps: 3,
@@ -2833,11 +2852,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             _StudySection(
               title: context.tr(TranslationKeys.studyGuidePrayerPoints),
               icon: Icons.favorite,
-              content: _currentStudyGuide!.prayerPoints
-                  .asMap()
-                  .entries
-                  .map((entry) => '• ${entry.value}')
-                  .join('\n'),
+              content: _currentStudyGuide!.prayerPoints.length == 1
+                  ? _currentStudyGuide!.prayerPoints.first
+                  : _currentStudyGuide!.prayerPoints
+                      .map((p) => '• $p')
+                      .join('\n'),
               contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 6,
             ),
@@ -3031,11 +3050,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         if (_currentStudyGuide!.prayerPoints.isNotEmpty)
           _QuickStudySection(
             title: context.tr(TranslationKeys.studyGuidePrayerPoints),
-            content: _currentStudyGuide!.prayerPoints
-                .asMap()
-                .entries
-                .map((entry) => '• ${entry.value}')
-                .join('\n'),
+            content: _currentStudyGuide!.prayerPoints.length == 1
+                ? _currentStudyGuide!.prayerPoints.first
+                : _currentStudyGuide!.prayerPoints
+                    .asMap()
+                    .entries
+                    .map((entry) => '• ${entry.value}')
+                    .join('\n'),
             icon: Icons.volunteer_activism_outlined,
             contentFontSize: _contentFontSize,
           ),
@@ -3173,11 +3194,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             _StudySection(
               title: context.tr(TranslationKeys.studyGuidePrayerForApplication),
               icon: Icons.favorite,
-              content: _currentStudyGuide!.prayerPoints
-                  .asMap()
-                  .entries
-                  .map((entry) => '• ${entry.value}')
-                  .join('\n'),
+              content: _currentStudyGuide!.prayerPoints.length == 1
+                  ? _currentStudyGuide!.prayerPoints.first
+                  : _currentStudyGuide!.prayerPoints
+                      .asMap()
+                      .entries
+                      .map((entry) => '• ${entry.value}')
+                      .join('\n'),
               contentFontSize: _contentFontSize,
               isBeingRead: isReading && currentSection == 6,
             ),
@@ -3685,7 +3708,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
                 title: 'Go Deeper',
                 description:
-                    'Want to explore this topic further? Chat with the AI Discipler for personalized Bible guidance.',
+                    'Want to explore this topic further? Chat with the Discipler for personalized Bible guidance.',
                 screen: WalkthroughScreen.disciplerHint,
                 stepNumber: 1,
                 totalSteps: 1,
@@ -4836,7 +4859,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Share with Your Fellowship',
+                      context.tr(TranslationKeys.studyGuideFellowshipCardTitle),
                       style: AppFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -4844,7 +4867,8 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                       ),
                     ),
                     Text(
-                      'Ask a question or share your insight',
+                      context
+                          .tr(TranslationKeys.studyGuideFellowshipCardSubtitle),
                       style: AppFonts.inter(
                         fontSize: 12,
                         color:
@@ -4866,7 +4890,7 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText:
-                  'What stood out to you? Share a thought or ask a question...',
+                  context.tr(TranslationKeys.studyGuideFellowshipInputHint),
               hintStyle: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13,
@@ -4929,7 +4953,8 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                         ),
                       )
                     : Text(
-                        'Share with Fellowship',
+                        context
+                            .tr(TranslationKeys.studyGuideFellowshipShareTitle),
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,

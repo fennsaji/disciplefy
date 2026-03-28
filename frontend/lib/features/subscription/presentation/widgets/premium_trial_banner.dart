@@ -426,7 +426,7 @@ class PremiumTrialCard extends StatelessWidget {
                 _buildFeatureRow(
                   context,
                   Icons.bolt,
-                  'Unlimited AI generations',
+                  'Unlimited study guides',
                 ),
                 const SizedBox(height: 8),
                 _buildFeatureRow(

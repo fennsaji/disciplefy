@@ -17,6 +17,7 @@ import '../../../../core/utils/category_utils.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
@@ -653,11 +654,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
                             SizedBox(height: isLargeScreen ? 16 : 12),
 
-                            // Generate Study Guide Button - hide if all study modes and AI Discipler are disabled
-                            if (!_shouldHideGenerateButton()) ...[
-                              _buildGenerateStudyButton(),
-                              SizedBox(height: isLargeScreen ? 32 : 24),
-                            ],
+                            // Explore Learning Paths Button
+                            _buildExploreLearningPathsButton(),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
 
                             // Resume Last Study (conditional)
                             if (_hasResumeableStudy) ...[
@@ -996,7 +995,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     });
   }
 
-  Widget _buildGenerateStudyButton() {
+  Widget _buildExploreLearningPathsButton() {
     return Container(
       width: double.infinity,
       height: 64,
@@ -1014,19 +1013,19 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.go('/generate-study'),
+          onTap: () => context.go(AppRoutes.studyTopics),
           borderRadius: BorderRadius.circular(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.auto_awesome,
+                Icons.explore_rounded,
                 size: 24,
                 color: Colors.white,
               ),
               const SizedBox(width: 12),
               Text(
-                context.tr(TranslationKeys.homeGenerateStudyGuide),
+                context.tr(TranslationKeys.homeExploreLearningPaths),
                 style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,

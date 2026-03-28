@@ -77,13 +77,13 @@ class TokenLoaded extends TokenState {
   /// Get user-friendly status message
   String get statusMessage {
     if (tokenStatus.isPremium) {
-      return 'Unlimited tokens available';
+      return 'Unlimited study credits';
     } else if (tokenStatus.totalTokens <= 0) {
-      return 'No tokens remaining';
+      return 'No credits left today';
     } else if (tokenStatus.totalTokens <= (tokenStatus.dailyLimit * 0.2)) {
-      return 'Running low on tokens';
+      return 'Running low on credits';
     } else {
-      return '${tokenStatus.totalTokens} tokens available';
+      return '${tokenStatus.totalTokens} credits available';
     }
   }
 }
@@ -114,7 +114,7 @@ class TokenError extends TokenState {
         return 'Server error occurred. Please try again later.';
       case InsufficientTokensFailure:
         final insufficientFailure = failure as InsufficientTokensFailure;
-        return 'Insufficient tokens. Need ${insufficientFailure.requiredTokens} but only have ${insufficientFailure.availableTokens}.';
+        return 'You need ${insufficientFailure.requiredTokens} credits but only have ${insufficientFailure.availableTokens} left today.';
       case TokenPaymentFailure:
         return 'Payment failed. Please try again or contact support.';
       case failures.AuthenticationFailure:
@@ -377,10 +377,10 @@ class TokenValidated extends TokenState {
   /// Get validation message
   String get validationMessage {
     if (hasSufficientTokens) {
-      return 'You have sufficient tokens for this operation';
+      return 'You have enough credits for this';
     } else {
       final shortage = requiredTokens - availableTokens;
-      return 'You need $shortage more tokens to perform this operation';
+      return 'You need $shortage more credits to continue';
     }
   }
 }

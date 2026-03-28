@@ -107,6 +107,9 @@ abstract class CommunityRemoteDatasource {
   /// Leaves the fellowship. Blocks if the caller is the sole mentor.
   Future<void> leaveFellowship(String fellowshipId);
 
+  /// Permanently deletes the fellowship (mentor only).
+  Future<void> deleteFellowship(String fellowshipId);
+
   /// Mutes a member in the fellowship (mentor only).
   Future<void> muteMember({
     required String fellowshipId,
@@ -932,6 +935,31 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   // ---------------------------------------------------------------------------
   // Fellowship — leave
   // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> deleteFellowship(String fellowshipId) async {
+    try {
+      final url = '$_baseUrl$_fellowshipUpdateEndpoint';
+      final body = jsonEncode({'fellowship_id': fellowshipId});
+      final headers = await _httpService.createHeaders();
+      final response =
+          await _httpService.delete(url, headers: headers, body: body);
+      if (response.statusCode >= 400) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        throw ServerException(
+          message: (json['error'] as String?) ?? 'Failed to delete fellowship',
+          code: 'FELLOWSHIP_DELETE_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to delete fellowship: $e',
+        code: 'FELLOWSHIP_DELETE_ERROR',
+      );
+    }
+  }
 
   @override
   Future<void> leaveFellowship(String fellowshipId) async {

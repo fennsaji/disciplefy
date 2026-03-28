@@ -93,4 +93,16 @@ abstract class LearningPathsRepository {
     String language = 'en',
     bool forceRefresh = false,
   });
+
+  /// Get top N personalized learning paths for the "For You" section.
+  ///
+  /// Returns paths scored by the questionnaire algorithm, or featured paths
+  /// for users who have not completed the questionnaire.
+  ///
+  /// [language] - The language for localized content (default: 'en')
+  /// [limit] - Number of paths to return (default: 5)
+  Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
+    String language = 'en',
+    int limit = 5,
+  });
 }

@@ -20,6 +20,9 @@ enum FellowshipTransferStatus { idle, loading, success, failure }
 /// Describes the status of a leave-fellowship operation.
 enum FellowshipLeaveStatus { idle, loading, success, failure }
 
+/// Describes the status of a delete-fellowship operation.
+enum FellowshipDeleteStatus { idle, loading, success, failure }
+
 /// Single immutable state for [FellowshipMembersBloc].
 ///
 /// Use [copyWith] to produce updated snapshots; never mutate fields directly.
@@ -81,6 +84,9 @@ class FellowshipMembersState extends Equatable {
   /// Status of the leave-fellowship operation.
   final FellowshipLeaveStatus leaveStatus;
 
+  /// Status of the delete-fellowship operation.
+  final FellowshipDeleteStatus deleteStatus;
+
   const FellowshipMembersState({
     this.status = FellowshipMembersStatus.initial,
     this.members = const [],
@@ -100,6 +106,7 @@ class FellowshipMembersState extends Equatable {
     this.transferStatus = FellowshipTransferStatus.idle,
     this.transferError,
     this.leaveStatus = FellowshipLeaveStatus.idle,
+    this.deleteStatus = FellowshipDeleteStatus.idle,
   });
 
   /// Returns the initial state (used as the BLoC seed value).
@@ -125,6 +132,7 @@ class FellowshipMembersState extends Equatable {
         transferStatus,
         transferError,
         leaveStatus,
+        deleteStatus,
       ];
 
   /// Creates a copy of this state with the provided fields replaced.
@@ -151,6 +159,7 @@ class FellowshipMembersState extends Equatable {
     String? transferError,
     bool clearTransferError = false,
     FellowshipLeaveStatus? leaveStatus,
+    FellowshipDeleteStatus? deleteStatus,
   }) {
     return FellowshipMembersState(
       status: status ?? this.status,
@@ -173,6 +182,7 @@ class FellowshipMembersState extends Equatable {
       transferError:
           clearTransferError ? null : (transferError ?? this.transferError),
       leaveStatus: leaveStatus ?? this.leaveStatus,
+      deleteStatus: deleteStatus ?? this.deleteStatus,
     );
   }
 }

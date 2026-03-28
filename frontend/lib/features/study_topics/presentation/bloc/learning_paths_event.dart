@@ -129,3 +129,20 @@ class SearchLearningPaths extends LearningPathsEvent {
   @override
   List<Object?> get props => [query, language];
 }
+
+/// Load personalized learning paths for the "For You" section.
+///
+/// Fetches top N paths scored by the questionnaire algorithm.
+/// Stores results in [LearningPathsLoaded.personalizedPaths].
+class LoadPersonalizedPaths extends LearningPathsEvent {
+  final String language;
+  final int limit;
+
+  const LoadPersonalizedPaths({
+    this.language = 'en',
+    this.limit = 5,
+  });
+
+  @override
+  List<Object?> get props => [language, limit];
+}

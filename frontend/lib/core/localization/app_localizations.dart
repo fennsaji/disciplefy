@@ -41,7 +41,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'Welcome to Disciplefy',
       'onboarding_welcome_subtitle':
-          'AI-powered Bible study guides following  methodology',
+          'Personalized Bible study guides following  methodology',
       'onboarding_language_title': 'Choose Your Language',
       'onboarding_language_subtitle':
           'Select your preferred language for the app',
@@ -336,6 +336,10 @@ class AppLocalizations {
       'editFellowshipTitle': 'Edit Fellowship',
       'editFellowshipSave': 'Save Changes',
       'editFellowshipSuccess': 'Fellowship updated',
+      'deleteFellowshipTitle': 'Delete Fellowship',
+      'deleteFellowshipConfirm':
+          'This will permanently delete the fellowship and remove all members. This cannot be undone.',
+      'deleteFellowshipSuccess': 'Fellowship deleted',
       // Invite list + revoke
       'inviteListEmpty': 'No active invite links',
       'inviteRevoke': 'Revoke',
@@ -408,65 +412,63 @@ class AppLocalizations {
       'walkthroughWatchVideo': '▶ Watch video',
       'walkthroughHomeDailyVerseTitle': 'Your Daily Verse',
       'walkthroughHomeDailyVerseDesc':
-          'Read, copy, or share your Bible verse for today',
+          'A new Bible verse every day — read it, copy it, or share it',
       'walkthroughHomeGenerateTitle': 'Generate Study Guides',
       'walkthroughHomeGenerateDesc':
-          'Tap here to create a personalised Bible study on any topic or verse',
+          'Create a personalised Bible study guide on any topic or verse',
       'walkthroughHomeTopicsTitle': 'Learning Paths',
       'walkthroughHomeTopicsDesc':
-          'Browse structured studies and learning paths — tap Topics to see more',
+          'Follow Bible study plans step by step — tap Topics to explore',
       'walkthroughHomeMemoryTitle': 'Memory Verses',
       'walkthroughHomeMemoryDesc':
-          'Verses you are memorizing — tap to start your daily practice session',
+          'Bible verses you want to memorize — tap to practice today',
       'walkthroughGenerateModeTitle': 'Choose Input Type',
       'walkthroughGenerateModeDesc':
-          'Scripture for a Bible reference, Topic for a theme, or Question for an apologetics answer',
+          'Scripture for a Bible verse, Topic for a theme, or Question for something you want to understand',
       'walkthroughGenerateInputTitle': 'Enter a Topic or Verse',
       'walkthroughGenerateInputDesc':
-          'Type any Bible verse, topic, or question to generate a personalised study guide',
+          'Try something like "Forgiveness", "John 3:16", or "How do I deal with anxiety?"',
       'walkthroughGenerateButtonTitle': 'Generate Your Study',
-      'walkthroughGenerateButtonDesc':
-          'Tap here to create your personalised Bible study guide',
-      'walkthroughDisciplerTitle': 'AI Discipler',
+      'walkthroughGenerateButtonDesc': 'Tap to create your Bible study guide',
+      'walkthroughDisciplerTitle': 'Discipler',
       'walkthroughDisciplerDesc':
-          'Chat with an AI Bible mentor for deeper guidance and answers',
+          'Ask any Bible question and get an answer — like having a Bible teacher available any time',
       'walkthroughStudyGuideInputTitle': 'Enter Your Topic',
       'walkthroughStudyGuideInputDesc':
-          'Type a Bible topic or scripture reference — for example, Faith or Romans 8:1',
+          'Try a topic like "Hope" or a verse like "Romans 8:1"',
       'walkthroughStudyGuideGenerateTitle': 'Generate Your Study',
       'walkthroughStudyGuideGenerateDesc':
-          'Tap Generate — the AI creates a personalized study guide in seconds',
+          'Tap Generate and your study guide is ready in seconds',
       'walkthroughLearningPathsTitle': 'Start a Path',
       'walkthroughLearningPathsDesc':
-          'Tap any path to begin a structured, guided Bible study journey',
+          'Tap a path to start a step-by-step Bible study course',
       'walkthroughForYouTitle': 'For You',
       'forYouSectionSubtitle': 'Personalised learning paths',
       'walkthroughForYouDesc':
-          'Personalised paths based on your progress — pick up where you left off or start something new',
+          'Study plans chosen just for you — continue where you left off or start something new',
       'walkthroughMemoryAddTitle': 'Add a Verse',
-      'walkthroughMemoryAddDesc':
-          'Tap here to add a Bible verse you want to memorize',
+      'walkthroughMemoryAddDesc': 'Add a Bible verse to start memorizing it',
       'walkthroughMemoryVerseTitle': 'Your Memory Verse',
       'walkthroughMemoryVerseDesc':
           'Tap this verse to start a practice session',
       'walkthroughPracticeModesTitle': 'Practice Modes',
       'walkthroughPracticeModesDesc':
-          'Choose how to practice — flashcard, fill-in-blank, recall, and more',
+          'Pick a way to practice — flashcards, fill in the blank, and more',
       'walkthroughCommunityTabsTitle': 'Browse Fellowships',
       'walkthroughCommunityTabsDesc':
-          'Use the tabs above to switch between your fellowships and discover new groups',
+          'Switch between your groups or discover new fellowships to join',
       'walkthroughCommunityFabTitle': 'Join a Fellowship',
       'walkthroughCommunityFabDesc':
-          'Tap here to join an existing fellowship with a code',
+          'Have a fellowship code? Tap here to join a group',
       'walkthroughCommunityNavTitle': 'Community',
       'walkthroughCommunityNavDesc':
           'Join fellowships and study the Bible together with other believers',
       'walkthroughChatInputTitle': 'Ask Anything',
       'walkthroughChatInputDesc':
-          'Type any Bible question or topic you want to explore',
-      'walkthroughDisciplerChatTitle': 'Your AI Bible Teacher',
+          'Ask anything — like "What does the Bible say about forgiveness?"',
+      'walkthroughDisciplerChatTitle': 'Your Bible Teacher',
       'walkthroughDisciplerChatDesc':
-          'The AI Discipler answers from Scripture — like having a Bible teacher available any time',
+          'Answers from Scripture, available any time — like having a Bible teacher in your pocket',
     },
     'hi': {
       // Common
@@ -483,7 +485,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'डिसाइपलफाई में आपका स्वागत है',
       'onboarding_welcome_subtitle':
-          'जेफ रीड पद्धति के अनुसार AI-संचालित बाइबल अध्ययन गाइड',
+          'जेफ रीड पद्धति के अनुसार व्यक्तिगत बाइबल अध्ययन गाइड',
       'onboarding_language_title': 'अपनी भाषा चुनें',
       'onboarding_language_subtitle': 'ऐप के लिए अपनी पसंदीदा भाषा चुनें',
       'onboarding_purpose_title': 'अपने बाइबल अध्ययन को बदलें',
@@ -779,6 +781,10 @@ class AppLocalizations {
       'editFellowshipTitle': 'संगति संपादित करें',
       'editFellowshipSave': 'परिवर्तन सहेजें',
       'editFellowshipSuccess': 'संगति अपडेट हुई',
+      'deleteFellowshipTitle': 'संगति हटाएं',
+      'deleteFellowshipConfirm':
+          'इससे संगति स्थायी रूप से हटा दी जाएगी और सभी सदस्य हटा दिए जाएंगे। यह पूर्ववत नहीं किया जा सकता।',
+      'deleteFellowshipSuccess': 'संगति हटाई गई',
       // Invite list + revoke
       'inviteListEmpty': 'कोई सक्रिय आमंत्रण लिंक नहीं',
       'inviteRevoke': 'रद्द करें',
@@ -848,67 +854,66 @@ class AppLocalizations {
       // Walkthrough tooltips
       'walkthroughGotIt': 'समझ गया →',
       'walkthroughWatchVideo': '▶ वीडियो देखें',
-      'walkthroughHomeDailyVerseTitle': 'आपका दैनिक पद',
+      'walkthroughHomeDailyVerseTitle': 'आपका दैनिक वचन',
       'walkthroughHomeDailyVerseDesc':
-          'आज के लिए अपना बाइबल पद पढ़ें, कॉपी करें या साझा करें',
+          'हर दिन एक नया बाइबल वचन — इसे पढ़ें, कॉपी करें या साझा करें',
       'walkthroughHomeGenerateTitle': 'अध्ययन गाइड बनाएं',
       'walkthroughHomeGenerateDesc':
-          'किसी भी विषय या पद पर व्यक्तिगत बाइबल अध्ययन बनाने के लिए यहाँ दबाएं',
+          'किसी भी विषय या वचन पर व्यक्तिगत बाइबल अध्ययन गाइड बनाएं',
       'walkthroughHomeTopicsTitle': 'सीखने के मार्ग',
       'walkthroughHomeTopicsDesc':
-          'संरचित अध्ययन और सीखने के मार्ग देखें — अधिक देखने के लिए Topics दबाएं',
-      'walkthroughHomeMemoryTitle': 'स्मृति पद',
+          'बाइबल सीखने के लिए तैयार अध्ययन योजनाएं हैं — और देखने के लिए Topics दबाएं',
+      'walkthroughHomeMemoryTitle': 'स्मृति वचन',
       'walkthroughHomeMemoryDesc':
-          'जो पद आप याद कर रहे हैं — दैनिक अभ्यास शुरू करने के लिए दबाएं',
+          'जो वचन आप याद करना चाहते हैं — आज अभ्यास के लिए दबाएं',
       'walkthroughGenerateModeTitle': 'इनपुट प्रकार चुनें',
       'walkthroughGenerateModeDesc':
-          'Scripture बाइबल संदर्भ के लिए, Topic विषय के लिए, या Question धर्म-रक्षा उत्तर के लिए',
-      'walkthroughGenerateInputTitle': 'विषय या पद दर्ज करें',
+          'Scripture — बाइबल का वचन, Topic — कोई विषय, Question — विश्वास के बारे में आपका प्रश्न',
+      'walkthroughGenerateInputTitle': 'विषय या वचन दर्ज करें',
       'walkthroughGenerateInputDesc':
-          'व्यक्तिगत अध्ययन मार्गदर्शिका बनाने के लिए कोई बाइबल पद, विषय या प्रश्न टाइप करें',
+          '"क्षमा", "यूहन्ना 3:16" या "चिंता से कैसे निपटें?" जैसा कुछ टाइप करें',
       'walkthroughGenerateButtonTitle': 'अपना अध्ययन बनाएं',
       'walkthroughGenerateButtonDesc':
-          'अपनी व्यक्तिगत बाइबल अध्ययन मार्गदर्शिका बनाने के लिए यहाँ दबाएं',
-      'walkthroughDisciplerTitle': 'AI शिष्य गुरु',
+          'अपनी बाइबल अध्ययन गाइड बनाने के लिए दबाएं',
+      'walkthroughDisciplerTitle': 'शिष्य गुरु',
       'walkthroughDisciplerDesc':
-          'गहरे मार्गदर्शन और उत्तरों के लिए AI बाइबल शिक्षक से बात करें',
+          'कोई भी बाइबल सवाल पूछें और जवाब पाएं — जैसे हमेशा एक बाइबल शिक्षक उपलब्ध हो',
       'walkthroughStudyGuideInputTitle': 'अपना विषय दर्ज करें',
       'walkthroughStudyGuideInputDesc':
-          'कोई बाइबल विषय या संदर्भ टाइप करें — उदाहरण के लिए, विश्वास या रोमियों 8:1',
+          '"आशा" जैसा कोई विषय या "रोमियों 8:1" जैसा वचन टाइप करें',
       'walkthroughStudyGuideGenerateTitle': 'अपना अध्ययन बनाएं',
       'walkthroughStudyGuideGenerateDesc':
-          'Generate दबाएं — AI कुछ ही सेकंड में व्यक्तिगत अध्ययन मार्गदर्शिका बनाता है',
+          'Generate दबाएं और आपकी अध्ययन गाइड कुछ ही सेकंड में तैयार',
       'walkthroughLearningPathsTitle': 'एक मार्ग शुरू करें',
       'walkthroughLearningPathsDesc':
-          'संरचित, निर्देशित बाइबल अध्ययन यात्रा शुरू करने के लिए कोई भी मार्ग दबाएं',
+          'कोई भी मार्ग दबाएं और धीरे-धीरे बाइबल सीखें',
       'walkthroughForYouTitle': 'आपके लिए',
       'forYouSectionSubtitle': 'आपके लिए सीखने के मार्ग',
       'walkthroughForYouDesc':
-          'आपकी प्रगति के आधार पर व्यक्तिगत मार्ग — जहाँ छोड़ा वहाँ से शुरू करें या कुछ नया शुरू करें',
-      'walkthroughMemoryAddTitle': 'एक पद जोड़ें',
-      'walkthroughMemoryAddDesc':
-          'जो बाइबल पद आप याद करना चाहते हैं उसे जोड़ने के लिए यहाँ दबाएं',
-      'walkthroughMemoryVerseTitle': 'आपका स्मृति पद',
+          'आपके लिए चुने गए अध्ययन — जहाँ छोड़ा वहाँ से जारी रखें या कुछ नया शुरू करें',
+      'walkthroughMemoryAddTitle': 'एक वचन जोड़ें',
+      'walkthroughMemoryAddDesc': 'याद करने के लिए बाइबल का एक वचन जोड़ें',
+      'walkthroughMemoryVerseTitle': 'आपका स्मृति वचन',
       'walkthroughMemoryVerseDesc':
-          'अभ्यास सत्र शुरू करने के लिए इस पद को दबाएं',
+          'अभ्यास सत्र शुरू करने के लिए इस वचन को दबाएं',
       'walkthroughPracticeModesTitle': 'अभ्यास मोड',
       'walkthroughPracticeModesDesc':
-          'अभ्यास का तरीका चुनें — फ्लैशकार्ड, रिक्त स्थान भरें, याद करें, और अधिक',
+          'अभ्यास का तरीका चुनें — फ्लैशकार्ड, रिक्त स्थान भरें, और अधिक',
       'walkthroughCommunityTabsTitle': 'संगतियाँ देखें',
       'walkthroughCommunityTabsDesc':
-          'अपनी संगतियों और नए समूहों के बीच स्विच करने के लिए ऊपर के टैब का उपयोग करें',
+          'अपने समूहों में जाएं या नई संगतियां खोजें',
       'walkthroughCommunityFabTitle': 'संगति में शामिल हों',
       'walkthroughCommunityFabDesc':
-          'कोड के साथ मौजूदा संगति में शामिल होने के लिए यहाँ दबाएं',
+          'संगति का कोड मिला? किसी समूह में शामिल होने के लिए दबाएं',
       'walkthroughCommunityNavTitle': 'समुदाय',
       'walkthroughCommunityNavDesc':
           'संगतियों में शामिल हों और अन्य विश्वासियों के साथ बाइबल का अध्ययन करें',
       'walkthroughChatInputTitle': 'कुछ भी पूछें',
       'walkthroughChatInputDesc':
-          'कोई भी बाइबल प्रश्न या विषय टाइप करें जिसे आप जानना चाहते हैं',
-      'walkthroughDisciplerChatTitle': 'आपका AI बाइबल शिक्षक',
+          'कुछ भी पूछें — जैसे "बाइबल में क्षमा के बारे में क्या लिखा है?"',
+      'walkthroughDisciplerChatTitle': 'आपका बाइबल शिक्षक',
       'walkthroughDisciplerChatDesc':
-          'AI शिष्य गुरु पवित्रशास्त्र से उत्तर देता है — जैसे हमेशा एक बाइबल शिक्षक उपलब्ध हो',
+          'बाइबल से जवाब, कभी भी — जैसे आपकी जेब में एक बाइबल शिक्षक हो',
     },
     'ml': {
       // Common
@@ -926,7 +931,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'ഡിസൈപ്പിൾഫൈയിലേക്ക് സ്വാഗതം',
       'onboarding_welcome_subtitle':
-          'ജെഫ് റീഡ് രീതി പിന്തുടർന്ന് AI-നയിക്കുന്ന ബൈബിൾ പഠന ഗൈഡുകൾ',
+          'ജെഫ് റീഡ് രീതി പിന്തുടർന്ന് വ്യക്തിഗത ബൈബിൾ പഠന ഗൈഡുകൾ',
       'onboarding_language_title': 'നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക',
       'onboarding_language_subtitle':
           'ആപ്പിനായി നിങ്ങളുടെ പ്രിയപ്പെട്ട ഭാഷ തിരഞ്ഞെടുക്കുക',
@@ -1225,6 +1230,10 @@ class AppLocalizations {
       'editFellowshipTitle': 'കൂട്ടായ്മ തിരുത്തുക',
       'editFellowshipSave': 'മാറ്റങ്ങൾ സംരക്ഷിക്കുക',
       'editFellowshipSuccess': 'കൂട്ടായ്മ അപ്ഡേറ്റ് ചെയ്തു',
+      'deleteFellowshipTitle': 'കൂട്ടായ്മ ഇല്ലാതാക്കുക',
+      'deleteFellowshipConfirm':
+          'ഇത് കൂട്ടായ്മ സ്ഥിരമായി ഇല്ലാതാക്കും, എല്ലാ അംഗങ്ങളെയും നീക്കും. ഇത് പഴയപടിയാക്കാൻ കഴിയില്ല.',
+      'deleteFellowshipSuccess': 'കൂട്ടായ്മ ഇല്ലാതാക്കി',
       // Invite list + revoke
       'inviteListEmpty': 'സജീവ ക്ഷണ ലിങ്കുകൾ ഇല്ല',
       'inviteRevoke': 'റദ്ദാക്കുക',
@@ -1298,65 +1307,64 @@ class AppLocalizations {
       'walkthroughWatchVideo': '▶ വീഡിയോ കാണുക',
       'walkthroughHomeDailyVerseTitle': 'നിങ്ങളുടെ ദൈനിക വചനം',
       'walkthroughHomeDailyVerseDesc':
-          'ഇന്നത്തെ ബൈബിൾ വചനം വായിക്കുക, പകർത്തുക, അല്ലെങ്കിൽ പങ്കുവെക്കുക',
+          'ഓരോ ദിവസവും ഒരു പുതിയ ബൈബിൾ വചനം — വായിക്കുക, പകർത്തുക, അല്ലെങ്കിൽ പങ്കിടുക',
       'walkthroughHomeGenerateTitle': 'പഠന ഗൈഡ് ഉണ്ടാക്കുക',
       'walkthroughHomeGenerateDesc':
-          'ഏത് വിഷയത്തിലും വ്യക്തിഗത ബൈബിൾ പഠനം ഉണ്ടാക്കാൻ ഇവിടെ ടാപ്പ് ചെയ്യുക',
+          'ഏത് വിഷയത്തിലും വ്യക്തിഗത ബൈബിൾ പഠന ഗൈഡ് ഉണ്ടാക്കുക',
       'walkthroughHomeTopicsTitle': 'പഠന പാതകൾ',
       'walkthroughHomeTopicsDesc':
-          'ഘടനാപരമായ പഠനങ്ങളും പഠന പാതകളും കാണുക — കൂടുതൽ കാണാൻ Topics ടാപ്പ് ചെയ്യുക',
+          'ബൈബിൾ പഠിക്കാൻ തയ്യാറാക്കിയ പദ്ധതികൾ ഇവിടെ ഉണ്ട് — കൂടുതൽ കാണാൻ Topics ടാപ്പ് ചെയ്യുക',
       'walkthroughHomeMemoryTitle': 'ഓർമ്മ വചനങ്ങൾ',
       'walkthroughHomeMemoryDesc':
-          'നിങ്ങൾ ഓർമ്മിക്കുന്ന വചനങ്ങൾ — ദൈനിക പ്രാക്ടീസ് ആരംഭിക്കാൻ ടാപ്പ് ചെയ്യുക',
+          'നിങ്ങൾ ഓർക്കാൻ ആഗ്രഹിക്കുന്ന വചനങ്ങൾ — ഇന്ന് പ്രാക്ടീസ് ചെയ്യാൻ ടാപ്പ് ചെയ്യുക',
       'walkthroughGenerateModeTitle': 'ഇൻപുട്ട് തരം തിരഞ്ഞെടുക്കുക',
       'walkthroughGenerateModeDesc':
-          'Scripture — ബൈബിൾ റഫറൻസ്, Topic — വിഷയം, Question — ക്ഷമാപണ ഉത്തരം എന്നിവ തിരഞ്ഞെടുക്കുക',
+          'Scripture — ഒരു ബൈബിൾ വചനം, Topic — ഒരു വിഷയം, Question — വിശ്വാസത്തെക്കുറിച്ചുള്ള ചോദ്യം',
       'walkthroughGenerateInputTitle': 'വിഷയം അല്ലെങ്കിൽ വചനം നൽകുക',
       'walkthroughGenerateInputDesc':
-          'വ്യക്തിഗത പഠന ഗൈഡ് ഉണ്ടാക്കാൻ ഏത് ബൈബിൾ വചനം, വിഷയം, അല്ലെങ്കിൽ ചോദ്യം ടൈപ്പ് ചെയ്യുക',
+          '"ക്ഷമ", "യോഹ 3:16", അല്ലെങ്കിൽ "ഉത്കണ്ഠ കൈകാര്യം ചെയ്യുന്നത് എങ്ങനെ?" എന്നിവ ടൈപ്പ് ചെയ്യുക',
       'walkthroughGenerateButtonTitle': 'നിങ്ങളുടെ പഠനം ഉണ്ടാക്കുക',
       'walkthroughGenerateButtonDesc':
-          'നിങ്ങളുടെ വ്യക്തിഗത ബൈബിൾ പഠന ഗൈഡ് ഉണ്ടാക്കാൻ ഇവിടെ ടാപ്പ് ചെയ്യുക',
-      'walkthroughDisciplerTitle': 'AI ശിഷ്യൻ',
+          'ടാപ്പ് ചെയ്ത് ബൈബിൾ പഠന ഗൈഡ് ഉണ്ടാക്കുക',
+      'walkthroughDisciplerTitle': 'Discipler',
       'walkthroughDisciplerDesc':
-          'ആഴത്തിലുള്ള മാർഗദർശനത്തിനും ഉത്തരങ്ങൾക്കുമായി AI ബൈബിൾ ഗുരുവുമായി ചാറ്റ് ചെയ്യുക',
+          'ഏത് ബൈബിൾ ചോദ്യവും ചോദിക്കുക, ഉത്തരം ലഭിക്കും — ഒരു ബൈബിൾ ടീച്ചർ എപ്പോഴും ലഭ്യമായതുപോലെ',
       'walkthroughStudyGuideInputTitle': 'നിങ്ങളുടെ വിഷയം നൽകുക',
       'walkthroughStudyGuideInputDesc':
-          'ഏത് ബൈബിൾ വിഷയവും സ്ക്രിപ്ചർ റഫറൻസും ടൈപ്പ് ചെയ്യുക — ഉദാ: വിശ്വാസം അല്ലെങ്കിൽ റോമർ 8:1',
+          '"പ്രത്യാശ" പോലൊരു വിഷയം, അല്ലെങ്കിൽ "റോമർ 8:1" പോലൊരു വചനം ടൈപ്പ് ചെയ്യുക',
       'walkthroughStudyGuideGenerateTitle': 'നിങ്ങളുടെ പഠനം ഉണ്ടാക്കുക',
       'walkthroughStudyGuideGenerateDesc':
-          'Generate ടാപ്പ് ചെയ്യുക — AI ഒരു വ്യക്തിഗത പഠന ഗൈഡ് നിമിഷങ്ങൾക്കുള്ളിൽ ഉണ്ടാക്കും',
+          'Generate ടാപ്പ് ചെയ്യുക — നിമിഷങ്ങൾക്കുള്ളിൽ പഠന ഗൈഡ് തയ്യാർ',
       'walkthroughLearningPathsTitle': 'ഒരു പാത തുടങ്ങുക',
       'walkthroughLearningPathsDesc':
-          'ഘടനാപരമായ, നയിക്കപ്പെടുന്ന ബൈബിൾ പഠന യാത്ര ആരംഭിക്കാൻ ഏത് പാതയും ടാപ്പ് ചെയ്യുക',
+          'ഏത് പാതയും ടാപ്പ് ചെയ്ത് ബൈബിൾ പതുക്കെ പഠിച്ചു തുടങ്ങുക',
       'walkthroughForYouTitle': 'നിങ്ങൾക്കായി',
       'forYouSectionSubtitle': 'നിങ്ങൾക്കുള്ള പഠന പാതകൾ',
       'walkthroughForYouDesc':
-          'നിങ്ങളുടെ പുരോഗതിയെ അടിസ്ഥാനമാക്കിയ വ്യക്തിഗത പാതകൾ — നിർത്തിയ ഇടത്ത് നിന്ന് തുടരുക',
+          'നിങ്ങൾക്കായി തിരഞ്ഞെടുത്ത പഠന പദ്ധതികൾ — നിർത്തിയ ഇടത്ത് നിന്ന് തുടരുക',
       'walkthroughMemoryAddTitle': 'ഒരു വചനം ചേർക്കുക',
-      'walkthroughMemoryAddDesc':
-          'നിങ്ങൾ ഓർമ്മിക്കാൻ ആഗ്രഹിക്കുന്ന ബൈബിൾ വചനം ചേർക്കാൻ ഇവിടെ ടാപ്പ് ചെയ്യുക',
+      'walkthroughMemoryAddDesc': 'ഓർക്കാൻ തുടങ്ങാൻ ഒരു ബൈബിൾ വചനം ചേർക്കുക',
       'walkthroughMemoryVerseTitle': 'നിങ്ങളുടെ ഓർമ്മ വചനം',
       'walkthroughMemoryVerseDesc':
           'ഒരു പ്രാക്ടീസ് സെഷൻ ആരംഭിക്കാൻ ഈ വചനം ടാപ്പ് ചെയ്യുക',
       'walkthroughPracticeModesTitle': 'പ്രാക്ടീസ് മോഡുകൾ',
       'walkthroughPracticeModesDesc':
-          'പ്രാക്ടീസ് രീതി തിരഞ്ഞെടുക്കുക — ഫ്ലാഷ്കാർഡ്, ശൂന്യം നിരത്തുക, ഓർക്കുക, കൂടുതൽ',
+          'പ്രാക്ടീസ് ചെയ്യാൻ ഒരു രീതി തിരഞ്ഞെടുക്കുക — ഫ്ലാഷ്കാർഡ്, ശൂന്യം നിരത്തുക, കൂടുതൽ',
       'walkthroughCommunityTabsTitle': 'ഫെലോഷിപ്പുകൾ കാണുക',
       'walkthroughCommunityTabsDesc':
-          'നിങ്ങളുടെ ഫെലോഷിപ്പുകളും പുതിയ ഗ്രൂപ്പുകളും തമ്മിൽ മാറ്റം ചെയ്യാൻ മേലെയുള്ള ടാബുകൾ ഉപയോഗിക്കുക',
+          'നിങ്ങളുടെ ഗ്രൂപ്പുകൾ കാണുക അല്ലെങ്കിൽ പുതിയ ഫെലോഷിപ്പുകൾ കണ്ടെത്തുക',
       'walkthroughCommunityFabTitle': 'ഫെലോഷിപ്പിൽ ചേരുക',
       'walkthroughCommunityFabDesc':
-          'ഒരു കോഡ് ഉപയോഗിച്ച് നിലവിലുള്ള ഫെലോഷിപ്പിൽ ചേരാൻ ഇവിടെ ടാപ്പ് ചെയ്യുക',
+          'ഫെലോഷിപ്പ് കോഡ് ഉണ്ടോ? ഒരു ഗ്രൂപ്പിൽ ചേരാൻ ടാപ്പ് ചെയ്യുക',
       'walkthroughCommunityNavTitle': 'കമ്മ്യൂണിറ്റി',
       'walkthroughCommunityNavDesc':
           'ഫെലോഷിപ്പുകളിൽ ചേർന്ന് മറ്റ് വിശ്വാസികളോടൊപ്പം ബൈബിൾ പഠിക്കുക',
       'walkthroughChatInputTitle': 'എന്തും ചോദിക്കുക',
       'walkthroughChatInputDesc':
-          'നിങ്ങൾ പര്യവേക്ഷണം ചെയ്യാൻ ആഗ്രഹിക്കുന്ന ഏത് ബൈബിൾ ചോദ്യവും ടൈപ്പ് ചെയ്യുക',
-      'walkthroughDisciplerChatTitle': 'നിങ്ങളുടെ AI ബൈബിൾ ടീച്ചർ',
+          'എന്തും ചോദിക്കുക — ഉദാ: "ക്ഷമയെക്കുറിച്ച് ബൈബിൾ എന്ത് പറയുന്നു?"',
+      'walkthroughDisciplerChatTitle': 'നിങ്ങളുടെ ബൈബിൾ ടീച്ചർ',
       'walkthroughDisciplerChatDesc':
-          'AI ശിഷ്യൻ തിരുവചനത്തിൽ നിന്ന് ഉത്തരം നൽകുന്നു — ഒരു ബൈബിൾ ടീച്ചർ എപ്പോഴും ലഭ്യമായതുപോലെ',
+          'തിരുവചനത്തിൽ നിന്ന് ഉത്തരം, ഏത് സമയത്തും — ഒരു ബൈബിൾ ടീച്ചർ കൂടെ ഉള്ളതുപോലെ',
     },
   };
 
@@ -1688,6 +1696,12 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['editFellowshipSave']!;
   String get editFellowshipSuccess =>
       _localizedValues[locale.languageCode]!['editFellowshipSuccess']!;
+  String get deleteFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['deleteFellowshipTitle']!;
+  String get deleteFellowshipConfirm =>
+      _localizedValues[locale.languageCode]!['deleteFellowshipConfirm']!;
+  String get deleteFellowshipSuccess =>
+      _localizedValues[locale.languageCode]!['deleteFellowshipSuccess']!;
   // Invite list + revoke
   String get inviteListEmpty =>
       _localizedValues[locale.languageCode]!['inviteListEmpty']!;

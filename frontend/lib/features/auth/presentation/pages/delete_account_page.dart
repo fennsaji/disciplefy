@@ -155,7 +155,7 @@ class DeleteAccountPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Study guide content may be retained in anonymised form — your name and personal details are removed, but AI-generated guide text may remain as shared content to benefit other users.',
+                      'Study guide content may be retained in anonymised form — your name and personal details are removed, but generated guide text may remain as shared content to benefit other users.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         height: 1.6,

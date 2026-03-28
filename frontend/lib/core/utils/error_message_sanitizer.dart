@@ -96,7 +96,7 @@ class ErrorMessageSanitizer {
     final available = failure.availableTokens;
 
     String message =
-        'You need $required tokens but only have $available available.';
+        'You need $required credits but only have $available left today.';
 
     if (failure.nextResetTime != null) {
       final now = DateTime.now();
@@ -106,11 +106,11 @@ class ErrorMessageSanitizer {
       if (duration.inHours > 0) {
         final hours = duration.inHours;
         final minutes = duration.inMinutes.remainder(60);
-        message += ' Tokens reset in ${hours}h ${minutes}m.';
+        message += ' Credits reset in ${hours}h ${minutes}m — or get more now!';
       } else if (duration.inMinutes > 0) {
-        message += ' Tokens reset in ${duration.inMinutes}m.';
+        message += ' Credits reset in ${duration.inMinutes}m — almost there!';
       } else {
-        message += ' Tokens reset soon.';
+        message += ' Your credits are resetting soon!';
       }
     }
 
@@ -120,7 +120,7 @@ class ErrorMessageSanitizer {
   static String _sanitizeTokenError(TokenFailure failure) {
     // Token errors from streaming - show user-friendly message
     // Don't expose internal error details
-    return 'You don\'t have enough tokens for this operation. Please get more tokens to continue.';
+    return 'You\'ve used all your credits for today. Credits refresh at midnight — or get more now to continue.';
   }
 
   static String _sanitizeStorageError(StorageFailure failure) {

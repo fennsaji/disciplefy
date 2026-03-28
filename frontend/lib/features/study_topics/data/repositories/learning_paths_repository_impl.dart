@@ -245,6 +245,8 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     _detailsCacheTimestamps.clear();
     _cachedRecommendedPath = null;
     _recommendedPathCacheTimestamp = null;
+    _cachedPersonalizedPaths = null;
+    _personalizedPathsCacheTimestamp = null;
   }
 
   bool _isCategoriesCacheValid() {
@@ -271,6 +273,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         _cacheDuration;
   }
 
+  // Cache for personalized paths
+  List<LearningPath>? _cachedPersonalizedPaths;
+  DateTime? _personalizedPathsCacheTimestamp;
+
   bool _isRecommendedPathCacheValid() {
     if (_cachedRecommendedPath == null ||
         _recommendedPathCacheTimestamp == null) {
@@ -278,6 +284,45 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     }
     return DateTime.now().difference(_recommendedPathCacheTimestamp!) <
         _cacheDuration;
+  }
+
+  bool _isPersonalizedPathsCacheValid() {
+    if (_cachedPersonalizedPaths == null ||
+        _personalizedPathsCacheTimestamp == null) {
+      return false;
+    }
+    return DateTime.now().difference(_personalizedPathsCacheTimestamp!) <
+        _cacheDuration;
+  }
+
+  @override
+  Future<Either<Failure, List<LearningPath>>> getPersonalizedPaths({
+    String language = 'en',
+    int limit = 5,
+  }) async {
+    if (_isPersonalizedPathsCacheValid()) {
+      return Right(_cachedPersonalizedPaths!);
+    }
+
+    try {
+      final response = await _remoteDataSource.getPersonalizedPaths(
+        language: language,
+        limit: limit,
+      );
+      final paths = response.toEntity();
+      _cachedPersonalizedPaths = paths;
+      _personalizedPathsCacheTimestamp = DateTime.now();
+      return Right(paths);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException catch (e) {
+      if (_cachedPersonalizedPaths != null) {
+        return Right(_cachedPersonalizedPaths!);
+      }
+      return Left(NetworkFailure(message: e.message));
+    } catch (e) {
+      return Left(ClientFailure(message: e.toString()));
+    }
   }
 
   @override
