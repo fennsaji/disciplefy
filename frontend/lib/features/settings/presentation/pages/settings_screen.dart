@@ -892,8 +892,9 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.gavel_outlined,
-            title: 'Terms of Service',
-            subtitle: 'View our terms of service',
+            title: context.tr(TranslationKeys.settingsTermsOfService),
+            subtitle:
+                context.tr(TranslationKeys.settingsTermsOfServiceSubtitle),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
@@ -905,8 +906,8 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.receipt_long_outlined,
-            title: 'Refund Policy',
-            subtitle: 'View our cancellation & refund policy',
+            title: context.tr(TranslationKeys.settingsRefundPolicy),
+            subtitle: context.tr(TranslationKeys.settingsRefundPolicySubtitle),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
