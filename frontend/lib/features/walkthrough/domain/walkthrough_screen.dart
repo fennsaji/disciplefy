@@ -19,6 +19,16 @@ enum WalkthroughScreen {
 
   /// Phase 2: fellowship share + follow-up chat + notes (shown on completion).
   studyGuideCompletion,
+
+  // Per-page first-launch walkthroughs for each of the 8 practice modes
+  practiceFlipCard,
+  practiceWordBank,
+  practiceCloze,
+  practiceFirstLetter,
+  practiceProgressive,
+  practiceWordScramble,
+  practiceAudio,
+  practiceTypeItOut,
 }
 
 extension WalkthroughScreenName on WalkthroughScreen {

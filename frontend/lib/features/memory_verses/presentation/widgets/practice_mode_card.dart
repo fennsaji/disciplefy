@@ -23,6 +23,9 @@ class PracticeModeCard extends StatelessWidget {
   final bool isUnlockLimitReached;
   final VoidCallback? onLockedTap;
 
+  /// Called when the user taps the (i) info button on an unlocked card.
+  final VoidCallback? onInfoTap;
+
   const PracticeModeCard({
     super.key,
     required this.mode,
@@ -32,6 +35,7 @@ class PracticeModeCard extends StatelessWidget {
     this.isTierLocked = false,
     this.isUnlockLimitReached = false,
     this.onLockedTap,
+    this.onInfoTap,
   });
 
   @override
@@ -130,8 +134,36 @@ class PracticeModeCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      // Favorite indicator
-                      if (mode.isFavorite)
+                      // Info + favorite indicators (only when unlocked)
+                      if (!isLocked)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (mode.isFavorite)
+                              const Icon(
+                                Icons.favorite,
+                                color: AppColors.error,
+                                size: 20,
+                              ),
+                            if (onInfoTap != null)
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  iconSize: 18,
+                                  icon: Icon(
+                                    Icons.info_outline,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                  onPressed: onInfoTap,
+                                ),
+                              ),
+                          ],
+                        )
+                      else if (mode.isFavorite)
                         const Icon(
                           Icons.favorite,
                           color: AppColors.error,

@@ -469,6 +469,102 @@ class AppLocalizations {
       'walkthroughDisciplerChatTitle': 'Your Bible Teacher',
       'walkthroughDisciplerChatDesc':
           'Answers from Scripture, available any time — like having a Bible teacher in your pocket',
+
+      // Practice Mode Info Sheet
+      'practice_mode_info.how_it_works': 'HOW IT WORKS',
+      'practice_mode_info.got_it': 'Got it',
+      'practice_mode_info.flip_card.step1':
+          'Read the verse reference shown on the front of the card.',
+      'practice_mode_info.flip_card.step2':
+          'Try to recall the full verse from memory, then tap to flip.',
+      'practice_mode_info.flip_card.step3':
+          'Rate how well you knew it — your answer affects future scheduling.',
+      'practice_mode_info.word_bank.step1':
+          'Read the verse reference at the top.',
+      'practice_mode_info.word_bank.step2':
+          'Tap words from the bank below to build the verse in the correct order.',
+      'practice_mode_info.word_bank.step3':
+          'Tap a placed word to remove it. Submit when the verse is complete.',
+      'practice_mode_info.cloze.step1':
+          'Read the verse with some words hidden as blanks.',
+      'practice_mode_info.cloze.step2':
+          'Type or select the missing word for each blank.',
+      'practice_mode_info.cloze.step3':
+          'Submit to see your accuracy and learn the correct words.',
+      'practice_mode_info.first_letter.step1':
+          'Each word in the verse is shown as just its first letter.',
+      'practice_mode_info.first_letter.step2':
+          'Try to recall and speak or mentally recite the full verse.',
+      'practice_mode_info.first_letter.step3':
+          'Use hints sparingly — the fewer hints you need, the better!',
+      'practice_mode_info.progressive.step1':
+          'The verse starts hidden. Tap "Reveal Next" to show it word by word.',
+      'practice_mode_info.progressive.step2':
+          'Try to predict the next word before each reveal.',
+      'practice_mode_info.progressive.step3':
+          'Switch to auto-reveal mode for a steady-pace walkthrough.',
+      'practice_mode_info.word_scramble.step1':
+          'Verse phrases are shown in the wrong order.',
+      'practice_mode_info.word_scramble.step2':
+          'Drag and drop the phrase blocks to arrange them correctly.',
+      'practice_mode_info.word_scramble.step3':
+          'Submit when all phrases are in the right order.',
+      'practice_mode_info.audio.step1':
+          'Tap the play button to hear the verse read aloud.',
+      'practice_mode_info.audio.step2':
+          'Listen carefully, then tap the microphone to speak the verse.',
+      'practice_mode_info.audio.step3':
+          'Your spoken words are compared to the verse for accuracy.',
+      'practice_mode_info.type_it_out.step1':
+          'Read the verse reference, then type the entire verse from memory.',
+      'practice_mode_info.type_it_out.step2':
+          'For Hindi/Malayalam, you can type in the Roman alphabet (transliteration).',
+      'practice_mode_info.type_it_out.step3':
+          'Submit to see a word-by-word comparison of your answer.',
+
+      // Per-page walkthrough tooltips
+      'walkthrough.practice_flip_card.title': 'Flip to Reveal',
+      'walkthrough.practice_flip_card.desc':
+          'Tap the card to flip it and reveal the verse — then rate how well you knew it.',
+      'walkthrough.practice_word_bank.title': 'Build the Verse',
+      'walkthrough.practice_word_bank.desc':
+          'Tap words from the bank to place them in order — build the complete verse.',
+      'walkthrough.practice_cloze.title': 'Fill the Blanks',
+      'walkthrough.practice_cloze.desc':
+          'Type the missing words to complete the verse.',
+      'walkthrough.practice_first_letter.title': 'First Letter Hints',
+      'walkthrough.practice_first_letter.desc':
+          'Each word shows only its first letter — recall the rest from memory.',
+      'walkthrough.practice_progressive.title': 'Reveal Step by Step',
+      'walkthrough.practice_progressive.desc':
+          'Tap to reveal the verse one word at a time — predict the next word each step.',
+      'walkthrough.practice_progressive.auto_reveal.title': 'Auto Reveal',
+      'walkthrough.practice_progressive.auto_reveal.desc':
+          'Let the verse reveal itself automatically at a steady pace.',
+      'walkthrough.practice_progressive.reveal_all.title': 'Reveal All',
+      'walkthrough.practice_progressive.reveal_all.desc':
+          'Instantly show the full verse — useful if you\'re stuck.',
+      'walkthrough.practice_progressive.submit.title': 'Submit',
+      'walkthrough.practice_progressive.submit.desc':
+          'Once the full verse is revealed, submit to rate yourself and record your progress.',
+      'walkthrough.practice_word_scramble.title': 'Unscramble the Phrases',
+      'walkthrough.practice_word_scramble.desc':
+          'Drag phrase blocks into the correct order to reconstruct the verse.',
+      'walkthrough.practice_word_scramble.show_answer.title': 'Show Answer',
+      'walkthrough.practice_word_scramble.show_answer.desc':
+          'Reveal the correct order — useful if you\'re stuck, but it reduces your score.',
+      'walkthrough.practice_word_scramble.reset.title': 'Reset',
+      'walkthrough.practice_word_scramble.reset.desc':
+          'Clear all placed phrases and start the scramble over from scratch.',
+      'walkthrough.practice_word_scramble.submit.title': 'Submit',
+      'walkthrough.practice_word_scramble.submit.desc':
+          'Submit once all phrases are placed to see your accuracy and record progress.',
+      'walkthrough.practice_audio.title': 'Listen & Speak',
+      'walkthrough.practice_audio.desc':
+          'Tap play to hear the verse, then tap the mic to speak it back.',
+      'walkthrough.practice_type_it_out.title': 'Type It from Memory',
+      'walkthrough.practice_type_it_out.desc':
+          'Type the complete verse from memory — word for word.',
     },
     'hi': {
       // Common
@@ -914,6 +1010,100 @@ class AppLocalizations {
       'walkthroughDisciplerChatTitle': 'आपका बाइबल शिक्षक',
       'walkthroughDisciplerChatDesc':
           'बाइबल से जवाब, कभी भी — जैसे आपकी जेब में एक बाइबल शिक्षक हो',
+
+      // Practice Mode Info Sheet
+      'practice_mode_info.how_it_works': 'यह कैसे काम करता है',
+      'practice_mode_info.got_it': 'समझ गया',
+      'practice_mode_info.flip_card.step1':
+          'कार्ड के अगले भाग पर दिखाया गया वचन संदर्भ पढ़ें।',
+      'practice_mode_info.flip_card.step2':
+          'पूरे वचन को याद करने की कोशिश करें, फिर पलटने के लिए दबाएं।',
+      'practice_mode_info.flip_card.step3':
+          'बताएं आपने कितना जाना — इससे भविष्य की समय-सूची तय होती है।',
+      'practice_mode_info.word_bank.step1': 'शीर्ष पर वचन संदर्भ पढ़ें।',
+      'practice_mode_info.word_bank.step2':
+          'नीचे दिए शब्दों पर दबाएं और उन्हें सही क्रम में रखें।',
+      'practice_mode_info.word_bank.step3':
+          'रखे गए शब्द को हटाने के लिए दबाएं। वचन पूरा होने पर सबमिट करें।',
+      'practice_mode_info.cloze.step1':
+          'कुछ शब्दों को रिक्त स्थान के रूप में छिपाकर वचन पढ़ें।',
+      'practice_mode_info.cloze.step2':
+          'प्रत्येक रिक्त स्थान के लिए शब्द टाइप करें।',
+      'practice_mode_info.cloze.step3':
+          'सटीकता देखने के लिए सबमिट करें और सही शब्द जानें।',
+      'practice_mode_info.first_letter.step1':
+          'वचन का हर शब्द केवल पहले अक्षर के साथ दिखाया जाता है।',
+      'practice_mode_info.first_letter.step2':
+          'पूरे वचन को याद करने और बोलने की कोशिश करें।',
+      'practice_mode_info.first_letter.step3':
+          'कम से कम संकेतों का उपयोग करें — जितने कम, उतना बेहतर!',
+      'practice_mode_info.progressive.step1':
+          'वचन छिपा होता है। एक-एक शब्द दिखाने के लिए "अगला दिखाएं" दबाएं।',
+      'practice_mode_info.progressive.step2':
+          'प्रत्येक प्रकटीकरण से पहले अगले शब्द का अनुमान लगाएं।',
+      'practice_mode_info.progressive.step3':
+          'स्थिर गति के लिए ऑटो-रिवील मोड पर स्विच करें।',
+      'practice_mode_info.word_scramble.step1':
+          'वचन के वाक्यांश गलत क्रम में दिखाए जाते हैं।',
+      'practice_mode_info.word_scramble.step2':
+          'वाक्यांश ब्लॉक्स को खींचें और सही क्रम में लगाएं।',
+      'practice_mode_info.word_scramble.step3':
+          'जब सभी वाक्यांश सही क्रम में हों, तो सबमिट करें।',
+      'practice_mode_info.audio.step1': 'वचन सुनने के लिए प्ले बटन दबाएं।',
+      'practice_mode_info.audio.step2':
+          'ध्यान से सुनें, फिर वचन बोलने के लिए माइक दबाएं।',
+      'practice_mode_info.audio.step3':
+          'आपकी बोली गई बात वचन से मिलाई जाती है।',
+      'practice_mode_info.type_it_out.step1':
+          'वचन संदर्भ पढ़ें, फिर पूरा वचन याद करके टाइप करें।',
+      'practice_mode_info.type_it_out.step2':
+          'हिंदी के लिए, रोमन अक्षरों में (हिंग्लिश) टाइप कर सकते हैं।',
+      'practice_mode_info.type_it_out.step3':
+          'शब्द-दर-शब्द तुलना देखने के लिए सबमिट करें।',
+
+      // Per-page walkthrough tooltips
+      'walkthrough.practice_flip_card.title': 'पलटें और जानें',
+      'walkthrough.practice_flip_card.desc':
+          'वचन देखने के लिए कार्ड दबाएं — फिर बताएं आपने कितना जाना।',
+      'walkthrough.practice_word_bank.title': 'वचन बनाएं',
+      'walkthrough.practice_word_bank.desc':
+          'शब्द बैंक से शब्द दबाएं और सही क्रम में वचन बनाएं।',
+      'walkthrough.practice_cloze.title': 'रिक्त स्थान भरें',
+      'walkthrough.practice_cloze.desc':
+          'वचन पूरा करने के लिए छूटे शब्द टाइप करें। हिंदी शब्द रोमन अक्षरों (Hinglish) में भी लिख सकते हैं।',
+      'walkthrough.practice_first_letter.title': 'पहला अक्षर संकेत',
+      'walkthrough.practice_first_letter.desc':
+          'हर शब्द केवल पहले अक्षर से दिखता है — बाकी याद करें।',
+      'walkthrough.practice_progressive.title': 'क्रमशः प्रकट करें',
+      'walkthrough.practice_progressive.desc':
+          'एक-एक शब्द दिखाने के लिए दबाएं — हर कदम पर अगले शब्द का अनुमान लगाएं।',
+      'walkthrough.practice_progressive.auto_reveal.title': 'स्वतः प्रकट करें',
+      'walkthrough.practice_progressive.auto_reveal.desc':
+          'आयत एक निश्चित गति से स्वतः प्रकट होती रहे।',
+      'walkthrough.practice_progressive.reveal_all.title': 'सब दिखाएं',
+      'walkthrough.practice_progressive.reveal_all.desc':
+          'पूरी आयत एक बार में दिखाएं — फंसे होने पर उपयोगी।',
+      'walkthrough.practice_progressive.submit.title': 'सबमिट करें',
+      'walkthrough.practice_progressive.submit.desc':
+          'पूरी आयत दिखने के बाद, अपना मूल्यांकन करें और प्रगति दर्ज करें।',
+      'walkthrough.practice_word_scramble.title': 'वाक्यांश सुलझाएं',
+      'walkthrough.practice_word_scramble.desc':
+          'वाक्यांश ब्लॉक्स को खींचकर सही क्रम में लगाएं।',
+      'walkthrough.practice_word_scramble.show_answer.title': 'उत्तर दिखाएं',
+      'walkthrough.practice_word_scramble.show_answer.desc':
+          'सही क्रम देखें — फंसे होने पर उपयोगी, लेकिन स्कोर कम होगा।',
+      'walkthrough.practice_word_scramble.reset.title': 'रीसेट करें',
+      'walkthrough.practice_word_scramble.reset.desc':
+          'सभी रखे वाक्यांश हटाएं और फिर से शुरू करें।',
+      'walkthrough.practice_word_scramble.submit.title': 'सबमिट करें',
+      'walkthrough.practice_word_scramble.submit.desc':
+          'सभी वाक्यांश रखने के बाद सबमिट करें — सटीकता और प्रगति देखें।',
+      'walkthrough.practice_audio.title': 'सुनें और बोलें',
+      'walkthrough.practice_audio.desc':
+          'वचन सुनने के लिए प्ले दबाएं, फिर माइक से बोलें।',
+      'walkthrough.practice_type_it_out.title': 'याद करके टाइप करें',
+      'walkthrough.practice_type_it_out.desc':
+          'पूरा वचन याद करके शब्द-दर-शब्द टाइप करें।',
     },
     'ml': {
       // Common
@@ -1365,6 +1555,102 @@ class AppLocalizations {
       'walkthroughDisciplerChatTitle': 'നിങ്ങളുടെ ബൈബിൾ ടീച്ചർ',
       'walkthroughDisciplerChatDesc':
           'തിരുവചനത്തിൽ നിന്ന് ഉത്തരം, ഏത് സമയത്തും — ഒരു ബൈബിൾ ടീച്ചർ കൂടെ ഉള്ളതുപോലെ',
+
+      // Practice Mode Info Sheet
+      'practice_mode_info.how_it_works': 'എങ്ങനെ പ്രവർത്തിക്കുന്നു',
+      'practice_mode_info.got_it': 'മനസ്സിലായി',
+      'practice_mode_info.flip_card.step1':
+          'കാർഡിന്റെ മുൻഭാഗത്ത് കാണിക്കുന്ന വചന റഫറൻസ് വായിക്കുക.',
+      'practice_mode_info.flip_card.step2':
+          'മുഴുവൻ വചനം ഓർത്തെടുക്കാൻ ശ്രമിക്കുക, തിരിക്കാൻ ടാപ്പ് ചെയ്യുക.',
+      'practice_mode_info.flip_card.step3':
+          'നിങ്ങൾ എത്രത്തോളം അറിഞ്ഞു എന്ന് വിലയിരുത്തുക — ഇത് ഭാവി ഷെഡ്യൂളിനെ ബാധിക്കും.',
+      'practice_mode_info.word_bank.step1': 'മുകളിൽ വചന റഫറൻസ് വായിക്കുക.',
+      'practice_mode_info.word_bank.step2':
+          'ബാങ്കിൽ നിന്ന് വാക്കുകൾ ടാപ്പ് ചെയ്ത് ശരിയായ ക്രമത്തിൽ വചനം ഉണ്ടാക്കുക.',
+      'practice_mode_info.word_bank.step3':
+          'വാക്ക് നീക്കാൻ ടാപ്പ് ചെയ്യുക. വചനം പൂർത്തിയാകുമ്പോൾ സബ്മിറ്റ് ചെയ്യുക.',
+      'practice_mode_info.cloze.step1':
+          'ചില വാക്കുകൾ ഒഴിച്ചിട്ട് വചനം വായിക്കുക.',
+      'practice_mode_info.cloze.step2':
+          'ഓരോ ഒഴിവിടത്തും നഷ്ടമായ വാക്ക് ടൈപ്പ് ചെയ്യുക.',
+      'practice_mode_info.cloze.step3':
+          'കൃത്യത കാണാൻ സബ്മിറ്റ് ചെയ്ത് ശരിയായ വാക്കുകൾ പഠിക്കുക.',
+      'practice_mode_info.first_letter.step1':
+          'വചനത്തിലെ ഓരോ വാക്കും ആദ്യ അക്ഷരം മാത്രം കാണിക്കുന്നു.',
+      'practice_mode_info.first_letter.step2':
+          'മുഴുവൻ വചനം ഓർത്ത് ഉരുവിടാൻ ശ്രമിക്കുക.',
+      'practice_mode_info.first_letter.step3':
+          'സൂചനകൾ കുറക്കുക — കുറവ് ഉപയോഗിക്കുന്നതാണ് നല്ലത്!',
+      'practice_mode_info.progressive.step1':
+          'വചനം മറഞ്ഞിരിക്കും. ഓരോ വാക്കായി കാണിക്കാൻ "അടുത്തത് വെളിപ്പെടുത്തുക" ടാപ്പ് ചെയ്യുക.',
+      'practice_mode_info.progressive.step2':
+          'ഓരോ വെളിപ്പെടുത്തലിനു മുൻപും അടുത്ത വാക്ക് ഊഹിക്കുക.',
+      'practice_mode_info.progressive.step3':
+          'സ്ഥിരഗതിക്ക് ഓട്ടോ-റിവീൽ മോഡ് ഉപയോഗിക്കുക.',
+      'practice_mode_info.word_scramble.step1':
+          'വചന ഭാഗങ്ങൾ തെറ്റായ ക്രമത്തിൽ കാണിക്കുന്നു.',
+      'practice_mode_info.word_scramble.step2':
+          'ഫ്രേസ് ബ്ലോക്കുകൾ ഡ്രാഗ് ചെയ്ത് ശരിയായ ക്രമത്തിൽ ഒഴുക്കുക.',
+      'practice_mode_info.word_scramble.step3':
+          'എല്ലാ ഫ്രേസുകളും ശരിയായ ക്രമത്തിലായാൽ സബ്മിറ്റ് ചെയ്യുക.',
+      'practice_mode_info.audio.step1':
+          'വചനം കേൾക്കാൻ പ്ലേ ബട്ടൺ ടാപ്പ് ചെയ്യുക.',
+      'practice_mode_info.audio.step2':
+          'ശ്രദ്ധയോടെ കേൾക്കുക, പിന്നെ വചനം പറയാൻ മൈക്ക് ടാപ്പ് ചെയ്യുക.',
+      'practice_mode_info.audio.step3':
+          'നിങ്ങൾ പറഞ്ഞത് വചനവുമായി താരതമ്യം ചെയ്യുന്നു.',
+      'practice_mode_info.type_it_out.step1':
+          'വചന റഫറൻസ് വായിക്കുക, പിന്നെ ഓർമ്മയിൽ നിന്ന് മുഴുവൻ വചനം ടൈപ്പ് ചെയ്യുക.',
+      'practice_mode_info.type_it_out.step2':
+          'മലയാളത്തിന്, റോമൻ ലിപിയിൽ (മംഗ്ലിഷ്) ടൈപ്പ് ചെയ്യാം.',
+      'practice_mode_info.type_it_out.step3':
+          'വാക്ക്-വഴി-വാക്ക് താരതമ്യം കാണാൻ സബ്മിറ്റ് ചെയ്യുക.',
+
+      // Per-page walkthrough tooltips
+      'walkthrough.practice_flip_card.title': 'മറിക്കി കണ്ടെത്തുക',
+      'walkthrough.practice_flip_card.desc':
+          'വചനം കാണാൻ കാർഡ് ടാപ്പ് ചെയ്യുക — നിങ്ങൾ എത്ര അറിഞ്ഞു എന്ന് വിലയിരുത്തുക.',
+      'walkthrough.practice_word_bank.title': 'വചനം ഉണ്ടാക്കുക',
+      'walkthrough.practice_word_bank.desc':
+          'ബാങ്കിൽ നിന്ന് വാക്കുകൾ ടാപ്പ് ചെയ്ത് ക്രമത്തിൽ വചനം ഉണ്ടാക്കുക.',
+      'walkthrough.practice_cloze.title': 'ഒഴിവിടം നിറക്കുക',
+      'walkthrough.practice_cloze.desc':
+          'വചനം പൂർത്തിയാക്കാൻ നഷ്ടമായ വാക്കുകൾ ടൈപ്പ് ചെയ്യുക. മലയാളം വാക്കുകൾ റോമൻ അക്ഷരങ്ങളിൽ (Manglish) ടൈപ്പ് ചെയ്യാം.',
+      'walkthrough.practice_first_letter.title': 'ആദ്യ അക്ഷരം സൂചന',
+      'walkthrough.practice_first_letter.desc':
+          'ഓരോ വാക്കും ആദ്യ അക്ഷരം കാണിക്കുന്നു — ബാക്കി ഓർത്തെടുക്കുക.',
+      'walkthrough.practice_progressive.title': 'ഘട്ടം ഘട്ടമായി',
+      'walkthrough.practice_progressive.desc':
+          'ഓരോ വാക്കായി കാണിക്കാൻ ടാപ്പ് ചെയ്യുക — ഓരോ ഘട്ടത്തിലും അടുത്ത വാക്ക് ഊഹിക്കുക.',
+      'walkthrough.practice_progressive.auto_reveal.title': 'ഓട്ടോ റിവീൽ',
+      'walkthrough.practice_progressive.auto_reveal.desc':
+          'വചനം സ്വയം ഒരു സ്ഥിരമായ വേഗതയിൽ വെളിപ്പെടട്ടെ.',
+      'walkthrough.practice_progressive.reveal_all.title': 'എല്ലാം കാണിക്കുക',
+      'walkthrough.practice_progressive.reveal_all.desc':
+          'മുഴുവൻ വചനവും ഒറ്റ തവണ കാണിക്കുക — കുടുങ്ങിയാൽ ഉപയോഗിക്കുക.',
+      'walkthrough.practice_progressive.submit.title': 'സമർപ്പിക്കുക',
+      'walkthrough.practice_progressive.submit.desc':
+          'മുഴുവൻ വചനവും കണ്ടതിനുശേഷം, സ്വയം വിലയിരുത്തി പ്രഗതി രേഖപ്പെടുത്തുക.',
+      'walkthrough.practice_word_scramble.title': 'ഫ്രേസ് ക്രമീകരിക്കുക',
+      'walkthrough.practice_word_scramble.desc':
+          'ഫ്രേസ് ബ്ലോക്കുകൾ ഡ്രാഗ് ചെയ്ത് ശരിയായ ക്രമത്തിൽ ഒഴുക്കുക.',
+      'walkthrough.practice_word_scramble.show_answer.title':
+          'ഉത്തരം കാണിക്കുക',
+      'walkthrough.practice_word_scramble.show_answer.desc':
+          'ശരിയായ ക്രമം കാണുക — കുടുങ്ങിയാൽ ഉപയോഗിക്കുക, പക്ഷേ സ്കോർ കുറയും.',
+      'walkthrough.practice_word_scramble.reset.title': 'റീസെറ്റ് ചെയ്യുക',
+      'walkthrough.practice_word_scramble.reset.desc':
+          'എല്ലാ ഫ്രേസുകളും നീക്കി വീണ്ടും തുടങ്ങുക.',
+      'walkthrough.practice_word_scramble.submit.title': 'സമർപ്പിക്കുക',
+      'walkthrough.practice_word_scramble.submit.desc':
+          'എല്ലാ ഫ്രേസുകളും ശരിയായ സ്ഥലത്ത് വെച്ചതിനു ശേഷം സമർപ്പിക്കുക.',
+      'walkthrough.practice_audio.title': 'കേൾക്കുക & പറയുക',
+      'walkthrough.practice_audio.desc':
+          'വചനം കേൾക്കാൻ പ്ലേ ടാപ്പ് ചെയ്യുക, പിന്നെ മൈക്കിൽ പറയുക.',
+      'walkthrough.practice_type_it_out.title': 'ഓർമ്മിച്ച് ടൈപ്പ് ചെയ്യുക',
+      'walkthrough.practice_type_it_out.desc':
+          'മുഴുവൻ വചനം ഓർമ്മിച്ച് വാക്ക്-വഴി-വാക്ക് ടൈപ്പ് ചെയ്യുക.',
     },
   };
 
@@ -1918,6 +2204,140 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['walkthroughDisciplerChatTitle']!;
   String get walkthroughDisciplerChatDesc =>
       _localizedValues[locale.languageCode]!['walkthroughDisciplerChatDesc']!;
+
+  // Practice Mode Info Sheet
+  String get practiceModeInfoHowItWorks => _localizedValues[
+      locale.languageCode]!['practice_mode_info.how_it_works']!;
+  String get practiceModeInfoGotIt =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.got_it']!;
+
+  // Flip Card steps
+  String get practiceModeInfoFlipCardStep1 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.flip_card.step1']!;
+  String get practiceModeInfoFlipCardStep2 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.flip_card.step2']!;
+  String get practiceModeInfoFlipCardStep3 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.flip_card.step3']!;
+
+  // Word Bank steps
+  String get practiceModeInfoWordBankStep1 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.word_bank.step1']!;
+  String get practiceModeInfoWordBankStep2 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.word_bank.step2']!;
+  String get practiceModeInfoWordBankStep3 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.word_bank.step3']!;
+
+  // Cloze steps
+  String get practiceModeInfoClozeStep1 =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.cloze.step1']!;
+  String get practiceModeInfoClozeStep2 =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.cloze.step2']!;
+  String get practiceModeInfoClozeStep3 =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.cloze.step3']!;
+
+  // First Letter steps
+  String get practiceModeInfoFirstLetterStep1 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.first_letter.step1']!;
+  String get practiceModeInfoFirstLetterStep2 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.first_letter.step2']!;
+  String get practiceModeInfoFirstLetterStep3 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.first_letter.step3']!;
+
+  // Progressive steps
+  String get practiceModeInfoProgressiveStep1 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.progressive.step1']!;
+  String get practiceModeInfoProgressiveStep2 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.progressive.step2']!;
+  String get practiceModeInfoProgressiveStep3 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.progressive.step3']!;
+
+  // Word Scramble steps
+  String get practiceModeInfoWordScrambleStep1 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.word_scramble.step1']!;
+  String get practiceModeInfoWordScrambleStep2 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.word_scramble.step2']!;
+  String get practiceModeInfoWordScrambleStep3 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.word_scramble.step3']!;
+
+  // Audio steps
+  String get practiceModeInfoAudioStep1 =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.audio.step1']!;
+  String get practiceModeInfoAudioStep2 =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.audio.step2']!;
+  String get practiceModeInfoAudioStep3 =>
+      _localizedValues[locale.languageCode]!['practice_mode_info.audio.step3']!;
+
+  // Type It Out steps
+  String get practiceModeInfoTypeItOutStep1 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.type_it_out.step1']!;
+  String get practiceModeInfoTypeItOutStep2 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.type_it_out.step2']!;
+  String get practiceModeInfoTypeItOutStep3 => _localizedValues[
+      locale.languageCode]!['practice_mode_info.type_it_out.step3']!;
+
+  // Per-page walkthrough tooltips for each practice mode
+  String get walkthroughPracticeFlipCardTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_flip_card.title']!;
+  String get walkthroughPracticeFlipCardDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_flip_card.desc']!;
+  String get walkthroughPracticeWordBankTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_bank.title']!;
+  String get walkthroughPracticeWordBankDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_bank.desc']!;
+  String get walkthroughPracticeClozeTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_cloze.title']!;
+  String get walkthroughPracticeClozeDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_cloze.desc']!;
+  String get walkthroughPracticeFirstLetterTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_first_letter.title']!;
+  String get walkthroughPracticeFirstLetterDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_first_letter.desc']!;
+  String get walkthroughPracticeProgressiveTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_progressive.title']!;
+  String get walkthroughPracticeProgressiveDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_progressive.desc']!;
+  String get walkthroughPracticeProgressiveAutoRevealTitle =>
+      _localizedValues[locale.languageCode]![
+          'walkthrough.practice_progressive.auto_reveal.title']!;
+  String get walkthroughPracticeProgressiveAutoRevealDesc =>
+      _localizedValues[locale.languageCode]![
+          'walkthrough.practice_progressive.auto_reveal.desc']!;
+  String get walkthroughPracticeProgressiveRevealAllTitle =>
+      _localizedValues[locale.languageCode]![
+          'walkthrough.practice_progressive.reveal_all.title']!;
+  String get walkthroughPracticeProgressiveRevealAllDesc =>
+      _localizedValues[locale.languageCode]![
+          'walkthrough.practice_progressive.reveal_all.desc']!;
+  String get walkthroughPracticeProgressiveSubmitTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_progressive.submit.title']!;
+  String get walkthroughPracticeProgressiveSubmitDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_progressive.submit.desc']!;
+  String get walkthroughPracticeWordScrambleTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_scramble.title']!;
+  String get walkthroughPracticeWordScrambleDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_scramble.desc']!;
+  String get walkthroughPracticeWordScrambleShowAnswerTitle =>
+      _localizedValues[locale.languageCode]![
+          'walkthrough.practice_word_scramble.show_answer.title']!;
+  String get walkthroughPracticeWordScrambleShowAnswerDesc =>
+      _localizedValues[locale.languageCode]![
+          'walkthrough.practice_word_scramble.show_answer.desc']!;
+  String get walkthroughPracticeWordScrambleResetTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_scramble.reset.title']!;
+  String get walkthroughPracticeWordScrambleResetDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_scramble.reset.desc']!;
+  String get walkthroughPracticeWordScrambleSubmitTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_scramble.submit.title']!;
+  String get walkthroughPracticeWordScrambleSubmitDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_word_scramble.submit.desc']!;
+  String get walkthroughPracticeAudioTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_audio.title']!;
+  String get walkthroughPracticeAudioDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_audio.desc']!;
+  String get walkthroughPracticeTypeItOutTitle => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_type_it_out.title']!;
+  String get walkthroughPracticeTypeItOutDesc => _localizedValues[
+      locale.languageCode]!['walkthrough.practice_type_it_out.desc']!;
 
   // First Century Christian Facts for Loading Screen
   String getLoadingFact(int index) {
