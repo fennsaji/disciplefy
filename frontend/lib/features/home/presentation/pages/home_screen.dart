@@ -649,11 +649,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                               ),
                             ),
 
-                            // Usage Meter (only for free users)
-                            _buildUsageMeter(),
-
-                            SizedBox(height: isLargeScreen ? 16 : 12),
-
                             // Explore Learning Paths Button
                             _buildExploreLearningPathsButton(),
                             SizedBox(height: isLargeScreen ? 32 : 24),
