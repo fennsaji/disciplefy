@@ -2132,4 +2132,98 @@ class TranslationKeys {
   static const tokenDialogPurchase = 'tokens.dialog.purchase';
   static const tokenDialogMaybeLater = 'tokens.dialog.maybe_later';
   static const tokenDialogViewPlans = 'tokens.dialog.view_plans';
+
+  // Practice Mode Info Sheet (shared)
+  static const practiceModeInfoHowItWorks = 'practice_mode_info.how_it_works';
+  static const practiceModeInfoGotIt = 'practice_mode_info.got_it';
+
+  // Practice Mode Info Steps — Flip Card
+  static const practiceModeInfoFlipCardStep1 =
+      'practice_mode_info.flip_card.step1';
+  static const practiceModeInfoFlipCardStep2 =
+      'practice_mode_info.flip_card.step2';
+  static const practiceModeInfoFlipCardStep3 =
+      'practice_mode_info.flip_card.step3';
+
+  // Practice Mode Info Steps — Word Bank
+  static const practiceModeInfoWordBankStep1 =
+      'practice_mode_info.word_bank.step1';
+  static const practiceModeInfoWordBankStep2 =
+      'practice_mode_info.word_bank.step2';
+  static const practiceModeInfoWordBankStep3 =
+      'practice_mode_info.word_bank.step3';
+
+  // Practice Mode Info Steps — Cloze
+  static const practiceModeInfoClozeStep1 = 'practice_mode_info.cloze.step1';
+  static const practiceModeInfoClozeStep2 = 'practice_mode_info.cloze.step2';
+  static const practiceModeInfoClozeStep3 = 'practice_mode_info.cloze.step3';
+
+  // Practice Mode Info Steps — First Letter
+  static const practiceModeInfoFirstLetterStep1 =
+      'practice_mode_info.first_letter.step1';
+  static const practiceModeInfoFirstLetterStep2 =
+      'practice_mode_info.first_letter.step2';
+  static const practiceModeInfoFirstLetterStep3 =
+      'practice_mode_info.first_letter.step3';
+
+  // Practice Mode Info Steps — Progressive Reveal
+  static const practiceModeInfoProgressiveStep1 =
+      'practice_mode_info.progressive.step1';
+  static const practiceModeInfoProgressiveStep2 =
+      'practice_mode_info.progressive.step2';
+  static const practiceModeInfoProgressiveStep3 =
+      'practice_mode_info.progressive.step3';
+
+  // Practice Mode Info Steps — Word Scramble
+  static const practiceModeInfoWordScrambleStep1 =
+      'practice_mode_info.word_scramble.step1';
+  static const practiceModeInfoWordScrambleStep2 =
+      'practice_mode_info.word_scramble.step2';
+  static const practiceModeInfoWordScrambleStep3 =
+      'practice_mode_info.word_scramble.step3';
+
+  // Practice Mode Info Steps — Audio
+  static const practiceModeInfoAudioStep1 = 'practice_mode_info.audio.step1';
+  static const practiceModeInfoAudioStep2 = 'practice_mode_info.audio.step2';
+  static const practiceModeInfoAudioStep3 = 'practice_mode_info.audio.step3';
+
+  // Practice Mode Info Steps — Type It Out
+  static const practiceModeInfoTypeItOutStep1 =
+      'practice_mode_info.type_it_out.step1';
+  static const practiceModeInfoTypeItOutStep2 =
+      'practice_mode_info.type_it_out.step2';
+  static const practiceModeInfoTypeItOutStep3 =
+      'practice_mode_info.type_it_out.step3';
+
+  // Per-page walkthrough tooltips for each practice mode
+  static const walkthroughPracticeFlipCardTitle =
+      'walkthrough.practice_flip_card.title';
+  static const walkthroughPracticeFlipCardDesc =
+      'walkthrough.practice_flip_card.desc';
+  static const walkthroughPracticeWordBankTitle =
+      'walkthrough.practice_word_bank.title';
+  static const walkthroughPracticeWordBankDesc =
+      'walkthrough.practice_word_bank.desc';
+  static const walkthroughPracticeClozeTitle =
+      'walkthrough.practice_cloze.title';
+  static const walkthroughPracticeClozeDesc = 'walkthrough.practice_cloze.desc';
+  static const walkthroughPracticeFirstLetterTitle =
+      'walkthrough.practice_first_letter.title';
+  static const walkthroughPracticeFirstLetterDesc =
+      'walkthrough.practice_first_letter.desc';
+  static const walkthroughPracticeProgressiveTitle =
+      'walkthrough.practice_progressive.title';
+  static const walkthroughPracticeProgressiveDesc =
+      'walkthrough.practice_progressive.desc';
+  static const walkthroughPracticeWordScrambleTitle =
+      'walkthrough.practice_word_scramble.title';
+  static const walkthroughPracticeWordScrambleDesc =
+      'walkthrough.practice_word_scramble.desc';
+  static const walkthroughPracticeAudioTitle =
+      'walkthrough.practice_audio.title';
+  static const walkthroughPracticeAudioDesc = 'walkthrough.practice_audio.desc';
+  static const walkthroughPracticeTypeItOutTitle =
+      'walkthrough.practice_type_it_out.title';
+  static const walkthroughPracticeTypeItOutDesc =
+      'walkthrough.practice_type_it_out.desc';
 }

@@ -4,7 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -18,6 +21,10 @@ import '../bloc/memory_verse_state.dart';
 import '../widgets/self_assessment_bottom_sheet.dart';
 import '../widgets/timer_badge.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Progressive reveal practice mode for memory verses.
 ///
@@ -51,11 +58,31 @@ class _ProgressiveRevealPracticePageState
 
   List<String> chunks = [];
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
     _startTimer();
     _loadVerse();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceProgressive)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase([
+        ShowcaseKeys.practiceProgressive,
+        ShowcaseKeys.practiceProgressiveAutoReveal,
+        ShowcaseKeys.practiceProgressiveRevealAll,
+        ShowcaseKeys.practiceProgressiveSubmit,
+      ]);
+    });
   }
 
   @override
@@ -242,211 +269,278 @@ class _ProgressiveRevealPracticePageState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (currentVerse == null) {
-      return BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) _loadVerse();
-        },
-        child: Scaffold(
-          appBar: AppBar(
-              title: Text(context.tr(TranslationKeys.practiceModeProgressive))),
-          body: const Center(child: CircularProgressIndicator()),
-        ).withAuthProtection(),
-      );
-    }
+    return ShowCaseWidget(
+      onFinish: () => sl<WalkthroughRepository>()
+          .markSeen(WalkthroughScreen.practiceProgressive),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
 
-    // Get revealed chunks
-    final revealedChunks = chunks.take(currentRevealIndex + 1).toList();
-    final revealedText = revealedChunks.join(' ');
+        if (currentVerse == null) {
+          return BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                  title: Text(
+                      context.tr(TranslationKeys.practiceModeProgressive))),
+              body: const Center(child: CircularProgressIndicator()),
+            ).withAuthProtection(),
+          );
+        }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackNavigation,
-          ),
-          title: Text(context.tr(TranslationKeys.practiceModeProgressive)),
-          actions: [
-            TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Verse Reference Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                color: theme.colorScheme.primaryContainer,
-                child: Column(
-                  children: [
-                    Text(
-                      currentVerse!.verseReference,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.tr(revealMode == RevealMode.word
-                          ? TranslationKeys.progressiveRevealWordByWord
-                          : TranslationKeys.progressiveRevealPhraseByPhrase),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer
-                            .withAlpha((0.7 * 255).round()),
-                      ),
-                    ),
-                  ],
-                ),
+        // Get revealed chunks
+        final revealedChunks = chunks.take(currentRevealIndex + 1).toList();
+        final revealedText = revealedChunks.join(' ');
+
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _handleBackNavigation,
               ),
-
-              // Mode selector
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        label: Text(
-                            context.tr(TranslationKeys.progressiveWordByWord)),
-                        selected: revealMode == RevealMode.word,
-                        onSelected: (_) => _changeRevealMode(RevealMode.word),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ChoiceChip(
-                        label: Text(context
-                            .tr(TranslationKeys.progressivePhraseByPhrase)),
-                        selected: revealMode == RevealMode.phrase,
-                        onSelected: (_) => _changeRevealMode(RevealMode.phrase),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Progress indicator
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  children: [
-                    LinearProgressIndicator(
-                      value: chunks.isEmpty
-                          ? 0
-                          : (currentRevealIndex + 1) / chunks.length,
-                      backgroundColor: AppColors.lightBorder,
-                      minHeight: 8,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${currentRevealIndex + 1} / ${chunks.length} ${context.tr(revealMode == RevealMode.word ? TranslationKeys.progressiveWords : TranslationKeys.progressivePhrases)}',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Revealed text display
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Center(
-                    child: Text(
-                      revealedText,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        height: 1.8,
-                        letterSpacing: 0.5,
-                      ),
-                      textAlign: TextAlign.center,
+              title: Text(context.tr(TranslationKeys.practiceModeProgressive)),
+              actions: [
+                TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+                const SizedBox(width: 8),
+              ],
+            ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Verse Reference Header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: theme.colorScheme.primaryContainer,
+                    child: Column(
+                      children: [
+                        Text(
+                          currentVerse!.verseReference,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.tr(revealMode == RevealMode.word
+                              ? TranslationKeys.progressiveRevealWordByWord
+                              : TranslationKeys
+                                  .progressiveRevealPhraseByPhrase),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer
+                                .withAlpha((0.7 * 255).round()),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
 
-              // Control buttons
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
+                  // Mode selector
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: currentRevealIndex < chunks.length - 1
-                                ? _revealNext
-                                : null,
-                            icon: const Icon(Icons.navigate_next),
+                          child: ChoiceChip(
                             label: Text(context
-                                .tr(TranslationKeys.progressiveRevealNext)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
+                                .tr(TranslationKeys.progressiveWordByWord)),
+                            selected: revealMode == RevealMode.word,
+                            onSelected: (_) =>
+                                _changeRevealMode(RevealMode.word),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: !isCompleted ? _toggleAutoReveal : null,
-                            icon: Icon(isAutoRevealing
-                                ? Icons.pause
-                                : Icons.play_arrow),
-                            label: Text(context.tr(isAutoRevealing
-                                ? TranslationKeys.progressivePause
-                                : TranslationKeys.progressiveAutoReveal)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
+                          child: ChoiceChip(
+                            label: Text(context
+                                .tr(TranslationKeys.progressivePhraseByPhrase)),
+                            selected: revealMode == RevealMode.phrase,
+                            onSelected: (_) =>
+                                _changeRevealMode(RevealMode.phrase),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Row(
+                  ),
+
+                  // Progress indicator
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: TextButton.icon(
-                            onPressed: !isCompleted ? _revealAll : null,
-                            icon: const Icon(Icons.visibility),
-                            label: Text(context
-                                .tr(TranslationKeys.progressiveRevealAll)),
-                          ),
+                        LinearProgressIndicator(
+                          value: chunks.isEmpty
+                              ? 0
+                              : (currentRevealIndex + 1) / chunks.length,
+                          backgroundColor: AppColors.lightBorder,
+                          minHeight: 8,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: isCompleted ? _submitPractice : null,
-                            icon: const Icon(Icons.check),
-                            label: Text(
-                                context.tr(TranslationKeys.practiceSubmit)),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: context.appInteractive,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${currentRevealIndex + 1} / ${chunks.length} ${context.tr(revealMode == RevealMode.word ? TranslationKeys.progressiveWords : TranslationKeys.progressivePhrases)}',
+                          style: theme.textTheme.bodySmall,
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Revealed text display
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Center(
+                        child: Text(
+                          revealedText,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            height: 1.8,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Control buttons
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: WalkthroughTooltip(
+                                showcaseKey: ShowcaseKeys.practiceProgressive,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveDesc,
+                                screen: WalkthroughScreen.practiceProgressive,
+                                stepNumber: 1,
+                                totalSteps: 4,
+                                onNext: _onNext,
+                                child: OutlinedButton.icon(
+                                  onPressed:
+                                      currentRevealIndex < chunks.length - 1
+                                          ? _revealNext
+                                          : null,
+                                  icon: const Icon(Icons.navigate_next),
+                                  label: Text(context.tr(
+                                      TranslationKeys.progressiveRevealNext)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: WalkthroughTooltip(
+                                showcaseKey:
+                                    ShowcaseKeys.practiceProgressiveAutoReveal,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveAutoRevealTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveAutoRevealDesc,
+                                screen: WalkthroughScreen.practiceProgressive,
+                                stepNumber: 2,
+                                totalSteps: 4,
+                                onNext: _onNext,
+                                child: OutlinedButton.icon(
+                                  onPressed:
+                                      !isCompleted ? _toggleAutoReveal : null,
+                                  icon: Icon(isAutoRevealing
+                                      ? Icons.pause
+                                      : Icons.play_arrow),
+                                  label: Text(context.tr(isAutoRevealing
+                                      ? TranslationKeys.progressivePause
+                                      : TranslationKeys.progressiveAutoReveal)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: WalkthroughTooltip(
+                                showcaseKey:
+                                    ShowcaseKeys.practiceProgressiveRevealAll,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveRevealAllTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveRevealAllDesc,
+                                screen: WalkthroughScreen.practiceProgressive,
+                                stepNumber: 3,
+                                totalSteps: 4,
+                                onNext: _onNext,
+                                child: TextButton.icon(
+                                  onPressed: !isCompleted ? _revealAll : null,
+                                  icon: const Icon(Icons.visibility),
+                                  label: Text(context.tr(
+                                      TranslationKeys.progressiveRevealAll)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: WalkthroughTooltip(
+                                showcaseKey:
+                                    ShowcaseKeys.practiceProgressiveSubmit,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveSubmitTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeProgressiveSubmitDesc,
+                                screen: WalkthroughScreen.practiceProgressive,
+                                stepNumber: 4,
+                                totalSteps: 4,
+                                onNext: _onNext,
+                                child: ElevatedButton.icon(
+                                  onPressed:
+                                      isCompleted ? _submitPractice : null,
+                                  icon: const Icon(Icons.check),
+                                  label: Text(context
+                                      .tr(TranslationKeys.practiceSubmit)),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    backgroundColor: context.appInteractive,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ).withAuthProtection();
+        ).withAuthProtection();
+      },
+    );
   }
 }
 

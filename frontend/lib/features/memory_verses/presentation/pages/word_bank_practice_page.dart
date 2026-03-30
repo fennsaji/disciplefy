@@ -6,7 +6,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -20,6 +23,10 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Word item representing a word in the word bank.
 class WordItem {
@@ -78,6 +85,9 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   final ScrollController _answerScrollController = ScrollController();
   bool _answerHasMoreBelow = false;
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +95,20 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     _loadVerse();
     _wordBankScrollController.addListener(_checkWordBankScroll);
     _answerScrollController.addListener(_checkAnswerScroll);
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceWordBank)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase(
+        [ShowcaseKeys.practiceWordBank],
+      );
+    });
   }
 
   @override
@@ -434,287 +458,314 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
-    if (currentVerse == null) {
-      return BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) _loadVerse();
-        },
-        child: Scaffold(
-          appBar: AppBar(
-              title: Text(context.tr(TranslationKeys.practiceModeWordBank))),
-          body: const Center(child: CircularProgressIndicator()),
-        ).withAuthProtection(),
-      );
-    }
+    return ShowCaseWidget(
+      onFinish: () => sl<WalkthroughRepository>()
+          .markSeen(WalkthroughScreen.practiceWordBank),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackNavigation,
-          ),
-          title: Text(context.tr(TranslationKeys.practiceModeWordBank)),
-          actions: [
-            TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Verse Reference Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                color: theme.colorScheme.primaryContainer,
-                child: Column(
-                  children: [
-                    Text(
-                      currentVerse!.verseReference,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.tr(TranslationKeys.wordBankTapWordsInstruction),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer
-                            .withAlpha((0.7 * 255).round()),
-                      ),
-                    ),
-                    if (detectedLanguage != 'en') ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        context.tr(TranslationKeys.wordBankLongPressHint),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer
-                              .withAlpha((0.5 * 255).round()),
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+        if (currentVerse == null) {
+          return BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                  title:
+                      Text(context.tr(TranslationKeys.practiceModeWordBank))),
+              body: const Center(child: CircularProgressIndicator()),
+            ).withAuthProtection(),
+          );
+        }
+
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _handleBackNavigation,
               ),
-
-              // Hints counter
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+              title: Text(context.tr(TranslationKeys.practiceModeWordBank)),
+              actions: [
+                TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+                const SizedBox(width: 8),
+              ],
+            ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Verse Reference Header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: theme.colorScheme.primaryContainer,
+                    child: Column(
                       children: [
-                        const Icon(Icons.help,
-                            size: 20, color: AppColors.warning),
-                        const SizedBox(width: 4),
                         Text(
-                          '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
-                          style: theme.textTheme.bodyMedium,
+                          currentVerse!.verseReference,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context
+                              .tr(TranslationKeys.wordBankTapWordsInstruction),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer
+                                .withAlpha((0.7 * 255).round()),
+                          ),
+                        ),
+                        if (detectedLanguage != 'en') ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            context.tr(TranslationKeys.wordBankLongPressHint),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer
+                                  .withAlpha((0.5 * 255).round()),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Hints counter
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.help,
+                                size: 20, color: AppColors.warning),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          onPressed: !isCompleted ? _useHint : null,
+                          icon: const Icon(Icons.lightbulb, size: 18),
+                          label:
+                              Text(context.tr(TranslationKeys.practiceUseHint)),
                         ),
                       ],
                     ),
-                    TextButton.icon(
-                      onPressed: !isCompleted ? _useHint : null,
-                      icon: const Icon(Icons.lightbulb, size: 18),
-                      label: Text(context.tr(TranslationKeys.practiceUseHint)),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Answer area (placed words) - 50% of available space
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr(TranslationKeys.wordBankYourAnswer),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: theme.colorScheme.outline
-                                  .withAlpha((0.3 * 255).round()),
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              NotificationListener<ScrollMetricsNotification>(
-                                onNotification: (n) {
-                                  // Use notification metrics directly — avoids
-                                  // accessing RenderBox.size during layout.
-                                  _updateScrollIndicator(
-                                    n.metrics,
-                                    current: _answerHasMoreBelow,
-                                    onChanged: (v) =>
-                                        setState(() => _answerHasMoreBelow = v),
-                                  );
-                                  return false;
-                                },
-                                child: SingleChildScrollView(
-                                  controller: _answerScrollController,
-                                  child: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: List.generate(
-                                      correctWords.length,
-                                      (index) => _buildAnswerSlot(index),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              if (_answerHasMoreBelow)
-                                Positioned(
-                                  right: 0,
-                                  bottom: 8,
-                                  child: _buildScrollDownIndicator(
-                                      _answerScrollController),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                ),
-              ),
 
-              const Divider(height: 1),
-
-              // Word Bank area - 50% of available space
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withAlpha((0.3 * 255).round()),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Answer area (placed words) - 50% of available space
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${context.tr(TranslationKeys.practiceModeWordBank)} (${availableWords.where((w) => !w.isUsed).length})',
+                            context.tr(TranslationKeys.wordBankYourAnswer),
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          TextButton.icon(
-                            onPressed: !isCompleted ? _clearAll : null,
-                            icon: const Icon(Icons.clear_all, size: 18),
-                            label:
-                                Text(context.tr(TranslationKeys.practiceClear)),
+                          const SizedBox(height: 6),
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: theme.colorScheme.outline
+                                      .withAlpha((0.3 * 255).round()),
+                                ),
+                              ),
+                              child: Stack(
+                                children: [
+                                  NotificationListener<
+                                      ScrollMetricsNotification>(
+                                    onNotification: (n) {
+                                      // Use notification metrics directly — avoids
+                                      // accessing RenderBox.size during layout.
+                                      _updateScrollIndicator(
+                                        n.metrics,
+                                        current: _answerHasMoreBelow,
+                                        onChanged: (v) => setState(
+                                            () => _answerHasMoreBelow = v),
+                                      );
+                                      return false;
+                                    },
+                                    child: SingleChildScrollView(
+                                      controller: _answerScrollController,
+                                      child: Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: List.generate(
+                                          correctWords.length,
+                                          (index) => _buildAnswerSlot(index),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (_answerHasMoreBelow)
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 8,
+                                      child: _buildScrollDownIndicator(
+                                          _answerScrollController),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            NotificationListener<ScrollMetricsNotification>(
-                              onNotification: (n) {
-                                _updateScrollIndicator(
-                                  n.metrics,
-                                  current: _wordBankHasMoreBelow,
-                                  onChanged: (v) =>
-                                      setState(() => _wordBankHasMoreBelow = v),
-                                );
-                                return false;
-                              },
-                              child: SingleChildScrollView(
-                                controller: _wordBankScrollController,
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: List.generate(
-                                    availableWords.length,
-                                    (index) => _buildWordChip(index),
-                                  ),
+                    ),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // Word Bank area - 50% of available space
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withAlpha((0.3 * 255).round()),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${context.tr(TranslationKeys.practiceModeWordBank)} (${availableWords.where((w) => !w.isUsed).length})',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                            if (_wordBankHasMoreBelow)
-                              Positioned(
-                                right: 0,
-                                bottom: 8,
-                                child: _buildScrollDownIndicator(
-                                    _wordBankScrollController),
+                              TextButton.icon(
+                                onPressed: !isCompleted ? _clearAll : null,
+                                icon: const Icon(Icons.clear_all, size: 18),
+                                label: Text(
+                                    context.tr(TranslationKeys.practiceClear)),
                               ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Action buttons
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: !isCompleted ? _showAnswer : null,
-                        icon: const Icon(Icons.visibility),
-                        label: Text(
-                            context.tr(TranslationKeys.practiceShowAnswer)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                NotificationListener<ScrollMetricsNotification>(
+                                  onNotification: (n) {
+                                    _updateScrollIndicator(
+                                      n.metrics,
+                                      current: _wordBankHasMoreBelow,
+                                      onChanged: (v) => setState(
+                                          () => _wordBankHasMoreBelow = v),
+                                    );
+                                    return false;
+                                  },
+                                  child: WalkthroughTooltip(
+                                    showcaseKey: ShowcaseKeys.practiceWordBank,
+                                    title:
+                                        l10n.walkthroughPracticeWordBankTitle,
+                                    description:
+                                        l10n.walkthroughPracticeWordBankDesc,
+                                    screen: WalkthroughScreen.practiceWordBank,
+                                    stepNumber: 1,
+                                    totalSteps: 1,
+                                    onNext: _onNext,
+                                    child: SingleChildScrollView(
+                                      controller: _wordBankScrollController,
+                                      child: Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: List.generate(
+                                          availableWords.length,
+                                          (index) => _buildWordChip(index),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (_wordBankHasMoreBelow)
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 8,
+                                    child: _buildScrollDownIndicator(
+                                        _wordBankScrollController),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        // Allow submission once all words are placed, regardless of correctness
-                        onPressed:
-                            !isCompleted && placedWords.every((w) => w != null)
+                  ),
+
+                  // Action buttons
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: !isCompleted ? _showAnswer : null,
+                            icon: const Icon(Icons.visibility),
+                            label: Text(
+                                context.tr(TranslationKeys.practiceShowAnswer)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            // Allow submission once all words are placed, regardless of correctness
+                            onPressed: !isCompleted &&
+                                    placedWords.every((w) => w != null)
                                 ? () {
                                     setState(() => isCompleted = true);
                                     _submitPractice();
                                   }
                                 : null,
-                        icon: const Icon(Icons.check),
-                        label: Text(context.tr(TranslationKeys.practiceSubmit)),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: context.appInteractive,
-                          foregroundColor: Colors.white,
+                            icon: const Icon(Icons.check),
+                            label: Text(
+                                context.tr(TranslationKeys.practiceSubmit)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: context.appInteractive,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ).withAuthProtection();
+        ).withAuthProtection();
+      },
+    );
   }
 
   Widget _buildAnswerSlot(int index) {

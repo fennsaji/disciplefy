@@ -6,7 +6,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -19,6 +22,10 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Phrase scramble practice mode for memory verses.
 ///
@@ -51,11 +58,31 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   bool isCompleted = false;
   bool showCorrectAnswer = false;
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
     _startTimer();
     _loadVerse();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceWordScramble)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase([
+        ShowcaseKeys.practiceWordScramble,
+        ShowcaseKeys.practiceWordScrambleShowAnswer,
+        ShowcaseKeys.practiceWordScrambleReset,
+        ShowcaseKeys.practiceWordScrambleSubmit,
+      ]);
+    });
   }
 
   @override
@@ -329,239 +356,306 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (currentVerse == null) {
-      return BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) _loadVerse();
-        },
-        child: Scaffold(
-          appBar: AppBar(
-              title:
-                  Text(context.tr(TranslationKeys.practiceModeWordScramble))),
-          body: const Center(child: CircularProgressIndicator()),
-        ).withAuthProtection(),
-      );
-    }
+    return ShowCaseWidget(
+      onFinish: () => sl<WalkthroughRepository>()
+          .markSeen(WalkthroughScreen.practiceWordScramble),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackNavigation,
-          ),
-          title: Text(context.tr(TranslationKeys.practiceModeWordScramble)),
-          actions: [
-            TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Verse Reference Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                color: theme.colorScheme.primaryContainer,
-                child: Column(
-                  children: [
-                    Text(
-                      currentVerse!.verseReference,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.tr(TranslationKeys.wordScrambleInstruction),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer
-                            .withAlpha((0.7 * 255).round()),
-                      ),
-                    ),
-                  ],
-                ),
+        if (currentVerse == null) {
+          return BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                  title: Text(
+                      context.tr(TranslationKeys.practiceModeWordScramble))),
+              body: const Center(child: CircularProgressIndicator()),
+            ).withAuthProtection(),
+          );
+        }
+
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _handleBackNavigation,
               ),
-
-              // Hints counter
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.help,
-                            size: 20, color: AppColors.warning),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                    TextButton.icon(
-                      onPressed:
-                          availablePhrases.isNotEmpty && !showCorrectAnswer
-                              ? _useHint
-                              : null,
-                      icon: const Icon(Icons.lightbulb, size: 18),
-                      label: Text(context.tr(TranslationKeys.practiceUseHint)),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Divider(height: 1),
-
-              // Verse construction area (drop targets)
-              // Gets all remaining space - main work area
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+              title: Text(context.tr(TranslationKeys.practiceModeWordScramble)),
+              actions: [
+                TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+                const SizedBox(width: 8),
+              ],
+            ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Verse Reference Header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: theme.colorScheme.primaryContainer,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: List.generate(
-                        correctPhrases.length,
-                        (index) => Padding(
-                          key: ValueKey('drop_target_$index'),
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: _buildDropTarget(index),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const Divider(height: 1),
-
-              // Available phrases area (drag sources)
-              if (availablePhrases.isEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 12.0),
-                  color: theme.colorScheme.surfaceVariant
-                      .withAlpha((0.3 * 255).round()),
-                  child: Center(
-                    child: Text(
-                      '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (0)',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant
-                            .withAlpha((0.6 * 255).round()),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16.0),
-                    color: theme.colorScheme.surfaceVariant
-                        .withAlpha((0.3 * 255).round()),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (${availablePhrases.length})',
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          currentVerse!.verseReference,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
                             fontWeight: FontWeight.bold,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.tr(TranslationKeys.wordScrambleInstruction),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer
+                                .withAlpha((0.7 * 255).round()),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Hints counter
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.help,
+                                size: 20, color: AppColors.warning),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          onPressed:
+                              availablePhrases.isNotEmpty && !showCorrectAnswer
+                                  ? _useHint
+                                  : null,
+                          icon: const Icon(Icons.lightbulb, size: 18),
+                          label:
+                              Text(context.tr(TranslationKeys.practiceUseHint)),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // Verse construction area (drop targets)
+                  // Gets all remaining space - main work area
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: List.generate(
+                            correctPhrases.length,
+                            (index) => Padding(
+                              key: ValueKey('drop_target_$index'),
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _buildDropTarget(index),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // Available phrases area (drag sources)
+                  if (availablePhrases.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 12.0),
+                      color: theme.colorScheme.surfaceVariant
+                          .withAlpha((0.3 * 255).round()),
+                      child: Center(
+                        child: Text(
+                          '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (0)',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withAlpha((0.6 * 255).round()),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: WalkthroughTooltip(
+                        showcaseKey: ShowcaseKeys.practiceWordScramble,
+                        title: AppLocalizations.of(context)!
+                            .walkthroughPracticeWordScrambleTitle,
+                        description: AppLocalizations.of(context)!
+                            .walkthroughPracticeWordScrambleDesc,
+                        screen: WalkthroughScreen.practiceWordScramble,
+                        stepNumber: 1,
+                        totalSteps: 4,
+                        onNext: _onNext,
+                        child: Container(
+                          padding: const EdgeInsets.all(16.0),
+                          color: theme.colorScheme.surfaceVariant
+                              .withAlpha((0.3 * 255).round()),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (${availablePhrases.length})',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: availablePhrases
+                                        .asMap()
+                                        .entries
+                                        .map((entry) {
+                                      final phrase = entry.value;
+                                      return Padding(
+                                        key: ValueKey(
+                                            'available_${entry.key}_$phrase'),
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8.0),
+                                        child: _buildDraggablePhrase(phrase),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Action buttons
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: WalkthroughTooltip(
+                                showcaseKey:
+                                    ShowcaseKeys.practiceWordScrambleShowAnswer,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeWordScrambleShowAnswerTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeWordScrambleShowAnswerDesc,
+                                screen: WalkthroughScreen.practiceWordScramble,
+                                stepNumber: 2,
+                                totalSteps: 4,
+                                onNext: _onNext,
+                                child: OutlinedButton.icon(
+                                  onPressed: !isCompleted ? _showAnswer : null,
+                                  icon: const Icon(Icons.visibility),
+                                  label: Text(context
+                                      .tr(TranslationKeys.practiceShowAnswer)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: WalkthroughTooltip(
+                                showcaseKey:
+                                    ShowcaseKeys.practiceWordScrambleReset,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeWordScrambleResetTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeWordScrambleResetDesc,
+                                screen: WalkthroughScreen.practiceWordScramble,
+                                stepNumber: 3,
+                                totalSteps: 4,
+                                onNext: _onNext,
+                                child: OutlinedButton.icon(
+                                  onPressed: !isCompleted ? _reset : null,
+                                  icon: const Icon(Icons.refresh),
+                                  label: Text(context
+                                      .tr(TranslationKeys.practiceReset)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children:
-                                  availablePhrases.asMap().entries.map((entry) {
-                                final phrase = entry.value;
-                                return Padding(
-                                  key: ValueKey(
-                                      'available_${entry.key}_$phrase'),
-                                  padding: const EdgeInsets.only(bottom: 8.0),
-                                  child: _buildDraggablePhrase(phrase),
-                                );
-                              }).toList(),
+                        SizedBox(
+                          width: double.infinity,
+                          child: WalkthroughTooltip(
+                            showcaseKey:
+                                ShowcaseKeys.practiceWordScrambleSubmit,
+                            title: AppLocalizations.of(context)!
+                                .walkthroughPracticeWordScrambleSubmitTitle,
+                            description: AppLocalizations.of(context)!
+                                .walkthroughPracticeWordScrambleSubmitDesc,
+                            screen: WalkthroughScreen.practiceWordScramble,
+                            stepNumber: 4,
+                            totalSteps: 4,
+                            onNext: _onNext,
+                            child: ElevatedButton.icon(
+                              onPressed: isCompleted || showCorrectAnswer
+                                  ? _submitPractice
+                                  : null,
+                              icon: const Icon(Icons.check),
+                              label: Text(
+                                  context.tr(TranslationKeys.practiceSubmit)),
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: context.appInteractive,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-
-              // Action buttons
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: !isCompleted ? _showAnswer : null,
-                            icon: const Icon(Icons.visibility),
-                            label: Text(
-                                context.tr(TranslationKeys.practiceShowAnswer)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: !isCompleted ? _reset : null,
-                            icon: const Icon(Icons.refresh),
-                            label:
-                                Text(context.tr(TranslationKeys.practiceReset)),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: isCompleted || showCorrectAnswer
-                            ? _submitPractice
-                            : null,
-                        icon: const Icon(Icons.check),
-                        label: Text(context.tr(TranslationKeys.practiceSubmit)),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: context.appInteractive,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ).withAuthProtection();
+        ).withAuthProtection();
+      },
+    );
   }
 
   Widget _buildDropTarget(int index) {

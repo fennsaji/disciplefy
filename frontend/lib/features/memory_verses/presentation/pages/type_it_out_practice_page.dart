@@ -4,11 +4,14 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../data/services/transliteration_service.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/practice_result_params.dart';
@@ -18,6 +21,10 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Helper class to store word alignment results
 class _WordMatch {
@@ -57,6 +64,9 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
   Timer? practiceTimer;
   int elapsedSeconds = 0;
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   /// The text the user should type - romanized for Hindi/Malayalam
   String expectedText = '';
   String detectedLanguage = 'en';
@@ -73,6 +83,20 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
     super.initState();
     _startTimer();
     _loadVerse();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceTypeItOut)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase(
+        [ShowcaseKeys.practiceTypeItOut],
+      );
+    });
   }
 
   @override
@@ -342,86 +366,105 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) {
-            _loadVerse();
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _handleBackNavigation,
-            ),
-            title: Text(context.tr(TranslationKeys.practiceModeTypeItOut)),
-            actions: [
-              TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-              const SizedBox(width: 8),
-            ],
-          ),
-          body: currentVerse == null
-              ? const Center(child: CircularProgressIndicator())
-              : SafeArea(
-                  child: Column(
-                    children: [
-                      // Verse Reference Header
-                      _buildVerseReferenceHeader(theme),
-
-                      // Language hint for non-English
-                      if (detectedLanguage != 'en') _buildLanguageHint(theme),
-
-                      // Text Input Area
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: TextField(
-                            controller: _textController,
-                            focusNode: _focusNode,
-                            maxLines: null,
-                            expands: true,
-                            textAlignVertical: TextAlignVertical.top,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              height: 1.6,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: context
-                                  .tr(TranslationKeys.typeItOutPlaceholder),
-                              hintStyle: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withOpacity(0.5),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: theme
-                                  .colorScheme.surfaceContainerHighest
-                                  .withOpacity(0.3),
-                            ),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                      ),
-
-                      // Word count row
-                      _buildWordCountRow(theme),
-
-                      // Action buttons
-                      _buildActionButtons(theme),
-                    ],
-                  ),
+    return ShowCaseWidget(
+      onFinish: () => sl<WalkthroughRepository>()
+          .markSeen(WalkthroughScreen.practiceTypeItOut),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _handleBackNavigation,
                 ),
-        ),
-      ),
-    ).withAuthProtection();
+                title: Text(context.tr(TranslationKeys.practiceModeTypeItOut)),
+                actions: [
+                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              body: currentVerse == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : SafeArea(
+                      child: Column(
+                        children: [
+                          // Verse Reference Header
+                          _buildVerseReferenceHeader(theme),
+
+                          // Language hint for non-English
+                          if (detectedLanguage != 'en')
+                            _buildLanguageHint(theme),
+
+                          // Text Input Area
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: WalkthroughTooltip(
+                                showcaseKey: ShowcaseKeys.practiceTypeItOut,
+                                title: l10n.walkthroughPracticeTypeItOutTitle,
+                                description:
+                                    l10n.walkthroughPracticeTypeItOutDesc,
+                                screen: WalkthroughScreen.practiceTypeItOut,
+                                stepNumber: 1,
+                                totalSteps: 1,
+                                onNext: _onNext,
+                                child: TextField(
+                                  controller: _textController,
+                                  focusNode: _focusNode,
+                                  maxLines: null,
+                                  expands: true,
+                                  textAlignVertical: TextAlignVertical.top,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    height: 1.6,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: context.tr(
+                                        TranslationKeys.typeItOutPlaceholder),
+                                    hintStyle: TextStyle(
+                                      color: theme.colorScheme.onSurfaceVariant
+                                          .withOpacity(0.5),
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    filled: true,
+                                    fillColor: theme
+                                        .colorScheme.surfaceContainerHighest
+                                        .withOpacity(0.3),
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Word count row
+                          _buildWordCountRow(theme),
+
+                          // Action buttons
+                          _buildActionButtons(theme),
+                        ],
+                      ),
+                    ),
+            ),
+          ),
+        ).withAuthProtection();
+      },
+    );
   }
 
   Widget _buildVerseReferenceHeader(ThemeData theme) {

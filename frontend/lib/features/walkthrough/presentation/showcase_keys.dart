@@ -87,4 +87,32 @@ class ShowcaseKeys {
       GlobalKey(debugLabel: 'studyGuideFollowUpChat');
   static final GlobalKey studyGuideNotes =
       GlobalKey(debugLabel: 'studyGuideNotes');
+
+  // Practice mode pages (per-page first-launch walkthroughs)
+  static final GlobalKey practiceFlipCard =
+      GlobalKey(debugLabel: 'practiceFlipCard');
+  static final GlobalKey practiceWordBank =
+      GlobalKey(debugLabel: 'practiceWordBank');
+  static final GlobalKey practiceCloze = GlobalKey(debugLabel: 'practiceCloze');
+  static final GlobalKey practiceFirstLetter =
+      GlobalKey(debugLabel: 'practiceFirstLetter');
+  static final GlobalKey practiceProgressive =
+      GlobalKey(debugLabel: 'practiceProgressive');
+  static final GlobalKey practiceProgressiveAutoReveal =
+      GlobalKey(debugLabel: 'practiceProgressiveAutoReveal');
+  static final GlobalKey practiceProgressiveRevealAll =
+      GlobalKey(debugLabel: 'practiceProgressiveRevealAll');
+  static final GlobalKey practiceProgressiveSubmit =
+      GlobalKey(debugLabel: 'practiceProgressiveSubmit');
+  static final GlobalKey practiceWordScramble =
+      GlobalKey(debugLabel: 'practiceWordScramble');
+  static final GlobalKey practiceWordScrambleShowAnswer =
+      GlobalKey(debugLabel: 'practiceWordScrambleShowAnswer');
+  static final GlobalKey practiceWordScrambleReset =
+      GlobalKey(debugLabel: 'practiceWordScrambleReset');
+  static final GlobalKey practiceWordScrambleSubmit =
+      GlobalKey(debugLabel: 'practiceWordScrambleSubmit');
+  static final GlobalKey practiceAudio = GlobalKey(debugLabel: 'practiceAudio');
+  static final GlobalKey practiceTypeItOut =
+      GlobalKey(debugLabel: 'practiceTypeItOut');
 }

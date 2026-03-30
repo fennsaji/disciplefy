@@ -16,6 +16,7 @@ import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
 import '../../domain/repositories/memory_verse_repository.dart';
 import '../widgets/practice_mode_card.dart';
+import '../widgets/practice_mode_info_sheet.dart';
 import '../widgets/unlock_limit_exceeded_dialog.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -607,6 +608,10 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                                                       isUnlockLimitReached,
                                                   onTap: () => _selectMode(
                                                       mode.modeType),
+                                                  onInfoTap: () =>
+                                                      PracticeModeInfoSheet
+                                                          .show(context,
+                                                              mode.modeType),
                                                   onLockedTap: isTierLocked
                                                       ? () => context.push(
                                                           AppRoutes.pricing)
