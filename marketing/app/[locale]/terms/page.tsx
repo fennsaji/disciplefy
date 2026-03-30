@@ -7,11 +7,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { mdxComponents } from "@/components/blog/MDXComponents";
 import { type Locale } from "@/i18n";
+import { getAlternates } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "Terms of Service — Disciplefy",
-  description: "Terms and conditions for using Disciplefy.",
-};
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  return {
+    title: "Terms of Service — Disciplefy",
+    description: "Terms and conditions for using Disciplefy.",
+    alternates: getAlternates("/terms", params.locale),
+  };
+}
 
 export default async function LocaleTermsPage({ params }: { params: { locale: Locale } }) {
   const localePath = path.join(process.cwd(), `content/terms/${params.locale}.mdx`);

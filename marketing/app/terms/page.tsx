@@ -8,10 +8,13 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { mdxComponents } from "@/components/blog/MDXComponents";
 import messages from "@/messages/en.json";
+import { getAlternates } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Terms of Service — Disciplefy",
   description: "Terms and conditions for using Disciplefy.",
+  alternates: getAlternates("/terms", "en"),
 };
 
 export default async function TermsPage() {

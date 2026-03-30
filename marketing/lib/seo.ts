@@ -5,14 +5,15 @@ import { PLAY_STORE_URL } from "@/lib/app-links";
 const BASE = "https://www.disciplefy.in";
 
 /** Returns alternates.languages metadata for all locales for a given path */
-export function getAlternates(path: string) {
+export function getAlternates(path: string, locale: string = "en") {
   const languages: Record<string, string> = {};
-  for (const locale of locales) {
-    const prefix = locale === "en" ? "" : `/${locale}`;
-    languages[locale] = `${BASE}${prefix}${path}`;
+  for (const loc of locales) {
+    const prefix = loc === "en" ? "" : `/${loc}`;
+    languages[loc] = `${BASE}${prefix}${path}`;
   }
-  languages["x-default"] = `${BASE}${path}`;
-  return { canonical: `${BASE}${path}`, languages };
+  languages["x-default"] = `${BASE}${path}`; // x-default always points to English
+  const canonicalPrefix = locale === "en" ? "" : `/${locale}`;
+  return { canonical: `${BASE}${canonicalPrefix}${path}`, languages };
 }
 
 /** JSON-LD for the homepage — SoftwareApplication + MobileApplication + Organization */

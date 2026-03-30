@@ -10,11 +10,11 @@ import { getAllPosts, searchPosts, getTags } from "@/lib/blog";
 import { type Locale } from "@/i18n";
 import { getAlternates } from "@/lib/seo";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   return {
     title: "Bible Study Blog — Disciplefy",
     description: "Free Bible study guides, devotionals, and theological insights in English, Hindi & Malayalam. Deepen your faith with AI-powered Scripture exploration.",
-    alternates: getAlternates("/blog"),
+    alternates: getAlternates("/blog", params.locale),
     openGraph: {
       title: "Bible Study Blog — Disciplefy",
       description: "Free Bible study guides, devotionals, and theological insights in English, Hindi & Malayalam.",

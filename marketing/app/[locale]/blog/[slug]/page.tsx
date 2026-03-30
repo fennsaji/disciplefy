@@ -20,7 +20,7 @@ export async function generateMetadata({
     title: `${post.title} | Bible Study — Disciplefy`,
     description: post.excerpt,
     keywords: post.tags,
-    alternates: getAlternates(`/blog/${params.slug}`),
+    alternates: getAlternates(`/blog/${params.slug}`, params.locale),
     openGraph: {
       title: `${post.title} | Disciplefy`,
       description: post.excerpt,

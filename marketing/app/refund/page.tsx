@@ -1,4 +1,4 @@
-// marketing/app/privacy/page.tsx
+// marketing/app/refund/page.tsx
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
@@ -12,13 +12,13 @@ import { getAlternates } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Disciplefy",
-  description: "How Disciplefy collects, uses, and protects your personal data.",
-  alternates: getAlternates("/privacy", "en"),
+  title: "Cancellation & Refund Policy — Disciplefy",
+  description: "Disciplefy's cancellation and refund policy for token purchases.",
+  alternates: getAlternates("/refund", "en"),
 };
 
-export default async function PrivacyPage() {
-  const raw = fs.readFileSync(path.join(process.cwd(), "content/privacy/en.mdx"), "utf-8");
+export default async function RefundPage() {
+  const raw = fs.readFileSync(path.join(process.cwd(), "content/refund/en.mdx"), "utf-8");
   const { content } = matter(raw);
   return (
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
