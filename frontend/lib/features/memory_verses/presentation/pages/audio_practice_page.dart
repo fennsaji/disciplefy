@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
@@ -17,6 +20,10 @@ import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../../voice_buddy/data/services/speech_service.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Audio Practice Page for Memory Verses.
 ///
@@ -68,6 +75,10 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   int _elapsedSeconds = 0;
   int _hintsUsed = 0;
 
+  // Walkthrough
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +86,20 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     context.read<MemoryVerseBloc>().add(const LoadDueVerses());
     _initializeServices();
     _startPracticeTimer();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceAudio)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase(
+        [ShowcaseKeys.practiceAudio],
+      );
+    });
   }
 
   @override
@@ -483,38 +508,45 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) {
-            _loadVerse();
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _handleBackNavigation,
+    return ShowCaseWidget(
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.practiceAudio),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _handleBackNavigation,
+                ),
+                title: Text(context.tr(TranslationKeys.practiceModeAudio)),
+                actions: [
+                  TimerBadge(elapsedSeconds: _elapsedSeconds, compact: true),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              body: SafeArea(
+                child: currentVerse == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildContent(theme),
+              ),
             ),
-            title: Text(context.tr(TranslationKeys.practiceModeAudio)),
-            actions: [
-              TimerBadge(elapsedSeconds: _elapsedSeconds, compact: true),
-              const SizedBox(width: 8),
-            ],
           ),
-          body: SafeArea(
-            child: currentVerse == null
-                ? const Center(child: CircularProgressIndicator())
-                : _buildContent(theme),
-          ),
-        ),
-      ),
-    ).withAuthProtection();
+        ).withAuthProtection();
+      },
+    );
   }
 
   Widget _buildContent(ThemeData theme) {
@@ -654,26 +686,36 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           const SizedBox(height: 32),
 
           // Play Button
-          GestureDetector(
-            onTap: _isPlaying ? _stopPlayback : _playVerse,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: context.appInteractive,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: context.appInteractive.withAlpha(60),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Icon(
-                _isPlaying ? Icons.stop : Icons.play_arrow,
-                color: Colors.white,
-                size: 64,
+          WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.practiceAudio,
+            title: AppLocalizations.of(context)!.walkthroughPracticeAudioTitle,
+            description:
+                AppLocalizations.of(context)!.walkthroughPracticeAudioDesc,
+            screen: WalkthroughScreen.practiceAudio,
+            stepNumber: 1,
+            totalSteps: 1,
+            onNext: _onNext,
+            child: GestureDetector(
+              onTap: _isPlaying ? _stopPlayback : _playVerse,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: context.appInteractive,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: context.appInteractive.withAlpha(60),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  _isPlaying ? Icons.stop : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 64,
+                ),
               ),
             ),
           ),

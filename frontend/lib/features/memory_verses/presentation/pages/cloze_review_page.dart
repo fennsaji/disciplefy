@@ -4,7 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -19,6 +22,10 @@ import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import 'cloze_models.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// Cloze deletion practice mode with progressive difficulty.
 ///
@@ -51,11 +58,28 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   bool isCompleted = false;
   String detectedLanguage = 'en'; // For transliteration support
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
     _startTimer();
     _loadVerse();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceCloze)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase(
+        [ShowcaseKeys.practiceCloze],
+      );
+    });
   }
 
   @override
@@ -369,88 +393,109 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) {
-            _loadVerse();
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _handleBackNavigation,
-            ),
-            title: Text(
-                '${context.tr(TranslationKeys.practiceModeCloze)} - ${_getDifficultyLabel(context)}'),
-            actions: [
-              TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-              const SizedBox(width: 8),
-            ],
-          ),
-          body: currentVerse == null
-              ? const Center(child: CircularProgressIndicator())
-              : SafeArea(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      // Verse Reference
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          currentVerse!.verseReference,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+    return ShowCaseWidget(
+      onFinish: () =>
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.practiceCloze),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _handleBackNavigation,
+                ),
+                title: Text(
+                    '${context.tr(TranslationKeys.practiceModeCloze)} - ${_getDifficultyLabel(context)}'),
+                actions: [
+                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              body: currentVerse == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : SafeArea(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 16),
+                          // Verse Reference
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              currentVerse!.verseReference,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: _ClozeVerseView(
-                            wordEntries: wordEntries,
-                            blankControllers: blankControllers,
-                            showFeedback: false,
-                          ),
-                        ),
-                      ),
-                      // Submit Button
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: isCompleted ? _submitPractice : null,
-                            icon: const Icon(Icons.check),
-                            label: Text(
-                                context.tr(TranslationKeys.practiceSubmit)),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: context.appInteractive,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 24),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: WalkthroughTooltip(
+                                showcaseKey: ShowcaseKeys.practiceCloze,
+                                title: l10n.walkthroughPracticeClozeTitle,
+                                description: l10n.walkthroughPracticeClozeDesc,
+                                screen: WalkthroughScreen.practiceCloze,
+                                stepNumber: 1,
+                                totalSteps: 1,
+                                onNext: _onNext,
+                                tooltipPosition: TooltipPosition.bottom,
+                                child: _ClozeVerseView(
+                                  wordEntries: wordEntries,
+                                  blankControllers: blankControllers,
+                                  showFeedback: false,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                          // Submit Button
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: isCompleted ? _submitPractice : null,
+                                icon: const Icon(Icons.check),
+                                label: Text(
+                                    context.tr(TranslationKeys.practiceSubmit)),
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: context.appInteractive,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-        ),
-      ),
-    ).withAuthProtection();
+                    ),
+            ),
+          ),
+        ).withAuthProtection();
+      },
+    );
   }
 }
 

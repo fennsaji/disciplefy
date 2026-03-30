@@ -4,7 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showcaseview/showcaseview.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -17,6 +20,10 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../walkthrough/domain/walkthrough_screen.dart';
+import '../../../walkthrough/domain/walkthrough_repository.dart';
+import '../../../walkthrough/presentation/showcase_keys.dart';
+import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 
 /// First letter hints practice mode.
 ///
@@ -43,11 +50,28 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
   int hintsUsed = 0;
   bool isCompleted = false;
 
+  BuildContext? _showcaseContext;
+  VoidCallback get _onNext => () => ShowCaseWidget.of(_showcaseContext!).next();
+
   @override
   void initState() {
     super.initState();
     _startTimer();
     _loadVerse();
+    _triggerWalkthroughIfNeeded();
+  }
+
+  Future<void> _triggerWalkthroughIfNeeded() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _showcaseContext == null) return;
+      final repo = sl<WalkthroughRepository>();
+      if (await repo.hasSeen(WalkthroughScreen.practiceFirstLetter)) return;
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _showcaseContext == null) return;
+      ShowCaseWidget.of(_showcaseContext!).startShowCase(
+        [ShowcaseKeys.practiceFirstLetter],
+      );
+    });
   }
 
   @override
@@ -162,102 +186,126 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
-      },
-      child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is DueVersesLoaded && currentVerse == null) {
-            _loadVerse();
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _handleBackNavigation,
-            ),
-            title: Text(context.tr(TranslationKeys.practiceModeFirstLetter)),
-            actions: [
-              TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
-              const SizedBox(width: 8),
-            ],
-          ),
-          body: currentVerse == null
-              ? const Center(child: CircularProgressIndicator())
-              : SafeArea(
-                  child: Column(
-                    children: [
-                      _HintsBadge(
-                        hintsUsed: hintsUsed,
-                        totalWords: hintWords.length,
-                      ),
-                      const SizedBox(height: 16),
-                      // Verse Reference
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          currentVerse!.verseReference,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+    return ShowCaseWidget(
+      onFinish: () => sl<WalkthroughRepository>()
+          .markSeen(WalkthroughScreen.practiceFirstLetter),
+      builder: (showcaseCtx) {
+        _showcaseContext = showcaseCtx;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBackNavigation();
+          },
+          child: BlocListener<MemoryVerseBloc, MemoryVerseState>(
+            listener: (context, state) {
+              if (state is DueVersesLoaded && currentVerse == null) {
+                _loadVerse();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _handleBackNavigation,
+                ),
+                title:
+                    Text(context.tr(TranslationKeys.practiceModeFirstLetter)),
+                actions: [
+                  TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              body: currentVerse == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : SafeArea(
+                      child: Column(
+                        children: [
+                          _HintsBadge(
+                            hintsUsed: hintsUsed,
+                            totalWords: hintWords.length,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Instructions
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          context.tr(TranslationKeys.firstLetterInstruction),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
+                          const SizedBox(height: 16),
+                          // Verse Reference
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              currentVerse!.verseReference,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: _HintWordsView(
-                            hintWords: hintWords,
-                            onWordTap: _revealWord,
+                          const SizedBox(height: 16),
+                          // Instructions
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              context
+                                  .tr(TranslationKeys.firstLetterInstruction),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                        ),
-                      ),
-                      // Submit Button
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _submitPractice,
-                            icon: const Icon(Icons.check),
-                            label: Text(
-                                context.tr(TranslationKeys.practiceSubmit)),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: context.appInteractive,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 24),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: WalkthroughTooltip(
+                                showcaseKey: ShowcaseKeys.practiceFirstLetter,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughPracticeFirstLetterTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughPracticeFirstLetterDesc,
+                                screen: WalkthroughScreen.practiceFirstLetter,
+                                stepNumber: 1,
+                                totalSteps: 1,
+                                onNext: _onNext,
+                                child: _HintWordsView(
+                                  hintWords: hintWords,
+                                  onWordTap: _revealWord,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                          // Submit Button
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: _submitPractice,
+                                icon: const Icon(Icons.check),
+                                label: Text(
+                                    context.tr(TranslationKeys.practiceSubmit)),
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: context.appInteractive,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-        ),
-      ),
-    ).withAuthProtection();
+                    ),
+            ),
+          ),
+        ).withAuthProtection();
+      },
+    );
   }
 }
 
