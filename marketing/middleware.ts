@@ -6,6 +6,7 @@ export default createMiddleware({
   locales,
   defaultLocale,
   localePrefix: "as-needed", // EN served at root /, HI at /hi, ML at /ml
+  localeDetection: false, // Never auto-redirect based on Accept-Language; URL locale always wins
 });
 
 export const config = {

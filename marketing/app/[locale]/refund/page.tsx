@@ -7,11 +7,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { mdxComponents } from "@/components/blog/MDXComponents";
 import { type Locale } from "@/i18n";
+import { getAlternates } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "Cancellation & Refund Policy — Disciplefy",
-  description: "Disciplefy's cancellation and refund policy for token purchases.",
-};
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  return {
+    title: "Cancellation & Refund Policy — Disciplefy",
+    description: "Disciplefy's cancellation and refund policy for token purchases.",
+    alternates: getAlternates("/refund", params.locale),
+  };
+}
 
 export default async function LocaleRefundPage({ params }: { params: { locale: Locale } }) {
   const localePath = path.join(process.cwd(), `content/refund/${params.locale}.mdx`);

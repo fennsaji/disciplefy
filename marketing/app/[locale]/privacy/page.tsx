@@ -7,11 +7,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { mdxComponents } from "@/components/blog/MDXComponents";
 import { type Locale } from "@/i18n";
+import { getAlternates } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "Privacy Policy — Disciplefy",
-  description: "How Disciplefy collects, uses, and protects your personal data.",
-};
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  return {
+    title: "Privacy Policy — Disciplefy",
+    description: "How Disciplefy collects, uses, and protects your personal data.",
+    alternates: getAlternates("/privacy", params.locale),
+  };
+}
 
 export default async function LocalePrivacyPage({ params }: { params: { locale: Locale } }) {
   const localePath = path.join(process.cwd(), `content/privacy/${params.locale}.mdx`);
