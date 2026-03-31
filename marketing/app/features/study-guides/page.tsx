@@ -31,7 +31,7 @@ export default function StudyGuidesPage() {
           "AI generates a full study guide with context, interpretation, and prayer points",
           "Save guides to your personal library to revisit any time",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
           { href: "/features/daily-verse", label: "Daily Verse" },

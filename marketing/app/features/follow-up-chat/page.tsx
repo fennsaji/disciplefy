@@ -31,7 +31,7 @@ export default function FollowUpChatPage() {
           "Ask any question about the passage — application, history, theology, or life",
           "Continue the conversation as long as you need — context is always preserved",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
           { href: "/features/voice-buddy", label: "Voice Buddy" },

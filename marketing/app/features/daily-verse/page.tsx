@@ -31,7 +31,7 @@ export default function DailyVersePage() {
           "Read a short AI-written devotional in English, Hindi, or Malayalam",
           "Save your favourite verses to revisit any time",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
           { href: "/features/study-guides", label: "Study Guides" },

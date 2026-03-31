@@ -31,7 +31,7 @@ const config: Config = {
           surface: "#FFFFFF",
           border: "rgba(0,0,0,0.08)",
           text: "#1E1E1E",
-          muted: "#6B7280",
+          muted: "#555F6E",
         },
       },
       fontFamily: {

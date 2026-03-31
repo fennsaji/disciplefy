@@ -59,7 +59,7 @@ export function Hero() {
               Each non-LCP child element has its own entrance animation.        */}
           <div>
             {/* Eyebrow chip — animates in from above (not LCP) */}
-            <div className="animate-hero-eyebrow inline-flex items-center gap-2 bg-gold-light/60 dark:bg-gold/10 border border-gold/30 text-gold px-3.5 py-1.5 rounded-full text-sm font-semibold mb-6">
+            <div className="animate-hero-eyebrow inline-flex items-center gap-2 bg-gold-light/60 dark:bg-gold/10 border border-gold/30 text-amber-900 dark:text-amber-300 px-3.5 py-1.5 rounded-full text-sm font-semibold mb-6">
               <span className="text-base">✝</span>
               <span>Free · English, हिन्दी &amp; മലയാളം</span>
             </div>
@@ -91,16 +91,21 @@ export function Hero() {
 
             {/* Subtitle & CTA — animate in after H1 is visible */}
             <div className="animate-hero-sub">
-              <p className="text-lg text-[var(--muted)] mb-10 max-w-lg">
+              <p className="text-lg text-[var(--muted)] mb-6 max-w-lg">
                 {t("subheadline")}
               </p>
+              {/* In-fold trust signal */}
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-[#D4930A]" aria-hidden="true">★★★★★</span>
+                <span className="text-sm text-[var(--muted)]">4.9 · 1,200+ ratings</span>
+              </div>
               <AppStoreBadges />
             </div>
           </div>
 
           {/* Phone mockup — scale-fade in, no delay */}
           <div className="animate-hero-phone flex justify-center">
-            <div className="relative w-[300px] h-[640px] rounded-[12px] border-2 border-[var(--border)] bg-neutral-900 shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-[300px] h-[640px] rounded-[12px] border-2 border-[var(--border)] bg-neutral-900 shadow-2xl overflow-hidden">
               <div className="absolute inset-0 rounded-[12px] border border-neutral-700/40" />
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-neutral-800 ring-1 ring-neutral-600/50 z-20" />
               <div className="absolute inset-[6px] rounded-[8px] overflow-hidden bg-[var(--surface)]">

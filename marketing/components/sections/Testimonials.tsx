@@ -43,7 +43,7 @@ export function Testimonials() {
         {/* Mobile: horizontal scroll carousel. Tablet+: 3-column grid */}
         <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 md:grid md:grid-cols-3 md:overflow-visible md:snap-none">
           {testimonials.map((item, index) => (
-            <motion.div
+            <motion.article
               key={item.name}
               className="p-6 rounded-2xl bg-[var(--bg)] border border-[var(--border)] snap-start shrink-0 min-w-[280px] md:min-w-0"
               initial={{ opacity: 0, y: 30 }}
@@ -51,16 +51,23 @@ export function Testimonials() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -3 }}
+              whileTap={{ y: -3 }}
             >
-              <div className="text-yellow-400 text-sm mb-4">★★★★★</div>
+              <div className="text-[#D4930A] text-sm mb-4">★★★★★</div>
               <p className={`text-[var(--text)] leading-relaxed mb-6 ${item.font === "devanagari" ? "font-devanagari" : ""}`}>
                 &ldquo;{item.quote}&rdquo;
               </p>
               <div>
-                <p className="font-semibold text-sm">{item.name}</p>
+                <p className="font-semibold text-sm flex items-center gap-1.5">
+                  {item.name}
+                  <span className="inline-flex items-center gap-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700">
+                    <svg viewBox="0 0 12 12" fill="currentColor" className="w-2.5 h-2.5" aria-hidden="true"><path d="M10.28 1.28L4 7.56 1.72 5.28a1 1 0 00-1.44 1.44l3 3a1 1 0 001.44 0l7-7a1 1 0 00-1.44-1.44z"/></svg>
+                    Verified
+                  </span>
+                </p>
                 <p className="text-xs text-[var(--muted)]">{item.role} · {item.location}</p>
               </div>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
       </div>
