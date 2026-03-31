@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::auth;
-use crate::cron::CRON_RUNNING;
+use crate::cron::{BLOG_GENERATION_RUNNING, BLOG_RETRY_RUNNING};
 use crate::error::AppError;
 use crate::models::{cron_config, post};
 use crate::AppState;
@@ -74,7 +74,7 @@ pub async fn trigger_cron(
 ) -> Result<Json<Value>, AppError> {
     verify_admin(&headers, &state).await?;
 
-    let _guard = crate::cron::CronGuard::try_acquire()
+    let _guard = crate::cron::CronGuard::try_acquire(&BLOG_GENERATION_RUNNING)
         .ok_or_else(|| AppError::BadRequest("Blog generation is already running".to_string()))?;
 
     let pool = state.pool.clone();
@@ -101,9 +101,12 @@ pub async fn cron_status(
 ) -> Result<Json<Value>, AppError> {
     verify_admin(&headers, &state).await?;
     let crons = cron_config::list(&state.pool).await?;
-    let is_running = CRON_RUNNING.load(Ordering::SeqCst);
+    let generation_running = BLOG_GENERATION_RUNNING.load(Ordering::SeqCst);
+    let retry_running = BLOG_RETRY_RUNNING.load(Ordering::SeqCst);
     Ok(Json(json!({
-        "is_running": is_running,
+        "is_running": generation_running || retry_running,
+        "blog_generation_running": generation_running,
+        "blog_retry_running": retry_running,
         "crons": crons.iter().map(|c| json!({
             "name": c.name,
             "enabled": c.enabled,
@@ -214,7 +217,12 @@ pub async fn cron_update_schedule(
                             ),
                             _ => {}
                         }
-                        let _guard = match crate::cron::CronGuard::try_acquire() {
+                        let flag = if n == "blog_retry" {
+                            &crate::cron::BLOG_RETRY_RUNNING
+                        } else {
+                            &crate::cron::BLOG_GENERATION_RUNNING
+                        };
+                        let _guard = match crate::cron::CronGuard::try_acquire(flag) {
                             Some(g) => g,
                             None => {
                                 tracing::warn!("CRON skipped: previous run still in progress");
