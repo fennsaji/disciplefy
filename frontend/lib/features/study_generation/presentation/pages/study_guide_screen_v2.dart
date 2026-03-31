@@ -238,6 +238,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   // Delayed completion-sheet timer (cancelled if user taps notes)
   Timer? _completionSheetTimer;
 
+  // Fallback timer: fires the completion walkthrough if the sheet was never
+  // shown (e.g. user never scrolled to absolute bottom).
+  Timer? _completionWalkthroughFallbackTimer;
+
   // Walkthrough state
   WalkthroughScreen? _pendingMarkSeen;
   // Keys to show once read-mode content is rendered (set when keys not yet in tree)
@@ -417,10 +421,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// the first time the user completes a study guide.
   Future<void> _triggerStudyGuideCompletionWalkthrough() async {
     // Mark as started synchronously so no new sheet timer can be created,
-    // and cancel any timer that is already pending.
+    // and cancel any timers that are already pending.
     _phase2WalkthroughStarted = true;
     _completionSheetTimer?.cancel();
     _completionSheetTimer = null;
+    _completionWalkthroughFallbackTimer?.cancel();
+    _completionWalkthroughFallbackTimer = null;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || _showcaseContext == null) return;
@@ -711,6 +717,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
     _completionSheetTimer?.cancel();
+    _completionWalkthroughFallbackTimer?.cancel();
     _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
@@ -1470,16 +1477,17 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Cancel the tracking timer since completion is marked
     _timeTrackingTimer?.cancel();
 
-    // If a completion sheet timer is pending, Phase 2 walkthrough will fire
-    // via the sheet's onDismissed callback — don't also trigger it here.
-    // If no timer is running (user not yet at absolute bottom), start Phase 2
-    // directly now so it isn't deferred indefinitely.
-    if (!_isTopicCompletedFromPath &&
-        !(_completionSheetTimer?.isActive ?? false)) {
+    // The completion sheet shows when the user reaches absolute bottom (97%).
+    // If the user never scrolls that far, fire the Phase 2 walkthrough after a
+    // 30 s grace period so it isn't deferred indefinitely.
+    // Do NOT trigger the walkthrough immediately here — that would set
+    // _phase2WalkthroughStarted = true and block the sheet from ever showing.
+    _completionWalkthroughFallbackTimer?.cancel();
+    _completionWalkthroughFallbackTimer =
+        Timer(const Duration(seconds: 30), () {
+      if (!mounted || _isTopicCompletedFromPath) return;
       _triggerStudyGuideCompletionWalkthrough();
-    }
-    // (Sheet path: _showLearningPathCompletionSheet triggers the walkthrough
-    //  via onDismissed so it fires only after the sheet closes.)
+    });
   }
 
   /// Complete topic progress tracking when study guide is finished.
@@ -1579,11 +1587,36 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (!_isScrolledToAbsoluteBottom()) return;
     // Don't stack timers if one is already pending
     if (_completionSheetTimer?.isActive ?? false) return;
-    // Wait a few seconds — if the user taps the notes field, the timer is
-    // cancelled via _onNotesFocusChanged so the sheet never appears.
-    _completionSheetTimer = Timer(const Duration(seconds: 4), () {
+    // Wait 5 s — if the user taps the notes field, the timer is cancelled via
+    // _onNotesFocusChanged so the sheet never appears.
+    _completionSheetTimer = Timer(const Duration(seconds: 5), () async {
       if (!mounted || _isTopicCompletedFromPath || _phase2WalkthroughStarted) {
         return;
+      }
+      // Wait for any pending achievement popups to be dismissed before showing
+      // the sheet — completing a study fires CheckStudyAchievements which can
+      // trigger an achievement dialog that would overlap the bottom sheet.
+      final gamificationBloc = sl<GamificationBloc>();
+      if (gamificationBloc.state.hasPendingNotifications) {
+        try {
+          await gamificationBloc.stream
+              .firstWhere((s) => !s.hasPendingNotifications)
+              .timeout(const Duration(seconds: 10));
+        } catch (_) {
+          // Timeout — proceed anyway so the sheet is never blocked forever.
+        }
+        if (!mounted ||
+            _isTopicCompletedFromPath ||
+            _phase2WalkthroughStarted) {
+          return;
+        }
+        // Extra pause so the dialog dismiss animation fully completes.
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted ||
+            _isTopicCompletedFromPath ||
+            _phase2WalkthroughStarted) {
+          return;
+        }
       }
       _showLearningPathCompletionSheet(
         onDismissed: _triggerStudyGuideCompletionWalkthrough,
@@ -1601,6 +1634,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     // Guard: only show once
     if (_isTopicCompletedFromPath) return;
     setState(() => _isTopicCompletedFromPath = true);
+    // Walkthrough will fire via onDismissed — cancel the fallback timer.
+    _completionWalkthroughFallbackTimer?.cancel();
+    _completionWalkthroughFallbackTimer = null;
 
     final isFromLearningPath =
         widget.navigationSource == StudyNavigationSource.learningPath;

@@ -33,7 +33,7 @@ export default function FellowshipPage() {
           "Mentors schedule Google Meet sessions directly from the app — invites sent automatically",
           "React, comment, and encourage one another as you grow in faith together",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
           { href: "/features/learning-paths", label: "Learning Paths" },

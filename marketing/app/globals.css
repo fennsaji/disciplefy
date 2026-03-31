@@ -62,6 +62,17 @@
 }
 .animate-hero-headline { animation: hero-slide-up 0.55s ease-out both; }
 
+/* Reduced motion: disable hero entrance animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-eyebrow,
+  .animate-hero-sub,
+  .animate-hero-phone,
+  .animate-navbar,
+  .animate-hero-headline {
+    animation: none !important;
+  }
+}
+
 /* Prose styles for MDX pages */
 @layer components {
   .prose-disciplefy {

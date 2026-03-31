@@ -49,7 +49,7 @@
   },
   "downloadPage": {
     "title": "Download Disciplefy — Free Bible Study App",
-    "subtitle": "Bible study in English, हिन्दी & മലയാളം. Free on Android.",
+    "subtitle": "Bible study in English, हिन्दी & മലയാളം. Free to download.",
     "cta": "Download Free on Google Play",
     "or": "or",
     "openWebApp": "open the web app",
@@ -66,7 +66,7 @@
   },
   "downloadSection": {
     "title": "Start Studying the Bible Today",
-    "subtitle": "Free on Android — English, हिन्दी & മലയാളം",
+    "subtitle": "English, हिन्दी & മലയാളം",
     "cta": "Download Free on Google Play",
     "openWebApp": "or open the web app →"
   },
@@ -138,75 +138,10 @@
     "startFree": "Start Free",
     "mostPopular": "Most Popular",
     "perMonth": "/mo",
-    "plans": [
-      {
-        "name": "Free",
-        "price": 0,
-        "tokens": "8 tokens/day",
-        "popular": false,
-        "features": [
-          "Quick Read study guide mode",
-          "3 memory verses",
-          "2 practice modes",
-          "1 practice per verse/day",
-          "Token top-ups available",
-          "Daily verse",
-          "Join fellowship groups"
-        ]
-      },
-      {
-        "name": "Standard",
-        "price": 79,
-        "tokens": "20 tokens/day",
-        "popular": false,
-        "features": [
-          "All study guide modes",
-          "5 follow-up questions/day",
-          "3 Voice Discipler calls/month",
-          "5 memory verses",
-          "2 practices per verse/day",
-          "Token top-ups available",
-          "Create & lead fellowship groups",
-          "Schedule fellowship meetings"
-        ]
-      },
-      {
-        "name": "Plus",
-        "price": 149,
-        "tokens": "50 tokens/day",
-        "popular": true,
-        "features": [
-          "All study guide modes",
-          "10 follow-up questions/day",
-          "10 Voice Discipler calls/month",
-          "10 memory verses",
-          "3 practices per verse/day",
-          "Token top-ups available",
-          "Create & lead fellowship groups",
-          "Schedule Google Meet sessions"
-        ]
-      },
-      {
-        "name": "Premium",
-        "price": 499,
-        "tokens": "Unlimited tokens",
-        "popular": false,
-        "features": [
-          "All study guide modes",
-          "Unlimited follow-up questions",
-          "Unlimited Voice Discipler calls",
-          "Unlimited memory verses",
-          "Unlimited practice",
-          "Priority support",
-          "Create & lead fellowship groups",
-          "Schedule Google Meet sessions"
-        ]
-      }
-    ],
     "faqs": [
       {
-        "q": "What is a token?",
-        "a": "Tokens are the currency for features in Disciplefy. Each study guide, follow-up, or Voice Discipler call uses a small number of tokens. Your plan resets your token count daily."
+        "q": "What is a credit?",
+        "a": "Credits are the currency for AI features in Disciplefy. Each study guide, follow-up question, or Disciple AI session uses a small number of credits. Your plan resets your credit count daily."
       },
       {
         "q": "Can I switch plans?",

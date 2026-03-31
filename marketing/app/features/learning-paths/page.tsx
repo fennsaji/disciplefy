@@ -31,7 +31,7 @@ export default function LearningPathsPage() {
           "Work through a curated sequence of AI-generated lessons at your own pace",
           "Complete each lesson, track your progress, and move to the next step",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
           { href: "/features/study-guides", label: "Study Guides" },

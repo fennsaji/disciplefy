@@ -31,7 +31,7 @@ export default function AiBibleStudyPage() {
           "AI generates a complete study guide — context, interpretation, and life application — in seconds",
           "Read, save to your library, and share guides with others",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/daily-verse", label: "Daily Verse" },
           { href: "/features/study-guides", label: "Study Guides" },

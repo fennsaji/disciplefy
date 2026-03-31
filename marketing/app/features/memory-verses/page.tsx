@@ -31,7 +31,7 @@ export default function MemoryVersesPage() {
           "Practice with fill-in-the-blank and audio flashcards at spaced intervals",
           "Track your streak and build a lasting habit of hiding Scripture in your heart",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/daily-verse", label: "Daily Verse" },
           { href: "/features/ai-bible-study", label: "AI Bible Study" },

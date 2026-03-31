@@ -4,27 +4,21 @@
 // 2. Mobile menu uses CSS max-height transition instead of AnimatePresence.
 // 3. Navbar slides in via CSS animation (animate-navbar) — no JS dependency.
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/lib/navigation";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
-import { Button } from "@/components/ui/Button";
-import { PLAY_STORE_URL, WEB_APP_URL } from "@/lib/app-links";
 
 export function Navbar() {
   const t = useTranslations("nav");
+  const locale = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState(WEB_APP_URL);
-  const buttonLabel = downloadUrl === WEB_APP_URL ? t("openApp") : t("download");
-
-  useEffect(() => {
-    if (/android/i.test(navigator.userAgent)) {
-      setDownloadUrl(PLAY_STORE_URL);
-    }
-  }, []);
+  const downloadUrl = locale === "en" ? "/download" : `/${locale}/download`;
+  const buttonLabel = t("download");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,6 +28,13 @@ export function Navbar() {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const pathname = usePathname();
+  const isActiveLink = (href: string) => {
+    const path = href.split("#")[0];
+    if (path === "/") return pathname === "/" || /^\/[a-z]{2}\/?$/.test(pathname);
+    return pathname === path || pathname.endsWith(path);
+  };
 
   const navLinks = [
     { label: t("features"), href: "/#features" },
@@ -78,7 +79,12 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors"
+                className={`text-sm transition-colors ${
+                  isActiveLink(link.href)
+                    ? "text-[var(--text)] font-semibold"
+                    : "text-[var(--muted)] hover:text-[var(--text)]"
+                }`}
+                aria-current={isActiveLink(link.href) ? "page" : undefined}
               >
                 {link.label}
               </Link>
@@ -89,14 +95,18 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <LocaleSwitcher />
             <ThemeToggle />
-            <Button href={downloadUrl} size="sm" className="hidden md:inline-flex">
+            <Link
+              href={downloadUrl}
+              className="hidden md:inline-flex px-4 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
               {buttonLabel}
-            </Button>
+            </Link>
             {/* Mobile hamburger */}
             <button
               className="md:hidden p-2 text-[var(--muted)]"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
+              aria-expanded={menuOpen}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {menuOpen
@@ -118,15 +128,24 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-[var(--muted)] hover:text-[var(--text)] py-1 block transition-colors"
+                className={`text-sm py-1 block transition-colors ${
+                  isActiveLink(link.href)
+                    ? "text-[var(--text)] font-semibold"
+                    : "text-[var(--muted)] hover:text-[var(--text)]"
+                }`}
+                aria-current={isActiveLink(link.href) ? "page" : undefined}
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
-            <Button href={downloadUrl} size="sm" className="w-full mt-2">
+            <Link
+              href={downloadUrl}
+              onClick={() => setMenuOpen(false)}
+              className="w-full mt-2 min-h-[44px] flex items-center justify-center px-4 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
               {buttonLabel}
-            </Button>
+            </Link>
           </div>
         </div>
       </div>

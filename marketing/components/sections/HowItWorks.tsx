@@ -311,12 +311,18 @@ export function HowItWorks() {
         >
           {t("title")}
         </motion.h2>
+        <a
+          href="#download"
+          className="inline-block mt-4 text-sm text-[var(--muted)] hover:text-primary transition-colors underline underline-offset-4"
+        >
+          Skip to download ↓
+        </a>
       </div>
 
       {/* ─── Desktop layout (lg+) ─── */}
       <div ref={sectionRef} className="hidden lg:block relative">
-        {/* Height = 6 panels × 85vh + some padding */}
-        <div className="max-w-7xl mx-auto px-8" style={{ minHeight: "510vh" }}>
+        {/* Height = 6 panels × 60vh */}
+        <div className="max-w-7xl mx-auto px-8" style={{ minHeight: "360vh" }}>
           <div className="grid grid-cols-2 gap-16">
             {/* Left: Sticky phone mockup */}
             <div className="relative">
@@ -340,7 +346,7 @@ export function HowItWorks() {
               {STEP_KEYS.map((key, i) => (
                 <div
                   key={key}
-                  className="min-h-[85vh] flex items-center"
+                  className="min-h-[60vh] flex items-center"
                 >
                   <StepContent
                     index={i}
