@@ -31,7 +31,7 @@ export default function VoiceBuddyPage() {
           "Your AI Voice Discipler listens and responds naturally in your language",
           "Continue the conversation — ask follow-up questions just like talking to a friend",
         ]}
-        downloadCta="Download Free on Android"
+        downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/ai-bible-study", label: "AI Bible Study" },
           { href: "/features/daily-verse", label: "Daily Verse" },

@@ -3,7 +3,7 @@
 // Inner AnimatePresence kept for verse cycling (client-side only, no SSR opacity issue).
 "use client";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const verses = [
   '"I can do all things through Christ who strengthens me." — Phil 4:13',
@@ -13,10 +13,13 @@ const verses = [
 
 export function SocialProof() {
   const [idx, setIdx] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
+
   useEffect(() => {
+    if (prefersReducedMotion) return;
     const id = setInterval(() => setIdx((i) => (i + 1) % verses.length), 4000);
     return () => clearInterval(id);
-  }, []);
+  }, [prefersReducedMotion]);
 
   return (
     <motion.div
@@ -28,10 +31,10 @@ export function SocialProof() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-yellow-400 text-lg">★★★★★</span>
-          <span className="text-sm text-[var(--muted)]">4.9/5 on App Store</span>
-          <span className="hidden sm:block text-[var(--border)]">·</span>
-          <span className="hidden sm:block text-xs font-semibold text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/50">
+          <span className="text-[#D4930A] text-lg">★★★★★</span>
+          <span className="text-sm text-[var(--muted)]">4.9/5 · 1,200+ ratings</span>
+          <span className="text-[var(--border)]">·</span>
+          <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/50">
             Theologically Sound · Orthodox Christian
           </span>
         </div>
