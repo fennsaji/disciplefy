@@ -230,6 +230,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
           onStudyLanguageChanged: (newLang) {
             setState(() => _currentLanguage = newLang);
             _learningPathsBloc.add(RefreshLearningPaths(language: newLang));
+            _learningPathsBloc.add(LoadPersonalizedPaths(language: newLang));
           },
         ),
       );
