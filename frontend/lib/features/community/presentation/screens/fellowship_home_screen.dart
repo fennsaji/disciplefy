@@ -3,12 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/models/app_language.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../user_profile/data/models/user_profile_model.dart';
+import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_state.dart';
 import '../../domain/entities/fellowship_entity.dart';
@@ -966,9 +973,366 @@ class _FellowshipLessonsPage extends StatefulWidget {
 class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
   AppLanguage? _selectedLanguage;
 
-  Future<void> _onLanguageSelected(AppLanguage lang) async {
-    await sl<LanguagePreferenceService>().saveStudyContentLanguage(lang);
-    if (mounted) setState(() => _selectedLanguage = lang);
+  Future<void> _showLanguageSelector(BuildContext context) async {
+    final theme = Theme.of(context);
+    final languageService = sl<LanguagePreferenceService>();
+    final currentLanguage = await languageService.getStudyContentLanguage();
+    final isDefault = await languageService.isStudyContentLanguageDefault();
+    final appLanguage = await languageService.getSelectedLanguage();
+
+    if (!context.mounted) return;
+
+    await showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    context.tr(TranslationKeys.studyTopicsContentLanguage),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.tr(
+                        TranslationKeys.studyTopicsContentLanguageDescription),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: Text(context
+                  .tr(TranslationKeys.studyTopicsContentLanguageDefault)),
+              subtitle: Text(
+                '${context.tr(TranslationKeys.studyTopicsContentLanguageDefaultDescription)} (${appLanguage.displayName})',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              trailing: isDefault
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () async {
+                await languageService.saveStudyContentLanguage(null);
+                if (sheetContext.mounted) Navigator.pop(sheetContext);
+                if (mounted) setState(() => _selectedLanguage = null);
+              },
+            ),
+            const Divider(height: 1),
+            ...AppLanguage.values.map((language) {
+              final isSelected = !isDefault && language == currentLanguage;
+              return ListTile(
+                title: Text(language.displayName),
+                trailing: isSelected
+                    ? Icon(Icons.check, color: theme.colorScheme.primary)
+                    : null,
+                onTap: () async {
+                  await languageService.saveStudyContentLanguage(language);
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  if (mounted) setState(() => _selectedLanguage = language);
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStudyModeSelector(BuildContext context) {
+    final authProvider = sl<AuthStateProvider>();
+    final currentMode =
+        authProvider.userProfile?['learning_path_study_mode'] as String?;
+    final parentContext = context;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                context.tr(
+                    TranslationKeys.settingsLearningPathStudyModePreference),
+                style: AppFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(builderContext).colorScheme.onBackground,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.tr(
+                    TranslationKeys.settingsLearningPathStudyModeDescription),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color: Theme.of(builderContext)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildLearningPathModeOption(
+                builderContext,
+                parentContext,
+                'recommended',
+                context.tr(TranslationKeys.settingsUseRecommended),
+                Icons.stars,
+                context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
+                currentMode,
+              ),
+              const SizedBox(height: 12),
+              _buildLearningPathModeOption(
+                builderContext,
+                parentContext,
+                'ask',
+                context.tr(TranslationKeys.settingsAskEveryTime),
+                Icons.help_outline,
+                context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
+                currentMode,
+              ),
+              const SizedBox(height: 12),
+              Divider(
+                  color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+              ...StudyMode.values.map((mode) => Column(
+                    children: [
+                      _buildLearningPathModeOption(
+                        builderContext,
+                        parentContext,
+                        mode.value,
+                        _getStudyModeTranslatedName(mode, context),
+                        mode.iconData,
+                        '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
+                        currentMode,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getStudyModeTranslatedName(StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickName);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardName);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepName);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioName);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonName);
+    }
+  }
+
+  String _getStudyModeTranslatedDescription(
+      StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickDescription);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardDescription);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepDescription);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioDescription);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonDescription);
+    }
+  }
+
+  Widget _buildLearningPathModeOption(
+    BuildContext sheetContext,
+    BuildContext parentContext,
+    String value,
+    String label,
+    IconData icon,
+    String subtitle,
+    String? currentMode,
+  ) {
+    final isSelected = value == currentMode;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          try {
+            final userProfileService = sl<UserProfileService>();
+            final authProvider = sl<AuthStateProvider>();
+            final result = await userProfileService
+                .updateLearningPathStudyModePreference(value);
+
+            if (parentContext.mounted) {
+              result.fold(
+                (failure) {
+                  if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text(parentContext
+                          .tr(TranslationKeys.errorUpdatingPreference)),
+                      backgroundColor:
+                          Theme.of(parentContext).colorScheme.error,
+                    ),
+                  );
+                },
+                (profile) {
+                  final userId = authProvider.userId;
+                  if (userId != null) {
+                    final profileMap =
+                        UserProfileModel.fromEntity(profile).toJson();
+                    authProvider.cacheProfile(userId, profileMap);
+                  }
+                  if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text(parentContext
+                          .tr(TranslationKeys.preferenceUpdatedSuccessfully)),
+                      backgroundColor:
+                          Theme.of(parentContext).colorScheme.primary,
+                    ),
+                  );
+                },
+              );
+            }
+          } catch (e) {
+            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+            if (parentContext.mounted) {
+              ScaffoldMessenger.of(parentContext).showSnackBar(
+                SnackBar(
+                  content: Text(parentContext
+                      .tr(TranslationKeys.errorUpdatingPreference)),
+                  backgroundColor: Theme.of(parentContext).colorScheme.error,
+                ),
+              );
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor.withOpacity(0.15)
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : Theme.of(sheetContext).colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: Theme.of(sheetContext)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: AppTheme.primaryColor,
+                  size: 22,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -991,38 +1355,39 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
           ),
         ),
         actions: [
-          PopupMenuButton<AppLanguage>(
+          PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: context.appTextPrimary),
             color: context.appSurface,
-            onSelected: _onLanguageSelected,
-            itemBuilder: (_) => AppLanguage.values.map((lang) {
-              final isCurrent = _selectedLanguage == lang;
-              return PopupMenuItem<AppLanguage>(
-                value: lang,
+            onSelected: (value) {
+              if (value == 'language') {
+                _showLanguageSelector(context);
+              } else if (value == 'study_mode') {
+                _showStudyModeSelector(context);
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem<String>(
+                value: 'language',
                 child: Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        lang.displayName,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight:
-                              isCurrent ? FontWeight.w700 : FontWeight.w400,
-                          color: isCurrent
-                              ? Theme.of(context).colorScheme.primary
-                              : context.appTextPrimary,
-                        ),
-                      ),
-                    ),
-                    if (isCurrent)
-                      Icon(Icons.check,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary),
+                    const Icon(Icons.language),
+                    const SizedBox(width: 12),
+                    Text(
+                        context.tr(TranslationKeys.studyTopicsContentLanguage)),
                   ],
                 ),
-              );
-            }).toList(),
+              ),
+              PopupMenuItem<String>(
+                value: 'study_mode',
+                child: Row(
+                  children: [
+                    const Icon(Icons.auto_awesome),
+                    const SizedBox(width: 12),
+                    Text(context.tr(TranslationKeys.studyModePreferenceTitle)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
