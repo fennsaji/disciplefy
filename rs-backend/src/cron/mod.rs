@@ -13,19 +13,23 @@ use uuid::Uuid;
 use crate::config::Config;
 use crate::models::cron_config::{self, CronConfig};
 
-/// Shared flag to prevent concurrent CRON execution.
-pub static CRON_RUNNING: AtomicBool = AtomicBool::new(false);
+/// Per-job flags to prevent concurrent execution of the same job.
+/// Each job has its own lock so they don't block each other.
+pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 
-/// Guard that sets `CRON_RUNNING` to false on drop.
-pub struct CronGuard;
+/// Guard that resets its flag to false on drop.
+pub struct CronGuard {
+    flag: &'static AtomicBool,
+}
 
 impl CronGuard {
-    pub fn try_acquire() -> Option<Self> {
-        if CRON_RUNNING
+    pub fn try_acquire(flag: &'static AtomicBool) -> Option<Self> {
+        if flag
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_ok()
         {
-            Some(CronGuard)
+            Some(CronGuard { flag })
         } else {
             None
         }
@@ -34,7 +38,7 @@ impl CronGuard {
 
 impl Drop for CronGuard {
     fn drop(&mut self) {
-        CRON_RUNNING.store(false, Ordering::SeqCst);
+        self.flag.store(false, Ordering::SeqCst);
     }
 }
 
@@ -94,7 +98,7 @@ pub async fn start_scheduler(
                 Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
                 _ => {}
             }
-            let _guard = match CronGuard::try_acquire() {
+            let _guard = match CronGuard::try_acquire(&BLOG_GENERATION_RUNNING) {
                 Some(g) => g,
                 None => {
                     tracing::warn!("Blog generation CRON skipped: previous run still in progress");
@@ -137,7 +141,7 @@ pub async fn start_scheduler(
                 Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
                 _ => {}
             }
-            let _guard = match CronGuard::try_acquire() {
+            let _guard = match CronGuard::try_acquire(&BLOG_RETRY_RUNNING) {
                 Some(g) => g,
                 None => {
                     tracing::warn!("Blog retry CRON skipped: previous run still in progress");
