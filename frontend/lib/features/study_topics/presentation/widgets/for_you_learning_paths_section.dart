@@ -180,9 +180,10 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
     }
 
     // Prepend the fellowship path at position 0 only if it's not already in
-    // the list (deduplication). This way the fellowship commitment is always
-    // visible without ever showing the same path twice.
+    // the list (deduplication) and not completed. This way the fellowship
+    // commitment is visible without showing completed or duplicate paths.
     if (fellowshipPath != null &&
+        !fellowshipPath.isCompleted &&
         !result.any((r) => r.id == fellowshipPath.id)) {
       result.insert(0, fellowshipPath);
     }
