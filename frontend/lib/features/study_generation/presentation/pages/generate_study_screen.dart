@@ -79,7 +79,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
 
-  StudyInputMode _selectedMode = StudyInputMode.scripture;
+  StudyInputMode _selectedMode = StudyInputMode.topic;
   StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isLanguageDefault = true; // Track if using default (app language)
   bool _isInputValid = false;
@@ -128,6 +128,11 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
   int? _displayTokenCost;
 
   bool _isInputFocused = false;
+
+  // Book-pill tooltip: shown once per session when pills first appear.
+  bool _showBookTooltip = false;
+  bool _bookTooltipShown = false;
+  Timer? _bookTooltipTimer;
 
   // Suggestions are now loaded from translations to support multiple languages
   // See _getFilteredSuggestions() method for implementation
@@ -352,6 +357,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     WidgetsBinding.instance.removeObserver(this);
     _goRouter?.routerDelegate.removeListener(_onRouterChanged);
     _generationTimeoutTimer?.cancel();
+    _bookTooltipTimer?.cancel();
     _languageChangeSubscription?.cancel();
     _inputController.dispose();
     _inputFocusNode.dispose();
@@ -421,6 +427,18 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         _validationError = _isInputValid
             ? null
             : context.tr(TranslationKeys.generateStudyTopicError);
+      }
+
+      // Show book-pill tooltip the first time suggestions appear.
+      if (_selectedMode == StudyInputMode.scripture && !_bookTooltipShown) {
+        if (_getBookNameSuggestions().isNotEmpty) {
+          _showBookTooltip = true;
+          _bookTooltipShown = true;
+          _bookTooltipTimer?.cancel();
+          _bookTooltipTimer = Timer(const Duration(milliseconds: 2500), () {
+            if (mounted) setState(() => _showBookTooltip = false);
+          });
+        }
       }
     });
   }
@@ -1623,6 +1641,48 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_showBookTooltip)
+              AnimatedOpacity(
+                opacity: _showBookTooltip ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 250),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(isDark ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.30),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.touch_app_rounded,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Tap the book name below to select it',
+                        style: AppFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Text(
               'Books of the Bible',
               style: AppFonts.inter(

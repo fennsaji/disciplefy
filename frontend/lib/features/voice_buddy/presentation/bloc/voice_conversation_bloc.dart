@@ -38,6 +38,11 @@ class VoiceConversationBloc
   String _currentTranscription = '';
   double _currentConfidence = 0.0;
 
+  /// Best (longest) transcription seen in the current listening session.
+  /// Prevents the last word being cut off when stop() triggers a finalResult
+  /// that is shorter than the last partial result.
+  String _bestTranscription = '';
+
   /// Timer for detecting silence after speech (3 seconds)
   Timer? _silenceAfterSpeechTimer;
 
@@ -324,6 +329,7 @@ class VoiceConversationBloc
 
     // Reset transcription tracking
     _currentTranscription = '';
+    _bestTranscription = '';
     _currentConfidence = 0.0;
     _hasStartedSpeaking = false;
     _silenceAfterSpeechTimer?.cancel();
@@ -349,11 +355,19 @@ class VoiceConversationBloc
           final text = result.recognizedWords;
           final confidence = result.confidence;
 
-          // Update tracking variables
-          _currentTranscription = text;
+          // Update tracking variables.
+          // _bestTranscription only grows — never downgrade to a shorter result.
+          // When stop() is called prematurely the finalResult from the speech
+          // engine can be shorter than the last partial result (last word cut
+          // off). Keeping the longest seen prevents that regression.
+          if (text.length >= _bestTranscription.length) {
+            _bestTranscription = text;
+          }
+          _currentTranscription = _bestTranscription;
           _currentConfidence = confidence;
 
-          add(ProcessSpeechText(text: text, confidence: confidence));
+          add(ProcessSpeechText(
+              text: _bestTranscription, confidence: confidence));
 
           // Feed transcription to VAD for debounced silence detection
           if (isContinuousMode) {
@@ -382,11 +396,15 @@ class VoiceConversationBloc
             });
           }
 
-          // Handle finalResult - send message in both modes
-          if (result.finalResult && text.isNotEmpty) {
+          // Handle finalResult - send message in both modes.
+          // Use _bestTranscription (not `text`) to avoid sending a truncated
+          // result when stop() caused the engine to return fewer words.
+          if (result.finalResult && _bestTranscription.isNotEmpty) {
             // Cancel silence timer since we're sending via finalResult
             _silenceAfterSpeechTimer?.cancel();
             _silenceAfterSpeechTimer = null;
+
+            final textToSend = _bestTranscription;
 
             if (isContinuousMode) {
               // In continuous mode, send message but don't stop listening
@@ -398,13 +416,15 @@ class VoiceConversationBloc
               // IMPORTANT: Clear transcription BEFORE sending to prevent duplicate
               // from _onSpeechStatusChanged when mic button is clicked again
               _currentTranscription = '';
+              _bestTranscription = '';
               _currentConfidence = 0.0;
 
-              add(SendTextMessage(text));
+              add(SendTextMessage(textToSend));
             } else {
               // In normal mode, stop listening and send
+              _bestTranscription = '';
               add(const StopListening());
-              add(SendTextMessage(text));
+              add(SendTextMessage(textToSend));
             }
           }
         },
@@ -472,6 +492,7 @@ class VoiceConversationBloc
 
     // Clear transcription and reset internal tracking
     _currentTranscription = '';
+    _bestTranscription = '';
     _currentConfidence = 0.0;
 
     emit(state.copyWith(
@@ -1324,6 +1345,7 @@ class VoiceConversationBloc
         // Clear transcription before sending to prevent any future duplicates
         final textToSend = _currentTranscription;
         _currentTranscription = '';
+        _bestTranscription = '';
         _currentConfidence = 0.0;
 
         add(SendTextMessage(textToSend));

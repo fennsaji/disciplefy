@@ -327,11 +327,21 @@ class AppLocalizations {
       'inviteShareCode': 'Share this code',
       'inviteExpires': 'Expires in 7 days',
       'lessonsAdvanceGuide': 'Advance to Next Guide',
+      'lessonsFinishPath': 'Finish Path',
+      'lessonsResetProgress': 'Reset Progress',
       'lessonsAdvanceConfirm':
           'Mark current guide complete and advance to the next?',
       'lessonsCompleted': 'Study Completed!',
       'lessonsGuideProgress': 'Guide',
       'lessonsOf': 'of',
+      'lessonsPathComplete': 'Path Complete!',
+      'lessonsPathCompleteBody':
+          'Your fellowship has finished "{pathTitle}". Ready to start the next one?',
+      'lessonsLater': 'Later',
+      'lessonsChooseNextPath': 'Choose Next Path',
+      'lessonsPathAssignedSuccess': 'Learning path assigned successfully!',
+      'lessonsProgressResetSuccess': 'Progress reset to Guide 1.',
+      'fellowshipProgress': 'Fellowship Progress',
       // Edit Fellowship
       'editFellowshipTitle': 'Edit Fellowship',
       'editFellowshipSave': 'Save Changes',
@@ -869,10 +879,20 @@ class AppLocalizations {
       'inviteShareCode': 'यह कोड साझा करें',
       'inviteExpires': '7 दिनों में समाप्त',
       'lessonsAdvanceGuide': 'अगले गाइड पर जाएं',
+      'lessonsFinishPath': 'पाठ पूर्ण करें',
+      'lessonsResetProgress': 'प्रगति रीसेट करें',
       'lessonsAdvanceConfirm': 'वर्तमान गाइड पूर्ण करें और अगले पर जाएं?',
       'lessonsCompleted': 'अध्ययन पूर्ण!',
       'lessonsGuideProgress': 'गाइड',
       'lessonsOf': 'का',
+      'lessonsPathComplete': 'पाठ पूर्ण!',
+      'lessonsPathCompleteBody':
+          'आपकी संगति ने "{pathTitle}" पूरा कर लिया है। अगला शुरू करना चाहते हैं?',
+      'lessonsLater': 'बाद में',
+      'lessonsChooseNextPath': 'अगला पाठ चुनें',
+      'lessonsPathAssignedSuccess': 'शिक्षण पथ सफलतापूर्वक सौंपा गया!',
+      'lessonsProgressResetSuccess': 'प्रगति गाइड 1 पर रीसेट की गई।',
+      'fellowshipProgress': 'संगति प्रगति',
       // Edit Fellowship
       'editFellowshipTitle': 'संगति संपादित करें',
       'editFellowshipSave': 'परिवर्तन सहेजें',
@@ -1411,11 +1431,21 @@ class AppLocalizations {
       'inviteShareCode': 'ഈ കോഡ് പങ്കിടുക',
       'inviteExpires': '7 ദിവസത്തിൽ കാലഹരണം',
       'lessonsAdvanceGuide': 'അടുത്ത ഗൈഡിലേക്ക് മുന്നേറുക',
+      'lessonsFinishPath': 'പഠനം പൂർത്തിയാക്കുക',
+      'lessonsResetProgress': 'പുരോഗതി പുനഃക്രമീകരിക്കുക',
       'lessonsAdvanceConfirm':
           'നിലവിലെ ഗൈഡ് പൂർത്തിയാക്കി അടുത്തതിലേക്ക് മുന്നേറണോ?',
       'lessonsCompleted': 'പഠനം പൂർത്തിയായി!',
       'lessonsGuideProgress': 'ഗൈഡ്',
       'lessonsOf': 'ൽ',
+      'lessonsPathComplete': 'പഠനം പൂർത്തിയായി!',
+      'lessonsPathCompleteBody':
+          'നിങ്ങളുടെ കൂട്ടായ്മ "{pathTitle}" പൂർത്തിയാക്കി. അടുത്തത് ആരംഭിക്കാൻ തയ്യാറാണോ?',
+      'lessonsLater': 'പിന്നീട്',
+      'lessonsChooseNextPath': 'അടുത്ത പഥം തിരഞ്ഞെടുക്കുക',
+      'lessonsPathAssignedSuccess': 'പഠന പഥം വിജയകരമായി നൽകി!',
+      'lessonsProgressResetSuccess': 'പുരോഗതി ഗൈഡ് 1 ലേക്ക് പുനഃക്രമീകരിച്ചു.',
+      'fellowshipProgress': 'കൂട്ടായ്മ പുരോഗതി',
       // Edit Fellowship
       'editFellowshipTitle': 'കൂട്ടായ്മ തിരുത്തുക',
       'editFellowshipSave': 'മാറ്റങ്ങൾ സംരക്ഷിക്കുക',
@@ -1967,6 +1997,10 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['inviteExpires']!;
   String get lessonsAdvanceGuide =>
       _localizedValues[locale.languageCode]!['lessonsAdvanceGuide']!;
+  String get lessonsFinishPath =>
+      _localizedValues[locale.languageCode]!['lessonsFinishPath']!;
+  String get lessonsResetProgress =>
+      _localizedValues[locale.languageCode]!['lessonsResetProgress']!;
   String get lessonsAdvanceConfirm =>
       _localizedValues[locale.languageCode]!['lessonsAdvanceConfirm']!;
   String get lessonsCompleted =>
@@ -1974,6 +2008,21 @@ class AppLocalizations {
   String get lessonsGuideProgress =>
       _localizedValues[locale.languageCode]!['lessonsGuideProgress']!;
   String get lessonsOf => _localizedValues[locale.languageCode]!['lessonsOf']!;
+  String get lessonsPathComplete =>
+      _localizedValues[locale.languageCode]!['lessonsPathComplete']!;
+  String lessonsPathCompleteBody(String pathTitle) =>
+      _localizedValues[locale.languageCode]!['lessonsPathCompleteBody']!
+          .replaceAll('{pathTitle}', pathTitle);
+  String get lessonsLater =>
+      _localizedValues[locale.languageCode]!['lessonsLater']!;
+  String get lessonsChooseNextPath =>
+      _localizedValues[locale.languageCode]!['lessonsChooseNextPath']!;
+  String get lessonsPathAssignedSuccess =>
+      _localizedValues[locale.languageCode]!['lessonsPathAssignedSuccess']!;
+  String get lessonsProgressResetSuccess =>
+      _localizedValues[locale.languageCode]!['lessonsProgressResetSuccess']!;
+  String get fellowshipProgress =>
+      _localizedValues[locale.languageCode]!['fellowshipProgress']!;
 
   // Edit Fellowship
   String get editFellowshipTitle =>

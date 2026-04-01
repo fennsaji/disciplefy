@@ -796,11 +796,35 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
 
         return IconButton(
           onPressed: isAlreadyInMemory ? null : _onTap,
-          icon: Icon(
-            isAlreadyInMemory ? Icons.bookmark : Icons.bookmark_add_outlined,
-            color: isAlreadyInMemory ? _iconColor.withOpacity(0.5) : _iconColor,
-            size: 22,
-          ),
+          icon: isAlreadyInMemory
+              ? Icon(
+                  Icons.psychology_rounded,
+                  color: _iconColor.withOpacity(0.5),
+                  size: 22,
+                )
+              : Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.psychology_outlined,
+                      color: _iconColor,
+                      size: 22,
+                    ),
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Text(
+                        '+',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _iconColor.withOpacity(0.85),
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
           tooltip: isAlreadyInMemory
               ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
               : context.tr(TranslationKeys.dailyVerseAddToMemory),

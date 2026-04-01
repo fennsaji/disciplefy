@@ -177,6 +177,80 @@ async function handleAdvanceStudy(req: Request, services: ServiceContainer): Pro
 }
 
 // ---------------------------------------------------------------------------
+// Reset study  POST /fellowship-study/reset
+// ---------------------------------------------------------------------------
+
+async function handleResetStudy(req: Request, services: ServiceContainer): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+    authHeader.replace('Bearer ', '')
+  )
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+
+  let body: { fellowship_id: string }
+  try {
+    body = await req.json()
+  } catch {
+    throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400)
+  }
+  if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+
+  const db = services.supabaseServiceClient
+
+  const { data: isMentor, error: rpcError } = await db.rpc('is_fellowship_mentor', {
+    p_fellowship_id: body.fellowship_id,
+    p_user_id: user.id
+  })
+  if (rpcError) {
+    console.error('[fellowship-study/reset] RPC error:', rpcError)
+    throw new AppError('DATABASE_ERROR', 'Failed to verify mentor status', 500)
+  }
+  if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
+
+  const { data: study, error: studyError } = await db
+    .from('fellowship_study')
+    .select('id, learning_path_id')
+    .eq('fellowship_id', body.fellowship_id)
+    .maybeSingle()
+
+  if (studyError) {
+    console.error('[fellowship-study/reset] Study fetch error:', studyError)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch study', 500)
+  }
+  if (!study) throw new AppError('NOT_FOUND', 'No study found for this fellowship', 404)
+
+  const now = new Date().toISOString()
+  const { error: updateError } = await db
+    .from('fellowship_study')
+    .update({
+      current_guide_index: 0,
+      completed_at: null,
+      started_at: now,
+      updated_at: now,
+    })
+    .eq('id', study.id)
+
+  if (updateError) {
+    console.error('[fellowship-study/reset] Update error:', updateError)
+    throw new AppError('DATABASE_ERROR', 'Failed to reset study', 500)
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      data: {
+        fellowship_id: body.fellowship_id,
+        learning_path_id: study.learning_path_id,
+        current_guide_index: 0,
+      },
+      message: 'Study progress reset to Guide 1'
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -188,6 +262,7 @@ async function handleStudy(req: Request, services: ServiceContainer): Promise<Re
   const pathname = new URL(req.url).pathname
   if (pathname.endsWith('/set'))     return handleSetStudy(req, services)
   if (pathname.endsWith('/advance')) return handleAdvanceStudy(req, services)
+  if (pathname.endsWith('/reset'))   return handleResetStudy(req, services)
 
   throw new AppError('NOT_FOUND', 'Route not found', 404)
 }

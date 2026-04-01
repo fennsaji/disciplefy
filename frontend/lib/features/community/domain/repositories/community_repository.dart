@@ -118,6 +118,9 @@ abstract class CommunityRepository {
   Future<Either<Failure, Map<String, dynamic>>> advanceStudy(
       String fellowshipId);
 
+  /// Resets the fellowship study progress back to Guide 1 (mentor only).
+  Future<Either<Failure, void>> resetStudy(String fellowshipId);
+
   /// Leaves the fellowship identified by [fellowshipId].
   Future<Either<Failure, void>> leaveFellowship(String fellowshipId);
 

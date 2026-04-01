@@ -12,6 +12,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { FCMService } from '../_shared/fcm-service.ts'
 
 // ---------------------------------------------------------------------------
 // List posts  GET /fellowship-posts
@@ -254,15 +255,23 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   if (membersResult.error) console.error('[fellowship-posts/create] Members fetch error:', membersResult.error)
   const members = membersResult.data ?? []
 
+  // Send FCM to all other active members (fire-and-forget)
   if (members.length > 0) {
-    const notifications = members.map((m: { user_id: string }) => ({
-      fellowship_id: body.fellowship_id,
-      recipient_user_id: m.user_id,
-      notification_type: 'new_post',
-      payload: { post_id: post.id, post_type: postType }
-    }))
-    const { error: notifError } = await db.from('fellowship_notification_queue').insert(notifications)
-    if (notifError) console.error('[fellowship-posts/create] Notification enqueue error:', notifError)
+    ;(async () => {
+      try {
+        const memberIds = members.map((m: { user_id: string }) => m.user_id)
+        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
+        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+        if (tokens.length === 0) return
+        const fcm = new FCMService()
+        const preview = post.content.length > 80 ? post.content.substring(0, 80) + '…' : post.content
+        await fcm.sendBatchNotifications(
+          tokens,
+          { title: `✍️ ${authorDisplayName} posted`, body: preview },
+          { type: 'fellowship_new_post', fellowship_id: body.fellowship_id, post_id: post.id, post_type: postType }
+        )
+      } catch (err) { console.error('[fellowship-posts/create] FCM error (non-fatal):', err) }
+    })()
   }
 
   return new Response(
@@ -386,7 +395,7 @@ async function handleToggleReaction(req: Request, services: ServiceContainer): P
 
   const { data: post, error: postError } = await db
     .from('fellowship_posts')
-    .select('fellowship_id, reaction_counts')
+    .select('fellowship_id, author_user_id, reaction_counts')
     .eq('id', body.post_id)
     .eq('is_deleted', false)
     .maybeSingle()
@@ -452,6 +461,24 @@ async function handleToggleReaction(req: Request, services: ServiceContainer): P
     .update({ reaction_counts: counts })
     .eq('id', body.post_id)
   if (updateError) console.error('[fellowship-posts/react] Count update error — non-fatal:', updateError)
+
+  // Notify post author when someone adds a reaction (not on remove, not self-reaction)
+  if (action === 'added' && post.author_user_id !== user.id) {
+    ;(async () => {
+      try {
+        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', post.author_user_id)
+        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+        if (tokens.length > 0) {
+          const fcm = new FCMService()
+          await fcm.sendBatchNotifications(
+            tokens,
+            { title: `${reactionType} Someone reacted to your post`, body: 'A fellowship member reacted to your post' },
+            { type: 'fellowship_reaction', fellowship_id: post.fellowship_id, post_id: body.post_id, reaction_type: reactionType }
+          )
+        }
+      } catch (err) { console.error('[fellowship-posts/react] FCM error (non-fatal):', err) }
+    })()
+  }
 
   return new Response(
     JSON.stringify({ success: true, data: { action, reaction_type: reactionType, reaction_counts: counts } }),

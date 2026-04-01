@@ -104,6 +104,9 @@ abstract class CommunityRemoteDatasource {
   /// Returns a map with `is_complete` (bool) and `current_guide_index` (int).
   Future<Map<String, dynamic>> advanceStudy(String fellowshipId);
 
+  /// Resets the fellowship study progress back to Guide 1 (mentor only).
+  Future<void> resetStudy(String fellowshipId);
+
   /// Leaves the fellowship. Blocks if the caller is the sole mentor.
   Future<void> leaveFellowship(String fellowshipId);
 
@@ -250,6 +253,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       '/functions/v1/fellowship-study/set';
   static const String _fellowshipStudyAdvanceEndpoint =
       '/functions/v1/fellowship-study/advance';
+  static const String _fellowshipStudyResetEndpoint =
+      '/functions/v1/fellowship-study/reset';
 
   // Merged: fellowship-members (list, mute, unmute, remove, transfer)
   static const String _fellowshipMembersListEndpoint =
@@ -928,6 +933,36 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       throw ServerException(
         message: 'Failed to advance study: $e',
         code: 'FELLOWSHIP_STUDY_ADVANCE_ERROR',
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fellowship study — reset
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> resetStudy(String fellowshipId) async {
+    try {
+      final url = '$_baseUrl$_fellowshipStudyResetEndpoint';
+      final body = jsonEncode({'fellowship_id': fellowshipId});
+
+      final headers = await _httpService.createHeaders();
+      final response =
+          await _httpService.post(url, headers: headers, body: body);
+
+      if (response.statusCode != 200) {
+        throw ServerException(
+          message: 'Failed to reset study: ${response.statusCode}',
+          code: 'FELLOWSHIP_STUDY_RESET_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to reset study: $e',
+        code: 'FELLOWSHIP_STUDY_RESET_ERROR',
       );
     }
   }

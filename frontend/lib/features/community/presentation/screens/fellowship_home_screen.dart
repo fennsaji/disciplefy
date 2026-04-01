@@ -1335,9 +1335,40 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
     );
   }
 
+  void _showResetConfirm(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.lessonsResetProgress),
+        content: const Text(
+          'This will reset the fellowship\'s progress back to Guide 1. '
+          'All members will need to work through the guides again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<FellowshipStudyBloc>().add(
+                    const FellowshipStudyResetRequested(),
+                  );
+            },
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isMentor = context.watch<FellowshipStudyBloc>().state.isMentor;
     return Scaffold(
       backgroundColor: context.appScaffold,
       appBar: AppBar(
@@ -1363,6 +1394,8 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                 _showLanguageSelector(context);
               } else if (value == 'study_mode') {
                 _showStudyModeSelector(context);
+              } else if (value == 'reset') {
+                _showResetConfirm(context);
               }
             },
             itemBuilder: (_) => [
@@ -1387,6 +1420,20 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                   ],
                 ),
               ),
+              if (isMentor)
+                PopupMenuItem<String>(
+                  value: 'reset',
+                  child: Row(
+                    children: [
+                      Icon(Icons.restart_alt, color: AppColors.error),
+                      const SizedBox(width: 12),
+                      Text(
+                        l10n.lessonsResetProgress,
+                        style: TextStyle(color: AppColors.error),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ],

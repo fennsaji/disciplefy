@@ -22,6 +22,7 @@ class FellowshipStudyBloc
     on<FellowshipStudyRefreshRequested>(_onRefreshRequested);
     on<FellowshipStudySetRequested>(_onSetRequested);
     on<FellowshipStudyAdvanceRequested>(_onAdvanceRequested);
+    on<FellowshipStudyResetRequested>(_onResetRequested);
   }
 
   // ---------------------------------------------------------------------------
@@ -83,6 +84,8 @@ class FellowshipStudyBloc
     emit(state.copyWith(
       setStatus: FellowshipStudySetStatus.loading,
       clearSetError: true,
+      advanceStatus: FellowshipStudyAdvanceStatus.idle,
+      studyCompleted: false,
     ));
 
     final result = await _repository.setFellowshipStudy(
@@ -110,6 +113,7 @@ class FellowshipStudyBloc
     emit(state.copyWith(
       advanceStatus: FellowshipStudyAdvanceStatus.loading,
       clearAdvanceError: true,
+      setStatus: FellowshipStudySetStatus.idle,
     ));
 
     final result = await _repository.advanceStudy(state.fellowshipId);
@@ -125,6 +129,32 @@ class FellowshipStudyBloc
         currentGuideIndex: data['current_guide_index'] as int?,
         totalGuides: data['total_guides'] as int?,
         clearAdvanceError: true,
+      )),
+    );
+  }
+
+  Future<void> _onResetRequested(
+    FellowshipStudyResetRequested event,
+    Emitter<FellowshipStudyState> emit,
+  ) async {
+    emit(state.copyWith(
+      resetStatus: FellowshipStudyResetStatus.loading,
+      clearResetError: true,
+    ));
+
+    final result = await _repository.resetStudy(state.fellowshipId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        resetStatus: FellowshipStudyResetStatus.failure,
+        resetError: failure.message,
+      )),
+      (_) => emit(state.copyWith(
+        resetStatus: FellowshipStudyResetStatus.success,
+        currentGuideIndex: 0,
+        studyCompleted: false,
+        advanceStatus: FellowshipStudyAdvanceStatus.idle,
+        clearResetError: true,
       )),
     );
   }

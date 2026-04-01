@@ -8,7 +8,7 @@
  * - Batch notification processing
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { FCMService, logNotification, getBatchNotificationStatus } from '../fcm-service.ts'
 import { AppError } from '../utils/error-handler.ts'
 
@@ -250,6 +250,28 @@ export class NotificationHelperService {
                 payload: { aps: { sound: 'default', badge: 1 } },
               },
             })
+
+            // Auto-purge stale/unregistered tokens so they are never retried.
+            if (!result.success && result.invalidToken) {
+              const supabase = createClient(
+                this.config.supabaseUrl,
+                this.config.serviceRoleKey
+              )
+              const { error: deleteError } = await supabase
+                .from('user_notification_tokens')
+                .delete()
+                .eq('fcm_token', user.fcm_token)
+              if (deleteError) {
+                console.error(
+                  `[NotificationHelper] Failed to purge stale token for user ${user.user_id}:`,
+                  deleteError.message
+                )
+              } else {
+                console.log(
+                  `[NotificationHelper] Purged stale FCM token for user ${user.user_id}`
+                )
+              }
+            }
 
             // Log the notification
             await logNotification(this.config.supabaseUrl, this.config.serviceRoleKey, {
