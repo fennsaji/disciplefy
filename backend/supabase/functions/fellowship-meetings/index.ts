@@ -378,7 +378,7 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
   const db = services.supabaseServiceClient
 
   const { data: meeting, error: fetchError } = await db
-    .from('fellowship_meetings').select('id, fellowship_id, calendar_event_id, calendar_type, is_cancelled, created_by')
+    .from('fellowship_meetings').select('id, fellowship_id, title, calendar_event_id, calendar_type, is_cancelled, created_by')
     .eq('id', body.meeting_id).maybeSingle()
 
   if (fetchError) throw new AppError('DATABASE_ERROR', 'Failed to fetch meeting', 500)
@@ -406,6 +406,26 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
     console.error('[fellowship-meetings/cancel] DB update error:', updateError)
     throw new AppError('DATABASE_ERROR', 'Failed to cancel meeting', 500)
   }
+
+  // Notify all active members that the meeting was cancelled (fire-and-forget)
+  ;(async () => {
+    try {
+      const { data: members } = await db.from('fellowship_members').select('user_id')
+        .eq('fellowship_id', meeting.fellowship_id).eq('is_active', true)
+      const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id)
+      if (memberIds.length === 0) return
+      const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
+      const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+      if (tokens.length > 0) {
+        const fcm = new FCMService()
+        await fcm.sendBatchNotifications(
+          tokens,
+          { title: `❌ Meeting Cancelled`, body: `"${meeting.title}" has been cancelled.` },
+          { type: 'fellowship_meeting_cancelled', fellowship_id: meeting.fellowship_id, meeting_id: body.meeting_id }
+        )
+      }
+    } catch (err) { console.error('[fellowship-meetings/cancel] FCM error (non-fatal):', err) }
+  })()
 
   return new Response(JSON.stringify({ success: true, message: 'Meeting cancelled' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }

@@ -10,6 +10,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { FCMService } from '../_shared/fcm-service.ts'
 
 // ---------------------------------------------------------------------------
 // List comments  GET /fellowship-comments?post_id=UUID
@@ -174,16 +175,6 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
 
   const [authorResult] = await Promise.all([
     services.supabaseServiceClient.auth.admin.getUserById(user.id),
-    post.author_user_id !== user.id
-      ? db.from('fellowship_notification_queue').insert({
-          fellowship_id: post.fellowship_id,
-          recipient_user_id: post.author_user_id,
-          notification_type: 'new_comment',
-          payload: { post_id: body.post_id, comment_id: comment.id }
-        }).then(({ error: notifError }) => {
-          if (notifError) console.error('[fellowship-comments/create] Notification error:', notifError)
-        })
-      : Promise.resolve()
   ])
 
   const authorUser = authorResult.data?.user
@@ -191,6 +182,25 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
     authorUser?.user_metadata?.full_name ?? authorUser?.user_metadata?.name ??
     authorUser?.user_metadata?.display_name ?? authorUser?.email ?? 'Unknown Member'
   const authorAvatarUrl: string | null = authorUser?.user_metadata?.avatar_url ?? null
+
+  // Notify post author about the new comment (fire-and-forget, skip self-comments)
+  if (post.author_user_id !== user.id) {
+    ;(async () => {
+      try {
+        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', post.author_user_id)
+        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+        if (tokens.length > 0) {
+          const fcm = new FCMService()
+          const preview = trimmedContent.length > 80 ? trimmedContent.substring(0, 80) + '…' : trimmedContent
+          await fcm.sendBatchNotifications(
+            tokens,
+            { title: `💬 ${authorDisplayName} commented`, body: preview },
+            { type: 'fellowship_new_comment', fellowship_id: post.fellowship_id, post_id: body.post_id, comment_id: comment.id }
+          )
+        }
+      } catch (err) { console.error('[fellowship-comments/create] FCM error (non-fatal):', err) }
+    })()
+  }
 
   return new Response(
     JSON.stringify({
