@@ -191,7 +191,13 @@ jobs:
           
           # Copy all build files to deployment root directory
           cp -r build/web/* vercel-deploy/
-          
+
+          # Create .well-known/assetlinks.json for Android App Links
+          mkdir -p vercel-deploy/.well-known
+          cat > vercel-deploy/.well-known/assetlinks.json << 'ASSETLINKS'
+          [{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.disciplefy.bible_study","sha256_cert_fingerprints":["C0:55:BD:BE:B3:3E:8E:47:17:50:97:C7:88:60:88:DA:CA:11:86:0A:3D:8C:F8:D3:DE:FE:C2:53:E0:3D:2D:BE"]}}]
+          ASSETLINKS
+
           # Create Vercel configuration for production (static deployment only)
           cat > vercel-deploy/vercel.json << EOF
           {
@@ -205,6 +211,10 @@ jobs:
               }
             ],
             "rewrites": [
+              {
+                "source": "/.well-known/(.*)",
+                "destination": "/.well-known/\$1"
+              },
               {
                 "source": "/(.*)",
                 "destination": "/index.html"
