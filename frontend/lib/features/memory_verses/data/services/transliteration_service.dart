@@ -662,6 +662,97 @@ class TransliterationService {
     return result.join(' ');
   }
 
+  /// Normalizes Malayalam Manglish (romanized Malayalam) spelling variants
+  /// to a canonical phonetic form for fairer comparison.
+  ///
+  /// Malayalam has no standardized romanization (Manglish), so the same
+  /// sound can be written many ways. This normalizes common equivalences:
+  /// - Doubled digraphs: thth→th, tth→th, chch→ch
+  /// - Doubled consonants: kk→k, pp→p, mm→m, nn→n, ll→l, etc.
+  /// - Long vowels: ee/ii→i, aa→a, oo→u
+  /// - Nasal variants: amg→ng, amk→nk
+  ///
+  /// Applied to BOTH user input and expected text so both converge to the
+  /// same canonical form regardless of which Manglish convention was used.
+  static String normalizeMalayalamManglish(String text) {
+    String result = text.toLowerCase();
+
+    // Phase 1: Reduce doubled digraphs (must run before single-char doubles)
+    result = result
+        .replaceAll('thth', 'th') // karththavu → karthavu
+        .replaceAll('tth', 'th') // uyirththezhun → uyirthezhun
+        .replaceAll('chch', 'ch') // ichchu → ichu
+        .replaceAll('zhzh', 'zh');
+
+    // Phase 2: Reduce doubled single consonants
+    result = result
+        .replaceAll('kk', 'k')
+        .replaceAll('pp', 'p')
+        .replaceAll('cc', 'c')
+        .replaceAll('mm', 'm')
+        .replaceAll('nn', 'n')
+        .replaceAll('ll', 'l')
+        .replaceAll('rr', 'r')
+        .replaceAll('tt', 't')
+        .replaceAll('dd', 'd')
+        .replaceAll('ss', 's')
+        .replaceAll('vv', 'v')
+        .replaceAll('yy', 'y')
+        .replaceAll('gg', 'g')
+        .replaceAll('bb', 'b');
+
+    // Phase 3: Normalize long vowels — Manglish has many conventions
+    // ee/ii → i, aa → a, oo → u
+    result = result
+        .replaceAll('ee', 'i')
+        .replaceAll('ii', 'i')
+        .replaceAll('aa', 'a')
+        .replaceAll('oo', 'u');
+
+    // Phase 4: Nasal consonant variants before stops
+    // 'amg'/'amk' are alternate spellings of 'ang'/'ank'
+    // Preserve the leading vowel: 'amgi' → 'angi' (not 'ngi')
+    result = result.replaceAll('amg', 'ang').replaceAll('amk', 'ank');
+
+    // Phase 5: v/w are interchangeable in Malayalam Manglish
+    // (Malayalam വ is romanized as 'v' by the system, but many type 'w')
+    result = result.replaceAll('w', 'v');
+
+    // Phase 6: English spelling influence
+    result = result.replaceAll('ck', 'k'); // e.g. "racksha" → "raksha"
+
+    // Phase 8: Collapse digraph / aspirated consonants to their base form.
+    // Applied in length order so longer digraphs are matched first.
+    // Both the system's romanization and the user's input are normalized
+    // symmetrically, so this is always safe.
+    //
+    //   zh → z   ഴ (zha) — some write 'z', system writes 'zh'
+    //   sh → s   ശ/ഷ  — many write just 's' in Manglish
+    //   ch → c   ച    — some write 'c' for the ch sound
+    //   bh → b   ഭ    — aspirate often dropped when typing
+    //   kh → k   ഖ    — aspirate often dropped
+    //   gh → g   ഘ    — aspirate often dropped
+    //   ph → p   ഫ    — aspirate often dropped (also: 'f' → 'p' below)
+    //   dh → d   ദ/ധ  — aspirate often dropped
+    //   th → t   ത    — very common: "karthavu"/"kartavu" are both typed
+    result = result
+        .replaceAll('zh', 'z')
+        .replaceAll('sh', 's')
+        .replaceAll('ch', 'c')
+        .replaceAll('bh', 'b')
+        .replaceAll('kh', 'k')
+        .replaceAll('gh', 'g')
+        .replaceAll('ph', 'p')
+        .replaceAll('dh', 'd')
+        .replaceAll('th', 't');
+
+    // Phase 9: Remaining single-char equivalents
+    // 'f' is sometimes used for ഫ (system produces 'ph' → 'p' after phase 8)
+    result = result.replaceAll('f', 'p');
+
+    return result;
+  }
+
   /// Calculates the Levenshtein (edit) distance between two strings.
   ///
   /// The Levenshtein distance is the minimum number of single-character edits

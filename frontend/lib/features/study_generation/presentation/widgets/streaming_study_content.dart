@@ -127,6 +127,9 @@ class StreamingStudyContent extends StatelessWidget {
   /// Study mode for layout adaptation
   final StudyMode studyMode;
 
+  /// Font size override for section content text
+  final double contentFontSize;
+
   const StreamingStudyContent({
     super.key,
     required this.content,
@@ -137,6 +140,7 @@ class StreamingStudyContent extends StatelessWidget {
     this.onComplete,
     this.isPartial = false,
     this.studyMode = StudyMode.standard,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -453,6 +457,7 @@ class StreamingStudyContent extends StatelessWidget {
       icon: icon,
       isHighlight: isHighlight,
       isNew: this.content.sectionsLoaded == index + 1,
+      contentFontSize: contentFontSize,
     );
   }
 
@@ -903,6 +908,7 @@ class StreamingStudyContent extends StatelessWidget {
       content: content,
       icon: icon,
       isNew: this.content.sectionsLoaded == index + 1,
+      contentFontSize: contentFontSize,
     );
   }
 
@@ -1311,6 +1317,7 @@ class StreamingStudyContent extends StatelessWidget {
       icon: icon,
       content: content,
       isNew: this.content.sectionsLoaded == index + 1,
+      contentFontSize: contentFontSize,
     );
   }
 }
@@ -1321,12 +1328,14 @@ class _StreamingSection extends StatefulWidget {
   final IconData icon;
   final String content;
   final bool isNew;
+  final double contentFontSize;
 
   const _StreamingSection({
     required this.title,
     required this.icon,
     required this.content,
     this.isNew = false,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -1453,7 +1462,7 @@ class _StreamingSectionState extends State<_StreamingSection>
               MarkdownWithScripture(
                 data: _cleanDuplicateTitle(widget.content, widget.title),
                 textStyle: AppFonts.inter(
-                  fontSize: 18,
+                  fontSize: widget.contentFontSize,
                   height: 1.6,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -1580,6 +1589,7 @@ class _QuickSection extends StatefulWidget {
   final IconData icon;
   final bool isHighlight;
   final bool isNew;
+  final double contentFontSize;
 
   const _QuickSection({
     required this.title,
@@ -1587,6 +1597,7 @@ class _QuickSection extends StatefulWidget {
     required this.icon,
     this.isHighlight = false,
     this.isNew = false,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -1699,7 +1710,7 @@ class _QuickSectionState extends State<_QuickSection>
               MarkdownWithScripture(
                 data: _cleanDuplicateTitle(widget.content, widget.title),
                 textStyle: AppFonts.inter(
-                  fontSize: 18,
+                  fontSize: widget.contentFontSize,
                   fontWeight:
                       widget.isHighlight ? FontWeight.w500 : FontWeight.w400,
                   height: 1.6,
@@ -1802,6 +1813,7 @@ class _LectioSection extends StatefulWidget {
   final String content;
   final IconData icon;
   final bool isNew;
+  final double contentFontSize;
 
   const _LectioSection({
     required this.title,
@@ -1809,6 +1821,7 @@ class _LectioSection extends StatefulWidget {
     required this.content,
     required this.icon,
     this.isNew = false,
+    this.contentFontSize = 18.0,
   });
 
   @override
@@ -1960,7 +1973,7 @@ class _LectioSectionState extends State<_LectioSection>
               MarkdownWithScripture(
                 data: _cleanDuplicateTitle(widget.content, widget.title),
                 textStyle: AppFonts.inter(
-                  fontSize: 18,
+                  fontSize: widget.contentFontSize,
                   fontWeight: FontWeight.w400,
                   height: 1.7, // Extra line height for meditative reading
                   color: Theme.of(context).colorScheme.onSurface,

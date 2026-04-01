@@ -327,6 +327,24 @@ class CommunityRepositoryImpl implements CommunityRepository {
   }
 
   // ---------------------------------------------------------------------------
+  // Fellowship study — reset
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Either<Failure, void>> resetStudy(String fellowshipId) async {
+    try {
+      await _datasource.resetStudy(fellowshipId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to reset study: $e'));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Fellowship — leave
   // ---------------------------------------------------------------------------
 

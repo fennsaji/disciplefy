@@ -363,8 +363,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
   void _onNotesFocusChanged() {
     if (_notesFocusNode.hasFocus) {
-      _completionSheetTimer?.cancel();
-      _completionSheetTimer = null;
+      // Typing in notes counts as user activity — reset inactivity countdown.
+      _cancelInactivityCountdown();
     }
   }
 
@@ -1281,6 +1281,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Setup scroll listener to detect when user reaches bottom of content
   void _startScrollListener() {
     _scrollController.addListener(() {
+      // Any scroll counts as user activity — reset the inactivity countdown.
+      _onUserActivity();
+
       // Completion tracking: 80% threshold
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
@@ -1291,12 +1294,96 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         _checkCompletionConditions();
       }
 
-      // Learning-path sheet: show only when guide is fully completed (time
-      // condition met + 80% scroll) AND user reaches the absolute bottom (97%).
-      if (_completionMarked && _isScrolledToAbsoluteBottom()) {
-        _maybeShowLearningPathSheet();
+      // Learning-path sheet: re-evaluate whether to start/cancel the inactivity
+      // countdown whenever the scroll position changes.
+      if (_completionMarked) {
+        if (_isScrolledToAbsoluteBottom()) {
+          _startInactivityCountdown();
+        } else {
+          // User scrolled away from bottom — cancel the pending countdown.
+          _cancelInactivityCountdown();
+        }
       }
     });
+  }
+
+  // ============================================================================
+  // Inactivity-based completion sheet trigger
+  // ============================================================================
+  //
+  // The completion sheet is shown only when:
+  //   1. The guide is fully completed (_completionMarked == true).
+  //   2. The user is at the absolute bottom of the page (97%+).
+  //   3. The user has been inactive (no scroll, no tap) for [_inactivitySeconds].
+  //
+  // Any scroll or tap cancels the countdown and resets it from zero.
+
+  static const int _inactivitySeconds = 3;
+
+  /// Called whenever the user interacts (scroll or tap).
+  /// Cancels any running inactivity countdown.  A new countdown is started by
+  /// the scroll listener once the user settles at the bottom again.
+  void _onUserActivity() {
+    _cancelInactivityCountdown();
+  }
+
+  /// Starts (or ignores if already running) the inactivity countdown that will
+  /// show the completion sheet after [_inactivitySeconds] of silence at the
+  /// absolute bottom.
+  void _startInactivityCountdown() {
+    if (_isTopicCompletedFromPath) return;
+    if (_phase2WalkthroughStarted) return;
+    if (!_completionMarked) return;
+    // Don't stack timers — one countdown at a time.
+    if (_completionSheetTimer?.isActive ?? false) return;
+
+    _completionSheetTimer =
+        Timer(const Duration(seconds: _inactivitySeconds), () async {
+      // Double-check all conditions at fire time (user may have scrolled away).
+      if (!mounted) return;
+      if (_isTopicCompletedFromPath || _phase2WalkthroughStarted) return;
+      if (!_completionMarked) return;
+      if (!_isScrolledToAbsoluteBottom()) return;
+
+      // Wait for any pending achievement popups to be dismissed before showing
+      // the sheet — completing a study fires CheckStudyAchievements which can
+      // trigger an achievement dialog that would overlap the bottom sheet.
+      final gamificationBloc = sl<GamificationBloc>();
+      if (gamificationBloc.state.hasPendingNotifications) {
+        try {
+          await gamificationBloc.stream
+              .firstWhere((s) => !s.hasPendingNotifications)
+              .timeout(const Duration(seconds: 10));
+        } catch (_) {
+          // Timeout — proceed anyway so the sheet is never blocked forever.
+        }
+        if (!mounted ||
+            _isTopicCompletedFromPath ||
+            _phase2WalkthroughStarted) {
+          return;
+        }
+        // Extra pause so the dialog dismiss animation fully completes.
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted ||
+            _isTopicCompletedFromPath ||
+            _phase2WalkthroughStarted) {
+          return;
+        }
+      }
+
+      // Final position check after all the async waits above.
+      if (!_isScrolledToAbsoluteBottom()) return;
+
+      _showLearningPathCompletionSheet(
+        onDismissed: _triggerStudyGuideCompletionWalkthrough,
+      );
+    });
+  }
+
+  /// Cancels the inactivity countdown without showing the sheet.
+  void _cancelInactivityCountdown() {
+    _completionSheetTimer?.cancel();
+    _completionSheetTimer = null;
   }
 
   /// Check if user has scrolled near the bottom of the content
@@ -1454,9 +1541,12 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       _completionMarked = true;
     });
 
-    // If user is already at the absolute bottom when completion triggers,
-    // show the learning path sheet immediately without waiting for another scroll.
-    _maybeShowLearningPathSheet();
+    // If the user is already sitting at the absolute bottom when completion
+    // triggers, begin the inactivity countdown immediately so the sheet appears
+    // after the user has been idle for a moment (without waiting for a scroll).
+    if (_isScrolledToAbsoluteBottom()) {
+      _startInactivityCountdown();
+    }
 
     if (kDebugMode) {
       Logger.info('✅ [COMPLETION] Marking guide as complete:');
@@ -1577,52 +1667,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  /// Guards the completion sheet: shown whenever the guide is fully completed
-  /// AND the user has scrolled to the absolute bottom, regardless of navigation
-  /// source.
-  void _maybeShowLearningPathSheet() {
-    if (_isTopicCompletedFromPath) return;
-    if (_phase2WalkthroughStarted) return; // walkthrough already running
-    if (!_completionMarked) return;
-    if (!_isScrolledToAbsoluteBottom()) return;
-    // Don't stack timers if one is already pending
-    if (_completionSheetTimer?.isActive ?? false) return;
-    // Wait 5 s — if the user taps the notes field, the timer is cancelled via
-    // _onNotesFocusChanged so the sheet never appears.
-    _completionSheetTimer = Timer(const Duration(seconds: 5), () async {
-      if (!mounted || _isTopicCompletedFromPath || _phase2WalkthroughStarted) {
-        return;
-      }
-      // Wait for any pending achievement popups to be dismissed before showing
-      // the sheet — completing a study fires CheckStudyAchievements which can
-      // trigger an achievement dialog that would overlap the bottom sheet.
-      final gamificationBloc = sl<GamificationBloc>();
-      if (gamificationBloc.state.hasPendingNotifications) {
-        try {
-          await gamificationBloc.stream
-              .firstWhere((s) => !s.hasPendingNotifications)
-              .timeout(const Duration(seconds: 10));
-        } catch (_) {
-          // Timeout — proceed anyway so the sheet is never blocked forever.
-        }
-        if (!mounted ||
-            _isTopicCompletedFromPath ||
-            _phase2WalkthroughStarted) {
-          return;
-        }
-        // Extra pause so the dialog dismiss animation fully completes.
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (!mounted ||
-            _isTopicCompletedFromPath ||
-            _phase2WalkthroughStarted) {
-          return;
-        }
-      }
-      _showLearningPathCompletionSheet(
-        onDismissed: _triggerStudyGuideCompletionWalkthrough,
-      );
-    });
-  }
+  // _maybeShowLearningPathSheet() has been replaced by _startInactivityCountdown()
+  // and _cancelInactivityCountdown() above.  The new approach verifies both the
+  // "at bottom" and "inactive for N seconds" conditions together.
 
   /// Shows a bottom sheet prompting the user after the guide is completed and
   /// the user has scrolled to the very bottom.
@@ -1640,23 +1687,76 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     final isFromLearningPath =
         widget.navigationSource == StudyNavigationSource.learningPath;
+    final hasFellowship =
+        _userFellowships != null && _userFellowships!.isNotEmpty;
+    final hasGuide = _currentStudyGuide != null;
+    final hasDiscipler =
+        _isAiDisciplerFeatureEnabled() && _shouldShowStudyChat();
 
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (sheetContext) {
         final theme = Theme.of(context);
         final isDark = theme.brightness == Brightness.dark;
         final accentColor = theme.colorScheme.primary;
+        final surfaceColor = theme.colorScheme.surface;
+        final onSurface = theme.colorScheme.onSurface;
+
+        // Build the list of quick-action tiles dynamically.
+        final actions = <_CompletionAction>[
+          _CompletionAction(
+            icon: Icons.edit_note_rounded,
+            label: 'Add Notes',
+            color: const Color(0xFF6366F1), // indigo
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              _scrollToNotesAndFocus();
+            },
+          ),
+          if (hasFellowship && hasGuide)
+            _CompletionAction(
+              icon: Icons.people_rounded,
+              label: 'Share to\nFellowship',
+              color: const Color(0xFF10B981), // green
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ShareGuideSheet(
+                    studyGuideId: _currentStudyGuide!.id,
+                    guideTitle: _getDisplayTitle(),
+                    guideInputType: _currentStudyGuide!.inputType,
+                    guideLanguage: _currentStudyGuide!.language,
+                    fellowships: _userFellowships!,
+                  ),
+                );
+              },
+            ),
+          if (hasDiscipler)
+            _CompletionAction(
+              icon: Icons.psychology_rounded,
+              label: 'Ask\nDiscipler',
+              color: const Color(0xFFF59E0B), // amber
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _openDisciplerChat();
+              },
+            ),
+        ];
 
         return Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          padding: EdgeInsets.fromLTRB(
+              20, 16, 20, 20 + MediaQuery.of(context).padding.bottom),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
+            color: surfaceColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                color: accentColor.withOpacity(0.12),
+                color: accentColor.withOpacity(0.10),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -1666,60 +1766,89 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             mainAxisSize: MainAxisSize.min,
             children: [
               // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(2),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: onSurface.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Icon
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 36,
-                ),
+              // Header row — icon + text side by side
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.success,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Guide Complete!',
+                          style: AppFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isFromLearningPath
+                              ? 'Ready to continue your learning path?'
+                              : 'What would you like to do next?',
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: onSurface.withOpacity(isDark ? 0.7 : 0.55),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
 
-              Text(
-                "You've reached the end!",
-                style: AppFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface,
+              // Quick-action tiles row
+              if (actions.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Row(
+                  children: actions
+                      .map((action) => Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: _buildCompletionActionTile(
+                                action: action,
+                                isDark: isDark,
+                              ),
+                            ),
+                          ))
+                      .toList(),
                 ),
-              ),
-              const SizedBox(height: 6),
+              ],
 
-              Text(
-                isFromLearningPath
-                    ? 'Ready to continue your learning path?'
-                    : 'Great job completing this study!',
-                style: AppFonts.inter(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurface
-                      .withOpacity(isDark ? 0.75 : 0.6),
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
 
               // Primary CTA
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 50,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();
@@ -1729,7 +1858,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                     isFromLearningPath
                         ? Icons.route_rounded
                         : Icons.check_rounded,
-                    size: 20,
+                    size: 18,
                   ),
                   label: Text(
                     isFromLearningPath ? 'Continue Learning Path' : 'Done',
@@ -1747,17 +1876,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Secondary – stay on screen
               TextButton(
                 onPressed: () => Navigator.of(sheetContext).pop(),
                 child: Text(
-                  'Stay Here',
+                  'Not now',
                   style: AppFonts.inter(
                     fontSize: 14,
-                    color: theme.colorScheme.onSurface
-                        .withOpacity(isDark ? 0.6 : 0.5),
+                    color: onSurface.withOpacity(isDark ? 0.55 : 0.45),
                   ),
                 ),
               ),
@@ -1766,6 +1894,79 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         );
       },
     ).then((_) => onDismissed?.call());
+  }
+
+  /// Builds a single quick-action tile used in the completion sheet.
+  Widget _buildCompletionActionTile({
+    required _CompletionAction action,
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: action.onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: action.color.withOpacity(isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: action.color.withOpacity(isDark ? 0.35 : 0.2),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(action.icon, color: action.color, size: 26),
+            const SizedBox(height: 6),
+            Text(
+              action.label,
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface
+                    .withOpacity(isDark ? 0.85 : 0.75),
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Scrolls to the personal notes section and focuses the text field.
+  void _scrollToNotesAndFocus() {
+    // The notes field is near the bottom of the page. Animate to the end and
+    // then request focus so the keyboard opens and positions the view correctly.
+    if (_scrollController.hasClients) {
+      _scrollController
+          .animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
+      )
+          .then((_) {
+        if (mounted) _notesFocusNode.requestFocus();
+      });
+    } else {
+      _notesFocusNode.requestFocus();
+    }
+  }
+
+  /// Scrolls to the AI Discipler / follow-up chat section and opens it.
+  void _openDisciplerChat() {
+    if (!mounted) return;
+    setState(() => _isChatExpanded = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      // Scroll the chat section into view by scrolling to bottom.
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   @override
@@ -2153,6 +2354,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   }
 
   Widget _buildBody() {
+    // Wrap with Listener so any pointer-down event (tap, long-press) is treated
+    // as user activity and resets the inactivity countdown.
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _onUserActivity(),
+      child: _buildBodyContent(),
+    );
+  }
+
+  Widget _buildBodyContent() {
     // Use BlocBuilder to handle streaming states
     return BlocBuilder<StudyBloc, StudyState>(
       buildWhen: (previous, current) =>
@@ -2198,6 +2409,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             language: state.language,
             scrollController: _scrollController,
             studyMode: widget.studyMode,
+            contentFontSize: _contentFontSize,
             onComplete:
                 state.content.isComplete && state.content.studyGuideId != null
                     ? () => _handleStreamingComplete(state)
@@ -2309,6 +2521,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             language: state.language,
             scrollController: _scrollController,
             studyMode: widget.studyMode,
+            contentFontSize: _contentFontSize,
             isPartial: true,
           ),
         ),
@@ -5128,4 +5341,24 @@ class _ScreenshotShareSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+// ============================================================================
+// Completion sheet action model
+// ============================================================================
+
+/// Describes a single quick-action tile displayed in the study completion
+/// bottom sheet (e.g., Add Notes, Share to Fellowship, Ask Discipler).
+class _CompletionAction {
+  const _CompletionAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 }

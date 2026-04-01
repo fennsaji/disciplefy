@@ -557,6 +557,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             user: user,
             profile: profile,
           ));
+
+          // Re-register FCM token after login. On logout, initialize() sets
+          // _isInitialized = false and deletes the Firebase token. Calling
+          // initialize() here obtains a fresh token and registers it for the
+          // newly signed-in user, ensuring notifications work after re-login
+          // without an app restart.
+          if (!kIsWeb) {
+            unawaited(_notificationService.initialize());
+          }
         }
       } else if (authState.event == AuthChangeEvent.signedOut) {
         // Supabase emits signedOut when its internal token auto-refresh fails

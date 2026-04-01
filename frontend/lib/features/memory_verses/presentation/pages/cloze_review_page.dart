@@ -311,9 +311,21 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
     // For non-English, use fuzzy matching with high threshold (85%+)
     // to account for spelling variations in Hinglish/Manglish
     if (detectedLanguage != 'en') {
+      // For Malayalam, normalize phonetic equivalences first
+      // (double consonants, long vowels, nasal variants) so that
+      // spellings like karthavu/karththavu are treated as identical.
+      String compareTarget = targetWithoutPunctuation;
+      String compareInput = inputWithoutPunctuation;
+      if (detectedLanguage == 'ml') {
+        compareTarget =
+            TransliterationService.normalizeMalayalamManglish(compareTarget);
+        compareInput =
+            TransliterationService.normalizeMalayalamManglish(compareInput);
+        if (compareTarget == compareInput) return true;
+      }
       final accuracy = TransliterationService.calculateAccuracy(
-        inputWithoutPunctuation,
-        targetWithoutPunctuation,
+        compareInput,
+        compareTarget,
       );
       return accuracy >= 85.0;
     }

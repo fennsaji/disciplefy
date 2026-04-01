@@ -107,7 +107,8 @@ class _FellowshipLessonsTabScreenState
       child: BlocConsumer<FellowshipStudyBloc, FellowshipStudyState>(
         listenWhen: (prev, curr) =>
             prev.setStatus != curr.setStatus ||
-            prev.advanceStatus != curr.advanceStatus,
+            prev.advanceStatus != curr.advanceStatus ||
+            prev.resetStatus != curr.resetStatus,
         listener: (context, state) {
           final l10n = AppLocalizations.of(context)!;
           if (state.setStatus == FellowshipStudySetStatus.success) {
@@ -115,7 +116,7 @@ class _FellowshipLessonsTabScreenState
               ..hideCurrentSnackBar()
               ..showSnackBar(
                 SnackBar(
-                  content: const Text('Learning path assigned successfully!'),
+                  content: Text(l10n.lessonsPathAssignedSuccess),
                   backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating,
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -139,21 +140,25 @@ class _FellowshipLessonsTabScreenState
               );
           } else if (state.advanceStatus ==
               FellowshipStudyAdvanceStatus.success) {
-            final msg = state.studyCompleted
-                ? l10n.lessonsCompleted
-                : '${l10n.lessonsGuideProgress} ${(state.currentGuideIndex ?? 0) + 1} ${l10n.lessonsOf} ${state.totalGuides ?? '?'}';
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(msg),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
+            if (state.studyCompleted && state.isMentor) {
+              _showPathCompletedDialog(context, state);
+            } else {
+              final msg = state.studyCompleted
+                  ? l10n.lessonsCompleted
+                  : '${l10n.lessonsGuideProgress} ${(state.currentGuideIndex ?? 0) + 1} ${l10n.lessonsOf} ${state.totalGuides ?? '?'}';
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(msg),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+            }
             // Refresh member list so topicsCompleted counts stay current.
             context.read<FellowshipMembersBloc>().add(
                   FellowshipMembersLoadRequested(
@@ -167,6 +172,37 @@ class _FellowshipLessonsTabScreenState
                 SnackBar(
                   content:
                       Text(state.advanceError ?? 'Failed to advance guide.'),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              );
+          } else if (state.resetStatus == FellowshipStudyResetStatus.success) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(l10n.lessonsProgressResetSuccess),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              );
+            context.read<FellowshipMembersBloc>().add(
+                  FellowshipMembersLoadRequested(
+                      fellowshipId: widget.fellowshipId),
+                );
+          } else if (state.resetStatus == FellowshipStudyResetStatus.failure) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content:
+                      Text(state.resetError ?? 'Failed to reset progress.'),
                   backgroundColor: AppColors.error,
                   behavior: SnackBarBehavior.floating,
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -220,11 +256,17 @@ class _FellowshipLessonsTabScreenState
 
   void _showAdvanceConfirm(BuildContext context, AppLocalizations l10n) {
     final studyBloc = context.read<FellowshipStudyBloc>();
+    final state = studyBloc.state;
+    final isLastGuide = state.currentGuideIndex != null &&
+        state.totalGuides != null &&
+        state.currentGuideIndex! >= state.totalGuides! - 1;
+    final title =
+        isLastGuide ? l10n.lessonsFinishPath : l10n.lessonsAdvanceGuide;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          l10n.lessonsAdvanceGuide,
+          title,
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w700,
@@ -249,7 +291,7 @@ class _FellowshipLessonsTabScreenState
               studyBloc.add(const FellowshipStudyAdvanceRequested());
             },
             child: Text(
-              l10n.lessonsAdvanceGuide,
+              title,
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
@@ -278,6 +320,74 @@ class _FellowshipLessonsTabScreenState
           studyBloc: studyBloc,
           language: _contentLanguage,
         ),
+      ),
+    );
+  }
+
+  void _showPathCompletedDialog(
+      BuildContext context, FellowshipStudyState state) {
+    final l10n = AppLocalizations.of(context)!;
+    final pathsState = context.read<LearningPathsBloc>().state;
+    final pathTitle = pathsState is LearningPathDetailLoaded
+        ? pathsState.pathDetail.title
+        : state.currentPathTitle ?? '';
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.emoji_events_rounded,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.lessonsPathComplete,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: context.appTextPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.lessonsPathCompleteBody(pathTitle),
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: context.appTextSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              l10n.lessonsLater,
+              style: TextStyle(color: context.appTextSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _showPathPicker(context, state);
+            },
+            child: Text(
+              l10n.lessonsChooseNextPath,
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,7 +437,11 @@ class _StudyContent extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: _AdvanceGuideButton(
                 isLoading: isAdvancing,
-                label: l10n.lessonsAdvanceGuide,
+                label: (state.currentGuideIndex != null &&
+                        state.totalGuides != null &&
+                        state.currentGuideIndex! >= state.totalGuides! - 1)
+                    ? l10n.lessonsFinishPath
+                    : l10n.lessonsAdvanceGuide,
                 onTap: onAdvanceTap,
               ),
             ),
@@ -338,7 +452,13 @@ class _StudyContent extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: _MemberProgressSection(l10n: l10n),
+              child: _MemberProgressSection(
+                l10n: l10n,
+                fellowshipGuideIndex: state.studyCompleted
+                    ? state.totalGuides
+                    : state.currentGuideIndex,
+                fellowshipTotalGuides: state.totalGuides,
+              ),
             ),
           ),
 
@@ -373,7 +493,9 @@ class _StudyContent extends StatelessWidget {
                     ? pathsState.pathDetail.discipleLevel
                     : '';
                 return _GuideList(
-                  currentGuideIndex: state.currentGuideIndex ?? 0,
+                  currentGuideIndex: state.studyCompleted
+                      ? (state.totalGuides ?? 0) + 1
+                      : (state.currentGuideIndex ?? 0),
                   fellowshipId: fellowshipId,
                   pathTitle: pathTitle,
                   pathDescription: pathDescription,
@@ -1635,8 +1757,14 @@ class _PathPickerItem extends StatelessWidget {
 
 class _MemberProgressSection extends StatelessWidget {
   final AppLocalizations l10n;
+  final int? fellowshipGuideIndex;
+  final int? fellowshipTotalGuides;
 
-  const _MemberProgressSection({required this.l10n});
+  const _MemberProgressSection({
+    required this.l10n,
+    this.fellowshipGuideIndex,
+    this.fellowshipTotalGuides,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1644,7 +1772,7 @@ class _MemberProgressSection extends StatelessWidget {
       builder: (context, pathsState) {
         final int? totalTopics = pathsState is LearningPathDetailLoaded
             ? pathsState.pathDetail.topics.length
-            : null;
+            : fellowshipTotalGuides;
 
         return BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
           buildWhen: (prev, curr) =>
@@ -1661,6 +1789,12 @@ class _MemberProgressSection extends StatelessWidget {
                     .length
                 : 0;
             final totalCount = members.length;
+
+            final fellowshipProgress = (fellowshipGuideIndex != null &&
+                    totalTopics != null &&
+                    totalTopics > 0)
+                ? (fellowshipGuideIndex! / totalTopics).clamp(0.0, 1.0)
+                : null;
 
             return Container(
               decoration: BoxDecoration(
@@ -1715,6 +1849,60 @@ class _MemberProgressSection extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  // ── Fellowship progress bar ───────────────────────────
+                  if (fellowshipProgress != null) ...[
+                    Divider(height: 1, color: context.appDivider),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.groups_outlined,
+                                size: 14,
+                                color: context.appTextSecondary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                l10n.fellowshipProgress,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.appTextSecondary,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${fellowshipGuideIndex!}/${totalTopics!}',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.appPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: fellowshipProgress,
+                              minHeight: 6,
+                              backgroundColor:
+                                  context.appPrimary.withValues(alpha: 0.12),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  context.appPrimary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   Divider(height: 1, color: context.appDivider),
 

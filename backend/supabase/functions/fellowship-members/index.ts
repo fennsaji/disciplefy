@@ -62,7 +62,7 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
       .eq('fellowship_id', fellowshipId).eq('is_active', true).order('joined_at', { ascending: true }),
     db.from('fellowship_mutes').select('muted_user_id').eq('fellowship_id', fellowshipId),
     db.from('fellowship_study').select('learning_path_id, current_guide_index')
-      .eq('fellowship_id', fellowshipId).maybeSingle()
+      .eq('fellowship_id', fellowshipId).is('completed_at', null).maybeSingle()
   ])
 
   if (membersResult.error) {
@@ -106,9 +106,7 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
       const personallyCompleted = progressByUserId.has(row.user_id)
         ? progressByUserId.get(row.user_id)!
         : (activeLearningPathId ? 0 : null)
-      const topics_completed = personallyCompleted !== null
-        ? Math.max(personallyCompleted, currentGuideIndex)
-        : null
+      const topics_completed = personallyCompleted
 
       try {
         const { data: userData, error: userError } =
