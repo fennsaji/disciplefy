@@ -799,31 +799,39 @@ class NotificationService {
     if (kIsWeb) return; // Web platform manages its own token lifecycle
 
     final token = _fcmToken;
-    if (token == null) {
-      if (kDebugMode) {
-        Logger.debug(
-            '[NotificationService] unregisterToken: no token stored, skipping');
-      }
-      return;
-    }
 
-    // 1. Remove from backend — requires active auth session (call before signOut)
+    // 1. Remove ALL tokens for this user from the backend. Using the
+    //    DELETE-by-user endpoint (no body) purges the current token AND any
+    //    orphaned tokens left behind by Firebase's automatic token rotation
+    //    (e.g., T1 was rotated to T2 — logout would previously only remove T2).
+    //    Call before signOut so the auth session is still valid.
     try {
       await _supabaseClient.functions.invoke(
         'register-fcm-token',
         method: HttpMethod.delete,
-        body: {'fcmToken': token},
+        // Omit fcmToken body → backend deletes ALL tokens for the current user
+        body: {},
       );
       if (kDebugMode) {
         Logger.debug(
-            '[NotificationService] ✅ FCM token unregistered from backend');
+            '[NotificationService] ✅ All FCM tokens unregistered from backend');
       }
     } catch (e) {
-      // Non-fatal — token will be cleaned up by the nightly cleanup job
+      // Non-fatal — stale tokens will be auto-purged on next failed send or
+      // by the nightly cleanup job.
       if (kDebugMode) {
         Logger.warning(
             '[NotificationService] ⚠️ Backend token unregister failed: $e');
       }
+    }
+
+    if (token == null) {
+      if (kDebugMode) {
+        Logger.debug(
+            '[NotificationService] unregisterToken: no local token, skipping Firebase delete');
+      }
+      _isInitialized = false;
+      return;
     }
 
     // 2. Delete from Firebase so this device gets a fresh token on next login

@@ -118,6 +118,19 @@ function normalizeBookName(book: string): string {
     return LOCALIZED_VARIANTS_TO_ENGLISH[book]
   }
 
+  // Case-insensitive fallback for Hinglish (Roman-script transliterations) and
+  // mixed-case English input. Hinglish entries are stored as lowercase keys.
+  const bookLower = book.toLowerCase()
+  if (LOCALIZED_VARIANTS_TO_ENGLISH[bookLower]) {
+    return LOCALIZED_VARIANTS_TO_ENGLISH[bookLower]
+  }
+
+  // Case-insensitive English canonical name (e.g. "psalms" → "Psalms")
+  const engKey = Object.keys(BOOK_CODES).find(k => k.toLowerCase() === bookLower)
+  if (engKey) {
+    return engKey
+  }
+
   // Return as-is (will fail validation later)
   return book
 }

@@ -1,16 +1,9 @@
 {
   "rewrites": [
-    { "source": "/.well-known/:path*", "destination": "/.well-known/:path*" },
+    { "source": "/.well-known/assetlinks.json", "destination": "/api/assetlinks" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
-    {
-      "source": "/.well-known/assetlinks.json",
-      "headers": [
-        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
-      ]
-    },
     {
       "source": "/(.*)",
       "headers": [

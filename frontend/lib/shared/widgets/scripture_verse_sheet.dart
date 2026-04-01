@@ -482,7 +482,32 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         const SizedBox(width: 24),
         // Memory button
         _ActionButton(
-          icon: Icons.bookmark_add_rounded,
+          icon: Icons.psychology_outlined,
+          iconWidget: Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  Icons.psychology_outlined,
+                  size: 24,
+                  color: theme.colorScheme.primary,
+                ),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.primary.withOpacity(0.85),
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           label: context.tr(TranslationKeys.verseSheetMemory),
           onTap: _isAddingToMemory ? null : _addToMemoryVerses,
           isLoading: _isAddingToMemory,
@@ -519,6 +544,7 @@ class _ParsedReference {
 /// Action button widget with icon and label.
 class _ActionButton extends StatelessWidget {
   final IconData icon;
+  final Widget? iconWidget;
   final String label;
   final VoidCallback? onTap;
   final ThemeData theme;
@@ -530,6 +556,7 @@ class _ActionButton extends StatelessWidget {
     required this.onTap,
     required this.theme,
     this.isLoading = false,
+    this.iconWidget,
   });
 
   @override
@@ -557,11 +584,12 @@ class _ActionButton extends StatelessWidget {
                         color: theme.colorScheme.primary,
                       ),
                     )
-                  : Icon(
-                      icon,
-                      size: 24,
-                      color: theme.colorScheme.primary,
-                    ),
+                  : iconWidget ??
+                      Icon(
+                        icon,
+                        size: 24,
+                        color: theme.colorScheme.primary,
+                      ),
             ),
             const SizedBox(height: 6),
             Text(

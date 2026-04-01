@@ -59,6 +59,8 @@ interface FCMResponse {
   success: boolean;
   messageId?: string;
   error?: string;
+  /** True when FCM rejected the token as unregistered/invalid — caller should purge it. */
+  invalidToken?: boolean;
 }
 
 // FCM API v1 request body structure
@@ -253,9 +255,23 @@ export class FCMService {
       if (!response.ok) {
         const error = await response.json();
         console.error('FCM API error:', error);
+
+        // Detect stale/invalid token errors so callers can purge the token.
+        // FCM v1 returns these as HTTP 404 (UNREGISTERED) or HTTP 400 (INVALID_ARGUMENT).
+        const fcmErrorCode: string =
+          error?.error?.details?.[0]?.errorCode ?? error?.error?.status ?? '';
+        const invalidToken =
+          fcmErrorCode === 'UNREGISTERED' ||
+          error?.error?.status === 'NOT_FOUND' ||
+          (error?.error?.status === 'INVALID_ARGUMENT' &&
+            (error?.error?.message as string | undefined)
+              ?.toLowerCase()
+              .includes('registration token'));
+
         return {
           success: false,
           error: formatFCMError(error),
+          ...(invalidToken ? { invalidToken: true } : {}),
         };
       }
 

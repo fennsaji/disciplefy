@@ -6,6 +6,9 @@ enum FellowshipStudySetStatus { idle, loading, success, failure }
 /// Status of the advance-study operation.
 enum FellowshipStudyAdvanceStatus { idle, loading, success, failure }
 
+/// Status of the reset-study operation.
+enum FellowshipStudyResetStatus { idle, loading, success, failure }
+
 /// State for [FellowshipStudyBloc].
 class FellowshipStudyState extends Equatable {
   /// ID of the fellowship this state belongs to.
@@ -44,6 +47,12 @@ class FellowshipStudyState extends Equatable {
   /// Total number of guides in the path.
   final int? totalGuides;
 
+  /// Status of the reset-progress operation.
+  final FellowshipStudyResetStatus resetStatus;
+
+  /// Error message from a failed reset call.
+  final String? resetError;
+
   const FellowshipStudyState({
     required this.fellowshipId,
     this.isMentor = false,
@@ -56,6 +65,8 @@ class FellowshipStudyState extends Equatable {
     this.studyCompleted = false,
     this.currentGuideIndex,
     this.totalGuides,
+    this.resetStatus = FellowshipStudyResetStatus.idle,
+    this.resetError,
   });
 
   factory FellowshipStudyState.initial() => const FellowshipStudyState(
@@ -78,6 +89,9 @@ class FellowshipStudyState extends Equatable {
     bool? studyCompleted,
     int? currentGuideIndex,
     int? totalGuides,
+    FellowshipStudyResetStatus? resetStatus,
+    String? resetError,
+    bool clearResetError = false,
   }) {
     return FellowshipStudyState(
       fellowshipId: fellowshipId ?? this.fellowshipId,
@@ -96,6 +110,8 @@ class FellowshipStudyState extends Equatable {
       studyCompleted: studyCompleted ?? this.studyCompleted,
       currentGuideIndex: currentGuideIndex ?? this.currentGuideIndex,
       totalGuides: totalGuides ?? this.totalGuides,
+      resetStatus: resetStatus ?? this.resetStatus,
+      resetError: clearResetError ? null : resetError ?? this.resetError,
     );
   }
 
@@ -112,5 +128,7 @@ class FellowshipStudyState extends Equatable {
         studyCompleted,
         currentGuideIndex,
         totalGuides,
+        resetStatus,
+        resetError,
       ];
 }

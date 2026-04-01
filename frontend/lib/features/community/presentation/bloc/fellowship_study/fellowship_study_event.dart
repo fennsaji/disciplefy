@@ -66,6 +66,14 @@ class FellowshipStudyAdvanceRequested extends FellowshipStudyEvent {
   List<Object?> get props => [];
 }
 
+/// Fired when a mentor taps "Reset Progress" to restart from Guide 1.
+class FellowshipStudyResetRequested extends FellowshipStudyEvent {
+  const FellowshipStudyResetRequested();
+
+  @override
+  List<Object?> get props => [];
+}
+
 /// Fired when a mentor picks a learning path from the picker bottom-sheet.
 class FellowshipStudySetRequested extends FellowshipStudyEvent {
   /// Fellowship that should be updated.
