@@ -714,9 +714,20 @@ class RouterGuard {
     }
 
     // Default — include redirect param so deep links survive login
-    return onboardingState.isCompleted
-        ? loginWithRedirect()
-        : AppRoutes.onboarding;
+    if (onboardingState.isCompleted) {
+      return loginWithRedirect();
+    }
+
+    // New user going through onboarding — save deep link to Hive so it
+    // survives the onboarding + login flow and is consumed on home arrival.
+    final path = routeAnalysis.currentPath;
+    if (path.isNotEmpty && path != '/' && path != AppRoutes.home) {
+      try {
+        final box = Hive.box(_hiveBboxName);
+        box.put('pending_deep_link_redirect', Uri.encodeComponent(path));
+      } catch (_) {}
+    }
+    return AppRoutes.onboarding;
   }
 
   /// Phase 2: Get reason for unauthenticated user redirect
@@ -742,6 +753,15 @@ class RouterGuard {
     if (routeAnalysis.isOnboardingRoute) {
       // User navigation logging handled by navigation system
       return null;
+    }
+
+    // Save deep link so it survives the onboarding flow and is consumed on home.
+    final path = routeAnalysis.currentPath;
+    if (path.isNotEmpty && path != '/' && path != AppRoutes.home) {
+      try {
+        final box = Hive.box(_hiveBboxName);
+        box.put('pending_deep_link_redirect', Uri.encodeComponent(path));
+      } catch (_) {}
     }
 
     Logger.info(
