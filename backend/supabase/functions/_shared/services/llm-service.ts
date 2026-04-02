@@ -187,18 +187,7 @@ export class LLMService {
     console.log(`[LLM] Starting streaming study guide for ${params.inputType}: ${params.inputValue}`)
 
     if (this.useMockData) {
-      // Yield mock data in chunks for testing
-      const mockGuide = this.getMockStudyGuide()
-      const mockJson = JSON.stringify(mockGuide)
-      const chunkSize = 50
-
-      for (let i = 0; i < mockJson.length; i += chunkSize) {
-        yield mockJson.slice(i, i + chunkSize)
-        // Small delay to simulate streaming
-        await new Promise(resolve => setTimeout(resolve, 50))
-      }
-
-      // Return mock usage
+      yield* this.streamMockStudyGuide()
       return {
         provider: 'openai',
         model: 'gpt-4o-mini-2024-07-18',
@@ -293,6 +282,18 @@ export class LLMService {
   ): AsyncGenerator<string, LLMUsageMetadata, unknown> {
     this.validateParams(params)
 
+    if (this.useMockData) {
+      yield* this.streamMockStudyGuide()
+      return {
+        provider: 'openai',
+        model: 'gpt-4o-mini-2024-07-18',
+        inputTokens: 100,
+        outputTokens: 500,
+        totalTokens: 600,
+        costUsd: 0.0001
+      }
+    }
+
     const languageConfig = getLanguageConfigOrDefault(params.language)
     const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
 
@@ -359,6 +360,20 @@ export class LLMService {
     params: LLMGenerationParams
   ): Promise<LLMResponseWithUsage<string>> {
     this.validateParams(params)
+
+    if (this.useMockData) {
+      return {
+        content: JSON.stringify(this.getMockStudyGuide()),
+        usage: {
+          provider: 'openai',
+          model: 'gpt-4o-mini-2024-07-18',
+          inputTokens: 100,
+          outputTokens: 500,
+          totalTokens: 600,
+          costUsd: 0.0001
+        }
+      }
+    }
 
     const languageConfig = getLanguageConfigOrDefault(params.language)
     const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
@@ -947,6 +962,33 @@ Return ONLY the numeric score, nothing else.`
   }
 
   // ==================== Mock Data ====================
+
+  /**
+   * Streams the mock study guide in small, variable-size chunks with variable
+   * delays — matching the token-by-token behaviour of a real LLM stream.
+   *
+   * Chunk sizes (1–8 chars) and delays (5–20 ms for content, 25–45 ms after
+   * structural boundaries) are randomised so the streaming JSON parser is
+   * exercised with splits across field names, string values, and delimiters.
+   */
+  private async *streamMockStudyGuide(): AsyncGenerator<string> {
+    const mockJson = JSON.stringify(this.getMockStudyGuide(), null, 2)
+    let i = 0
+    while (i < mockJson.length) {
+      // Token-like chunk: 1–8 chars
+      const chunkSize = Math.floor(Math.random() * 8) + 1
+      yield mockJson.slice(i, i + chunkSize)
+      i += chunkSize
+
+      // Longer pause after structural boundaries to mimic LLM "thinking"
+      const tail = mockJson.slice(Math.max(0, i - 3), i)
+      const atBoundary = /[,\[{]\s*$/.test(tail) || /}\s*$/.test(tail)
+      const delay = atBoundary
+        ? Math.random() * 20 + 25   // 25–45 ms between fields / structures
+        : Math.random() * 15 + 5    // 5–20 ms for regular content
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
 
   private getMockStudyGuide(): LLMResponse {
     return {
