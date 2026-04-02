@@ -2109,6 +2109,28 @@ class TranslationKeys {
   static const studyGuideFellowshipWalkthroughDesc =
       'study_guide.fellowship.walkthrough_desc';
 
+  // Walkthrough tooltip titles & descriptions (study guide screen)
+  static const studyGuideWalkthroughMenuTitle =
+      'study_guide.walkthrough.menu.title';
+  static const studyGuideWalkthroughMenuDesc =
+      'study_guide.walkthrough.menu.desc';
+  static const studyGuideWalkthroughTtsTitle =
+      'study_guide.walkthrough.tts.title';
+  static const studyGuideWalkthroughTtsDesc =
+      'study_guide.walkthrough.tts.desc';
+  static const studyGuideWalkthroughChatTitle =
+      'study_guide.walkthrough.chat.title';
+  static const studyGuideWalkthroughChatDesc =
+      'study_guide.walkthrough.chat.desc';
+  static const studyGuideWalkthroughNotesTitle =
+      'study_guide.walkthrough.notes.title';
+  static const studyGuideWalkthroughNotesDesc =
+      'study_guide.walkthrough.notes.desc';
+  static const studyGuideWalkthroughDeeperTitle =
+      'study_guide.walkthrough.deeper.title';
+  static const studyGuideWalkthroughDeeperDesc =
+      'study_guide.walkthrough.deeper.desc';
+
   // Soft paywall dialog
   static const tokenSoftPaywallUsedTitle = 'tokens.soft_paywall.used_title';
   static const tokenSoftPaywallUsedMessage = 'tokens.soft_paywall.used_message';

@@ -65,6 +65,33 @@ class AppTranslations {
         'walkthrough_desc':
             'Write a reflection, prayer, or insight and share it with your fellowship group.',
       },
+      'walkthrough': {
+        'menu': {
+          'title': 'More Options',
+          'desc':
+              'Change text size, share, save, or download a PDF of your study guide.',
+        },
+        'tts': {
+          'title': 'Listen to Your Study',
+          'desc':
+              'Tap to hear your study guide read aloud. Great for hands-free devotional time.',
+        },
+        'chat': {
+          'title': 'Follow-Up Chat',
+          'desc':
+              'Ask questions about what you just studied and get personalized Bible guidance.',
+        },
+        'notes': {
+          'title': 'Personal Notes',
+          'desc':
+              'Write your thoughts, prayers, and insights. Notes are saved automatically.',
+        },
+        'deeper': {
+          'title': 'Go Deeper',
+          'desc':
+              'Want to explore this topic further? Chat with the Discipler for personalized Bible guidance.',
+        },
+      },
       'messages': {
         'auth_required': 'Authentication Required',
         'auth_required_message':
@@ -2007,6 +2034,33 @@ class AppTranslations {
         'input_hint': 'क्या आपको प्रभावित किया? कोई विचार या सवाल साझा करें...',
         'walkthrough_desc':
             'अपनी प्रार्थना, विचार या अंतर्दृष्टि लिखें और अपनी फेलोशिप के साथ साझा करें।',
+      },
+      'walkthrough': {
+        'menu': {
+          'title': 'अधिक विकल्प',
+          'desc':
+              'टेक्स्ट साइज़ बदलें, शेयर करें, सेव करें या अपनी स्टडी गाइड का PDF डाउनलोड करें।',
+        },
+        'tts': {
+          'title': 'स्टडी सुनें',
+          'desc':
+              'अपनी स्टडी गाइड को ज़ोर से पढ़वाने के लिए टैप करें। हैंड्स-फ्री भक्ति के लिए बढ़िया।',
+        },
+        'chat': {
+          'title': 'फॉलो-अप चैट',
+          'desc':
+              'अभी पढ़े विषय पर सवाल पूछें और व्यक्तिगत बाइबल मार्गदर्शन पाएं।',
+        },
+        'notes': {
+          'title': 'व्यक्तिगत नोट्स',
+          'desc':
+              'अपने विचार, प्रार्थनाएं और अंतर्दृष्टि लिखें। नोट्स अपने आप सेव हो जाते हैं।',
+        },
+        'deeper': {
+          'title': 'और गहराई में जाएं',
+          'desc':
+              'इस विषय को और जानना चाहते हैं? व्यक्तिगत बाइबल मार्गदर्शन के लिए Discipler से चैट करें।',
+        },
       },
       'messages': {
         'auth_required': 'साइन इन करें',
@@ -3957,6 +4011,33 @@ class AppTranslations {
             'നിങ്ങൾക്ക് ഏറ്റവും മനസ്സിൽ തോന്നിയത് എന്ത്? ഒരു ചിന്ത അല്ലെങ്കിൽ ചോദ്യം പങ്കിടൂ...',
         'walkthrough_desc':
             'ഒരു ധ്യാനം, പ്രാർത്ഥന, അല്ലെങ്കിൽ ഉൾക്കാഴ്ച എഴുതി നിങ്ങളുടെ ഫെല്ലോഷിപ്പ് ഗ്രൂപ്പുമായി പങ്കിടൂ.',
+      },
+      'walkthrough': {
+        'menu': {
+          'title': 'കൂടുതൽ ഓപ്ഷനുകൾ',
+          'desc':
+              'ടെക്സ്റ്റ് സൈസ് മാറ്റൂ, ഷെയർ ചെയ്യൂ, സേവ് ചെയ്യൂ, അല്ലെങ്കിൽ PDF ഡൗൺലോഡ് ചെയ്യൂ.',
+        },
+        'tts': {
+          'title': 'സ്റ്റഡി കേൾക്കൂ',
+          'desc':
+              'നിങ്ങളുടെ സ്റ്റഡി ഗൈഡ് ഉച്ചത്തിൽ വായിക്കാൻ ടാപ്പ് ചെയ്യൂ. ഹാൻഡ്സ്-ഫ്രീ ഭക്തിക്ക് അനുയോജ്യം.',
+        },
+        'chat': {
+          'title': 'ഫോളോ-അപ്പ് ചാറ്റ്',
+          'desc':
+              'ഇപ്പോൾ പഠിച്ചതിനെക്കുറിച്ച് ചോദ്യങ്ങൾ ചോദിക്കൂ, വ്യക്തിഗത ബൈബിൾ മാർഗ്ഗദർശനം നേടൂ.',
+        },
+        'notes': {
+          'title': 'വ്യക്തിഗത കുറിപ്പുകൾ',
+          'desc':
+              'നിങ്ങളുടെ ചിന്തകൾ, പ്രാർത്ഥനകൾ, ഉൾക്കാഴ്ചകൾ എഴുതൂ. കുറിപ്പുകൾ സ്വയം സേവ് ആകും.',
+        },
+        'deeper': {
+          'title': 'ആഴത്തിലേക്ക് പോകൂ',
+          'desc':
+              'ഈ വിഷയം കൂടുതൽ പഠിക്കണോ? വ്യക്തിഗത ബൈബിൾ മാർഗ്ഗദർശനത്തിനായി Discipler-നോട് ചാറ്റ് ചെയ്യൂ.',
+        },
       },
       'messages': {
         'auth_required': 'സൈൻ ഇൻ ചെയ്യൂ',
