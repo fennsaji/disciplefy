@@ -18,6 +18,7 @@ abstract class LearningPathsRemoteDataSource {
     int limit = 10,
     int offset = 0,
     String? search,
+    String? fellowshipId,
   });
 
   /// Get learning paths grouped by category (primary listing endpoint).
@@ -86,9 +87,10 @@ class LearningPathsRemoteDataSourceImpl
     int limit = 10,
     int offset = 0,
     String? search,
+    String? fellowshipId,
   }) async {
-    // Only use persistent cache when not searching (search results must be fresh)
-    if (offset == 0 && search == null) {
+    // Only use persistent cache when not searching and no fellowship context
+    if (offset == 0 && search == null && fellowshipId == null) {
       final cached =
           await _cache.getCachedResponse(type: 'paths', language: language);
       if (cached != null) {
@@ -99,7 +101,7 @@ class LearningPathsRemoteDataSourceImpl
 
     try {
       _logDebug(
-          'Fetching learning paths (language: $language, limit: $limit, offset: $offset, search: $search)');
+          'Fetching learning paths (language: $language, limit: $limit, offset: $offset, search: $search, fellowshipId: $fellowshipId)');
 
       final headers = await _httpService.createHeaders();
       final bodyMap = <String, dynamic>{
@@ -111,6 +113,9 @@ class LearningPathsRemoteDataSourceImpl
       };
       if (search != null && search.isNotEmpty) {
         bodyMap['search'] = search;
+      }
+      if (fellowshipId != null) {
+        bodyMap['fellowship_id'] = fellowshipId;
       }
       final body = jsonEncode(bodyMap);
 

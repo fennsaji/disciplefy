@@ -136,8 +136,8 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const analyticsLogger = new AnalyticsLogger(supabaseServiceClient)
     const securityValidator = new SecurityValidator()
     const voiceStreamingService = new VoiceStreamingService({
-      openaiApiKey: config.openaiApiKey || '',
-      anthropicApiKey: config.anthropicApiKey
+      openaiApiKey: config.useMock ? '' : (config.openaiApiKey || ''),
+      anthropicApiKey: config.useMock ? undefined : config.anthropicApiKey
     })
     const voiceQuotaService = new VoiceQuotaService(supabaseServiceClient)
 

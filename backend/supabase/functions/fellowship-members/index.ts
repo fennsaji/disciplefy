@@ -83,13 +83,29 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
 
   if (activeLearningPathId && memberRows.length > 0) {
     const memberUserIds = memberRows.map((r) => r.user_id)
-    const { data: progressRows } = await db
-      .from('user_learning_path_progress')
-      .select('user_id, topics_completed')
+
+    // Fetch topic IDs for the active path, then count each member's completions
+    // directly from user_topic_progress. This avoids requiring enrollment in
+    // user_learning_path_progress (fellowship members complete guides without
+    // individually enrolling in the path).
+    const { data: pathTopics } = await db
+      .from('learning_path_topics')
+      .select('topic_id')
       .eq('learning_path_id', activeLearningPathId)
-      .in('user_id', memberUserIds)
-    for (const row of progressRows ?? []) {
-      progressByUserId.set(row.user_id, row.topics_completed ?? 0)
+
+    const topicIds = (pathTopics ?? []).map((r: { topic_id: string }) => r.topic_id)
+
+    if (topicIds.length > 0) {
+      const { data: completedRows } = await db
+        .from('user_topic_progress')
+        .select('user_id')
+        .in('user_id', memberUserIds)
+        .in('topic_id', topicIds)
+        .not('completed_at', 'is', null)
+
+      for (const row of completedRows ?? []) {
+        progressByUserId.set(row.user_id, (progressByUserId.get(row.user_id) ?? 0) + 1)
+      }
     }
   }
 

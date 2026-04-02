@@ -314,7 +314,10 @@ class _FellowshipLessonsTabScreenState
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider<LearningPathsBloc>(
         create: (_) => sl<LearningPathsBloc>()
-          ..add(LoadFlatLearningPaths(language: _contentLanguage)),
+          ..add(LoadFlatLearningPaths(
+            language: _contentLanguage,
+            fellowshipId: widget.fellowshipId,
+          )),
         child: _PathPickerSheet(
           fellowshipId: widget.fellowshipId,
           studyBloc: studyBloc,
@@ -1724,14 +1727,38 @@ class _PathPickerItem extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 4),
-                      Text(
-                        '${path.topicsCount} topics · ${path.discipleLevel}',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: context.appTextTertiary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            '${path.topicsCount} topics · ${path.discipleLevel}',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              color: context.appTextTertiary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (path.fellowshipCompleted) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Completed',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),

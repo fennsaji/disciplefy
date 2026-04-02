@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { inter, poppins, notoDevanagari, notoMalayalam } from "@/lib/fonts";
 import { getAlternates, homepageJsonLd } from "@/lib/seo";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,14 +39,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale().catch(() => "en");
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       className={`${inter.variable} ${poppins.variable} ${notoDevanagari.variable} ${notoMalayalam.variable}`}
     >
