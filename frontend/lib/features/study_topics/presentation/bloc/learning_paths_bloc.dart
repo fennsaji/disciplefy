@@ -291,6 +291,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       language: event.language,
       limit: 100,
       forceRefresh: true,
+      fellowshipId: event.fellowshipId,
     );
 
     result.fold(

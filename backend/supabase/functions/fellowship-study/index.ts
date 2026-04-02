@@ -55,6 +55,23 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
   }
   if (!learningPath) throw new AppError('NOT_FOUND', 'Learning path not found', 404)
 
+  // Read current study to preserve completed path history
+  const { data: currentStudy } = await db
+    .from('fellowship_study')
+    .select('learning_path_id, completed_at, completed_path_ids')
+    .eq('fellowship_id', body.fellowship_id)
+    .maybeSingle()
+
+  // Accumulate completed paths: carry over existing history, and add current
+  // path if it was completed before being replaced by the new one.
+  const existingCompleted: string[] = (currentStudy?.completed_path_ids as string[]) ?? []
+  const newCompleted = new Set<string>(existingCompleted)
+  if (currentStudy?.completed_at && currentStudy?.learning_path_id) {
+    newCompleted.add(currentStudy.learning_path_id as string)
+  }
+  // Remove the newly assigned path from completed set (it's being restarted)
+  newCompleted.delete(body.learning_path_id)
+
   const { data: study, error } = await db
     .from('fellowship_study')
     .upsert({
@@ -63,7 +80,8 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
       current_guide_index: 0,
       started_at: new Date().toISOString(),
       completed_at: null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      completed_path_ids: Array.from(newCompleted),
     }, { onConflict: 'fellowship_id' })
     .select()
     .single()
