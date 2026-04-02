@@ -1341,14 +1341,11 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.lessonsResetProgress),
-        content: const Text(
-          'This will reset the fellowship\'s progress back to Guide 1. '
-          'All members will need to work through the guides again.',
-        ),
+        content: Text(l10n.lessonsResetConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -1358,7 +1355,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                     const FellowshipStudyResetRequested(),
                   );
             },
-            child: const Text('Reset'),
+            child: Text(l10n.lessonsResetAction),
           ),
         ],
       ),

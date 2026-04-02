@@ -341,6 +341,9 @@ class AppLocalizations {
       'lessonsChooseNextPath': 'Choose Next Path',
       'lessonsPathAssignedSuccess': 'Learning path assigned successfully!',
       'lessonsProgressResetSuccess': 'Progress reset to Guide 1.',
+      'lessonsResetConfirm':
+          'This will reset the fellowship\'s progress back to Guide 1. All members will need to work through the guides again.',
+      'lessonsResetAction': 'Reset',
       'fellowshipProgress': 'Fellowship Progress',
       // Edit Fellowship
       'editFellowshipTitle': 'Edit Fellowship',
@@ -892,6 +895,9 @@ class AppLocalizations {
       'lessonsChooseNextPath': 'अगला पाठ चुनें',
       'lessonsPathAssignedSuccess': 'शिक्षण पथ सफलतापूर्वक सौंपा गया!',
       'lessonsProgressResetSuccess': 'प्रगति गाइड 1 पर रीसेट की गई।',
+      'lessonsResetConfirm':
+          'यह संगति की प्रगति को वापस गाइड 1 पर रीसेट कर देगा। सभी सदस्यों को गाइड फिर से पूरे करने होंगे।',
+      'lessonsResetAction': 'रीसेट करें',
       'fellowshipProgress': 'संगति प्रगति',
       // Edit Fellowship
       'editFellowshipTitle': 'संगति संपादित करें',
@@ -1445,6 +1451,9 @@ class AppLocalizations {
       'lessonsChooseNextPath': 'അടുത്ത പഥം തിരഞ്ഞെടുക്കുക',
       'lessonsPathAssignedSuccess': 'പഠന പഥം വിജയകരമായി നൽകി!',
       'lessonsProgressResetSuccess': 'പുരോഗതി ഗൈഡ് 1 ലേക്ക് പുനഃക്രമീകരിച്ചു.',
+      'lessonsResetConfirm':
+          'ഇത് കൂട്ടായ്മയുടെ പുരോഗതി ഗൈഡ് 1 ലേക്ക് പുനഃക്രമീകരിക്കും. എല്ലാ അംഗങ്ങളും വീണ്ടും ഗൈഡുകൾ പൂർത്തിയാക്കേണ്ടി വരും.',
+      'lessonsResetAction': 'പുനഃക്രമീകരിക്കുക',
       'fellowshipProgress': 'കൂട്ടായ്മ പുരോഗതി',
       // Edit Fellowship
       'editFellowshipTitle': 'കൂട്ടായ്മ തിരുത്തുക',
@@ -2021,6 +2030,10 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsPathAssignedSuccess']!;
   String get lessonsProgressResetSuccess =>
       _localizedValues[locale.languageCode]!['lessonsProgressResetSuccess']!;
+  String get lessonsResetConfirm =>
+      _localizedValues[locale.languageCode]!['lessonsResetConfirm']!;
+  String get lessonsResetAction =>
+      _localizedValues[locale.languageCode]!['lessonsResetAction']!;
   String get fellowshipProgress =>
       _localizedValues[locale.languageCode]!['fellowshipProgress']!;
 
