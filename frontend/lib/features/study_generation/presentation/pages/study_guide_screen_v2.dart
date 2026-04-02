@@ -315,6 +315,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
+  // Holds the in-flight topic-progress future so _handleBackNavigation can
+  // await it before popping — prevents the race condition where the member
+  // progress count in fellowship is still stale when the screen is dismissed.
+  Future<void>? _topicProgressFuture;
   // True once Phase 2 walkthrough has been triggered. Prevents the completion
   // sheet from appearing after the walkthrough has already started.
   bool _phase2WalkthroughStarted = false;
@@ -2096,7 +2100,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 sl<RecommendedGuidesService>().clearForYouCache();
 
                 // Track topic progress completion (XP, first-completion badge, etc.)
-                _completeTopicProgress();
+                // Store the future so _handleBackNavigation can await it.
+                _topicProgressFuture = _completeTopicProgress();
 
                 // Update study streak and check achievements
                 sl<GamificationBloc>().add(const UpdateStudyStreak());
@@ -2147,9 +2152,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           ? [
               WalkthroughTooltip(
                 showcaseKey: ShowcaseKeys.studyGuideMenuButton,
-                title: 'More Options',
+                title:
+                    context.tr(TranslationKeys.studyGuideWalkthroughMenuTitle),
                 description:
-                    'Change text size, share, save, or download a PDF of your study guide.',
+                    context.tr(TranslationKeys.studyGuideWalkthroughMenuDesc),
                 screen: WalkthroughScreen.studyGuide,
                 stepNumber: 1,
                 totalSteps: 2,
@@ -2812,9 +2818,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               children: [
                 WalkthroughTooltip(
                   showcaseKey: ShowcaseKeys.studyGuideFollowUpChat,
-                  title: 'Follow-Up Chat',
+                  title: context
+                      .tr(TranslationKeys.studyGuideWalkthroughChatTitle),
                   description:
-                      'Ask questions about what you just studied and get personalized Bible guidance.',
+                      context.tr(TranslationKeys.studyGuideWalkthroughChatDesc),
                   screen: WalkthroughScreen.studyGuideCompletion,
                   stepNumber: 2,
                   totalSteps: 3,
@@ -2851,9 +2858,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           // Notes Section
           WalkthroughTooltip(
             showcaseKey: ShowcaseKeys.studyGuideNotes,
-            title: 'Personal Notes',
+            title: context.tr(TranslationKeys.studyGuideWalkthroughNotesTitle),
             description:
-                'Write your thoughts, prayers, and insights. Notes are saved automatically.',
+                context.tr(TranslationKeys.studyGuideWalkthroughNotesDesc),
             screen: WalkthroughScreen.studyGuideCompletion,
             stepNumber: 3,
             totalSteps: 3,
@@ -3801,9 +3808,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           Expanded(
             child: WalkthroughTooltip(
               showcaseKey: ShowcaseKeys.studyGuideListen,
-              title: 'Listen to Your Study',
+              title: context.tr(TranslationKeys.studyGuideWalkthroughTtsTitle),
               description:
-                  'Tap to hear your study guide read aloud. Great for hands-free devotional time.',
+                  context.tr(TranslationKeys.studyGuideWalkthroughTtsDesc),
               screen: WalkthroughScreen.studyGuide,
               stepNumber: 2,
               totalSteps: 2,
@@ -3955,9 +3962,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             Expanded(
               child: WalkthroughTooltip(
                 showcaseKey: ShowcaseKeys.disciplerHintStudyGuide,
-                title: 'Go Deeper',
+                title: context
+                    .tr(TranslationKeys.studyGuideWalkthroughDeeperTitle),
                 description:
-                    'Want to explore this topic further? Chat with the Discipler for personalized Bible guidance.',
+                    context.tr(TranslationKeys.studyGuideWalkthroughDeeperDesc),
                 screen: WalkthroughScreen.disciplerHint,
                 stepNumber: 1,
                 totalSteps: 1,
@@ -4054,7 +4062,23 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
   }
 
-  void _handleBackNavigation() {
+  Future<void> _handleBackNavigation() async {
+    // Ensure topic progress is written before navigating back so that the
+    // fellowship member-progress query sees up-to-date data.
+    //
+    // Two cases:
+    // 1. StudyCompletionSuccess already fired → _topicProgressFuture is set.
+    //    Await it so the DB write finishes before we leave.
+    // 2. Guide is marked complete (_completionMarked=true) but
+    //    mark-study-guide-complete is still in-flight, so StudyCompletionSuccess
+    //    hasn't fired yet → call _completeTopicProgress() directly and await it.
+    if (_topicProgressFuture != null) {
+      await _topicProgressFuture;
+    } else if (_completionMarked) {
+      await _completeTopicProgress();
+    }
+    _topicProgressFuture = null;
+    if (!mounted) return;
     sl<StudyNavigator>().navigateBack(
       context,
       source: widget.navigationSource,
