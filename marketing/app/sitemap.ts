@@ -31,6 +31,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
 
   for (const page of staticPages) {
+    // Build the hreflang map shared by all locale variants of this page
+    const languages: Record<string, string> = {};
+    for (const loc of locales) {
+      const prefix = loc === "en" ? "" : `/${loc}`;
+      languages[loc] = `${BASE}${prefix}${page}`;
+    }
+
     for (const locale of locales) {
       const localePrefix = locale === "en" ? "" : `/${locale}`;
       entries.push({
@@ -38,11 +45,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(),
         changeFrequency: page === "" ? "weekly" : "monthly",
         priority: page === "" ? 1 : 0.8,
+        alternates: { languages },
       });
     }
   }
 
-  // Blog posts — paginate through all posts for each locale
+  // Blog posts — only include the canonical locale URL for each post (post.locale)
+  // to avoid submitting duplicate-locale URLs for posts that don't have translations.
+  const seenSlugs = new Set<string>();
   for (const locale of locales) {
     let page = 1;
     let hasMore = true;
@@ -50,6 +60,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const { posts, pagination } = await getAllPosts(locale as Locale, page, 100);
       const prefix = locale === "en" ? "" : `/${locale}`;
       for (const post of posts) {
+        const canonicalKey = `${post.locale ?? locale}:${post.slug}`;
+        if (seenSlugs.has(canonicalKey)) continue;
+        seenSlugs.add(canonicalKey);
         entries.push({
           url: `${BASE}${prefix}/blog/${post.slug}`,
           lastModified: post.published_at ? new Date(post.published_at) : new Date(),
