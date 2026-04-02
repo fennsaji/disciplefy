@@ -109,12 +109,17 @@ const REQUIRED_SECTIONS: SectionType[] = [
 ]
 
 /**
- * Escapes literal control characters (newlines, tabs, etc.) inside JSON string values.
+ * Sanitizes invalid characters inside JSON string values so that JSON.parse() succeeds.
  *
- * LLMs sometimes output actual newline/carriage-return characters inside JSON string
- * values instead of the escaped sequences (\n, \r). This makes JSON.parse() throw
- * "Unterminated string" errors. This function fixes those characters while leaving
- * structural JSON whitespace (between fields) completely untouched.
+ * Fixes two classes of LLM output errors:
+ * 1. Literal control characters (actual \n, \r, \t bytes inside string values)
+ *    → escaped to \\n, \\r, \\t
+ * 2. Unescaped double-quote characters inside string values
+ *    (e.g., The word "faith" in Greek...) → escaped to \\"
+ *    Detection: a quote is structural (field boundary) only when followed by
+ *    a comma, closing brace/bracket, or next JSON key. Otherwise it is content.
+ *
+ * Structural whitespace between fields is never modified.
  */
 function sanitizeJsonStringLiterals(json: string): string {
   let inString = false
@@ -131,8 +136,29 @@ function sanitizeJsonStringLiterals(json: string): string {
       result += char
       escaped = true
     } else if (char === '"') {
-      inString = !inString
-      result += char
+      if (inString) {
+        // Determine if this quote closes the string value or is an unescaped
+        // quote inside the value (e.g., LLM writes The word "faith" literally).
+        // A quote is structural (closes the string) if followed by:
+        //   - optional whitespace + comma, closing brace, or closing bracket
+        //   - optional whitespace + a JSON key (quote + letter/underscore)
+        //   - end of input
+        const remaining = json.substring(i + 1)
+        const isStructural =
+          /^\s*[,}\]]/.test(remaining) ||
+          /^\s*"[a-zA-Z_]/.test(remaining) ||
+          remaining.trim() === ''
+        if (isStructural) {
+          inString = false
+          result += char
+        } else {
+          // Unescaped quote inside string value — escape it so JSON.parse succeeds
+          result += '\\"'
+        }
+      } else {
+        inString = true
+        result += char
+      }
     } else if (inString && char === '\n') {
       result += '\\n'
     } else if (inString && char === '\r') {
@@ -242,31 +268,56 @@ export class StreamingJsonParser {
   }
 
   /**
-   * Extracts a string field value from the buffer
-   * 
+   * Extracts a string field value from the buffer using a state machine.
+   *
    * Pattern: "fieldName": "value"
-   * Handles escaped quotes and special characters
+   * Handles escaped quotes AND unescaped quotes inside string values
+   * (LLMs sometimes emit The word "faith" without escaping the inner quotes).
+   * A quote is treated as the field's closing quote only when immediately followed
+   * by a structural JSON token (comma, closing brace/bracket, or next key name).
    */
   private tryExtractString(fieldName: string): string | null {
-    // Match pattern: "fieldName": "value"
-    // The value continues until we find an unescaped quote followed by comma or closing brace
-    const pattern = new RegExp(
-      `"${fieldName}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`
-    )
-    
-    const match = this.buffer.match(pattern)
-    
-    if (match && match[1] !== undefined) {
-      // Check if there's content after this field (indicating it's complete)
-      const afterMatch = this.buffer.substring(this.buffer.indexOf(match[0]) + match[0].length)
-      
-      // A field is complete if followed by comma, closing brace, or another field
-      if (/^\s*[,}]/.test(afterMatch) || /^\s*"[a-zA-Z]/.test(afterMatch)) {
-        // Unescape the string value
-        return this.unescapeJsonString(match[1])
+    // Find the field key followed by opening quote
+    const keyPattern = new RegExp(`"${fieldName}"\\s*:\\s*"`)
+    const keyMatch = keyPattern.exec(this.buffer)
+    if (!keyMatch) return null
+
+    const valueStart = keyMatch.index + keyMatch[0].length
+
+    // Scan forward to find the closing quote via look-ahead heuristic
+    let pos = valueStart
+    let escaped = false
+    let value = ''
+
+    while (pos < this.buffer.length) {
+      const char = this.buffer[pos]
+
+      if (escaped) {
+        value += char
+        escaped = false
+      } else if (char === '\\') {
+        value += char
+        escaped = true
+      } else if (char === '"') {
+        // A quote closes the string only if followed by a structural token
+        const remaining = this.buffer.substring(pos + 1)
+        const isClosing =
+          /^\s*[,}\]]/.test(remaining) ||
+          /^\s*"[a-zA-Z_]/.test(remaining)
+        if (isClosing) {
+          return this.unescapeJsonString(value)
+        } else {
+          // Unescaped quote inside the value — treat as literal content
+          value += '"'
+        }
+      } else {
+        value += char
       }
+
+      pos++
     }
 
+    // Reached end of buffer without a structural closing quote — still streaming
     return null
   }
 
