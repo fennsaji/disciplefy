@@ -104,13 +104,16 @@ class LoadMorePathsForCategory extends LearningPathsEvent {
 /// Load all learning paths as a flat list (bypasses category grouping).
 ///
 /// Used by the fellowship picker to ensure completed paths are included.
+/// If [fellowshipId] is provided, each path will include a [fellowshipCompleted]
+/// flag indicating whether that fellowship has completed the path.
 class LoadFlatLearningPaths extends LearningPathsEvent {
   final String language;
+  final String? fellowshipId;
 
-  const LoadFlatLearningPaths({this.language = 'en'});
+  const LoadFlatLearningPaths({this.language = 'en', this.fellowshipId});
 
   @override
-  List<Object?> get props => [language];
+  List<Object?> get props => [language, fellowshipId];
 }
 
 /// Search learning paths by query (bypasses cache, hits backend).

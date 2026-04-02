@@ -21,6 +21,7 @@ abstract class LearningPathsRepository {
     int limit = 10,
     int offset = 0,
     String? search,
+    String? fellowshipId,
   });
 
   /// Get learning paths grouped by category (primary section listing).

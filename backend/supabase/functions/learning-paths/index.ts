@@ -37,6 +37,8 @@ interface LearningPathsRequest {
   format?: 'flat' | 'categories';
   /** Optional search term — filters by title/description via ILIKE */
   search?: string;
+  /** Optional fellowship ID — when provided, marks paths completed by this fellowship */
+  fellowship_id?: string;
 }
 
 interface CategoryPathsRequest {
@@ -478,6 +480,7 @@ async function handleListPathsFlat(
   let limit = PAGE_SIZE;
   let offset = 0;
   let search: string | undefined;
+  let fellowshipId: string | undefined;
 
   try {
     const body: LearningPathsRequest = await req.json();
@@ -486,6 +489,7 @@ async function handleListPathsFlat(
     limit = typeof body.limit === 'number' ? body.limit : PAGE_SIZE;
     offset = typeof body.offset === 'number' ? body.offset : 0;
     search = body.search?.trim() || undefined;
+    fellowshipId = body.fellowship_id || undefined;
   } catch {
     // Use defaults
   }
@@ -508,9 +512,28 @@ async function handleListPathsFlat(
     throw new AppError('DATABASE_ERROR', 'Failed to fetch learning paths', 500);
   }
 
+  // If a fellowship_id was provided, determine which paths this fellowship has completed.
+  // Sources: completed_path_ids array (historical) + current path if completed_at is set.
+  const completedPathIds = new Set<string>();
+  if (fellowshipId) {
+    const { data: studyRow } = await supabaseServiceClient
+      .from('fellowship_study')
+      .select('learning_path_id, completed_at, completed_path_ids')
+      .eq('fellowship_id', fellowshipId)
+      .maybeSingle();
+    if (studyRow) {
+      const historical = (studyRow.completed_path_ids as string[]) ?? [];
+      for (const id of historical) completedPathIds.add(id);
+      if (studyRow.completed_at) completedPathIds.add(studyRow.learning_path_id as string);
+    }
+  }
+
   const rows = data || [];
   const hasMore = rows.length > limit;
-  const paths = (hasMore ? rows.slice(0, limit) : rows).map(mapPathRow);
+  const paths = (hasMore ? rows.slice(0, limit) : rows).map((row: Record<string, unknown>) => ({
+    ...mapPathRow(row),
+    fellowship_completed: completedPathIds.has(row.path_id as string),
+  }));
 
   return new Response(
     JSON.stringify({ success: true, data: { paths, total: paths.length, has_more: hasMore, offset } }),

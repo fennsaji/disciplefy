@@ -19,6 +19,7 @@ class LearningPathModel extends LearningPath {
     super.isEnrolled,
     super.progressPercentage,
     super.category,
+    super.fellowshipCompleted,
   });
 
   factory LearningPathModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +41,7 @@ class LearningPathModel extends LearningPath {
       isEnrolled: json['is_enrolled'] as bool? ?? false,
       progressPercentage: json['progress_percentage'] as int? ?? 0,
       category: json['category'] as String? ?? '',
+      fellowshipCompleted: json['fellowship_completed'] as bool? ?? false,
     );
   }
 

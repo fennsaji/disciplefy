@@ -19,6 +19,7 @@ class LearningPath extends Equatable {
   final bool isEnrolled;
   final int progressPercentage;
   final String category;
+  final bool fellowshipCompleted;
 
   const LearningPath({
     required this.id,
@@ -37,6 +38,7 @@ class LearningPath extends Equatable {
     this.isEnrolled = false,
     this.progressPercentage = 0,
     this.category = '',
+    this.fellowshipCompleted = false,
   });
 
   @override
@@ -57,6 +59,7 @@ class LearningPath extends Equatable {
         isEnrolled,
         progressPercentage,
         category,
+        fellowshipCompleted,
       ];
 
   /// Number of topics completed, derived from progress percentage.

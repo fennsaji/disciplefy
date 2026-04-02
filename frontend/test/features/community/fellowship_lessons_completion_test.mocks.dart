@@ -876,6 +876,7 @@ class MockLearningPathsRepository extends _i1.Mock
     int? limit = 10,
     int? offset = 0,
     String? search,
+    String? fellowshipId,
   }) =>
           (super.noSuchMethod(
             Invocation.method(
@@ -888,6 +889,7 @@ class MockLearningPathsRepository extends _i1.Mock
                 #limit: limit,
                 #offset: offset,
                 #search: search,
+                #fellowshipId: fellowshipId,
               },
             ),
             returnValue: _i8.Future<
@@ -904,6 +906,7 @@ class MockLearningPathsRepository extends _i1.Mock
                   #limit: limit,
                   #offset: offset,
                   #search: search,
+                  #fellowshipId: fellowshipId,
                 },
               ),
             )),
