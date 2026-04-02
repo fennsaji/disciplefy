@@ -2,7 +2,7 @@
 // Force SSR so newly published posts are immediately visible.
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
 import { getPost } from "@/lib/blog";
@@ -16,11 +16,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const post = await getPost(params.slug);
   if (!post) return {};
+  // Use the post's actual locale for the canonical, not the URL locale.
+  // This ensures /ml/blog/english-post-slug has canonical → /blog/english-post-slug.
+  const postLocale = post.locale ?? params.locale;
   return {
     title: `${post.title} | Bible Study — Disciplefy`,
     description: post.excerpt,
     keywords: post.tags,
-    alternates: getAlternates(`/blog/${params.slug}`, params.locale),
+    alternates: getAlternates(`/blog/${params.slug}`, postLocale),
     openGraph: {
       title: `${post.title} | Disciplefy`,
       description: post.excerpt,
@@ -45,6 +48,14 @@ export default async function LocaleBlogPostPage({
 }) {
   const post = await getPost(params.slug);
   if (!post) notFound();
+
+  // Redirect to the canonical locale URL when the URL locale doesn't match the post locale.
+  // e.g. /ml/blog/walking-with-god-daily-en → /blog/walking-with-god-daily-en
+  const postLocale = post.locale ?? params.locale;
+  if (postLocale !== params.locale) {
+    const prefix = postLocale === "en" ? "" : `/${postLocale}`;
+    permanentRedirect(`${prefix}/blog/${params.slug}`);
+  }
 
   return <BlogPostContent post={post} locale={params.locale} />;
 }
