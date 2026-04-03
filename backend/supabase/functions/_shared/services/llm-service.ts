@@ -993,8 +993,9 @@ Return ONLY the numeric score, nothing else.`
   private getMockStudyGuide(): LLMResponse {
     return {
       summary: "This passage reveals God's profound love for humanity and His plan for salvation through Jesus Christ.",
-      interpretation: "The theological significance of this text lies in its demonstration of God's unconditional love. It teaches us that salvation is available to all who believe.",
       context: "Written during a period of spiritual awakening, this passage addresses fundamental questions about faith and redemption.",
+      passage: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life. For God did not send his Son into the world to condemn the world, but in order that the world might be saved through him. Whoever believes in him is not condemned, but whoever does not believe is condemned already, because he has not believed in the name of the only Son of God. (John 3:16-18)",
+      interpretation: "The theological significance of this text lies in its demonstration of God's unconditional love. It teaches us that salvation is available to all who believe.",
       relatedVerses: ["Romans 8:28", "Jeremiah 29:11", "Philippians 4:13"],
       reflectionQuestions: [
         "How does this passage speak to your current situation?",
