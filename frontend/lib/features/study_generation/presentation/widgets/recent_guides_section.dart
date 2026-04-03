@@ -328,6 +328,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
         'related_verses': guide.relatedVerses,
         'reflection_questions': guide.reflectionQuestions,
         'prayer_points': guide.prayerPoints,
+        'passage': guide.passage,
       }
     });
   }

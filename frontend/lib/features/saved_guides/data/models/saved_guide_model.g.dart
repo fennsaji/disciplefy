@@ -33,6 +33,7 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       relatedVerses: (fields[12] as List?)?.cast<String>(),
       reflectionQuestions: (fields[13] as List?)?.cast<String>(),
       prayerPoints: (fields[14] as List?)?.cast<String>(),
+      passage: fields[24] as String?,
       interpretationInsights: (fields[15] as List?)?.cast<String>(),
       summaryInsights: (fields[21] as List?)?.cast<String>(),
       reflectionAnswers: (fields[22] as List?)?.cast<String>(),
@@ -47,7 +48,7 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
   @override
   void write(BinaryWriter writer, SavedGuideModel obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(25)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -84,6 +85,8 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       ..write(obj.reflectionAnswers)
       ..writeByte(23)
       ..write(obj.studyMode)
+      ..writeByte(24)
+      ..write(obj.passage)
       ..writeByte(3)
       ..write(obj.typeString)
       ..writeByte(4)
@@ -137,6 +140,7 @@ SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
       prayerPoints: (json['prayerPoints'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      passage: json['passage'] as String?,
       interpretationInsights: (json['interpretationInsights'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
@@ -173,6 +177,7 @@ Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
       'summaryInsights': instance.summaryInsights,
       'reflectionAnswers': instance.reflectionAnswers,
       'studyMode': instance.studyMode,
+      'passage': instance.passage,
       'type': instance.typeString,
       'createdAt': instance.createdAt.toIso8601String(),
       'lastAccessedAt': instance.lastAccessedAt.toIso8601String(),
