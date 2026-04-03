@@ -209,6 +209,16 @@ class UserProfileApiService {
       // Handle both direct profile data and wrapped response
       final profileData = data['data'] ?? data;
 
+      // Some endpoints (e.g. POST /user-profile with no OAuth data to sync)
+      // return { message: '...', source: '...' } without a profile object.
+      // Detect this by checking for the required 'id' field.
+      if (profileData['id'] == null) {
+        return Left(ServerFailure(
+          message: data['message'] as String? ??
+              'Response did not contain profile data',
+        ));
+      }
+
       final profile = UserProfileModel.fromJson(profileData);
       return Right(profile.toEntity());
     } on FormatException catch (e) {
