@@ -2151,7 +2151,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           Icons.arrow_back_ios,
           color: accentColor,
         ),
-        tooltip: 'Go back',
       ),
       title: Text(
         context.tr('study_guide.page_title'),
