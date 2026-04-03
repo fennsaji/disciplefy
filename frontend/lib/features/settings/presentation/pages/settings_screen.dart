@@ -47,8 +47,18 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) => const _SettingsScreenContent();
 }
 
-class _SettingsScreenContent extends StatelessWidget {
+class _SettingsScreenContent extends StatefulWidget {
   const _SettingsScreenContent();
+
+  @override
+  State<_SettingsScreenContent> createState() => _SettingsScreenContentState();
+}
+
+class _SettingsScreenContentState extends State<_SettingsScreenContent> {
+  /// True while the delete-account API call is in-flight.
+  /// Used to show a loading overlay and to navigate straight to login
+  /// (bypassing the currentUser guard that exists for sign-out).
+  bool _isDeletingAccount = false;
 
   @override
   Widget build(BuildContext context) => PopScope(
@@ -106,94 +116,112 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             centerTitle: true,
           ),
-          body: BlocListener<AuthBloc, auth_states.AuthState>(
-            listener: (context, authState) {
-              if (authState is auth_states.UnauthenticatedState) {
-                // Only navigate to login once the Supabase session is actually
-                // cleared. If currentUser is still non-null, the bloc is in a
-                // transient state (e.g. a second AuthInitializeRequested is
-                // mid-flight) — wait for the real signOut to complete.
-                if (Supabase.instance.client.auth.currentUser == null) {
-                  context.go('/login');
-                }
-              } else if (authState is auth_states.AuthErrorState) {
-                // Show error message
-                _showSnackBar(
-                    context,
-                    'Something went wrong. Please try again.',
-                    Theme.of(context).colorScheme.error);
-              }
-            },
-            child: BlocConsumer<SettingsBloc, SettingsState>(
-              listener: (context, state) {
-                if (state is SettingsError) {
-                  _showSnackBar(
-                      context,
-                      'Something went wrong. Please try again.',
-                      Theme.of(context).colorScheme.error);
-                } else if (state is SettingsUpdateSuccess) {
-                  _showSnackBar(context, state.message, AppColors.success);
-                }
-              },
-              builder: (context, state) {
-                if (state is SettingsLoading) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary),
-                      strokeWidth: 3,
-                    ),
-                  );
-                }
+          body: Stack(
+            children: [
+              BlocListener<AuthBloc, auth_states.AuthState>(
+                listener: (context, authState) {
+                  if (authState is auth_states.UnauthenticatedState) {
+                    if (_isDeletingAccount) {
+                      // Account just deleted — go straight to login, no guard needed
+                      context.go(AppRoutes.login);
+                    } else if (Supabase.instance.client.auth.currentUser ==
+                        null) {
+                      // Regular sign-out — wait for session to be fully cleared
+                      context.go(AppRoutes.login);
+                    }
+                  } else if (authState is auth_states.AuthErrorState) {
+                    // Reset deleting flag so the overlay is dismissed
+                    if (_isDeletingAccount) {
+                      setState(() => _isDeletingAccount = false);
+                    }
+                    _showSnackBar(
+                        context,
+                        'Something went wrong. Please try again.',
+                        Theme.of(context).colorScheme.error);
+                  }
+                },
+                child: BlocConsumer<SettingsBloc, SettingsState>(
+                  listener: (context, state) {
+                    if (state is SettingsError) {
+                      _showSnackBar(
+                          context,
+                          'Something went wrong. Please try again.',
+                          Theme.of(context).colorScheme.error);
+                    } else if (state is SettingsUpdateSuccess) {
+                      _showSnackBar(context, state.message, AppColors.success);
+                    }
+                  },
+                  builder: (context, state) {
+                    if (state is SettingsLoading) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).colorScheme.primary),
+                          strokeWidth: 3,
+                        ),
+                      );
+                    }
 
-                if (state is SettingsLoaded) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // User Profile Section (only for authenticated users)
-                        _buildUserProfileSection(context),
+                    if (state is SettingsLoaded) {
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // User Profile Section (only for authenticated users)
+                            _buildUserProfileSection(context),
 
-                        // Theme & Language Section
-                        _buildThemeLanguageSection(context, state),
-                        const SizedBox(height: 24),
+                            // Theme & Language Section
+                            _buildThemeLanguageSection(context, state),
+                            const SizedBox(height: 24),
 
-                        // Notification Section
-                        _buildNotificationSection(context, state),
-                        const SizedBox(height: 24),
+                            // Notification Section
+                            _buildNotificationSection(context, state),
+                            const SizedBox(height: 24),
 
-                        // Personalization Section (only for authenticated users)
-                        _buildPersonalizationSection(context),
+                            // Personalization Section (only for authenticated users)
+                            _buildPersonalizationSection(context),
 
-                        // Help & Support Section
-                        _buildHelpSupportSection(context),
-                        const SizedBox(height: 24),
+                            // Help & Support Section
+                            _buildHelpSupportSection(context),
+                            const SizedBox(height: 24),
 
-                        // Account Section
-                        _buildAccountSection(context),
-                        const SizedBox(height: 24),
+                            // Account Section
+                            _buildAccountSection(context),
+                            const SizedBox(height: 24),
 
-                        // About Section
-                        _buildAboutSection(context, state),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  );
-                }
+                            // About Section
+                            _buildAboutSection(context, state),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      );
+                    }
 
-                return Center(
-                  child: Text(
-                    context.tr(TranslationKeys.settingsFailedToLoad),
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.error,
+                    return Center(
+                      child: Text(
+                        context.tr(TranslationKeys.settingsFailedToLoad),
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ), // BlocListener
+              // Loading overlay while delete-account API is in-flight
+              if (_isDeletingAccount)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.5),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
+                ),
+            ],
+          ), // Stack
         ), // Scaffold
       ); // PopScope
 
@@ -1174,6 +1202,7 @@ class _SettingsScreenContent extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
+              setState(() => _isDeletingAccount = true);
               context.read<AuthBloc>().add(const DeleteAccountRequested());
             },
             style: ElevatedButton.styleFrom(
