@@ -543,6 +543,8 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
         return context.tr(TranslationKeys.studyGuideInterpretation);
       case 'context':
         return context.tr(TranslationKeys.studyGuideContext);
+      case 'passage reading':
+        return context.tr(TranslationKeys.studyGuidePassageReading);
       case 'related verses':
         return context.tr(TranslationKeys.studyGuideRelatedVerses);
       case 'discussion questions':
