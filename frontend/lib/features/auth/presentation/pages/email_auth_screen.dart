@@ -50,7 +50,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
             final theme = Theme.of(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Something went wrong. Please try again.'),
+                content: Text(state.message),
                 backgroundColor: theme.colorScheme.error,
                 behavior: SnackBarBehavior.floating,
               ),
