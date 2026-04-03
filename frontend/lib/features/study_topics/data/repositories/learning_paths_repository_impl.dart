@@ -253,6 +253,9 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     _recommendedPathCacheTimestamp = null;
     _cachedPersonalizedPaths = null;
     _personalizedPathsCacheTimestamp = null;
+    // Also clear the persistent Hive cache so stale data is not served after
+    // events like enrollment, language change, or DB migrations.
+    _remoteDataSource.clearCache();
   }
 
   bool _isCategoriesCacheValid() {

@@ -149,7 +149,13 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
 
     // 0. Fellowship active path — resolved in initState (may be from BLoC cache
     //    or fetched directly if its category hasn't loaded yet).
-    final fellowshipPath = _fellowshipPath;
+    //    Prefer the version from the current BLoC state so it reflects the
+    //    latest language after a language switch.
+    final fellowshipPathId = _fellowshipPath?.id;
+    final fellowshipPath = fellowshipPathId != null
+        ? (state.allPaths.where((p) => p.id == fellowshipPathId).firstOrNull ??
+            _fellowshipPath)
+        : null;
 
     // 1. In-progress paths — most progressed first
     final inProgress = state.enrolledPaths.where((p) => p.isInProgress).toList()

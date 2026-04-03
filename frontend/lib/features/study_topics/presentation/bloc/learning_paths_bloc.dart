@@ -115,9 +115,6 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     Emitter<LearningPathsState> emit,
   ) async {
     final hadData = state is LearningPathsLoaded;
-    final priorPersonalizedPaths = hadData
-        ? (state as LearningPathsLoaded).personalizedPaths
-        : <LearningPath>[];
     if (!hadData) {
       emit(const LearningPathsLoading());
     }
@@ -142,12 +139,15 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
               .expand((c) => c.paths)
               .where((p) => p.isEnrolled)
               .toList();
+          // Intentionally omit personalizedPaths (defaults to []) so the
+          // For You section uses fresh language-correct paths immediately.
+          // LoadPersonalizedPaths (dispatched alongside RefreshLearningPaths)
+          // will repopulate it once the language-aware fetch completes.
           emit(LearningPathsLoaded(
             categories: categoriesResult.categories,
             enrolledPaths: enrolledPaths,
             hasMoreCategories: categoriesResult.hasMoreCategories,
             nextCategoryOffset: categoriesResult.nextCategoryOffset,
-            personalizedPaths: priorPersonalizedPaths,
           ));
         }
       },

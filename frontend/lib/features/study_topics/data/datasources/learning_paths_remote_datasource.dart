@@ -29,6 +29,9 @@ abstract class LearningPathsRemoteDataSource {
     int categoryOffset = 0,
   });
 
+  /// Clears all persistent cache entries.
+  Future<void> clearCache();
+
   /// Get more paths for a single category (per-category load more).
   Future<LearningPathCategoryPathsResponseModel> getLearningPathsForCategory({
     required String category,
@@ -166,8 +169,15 @@ class LearningPathsRemoteDataSourceImpl
       final cached = await _cache.getCachedResponse(
           type: 'categories', language: language);
       if (cached != null) {
-        _logDebug('Returning cached learning path categories ($language)');
-        return _parseCategoriesResponse(cached);
+        final result = _parseCategoriesResponse(cached);
+        // Guard: don't serve stale empty cache (e.g. from a DB outage).
+        // If no category has any paths, treat as a cache miss and fetch fresh.
+        if (result.categories.any((c) => c.paths.isNotEmpty)) {
+          _logDebug('Returning cached learning path categories ($language)');
+          return result;
+        }
+        _logDebug(
+            'Cached categories have no paths — bypassing stale cache ($language)');
       }
     }
 
@@ -597,6 +607,9 @@ class LearningPathsRemoteDataSourceImpl
       );
     }
   }
+
+  @override
+  Future<void> clearCache() => _cache.clearCache();
 
   void _logDebug(String message) {
     if (kDebugMode) Logger.debug('[LEARNING_PATHS] $message');
