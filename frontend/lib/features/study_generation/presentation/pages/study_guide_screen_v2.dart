@@ -910,10 +910,23 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       studyMode: widget.studyMode.name,
     );
     if (cached != null && mounted) {
-      Logger.info('📦 [STUDY_GUIDE_V2] Cache hit — skipping API call');
-      _startTopicProgress();
-      _loadFromCachedStudyGuide(cached);
-      return;
+      // A cached guide with no passage was stored before the passage-reading
+      // feature shipped. Treat it as stale so it is regenerated once and then
+      // re-cached with the passage field populated.
+      final lacksPassage = cached.passage == null || cached.passage!.isEmpty;
+      final isPassageMode = cached.studyMode == StudyMode.standard.name ||
+          cached.studyMode == StudyMode.deep.name ||
+          cached.studyMode == null; // legacy entries without mode
+
+      if (lacksPassage && isPassageMode) {
+        Logger.info(
+            '♻️ [STUDY_GUIDE_V2] Stale cache (no passage) — regenerating');
+      } else {
+        Logger.info('📦 [STUDY_GUIDE_V2] Cache hit — skipping API call');
+        _startTopicProgress();
+        _loadFromCachedStudyGuide(cached);
+        return;
+      }
     }
 
     // Track topic progress start if we have a topic ID
