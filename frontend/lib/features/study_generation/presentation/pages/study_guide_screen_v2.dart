@@ -961,6 +961,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           (guideData['prayer_points'] as List<dynamic>?)?.cast<String>();
       final isSaved = guideData['is_saved'] as bool? ?? false;
       final personalNotes = guideData['personal_notes'] as String?;
+      final passage = guideData['passage'] as String?;
       final language = widget.language ?? 'en';
 
       // Create StudyGuide entity
@@ -977,6 +978,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         prayerPoints: prayerPoints ?? [],
         personalNotes: personalNotes,
         isSaved: isSaved,
+        passage: passage,
         createdAt: DateTime.now(),
       );
 
