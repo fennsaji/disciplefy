@@ -57,6 +57,7 @@ export interface LLMResponse {
   readonly summary: string
   readonly interpretation: string
   readonly context: string
+  readonly passage?: string  // LLM-generated Scripture passage text (3-8 verses)
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
