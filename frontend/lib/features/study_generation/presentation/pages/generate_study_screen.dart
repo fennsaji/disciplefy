@@ -301,7 +301,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       _isRefreshingTokens = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.read<TokenBloc>().add(const GetTokenStatus());
+          context.read<TokenBloc>().add(const RefreshTokenStatus());
         }
       });
     }
@@ -332,8 +332,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Logger.debug(
-              '🔄 [DEBUG] Executing GetTokenStatus from didChangeDependencies');
-          context.read<TokenBloc>().add(const GetTokenStatus());
+              '🔄 [DEBUG] Executing RefreshTokenStatus from didChangeDependencies');
+          context.read<TokenBloc>().add(const RefreshTokenStatus());
         }
       });
     } else {
