@@ -9,9 +9,10 @@ interface HeaderProps {
   user: {
     name: string
   }
+  onMenuOpen: () => void
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, onMenuOpen }: HeaderProps) {
   const router = useRouter()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
@@ -36,9 +37,19 @@ export default function Header({ user }: HeaderProps) {
     .toUpperCase()
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200/80 bg-white px-6 shadow-sm dark:border-white/5 dark:bg-[#0f0e1a]">
-      {/* Left — wordmark echo */}
-      <div className="flex items-center gap-2">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200/80 bg-white px-4 shadow-sm dark:border-white/5 dark:bg-[#0f0e1a] md:px-6">
+      {/* Left — hamburger (mobile) + wordmark */}
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuOpen}
+          className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+          aria-label="Open navigation"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         <span className="text-sm font-semibold text-gray-400 dark:text-indigo-300/50">Dashboard</span>
       </div>
 

@@ -1,17 +1,17 @@
+// admin-web/app/(dashboard)/layout.tsx
+import type { ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/sidebar'
-import Header from '@/components/header'
+import DashboardShell from '@/components/dashboard-shell'
 
 export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
   console.log('🟣 [LAYOUT] Dashboard layout rendering')
 
-  // Check authentication with regular client
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -22,7 +22,6 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Get user profile with admin check using service role (bypasses RLS)
   console.log('🟣 [LAYOUT] Checking admin status with service role...')
   const supabaseAdmin = await createAdminClient()
   const { data: profile, error } = await supabaseAdmin
@@ -46,20 +45,13 @@ export default async function DashboardLayout({
 
   console.log('🟣 [LAYOUT] Admin access granted, rendering dashboard')
 
-  // Construct display name from available data
   const displayName = profile.first_name && profile.last_name
     ? `${profile.first_name} ${profile.last_name}`
     : profile.first_name || user.email || 'Admin'
 
   return (
-    <div className="flex h-screen bg-background dark:bg-gray-950">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header user={{ name: displayName }} />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6 dark:bg-gray-900">
-          {children}
-        </main>
-      </div>
-    </div>
+    <DashboardShell user={{ name: displayName }}>
+      {children}
+    </DashboardShell>
   )
 }

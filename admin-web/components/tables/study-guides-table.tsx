@@ -57,7 +57,7 @@ export default function StudyGuidesTable({
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Input
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -80,8 +80,8 @@ export default function StudyGuidesTable({
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {guides.map((guide) => (
             <Fragment key={guide.id}>
-              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-6 py-4">
+              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
+                <td className="px-6 py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                   <div className="flex flex-col gap-1">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getInputTypeColor(guide.input_type)} w-fit`}>
                       {guide.input_type}
