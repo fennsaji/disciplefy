@@ -1,4 +1,5 @@
 // Using built-in Web Crypto API for better stability
+import { LOCALIZED_VARIANTS_TO_ENGLISH } from './bible-book-normalizer.ts'
 
 export interface SecurityValidationResult {
   isValid: boolean
@@ -363,12 +364,21 @@ export class SecurityValidator {
     }
 
     const normalizedBook = book.toLowerCase().replace(/\./g, '')
-    
+
     if (bibleBooks.has(normalizedBook)) {
       return {
         isValid: true,
         message: 'Valid book name',
         details: { book: normalizedBook }
+      }
+    }
+
+    // Also accept romanized/Hinglish transliterations (e.g., "Bhajan Sahita", "Utpatti")
+    if (normalizedBook in LOCALIZED_VARIANTS_TO_ENGLISH) {
+      return {
+        isValid: true,
+        message: 'Valid book name (romanized)',
+        details: { book: normalizedBook, resolvedTo: LOCALIZED_VARIANTS_TO_ENGLISH[normalizedBook] }
       }
     }
 

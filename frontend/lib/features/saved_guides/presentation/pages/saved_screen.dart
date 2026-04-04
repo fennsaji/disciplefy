@@ -649,6 +649,7 @@ class _SavedScreenContent extends StatelessWidget {
         'related_verses': guide.relatedVerses,
         'reflection_questions': guide.reflectionQuestions,
         'prayer_points': guide.prayerPoints,
+        'passage': guide.passage,
         // Include reflection enhancement fields
         'interpretation_insights': guide.interpretationInsights,
         'summary_insights': guide.summaryInsights,

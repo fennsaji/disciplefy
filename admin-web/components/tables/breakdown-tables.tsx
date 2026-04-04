@@ -32,7 +32,7 @@ export function BreakdownTables({
           <table className="min-w-full">
             <thead className="border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                   Feature
                 </th>
                 <th className="pb-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -50,8 +50,8 @@ export function BreakdownTables({
               {Object.entries(byFeature).filter(([, d]) => d.operations > 0).length === 0 ? (
                 <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
               ) : Object.entries(byFeature).filter(([, d]) => d.operations > 0).map(([feature, data]) => (
-                <tr key={feature}>
-                  <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
+                <tr key={feature} className="group">
+                  <td className="py-3 text-sm text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                     {formatFeatureName(feature)}
                   </td>
                   <td className="py-3 text-right text-sm text-gray-600 dark:text-gray-400">
@@ -79,7 +79,7 @@ export function BreakdownTables({
           <table className="min-w-full">
             <thead className="border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                   Tier
                 </th>
                 <th className="pb-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -98,8 +98,8 @@ export function BreakdownTables({
                 <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
               )}
               {Object.entries(byTier).filter(([, d]) => d.operations > 0).map(([tier, data]) => (
-                <tr key={tier}>
-                  <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
+                <tr key={tier} className="group">
+                  <td className="py-3 text-sm text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                     <span className={`inline-flex items-center gap-2`}>
                       {getTierBadge(tier)}
                       {formatTierName(tier)}
@@ -130,7 +130,7 @@ export function BreakdownTables({
           <table className="min-w-full">
             <thead className="border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                   Provider
                 </th>
                 <th className="pb-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -149,8 +149,8 @@ export function BreakdownTables({
                 <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
               )}
               {Object.entries(byProvider).map(([provider, data]) => (
-                <tr key={provider}>
-                  <td className="py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <tr key={provider} className="group">
+                  <td className="py-3 text-sm font-medium text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                     {formatProviderName(provider)}
                   </td>
                   <td className="py-3 text-right text-sm text-gray-600 dark:text-gray-400">
@@ -178,7 +178,7 @@ export function BreakdownTables({
           <table className="min-w-full">
             <thead className="border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                   Model
                 </th>
                 <th className="pb-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -197,8 +197,8 @@ export function BreakdownTables({
                 <tr><td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No data for this period</td></tr>
               )}
               {Object.entries(byModel).map(([model, data]) => (
-                <tr key={model}>
-                  <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
+                <tr key={model} className="group">
+                  <td className="py-3 text-sm text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                     <div className="flex flex-col">
                       <span className="font-medium">{formatModelName(model)}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">

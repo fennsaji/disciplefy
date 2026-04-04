@@ -159,7 +159,7 @@ class StudyGuideTTSService {
         StudyGuideSection.prayerPoints: 'Prayer Points',
       },
       'hi': {
-        StudyGuideSection.passageReading: 'पवित्र पद वाचन',
+        StudyGuideSection.passageReading: 'वचन पाठ',
         StudyGuideSection.summary: 'सारांश',
         StudyGuideSection.context: 'पृष्ठभूमि',
         StudyGuideSection.interpretation: 'व्याख्या',
@@ -168,7 +168,7 @@ class StudyGuideTTSService {
         StudyGuideSection.prayerPoints: 'प्रार्थना विषय',
       },
       'ml': {
-        StudyGuideSection.passageReading: 'വേദഭാഗം വായന',
+        StudyGuideSection.passageReading: 'വചന വായന',
         StudyGuideSection.summary: 'സംഗ്രഹം',
         StudyGuideSection.context: 'പശ്ചാത്തലം',
         StudyGuideSection.interpretation: 'വ്യാഖ്യാനം',
@@ -421,14 +421,6 @@ class StudyGuideTTSService {
     final language = guide.language;
     final sections = <TtsSection>[];
 
-    if (guide.passage != null && guide.passage!.isNotEmpty) {
-      sections.add(TtsSection(
-        title: titles[StudyGuideSection.passageReading]!,
-        content: guide.passage!,
-        section: StudyGuideSection.passageReading,
-      ));
-    }
-
     sections.addAll([
       TtsSection(
         title: titles[StudyGuideSection.summary]!,
@@ -440,6 +432,18 @@ class StudyGuideTTSService {
         content: guide.context,
         section: StudyGuideSection.context,
       ),
+    ]);
+
+    // Passage reading comes after context, matching the study guide page order
+    if (guide.passage != null && guide.passage!.isNotEmpty) {
+      sections.add(TtsSection(
+        title: titles[StudyGuideSection.passageReading]!,
+        content: guide.passage!,
+        section: StudyGuideSection.passageReading,
+      ));
+    }
+
+    sections.addAll([
       TtsSection(
         title: titles[StudyGuideSection.interpretation]!,
         content: guide.interpretation,

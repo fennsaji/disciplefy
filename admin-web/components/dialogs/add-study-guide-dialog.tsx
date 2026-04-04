@@ -161,7 +161,7 @@ export function AddStudyGuideDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-4 md:p-0">
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
@@ -169,7 +169,7 @@ export function AddStudyGuideDialog({
 
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative w-full max-w-2xl rounded-lg bg-white shadow-xl"
+          className="relative mx-4 w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-gray-900"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

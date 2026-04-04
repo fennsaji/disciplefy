@@ -82,6 +82,10 @@ class SavedGuideModel extends SavedGuideEntity {
   @override
   final String? studyMode;
 
+  @HiveField(24)
+  @override
+  final String? passage;
+
   @HiveField(3)
   @JsonKey(name: 'type')
   final String typeString;
@@ -123,6 +127,7 @@ class SavedGuideModel extends SavedGuideEntity {
     this.relatedVerses,
     this.reflectionQuestions,
     this.prayerPoints,
+    this.passage,
     this.interpretationInsights,
     this.summaryInsights,
     this.reflectionAnswers,
@@ -148,6 +153,7 @@ class SavedGuideModel extends SavedGuideEntity {
           relatedVerses: relatedVerses,
           reflectionQuestions: reflectionQuestions,
           prayerPoints: prayerPoints,
+          passage: passage,
           interpretationInsights: interpretationInsights,
           summaryInsights: summaryInsights,
           reflectionAnswers: reflectionAnswers,
@@ -181,6 +187,7 @@ class SavedGuideModel extends SavedGuideEntity {
         relatedVerses: entity.relatedVerses,
         reflectionQuestions: entity.reflectionQuestions,
         prayerPoints: entity.prayerPoints,
+        passage: entity.passage,
         interpretationInsights: entity.interpretationInsights,
         summaryInsights: entity.summaryInsights,
         reflectionAnswers: entity.reflectionAnswers,
@@ -200,6 +207,7 @@ class SavedGuideModel extends SavedGuideEntity {
     final inputValue = inputData['value'] as String? ?? 'Study Guide';
 
     // Extract structured content from API response
+    final passage = contentData['passage'] as String?;
     final summary = contentData['summary'] as String? ?? '';
     final interpretation = contentData['interpretation'] as String? ?? '';
     final context = contentData['context'] as String? ?? '';
@@ -260,6 +268,7 @@ class SavedGuideModel extends SavedGuideEntity {
       reflectionQuestions:
           reflectionQuestions.isNotEmpty ? reflectionQuestions : null,
       prayerPoints: prayerPoints.isNotEmpty ? prayerPoints : null,
+      passage: passage != null && passage.isNotEmpty ? passage : null,
       // Store reflection enhancement fields
       interpretationInsights:
           interpretationInsights.isNotEmpty ? interpretationInsights : null,
@@ -293,6 +302,7 @@ class SavedGuideModel extends SavedGuideEntity {
         relatedVerses: relatedVerses,
         reflectionQuestions: reflectionQuestions,
         prayerPoints: prayerPoints,
+        passage: passage,
         interpretationInsights: interpretationInsights,
         summaryInsights: summaryInsights,
         reflectionAnswers: reflectionAnswers,
@@ -314,6 +324,7 @@ class SavedGuideModel extends SavedGuideEntity {
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
+    String? passage,
     List<String>? interpretationInsights,
     List<String>? summaryInsights,
     List<String>? reflectionAnswers,
@@ -350,6 +361,7 @@ class SavedGuideModel extends SavedGuideEntity {
         relatedVerses: relatedVerses ?? this.relatedVerses,
         reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
         prayerPoints: prayerPoints ?? this.prayerPoints,
+        passage: passage ?? this.passage,
         interpretationInsights:
             interpretationInsights ?? this.interpretationInsights,
         summaryInsights: summaryInsights ?? this.summaryInsights,
@@ -377,6 +389,7 @@ class SavedGuideModel extends SavedGuideEntity {
         reflectionQuestions:
             reflectionQuestions ?? _extractReflectionQuestionsFromContent(),
         prayerPoints: prayerPoints ?? _extractPrayerPointsFromContent(),
+        passage: passage,
         interpretationInsights: interpretationInsights,
         summaryInsights: summaryInsights,
         reflectionAnswers: reflectionAnswers,

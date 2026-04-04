@@ -38,7 +38,7 @@ export function PlByTierTable({ data, exchangeRateUsed, exchangeRateIsLive }: Pl
         <table className="min-w-full">
           <thead className="border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Plan</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">Plan</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Revenue (₹)</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">LLM Cost (₹)</th>
@@ -51,8 +51,8 @@ export function PlByTierTable({ data, exchangeRateUsed, exchangeRateIsLive }: Pl
               <tr><td colSpan={6} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">No subscription data for this period</td></tr>
             )}
             {data.map((item) => (
-              <tr key={item.plan_code} className={rowClass(item)}>
-                <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+              <tr key={item.plan_code} className={`${rowClass(item)} group`}>
+                <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                   {PLAN_LABELS[item.plan_code] ?? item.plan_code}
                 </td>
                 <td className="px-6 py-3 text-right text-sm text-gray-600 dark:text-gray-400">

@@ -75,7 +75,7 @@ function SecurityEventsTab() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Event Type:
@@ -83,7 +83,7 @@ function SecurityEventsTab() {
           <select
             value={eventTypeFilter}
             onChange={(e) => setEventTypeFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="all">All Events</option>
             <option value="prompt_injection">Prompt Injection</option>
@@ -102,7 +102,7 @@ function SecurityEventsTab() {
           <select
             value={riskScoreFilter}
             onChange={(e) => setRiskScoreFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="all">All Scores</option>
             <option value="0.7">High Risk (≥70%)</option>
@@ -117,7 +117,7 @@ function SecurityEventsTab() {
           <select
             value={rangeFilter}
             onChange={(e) => setRangeFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="today">Today</option>
             <option value="week">Last 7 Days</option>
@@ -198,7 +198,7 @@ function AdminLogsTab() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Time Range:
@@ -206,7 +206,7 @@ function AdminLogsTab() {
           <select
             value={rangeFilter}
             onChange={(e) => setRangeFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="today">Today</option>
             <option value="week">Last 7 Days</option>

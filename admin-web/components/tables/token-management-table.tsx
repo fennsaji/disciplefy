@@ -34,11 +34,11 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.08)] dark:bg-gray-900 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               User
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -66,8 +66,8 @@ export function TokenManagementTable({ balances }: TokenManagementTableProps) {
             const totalTokens = balance.available_tokens + balance.purchased_tokens
 
             return (
-              <tr key={balance.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4">
+              <tr key={balance.id} className="group hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.08)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700 px-6 py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {balance.user_name || balance.user_email || 'Anonymous'}

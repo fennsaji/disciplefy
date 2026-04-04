@@ -17,6 +17,9 @@ class SavedGuideEntity extends Equatable {
   final List<String>? reflectionQuestions;
   final List<String>? prayerPoints;
 
+  // Scripture passage for meditation and reading
+  final String? passage;
+
   // Reflection enhancement fields
   final List<String>? interpretationInsights;
   final List<String>? summaryInsights;
@@ -55,6 +58,7 @@ class SavedGuideEntity extends Equatable {
     this.relatedVerses,
     this.reflectionQuestions,
     this.prayerPoints,
+    this.passage,
     this.interpretationInsights,
     this.summaryInsights,
     this.reflectionAnswers,
@@ -82,6 +86,7 @@ class SavedGuideEntity extends Equatable {
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
+    String? passage,
     List<String>? interpretationInsights,
     List<String>? summaryInsights,
     List<String>? reflectionAnswers,
@@ -108,6 +113,7 @@ class SavedGuideEntity extends Equatable {
         relatedVerses: relatedVerses ?? this.relatedVerses,
         reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
         prayerPoints: prayerPoints ?? this.prayerPoints,
+        passage: passage ?? this.passage,
         interpretationInsights:
             interpretationInsights ?? this.interpretationInsights,
         summaryInsights: summaryInsights ?? this.summaryInsights,
@@ -229,6 +235,7 @@ class SavedGuideEntity extends Equatable {
         relatedVerses,
         reflectionQuestions,
         prayerPoints,
+        passage,
         interpretationInsights,
         summaryInsights,
         reflectionAnswers,
