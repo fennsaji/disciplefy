@@ -22,7 +22,7 @@ export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
         <table className="min-w-full">
           <thead className="border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 w-8">#</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 w-8 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">#</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Email</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Plan</th>
               <th className="px-4 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Ops</th>
@@ -41,8 +41,8 @@ export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
               </tr>
             )}
             {data.map((user) => (
-              <tr key={user.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{user.rank}</td>
+              <tr key={user.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 group">
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">{user.rank}</td>
                 <td className="px-4 py-3 font-mono text-xs text-gray-900 dark:text-gray-100 max-w-[200px] truncate">
                   {user.email}
                 </td>

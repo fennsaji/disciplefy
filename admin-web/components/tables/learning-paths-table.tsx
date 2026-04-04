@@ -79,10 +79,10 @@ function SortableRow({
       <tr
         ref={setNodeRef}
         style={style}
-        className="border-b border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+        className="border-b border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 group"
       >
       {/* Drag Handle */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
         {!disabled && (
           <button
             type="button"
@@ -278,7 +278,7 @@ export function LearningPathsTable({
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="w-12 px-4 py-3 text-left">
+              <th className="w-12 px-4 py-3 text-left sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                 {/* Drag handle column */}
               </th>
               <th className="w-16 px-4 py-3 text-left">

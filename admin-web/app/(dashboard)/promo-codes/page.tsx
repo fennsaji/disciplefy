@@ -122,7 +122,7 @@ export default function PromoCodesPage() {
 
       {/* Filter Buttons */}
       {promoData && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { value: 'all', label: 'All' },
             { value: 'active', label: 'Active' },

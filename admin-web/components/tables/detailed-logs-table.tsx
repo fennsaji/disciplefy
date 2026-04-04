@@ -209,7 +209,7 @@ export function DetailedLogsTable({ dateRange }: DetailedLogsTableProps) {
             <table className="min-w-full">
               <thead className="border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
                     Date/Time
                   </th>
                   <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -240,8 +240,8 @@ export function DetailedLogsTable({ dateRange }: DetailedLogsTableProps) {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data.items.map((item: DetailedLogItem) => (
-                  <tr key={item.id}>
-                    <td className="whitespace-nowrap py-3 text-sm text-gray-600 dark:text-gray-400">
+                  <tr key={item.id} className="group">
+                    <td className="whitespace-nowrap py-3 text-sm text-gray-600 dark:text-gray-400 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
                       {formatDateTime(item.created_at)}
                     </td>
                     <td className="py-3 font-mono text-sm text-gray-500 dark:text-gray-400">

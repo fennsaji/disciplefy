@@ -58,7 +58,7 @@ export function PurchaseIssuesTable({ issues }: PurchaseIssuesTableProps) {
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">
               Issue Type
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -82,10 +82,10 @@ export function PurchaseIssuesTable({ issues }: PurchaseIssuesTableProps) {
           {issues.map((issue) => (
             <tr
               key={issue.id}
-              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 group"
               onClick={() => router.push(`/issues/purchase/${issue.id}`)}
             >
-              <td className="whitespace-nowrap px-6 py-4">
+              <td className="whitespace-nowrap px-6 py-4 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-700">
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {getIssueTypeLabel(issue.issue_type)}
                 </div>

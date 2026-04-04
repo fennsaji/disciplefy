@@ -59,11 +59,11 @@ function PurchaseIssuesTab() {
   return (
     <div className="space-y-6">
       {/* Filter */}
-      <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -111,7 +111,7 @@ function FeedbackTab() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Category:
@@ -119,7 +119,7 @@ function FeedbackTab() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="all">All Categories</option>
             <option value="general">General</option>
@@ -138,7 +138,7 @@ function FeedbackTab() {
           <select
             value={helpfulFilter}
             onChange={(e) => setHelpfulFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="all">All Feedback</option>
             <option value="true">👍 Helpful</option>

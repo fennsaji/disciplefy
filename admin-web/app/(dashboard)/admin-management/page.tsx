@@ -212,19 +212,19 @@ export default function AdminManagementPage() {
         </h2>
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-gray-900">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Search by name, email or user ID…"
-              className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:placeholder-gray-500"
+              className="w-full flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:placeholder-gray-500 md:w-auto"
             />
             <button
               onClick={handleSearch}
               disabled={isSearching || !searchQuery.trim()}
-              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {isSearching ? 'Searching…' : 'Search'}
             </button>

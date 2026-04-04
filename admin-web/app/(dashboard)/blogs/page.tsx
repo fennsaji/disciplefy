@@ -161,12 +161,12 @@ export default function BlogsPage() {
           placeholder="Search title, excerpt, tags…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="flex-1 min-w-48 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
+          className="w-full md:w-auto flex-1 min-w-48 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
         />
         <select
           value={localeFilter}
           onChange={e => setLocaleFilter(e.target.value)}
-          className="rounded-lg border border-white/10 bg-[#161240] px-3 py-2 text-sm text-white outline-none"
+          className="w-full sm:w-auto rounded-lg border border-white/10 bg-[#161240] px-3 py-2 text-sm text-white outline-none"
         >
           <option value="all">All Languages</option>
           <option value="en">English</option>
@@ -176,7 +176,7 @@ export default function BlogsPage() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-white/10 bg-[#161240] px-3 py-2 text-sm text-white outline-none"
+          className="w-full sm:w-auto rounded-lg border border-white/10 bg-[#161240] px-3 py-2 text-sm text-white outline-none"
         >
           <option value="all">All Statuses</option>
           <option value="published">Published</option>
