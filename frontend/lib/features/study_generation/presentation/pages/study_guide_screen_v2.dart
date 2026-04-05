@@ -56,6 +56,7 @@ import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/repositories/reflections_repository.dart';
 import '../widgets/reading_completion_card.dart';
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
 import '../../../community/domain/repositories/community_repository.dart';
@@ -919,6 +920,16 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           cached.studyMode == null; // legacy entries without mode
 
       if (lacksPassage && isPassageMode) {
+        // When offline, use the stale guide rather than failing to regenerate
+        final isOffline = mounted &&
+            context.read<ConnectivityBloc>().state is ConnectivityOffline;
+        if (isOffline) {
+          Logger.info(
+              '📦 [STUDY_GUIDE_V2] Offline — using stale cache (no passage)');
+          _startTopicProgress();
+          _loadFromCachedStudyGuide(cached);
+          return;
+        }
         Logger.info(
             '♻️ [STUDY_GUIDE_V2] Stale cache (no passage) — regenerating');
       } else {
@@ -1026,12 +1037,26 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     try {
       final cached = await sl<StudyLocalDataSource>().getCachedStudyGuides();
       final normalizedInput = input.trim().toLowerCase();
-      return cached.firstWhere(
-        (g) =>
-            g.input.trim().toLowerCase() == normalizedInput &&
-            g.inputType == inputType &&
-            g.language == language &&
-            g.studyMode == studyMode,
+      // Filter by input+type+language first
+      final matches = cached
+          .where(
+            (g) =>
+                g.input.trim().toLowerCase() == normalizedInput &&
+                g.inputType == inputType &&
+                g.language == language,
+          )
+          .toList();
+
+      if (matches.isEmpty) return null;
+
+      // Prefer exact studyMode match; fall back to guides with no mode
+      // (e.g. guides downloaded via the background download service which
+      // uses the non-streaming V1 API and doesn't set studyMode).
+      return matches.firstWhere(
+        (g) => g.studyMode == studyMode,
+        orElse: () => matches.firstWhere(
+          (g) => g.studyMode == null,
+        ),
       );
     } catch (_) {
       return null;

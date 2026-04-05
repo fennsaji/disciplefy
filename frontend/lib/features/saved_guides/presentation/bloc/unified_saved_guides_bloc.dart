@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/pagination_helper.dart';
+import '../../../../core/connectivity/connectivity_bloc.dart';
+import '../../data/services/saved_guides_sync_service.dart';
+import '../../data/datasources/saved_guides_local_data_source.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import '../../domain/usecases/get_saved_guides_with_sync.dart';
 import '../../domain/usecases/get_recent_guides_with_sync.dart';
@@ -15,28 +18,59 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
   final GetSavedGuidesWithSync _getSavedGuidesWithSync;
   final GetRecentGuidesWithSync _getRecentGuidesWithSync;
   final ToggleSaveGuideApi _toggleSaveGuideApi;
+  final ConnectivityBloc _connectivityBloc;
+  final SavedGuidesSyncService _savedGuidesSyncService;
+  final SavedGuidesLocalDataSource _localDataSource;
 
   // Debouncer for tab changes
   Timer? _debounceTimer;
+  StreamSubscription? _connectivitySubscription;
+  bool _isOnline = true;
 
   UnifiedSavedGuidesBloc({
     required GetSavedGuidesWithSync getSavedGuidesWithSync,
     required GetRecentGuidesWithSync getRecentGuidesWithSync,
     required ToggleSaveGuideApi toggleSaveGuideApi,
+    required ConnectivityBloc connectivityBloc,
+    required SavedGuidesSyncService savedGuidesSyncService,
+    required SavedGuidesLocalDataSource localDataSource,
   })  : _getSavedGuidesWithSync = getSavedGuidesWithSync,
         _getRecentGuidesWithSync = getRecentGuidesWithSync,
         _toggleSaveGuideApi = toggleSaveGuideApi,
+        _connectivityBloc = connectivityBloc,
+        _savedGuidesSyncService = savedGuidesSyncService,
+        _localDataSource = localDataSource,
         super(SavedGuidesInitial()) {
     on<LoadSavedGuidesFromApi>(_onLoadSavedGuides);
     on<LoadRecentGuidesFromApi>(_onLoadRecentGuides);
     on<ToggleGuideApiEvent>(_onToggleGuide);
     on<TabChangedEvent>(_onTabChanged);
+    _subscribeToConnectivity();
+  }
+
+  void _subscribeToConnectivity() {
+    _isOnline = _connectivityBloc.state is ConnectivityOnline;
+    _connectivitySubscription = _connectivityBloc.stream.listen((state) {
+      _isOnline = state is ConnectivityOnline;
+    });
   }
 
   Future<void> _onLoadSavedGuides(
     LoadSavedGuidesFromApi event,
     Emitter<SavedGuidesState> emit,
   ) async {
+    if (!_isOnline) {
+      // Offline: serve from local Hive cache
+      final localGuides = await _localDataSource.getSavedGuides();
+      emit(SavedGuidesApiLoaded(
+        savedGuides: localGuides.map((m) => m.toEntity()).toList(),
+        recentGuides: const [],
+        hasMoreSaved: false,
+        hasMoreRecent: false,
+      ));
+      return;
+    }
+
     // REFACTORED: Extract state management to reduce complexity
     final loadingState = _prepareLoadingState(
       currentState: state,
@@ -99,6 +133,17 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
     ToggleGuideApiEvent event,
     Emitter<SavedGuidesState> emit,
   ) async {
+    if (!_isOnline) {
+      await _savedGuidesSyncService.addToSyncQueue({
+        'type': 'toggle_save',
+        'guideId': event.guideId,
+        'save': event.save,
+      });
+      emit(const SavedGuidesActionSuccess(
+          message: 'Saved — will sync when online'));
+      return;
+    }
+
     final result = await _toggleSaveGuideApi(
       guideId: event.guideId,
       save: event.save,
@@ -418,6 +463,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
   @override
   Future<void> close() {
     // TIMER RESOURCE LEAK FIX: Ensure complete cleanup
+    _connectivitySubscription?.cancel();
     _debounceTimer?.cancel();
     _debounceTimer = null; // Clear reference to prevent memory leaks
     return super.close();

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/usecases/generate_study_guide.dart';
+import '../../data/datasources/study_local_data_source.dart';
 import '../../domain/usecases/manage_personal_notes.dart';
 import '../../domain/services/input_validation_service.dart';
 import '../../data/services/save_guide_api_service.dart';
@@ -43,6 +44,7 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     // Initialize handlers with their dependencies
     _generationHandler = StudyGenerationHandler(
       generateStudyGuide: generateStudyGuide,
+      localDataSource: StudyLocalDataSourceImpl(),
     );
     _saveHandler = StudySaveHandler(
       saveGuideService: saveGuideService,
