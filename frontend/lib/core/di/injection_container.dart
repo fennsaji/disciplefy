@@ -114,6 +114,7 @@ import '../../features/study_topics/data/datasources/leaderboard_remote_datasour
 import '../../features/study_topics/data/repositories/leaderboard_repository_impl.dart';
 import '../../features/study_topics/domain/repositories/leaderboard_repository.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
+import '../../features/study_topics/data/services/learning_path_download_service.dart';
 import '../services/theme_service.dart';
 import '../services/locale_service.dart';
 import '../services/font_scale_service.dart';
@@ -243,6 +244,9 @@ import '../../features/community/presentation/bloc/discover/discover_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
 import '../../features/walkthrough/domain/walkthrough_repository.dart';
 import '../../features/walkthrough/data/walkthrough_repository_impl.dart';
+import '../connectivity/connectivity_bloc.dart';
+import '../services/connectivity_sync_service.dart';
+import '../../features/saved_guides/data/services/saved_guides_sync_service.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -394,6 +398,14 @@ Future<void> initializeDependencies() async {
 
   sl.registerLazySingleton(() => GenerateStudyGuide(sl()));
   sl.registerLazySingleton(() => GetDefaultStudyLanguage(sl()));
+
+  // Learning path download service
+  sl.registerLazySingleton<LearningPathDownloadService>(
+    () => LearningPathDownloadService(
+      generateStudyGuide: sl<GenerateStudyGuide>(),
+      localDataSource: sl<StudyLocalDataSource>(),
+    ),
+  );
 
   sl.registerLazySingleton(() => InputValidationService());
 
@@ -614,6 +626,7 @@ Future<void> initializeDependencies() async {
         getSuggestedVerses: sl(),
         notificationService: sl(),
         suggestedVersesCacheService: sl(),
+        connectivityBloc: sl(),
       ));
 
   //! Saved Guides
@@ -653,7 +666,28 @@ Future<void> initializeDependencies() async {
         getSavedGuidesWithSync: sl(),
         getRecentGuidesWithSync: sl(),
         toggleSaveGuideApi: sl(),
+        connectivityBloc: sl(),
+        savedGuidesSyncService: sl(),
+        localDataSource: sl(),
       ));
+
+  // ConnectivityBloc (app-level singleton)
+  sl.registerLazySingleton<ConnectivityBloc>(
+    () => ConnectivityBloc(networkInfo: sl()),
+  );
+
+  // SavedGuidesSyncService
+  sl.registerLazySingleton<SavedGuidesSyncService>(
+    () => SavedGuidesSyncService(remote: sl()),
+  );
+
+  // ConnectivitySyncService
+  sl.registerLazySingleton<ConnectivitySyncService>(
+    () => ConnectivitySyncService(
+      connectivityBloc: sl(),
+      savedGuidesSyncService: sl(),
+    ),
+  );
 
   //! Feedback
   sl.registerLazySingleton<FeedbackRemoteDataSource>(

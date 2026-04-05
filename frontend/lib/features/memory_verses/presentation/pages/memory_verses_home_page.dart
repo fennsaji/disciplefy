@@ -39,6 +39,7 @@ import '../widgets/daily_goal_progress_widget.dart';
 import '../widgets/milestone_celebration_dialog.dart';
 import '../widgets/streak_protection_dialog.dart';
 import '../widgets/memory_verse_navigation_bar.dart';
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
@@ -314,16 +315,36 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                       }
                     });
                   } else {
+                    final isOffline = context.read<ConnectivityBloc>().state
+                        is ConnectivityOffline;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content:
-                            Text('Something went wrong. Please try again.'),
-                        backgroundColor: AppColors.error,
-                        action: SnackBarAction(
-                          label: context.tr(TranslationKeys.commonRetry),
-                          textColor: Colors.white,
-                          onPressed: _loadVerses,
+                        content: Row(
+                          children: [
+                            Icon(
+                              isOffline ? Icons.wifi_off : Icons.error,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                isOffline
+                                    ? 'You\'re offline. Connect to load Memory Verses.'
+                                    : 'Something went wrong. Please try again.',
+                              ),
+                            ),
+                          ],
                         ),
+                        backgroundColor:
+                            isOffline ? AppColors.warning : AppColors.error,
+                        action: isOffline
+                            ? null
+                            : SnackBarAction(
+                                label: context.tr(TranslationKeys.commonRetry),
+                                textColor: Colors.white,
+                                onPressed: _loadVerses,
+                              ),
                       ),
                     );
                   }
@@ -389,13 +410,54 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                       hasVerses: hasVerses);
                 }
 
-                // No cached data yet (first visit) — show loader while fetching
+                // No cached data yet — if offline show offline message, else spinner
+                if (context.read<ConnectivityBloc>().state
+                    is ConnectivityOffline) {
+                  return _buildOfflineState();
+                }
                 return _buildLoadingState();
               },
             ),
           ).withAuthProtection(),
         );
       },
+    );
+  }
+
+  Widget _buildOfflineState() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off,
+              size: 64,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'You\'re offline',
+              style: AppFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Memory Verses require an internet connection. Connect and come back.',
+              textAlign: TextAlign.center,
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

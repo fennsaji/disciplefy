@@ -64,6 +64,7 @@ import '../../../community/domain/entities/fellowship_meeting_entity.dart';
 import '../../../community/domain/repositories/community_repository.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
@@ -1289,41 +1290,55 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     });
   }
 
-  Widget _buildTopicsErrorWidget(String error) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppTheme.accentColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.accentColor.withOpacity(0.3),
-          ),
+  Widget _buildTopicsErrorWidget(String error) {
+    final isOffline =
+        context.read<ConnectivityBloc>().state is ConnectivityOffline;
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isOffline
+            ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+            : AppTheme.accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isOffline
+              ? theme.colorScheme.outline.withOpacity(0.2)
+              : AppTheme.accentColor.withOpacity(0.3),
         ),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.error_outline,
-              color: AppTheme.accentColor,
-              size: 32,
+      ),
+      child: Column(
+        children: [
+          Icon(
+            isOffline ? Icons.wifi_off : Icons.error_outline,
+            color: isOffline
+                ? theme.colorScheme.onSurfaceVariant
+                : AppTheme.accentColor,
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            isOffline
+                ? 'You\'re offline'
+                : context.tr(TranslationKeys.homeFailedToLoadTopics),
+            style: AppFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onBackground,
             ),
-            const SizedBox(height: 12),
-            Text(
-              context.tr(TranslationKeys.homeFailedToLoadTopics),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isOffline
+                ? 'Personalized topics require an internet connection.'
+                : context.tr(TranslationKeys.homeSomethingWentWrong),
+            style: AppFonts.inter(
+              fontSize: 14,
+              color: theme.colorScheme.onBackground.withOpacity(0.7),
             ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.homeSomethingWentWrong),
-              style: AppFonts.inter(
-                fontSize: 14,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
+            textAlign: TextAlign.center,
+          ),
+          if (!isOffline) ...[
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () => context
@@ -1340,8 +1355,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               label: Text(context.tr(TranslationKeys.homeTryAgain)),
             ),
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 
   Widget _buildTopicsLoadingWidget() =>
       const LearningPathCardSkeleton(compact: false);

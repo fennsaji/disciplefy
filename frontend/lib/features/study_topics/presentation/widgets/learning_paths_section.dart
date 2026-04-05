@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -356,29 +357,45 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
 
   Widget _buildErrorState(BuildContext context, LearningPathsError state) {
     final theme = Theme.of(context);
+    final isOffline =
+        context.read<ConnectivityBloc>().state is ConnectivityOffline;
     return _buildSection(
       context,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+          color: isOffline
+              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+              : theme.colorScheme.errorContainer.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: theme.colorScheme.error, size: 20),
+            Icon(
+              isOffline ? Icons.wifi_off : Icons.error_outline,
+              color: isOffline
+                  ? theme.colorScheme.onSurfaceVariant
+                  : theme.colorScheme.error,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Something went wrong. Please try again.',
+                isOffline
+                    ? 'You\'re offline. Learning Paths require an internet connection.'
+                    : 'Something went wrong. Please try again.',
                 style: AppFonts.inter(
-                    fontSize: 14, color: theme.colorScheme.error),
+                  fontSize: 14,
+                  color: isOffline
+                      ? theme.colorScheme.onSurfaceVariant
+                      : theme.colorScheme.error,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (widget.onRetry != null)
+            if (!isOffline && widget.onRetry != null)
               TextButton(
                 onPressed: widget.onRetry,
                 child: Text(

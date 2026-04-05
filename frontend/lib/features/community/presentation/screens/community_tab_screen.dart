@@ -23,6 +23,8 @@ import '../bloc/fellowship_list/fellowship_list_bloc.dart';
 import '../bloc/fellowship_list/fellowship_list_event.dart';
 import '../bloc/fellowship_list/fellowship_list_state.dart';
 import 'package:showcaseview/showcaseview.dart';
+
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
@@ -1137,6 +1139,9 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isOffline =
+        context.read<ConnectivityBloc>().state is ConnectivityOffline;
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1147,15 +1152,25 @@ class _ErrorState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: isOffline
+                    ? theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.4)
+                    : AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(Icons.error_outline_rounded,
-                  size: 36, color: AppColors.error),
+              child: Icon(
+                isOffline
+                    ? Icons.wifi_off_rounded
+                    : Icons.error_outline_rounded,
+                size: 36,
+                color: isOffline
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.error,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
-              l10n.communityLoadError,
+              isOffline ? "You're offline" : l10n.communityLoadError,
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 18,
@@ -1165,7 +1180,9 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message,
+              isOffline
+                  ? 'Community features require an internet connection.'
+                  : 'Unable to load. Please try again.',
               style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 14,
@@ -1173,18 +1190,20 @@ class _ErrorState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(l10n.communityRetry),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.primary,
-                side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+            if (!isOffline) ...[
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(l10n.communityRetry),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  side: BorderSide(color: theme.colorScheme.primary),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

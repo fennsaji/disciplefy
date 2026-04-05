@@ -280,15 +280,18 @@ class SystemConfigService extends ChangeNotifier {
         final cacheAge =
             DateTime.now().millisecondsSinceEpoch - cachedTimestamp;
 
-        // Only use cache if less than 5 minutes old
+        // Always load cached config as a fallback (even if stale).
+        // Stale cache is better than no config (which hides all feature-flagged tabs).
+        // If stale, _lastFetch is left null so _shouldRefresh() triggers a background refresh.
+        _config = SystemConfig.fromJson(jsonDecode(cachedJson));
+
         if (cacheAge < _cacheDuration.inMilliseconds) {
-          _config = SystemConfig.fromJson(jsonDecode(cachedJson));
           _lastFetch = DateTime.fromMillisecondsSinceEpoch(cachedTimestamp);
           Logger.debug(
-              '✅ [SystemConfigService] Loaded from cache (age: \${cacheAge ~/ 1000}s)');
+              '✅ [SystemConfigService] Loaded from cache (age: ${cacheAge ~/ 1000}s)');
         } else {
           Logger.debug(
-              'ℹ️ [SystemConfigService] Cache expired (age: \${cacheAge ~/ 1000}s)');
+              'ℹ️ [SystemConfigService] Loaded stale cache as fallback (age: ${cacheAge ~/ 1000}s), will refresh');
         }
       }
     } catch (e) {
