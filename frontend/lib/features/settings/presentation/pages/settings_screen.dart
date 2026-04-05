@@ -28,6 +28,8 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../../study_topics/data/models/learning_path_download_model.dart';
+import '../../../study_topics/data/services/learning_path_download_service.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
@@ -59,6 +61,24 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   /// Used to show a loading overlay and to navigate straight to login
   /// (bypassing the currentUser guard that exists for sign-out).
   bool _isDeletingAccount = false;
+  List<LearningPathDownloadModel> _downloadedPaths = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDownloadedPaths();
+  }
+
+  Future<void> _loadDownloadedPaths() async {
+    final paths = await sl<LearningPathDownloadService>().getAllDownloads();
+    if (mounted) {
+      setState(() {
+        _downloadedPaths = paths
+            .where((p) => p.status == PathDownloadStatus.completed)
+            .toList();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) => PopScope(
@@ -188,6 +208,11 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
                             // Account Section
                             _buildAccountSection(context),
+                            const SizedBox(height: 24),
+
+                            // Offline Content Section
+                            _buildOfflineContentSection(),
+                            const Divider(height: 1),
                             const SizedBox(height: 24),
 
                             // About Section
@@ -874,6 +899,56 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           );
         },
       );
+
+  /// Offline Content Section - shows downloaded learning paths
+  Widget _buildOfflineContentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          child: Text(
+            'Offline Content',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+          ),
+        ),
+        if (_downloadedPaths.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'No downloaded learning paths.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+            ),
+          )
+        else
+          ..._downloadedPaths.map(
+            (path) => ListTile(
+              leading: const Icon(Icons.download_done_outlined),
+              title: Text(path.learningPathTitle),
+              subtitle: Text('${path.completedCount} guides available offline'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Delete offline content',
+                onPressed: () async {
+                  await sl<LearningPathDownloadService>()
+                      .deleteDownload(path.learningPathId);
+                  await _loadDownloadedPaths();
+                },
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
   /// About Section
   Widget _buildAboutSection(BuildContext context, SettingsLoaded state) =>

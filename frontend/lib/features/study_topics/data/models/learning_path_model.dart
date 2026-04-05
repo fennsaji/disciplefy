@@ -94,6 +94,21 @@ class LearningPathTopicModel extends LearningPathTopic {
       isInProgress: json['is_in_progress'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'position': position,
+      'is_milestone': isMilestone,
+      'topic_id': topicId,
+      'title': title,
+      'description': description,
+      'category': category,
+      'input_type': inputType,
+      'xp_value': xpValue,
+      'is_completed': isCompleted,
+      'is_in_progress': isInProgress,
+    };
+  }
 }
 
 /// Model for parsing learning path detail data from API.
@@ -148,6 +163,42 @@ class LearningPathDetailModel extends LearningPathDetail {
           : null,
       topics: topics,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'slug': slug,
+      'title': title,
+      'description': description,
+      'icon_name': iconName,
+      'color': color,
+      'total_xp': totalXp,
+      'estimated_days': estimatedDays,
+      'disciple_level': discipleLevel,
+      'recommended_mode': recommendedMode,
+      'allow_non_sequential_access': allowNonSequentialAccess,
+      'is_featured': isFeatured,
+      'is_enrolled': isEnrolled,
+      'progress_percentage': progressPercentage,
+      'topics_completed': topicsCompleted,
+      'enrolled_at': enrolledAt?.toIso8601String(),
+      'topics': topics.map((t) {
+        if (t is LearningPathTopicModel) return t.toJson();
+        return <String, dynamic>{
+          'position': t.position,
+          'is_milestone': t.isMilestone,
+          'topic_id': t.topicId,
+          'title': t.title,
+          'description': t.description,
+          'category': t.category,
+          'input_type': t.inputType,
+          'xp_value': t.xpValue,
+          'is_completed': t.isCompleted,
+          'is_in_progress': t.isInProgress,
+        };
+      }).toList(),
+    };
   }
 }
 

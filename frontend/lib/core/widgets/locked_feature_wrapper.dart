@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../connectivity/connectivity_bloc.dart';
 import '../theme/app_colors.dart';
 import '../../features/tokens/presentation/bloc/token_bloc.dart';
 import '../../features/tokens/presentation/bloc/token_state.dart';
@@ -38,43 +39,50 @@ class LockedFeatureWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TokenBloc, TokenState>(
-      builder: (context, tokenState) {
-        // Get user plan
-        String userPlan = 'free';
-        if (tokenState is TokenLoaded) {
-          userPlan = tokenState.tokenStatus.userPlan.name;
-        }
+    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
+      buildWhen: (prev, next) => prev.runtimeType != next.runtimeType,
+      builder: (context, connectivityState) =>
+          BlocBuilder<TokenBloc, TokenState>(
+        builder: (context, tokenState) {
+          // Get user plan
+          String userPlan = 'free';
+          if (tokenState is TokenLoaded) {
+            userPlan = tokenState.tokenStatus.userPlan.name;
+          }
 
-        final systemConfig = sl<SystemConfigService>();
+          final systemConfig = sl<SystemConfigService>();
 
-        // Check feature access
-        final hasAccess = systemConfig.hasFeatureAccess(featureKey, userPlan);
-        final isLocked = systemConfig.isFeatureLocked(featureKey, userPlan);
-        final shouldHide = systemConfig.shouldHideFeature(featureKey, userPlan);
+          // Check feature access
+          final hasAccess = systemConfig.hasFeatureAccess(featureKey, userPlan);
+          final isLocked = systemConfig.isFeatureLocked(featureKey, userPlan);
+          final shouldHide =
+              systemConfig.shouldHideFeature(featureKey, userPlan);
 
-        // If should be hidden, don't render anything
-        if (shouldHide) {
+          // If should be hidden, don't render anything
+          if (shouldHide) {
+            return const SizedBox.shrink();
+          }
+
+          // If user has access, render child normally
+          if (hasAccess) {
+            return child;
+          }
+
+          // If locked, render with lock overlay
+          if (isLocked && showLockOverlay) {
+            final isOffline = connectivityState is ConnectivityOffline;
+            return _buildLockedFeature(context, userPlan, isOffline: isOffline);
+          }
+
+          // Fallback: hide
           return const SizedBox.shrink();
-        }
-
-        // If user has access, render child normally
-        if (hasAccess) {
-          return child;
-        }
-
-        // If locked, render with lock overlay
-        if (isLocked && showLockOverlay) {
-          return _buildLockedFeature(context, userPlan);
-        }
-
-        // Fallback: hide
-        return const SizedBox.shrink();
-      },
+        },
+      ),
     );
   }
 
-  Widget _buildLockedFeature(BuildContext context, String currentPlan) {
+  Widget _buildLockedFeature(BuildContext context, String currentPlan,
+      {bool isOffline = false}) {
     final systemConfig = sl<SystemConfigService>();
     final requiredPlans = systemConfig.getRequiredPlans(featureKey);
     final upgradePlan = systemConfig.getUpgradePlan(featureKey, currentPlan);
@@ -100,12 +108,23 @@ class LockedFeatureWrapper extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => _showUpgradeDialog(
-                  context,
-                  currentPlan,
-                  requiredPlans,
-                  upgradePlan,
-                ),
+                onTap: () {
+                  if (isOffline) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Connect to internet to upgrade'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  _showUpgradeDialog(
+                    context,
+                    currentPlan,
+                    requiredPlans,
+                    upgradePlan,
+                  );
+                },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   decoration: BoxDecoration(
@@ -162,7 +181,9 @@ class LockedFeatureWrapper extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            customLockedMessage ?? 'Tap to Upgrade',
+                            isOffline
+                                ? 'Not available offline'
+                                : (customLockedMessage ?? 'Tap to Upgrade'),
                             style: const TextStyle(
                               color: AppColors.onGradient,
                               fontSize: 12,

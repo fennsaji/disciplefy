@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
 import '../../../../../core/error/token_failures.dart';
 import '../../../../../core/utils/error_message_sanitizer.dart';
 import '../../../domain/usecases/generate_study_guide.dart';
+import '../../../data/datasources/study_local_data_source.dart';
 import '../study_event.dart';
 import '../study_state.dart';
 import '../../../../../core/utils/logger.dart';
@@ -14,10 +17,13 @@ import '../../../../../core/utils/logger.dart';
 /// study guides, following the Single Responsibility Principle.
 class StudyGenerationHandler {
   final GenerateStudyGuide _generateStudyGuide;
+  final StudyLocalDataSource _localDataSource;
 
   const StudyGenerationHandler({
     required GenerateStudyGuide generateStudyGuide,
-  }) : _generateStudyGuide = generateStudyGuide;
+    required StudyLocalDataSource localDataSource,
+  })  : _generateStudyGuide = generateStudyGuide,
+        _localDataSource = localDataSource;
 
   /// Handles the study guide generation request.
   ///
@@ -59,6 +65,8 @@ class StudyGenerationHandler {
         },
         (studyGuide) {
           Logger.debug('🚨 [STUDY_BLOC] Emitting StudyGenerationSuccess');
+          // Auto-cache every generated guide for offline viewing
+          unawaited(_localDataSource.cacheStudyGuide(studyGuide));
           emit(StudyGenerationSuccess(
             studyGuide: studyGuide,
             generatedAt: DateTime.now(),

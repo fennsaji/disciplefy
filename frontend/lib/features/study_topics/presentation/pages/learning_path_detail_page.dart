@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/category_utils.dart';
@@ -22,6 +25,8 @@ import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
+import '../../data/models/learning_path_download_model.dart';
+import '../../data/services/learning_path_download_service.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -53,11 +58,32 @@ class LearningPathDetailPage extends StatefulWidget {
 
 class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   String _currentLanguage = 'en';
+  LearningPathDownloadModel? _downloadModel;
+  StreamSubscription<LearningPathDownloadModel>? _downloadSub;
 
   @override
   void initState() {
     super.initState();
     _loadLanguageAndPathDetails();
+    _subscribeToDownloadState();
+  }
+
+  void _subscribeToDownloadState() {
+    _downloadSub = sl<LearningPathDownloadService>()
+        .watchDownload(widget.pathId)
+        .listen((model) {
+      if (mounted) setState(() => _downloadModel = model);
+    });
+    // Sync current state immediately (stream only emits on change)
+    final current =
+        sl<LearningPathDownloadService>().getDownload(widget.pathId);
+    if (current != null) setState(() => _downloadModel = current);
+  }
+
+  @override
+  void dispose() {
+    _downloadSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadLanguageAndPathDetails() async {
@@ -440,6 +466,9 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   Widget _buildErrorState(BuildContext context, LearningPathsError state) {
     final theme = Theme.of(context);
+    final isOffline =
+        context.read<ConnectivityBloc>().state is ConnectivityOffline;
+
     return CustomScrollView(
       slivers: [
         _buildAppBar(context, null),
@@ -450,13 +479,17 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
               children: [
                 const SizedBox(height: 40),
                 Icon(
-                  Icons.error_outline,
+                  isOffline ? Icons.wifi_off_rounded : Icons.error_outline,
                   size: 64,
-                  color: theme.colorScheme.error,
+                  color: isOffline
+                      ? theme.colorScheme.onSurfaceVariant
+                      : theme.colorScheme.error,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  context.tr(TranslationKeys.learningPathsFailedToLoad),
+                  isOffline
+                      ? "You're offline"
+                      : context.tr(TranslationKeys.learningPathsFailedToLoad),
                   style: AppFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -465,18 +498,35 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Something went wrong. Please try again.',
+                  isOffline
+                      ? 'This learning path hasn\'t been downloaded. Download it while online to access it offline.'
+                      : 'Something went wrong. Please try again.',
                   style: AppFonts.inter(
                     fontSize: 14,
-                    color: theme.colorScheme.error,
+                    color: isOffline
+                        ? theme.colorScheme.onSurfaceVariant
+                        : theme.colorScheme.error,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _loadPathDetails,
-                  child: Text(context.tr(TranslationKeys.commonRetry)),
-                ),
+                if (!isOffline)
+                  ElevatedButton(
+                    onPressed: _loadPathDetails,
+                    child: Text(context.tr(TranslationKeys.commonRetry)),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Go Back'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.onSurfaceVariant,
+                      side: BorderSide(
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.4)),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -550,6 +600,130 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     );
   }
 
+  Widget _buildDownloadButton(LearningPathDetail path) {
+    final model = _downloadModel;
+
+    if (model == null ||
+        model.status == PathDownloadStatus.failed ||
+        model.status == PathDownloadStatus.paused) {
+      return IconButton(
+        icon: const Icon(Icons.download_outlined),
+        tooltip: 'Download for offline',
+        onPressed: () => _startDownload(path),
+      );
+    }
+
+    if (model.status == PathDownloadStatus.completed) {
+      return IconButton(
+        icon: Icon(Icons.check_circle, color: AppColors.success),
+        tooltip: 'Available offline',
+        onPressed: () => _showCompletedDownloadOptions(path),
+      );
+    }
+
+    // Downloading / queued — show progress ring
+    final total = model.totalCount;
+    final done = model.completedCount;
+    return GestureDetector(
+      onTap: () => _showDownloadOptions(path),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: CircularProgressIndicator(
+              value: total > 0 ? done / total : null,
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          Text(
+            '$done',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _startDownload(LearningPathDetail path) async {
+    final languageService = sl<LanguagePreferenceService>();
+    final lang = await languageService.getStudyContentLanguage();
+    final topics = path.topics
+        .map((t) => LearningPathTopicDownload(
+              topicId: t.topicId,
+              topicTitle: t.title,
+              inputType: t.inputType,
+              description: t.description,
+              studyMode: path.recommendedMode ?? 'standard',
+              status: TopicDownloadStatus.pending,
+            ))
+        .toList();
+
+    await sl<LearningPathDownloadService>().startDownload(
+      learningPathId: path.id,
+      learningPathTitle: path.title,
+      language: lang.code,
+      topics: topics,
+    );
+  }
+
+  void _showCompletedDownloadOptions(LearningPathDetail path) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Remove download'),
+              subtitle: const Text('Delete offline content to free storage'),
+              onTap: () {
+                sl<LearningPathDownloadService>().deleteDownload(path.id);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDownloadOptions(LearningPathDetail path) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.pause),
+              title: const Text('Pause download'),
+              onTap: () {
+                sl<LearningPathDownloadService>().pauseDownload(path.id);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cancel_outlined),
+              title: const Text('Cancel download'),
+              onTap: () {
+                sl<LearningPathDownloadService>().cancelDownload(path.id);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAppBar(BuildContext context, LearningPath? path) {
     final theme = Theme.of(context);
     final color =
@@ -574,6 +748,14 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         ),
         onPressed: _handleBackNavigation,
       ),
+      actions: path is LearningPathDetail
+          ? [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _buildDownloadButton(path),
+              ),
+            ]
+          : null,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(

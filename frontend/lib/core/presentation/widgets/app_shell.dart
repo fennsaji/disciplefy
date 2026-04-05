@@ -14,6 +14,7 @@ import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/domain/walkthrough_repository.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import 'bottom_nav.dart' as bottom_nav;
+import '../../widgets/offline_banner.dart';
 
 /// Main App Shell with Bottom Navigation
 ///
@@ -269,33 +270,40 @@ class _AppShellState extends State<AppShell>
           },
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: Stack(
+            body: Column(
               children: [
-                // Main content with animation
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: widget.navigationShell,
-                  ),
-                ),
-                // Loading indicator overlay - shown during async navigation
-                if (_showLoadingIndicator)
-                  Semantics(
-                    label: 'Loading content',
-                    liveRegion: true,
-                    container: true,
-                    child: Container(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                          strokeWidth: 3,
-                          semanticsLabel: 'Loading',
+                const OfflineBanner(),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Main content with animation
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: widget.navigationShell,
                         ),
                       ),
-                    ),
+                      // Loading indicator overlay - shown during async navigation
+                      if (_showLoadingIndicator)
+                        Semantics(
+                          label: 'Loading content',
+                          liveRegion: true,
+                          container: true,
+                          child: Container(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.primary,
+                                strokeWidth: 3,
+                                semanticsLabel: 'Loading',
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
             bottomNavigationBar: bottom_nav.DisciplefyBottomNav(

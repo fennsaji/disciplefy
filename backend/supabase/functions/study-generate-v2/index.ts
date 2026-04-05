@@ -896,6 +896,7 @@ async function handleStudyGenerateV2(
 
             // Another client is already generating this study - poll for completion
             // The generation continues in background even if original client disconnected
+            inProgressId = inProgressStudy.id // Set for disconnect handler logging
             await pollForInProgressCompletion(
               inProgressStudy.id,
               controller,
@@ -1880,7 +1881,7 @@ async function pollForInProgressCompletion(
         ))
 
         console.log('[POLL] Polling complete, study found in main table')
-        controller.close()
+        try { controller.close() } catch (_) { /* Client already disconnected */ }
         return
       }
     }
@@ -1893,7 +1894,7 @@ async function pollForInProgressCompletion(
         errorMsg,
         false
       ))
-      controller.close()
+      try { controller.close() } catch (_) { /* Client already disconnected */ }
       throw new Error(`Generation failed: ${errorMsg}`)
     }
 
@@ -1908,7 +1909,7 @@ async function pollForInProgressCompletion(
     'Study generation did not complete in time',
     true
   ))
-  controller.close()
+  try { controller.close() } catch (_) { /* Client already disconnected */ }
   throw new Error('Polling timeout: Study generation did not complete in time')
 }
 

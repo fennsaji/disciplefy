@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/mastery_progress_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
@@ -88,6 +91,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final MemoryVerseNotificationService notificationService;
   final SuggestedVersesCacheService suggestedVersesCacheService;
 
+  // Connectivity
+  final ConnectivityBloc _connectivityBloc;
+  StreamSubscription? _connectivitySubscription;
+
   MemoryVerseBloc({
     required this.getDueVerses,
     required this.getCachedDueVerses,
@@ -118,7 +125,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     // Services
     required this.notificationService,
     required this.suggestedVersesCacheService,
-  }) : super(const MemoryVerseInitial()) {
+    required ConnectivityBloc connectivityBloc,
+  })  : _connectivityBloc = connectivityBloc,
+        super(const MemoryVerseInitial()) {
     on<LoadDueVerses>(_onLoadDueVerses);
     on<AddVerseFromDaily>(_onAddVerseFromDaily);
     on<AddVerseManually>(_onAddVerseManually);
@@ -153,6 +162,19 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     // Suggested verses event handlers
     on<LoadSuggestedVersesEvent>(_onLoadSuggestedVerses);
     on<AddSuggestedVerseEvent>(_onAddSuggestedVerse);
+
+    // Sync when connectivity is restored
+    _connectivitySubscription = _connectivityBloc.stream.listen((state) {
+      if (state is ConnectivityOnline) {
+        add(const SyncWithRemote());
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    return super.close();
   }
 
   /// Handles LoadDueVerses event with stale-while-revalidate pattern.

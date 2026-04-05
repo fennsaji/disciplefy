@@ -1,10 +1,16 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
+import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
 import '../datasources/learning_paths_remote_datasource.dart';
+import '../models/learning_path_download_model.dart';
+import '../models/learning_path_model.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Implementation of [LearningPathsRepository].
@@ -23,6 +29,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   // Cache for path details
   final Map<String, LearningPathDetail> _detailsCache = {};
   final Map<String, DateTime> _detailsCacheTimestamps = {};
+  static const String _detailsPrefKeyPrefix = 'lp_detail_';
 
   // Cache for recommended path
   RecommendedPathResult? _cachedRecommendedPath;
@@ -184,21 +191,134 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       Logger.debug(
           '[LearningPathsRepo] Got fresh path details - progress: ${detail.progressPercentage}%');
 
-      // Update cache
+      // Update in-memory and persistent cache
       _detailsCache[cacheKey] = detail;
       _detailsCacheTimestamps[cacheKey] = DateTime.now();
+      _persistDetailToPrefs(cacheKey, detail);
 
       return Right(detail);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {
-      // Return cached data if available
+      // Return in-memory cache if available (same session)
       if (_detailsCache.containsKey(cacheKey)) {
+        Logger.debug(
+            '[LearningPathsRepo] Serving path details from in-memory cache (offline)');
         return Right(_detailsCache[cacheKey]!);
+      }
+      // Fall back to persistent SharedPreferences cache (survives app restarts)
+      final persisted = await _loadDetailFromPrefs(cacheKey);
+      if (persisted != null) {
+        _detailsCache[cacheKey] = persisted;
+        Logger.debug(
+            '[LearningPathsRepo] Serving path details from persistent cache (offline fallback)');
+        return Right(persisted);
+      }
+      // Last resort: reconstruct from Hive download data (works for all downloaded paths)
+      final fromDownload = await _buildDetailFromHiveDownload(pathId);
+      if (fromDownload != null) {
+        _detailsCache[cacheKey] = fromDownload;
+        Logger.debug(
+            '[LearningPathsRepo] Reconstructed path details from Hive download data');
+        return Right(fromDownload);
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
       return Left(ClientFailure(message: e.toString()));
+    }
+  }
+
+  void _persistDetailToPrefs(String cacheKey, LearningPathDetail detail) {
+    Future(() async {
+      try {
+        if (detail is! LearningPathDetailModel) return;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          '$_detailsPrefKeyPrefix$cacheKey',
+          jsonEncode(detail.toJson()),
+        );
+        Logger.debug('[LearningPathsRepo] Persisted path detail for $cacheKey');
+      } catch (e) {
+        Logger.debug('[LearningPathsRepo] Failed to persist path detail: $e');
+      }
+    });
+  }
+
+  Future<LearningPathDetail?> _loadDetailFromPrefs(String cacheKey) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('$_detailsPrefKeyPrefix$cacheKey');
+      if (jsonStr == null) return null;
+      return LearningPathDetailModel.fromJson(
+        jsonDecode(jsonStr) as Map<String, dynamic>,
+      );
+    } catch (e) {
+      Logger.debug(
+          '[LearningPathsRepo] Failed to load path detail from prefs: $e');
+      return null;
+    }
+  }
+
+  /// Reconstruct a minimal [LearningPathDetail] from Hive download data.
+  /// Used as last-resort offline fallback for paths that were downloaded but
+  /// whose detail was never explicitly saved to SharedPreferences.
+  Future<LearningPathDetail?> _buildDetailFromHiveDownload(
+      String pathId) async {
+    try {
+      final Box<Map> box;
+      if (Hive.isBoxOpen('learning_path_downloads')) {
+        box = Hive.box<Map>('learning_path_downloads');
+      } else {
+        box = await Hive.openBox<Map>('learning_path_downloads');
+      }
+      final raw = box.get(pathId);
+      if (raw == null) return null;
+
+      final download = LearningPathDownloadModel.fromMap(raw);
+      final topics = download.topics.asMap().entries.map((entry) {
+        final t = entry.value;
+        return LearningPathTopicModel(
+          position: entry.key + 1,
+          isMilestone: false,
+          topicId: t.topicId,
+          title: t.topicTitle,
+          description: t.description,
+          category: '',
+          inputType: t.inputType,
+          xpValue: 50,
+          isCompleted: t.status == TopicDownloadStatus.done,
+          isInProgress: t.status == TopicDownloadStatus.downloading,
+        );
+      }).toList();
+
+      final completed = download.topics
+          .where((t) => t.status == TopicDownloadStatus.done)
+          .length;
+
+      return LearningPathDetailModel(
+        id: download.learningPathId,
+        slug: '',
+        title: download.learningPathTitle,
+        description: '',
+        iconName: 'school',
+        color: '#6A4FB6',
+        totalXp: 0,
+        estimatedDays: 0,
+        discipleLevel: 'believer',
+        allowNonSequentialAccess: true,
+        topicsCount: topics.length,
+        isEnrolled: true,
+        progressPercentage: download.totalCount > 0
+            ? ((completed / download.totalCount) * 100).round()
+            : 0,
+        topicsCompleted: completed,
+        enrolledAt: download.queuedAt,
+        topics: topics,
+      );
+    } catch (e) {
+      Logger.debug(
+          '[LearningPathsRepo] Failed to reconstruct detail from Hive: $e');
+      return null;
     }
   }
 

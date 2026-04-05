@@ -52,11 +52,15 @@ import 'core/utils/device_keyboard_handler.dart';
 import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
+import 'core/services/android_download_notification_service.dart';
 import 'core/services/android_hybrid_storage.dart';
 import 'core/services/iap_service.dart';
 import 'core/utils/logger.dart';
+import 'core/connectivity/connectivity_bloc.dart';
+import 'core/services/connectivity_sync_service.dart';
 import 'features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'features/subscription/presentation/bloc/subscription_event.dart';
+import 'features/study_topics/data/services/learning_path_download_service.dart';
 
 // ============================================================================
 // Firebase Configuration (Environment Variables)
@@ -106,6 +110,9 @@ void main() async {
 
     // Initialize Hive for local storage
     await Hive.initFlutter();
+
+    // Initialize download notification service (Android only — no-ops on other platforms)
+    await AndroidDownloadNotificationService.configure();
 
     // Register Hive adapters
     if (!Hive.isAdapterRegistered(1)) {
@@ -187,6 +194,12 @@ void main() async {
     }
     await initializeDependencies();
     if (kDebugMode) Logger.debug('✅ [MAIN] Dependency injection completed');
+
+    // Initialize connectivity sync service (flushes queues on reconnect)
+    sl<ConnectivitySyncService>().initialize();
+
+    // Restore persisted learning path download state
+    await sl<LearningPathDownloadService>().initialize();
 
     // Initialize daily verse cache service
     Logger.debug('🔧 [MAIN] Initializing daily verse cache service...');
@@ -435,6 +448,9 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
 
     return MultiBlocProvider(
       providers: [
+        BlocProvider<ConnectivityBloc>(
+          create: (_) => sl<ConnectivityBloc>(),
+        ),
         BlocProvider<StudyBloc>(
           create: (context) => sl<StudyBloc>(),
         ),
