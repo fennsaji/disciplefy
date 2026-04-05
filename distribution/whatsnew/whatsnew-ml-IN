@@ -5,5 +5,6 @@
 • Connection നഷ്ടപ്പെടുമ്പോൾ offline banner കാണിക്കും
 • Internet ഇല്ലാത്ത features-ൽ offline സൂചന
 • തിരികെ online ആകുമ്പോൾ auto-sync ആകും
+• Bug fix: foreground service permission പ്രശ്നം പരിഹരിച്ചു
 
 📖 വിശ്വാസ യാത്രയിൽ വളരൂ!
