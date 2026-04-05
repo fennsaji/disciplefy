@@ -1,9 +1,6 @@
 🙏 Disciplefy - बीटा अपडेट
 
 ✨ नया क्या है:
-• Offline mode: learning paths डाउनलोड करें और बिना internet पढ़ें
-• Connection जाने पर offline banner दिखेगा
-• Internet न होने पर "Not available offline" दिखेगा
-• वापस online आने पर auto-sync होगा
+• Bug fix: Google Play foreground service permission समस्या ठीक की
 
 📖 विश्वास में बढ़ते रहें!
