@@ -1,9 +1,6 @@
 🙏 Disciplefy - Beta Update
 
 ✨ What's New:
-• Offline mode: download learning paths and study offline
-• Offline banner shows when you lose connection
-• "Not available offline" indicator on features that need internet
-• Auto-sync when you come back online
+• Bug fix: resolved Google Play foreground service permission issue
 
 📖 Keep growing in your faith!
