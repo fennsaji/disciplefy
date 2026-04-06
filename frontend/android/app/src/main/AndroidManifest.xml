@@ -8,9 +8,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Required for Google Play In-App Purchases -->
     <uses-permission android:name="com.android.vending.BILLING" />
-    <!-- Required for learning path download background service -->
+    <!-- Required for background foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- Required for learning path download foreground service (Android 14+) -->
+    <!-- Required for study guide TTS audio playback in background (Android 14+) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Required for learning path download in background (Android 14+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Note: RECEIVE_BOOT_COMPLETED removed - FCM handles post-boot notification delivery automatically -->
     
@@ -88,7 +90,7 @@
         <!-- Background service for learning path downloads -->
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
-            android:foregroundServiceType="dataSync"
+            android:foregroundServiceType="dataSync|mediaPlayback"
             android:exported="false"
             tools:replace="android:exported" />
     </application>

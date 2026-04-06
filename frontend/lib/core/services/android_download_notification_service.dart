@@ -2,24 +2,25 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-/// Manages the Android foreground service and progress notifications for
-/// learning path downloads.
+/// Manages the Android foreground service for two use cases:
+/// 1. Learning path downloads (dataSync)
+/// 2. Study guide TTS audio playback (mediaPlayback)
 ///
-/// The foreground service keeps Android from killing the app during download.
-/// Progress notifications are updated via flutter_local_notifications.
-/// The actual download logic runs in the main Dart isolate.
+/// Both share a single foreground service instance so Android keeps the
+/// process alive during background audio playback and content downloads.
 class AndroidDownloadNotificationService {
   static const String _channelId = 'lp_download';
-  static const String _channelName = 'Learning Path Downloads';
+  static const String _channelName = 'Disciplefy Background';
   static const int _progressNotificationId = 2001;
   static const int _completionNotificationId = 2002;
 
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  /// Returns true only when running on a real Android device/emulator where
-  /// platform channels are registered. Returns false in unit-test environments
-  /// and on iOS/web even if [defaultTargetPlatform] reports Android.
+  /// Tracks active use cases so the service stops only when both are idle.
+  static bool _downloadActive = false;
+  static bool _ttsActive = false;
+
   static bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
@@ -27,17 +28,15 @@ class AndroidDownloadNotificationService {
   static Future<void> configure() async {
     if (!_isAndroid) return;
 
-    // Initialize flutter_local_notifications for Android
     const initSettings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     );
     await _notifications.initialize(initSettings);
 
-    // Create notification channel
     const channel = AndroidNotificationChannel(
       _channelId,
       _channelName,
-      description: 'Shows learning path download progress',
+      description: 'Shows during downloads and audio playback',
       importance: Importance.low,
     );
     await _notifications
@@ -45,7 +44,6 @@ class AndroidDownloadNotificationService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
 
-    // Configure background service (foreground-service holder only)
     final service = FlutterBackgroundService();
     try {
       await service.configure(
@@ -55,30 +53,35 @@ class AndroidDownloadNotificationService {
           isForegroundMode: true,
           notificationChannelId: _channelId,
           initialNotificationTitle: 'Disciplefy',
-          initialNotificationContent: 'Download starting...',
+          initialNotificationContent: '',
           foregroundServiceNotificationId: _progressNotificationId,
-          foregroundServiceTypes: [AndroidForegroundType.dataSync],
+          foregroundServiceTypes: [
+            AndroidForegroundType.dataSync,
+            AndroidForegroundType.mediaPlayback,
+          ],
         ),
         iosConfiguration: IosConfiguration(autoStart: false),
       );
     } catch (_) {
-      // Platform channel not available in test environments — safe to ignore.
+      // Platform channel not available in test environments.
     }
   }
 
-  /// Start the Android foreground service.
+  // ─── Download methods ────────────────────────────────────────────────────
+
   static Future<void> startForeground(String pathTitle) async {
     if (!_isAndroid) return;
+    _downloadActive = true;
     try {
       final service = FlutterBackgroundService();
       await service.startService();
-      service.invoke('setTitle', {'title': 'Downloading "$pathTitle"'});
-    } catch (_) {
-      // Platform channel not available in test environments — safe to ignore.
-    }
+      service.invoke('startDownload', {
+        'title': 'Downloading "$pathTitle"',
+        'content': 'Starting...',
+      });
+    } catch (_) {}
   }
 
-  /// Update the ongoing progress notification.
   static Future<void> updateProgress({
     required String pathTitle,
     required int completed,
@@ -86,25 +89,23 @@ class AndroidDownloadNotificationService {
   }) async {
     if (!_isAndroid) return;
     try {
-      FlutterBackgroundService().invoke('update', {
+      FlutterBackgroundService().invoke('updateDownload', {
         'title': 'Downloading "$pathTitle"',
         'content': '$completed of $total guides ready',
       });
-    } catch (_) {
-      // Platform channel not available in test environments — safe to ignore.
-    }
+    } catch (_) {}
   }
 
-  /// Show completion notification and stop the foreground service.
   static Future<void> completeDownload(String pathTitle, int total) async {
     if (!_isAndroid) return;
+    _downloadActive = false;
     try {
-      FlutterBackgroundService().invoke('stop', {});
+      FlutterBackgroundService().invoke('stopDownload', {});
 
       const details = AndroidNotificationDetails(
         _channelId,
         _channelName,
-        channelDescription: 'Learning Path Downloads',
+        channelDescription: 'Shows during downloads and audio playback',
       );
       await _notifications.show(
         _completionNotificationId,
@@ -112,44 +113,111 @@ class AndroidDownloadNotificationService {
         'All $total guides downloaded - Tap to open',
         const NotificationDetails(android: details),
       );
-    } catch (_) {
-      // Platform channel not available in test environments — safe to ignore.
-    }
+    } catch (_) {}
   }
 
-  /// Stop foreground service (call on pause/cancel).
   static void stopForeground() {
     if (!_isAndroid) return;
+    _downloadActive = false;
     try {
-      FlutterBackgroundService().invoke('stop', {});
-    } catch (_) {
-      // Platform channel not available in test environments — safe to ignore.
-    }
+      FlutterBackgroundService().invoke('stopDownload', {});
+    } catch (_) {}
+  }
+
+  // ─── TTS / media playback methods ────────────────────────────────────────
+
+  /// Start foreground service for TTS audio playback.
+  static Future<void> startTtsForeground(String sectionName) async {
+    if (!_isAndroid) return;
+    _ttsActive = true;
+    try {
+      final service = FlutterBackgroundService();
+      await service.startService();
+      service.invoke('startTts', {'section': sectionName});
+    } catch (_) {}
+  }
+
+  /// Update the TTS notification with the current section.
+  static Future<void> updateTtsSection(String sectionName) async {
+    if (!_isAndroid) return;
+    try {
+      FlutterBackgroundService().invoke('updateTts', {'section': sectionName});
+    } catch (_) {}
+  }
+
+  /// Stop the TTS foreground service (stops service if no download active).
+  static void stopTtsForeground() {
+    if (!_isAndroid) return;
+    _ttsActive = false;
+    try {
+      FlutterBackgroundService().invoke('stopTts', {});
+    } catch (_) {}
   }
 }
 
-/// Entry point for flutter_background_service background isolate.
-/// Runs in a separate Dart isolate — only manages the notification text.
+/// Entry point for the background service isolate.
+/// Handles both download progress and TTS playback notifications.
 @pragma('vm:entry-point')
 void _onBackgroundServiceStart(ServiceInstance service) {
-  // Cast to AndroidServiceInstance to access setForegroundNotificationInfo.
   final android = service is AndroidServiceInstance ? service : null;
 
-  service.on('update').listen((event) {
+  bool downloadActive = false;
+  bool ttsActive = false;
+
+  void stopIfIdle() {
+    if (!downloadActive && !ttsActive) service.stopSelf();
+  }
+
+  service.on('startDownload').listen((event) {
     if (event == null) return;
+    downloadActive = true;
     android?.setForegroundNotificationInfo(
       title: event['title'] as String? ?? 'Downloading...',
       content: event['content'] as String? ?? '',
     );
   });
 
-  service.on('setTitle').listen((event) {
-    if (event == null) return;
+  service.on('updateDownload').listen((event) {
+    if (event == null || !downloadActive) return;
     android?.setForegroundNotificationInfo(
       title: event['title'] as String? ?? 'Downloading...',
-      content: 'Preparing...',
+      content: event['content'] as String? ?? '',
     );
   });
 
-  service.on('stop').listen((_) => service.stopSelf());
+  service.on('stopDownload').listen((_) {
+    downloadActive = false;
+    if (ttsActive) {
+      android?.setForegroundNotificationInfo(
+        title: '📖 Reading Study Guide',
+        content: '',
+      );
+    } else {
+      stopIfIdle();
+    }
+  });
+
+  service.on('startTts').listen((event) {
+    if (event == null) return;
+    ttsActive = true;
+    if (!downloadActive) {
+      android?.setForegroundNotificationInfo(
+        title: '📖 Reading Study Guide',
+        content: event['section'] as String? ?? '',
+      );
+    }
+  });
+
+  service.on('updateTts').listen((event) {
+    if (event == null || !ttsActive || downloadActive) return;
+    android?.setForegroundNotificationInfo(
+      title: '📖 Reading Study Guide',
+      content: event['section'] as String? ?? '',
+    );
+  });
+
+  service.on('stopTts').listen((_) {
+    ttsActive = false;
+    stopIfIdle();
+  });
 }
