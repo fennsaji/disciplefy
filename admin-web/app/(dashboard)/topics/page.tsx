@@ -31,6 +31,7 @@ export default function StudyGuidesPage() {
   // Inline preview expand
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [expandedData, setExpandedData] = useState<Record<string, { summary?: string; interpretation?: string; loading: boolean }>>({})
+  const [blogGenerating, setBlogGenerating] = useState<Record<string, boolean>>({})
 
   const handleToggleExpand = async (guideId: string) => {
     if (expandedId === guideId) {
@@ -179,6 +180,37 @@ export default function StudyGuidesPage() {
     } catch (err: any) {
       console.error('Failed to delete study guide:', err)
       toast.error(err.message || 'Failed to delete study guide. Please try again.')
+    }
+  }
+
+  const handleGenerateBlog = async (guideId: string) => {
+    setBlogGenerating((prev) => ({ ...prev, [guideId]: true }))
+    try {
+      const res = await fetch(`/api/admin/study-guides/${guideId}/generate-blog`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        let errorMsg = 'Failed to generate blog'
+        try {
+          const errData = await res.json()
+          errorMsg = errData.error || errorMsg
+        } catch {
+          // non-JSON error body
+        }
+        toast.error(errorMsg)
+        return
+      }
+      const data = await res.json()
+      if (data.already_exists) {
+        toast.info(`Blog already exists: ${data.data?.slug ?? 'unknown'}`)
+      } else {
+        toast.success(`Blog created: ${data.data?.slug ?? 'unknown'}`)
+      }
+    } catch {
+      toast.error('Failed to generate blog')
+    } finally {
+      setBlogGenerating((prev) => ({ ...prev, [guideId]: false }))
     }
   }
 
@@ -641,6 +673,39 @@ export default function StudyGuidesPage() {
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                               />
                             </svg>
+                          </button>
+                          {/* Generate Blog */}
+                          <button
+                            onClick={() => handleGenerateBlog(guide.id)}
+                            disabled={blogGenerating[guide.id]}
+                            className="rounded p-1 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Generate Blog Post"
+                          >
+                            {blogGenerating[guide.id] ? (
+                              <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v8a2 2 0 01-2 2z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 20v-6H7v6M7 4v5h8"
+                                />
+                              </svg>
+                            )}
                           </button>
                           <button
                             onClick={() => handleDelete(guide.id)}

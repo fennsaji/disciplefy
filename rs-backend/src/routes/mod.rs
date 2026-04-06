@@ -35,4 +35,8 @@ pub fn create_router() -> Router<AppState> {
             "/api/v1/admin/cron/:name/schedule",
             put(admin::cron_update_schedule),
         )
+        .route(
+            "/api/v1/admin/study-guides/:guide_id/generate-blog",
+            post(admin::generate_blog_from_study_guide),
+        )
 }
