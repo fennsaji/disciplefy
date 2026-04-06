@@ -2,14 +2,14 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../../../core/services/android_download_notification_service.dart';
 import '../../../../core/utils/logger.dart';
 
-/// Manages an ongoing notification displayed while study guide TTS is playing.
+/// Manages the notification displayed while study guide TTS is playing.
 ///
-/// This notification:
-/// - Keeps the process visible to Android and prevents aggressive battery kills
-/// - Informs the user that audio is playing so they can return to the app
-/// - Is automatically dismissed when TTS stops
+/// On Android: uses a mediaPlayback foreground service so the OS keeps the
+/// process alive during background audio playback.
+/// On other platforms: shows an ongoing notification via flutter_local_notifications.
 class TtsNotificationService {
   static const int _notificationId = 9001;
   static const String _channelId = 'tts_playback';
@@ -17,15 +17,14 @@ class TtsNotificationService {
   static const String _channelDescription =
       'Shows while a study guide is being read aloud';
 
-  // Own plugin instance — shares the same native plugin with NotificationService.
-  // NotificationService.initialize() must run before this service is used.
   final _localNotifications = FlutterLocalNotificationsPlugin();
 
-  /// Initialize the TTS notification channel.
-  /// Call this after NotificationService.initialize() completes at app startup.
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+
+  /// Initialize the TTS notification channel (non-Android platforms only).
   Future<void> initialize() async {
     if (kIsWeb) return;
-    if (!Platform.isAndroid) return;
+    if (_isAndroid) return; // Android uses the foreground service channel
 
     const channel = AndroidNotificationChannel(
       _channelId,
@@ -45,11 +44,18 @@ class TtsNotificationService {
     Logger.debug('🔔 [TTS Notification] Channel initialized');
   }
 
-  /// Show an ongoing notification for TTS playback.
-  /// [sectionName] is displayed as the notification body (e.g., "Summary").
+  /// Show notification for TTS playback.
+  /// On Android: starts the mediaPlayback foreground service.
+  /// On other platforms: shows an ongoing notification.
   Future<void> showPlaybackNotification({required String sectionName}) async {
     if (kIsWeb) return;
-    if (!Platform.isAndroid) return;
+
+    if (_isAndroid) {
+      await AndroidDownloadNotificationService.startTtsForeground(sectionName);
+      Logger.debug(
+          '🔔 [TTS Notification] Foreground service started: $sectionName');
+      return;
+    }
 
     const androidDetails = AndroidNotificationDetails(
       _channelId,
@@ -66,27 +72,37 @@ class TtsNotificationService {
       styleInformation: BigTextStyleInformation(''),
     );
 
-    const details = NotificationDetails(android: androidDetails);
-
     await _localNotifications.show(
       _notificationId,
       'Disciplefy - Reading Study Guide',
       sectionName,
-      details,
+      const NotificationDetails(android: androidDetails),
     );
 
     Logger.debug('🔔 [TTS Notification] Showing: $sectionName');
   }
 
-  /// Update the notification body with the current section name.
+  /// Update the notification with the current section.
   Future<void> updateSection(String sectionName) async {
+    if (kIsWeb) return;
+
+    if (_isAndroid) {
+      await AndroidDownloadNotificationService.updateTtsSection(sectionName);
+      return;
+    }
+
     await showPlaybackNotification(sectionName: sectionName);
   }
 
-  /// Dismiss the playback notification.
+  /// Dismiss the playback notification and stop the foreground service.
   Future<void> dismissNotification() async {
     if (kIsWeb) return;
-    if (!Platform.isAndroid) return;
+
+    if (_isAndroid) {
+      AndroidDownloadNotificationService.stopTtsForeground();
+      Logger.debug('🔔 [TTS Notification] Foreground service stopped');
+      return;
+    }
 
     await _localNotifications.cancel(_notificationId);
     Logger.debug('🔔 [TTS Notification] Dismissed');
