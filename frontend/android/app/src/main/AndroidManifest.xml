@@ -11,9 +11,8 @@
     <!-- Required for background foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- Required for study guide TTS audio playback in background (Android 14+) -->
+    <!-- Note: dataSync type is deprecated in Android 15; download runs in main isolate so mediaPlayback covers both use cases -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- Required for learning path download in background (Android 14+) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Note: RECEIVE_BOOT_COMPLETED removed - FCM handles post-boot notification delivery automatically -->
     
     <application
@@ -90,7 +89,7 @@
         <!-- Background service for learning path downloads -->
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
-            android:foregroundServiceType="dataSync|mediaPlayback"
+            android:foregroundServiceType="mediaPlayback"
             android:exported="false"
             tools:replace="android:exported" />
     </application>
