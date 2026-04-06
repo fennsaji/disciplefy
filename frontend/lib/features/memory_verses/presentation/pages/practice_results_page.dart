@@ -446,8 +446,18 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
     int blankNumber,
   ) {
     final isCorrect = comparison.isCorrect;
-    final statusColor = isCorrect ? AppColors.success : AppColors.error;
-    final statusIcon = isCorrect ? Icons.check_circle : Icons.cancel;
+    final isClose = comparison.matchType == MatchType.close;
+
+    final statusColor = isClose
+        ? AppColors.warning
+        : isCorrect
+            ? AppColors.success
+            : AppColors.error;
+    final statusIcon = isClose
+        ? Icons.check_circle_outline
+        : isCorrect
+            ? Icons.check_circle
+            : Icons.cancel;
 
     // Detect language and transliterate correct answer for Fill-in-the-Blanks only
     // Fill-in-the-Blanks: Users type romanized text, so show romanized correct answers
@@ -536,21 +546,28 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isCorrect
-                      ? AppColors.success.withAlpha((0.1 * 255).round())
-                      : AppColors.error.withAlpha((0.1 * 255).round()),
+                  color: isClose
+                      ? AppColors.warning.withAlpha((0.1 * 255).round())
+                      : isCorrect
+                          ? AppColors.success.withAlpha((0.1 * 255).round())
+                          : AppColors.error.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isCorrect
-                        ? AppColors.success.withAlpha((0.3 * 255).round())
-                        : AppColors.error.withAlpha((0.3 * 255).round()),
+                    color: isClose
+                        ? AppColors.warning.withAlpha((0.3 * 255).round())
+                        : isCorrect
+                            ? AppColors.success.withAlpha((0.3 * 255).round())
+                            : AppColors.error.withAlpha((0.3 * 255).round()),
                   ),
                 ),
                 child: Text(
                   comparison.userInput,
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color:
-                        isCorrect ? AppColors.successDark : AppColors.errorDark,
+                    color: isClose
+                        ? AppColors.warningDark
+                        : isCorrect
+                            ? AppColors.successDark
+                            : AppColors.errorDark,
                     fontWeight: FontWeight.w600,
                     fontStyle: comparison.userInput == '(missing)'
                         ? FontStyle.italic
@@ -562,8 +579,8 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
           ],
         ),
 
-        // Expected answer (only show if incorrect)
-        if (!isCorrect) ...[
+        // Expected answer (show if wrong or only close — so user can see correct spelling)
+        if (!isCorrect || isClose) ...[
           const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

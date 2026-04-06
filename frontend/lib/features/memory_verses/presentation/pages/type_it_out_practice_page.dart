@@ -31,11 +31,15 @@ class _WordMatch {
   final String expected;
   final String userWord;
   final bool isCorrect;
+  final MatchType matchType;
+  final double score;
 
   _WordMatch({
     required this.expected,
     required this.userWord,
     required this.isCorrect,
+    this.matchType = MatchType.wrong,
+    this.score = 0.0,
   });
 }
 
@@ -251,20 +255,17 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
     final userWords =
         userInput.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
 
-    final comparisons = <BlankComparison>[];
-
-    // Use dynamic programming to find the best alignment between expected and user words
     final alignment = _alignWordSequences(expectedWords, userWords);
 
-    for (final match in alignment) {
-      comparisons.add(BlankComparison(
-        expected: match.expected,
-        userInput: match.userWord,
-        isCorrect: match.isCorrect,
-      ));
-    }
-
-    return comparisons;
+    return alignment
+        .map((match) => BlankComparison(
+              expected: match.expected,
+              userInput: match.userWord,
+              isCorrect: match.isCorrect,
+              matchType: match.matchType,
+              score: match.score,
+            ))
+        .toList();
   }
 
   /// Align two word sequences to find missing, extra, and matching words
@@ -279,7 +280,6 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
       final expectedWord = expected[expectedIndex];
 
       if (userIndex >= user.length) {
-        // User ran out of words - mark remaining as missing
         matches.add(_WordMatch(
           expected: expectedWord,
           userWord: '(missing)',
@@ -289,31 +289,32 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
       }
 
       final userWord = user[userIndex];
+      final result = _evaluateWord(expectedWord, userWord);
 
-      // Check if current user word matches current expected word
-      if (_isWordCorrect(expectedWord, userWord)) {
+      if (result.matchType != MatchType.wrong) {
         matches.add(_WordMatch(
           expected: expectedWord,
           userWord: userWord,
           isCorrect: true,
+          matchType: result.matchType,
+          score: result.score,
         ));
         userIndex++;
       } else {
-        // Current word doesn't match - check if user skipped this word
-        // Look ahead: does the current user word match the NEXT expected word?
-        final isNextWordMatch = expectedIndex + 1 < expected.length &&
-            _isWordCorrect(expected[expectedIndex + 1], userWord);
+        // Check if user skipped this word — does the user word match the NEXT expected word?
+        final nextEval = expectedIndex + 1 < expected.length
+            ? _evaluateWord(expected[expectedIndex + 1], userWord)
+            : (matchType: MatchType.wrong, score: 0.0);
 
-        if (isNextWordMatch) {
+        if (nextEval.matchType != MatchType.wrong) {
           // User likely skipped the current expected word
           matches.add(_WordMatch(
             expected: expectedWord,
             userWord: '(missing)',
             isCorrect: false,
           ));
-          // Don't increment userIndex - we'll match this user word with the next expected word
         } else {
-          // User typed a wrong word (substitution)
+          // Substitution — user typed a different word
           matches.add(_WordMatch(
             expected: expectedWord,
             userWord: userWord,
@@ -324,7 +325,7 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
       }
     }
 
-    // Handle extra words typed by user beyond expected length
+    // Extra words typed beyond expected length
     while (userIndex < user.length) {
       matches.add(_WordMatch(
         expected: '(extra)',
@@ -337,30 +338,45 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
     return matches;
   }
 
-  /// Check if a single word matches (with transliteration support)
-  bool _isWordCorrect(String expected, String user) {
-    if (user == '(missing)') return false;
-    if (expected.isEmpty) return false;
-
-    // Normalize both words for comparison
-    final normalizedExpected = expected.toLowerCase().trim();
-    final normalizedUser = user.toLowerCase().trim();
-
-    // Remove punctuation
-    final expectedClean = normalizedExpected.replaceAll(RegExp(r'[^\w\s]'), '');
-    final userClean = normalizedUser.replaceAll(RegExp(r'[^\w\s]'), '');
-
-    // Exact match
-    if (expectedClean == userClean) return true;
-
-    // For non-English, use fuzzy matching (85%+ similarity)
-    if (detectedLanguage != 'en') {
-      final wordAccuracy =
-          TransliterationService.calculateAccuracy(userClean, expectedClean);
-      return wordAccuracy >= 85.0;
+  /// Evaluates how closely [user] matches [expected] with graduated scoring.
+  ///
+  ///   ≥ 80% similarity → correct (100 pts) — covers 1-letter typos
+  ///   60–79% similarity → close  (70 pts)  — covers 2-letter typos
+  ///   < 60%             → wrong  (0 pts)
+  ///
+  /// Applied to all languages so English typos are also tolerated.
+  ({MatchType matchType, double score}) _evaluateWord(
+      String expected, String user) {
+    if (user == '(missing)' || expected.isEmpty) {
+      return (matchType: MatchType.wrong, score: 0.0);
     }
 
-    return false;
+    final expectedClean =
+        expected.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
+    final userClean =
+        user.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
+
+    if (expectedClean == userClean) {
+      return (matchType: MatchType.correct, score: 100.0);
+    }
+
+    String compareExpected = expectedClean;
+    String compareUser = userClean;
+    if (detectedLanguage == 'ml') {
+      compareExpected =
+          TransliterationService.normalizeMalayalamManglish(compareExpected);
+      compareUser =
+          TransliterationService.normalizeMalayalamManglish(compareUser);
+      if (compareExpected == compareUser) {
+        return (matchType: MatchType.correct, score: 100.0);
+      }
+    }
+
+    final similarity =
+        TransliterationService.calculateAccuracy(compareUser, compareExpected);
+    if (similarity >= 80.0) return (matchType: MatchType.correct, score: 100.0);
+    if (similarity >= 60.0) return (matchType: MatchType.close, score: 70.0);
+    return (matchType: MatchType.wrong, score: 0.0);
   }
 
   @override
