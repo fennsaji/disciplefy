@@ -7,6 +7,30 @@ use crate::error::AppError;
 
 // ── Row types ──────────────────────────────────────────────
 
+/// Study guide row fetched for blog generation.
+/// JSON array columns are cast to TEXT in SQL to avoid sqlx json feature requirement.
+#[derive(Debug, sqlx::FromRow)]
+pub struct StudyGuideForBlog {
+    pub id: Uuid,
+    pub input_value: String,
+    pub language: String,
+    // Flat text content columns
+    pub summary: Option<String>,
+    pub context: Option<String>,
+    pub interpretation: Option<String>,
+    pub passage: Option<String>,
+    // JSON array columns cast to TEXT
+    pub related_verses: Option<String>,
+    pub reflection_questions: Option<String>,
+    pub prayer_points: Option<String>,
+    pub interpretation_insights: Option<String>,
+    // Optional context from joins (may be NULL if topic not in a learning path)
+    pub topic_id: Option<Uuid>,
+    pub category: Option<String>,
+    pub disciple_level: Option<String>,
+    pub learning_path_id: Option<Uuid>,
+}
+
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub struct BlogPost {
     pub id: Uuid,
@@ -22,6 +46,7 @@ pub struct BlogPost {
     pub source_type: Option<String>,
     pub source_topic_id: Option<Uuid>,
     pub source_learning_path_id: Option<Uuid>,
+    pub source_guide_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub published_at: Option<DateTime<Utc>>,
@@ -59,6 +84,7 @@ pub struct CreatePostInput {
     pub source_type: Option<String>,
     pub source_topic_id: Option<Uuid>,
     pub source_learning_path_id: Option<Uuid>,
+    pub source_guide_id: Option<Uuid>,
 }
 
 fn default_status() -> String {
@@ -331,8 +357,9 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
 
     let post = sqlx::query_as::<_, BlogPost>(
         "INSERT INTO blog_posts (slug, title, excerpt, content, locale, tags, featured, status,
-                                 source_type, source_topic_id, source_learning_path_id, published_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                                 source_type, source_topic_id, source_learning_path_id,
+                                 source_guide_id, published_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING *"
     )
     .bind(&slug)
@@ -346,6 +373,7 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
     .bind(&input.source_type)
     .bind(input.source_topic_id)
     .bind(input.source_learning_path_id)
+    .bind(input.source_guide_id)
     .bind(published_at)
     .fetch_one(pool)
     .await?;
@@ -510,4 +538,57 @@ pub async fn get_generated_locales(pool: &PgPool, topic_id: Uuid) -> Result<Vec<
     .fetch_all(pool)
     .await?;
     Ok(locales)
+}
+
+/// Fetch a study guide by ID with all columns needed for blog generation.
+/// JSON array columns are cast to TEXT so they can be inserted directly into
+/// StudyGuideResult.sections without needing the sqlx `json` feature.
+pub async fn fetch_study_guide_for_blog(
+    pool: &PgPool,
+    guide_id: Uuid,
+) -> Result<Option<StudyGuideForBlog>, AppError> {
+    let guide = sqlx::query_as::<_, StudyGuideForBlog>(
+        "SELECT
+            sg.id,
+            sg.input_value,
+            sg.language,
+            sg.summary,
+            sg.context,
+            sg.interpretation,
+            sg.passage,
+            sg.related_verses::text        AS related_verses,
+            sg.reflection_questions::text  AS reflection_questions,
+            sg.prayer_points::text         AS prayer_points,
+            sg.interpretation_insights::text AS interpretation_insights,
+            sg.topic_id,
+            rt.category,
+            lp.disciple_level,
+            lp.id AS learning_path_id
+         FROM study_guides sg
+         LEFT JOIN recommended_topics rt ON rt.id = sg.topic_id
+         LEFT JOIN learning_path_topics lpt ON lpt.topic_id = rt.id
+         LEFT JOIN learning_paths lp ON lp.id = lpt.learning_path_id
+         WHERE sg.id = $1
+         ORDER BY lp.display_order NULLS LAST, lpt.position NULLS LAST
+         LIMIT 1",
+    )
+    .bind(guide_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(guide)
+}
+
+/// Returns the existing blog post's (id, slug) if a blog was already generated
+/// from the given study guide. Used to return "already_exists" instead of duplicating.
+pub async fn check_blog_exists_for_guide(
+    pool: &PgPool,
+    guide_id: Uuid,
+) -> Result<Option<(Uuid, String)>, AppError> {
+    let row: Option<(Uuid, String)> = sqlx::query_as(
+        "SELECT id, slug FROM blog_posts WHERE source_guide_id = $1 LIMIT 1",
+    )
+    .bind(guide_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
 }

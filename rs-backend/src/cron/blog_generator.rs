@@ -117,6 +117,7 @@ async fn generate_for_locale(
         source_type: Some("learning_path_topic".to_string()),
         source_topic_id: Some(topic.id),
         source_learning_path_id: Some(topic.path_id),
+        source_guide_id: None,
     };
 
     let p = post::create_post(pool, input).await?;
