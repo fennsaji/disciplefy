@@ -360,7 +360,7 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
                                  source_type, source_topic_id, source_learning_path_id,
                                  source_guide_id, published_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-         RETURNING *"
+         RETURNING *",
     )
     .bind(&slug)
     .bind(&input.title)
@@ -584,11 +584,10 @@ pub async fn check_blog_exists_for_guide(
     pool: &PgPool,
     guide_id: Uuid,
 ) -> Result<Option<(Uuid, String)>, AppError> {
-    let row: Option<(Uuid, String)> = sqlx::query_as(
-        "SELECT id, slug FROM blog_posts WHERE source_guide_id = $1 LIMIT 1",
-    )
-    .bind(guide_id)
-    .fetch_optional(pool)
-    .await?;
+    let row: Option<(Uuid, String)> =
+        sqlx::query_as("SELECT id, slug FROM blog_posts WHERE source_guide_id = $1 LIMIT 1")
+            .bind(guide_id)
+            .fetch_optional(pool)
+            .await?;
     Ok(row)
 }

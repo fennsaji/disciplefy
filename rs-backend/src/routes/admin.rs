@@ -283,19 +283,35 @@ pub async fn generate_blog_from_study_guide(
 
     // 3. Build StudyGuideResult sections from flat DB columns
     let mut sections: HashMap<String, String> = HashMap::new();
-    if let Some(v) = guide.summary        { sections.insert("summary".to_string(), v); }
-    if let Some(v) = guide.context        { sections.insert("context".to_string(), v); }
-    if let Some(v) = guide.interpretation { sections.insert("interpretation".to_string(), v); }
-    if let Some(v) = guide.passage        { sections.insert("passage".to_string(), v); }
-    if let Some(v) = guide.related_verses        { sections.insert("relatedVerses".to_string(), v); }
-    if let Some(v) = guide.reflection_questions  { sections.insert("reflectionQuestions".to_string(), v); }
-    if let Some(v) = guide.prayer_points         { sections.insert("prayerPoints".to_string(), v); }
-    if let Some(v) = guide.interpretation_insights { sections.insert("interpretationInsights".to_string(), v); }
+    if let Some(v) = guide.summary {
+        sections.insert("summary".to_string(), v);
+    }
+    if let Some(v) = guide.context {
+        sections.insert("context".to_string(), v);
+    }
+    if let Some(v) = guide.interpretation {
+        sections.insert("interpretation".to_string(), v);
+    }
+    if let Some(v) = guide.passage {
+        sections.insert("passage".to_string(), v);
+    }
+    if let Some(v) = guide.related_verses {
+        sections.insert("relatedVerses".to_string(), v);
+    }
+    if let Some(v) = guide.reflection_questions {
+        sections.insert("reflectionQuestions".to_string(), v);
+    }
+    if let Some(v) = guide.prayer_points {
+        sections.insert("prayerPoints".to_string(), v);
+    }
+    if let Some(v) = guide.interpretation_insights {
+        sections.insert("interpretationInsights".to_string(), v);
+    }
 
     let guide_result = crate::services::study_api::StudyGuideResult { sections };
 
     // 4. Format into blog content
-    let category       = guide.category.as_deref().unwrap_or("");
+    let category = guide.category.as_deref().unwrap_or("");
     let disciple_level = guide.disciple_level.as_deref().unwrap_or("beginner");
     let blog = content_formatter::format_blog_post(
         &guide.input_value,
@@ -310,18 +326,18 @@ pub async fn generate_blog_from_study_guide(
 
     // 6. Persist
     let input = post::CreatePostInput {
-        title:    blog.title,
-        content:  blog.content,
-        excerpt:  blog.excerpt,
-        locale:   guide.language.clone(),
-        tags:     blog.tags,
+        title: blog.title,
+        content: blog.content,
+        excerpt: blog.excerpt,
+        locale: guide.language.clone(),
+        tags: blog.tags,
         featured: false,
-        status:   "published".to_string(),
-        slug:     Some(slug),
-        source_type:             Some("study_guide".to_string()),
-        source_topic_id:         guide.topic_id,
+        status: "published".to_string(),
+        slug: Some(slug),
+        source_type: Some("study_guide".to_string()),
+        source_topic_id: guide.topic_id,
         source_learning_path_id: guide.learning_path_id,
-        source_guide_id:         Some(guide_id),
+        source_guide_id: Some(guide_id),
     };
 
     let p = post::create_post(&state.pool, input).await?;
