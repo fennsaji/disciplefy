@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
 use axum::extract::{Path, State};
@@ -11,6 +12,7 @@ use crate::auth;
 use crate::cron::{BLOG_GENERATION_RUNNING, BLOG_RETRY_RUNNING};
 use crate::error::AppError;
 use crate::models::{cron_config, post};
+use crate::services::content_formatter;
 use crate::AppState;
 
 async fn verify_admin(headers: &HeaderMap, state: &AppState) -> Result<auth::AdminUser, AppError> {
@@ -256,4 +258,89 @@ pub async fn cron_update_schedule(
         "name": cfg.name, "enabled": cfg.enabled,
         "schedule": cfg.schedule, "label": cfg.label, "updated_at": cfg.updated_at
     }})))
+}
+
+pub async fn generate_blog_from_study_guide(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(guide_id): Path<Uuid>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+
+    // 1. Fetch study guide
+    let guide = post::fetch_study_guide_for_blog(&state.pool, guide_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Study guide not found".to_string()))?;
+
+    // 2. Check if blog already exists for this guide
+    if let Some((_id, slug)) = post::check_blog_exists_for_guide(&state.pool, guide_id).await? {
+        return Ok(Json(json!({
+            "success": true,
+            "already_exists": true,
+            "data": { "slug": slug }
+        })));
+    }
+
+    // 3. Build StudyGuideResult sections from flat DB columns
+    let mut sections: HashMap<String, String> = HashMap::new();
+    if let Some(v) = guide.summary        { sections.insert("summary".to_string(), v); }
+    if let Some(v) = guide.context        { sections.insert("context".to_string(), v); }
+    if let Some(v) = guide.interpretation { sections.insert("interpretation".to_string(), v); }
+    if let Some(v) = guide.passage        { sections.insert("passage".to_string(), v); }
+    if let Some(v) = guide.related_verses        { sections.insert("relatedVerses".to_string(), v); }
+    if let Some(v) = guide.reflection_questions  { sections.insert("reflectionQuestions".to_string(), v); }
+    if let Some(v) = guide.prayer_points         { sections.insert("prayerPoints".to_string(), v); }
+    if let Some(v) = guide.interpretation_insights { sections.insert("interpretationInsights".to_string(), v); }
+
+    let guide_result = crate::services::study_api::StudyGuideResult { sections };
+
+    // 4. Format into blog content
+    let category       = guide.category.as_deref().unwrap_or("");
+    let disciple_level = guide.disciple_level.as_deref().unwrap_or("beginner");
+    let blog = content_formatter::format_blog_post(
+        &guide.input_value,
+        &guide_result,
+        category,
+        disciple_level,
+        &guide.language,
+    );
+
+    // 5. Build slug from title + locale
+    let slug = format!("{}-{}", slug::slugify(&guide.input_value), &guide.language);
+
+    // 6. Persist
+    let input = post::CreatePostInput {
+        title:    blog.title,
+        content:  blog.content,
+        excerpt:  blog.excerpt,
+        locale:   guide.language.clone(),
+        tags:     blog.tags,
+        featured: false,
+        status:   "published".to_string(),
+        slug:     Some(slug),
+        source_type:             Some("study_guide".to_string()),
+        source_topic_id:         guide.topic_id,
+        source_learning_path_id: guide.learning_path_id,
+        source_guide_id:         Some(guide_id),
+    };
+
+    let p = post::create_post(&state.pool, input).await?;
+
+    tracing::info!(
+        guide_id = %guide_id,
+        slug = %p.slug,
+        locale = %p.locale,
+        "Blog post generated from study guide"
+    );
+
+    Ok(Json(json!({
+        "success": true,
+        "already_exists": false,
+        "data": {
+            "id":     p.id,
+            "slug":   p.slug,
+            "title":  p.title,
+            "locale": p.locale
+        }
+    })))
 }
