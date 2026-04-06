@@ -3,11 +3,12 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Manages the Android foreground service for two use cases:
-/// 1. Learning path downloads (dataSync)
+/// 1. Learning path downloads (actual download runs in main isolate; service shows notifications)
 /// 2. Study guide TTS audio playback (mediaPlayback)
 ///
 /// Both share a single foreground service instance so Android keeps the
 /// process alive during background audio playback and content downloads.
+/// Note: dataSync foreground service type deprecated in Android 15; mediaPlayback covers both.
 class AndroidDownloadNotificationService {
   static const String _channelId = 'lp_download';
   static const String _channelName = 'Disciplefy Background';
@@ -56,7 +57,6 @@ class AndroidDownloadNotificationService {
           initialNotificationContent: '',
           foregroundServiceNotificationId: _progressNotificationId,
           foregroundServiceTypes: [
-            AndroidForegroundType.dataSync,
             AndroidForegroundType.mediaPlayback,
           ],
         ),
