@@ -268,12 +268,13 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   }
 
   void _calculateAccuracy() {
-    final blanks = wordEntries.where((e) => e.isBlank);
-    final correctBlanks =
-        blanks.where((e) => _isWordCorrect(e.word, e.userInput));
-
+    final blanks = wordEntries.where((e) => e.isBlank).toList();
+    final totalScore = blanks.fold(
+      0.0,
+      (sum, e) => sum + _evaluateWord(e.word, e.userInput).score,
+    );
     final accuracy =
-        blanks.isEmpty ? 0.0 : (correctBlanks.length / blanks.length) * 100;
+        blanks.isEmpty ? 0.0 : (totalScore / (blanks.length * 100.0)) * 100.0;
     final allFilled = blanks.every((e) => e.userInput.isNotEmpty);
 
     setState(() {
@@ -282,14 +283,21 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
     });
   }
 
-  bool _isWordCorrect(String target, String input) {
-    if (input.isEmpty) return false;
+  /// Evaluates how closely [input] matches [target] and returns a graduated result.
+  ///
+  /// Thresholds (applied after normalization):
+  ///   ≥ 80% similarity → correct (100 pts) — covers 1-letter typos
+  ///   60–79% similarity → close  (70 pts)  — covers 2-letter typos
+  ///   < 60%             → wrong  (0 pts)
+  ///
+  /// All languages use fuzzy matching so casual typos are tolerated.
+  ({MatchType matchType, double score}) _evaluateWord(
+      String target, String input) {
+    if (input.isEmpty) return (matchType: MatchType.wrong, score: 0.0);
 
-    // For non-English verses, transliterate the target word and compare
-    // User types romanized input (Hinglish/Manglish)
+    // Transliterate non-English target to romanized form for comparison
     String normalizedTarget;
     if (detectedLanguage != 'en') {
-      // Transliterate Hindi/Malayalam word to romanized form
       final transliterated =
           TransliterationService.transliterate(target, detectedLanguage);
       normalizedTarget = (transliterated ?? target).toLowerCase().trim();
@@ -299,38 +307,35 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
 
     final normalizedInput = input.toLowerCase().trim();
 
-    // Remove punctuation for comparison
-    final targetWithoutPunctuation =
-        normalizedTarget.replaceAll(RegExp(r'[^\w\s]'), '');
-    final inputWithoutPunctuation =
-        normalizedInput.replaceAll(RegExp(r'[^\w\s]'), '');
+    final targetClean = normalizedTarget.replaceAll(RegExp(r'[^\w\s]'), '');
+    final inputClean = normalizedInput.replaceAll(RegExp(r'[^\w\s]'), '');
 
     // Exact match
-    if (targetWithoutPunctuation == inputWithoutPunctuation) return true;
-
-    // For non-English, use fuzzy matching with high threshold (85%+)
-    // to account for spelling variations in Hinglish/Manglish
-    if (detectedLanguage != 'en') {
-      // For Malayalam, normalize phonetic equivalences first
-      // (double consonants, long vowels, nasal variants) so that
-      // spellings like karthavu/karththavu are treated as identical.
-      String compareTarget = targetWithoutPunctuation;
-      String compareInput = inputWithoutPunctuation;
-      if (detectedLanguage == 'ml') {
-        compareTarget =
-            TransliterationService.normalizeMalayalamManglish(compareTarget);
-        compareInput =
-            TransliterationService.normalizeMalayalamManglish(compareInput);
-        if (compareTarget == compareInput) return true;
-      }
-      final accuracy = TransliterationService.calculateAccuracy(
-        compareInput,
-        compareTarget,
-      );
-      return accuracy >= 85.0;
+    if (targetClean == inputClean) {
+      return (matchType: MatchType.correct, score: 100.0);
     }
 
-    return false;
+    // For Malayalam, normalize phonetic equivalences first so that
+    // spellings like karthavu/karththavu are treated as identical.
+    String compareTarget = targetClean;
+    String compareInput = inputClean;
+    if (detectedLanguage == 'ml') {
+      compareTarget =
+          TransliterationService.normalizeMalayalamManglish(compareTarget);
+      compareInput =
+          TransliterationService.normalizeMalayalamManglish(compareInput);
+      if (compareTarget == compareInput) {
+        return (matchType: MatchType.correct, score: 100.0);
+      }
+    }
+
+    // Fuzzy match for all languages — tolerates typos in English too
+    final similarity =
+        TransliterationService.calculateAccuracy(compareInput, compareTarget);
+    if (similarity >= 80.0) return (matchType: MatchType.correct, score: 100.0);
+    if (similarity >= 60.0) return (matchType: MatchType.close, score: 70.0);
+
+    return (matchType: MatchType.wrong, score: 0.0);
   }
 
   void _submitPractice() {
@@ -342,11 +347,13 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
 
     // Collect blank comparisons for results page
     final blankComparisons = blanks.map((entry) {
-      final isCorrect = _isWordCorrect(entry.word, entry.userInput);
+      final result = _evaluateWord(entry.word, entry.userInput);
       return BlankComparison(
         expected: entry.word,
         userInput: entry.userInput.isEmpty ? '(empty)' : entry.userInput,
-        isCorrect: isCorrect,
+        isCorrect: result.matchType != MatchType.wrong,
+        matchType: result.matchType,
+        score: result.score,
       );
     }).toList();
 

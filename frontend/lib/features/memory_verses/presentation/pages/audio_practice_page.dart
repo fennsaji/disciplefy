@@ -278,22 +278,29 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     final alignedPairs = _alignWordSequences(originalWords, recognizedWords);
 
     final comparisons = <WordComparison>[];
-    int matchedWords = 0;
+    double matchScore = 0.0;
 
     for (final pair in alignedPairs) {
-      final isMatch = pair.isMatch;
-      if (isMatch) matchedWords++;
+      switch (pair.matchType) {
+        case MatchType.correct:
+          matchScore += 1.0;
+        case MatchType.close:
+          matchScore += 0.7;
+        case MatchType.wrong:
+          break;
+      }
 
       comparisons.add(WordComparison(
         originalWord: pair.originalWord,
         recognizedWord: pair.recognizedWord,
-        isMatch: isMatch,
+        isMatch: pair.matchType != MatchType.wrong,
+        matchType: pair.matchType,
       ));
     }
 
     final accuracy = originalWords.isEmpty
         ? 0.0
-        : (matchedWords / originalWords.length * 100).clamp(0.0, 100.0);
+        : (matchScore / originalWords.length * 100).clamp(0.0, 100.0);
 
     setState(() {
       _accuracyPercentage = accuracy;
@@ -325,8 +332,8 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     // Fill DP table
     for (int i = 1; i <= m; i++) {
       for (int j = 1; j <= n; j++) {
-        final matchCost =
-            _wordsMatch(original[i - 1], recognized[j - 1]) ? 0 : 1;
+        final mt = _evaluateWordMatch(original[i - 1], recognized[j - 1]);
+        final matchCost = mt == MatchType.wrong ? 1 : 0;
 
         dp[i][j] = [
           dp[i - 1][j - 1] + matchCost, // Match or substitute
@@ -343,26 +350,25 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
     while (i > 0 || j > 0) {
       if (i > 0 && j > 0) {
-        final matchCost =
-            _wordsMatch(original[i - 1], recognized[j - 1]) ? 0 : 1;
+        final mt = _evaluateWordMatch(original[i - 1], recognized[j - 1]);
+        final matchCost = mt == MatchType.wrong ? 1 : 0;
         final fromMatch = dp[i - 1][j - 1] + matchCost;
         final fromDelete = i > 0 ? dp[i - 1][j] + 1 : double.infinity;
         final fromInsert = j > 0 ? dp[i][j - 1] + 1 : double.infinity;
 
         if (dp[i][j] == fromMatch) {
-          // Match or substitution
           aligned.insert(
             0,
             _AlignedWordPair(
               originalWord: original[i - 1],
               recognizedWord: recognized[j - 1],
-              isMatch: _wordsMatch(original[i - 1], recognized[j - 1]),
+              isMatch: mt != MatchType.wrong,
+              matchType: mt,
             ),
           );
           i--;
           j--;
         } else if (dp[i][j] == fromDelete) {
-          // Word was missed
           aligned.insert(
             0,
             _AlignedWordPair(
@@ -373,7 +379,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           );
           i--;
         } else {
-          // Extra word was spoken
           aligned.insert(
             0,
             _AlignedWordPair(
@@ -385,7 +390,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           j--;
         }
       } else if (i > 0) {
-        // Remaining words were missed
         aligned.insert(
           0,
           _AlignedWordPair(
@@ -396,7 +400,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         );
         i--;
       } else {
-        // Remaining extra words
         aligned.insert(
           0,
           _AlignedWordPair(
@@ -422,14 +425,24 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         .trim();
   }
 
-  bool _wordsMatch(String original, String recognized) {
-    if (original == recognized) return true;
+  /// Evaluates how closely [recognized] matches [original] with graduated scoring.
+  ///
+  ///   ≥ 80% similarity → correct  — covers 1-letter speech recognition errors
+  ///   60–79% similarity → close   — covers 2-letter differences
+  ///   < 60%             → wrong
+  MatchType _evaluateWordMatch(String original, String recognized) {
+    if (original == recognized) return MatchType.correct;
+    if (original.isEmpty || recognized.isEmpty) return MatchType.wrong;
 
-    // Allow for minor differences (1-2 character Levenshtein distance)
+    final maxLen = original.length > recognized.length
+        ? original.length
+        : recognized.length;
     final distance = _levenshteinDistance(original, recognized);
-    final maxAllowedDistance = (original.length * 0.3).ceil().clamp(1, 2);
+    final similarity = (1.0 - distance / maxLen) * 100;
 
-    return distance <= maxAllowedDistance;
+    if (similarity >= 80.0) return MatchType.correct;
+    if (similarity >= 60.0) return MatchType.close;
+    return MatchType.wrong;
   }
 
   int _levenshteinDistance(String s1, String s2) {
@@ -1037,27 +1050,30 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
               final isExtraWord = comparison.originalWord.isEmpty;
               final isMissed = comparison.recognizedWord.isEmpty;
 
+              final isClose = comparison.matchType == MatchType.close;
+              final chipColor = isClose
+                  ? AppColors.warning
+                  : comparison.isMatch
+                      ? AppColors.success
+                      : AppColors.error;
+
               return Tooltip(
                 message: isExtraWord
                     ? 'Extra word spoken'
                     : isMissed
                         ? 'Word missed'
                         : comparison.isMatch
-                            ? 'Correct!'
+                            ? isClose
+                                ? 'Close! Expected: ${comparison.originalWord}'
+                                : 'Correct!'
                             : 'Expected: ${comparison.originalWord}\nYou said: ${comparison.recognizedWord}',
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: comparison.isMatch
-                        ? AppColors.success.withAlpha(30)
-                        : AppColors.error.withAlpha(30),
+                    color: chipColor.withAlpha(30),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: comparison.isMatch
-                          ? AppColors.success
-                          : AppColors.error,
-                    ),
+                    border: Border.all(color: chipColor),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1078,8 +1094,27 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                         Text(
                           comparison.originalWord,
                           style: const TextStyle(
-                            color: AppColors.warning,
+                            color: AppColors.warningDark,
                             fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ] else if (isClose && !isExtraWord) ...[
+                        // Show recognized word with slight strikethrough, correct below
+                        Text(
+                          comparison.recognizedWord,
+                          style: const TextStyle(
+                            color: AppColors.warningDark,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                        Text(
+                          comparison.originalWord,
+                          style: const TextStyle(
+                            color: AppColors.warningDark,
+                            fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
@@ -1155,11 +1190,13 @@ class WordComparison {
   final String originalWord;
   final String recognizedWord;
   final bool isMatch;
+  final MatchType matchType;
 
   WordComparison({
     required this.originalWord,
     required this.recognizedWord,
     required this.isMatch,
+    this.matchType = MatchType.wrong,
   });
 }
 
@@ -1168,10 +1205,12 @@ class _AlignedWordPair {
   final String originalWord;
   final String recognizedWord;
   final bool isMatch;
+  final MatchType matchType;
 
   _AlignedWordPair({
     required this.originalWord,
     required this.recognizedWord,
     required this.isMatch,
+    this.matchType = MatchType.wrong,
   });
 }

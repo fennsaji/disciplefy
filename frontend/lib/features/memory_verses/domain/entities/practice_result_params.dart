@@ -1,5 +1,17 @@
 import 'package:equatable/equatable.dart';
 
+/// How closely the user's answer matched the expected answer.
+enum MatchType {
+  /// Exact match or within 1-letter typo tolerance (score: 100)
+  correct,
+
+  /// 2-letter difference — close but not exact (score: 70)
+  close,
+
+  /// Too far off to count (score: 0)
+  wrong,
+}
+
 /// Comparison data for a single blank in Fill in the Blanks mode.
 class BlankComparison extends Equatable {
   /// The word/phrase that was expected (correct answer)
@@ -8,17 +20,25 @@ class BlankComparison extends Equatable {
   /// What the user actually typed
   final String userInput;
 
-  /// Whether the answer was marked as correct
+  /// Whether the answer was marked as correct or close (not wrong)
   final bool isCorrect;
+
+  /// Graduated match quality
+  final MatchType matchType;
+
+  /// Score for this blank: 100 (correct), 70 (close), 0 (wrong)
+  final double score;
 
   const BlankComparison({
     required this.expected,
     required this.userInput,
     required this.isCorrect,
+    this.matchType = MatchType.wrong,
+    this.score = 0,
   });
 
   @override
-  List<Object?> get props => [expected, userInput, isCorrect];
+  List<Object?> get props => [expected, userInput, isCorrect, matchType, score];
 }
 
 /// Parameters passed to the Practice Results Page after completing any practice mode.
