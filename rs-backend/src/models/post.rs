@@ -11,7 +11,6 @@ use crate::error::AppError;
 /// JSON array columns are cast to TEXT in SQL to avoid sqlx json feature requirement.
 #[derive(Debug, sqlx::FromRow)]
 pub struct StudyGuideForBlog {
-    pub id: Uuid,
     pub input_value: String,
     pub language: String,
     // Flat text content columns
@@ -549,7 +548,6 @@ pub async fn fetch_study_guide_for_blog(
 ) -> Result<Option<StudyGuideForBlog>, AppError> {
     let guide = sqlx::query_as::<_, StudyGuideForBlog>(
         "SELECT
-            sg.id,
             sg.input_value,
             sg.language,
             sg.summary,
