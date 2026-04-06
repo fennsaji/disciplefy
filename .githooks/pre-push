@@ -137,6 +137,28 @@ if [ -d "rs-backend" ] && has_changes_since_push "rs-backend"; then
             cargo fmt --check 2>&1 | sed 's/^/   /' | head -20
             OVERALL_SUCCESS=false
         fi
+
+        echo "🔍 Running cargo clippy..."
+        if cargo clippy -- -D warnings >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ cargo clippy: PASSED${NC}"
+        else
+            echo -e "${RED}❌ cargo clippy: FAILED${NC}"
+            echo ""
+            echo -e "${RED}Clippy errors:${NC}"
+            cargo clippy -- -D warnings 2>&1 | grep -E "^error" | sed 's/^/   /' | head -20
+            OVERALL_SUCCESS=false
+        fi
+
+        echo "🧪 Running cargo test..."
+        if cargo test >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ cargo test: PASSED${NC}"
+        else
+            echo -e "${RED}❌ cargo test: FAILED${NC}"
+            echo ""
+            echo -e "${RED}Test failures:${NC}"
+            cargo test 2>&1 | grep -E "^(FAILED|error)" | sed 's/^/   /' | head -20
+            OVERALL_SUCCESS=false
+        fi
     fi
 
     cd "$REPO_ROOT"
