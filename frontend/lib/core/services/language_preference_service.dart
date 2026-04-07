@@ -20,6 +20,8 @@ class LanguagePreferenceService {
   static const String _hasCompletedLanguageSelectionKey =
       'has_completed_language_selection';
   static const String _studyModePreferenceKey = 'user_study_mode_preference';
+  static const String _learningPathModePreferenceKey =
+      'user_learning_path_study_mode';
   static const String _studyContentLanguageKey = 'study_content_language';
 
   final SharedPreferences _prefs;
@@ -589,11 +591,20 @@ class LanguagePreferenceService {
   /// Get raw study mode preference as string (including 'recommended')
   Future<String?> getStudyModePreferenceRaw() async {
     try {
-      // For authenticated users, check database first
       if (_authStateProvider.isAuthenticated) {
         final profile = _authStateProvider.userProfile;
-        final dbMode = profile?['default_study_mode'] as String?;
 
+        // Profile not loaded yet (cold start offline) — fall back to local cache.
+        // Do NOT clear local storage here: the profile absence doesn't mean the
+        // user has no preference; it just means we haven't fetched it yet.
+        if (profile == null) {
+          final localMode = _prefs.getString(_studyModePreferenceKey);
+          Logger.info(
+              '✅ [PREFERENCE_SERVICE] Study mode from local (profile not loaded): $localMode');
+          return localMode;
+        }
+
+        final dbMode = profile['default_study_mode'] as String?;
         if (dbMode != null) {
           // Sync local storage with database value
           await _prefs.setString(_studyModePreferenceKey, dbMode);
@@ -601,7 +612,7 @@ class LanguagePreferenceService {
               '✅ [PREFERENCE_SERVICE] Study mode preference from DB: $dbMode');
           return dbMode;
         } else {
-          // ✅ FIX: When database is null, also clear local storage to stay in sync
+          // Profile IS loaded and field is explicitly null → clear local to stay in sync
           await _prefs.remove(_studyModePreferenceKey);
           Logger.info(
               '✅ [PREFERENCE_SERVICE] Study mode preference from DB: null (cleared local storage)');
@@ -623,6 +634,34 @@ class LanguagePreferenceService {
       Logger.debug('Error getting study mode preference: $e');
       return null;
     }
+  }
+
+  /// Get learning-path-specific study mode preference.
+  ///
+  /// Priority:
+  ///   1. In-memory cached profile (loaded when online)
+  ///   2. Locally persisted value (survives cold-start offline)
+  ///   3. null → caller should fall back to recommended/standard
+  String? getLearningPathStudyModePreferenceRaw() {
+    final profile = _authStateProvider.userProfile;
+    if (profile != null) {
+      final dbMode = profile['learning_path_study_mode'] as String?;
+      // Sync to local storage whenever profile is available
+      if (dbMode != null) {
+        _prefs.setString(_learningPathModePreferenceKey, dbMode);
+      } else {
+        _prefs.remove(_learningPathModePreferenceKey);
+      }
+      return dbMode;
+    }
+    // Profile not loaded (cold start offline) — return last persisted value
+    return _prefs.getString(_learningPathModePreferenceKey);
+  }
+
+  /// Persists the learning-path study mode locally so it is available offline.
+  /// Call this whenever the user updates the preference (alongside the DB write).
+  Future<void> cacheLearningPathStudyModePreference(String modeValue) async {
+    await _prefs.setString(_learningPathModePreferenceKey, modeValue);
   }
 
   Future<StudyMode?> getStudyModePreference() async {
