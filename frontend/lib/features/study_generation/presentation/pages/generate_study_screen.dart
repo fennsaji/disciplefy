@@ -2230,81 +2230,70 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                 ),
                 child: Stack(
                   children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: isEnabled ? _generateStudyGuide : null,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (isLoading) ...[
-                                const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                    Positioned.fill(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: isEnabled ? _generateStudyGuide : null,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (isLoading) ...[
+                                  const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    isLoading
+                                        ? context.tr(TranslationKeys
+                                            .generateStudyButtonGenerating)
+                                        : context.tr(TranslationKeys
+                                            .generateStudyButtonGenerate),
+                                    style: AppFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: isEnabled
+                                          ? Colors.white
+                                          : isDark
+                                              ? Colors.white.withOpacity(0.4)
+                                              : const Color(0xFF9CA3AF),
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                              ],
-                              Flexible(
-                                child: Text(
-                                  isLoading
-                                      ? context.tr(TranslationKeys
-                                          .generateStudyButtonGenerating)
-                                      : context.tr(TranslationKeys
-                                          .generateStudyButtonGenerate),
-                                  style: AppFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: isEnabled
-                                        ? Colors.white
-                                        : isDark
-                                            ? Colors.white.withOpacity(0.4)
-                                            : const Color(0xFF9CA3AF),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              // Only show token badge if cost is available AND not loading
-                              if (!isLoading && tokenCost != null) ...[
-                                const SizedBox(width: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isEnabled
-                                        ? Colors.white.withOpacity(0.2)
-                                        : isDark
-                                            ? Colors.white.withOpacity(0.05)
-                                            : Colors.black.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.token,
-                                        size: 16,
-                                        color: isEnabled
-                                            ? Colors.white.withOpacity(0.9)
-                                            : isDark
-                                                ? Colors.white.withOpacity(0.4)
-                                                : const Color(0xFF9CA3AF),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$tokenCost',
-                                        style: AppFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                                // Only show token badge if cost is available AND not loading
+                                if (!isLoading && tokenCost != null) ...[
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isEnabled
+                                          ? Colors.white.withOpacity(0.2)
+                                          : isDark
+                                              ? Colors.white.withOpacity(0.05)
+                                              : Colors.black.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.token,
+                                          size: 16,
                                           color: isEnabled
                                               ? Colors.white.withOpacity(0.9)
                                               : isDark
@@ -2312,12 +2301,26 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                                                       .withOpacity(0.4)
                                                   : const Color(0xFF9CA3AF),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '$tokenCost',
+                                          style: AppFonts.inter(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: isEnabled
+                                                ? Colors.white.withOpacity(0.9)
+                                                : isDark
+                                                    ? Colors.white
+                                                        .withOpacity(0.4)
+                                                    : const Color(0xFF9CA3AF),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -3142,7 +3145,19 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         }
       }
     } else {
-      // No saved preference - show mode selection sheet
+      // No saved preference — when offline, skip the sheet and use the
+      // recommended mode for the input type (no API call needed).
+      final isOffline =
+          context.read<ConnectivityBloc>().state is ConnectivityOffline;
+      if (isOffline) {
+        final offlineMode =
+            inputType == 'scripture' ? StudyMode.deep : StudyMode.standard;
+        Logger.debug(
+            '🔍 [GENERATE_STUDY] Offline – skipping mode sheet, using ${offlineMode.name}');
+        await _navigateToStudyGuide(offlineMode, false, true);
+        return;
+      }
+
       Logger.debug(
           '🔍 [GENERATE_STUDY] No saved preference - showing mode selection sheet');
 
