@@ -121,6 +121,8 @@ function parseRequestParams(req: Request): {
   disciple_level?: string
   language: string
   study_mode: StudyMode
+  // TODO: Remove or update this when learning path token pricing is finalized.
+  topic_id?: string
 } | null {
   const url = new URL(req.url)
 
@@ -132,6 +134,8 @@ function parseRequestParams(req: Request): {
   const disciple_level = url.searchParams.get('disciple_level') || undefined
   const language = url.searchParams.get('language') || 'en'
   const mode = url.searchParams.get('mode') as StudyMode | null
+  // TODO: Remove or update this when learning path token pricing is finalized.
+  const topic_id = url.searchParams.get('topic_id') || undefined
 
   if (!input_type || !input_value) {
     return null
@@ -145,7 +149,7 @@ function parseRequestParams(req: Request): {
   const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio', 'sermon']
   const study_mode: StudyMode = mode && validModes.includes(mode) ? mode : 'standard'
 
-  return { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode }
+  return { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode, topic_id }
 }
 
 /**
@@ -165,6 +169,27 @@ function checkIsCreator(
   } else {
     return content.creatorSessionId === userContext.sessionId
   }
+}
+
+/**
+ * Look up the recommended study mode for a learning path topic.
+ *
+ * TODO: Remove or update this when learning path token pricing is finalized.
+ * Returns the recommended_mode string (e.g. 'standard') if the topic belongs
+ * to a learning path, or null if the topic_id is not found.
+ */
+async function getLearningPathRecommendedMode(
+  supabase: any,
+  topicId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('learning_path_topics')
+    .select('learning_paths!inner(recommended_mode)')
+    .eq('topic_id', topicId)
+    .limit(1)
+    .single()
+  if (error || !data) return null
+  return (data as any).learning_paths?.recommended_mode ?? null
 }
 
 /**
@@ -603,7 +628,7 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode } = params
+  const { input_type, input_value, topic_description, path_title, path_description, disciple_level, language, study_mode, topic_id } = params
 
   console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
@@ -673,6 +698,21 @@ async function handleStudyGenerateV2(
   const tokenCost = tokenService.calculateTokenCost(targetLanguage, study_mode)
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
 
+  // TODO: Remove or update this when learning path token pricing is finalized.
+  // Study guide generation is free for all users when using a learning path topic
+  // in its recommended study mode. Validated server-side via DB lookup.
+  let isFreeGeneration = false
+  if (topic_id) {
+    const lpRecommendedMode = await getLearningPathRecommendedMode(
+      studyGuideRepository.getSupabaseClient(),
+      topic_id
+    )
+    if (lpRecommendedMode && lpRecommendedMode === study_mode) {
+      isFreeGeneration = true
+      console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (recommended mode: ${study_mode})`)
+    }
+  }
+
   // Declare inProgressId outside the stream for access in both start() and cancel()
   let inProgressId: string | undefined
 
@@ -711,7 +751,8 @@ async function handleStudyGenerateV2(
           const isCreator = checkIsCreator(existingContent, userContext)
 
           // Non-creator needs to pay tokens for cached content
-          if (!isCreator && !tokenService.isUnlimitedPlan(userPlan)) {
+          // TODO: Remove or update this when learning path token pricing is finalized.
+          if (!isCreator && !isFreeGeneration && !tokenService.isUnlimitedPlan(userPlan)) {
             const consumptionResult = await tokenService.consumeTokens(
               identifier,
               userPlan,
@@ -789,9 +830,10 @@ async function handleStudyGenerateV2(
           await studyGuideRepository.linkUserToContent(existingContent.id, userContext)
 
           // Emit complete event
+          // TODO: Remove or update this when learning path token pricing is finalized.
           emit(createCompleteEvent(
             existingContent.id,
-            isCreator || tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
+            isCreator || isFreeGeneration || tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
             true
           ))
 
@@ -814,7 +856,8 @@ async function handleStudyGenerateV2(
                 tier: userPlan,
                 featureName: 'study_generate',
                 operationType: 'read',
-                tokensConsumed: isCreator || tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
+                // TODO: Remove or update this when learning path token pricing is finalized.
+                tokensConsumed: isCreator || isFreeGeneration || tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
                 llmProvider: undefined, // No LLM call for cache hit
                 llmModel: undefined,
                 llmInputTokens: undefined,
@@ -911,7 +954,8 @@ async function handleStudyGenerateV2(
         // --- NEW GENERATION: Consume tokens BEFORE streaming ---
 
         let consumptionResult
-        if (tokenService.isUnlimitedPlan(userPlan)) {
+        // TODO: Remove or update this when learning path token pricing is finalized.
+        if (isFreeGeneration || tokenService.isUnlimitedPlan(userPlan)) {
           consumptionResult = {
             success: true,
             availableTokens: 999999,
@@ -1709,9 +1753,10 @@ async function handleStudyGenerateV2(
         }
 
         // Emit complete event
+        // TODO: Remove or update this when learning path token pricing is finalized.
         emit(createCompleteEvent(
           savedGuide.id,
-          tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
+          isFreeGeneration || tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
           false
         ))
 

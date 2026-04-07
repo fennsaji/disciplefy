@@ -36,6 +36,8 @@ class StudyStreamService {
     String? discipleLevel,
     required String language,
     StudyMode studyMode = StudyMode.standard,
+    // TODO: Remove or update this when learning path token pricing is finalized.
+    String? topicId,
   }) async* {
     // Build URL with query parameters (auth is passed via headers, not query params)
     final baseUrl = '${AppConfig.baseApiUrl}/study-generate-v2';
@@ -73,6 +75,11 @@ class StudyStreamService {
 
     if (discipleLevel != null && discipleLevel.isNotEmpty) {
       queryParams['disciple_level'] = discipleLevel;
+    }
+
+    // TODO: Remove or update this when learning path token pricing is finalized.
+    if (topicId != null && topicId.isNotEmpty) {
+      queryParams['topic_id'] = topicId;
     }
 
     final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
