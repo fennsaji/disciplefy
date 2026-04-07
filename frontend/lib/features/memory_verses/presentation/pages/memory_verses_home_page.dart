@@ -317,36 +317,29 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   } else {
                     final isOffline = context.read<ConnectivityBloc>().state
                         is ConnectivityOffline;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(
-                              isOffline ? Icons.wifi_off : Icons.error,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                isOffline
-                                    ? 'You\'re offline. Connect to load Memory Verses.'
-                                    : 'Something went wrong. Please try again.',
+                    if (!isOffline) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.error,
+                                  color: Colors.white, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                    'Something went wrong. Please try again.'),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          backgroundColor: AppColors.error,
+                          action: SnackBarAction(
+                            label: context.tr(TranslationKeys.commonRetry),
+                            textColor: Colors.white,
+                            onPressed: _loadVerses,
+                          ),
                         ),
-                        backgroundColor:
-                            isOffline ? AppColors.warning : AppColors.error,
-                        action: isOffline
-                            ? null
-                            : SnackBarAction(
-                                label: context.tr(TranslationKeys.commonRetry),
-                                textColor: Colors.white,
-                                onPressed: _loadVerses,
-                              ),
-                      ),
-                    );
+                      );
+                    }
                   }
                 } else if (state is PracticeSessionSubmitted) {
                   // Silently refresh verse list so stats (review count, next date)
