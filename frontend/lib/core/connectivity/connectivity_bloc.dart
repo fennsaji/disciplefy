@@ -14,6 +14,15 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
         super(ConnectivityInitial()) {
     on<ConnectivityStatusChanged>(_onStatusChanged);
     _subscribeToConnectivity();
+    _checkInitialStatus();
+  }
+
+  /// Immediately checks current connectivity so the bloc emits a real state
+  /// before any BLoC fires its first load event (avoids the race condition
+  /// where [ConnectivityInitial] is misread as online).
+  void _checkInitialStatus() async {
+    final isOnline = await _networkInfo.isConnected;
+    add(ConnectivityStatusChanged(isOnline: isOnline));
   }
 
   void _subscribeToConnectivity() {
