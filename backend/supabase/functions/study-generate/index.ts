@@ -437,7 +437,7 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
     },
     topic_description: {
       required: false,
-      maxLength: 1000  // Allow longer descriptions for better context
+      maxLength: 5000
     },
     language: {
       required: false,
