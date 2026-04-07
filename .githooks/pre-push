@@ -328,6 +328,31 @@ fi
 
 echo ""
 
+# Release notes length validation (Google Play Store limit: 500 chars)
+echo -e "${YELLOW}📝 Release notes validation...${NC}"
+if [ -d "$REPO_ROOT/distribution/whatsnew" ]; then
+    notes_issues=0
+    for notes_file in "$REPO_ROOT/distribution/whatsnew"/whatsnew-*; do
+        [ -f "$notes_file" ] || continue
+        char_count=$(wc -m < "$notes_file")
+        locale=$(basename "$notes_file")
+        if [ "$char_count" -gt 500 ]; then
+            echo -e "${RED}❌ $locale: $char_count chars (max: 500)${NC}"
+            ((notes_issues++))
+            OVERALL_SUCCESS=false
+        else
+            echo -e "${GREEN}✅ $locale: $char_count chars${NC}"
+        fi
+    done
+    if [ $notes_issues -gt 0 ]; then
+        echo -e "${RED}Release notes too long. Edit files in distribution/whatsnew/ to be ≤500 chars.${NC}"
+    fi
+else
+    echo -e "${BLUE}ℹ️  No distribution/whatsnew directory - skipping${NC}"
+fi
+
+echo ""
+
 # Final validation result
 if [ "$OVERALL_SUCCESS" = true ]; then
     echo -e "${GREEN}🎉 Pre-push validation PASSED! Proceeding with push...${NC}"
