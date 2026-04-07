@@ -902,51 +902,66 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
   /// Offline Content Section - shows downloaded learning paths
   Widget _buildOfflineContentSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-          child: Text(
-            'Offline Content',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-          ),
+    final tileChildren = <Widget>[];
+
+    if (_downloadedPaths.isEmpty) {
+      tileChildren.add(
+        _buildSettingsTile(
+          context: context,
+          icon: Icons.wifi_off_outlined,
+          title: 'No offline guides',
+          subtitle: 'Download a learning path to access it offline',
+          trailing: null,
+          onTap: null,
         ),
-        if (_downloadedPaths.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'No downloaded learning paths.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+      );
+    } else {
+      for (int i = 0; i < _downloadedPaths.length; i++) {
+        if (i > 0) tileChildren.add(_buildDivider());
+        final path = _downloadedPaths[i];
+        tileChildren.add(
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.download_done_outlined,
+            title: path.learningPathTitle,
+            subtitle:
+                '${path.completedCount} of ${path.totalCount} guides available offline',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 20,
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withValues(alpha: 0.6),
+                        .withOpacity(0.5),
                   ),
+                  tooltip: 'Delete offline content',
+                  onPressed: () async {
+                    await sl<LearningPathDownloadService>()
+                        .deleteDownload(path.learningPathId);
+                    await _loadDownloadedPaths();
+                  },
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ],
             ),
-          )
-        else
-          ..._downloadedPaths.map(
-            (path) => ListTile(
-              leading: const Icon(Icons.download_done_outlined),
-              title: Text(path.learningPathTitle),
-              subtitle: Text('${path.completedCount} guides available offline'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Delete offline content',
-                onPressed: () async {
-                  await sl<LearningPathDownloadService>()
-                      .deleteDownload(path.learningPathId);
-                  await _loadDownloadedPaths();
-                },
-              ),
-            ),
+            onTap: () => context.push('/offline-guides'),
           ),
-      ],
+        );
+      }
+    }
+
+    return _buildSection(
+      title: 'Offline Content',
+      children: tileChildren,
     );
   }
 

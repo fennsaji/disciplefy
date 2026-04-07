@@ -27,6 +27,7 @@ import '../navigation/study_navigator.dart';
 import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/settings/presentation/pages/offline_guides_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
@@ -323,6 +324,14 @@ class AppRouter {
         name: 'settings',
         pageBuilder: (context, state) => slideUpTransitionPage(
           child: const SettingsScreen(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/offline-guides',
+        name: 'offline_guides',
+        pageBuilder: (context, state) => slideRightTransitionPage(
+          child: const OfflineGuidesScreen(),
           state: state,
         ),
       ),
