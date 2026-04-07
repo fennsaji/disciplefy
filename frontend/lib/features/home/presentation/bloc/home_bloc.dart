@@ -12,6 +12,9 @@ import 'home_study_generation_state.dart' as generation_states;
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../study_topics/data/models/learning_path_download_model.dart';
+import '../../../study_topics/data/services/learning_path_download_service.dart';
+import '../../../study_topics/domain/entities/learning_path.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Refactored BLoC for coordinating Home screen concerns.
@@ -23,6 +26,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final HomeStudyGenerationBloc _studyGenerationBloc;
   final LanguagePreferenceService _languagePreferenceService;
   final LearningPathsRepository _learningPathsRepository;
+  final LearningPathDownloadService _downloadService;
 
   late final StreamSubscription _topicsSubscription;
   late final StreamSubscription _studyGenerationSubscription;
@@ -33,10 +37,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required HomeStudyGenerationBloc studyGenerationBloc,
     required LanguagePreferenceService languagePreferenceService,
     required LearningPathsRepository learningPathsRepository,
+    required LearningPathDownloadService downloadService,
   })  : _topicsBloc = topicsBloc,
         _studyGenerationBloc = studyGenerationBloc,
         _languagePreferenceService = languagePreferenceService,
         _learningPathsRepository = learningPathsRepository,
+        _downloadService = downloadService,
         super(const HomeCombinedState()) {
     // Subscribe to child BLoC states and trigger events instead of direct emit
     _topicsSubscription = _topicsBloc.stream.listen((state) {
@@ -305,37 +311,84 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         forceRefresh: event.forceRefresh,
       );
 
-      result.fold(
-        (failure) {
-          Logger.error(
-            'Failed to load recommended learning path: ${failure.message}',
-            tag: 'HOME_BLOC',
-          );
-          // Just clear loading state on error, don't show error UI
-          final updatedState = state;
-          if (updatedState is HomeCombinedState) {
+      if (result.isLeft()) {
+        final failure = result.fold((f) => f, (_) => null)!;
+        Logger.error(
+          'Failed to load recommended learning path: ${failure.message}',
+          tag: 'HOME_BLOC',
+        );
+
+        // Offline fallback: try to find any learning path that has downloaded
+        // content from the Hive-persisted categories cache.
+        final offlinePath = await _findOfflineAvailablePath(languageCode);
+
+        final updatedState = state;
+        if (updatedState is HomeCombinedState) {
+          if (offlinePath != null) {
+            emit(updatedState.copyWith(
+              isLoadingActivePath: false,
+              activeLearningPath: offlinePath,
+              learningPathReason:
+                  LearningPathRecommendationReason.offlineAvailable,
+            ));
+          } else {
             emit(updatedState.copyWith(
               isLoadingActivePath: false,
               clearActiveLearningPath: true,
             ));
           }
-        },
-        (recommended) {
-          Logger.info(
-            'Loaded recommended learning path: ${recommended.path.title} (reason: ${recommended.reason.name})',
-            tag: 'HOME_BLOC',
-          );
+        }
+      } else {
+        final recommended = result.fold((_) => null, (r) => r)!;
+        Logger.info(
+          'Loaded recommended learning path: ${recommended.path.title} (reason: ${recommended.reason.name})',
+          tag: 'HOME_BLOC',
+        );
 
-          final updatedState = state;
-          if (updatedState is HomeCombinedState) {
-            emit(updatedState.copyWith(
-              isLoadingActivePath: false,
-              activeLearningPath: recommended.path,
-              learningPathReason: recommended.reason,
-            ));
+        final updatedState = state;
+        if (updatedState is HomeCombinedState) {
+          emit(updatedState.copyWith(
+            isLoadingActivePath: false,
+            activeLearningPath: recommended.path,
+            learningPathReason: recommended.reason,
+          ));
+        }
+      }
+    }
+  }
+
+  /// Tries to find a learning path that has at least one downloaded guide,
+  /// using the Hive-persisted categories cache (survives app restarts).
+  /// Returns null if no downloaded path is found or cache is empty.
+  Future<LearningPath?> _findOfflineAvailablePath(String language) async {
+    try {
+      final downloads = _downloadService.cachedDownloads
+          .where(
+              (m) => m.topics.any((t) => t.status == TopicDownloadStatus.done))
+          .toList();
+
+      if (downloads.isEmpty) return null;
+
+      final downloadedIds = downloads.map((m) => m.learningPathId).toSet();
+
+      final result = await _learningPathsRepository.getLearningPathCategories(
+        language: language,
+      );
+
+      return result.fold(
+        (_) => null,
+        (cats) {
+          for (final cat in cats.categories) {
+            for (final path in cat.paths) {
+              if (downloadedIds.contains(path.id)) return path;
+            }
           }
+          return null;
         },
       );
+    } catch (e) {
+      Logger.warning('Offline path fallback failed: $e', tag: 'HOME_BLOC');
+      return null;
     }
   }
 

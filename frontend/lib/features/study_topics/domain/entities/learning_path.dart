@@ -260,6 +260,9 @@ enum LearningPathRecommendationReason {
 
   /// Featured learning path (default recommendation)
   featured,
+
+  /// Path shown because it has locally downloaded content (offline fallback)
+  offlineAvailable,
 }
 
 /// Result container for recommended learning path.

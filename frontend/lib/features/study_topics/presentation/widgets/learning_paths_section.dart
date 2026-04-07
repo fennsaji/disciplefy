@@ -5,12 +5,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import '../../data/models/learning_path_download_model.dart';
+import '../../data/services/learning_path_download_service.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -134,9 +137,12 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
 
   /// Build display categories, applying local filters.
   /// In search mode, groups searchResults by category; otherwise uses state categories.
+  /// When offline, only paths with at least one downloaded topic are shown.
   List<LearningPathCategory> _displayCategories(LearningPathsLoaded state) {
     final isSearchActive =
         state.searchQuery != null && state.searchQuery!.isNotEmpty;
+    final isOffline =
+        context.read<ConnectivityBloc>().state is ConnectivityOffline;
 
     final List<LearningPathCategory> base;
     if (isSearchActive) {
@@ -160,7 +166,18 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     // Apply local filters per category; drop empty categories
     return base
         .map((cat) {
-          final filtered = _applyFilters(cat.paths);
+          var filtered = _applyFilters(cat.paths);
+
+          // Offline: only show paths with at least one downloaded guide
+          if (isOffline) {
+            final downloadService = sl<LearningPathDownloadService>();
+            filtered = filtered.where((p) {
+              final model = downloadService.getDownload(p.id);
+              return model != null &&
+                  model.topics.any((t) => t.status == TopicDownloadStatus.done);
+            }).toList();
+          }
+
           if (filtered.isEmpty) return null;
           return LearningPathCategory(
             name: cat.name,
