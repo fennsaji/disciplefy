@@ -104,4 +104,13 @@ class MockStudyLocalDataSource extends _i1.Mock
         ),
         returnValue: _i4.Future<bool>.value(false),
       ) as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> deleteStudyGuide(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteStudyGuide,
+          [id],
+        ),
+        returnValue: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
 }

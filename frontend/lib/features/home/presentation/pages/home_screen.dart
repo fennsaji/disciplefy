@@ -1197,6 +1197,31 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   ),
                 ),
                 const SizedBox(height: 8),
+              ] else if (homeState.learningPathReason ==
+                  LearningPathRecommendationReason.offlineAvailable) ...[
+                Row(
+                  children: [
+                    Icon(
+                      Icons.download_done_rounded,
+                      size: 13,
+                      color: isDark
+                          ? AppColors.brandPrimaryLight.withOpacity(0.85)
+                          : AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Available offline',
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? AppColors.brandPrimaryLight.withOpacity(0.85)
+                            : AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
               ],
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
@@ -1219,6 +1244,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               _buildTopicsErrorWidget(homeState.topicsError!)
             else if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
               _buildTopicsLoadingWidget()
+            else if (context.read<ConnectivityBloc>().state
+                is ConnectivityOffline)
+              _buildForYouOfflineWidget()
             else if (homeState.topics.isEmpty)
               _buildNoTopicsWidget()
             else
@@ -1355,6 +1383,60 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               label: Text(context.tr(TranslationKeys.homeTryAgain)),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForYouOfflineWidget() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.wifi_off,
+            color: theme.colorScheme.onSurfaceVariant,
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'You\'re offline',
+            style: AppFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onBackground,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Learning path requires a connection',
+            style: AppFonts.inter(
+              fontSize: 14,
+              color: theme.colorScheme.onBackground.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => context.push('/offline-guides'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.download_done_outlined, size: 18),
+            label: const Text('View Offline Guides'),
+          ),
         ],
       ),
     );

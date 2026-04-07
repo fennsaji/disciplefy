@@ -163,4 +163,121 @@ void main() {
           service.getDownload('path-1')?.status, PathDownloadStatus.completed);
     });
   });
+
+  group('deleteTopic', () {
+    test('deletes guide from local data source', () async {
+      final box = await Hive.openBox<Map>('learning_path_downloads');
+      await box.put('path-delete', {
+        'learningPathId': 'path-delete',
+        'learningPathTitle': 'Romans',
+        'language': 'en',
+        'topics': [
+          {
+            'topicId': 'topic-1',
+            'topicTitle': 'Romans 1',
+            'inputType': 'topic',
+            'description': '',
+            'studyMode': 'standard',
+            'status': 'done',
+            'cachedGuideId': 'guide-abc',
+          },
+          {
+            'topicId': 'topic-2',
+            'topicTitle': 'Romans 2',
+            'inputType': 'topic',
+            'description': '',
+            'studyMode': 'standard',
+            'status': 'done',
+            'cachedGuideId': 'guide-xyz',
+          },
+        ],
+        'status': 'completed',
+        'queuedAt': DateTime(2026, 4, 7).toIso8601String(),
+        'completedCount': 2,
+        'totalCount': 2,
+      });
+
+      when(mockLocalDataSource.deleteStudyGuide('guide-abc'))
+          .thenAnswer((_) async => true);
+
+      await service.deleteTopic('path-delete', 'guide-abc');
+
+      verify(mockLocalDataSource.deleteStudyGuide('guide-abc')).called(1);
+    });
+
+    test('decrements completedCount after single guide deletion', () async {
+      final box = await Hive.openBox<Map>('learning_path_downloads');
+      await box.put('path-decrement', {
+        'learningPathId': 'path-decrement',
+        'learningPathTitle': 'Psalms',
+        'language': 'en',
+        'topics': [
+          {
+            'topicId': 'topic-1',
+            'topicTitle': 'Psalm 1',
+            'inputType': 'topic',
+            'description': '',
+            'studyMode': 'standard',
+            'status': 'done',
+            'cachedGuideId': 'guide-p1',
+          },
+          {
+            'topicId': 'topic-2',
+            'topicTitle': 'Psalm 2',
+            'inputType': 'topic',
+            'description': '',
+            'studyMode': 'standard',
+            'status': 'done',
+            'cachedGuideId': 'guide-p2',
+          },
+        ],
+        'status': 'completed',
+        'queuedAt': DateTime(2026, 4, 7).toIso8601String(),
+        'completedCount': 2,
+        'totalCount': 2,
+      });
+
+      when(mockLocalDataSource.deleteStudyGuide('guide-p1'))
+          .thenAnswer((_) async => true);
+
+      await service.deleteTopic('path-decrement', 'guide-p1');
+
+      final downloads = await service.getAllDownloads();
+      final updated =
+          downloads.firstWhere((d) => d.learningPathId == 'path-decrement');
+      expect(updated.completedCount, 1);
+    });
+
+    test('removes entire path record when last guide is deleted', () async {
+      final box = await Hive.openBox<Map>('learning_path_downloads');
+      await box.put('path-last', {
+        'learningPathId': 'path-last',
+        'learningPathTitle': 'Single Guide Path',
+        'language': 'en',
+        'topics': [
+          {
+            'topicId': 'topic-1',
+            'topicTitle': 'Only Topic',
+            'inputType': 'topic',
+            'description': '',
+            'studyMode': 'standard',
+            'status': 'done',
+            'cachedGuideId': 'guide-only',
+          },
+        ],
+        'status': 'completed',
+        'queuedAt': DateTime(2026, 4, 7).toIso8601String(),
+        'completedCount': 1,
+        'totalCount': 1,
+      });
+
+      when(mockLocalDataSource.deleteStudyGuide('guide-only'))
+          .thenAnswer((_) async => true);
+
+      await service.deleteTopic('path-last', 'guide-only');
+
+      final downloads = await service.getAllDownloads();
+      expect(downloads.any((d) => d.learningPathId == 'path-last'), isFalse);
+    });
+  });
 }

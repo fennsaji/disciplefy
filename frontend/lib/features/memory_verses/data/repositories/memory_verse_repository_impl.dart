@@ -563,25 +563,22 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
 
       final response = await _remoteDataSource.getMemoryStreak();
 
-      final entity = MemoryStreakEntity(
-        currentStreak: response['current_streak'] as int,
-        longestStreak: response['longest_streak'] as int,
-        lastPracticeDate: response['last_practice_date'] != null
-            ? DateTime.parse(response['last_practice_date'] as String)
-            : null,
-        totalPracticeDays: response['total_practice_days'] as int,
-        freezeDaysAvailable: response['freeze_days_available'] as int,
-        freezeDaysUsed: response['freeze_days_used'] as int,
-        milestones: _parseMilestones(response['milestones']),
-      );
+      // Cache the raw response so it's available offline.
+      _helper.cacheStreakData(response).ignore();
 
+      final entity = _parseStreakEntity(response);
       _helper.logSuccess('Memory streak fetched');
       return Right(entity);
     } on ServerException catch (e) {
       _helper.logError('Server error: ${e.message}');
       return Left(ServerFailure(message: e.message, code: e.code));
     } on NetworkException catch (e) {
-      _helper.logError('Network error: ${e.message}');
+      _helper.logError('Network error (offline): ${e.message}');
+      final cached = await _helper.getCachedStreakData();
+      if (cached != null) {
+        _helper.logDebug('Returning cached streak data');
+        return Right(_parseStreakEntity(cached));
+      }
       return Left(NetworkFailure(message: e.message, code: e.code));
     } catch (e) {
       _helper.logError('Unexpected error: $e');
@@ -590,6 +587,20 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
         code: 'GET_STREAK_FAILED',
       ));
     }
+  }
+
+  MemoryStreakEntity _parseStreakEntity(Map<String, dynamic> response) {
+    return MemoryStreakEntity(
+      currentStreak: response['current_streak'] as int,
+      longestStreak: response['longest_streak'] as int,
+      lastPracticeDate: response['last_practice_date'] != null
+          ? DateTime.parse(response['last_practice_date'] as String)
+          : null,
+      totalPracticeDays: response['total_practice_days'] as int,
+      freezeDaysAvailable: response['freeze_days_available'] as int,
+      freezeDaysUsed: response['freeze_days_used'] as int,
+      milestones: _parseMilestones(response['milestones']),
+    );
   }
 
   Map<int, DateTime?> _parseMilestones(dynamic milestones) {

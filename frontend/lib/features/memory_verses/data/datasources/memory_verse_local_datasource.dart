@@ -17,6 +17,7 @@ class MemoryVerseLocalDataSource {
   static const String _versesKey = 'verses_list';
   static const String _syncQueueKey = 'sync_queue';
   static const String _lastSyncKey = 'last_sync_timestamp';
+  static const String _streakKey = 'memory_streak';
 
   /// Hive box for storing cached memory verses
   Box<String>? _cacheBox;
@@ -275,6 +276,29 @@ class MemoryVerseLocalDataSource {
       return DateTime.parse(timestampStr);
     } catch (e) {
       Logger.error('❌ [MEMORY VERSES CACHE] Error getting last sync time: $e');
+      return null;
+    }
+  }
+
+  /// Persists streak data so it can be shown when offline.
+  Future<void> cacheStreakData(Map<String, dynamic> data) async {
+    try {
+      final box = await _ensureInitialized();
+      await box.put(_streakKey, jsonEncode(data));
+    } catch (e) {
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error caching streak: $e');
+    }
+  }
+
+  /// Returns the last cached streak data, or null if none.
+  Future<Map<String, dynamic>?> getCachedStreakData() async {
+    try {
+      final box = await _ensureInitialized();
+      final raw = box.get(_streakKey);
+      if (raw == null) return null;
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (e) {
+      Logger.debug('❌ [MEMORY VERSES CACHE] Error reading cached streak: $e');
       return null;
     }
   }

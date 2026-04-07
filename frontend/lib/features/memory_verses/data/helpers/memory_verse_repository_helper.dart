@@ -139,6 +139,14 @@ class MemoryVerseRepositoryHelper {
     await _localDataSource.clearCache();
   }
 
+  /// Persists streak data for offline use.
+  Future<void> cacheStreakData(Map<String, dynamic> data) =>
+      _localDataSource.cacheStreakData(data);
+
+  /// Returns last cached streak data, or null.
+  Future<Map<String, dynamic>?> getCachedStreakData() =>
+      _localDataSource.getCachedStreakData();
+
   // ============================================================================
   // Logging Helpers
   // ============================================================================

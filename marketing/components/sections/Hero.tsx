@@ -94,11 +94,6 @@ export function Hero() {
               <p className="text-lg text-[var(--muted)] mb-6 max-w-lg">
                 {t("subheadline")}
               </p>
-              {/* In-fold trust signal */}
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-[#D4930A]" aria-hidden="true">★★★★★</span>
-                <span className="text-sm text-[var(--muted)]">4.9 · 1,200+ ratings</span>
-              </div>
               <AppStoreBadges />
             </div>
           </div>

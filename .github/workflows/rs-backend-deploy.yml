@@ -1,10 +1,10 @@
 name: RS Backend Deploy
 
 on:
-  workflow_run:
-    workflows: [RS Backend CI]
+  push:
     branches: [main]
-    types: [completed]
+    paths:
+      - 'rs-backend/**'
 
 concurrency:
   group: rs-backend-deploy
@@ -14,16 +14,12 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
-
     permissions:
       contents: read
       packages: write
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       # ── Write .env for rs-backend (app secrets) ─────────────────────────────
       - name: Write .env
@@ -72,7 +68,7 @@ jobs:
           platforms: linux/amd64
           tags: |
             ghcr.io/${{ github.repository_owner }}/disciplefy-rs-backend:latest
-            ghcr.io/${{ github.repository_owner }}/disciplefy-rs-backend:${{ github.event.workflow_run.head_sha }}
+            ghcr.io/${{ github.repository_owner }}/disciplefy-rs-backend:${{ github.sha }}
           cache-from: type=gha,scope=rs-backend
           cache-to: type=gha,scope=rs-backend,mode=max
 
