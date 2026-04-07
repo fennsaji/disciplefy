@@ -961,6 +961,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           language: normalizedLanguageCode,
           studyMode: widget.studyMode,
           pendingStudyId: _pendingStudyId,
+          // TODO: Remove or update this when learning path token pricing is finalized.
+          topicId: widget.topicId,
         ));
   }
 

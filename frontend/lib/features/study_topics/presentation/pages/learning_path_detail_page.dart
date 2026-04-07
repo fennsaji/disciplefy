@@ -273,21 +273,29 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           '(completed=${topic.isCompleted}, hiveCached=$hiveCached)');
       // Fall through to navigation; study screen will load from cache
     } else {
-      // First-time generation — check if user has sufficient tokens
-      final tokenState = context.read<TokenBloc>().state;
-      if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
-        final costResult = await sl<TokenCostRepository>()
-            .getTokenCost(_currentLanguage, mode.value);
-        final requiredCost = costResult.fold((f) => 0, (cost) => cost);
-        if (requiredCost > 0 &&
-            tokenState.tokenStatus.totalTokens < requiredCost &&
-            mounted) {
-          await InsufficientTokensDialog.show(
-            context,
-            tokenStatus: tokenState.tokenStatus,
-            requiredTokens: requiredCost,
-          );
-          return;
+      // TODO: Remove or update this when learning path token pricing is finalized.
+      // Learning path recommended mode generation is free for all users (validated server-side).
+      // Skip the pre-check for the recommended mode to avoid false blocking.
+      final isRecommendedMode = mode ==
+          (studyModeFromString(path.recommendedMode) ?? StudyMode.standard);
+
+      if (!isRecommendedMode) {
+        // Non-recommended mode: check if user has sufficient tokens
+        final tokenState = context.read<TokenBloc>().state;
+        if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
+          final costResult = await sl<TokenCostRepository>()
+              .getTokenCost(_currentLanguage, mode.value);
+          final requiredCost = costResult.fold((f) => 0, (cost) => cost);
+          if (requiredCost > 0 &&
+              tokenState.tokenStatus.totalTokens < requiredCost &&
+              mounted) {
+            await InsufficientTokensDialog.show(
+              context,
+              tokenStatus: tokenState.tokenStatus,
+              requiredTokens: requiredCost,
+            );
+            return;
+          }
         }
       }
     }

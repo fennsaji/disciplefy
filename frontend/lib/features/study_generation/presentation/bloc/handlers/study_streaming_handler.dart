@@ -59,6 +59,7 @@ class StudyStreamingHandler {
         discipleLevel: event.discipleLevel,
         language: event.language,
         studyMode: event.studyMode,
+        topicId: event.topicId,
       );
 
       await for (final streamEvent in stream) {

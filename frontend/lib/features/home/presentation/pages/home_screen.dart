@@ -562,117 +562,131 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           _checkUsageThreshold(context, state.usageStats);
         }
       },
-      child: BlocListener<DailyVerseBloc, DailyVerseState>(
-        bloc: sl<DailyVerseBloc>(),
+      child: BlocListener<TokenBloc, TokenState>(
         listener: (context, state) {
-          // Trigger notification prompts when daily verse loads successfully
-          if (state is DailyVerseLoaded) {
-            final languageCode = _getLanguageCode(state.currentLanguage);
-            _showDailyVerseNotificationPrompt(languageCode);
-
-            // Also check for streak and show streak notification prompt
-            final streak = state.streak;
-            if (streak != null) {
-              _showStreakNotificationPrompt(languageCode, streak.currentStreak);
+          // Re-run usage threshold check once token data is available.
+          // Handles the race condition where UsageStatsLoaded fires before
+          // TokenLoaded — the first check is skipped, this retries it.
+          if (state is TokenLoaded) {
+            final usageState = _usageStatsBloc.state;
+            if (usageState is UsageStatsLoaded) {
+              _checkUsageThreshold(context, usageState.usageStats);
             }
           }
         },
-        child: ListenableBuilder(
-          listenable: sl<AuthStateProvider>(),
-          builder: (context, _) {
-            final authProvider = sl<AuthStateProvider>();
-            final currentUserName = authProvider.currentUserName;
+        child: BlocListener<DailyVerseBloc, DailyVerseState>(
+          bloc: sl<DailyVerseBloc>(),
+          listener: (context, state) {
+            // Trigger notification prompts when daily verse loads successfully
+            if (state is DailyVerseLoaded) {
+              final languageCode = _getLanguageCode(state.currentLanguage);
+              _showDailyVerseNotificationPrompt(languageCode);
 
-            if (kDebugMode) {
-              Logger.debug(
-                  '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
-              Logger.debug('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+              // Also check for streak and show streak notification prompt
+              final streak = state.streak;
+              if (streak != null) {
+                _showStreakNotificationPrompt(
+                    languageCode, streak.currentStreak);
+              }
             }
+          },
+          child: ListenableBuilder(
+            listenable: sl<AuthStateProvider>(),
+            builder: (context, _) {
+              final authProvider = sl<AuthStateProvider>();
+              final currentUserName = authProvider.currentUserName;
 
-            return Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    // Main content
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: isLargeScreen ? 32 : 24),
+              if (kDebugMode) {
+                Logger.debug(
+                    '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
+                Logger.debug('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+              }
 
-                            // App Header with Logo
-                            _buildAppHeader(),
+              return Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      // Main content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: isLargeScreen ? 32 : 24),
 
-                            SizedBox(height: isLargeScreen ? 32 : 24),
+                              // App Header with Logo
+                              _buildAppHeader(),
 
-                            // Welcome Message
-                            _buildWelcomeMessage(currentUserName),
+                              SizedBox(height: isLargeScreen ? 32 : 24),
 
-                            SizedBox(height: isLargeScreen ? 16 : 12),
+                              // Welcome Message
+                              _buildWelcomeMessage(currentUserName),
 
-                            // Upcoming meeting banner (today's meetings)
-                            const _UpcomingMeetingBanner(),
+                              SizedBox(height: isLargeScreen ? 16 : 12),
 
-                            // Email Verification Banner (shown for unverified email users)
-                            BlocProvider.value(
-                              value: context.read<AuthBloc>(),
-                              child: const EmailVerificationBanner(),
-                            ),
+                              // Upcoming meeting banner (today's meetings)
+                              const _UpcomingMeetingBanner(),
 
-                            SizedBox(height: isLargeScreen ? 16 : 12),
+                              // Email Verification Banner (shown for unverified email users)
+                              BlocProvider.value(
+                                value: context.read<AuthBloc>(),
+                                child: const EmailVerificationBanner(),
+                              ),
 
-                            // Daily Verse Card with click functionality and lock support
-                            WalkthroughTooltip(
-                              showcaseKey: ShowcaseKeys.homeDailyVerse,
-                              title: AppLocalizations.of(context)!
-                                  .walkthroughHomeDailyVerseTitle,
-                              description: AppLocalizations.of(context)!
-                                  .walkthroughHomeDailyVerseDesc,
-                              screen: WalkthroughScreen.home,
-                              stepNumber: 1,
-                              totalSteps: 5,
-                              onNext: _onNext,
-                              child: LockedFeatureWrapper(
-                                featureKey: 'daily_verse',
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    DailyVerseCard(
-                                      margin: EdgeInsets.zero,
-                                      onTap: _onDailyVerseCardTap,
-                                    ),
-                                    SizedBox(height: isLargeScreen ? 24 : 20),
-                                  ],
+                              SizedBox(height: isLargeScreen ? 16 : 12),
+
+                              // Daily Verse Card with click functionality and lock support
+                              WalkthroughTooltip(
+                                showcaseKey: ShowcaseKeys.homeDailyVerse,
+                                title: AppLocalizations.of(context)!
+                                    .walkthroughHomeDailyVerseTitle,
+                                description: AppLocalizations.of(context)!
+                                    .walkthroughHomeDailyVerseDesc,
+                                screen: WalkthroughScreen.home,
+                                stepNumber: 1,
+                                totalSteps: 5,
+                                onNext: _onNext,
+                                child: LockedFeatureWrapper(
+                                  featureKey: 'daily_verse',
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      DailyVerseCard(
+                                        margin: EdgeInsets.zero,
+                                        onTap: _onDailyVerseCardTap,
+                                      ),
+                                      SizedBox(height: isLargeScreen ? 24 : 20),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
 
-                            // Explore Learning Paths Button
-                            _buildExploreLearningPathsButton(),
-                            SizedBox(height: isLargeScreen ? 32 : 24),
+                              // Explore Learning Paths Button
+                              _buildExploreLearningPathsButton(),
+                              SizedBox(height: isLargeScreen ? 32 : 24),
 
-                            // Resume Last Study (conditional)
-                            if (_hasResumeableStudy) ...[
-                              _buildResumeStudyBanner(),
+                              // Resume Last Study (conditional)
+                              if (_hasResumeableStudy) ...[
+                                _buildResumeStudyBanner(),
+                                SizedBox(height: isLargeScreen ? 32 : 24),
+                              ],
+
+                              // Recommended Study Topics
+                              _buildRecommendedTopics(),
+
                               SizedBox(height: isLargeScreen ? 32 : 24),
                             ],
-
-                            // Recommended Study Topics
-                            _buildRecommendedTopics(),
-
-                            SizedBox(height: isLargeScreen ? 32 : 24),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ).withHomeProtection();
-          },
+              ).withHomeProtection();
+            },
+          ),
         ),
       ),
     );
@@ -961,10 +975,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       int purchasedTokens = 0;
       try {
         final tokenState = context.read<TokenBloc>().state;
-        if (tokenState is TokenLoaded) {
-          userPlan = tokenState.tokenStatus.userPlan.name;
-          purchasedTokens = tokenState.tokenStatus.purchasedTokens;
+        if (tokenState is! TokenLoaded) {
+          // TokenBloc not loaded yet — skip now; the BlocListener on TokenBloc
+          // will re-trigger this check once the state is available.
+          return;
         }
+        userPlan = tokenState.tokenStatus.userPlan.name;
+        purchasedTokens = tokenState.tokenStatus.purchasedTokens;
       } catch (_) {}
 
       // Pass currentDate so the service handles daily resets internally.

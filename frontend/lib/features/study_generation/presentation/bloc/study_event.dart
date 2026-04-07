@@ -261,6 +261,11 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
   /// completion status even if the user navigates away.
   final String? pendingStudyId;
 
+  /// Optional topic ID from a learning path.
+  /// When present, the backend validates free generation eligibility server-side.
+  // TODO: Remove or update this when learning path token pricing is finalized.
+  final String? topicId;
+
   const GenerateStudyGuideStreamingRequested({
     required this.input,
     required this.inputType,
@@ -271,6 +276,7 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
     required this.language,
     this.studyMode = StudyMode.standard,
     this.pendingStudyId,
+    this.topicId,
   });
 
   @override
@@ -283,7 +289,8 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
         discipleLevel,
         language,
         studyMode,
-        pendingStudyId
+        pendingStudyId,
+        topicId,
       ];
 }
 
