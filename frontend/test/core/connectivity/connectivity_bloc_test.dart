@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -13,12 +15,17 @@ void main() {
 
   setUp(() {
     mockNetworkInfo = MockNetworkInfo();
+    // Stub connectivityStream to avoid MissingStubError in all tests
+    when(mockNetworkInfo.connectivityStream)
+        .thenAnswer((_) => const Stream.empty());
+    // Stub isConnected with a future that never completes so the async
+    // _checkInitialStatus() doesn't emit any extra states during tests.
+    when(mockNetworkInfo.isConnected)
+        .thenAnswer((_) => Completer<bool>().future);
   });
 
   group('ConnectivityBloc', () {
     test('initial state is ConnectivityInitial', () {
-      when(mockNetworkInfo.connectivityStream)
-          .thenAnswer((_) => const Stream.empty());
       final bloc = ConnectivityBloc(networkInfo: mockNetworkInfo);
       expect(bloc.state, isA<ConnectivityInitial>());
       bloc.close();
@@ -26,22 +33,14 @@ void main() {
 
     blocTest<ConnectivityBloc, ConnectivityState>(
       'emits ConnectivityOffline when status changed to offline',
-      build: () {
-        when(mockNetworkInfo.connectivityStream)
-            .thenAnswer((_) => const Stream.empty());
-        return ConnectivityBloc(networkInfo: mockNetworkInfo);
-      },
+      build: () => ConnectivityBloc(networkInfo: mockNetworkInfo),
       act: (bloc) => bloc.add(ConnectivityStatusChanged(isOnline: false)),
       expect: () => [isA<ConnectivityOffline>()],
     );
 
     blocTest<ConnectivityBloc, ConnectivityState>(
       'emits ConnectivityOnline when status changed to online',
-      build: () {
-        when(mockNetworkInfo.connectivityStream)
-            .thenAnswer((_) => const Stream.empty());
-        return ConnectivityBloc(networkInfo: mockNetworkInfo);
-      },
+      build: () => ConnectivityBloc(networkInfo: mockNetworkInfo),
       act: (bloc) => bloc.add(ConnectivityStatusChanged(isOnline: true)),
       expect: () => [isA<ConnectivityOnline>()],
     );
