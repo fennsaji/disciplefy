@@ -13,6 +13,9 @@ abstract class StudyLocalDataSource {
 
   /// Clears all cached study guides.
   Future<bool> clearCache();
+
+  /// Deletes a single cached study guide by its ID.
+  Future<bool> deleteStudyGuide(String id);
 }
 
 /// Implementation of StudyLocalDataSource using Hive.
@@ -95,6 +98,20 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
       final box = Hive.box(_studyGuidesBoxName);
       await box.clear();
 
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> deleteStudyGuide(String id) async {
+    try {
+      if (!Hive.isBoxOpen(_studyGuidesBoxName)) {
+        await Hive.openBox(_studyGuidesBoxName);
+      }
+      final box = Hive.box(_studyGuidesBoxName);
+      await box.delete(id);
       return true;
     } catch (e) {
       return false;
