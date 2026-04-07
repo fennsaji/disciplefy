@@ -728,6 +728,7 @@ Future<void> initializeDependencies() async {
       studyGenerationBloc: sl(),
       languagePreferenceService: sl(),
       learningPathsRepository: sl(),
+      downloadService: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );

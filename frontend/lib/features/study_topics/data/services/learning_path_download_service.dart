@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../../../core/error/failures.dart';
+import '../../../../core/error/token_failures.dart';
 import '../../../../core/services/android_download_notification_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../study_generation/data/datasources/study_local_data_source.dart';
@@ -122,6 +124,9 @@ class LearningPathDownloadService {
     return _cache[learningPathId];
   }
 
+  /// Returns all in-memory download models (synchronous; populated after init).
+  List<LearningPathDownloadModel> get cachedDownloads => _cache.values.toList();
+
   /// Returns all persisted download models (for the Settings screen).
   Future<List<LearningPathDownloadModel>> getAllDownloads() async {
     final box = await _box();
@@ -131,6 +136,173 @@ class LearningPathDownloadService {
   /// Deletes the persisted download record for [learningPathId].
   Future<void> deleteDownload(String learningPathId) async {
     await cancelDownload(learningPathId);
+  }
+
+  /// Adds a single topic to an existing download job and starts the loop.
+  ///
+  /// If the topic is already in the model and done, this is a no-op.
+  /// If it is failed or pending, it is reset to pending.
+  /// If it is not in the model at all, it is appended.
+  /// No-op while a download is already actively running.
+  Future<void> queueSingleTopic(
+      String pathId, LearningPathTopicDownload topic) async {
+    final model = getDownload(pathId);
+    if (model == null) return;
+    if (model.status == PathDownloadStatus.downloading ||
+        model.status == PathDownloadStatus.queued) {
+      return;
+    }
+
+    final existingIndex =
+        model.topics.indexWhere((t) => t.topicId == topic.topicId);
+
+    if (existingIndex >= 0 &&
+        model.topics[existingIndex].status == TopicDownloadStatus.done) {
+      return; // already downloaded
+    }
+
+    List<LearningPathTopicDownload> updatedTopics;
+    if (existingIndex >= 0) {
+      updatedTopics = List.from(model.topics);
+      updatedTopics[existingIndex] = model.topics[existingIndex]
+          .copyWith(status: TopicDownloadStatus.pending);
+    } else {
+      updatedTopics = [
+        ...model.topics,
+        topic.copyWith(status: TopicDownloadStatus.pending),
+      ];
+    }
+
+    final updated = model.copyWith(
+      topics: updatedTopics,
+      totalCount: updatedTopics.length,
+      status: PathDownloadStatus.downloading,
+    );
+    await _persist(updated);
+    _emit(updated);
+    unawaited(processDownloadLoop(updated));
+  }
+
+  /// Merges [newTopics] into an existing download model without overwriting
+  /// already-completed topics, then starts the loop for the new ones.
+  ///
+  /// Falls back to [startDownload] if no model exists for [pathId].
+  /// No-op if the path is already actively downloading or queued.
+  Future<void> queueAdditionalTopics({
+    required String pathId,
+    required String pathTitle,
+    required String language,
+    required List<LearningPathTopicDownload> newTopics,
+  }) async {
+    final existing = getDownload(pathId);
+    if (existing == null) {
+      await startDownload(
+        learningPathId: pathId,
+        learningPathTitle: pathTitle,
+        language: language,
+        topics: newTopics,
+      );
+      return;
+    }
+
+    if (existing.status == PathDownloadStatus.downloading ||
+        existing.status == PathDownloadStatus.queued) {
+      return;
+    }
+
+    // Merge: preserve done topics, reset/add new ones.
+    final updatedTopics = List<LearningPathTopicDownload>.from(existing.topics);
+    for (final topic in newTopics) {
+      final idx = updatedTopics.indexWhere((t) => t.topicId == topic.topicId);
+      if (idx >= 0) {
+        if (updatedTopics[idx].status != TopicDownloadStatus.done) {
+          updatedTopics[idx] =
+              topic.copyWith(status: TopicDownloadStatus.pending);
+        }
+      } else {
+        updatedTopics.add(topic.copyWith(status: TopicDownloadStatus.pending));
+      }
+    }
+
+    final updated = existing.copyWith(
+      topics: updatedTopics,
+      totalCount: updatedTopics.length,
+      status: PathDownloadStatus.downloading,
+    );
+    await _persist(updated);
+    _emit(updated);
+    unawaited(processDownloadLoop(updated));
+  }
+
+  /// Retries a single failed topic, resetting it to pending and resuming the loop.
+  ///
+  /// No-op if the path is already actively downloading or the topic is not failed.
+  Future<void> retryTopic(String pathId, String topicId) async {
+    final model = getDownload(pathId);
+    if (model == null) return;
+    if (model.status == PathDownloadStatus.downloading ||
+        model.status == PathDownloadStatus.queued) {
+      return;
+    }
+
+    final updatedTopics = model.topics
+        .map((t) =>
+            t.topicId == topicId && t.status == TopicDownloadStatus.failed
+                ? t.copyWith(status: TopicDownloadStatus.pending)
+                : t)
+        .toList();
+
+    final updated = model.copyWith(
+      topics: updatedTopics,
+      status: PathDownloadStatus.downloading,
+    );
+    await _persist(updated);
+    _emit(updated);
+    unawaited(processDownloadLoop(updated));
+  }
+
+  /// Removes a single downloaded guide from a path.
+  ///
+  /// Deletes the guide from local storage, marks the topic as pending in the
+  /// download model, and decrements [completedCount]. If no guides remain,
+  /// the entire path record is removed.
+  Future<void> deleteTopic(String pathId, String guideId) async {
+    await _localDataSource.deleteStudyGuide(guideId);
+
+    final box = await _box();
+    final raw = box.get(pathId);
+    if (raw == null) return;
+
+    final model = LearningPathDownloadModel.fromMap(raw);
+
+    final updatedTopics = model.topics.map((t) {
+      if (t.cachedGuideId == guideId) {
+        return LearningPathTopicDownload(
+          topicId: t.topicId,
+          topicTitle: t.topicTitle,
+          inputType: t.inputType,
+          description: t.description,
+          studyMode: t.studyMode,
+          status: TopicDownloadStatus.pending,
+        );
+      }
+      return t;
+    }).toList();
+
+    final newCompletedCount =
+        updatedTopics.where((t) => t.status == TopicDownloadStatus.done).length;
+
+    if (newCompletedCount == 0) {
+      await deleteDownload(pathId);
+      return;
+    }
+
+    final updated = model.copyWith(
+      topics: updatedTopics,
+      completedCount: newCompletedCount,
+    );
+    await _persist(updated);
+    _emit(updated);
   }
 
   // ---------------------------------------------------------------------------
@@ -167,15 +339,45 @@ class LearningPathDownloadService {
       await _persist(current);
       _emit(current);
 
-      final result = await _generateStudyGuide(
-        StudyGenerationParams(
-          input: topic.topicTitle,
-          inputType: topic.inputType,
-          topicDescription:
-              topic.description.isNotEmpty ? topic.description : null,
-          language: current.language,
-        ),
+      final params = StudyGenerationParams(
+        input: topic.topicTitle,
+        inputType: topic.inputType,
+        topicDescription:
+            topic.description.isNotEmpty ? topic.description : null,
+        language: current.language,
       );
+
+      var result = await _generateStudyGuide(params);
+
+      // On rate limit: wait the required duration and retry once.
+      if (result.isLeft()) {
+        final failure = result.fold((f) => f, (_) => null);
+        if (failure is RateLimitFailure) {
+          final wait = failure.retryAfter ?? const Duration(seconds: 60);
+          Logger.info(
+              '[DOWNLOAD] Rate limited — waiting ${wait.inSeconds}s before retry');
+          await Future<void>.delayed(wait);
+          result = await _generateStudyGuide(params);
+        }
+      }
+
+      // On insufficient tokens: pause the path and stop the loop.
+      if (result.isLeft()) {
+        final failure = result.fold((f) => f, (_) => null);
+        if (failure is InsufficientTokensFailure) {
+          Logger.info(
+              '[DOWNLOAD] Insufficient tokens — pausing download for ${current.learningPathId}');
+          _isPaused = true;
+          final paused = current.copyWith(
+            topics: updatedTopics,
+            status: PathDownloadStatus.paused,
+          );
+          await _persist(paused);
+          _emit(paused);
+          AndroidDownloadNotificationService.stopForeground();
+          return;
+        }
+      }
 
       result.fold(
         (failure) {
