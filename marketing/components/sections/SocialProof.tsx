@@ -31,9 +31,6 @@ export function SocialProof() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-[#D4930A] text-lg">★★★★★</span>
-          <span className="text-sm text-[var(--muted)]">4.9/5 · 1,200+ ratings</span>
-          <span className="text-[var(--border)]">·</span>
           <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/50">
             Theologically Sound · Orthodox Christian
           </span>

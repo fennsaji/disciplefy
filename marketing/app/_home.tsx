@@ -8,7 +8,6 @@ import { SocialProof } from "@/components/sections/SocialProof";
 import { Features } from "@/components/sections/Features";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { LanguageShowcase } from "@/components/sections/LanguageShowcase";
-import { Testimonials } from "@/components/sections/Testimonials";
 import { PricingPreview } from "@/components/sections/PricingPreview";
 import { DownloadSection } from "@/components/sections/DownloadSection";
 import { DownloadCTA } from "@/components/sections/DownloadCTA";
@@ -26,7 +25,6 @@ export function HomePage({ posts = [] }: { posts?: PostMeta[] }) {
         <Features />
         <HowItWorks />
         <LanguageShowcase />
-        <Testimonials />
         <PricingPreview />
         <HomeBlogPreview posts={posts} />
         <DownloadCTA />
