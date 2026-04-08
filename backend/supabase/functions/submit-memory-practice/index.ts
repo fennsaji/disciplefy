@@ -776,8 +776,10 @@ async function handleSubmitMemoryPractice(
   const MEDIUM_MODES = ['cloze', 'word_bank', 'word_scramble']
   const skipSM2 = EASY_MODES.includes(body.practice_mode) || MEDIUM_MODES.includes(body.practice_mode)
 
-  // Calculate new SM-2 state (or keep current state if already reviewed today or non-hard mode)
-  const sm2Result: SM2Result = (alreadyReviewedToday || skipSM2)
+  // Calculate new SM-2 state (or keep current state if already reviewed today).
+  // Easy/medium modes still run SM-2 to advance interval_days and repetitions —
+  // they just don't write ease_factor so practice difficulty is preserved.
+  const sm2Result: SM2Result = alreadyReviewedToday
     ? {
         easeFactor: memoryVerse.ease_factor,
         interval: memoryVerse.interval_days,
@@ -867,18 +869,14 @@ async function handleSubmitMemoryPractice(
     savedNextReviewDate = sm2Result.nextReviewDate
     savedRepetitions = sm2Result.repetitions
   } else if (!alreadyReviewedToday && skipSM2) {
-    // Easy/medium modes: advance next_review_date by the current interval and
-    // increment repetitions so the card shows progress — but do NOT touch
-    // ease_factor or interval_days so SM-2 scheduling difficulty is preserved.
-    const newRepetitions = memoryVerse.repetitions + 1
-    const nextDate = new Date()
-    nextDate.setDate(nextDate.getDate() + Math.max(1, memoryVerse.interval_days))
-    const nextReviewDateStr = nextDate.toISOString()
-
-    verseUpdate.repetitions = newRepetitions
-    verseUpdate.next_review_date = nextReviewDateStr
-    savedNextReviewDate = nextReviewDateStr
-    savedRepetitions = newRepetitions
+    // Easy/medium modes: advance interval and repetitions using SM-2 scheduling so
+    // the review date actually progresses — but do NOT write ease_factor so
+    // practice difficulty is preserved (only hard modes can change ease_factor).
+    verseUpdate.interval_days = sm2Result.interval
+    verseUpdate.repetitions = sm2Result.repetitions
+    verseUpdate.next_review_date = sm2Result.nextReviewDate
+    savedNextReviewDate = sm2Result.nextReviewDate
+    savedRepetitions = sm2Result.repetitions
   }
   const { error: updateError } = await services.supabaseServiceClient
     .from('memory_verses')
