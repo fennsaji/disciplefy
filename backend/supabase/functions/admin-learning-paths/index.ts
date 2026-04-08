@@ -195,9 +195,8 @@ serve(async (req) => {
       )
     }
   } catch (error: unknown) {
-    console.error('Admin learning paths error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error('[admin-learning-paths] Unhandled error:', error)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

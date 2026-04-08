@@ -98,9 +98,8 @@ serve(async (req) => {
       )
     }
   } catch (error: unknown) {
-    console.error('Admin study guides error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error('[admin-study-guides] Unhandled error:', error)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

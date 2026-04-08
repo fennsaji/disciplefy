@@ -26,7 +26,7 @@ class StorageRepositoryImpl implements StorageRepository {
   Future<void> clearSecureStorage() async {
     try {
       await _secureStorage.deleteAll();
-      Logger.error('🗄️ [STORAGE REPO] ✅ Secure storage cleared');
+      Logger.debug('🗄️ [STORAGE REPO] ✅ Secure storage cleared');
     } catch (e) {
       Logger.debug('🗄️ [STORAGE REPO] ❌ Failed to clear secure storage: $e');
       rethrow;
@@ -54,7 +54,7 @@ class StorageRepositoryImpl implements StorageRepository {
       await box.close();
       await Hive.deleteBoxFromDisk(boxName);
 
-      Logger.error(
+      Logger.debug(
           '🗄️ [STORAGE REPO] ✅ Cleared Hive box: $boxName ($itemCount items)');
     } catch (e) {
       Logger.debug('🗄️ [STORAGE REPO] ❌ Error clearing Hive box $boxName: $e');
@@ -83,7 +83,7 @@ class StorageRepositoryImpl implements StorageRepository {
           }
         }
 
-        Logger.error(
+        Logger.debug(
             '🗄️ [STORAGE REPO] ✅ Cleared $clearedKeys user keys from app_settings');
       }
     } catch (e) {
@@ -98,7 +98,7 @@ class StorageRepositoryImpl implements StorageRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      Logger.error('🗄️ [STORAGE REPO] ✅ SharedPreferences cleared');
+      Logger.debug('🗄️ [STORAGE REPO] ✅ SharedPreferences cleared');
     } catch (e) {
       Logger.debug(
           '🗄️ [STORAGE REPO] ❌ Failed to clear SharedPreferences: $e');

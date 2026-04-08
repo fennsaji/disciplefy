@@ -4,20 +4,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/logger.dart';
 
-/// Robust hybrid storage for Android - SharedPreferences PRIMARY + SecureStorage backup
+/// Robust hybrid storage for Android - SecureStorage PRIMARY + SharedPreferences fallback
 ///
-/// Problem: Android Keystore can be cleared by OS, causing unexpected logouts.
-/// flutter_secure_storage v10+ has ResetOnError=true by default, which silently
-/// deletes data when decryption fails (e.g., after Keystore clear).
+/// SecureStorage (Android Keystore-backed) is the primary store because it
+/// encrypts session data at rest. SharedPreferences is kept as a read-only
+/// migration source and last-resort degraded fallback only.
 ///
-/// Solution: Use SharedPreferences as PRIMARY storage (more reliable on Android)
-/// and SecureStorage as encrypted backup. This ensures session persistence even
-/// when Android clears the Keystore.
+/// On session write:
+///   1. SecureStorage is written first (primary).
+///   2. If SecureStorage fails, SharedPreferences is written with a warning
+///      (degraded fallback — plaintext on Android).
+///   3. If both fail, an exception is thrown so the caller is aware.
 ///
-/// Key changes from previous implementation:
-/// 1. SharedPreferences is read FIRST (primary), SecureStorage is backup
-/// 2. Both storages are kept in sync during reads and writes
-/// 3. Better error handling with explicit recovery logic
+/// On session read:
+///   1. SecureStorage is read first.
+///   2. If empty/unavailable, SharedPreferences is checked for migration data
+///      and, if found, the value is migrated back into SecureStorage.
 class AndroidHybridStorage extends LocalStorage {
   static const String _secureKey = 'supabase.session';
   static const String _prefsKey = 'supabase.session.primary';
@@ -34,8 +36,6 @@ class AndroidHybridStorage extends LocalStorage {
   /// Create instance - must be called in main() after WidgetsFlutterBinding
   static Future<AndroidHybridStorage> create() async {
     final prefs = await SharedPreferences.getInstance();
-    // Note: encryptedSharedPreferences is deprecated in v10+ and always enabled
-    // ResetOnError is also true by default, which is why we use SharedPrefs as primary
     const secure = FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
     );
@@ -46,7 +46,7 @@ class AndroidHybridStorage extends LocalStorage {
     await storage._migrateOldBackupKey();
 
     Logger.info(
-        '✅ [ANDROID STORAGE] Hybrid storage initialized (SharedPrefs primary)');
+        '✅ [ANDROID STORAGE] Hybrid storage initialized (SecureStorage primary)');
 
     return storage;
   }
@@ -80,19 +80,15 @@ class AndroidHybridStorage extends LocalStorage {
     Logger.info('✅ [ANDROID STORAGE] Storage ready and synced');
   }
 
-  /// Sync both storages - if one has data and other doesn't, copy to the empty one
+  /// Sync both storages - SecureStorage is the source of truth.
+  /// If SecureStorage has data and SharedPrefs doesn't, no action is needed
+  /// (SharedPrefs is not required). If SharedPrefs has data and SecureStorage
+  /// is empty, migrate from SharedPrefs into SecureStorage.
   Future<void> _syncStorages() async {
     String? prefsSession;
     String? secureSession;
 
-    // Read from SharedPreferences (primary)
-    try {
-      prefsSession = _prefs.getString(_prefsKey);
-    } catch (e) {
-      Logger.warning('⚠️  [ANDROID STORAGE] Sync: SharedPrefs read failed: $e');
-    }
-
-    // Read from SecureStorage (backup)
+    // Read from SecureStorage (primary)
     try {
       secureSession = await _secure.read(key: _secureKey);
     } catch (e) {
@@ -100,135 +96,122 @@ class AndroidHybridStorage extends LocalStorage {
           '⚠️  [ANDROID STORAGE] Sync: SecureStorage read failed: $e');
     }
 
+    // Read from SharedPreferences (migration source / fallback)
+    try {
+      prefsSession = _prefs.getString(_prefsKey);
+    } catch (e) {
+      Logger.warning('⚠️  [ANDROID STORAGE] Sync: SharedPrefs read failed: $e');
+    }
+
     final hasPrefs = prefsSession != null && prefsSession.isNotEmpty;
     final hasSecure = secureSession != null && secureSession.isNotEmpty;
 
-    // Sync logic: ensure both have the same data
-    if (hasPrefs && !hasSecure) {
-      // SharedPrefs has data, SecureStorage doesn't - restore to SecureStorage
+    if (!hasSecure && hasPrefs) {
+      // SecureStorage is empty but SharedPrefs has data — migrate to SecureStorage
       try {
         await _secure.write(key: _secureKey, value: prefsSession);
-        Logger.warning(
-            '✅ [ANDROID STORAGE] Sync: Restored SecureStorage from SharedPrefs');
+        Logger.info(
+            '✅ [ANDROID STORAGE] Sync: Migrated session from SharedPrefs to SecureStorage');
       } catch (e) {
         Logger.warning(
-            '⚠️  [ANDROID STORAGE] Sync: Could not restore SecureStorage: $e');
-      }
-    } else if (!hasPrefs && hasSecure) {
-      // SecureStorage has data, SharedPrefs doesn't - copy to SharedPrefs
-      try {
-        await _prefs.setString(_prefsKey, secureSession);
-        Logger.warning(
-            '✅ [ANDROID STORAGE] Sync: Copied SecureStorage to SharedPrefs');
-      } catch (e) {
-        Logger.warning(
-            '⚠️  [ANDROID STORAGE] Sync: Could not copy to SharedPrefs: $e');
+            '⚠️  [ANDROID STORAGE] Sync: Could not migrate to SecureStorage: $e');
       }
     }
+    // If SecureStorage has data, it is already the source of truth — nothing to do.
   }
 
   @override
   Future<void> persistSession(String sessionString) async {
-    bool prefsSuccess = false;
     bool secureSuccess = false;
 
-    // Write to SharedPreferences FIRST (primary - more reliable)
-    try {
-      await _prefs.setString(_prefsKey, sessionString);
-      prefsSuccess = true;
-      Logger.warning(
-          '✅ [ANDROID STORAGE] Saved to SharedPreferences (primary)');
-    } catch (e) {
-      Logger.debug('⚠️  [ANDROID STORAGE] SharedPreferences write failed: $e');
-    }
-
-    // Write to SecureStorage (backup - may fail due to Keystore issues)
+    // Write to SecureStorage FIRST (primary — encrypted at rest)
     try {
       await _secure.write(key: _secureKey, value: sessionString);
       secureSuccess = true;
-      Logger.warning('✅ [ANDROID STORAGE] Saved to SecureStorage (backup)');
+      Logger.info('✅ [ANDROID STORAGE] Saved to SecureStorage (primary)');
     } catch (e) {
-      Logger.debug('⚠️  [ANDROID STORAGE] SecureStorage write failed: $e');
+      Logger.warning('⚠️  [ANDROID STORAGE] SecureStorage write failed: $e');
     }
 
-    // At least one storage must succeed
-    if (!prefsSuccess && !secureSuccess) {
-      Logger.debug('🚨 [ANDROID STORAGE] CRITICAL: Both storages failed!');
+    if (secureSuccess) {
+      return;
     }
+
+    // SecureStorage failed — fall back to SharedPreferences as a degraded path.
+    // WARNING: SharedPreferences stores data in plaintext on Android.
+    Logger.warning(
+        '⚠️  [ANDROID STORAGE] DEGRADED FALLBACK: Writing session to SharedPreferences (plaintext). SecureStorage unavailable.');
+    try {
+      await _prefs.setString(_prefsKey, sessionString);
+      Logger.warning(
+          '⚠️  [ANDROID STORAGE] Saved to SharedPreferences (degraded fallback — plaintext)');
+      return;
+    } catch (e) {
+      Logger.error(
+          '🚨 [ANDROID STORAGE] CRITICAL: SharedPreferences write also failed: $e');
+    }
+
+    // Both storages failed — throw so the caller knows the session was not persisted.
+    throw Exception(
+        '[ANDROID STORAGE] Failed to persist session: both SecureStorage and SharedPreferences writes failed.');
   }
 
-  /// Read session with SharedPreferences as PRIMARY source
+  /// Read session with SecureStorage as PRIMARY source.
+  /// Falls back to SharedPreferences only when SecureStorage is empty/unavailable,
+  /// and migrates the value back into SecureStorage when possible.
   Future<String?> _readSession() async {
-    // Try SharedPreferences FIRST (primary - more reliable on Android)
-    try {
-      final session = _prefs.getString(_prefsKey);
-      if (session != null && session.isNotEmpty) {
-        Logger.info('✅ [ANDROID STORAGE] Found in SharedPreferences (primary)');
-        // Ensure SecureStorage is synced (background, non-blocking intent)
-        _syncSecureStorageBackground(session);
-        return session;
-      }
-    } catch (e) {
-      Logger.warning('⚠️  [ANDROID STORAGE] SharedPreferences read failed: $e');
-    }
-
-    // Fallback to SecureStorage (may have data if SharedPrefs was cleared)
+    // Try SecureStorage FIRST (primary — encrypted)
     try {
       final session = await _secure.read(key: _secureKey);
       if (session != null && session.isNotEmpty) {
-        Logger.info(
-            '✅ [ANDROID STORAGE] Recovered from SecureStorage (backup)');
-        // Restore to SharedPreferences for next time
+        Logger.info('✅ [ANDROID STORAGE] Found in SecureStorage (primary)');
+        return session;
+      }
+    } catch (e) {
+      Logger.warning('⚠️  [ANDROID STORAGE] SecureStorage read failed: $e');
+    }
+
+    // SecureStorage is empty or failed — check SharedPreferences for migration data
+    try {
+      final session = _prefs.getString(_prefsKey);
+      if (session != null && session.isNotEmpty) {
+        Logger.warning(
+            '⚠️  [ANDROID STORAGE] Fell back to SharedPreferences (plaintext). Attempting migration to SecureStorage...');
+        // Attempt to migrate back into SecureStorage
         try {
-          await _prefs.setString(_prefsKey, session);
-          Logger.warning('✅ [ANDROID STORAGE] Restored to SharedPreferences');
+          await _secure.write(key: _secureKey, value: session);
+          Logger.info(
+              '✅ [ANDROID STORAGE] Migrated session from SharedPrefs back to SecureStorage');
         } catch (e) {
-          Logger.debug(
-              '⚠️  [ANDROID STORAGE] Could not restore to SharedPrefs: $e');
+          Logger.warning(
+              '⚠️  [ANDROID STORAGE] Could not migrate back to SecureStorage: $e');
         }
         return session;
       }
     } catch (e) {
-      Logger.error('⚠️  [ANDROID STORAGE] SecureStorage read failed: $e');
+      Logger.error('⚠️  [ANDROID STORAGE] SharedPreferences read failed: $e');
     }
 
     Logger.debug('❌ [ANDROID STORAGE] No session found in any storage');
     return null;
   }
 
-  /// Background sync to SecureStorage (non-blocking)
-  void _syncSecureStorageBackground(String session) {
-    // Fire-and-forget sync to SecureStorage
-    Future.microtask(() async {
-      try {
-        final existing = await _secure.read(key: _secureKey);
-        if (existing != session) {
-          await _secure.write(key: _secureKey, value: session);
-          Logger.warning(
-              '✅ [ANDROID STORAGE] Background sync to SecureStorage complete');
-        }
-      } catch (e) {
-        // Silently fail - SecureStorage is just backup
-        Logger.debug('⚠️  [ANDROID STORAGE] Background sync failed: $e');
-      }
-    });
-  }
-
   @override
   Future<void> removePersistedSession() async {
     // Remove from both storages
     try {
-      await _prefs.remove(_prefsKey);
-      Logger.warning('✅ [ANDROID STORAGE] Removed from SharedPreferences');
+      await _secure.delete(key: _secureKey);
+      Logger.info('✅ [ANDROID STORAGE] Removed from SecureStorage');
     } catch (e) {
-      Logger.debug('⚠️  [ANDROID STORAGE] SharedPreferences delete failed: $e');
+      Logger.warning('⚠️  [ANDROID STORAGE] SecureStorage delete failed: $e');
     }
 
     try {
-      await _secure.delete(key: _secureKey);
-      Logger.warning('✅ [ANDROID STORAGE] Removed from SecureStorage');
+      await _prefs.remove(_prefsKey);
+      Logger.info('✅ [ANDROID STORAGE] Removed from SharedPreferences');
     } catch (e) {
-      Logger.debug('⚠️  [ANDROID STORAGE] SecureStorage delete failed: $e');
+      Logger.warning(
+          '⚠️  [ANDROID STORAGE] SharedPreferences delete failed: $e');
     }
 
     Logger.info('✅ [ANDROID STORAGE] Session removed from all storages');

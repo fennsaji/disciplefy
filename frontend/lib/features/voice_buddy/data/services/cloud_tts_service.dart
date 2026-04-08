@@ -878,6 +878,25 @@ class CloudTTSService {
     }
   }
 
+  /// Seek to a specific position in the current audio.
+  Future<void> seekTo(Duration position) async {
+    try {
+      await _audioPlayer?.seek(position);
+    } catch (e) {
+      Logger.error('🔊 [CLOUD TTS] Seek error: $e');
+    }
+  }
+
+  /// Get the actual duration of the currently loaded audio.
+  Future<Duration?> getDuration() async {
+    try {
+      return await _audioPlayer?.getDuration();
+    } catch (e) {
+      Logger.debug('🔊 [CLOUD TTS] getDuration error: $e');
+      return null;
+    }
+  }
+
   /// Dispose of resources.
   void dispose() {
     _currentCancelToken?.cancel('Dispose');

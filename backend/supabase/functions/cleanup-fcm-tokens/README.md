@@ -168,7 +168,7 @@ Set these in GitHub repository settings:
 
 ```bash
 # Set environment variables
-export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_URL="$SUPABASE_URL"
 export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
 # Run the function locally

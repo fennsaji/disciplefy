@@ -81,6 +81,7 @@ class _TtsControlButtonState extends State<TtsControlButton> {
     switch (state.status) {
       case TtsStatus.idle:
       case TtsStatus.error:
+      case TtsStatus.completed:
         icon = Icons.headphones;
         label = context.tr(TranslationKeys.studyGuideListen);
         isLoading = false;

@@ -437,7 +437,7 @@ alerts:
 **1. Environment Preparation:**
 ```bash
 # Set up test environment variables
-export SUPABASE_URL="https://[PROJECT-URL].supabase.co"
+export SUPABASE_URL="$SUPABASE_URL"
 export SUPABASE_ANON_KEY="[ANON-KEY]"
 export TEST_DURATION="30m"
 export MAX_USERS="1000"

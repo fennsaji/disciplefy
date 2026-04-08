@@ -3,12 +3,19 @@ set -e
 
 echo "🏗️  Building Flutter web for production..."
 
-# Load production environment variables
-export SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co"
-export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6ZGN3eHZ5anV4amd6cG51a3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MDY3MjMsImV4cCI6MjA2NzM4MjcyM30.FRwVStEigv5hh_-I8ct3QcY_GswCKWcEMCtkjXvq8FA"
-export APP_URL="https://app.disciplefy.in"
-export GOOGLE_CLIENT_ID="16888340359-2dhcijda2k4c3m71vtnghnghkbp3jvif.apps.googleusercontent.com"
-export FLUTTER_ENV="production"
+# Load production environment variables from gitignored .env.production
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env.production"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "❌ Error: $ENV_FILE not found. Copy .env.example to .env.production and fill in values."
+  exit 1
+fi
+
+set -a
+# shellcheck source=../.env.production
+source "$ENV_FILE"
+set +a
 
 # Clean previous build
 flutter clean

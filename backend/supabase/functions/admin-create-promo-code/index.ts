@@ -168,11 +168,10 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error in admin-create-promo-code:', error)
+    console.error('[admin-create-promo-code] Unhandled error:', error)
     return new Response(
       JSON.stringify({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Internal server error'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

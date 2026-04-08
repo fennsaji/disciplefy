@@ -16,6 +16,18 @@ migrate_working_dir/
 .env
 .env.local
 .env.*.local
+.env.*
+.env.production
+.env.staging
+.env.android
+
+# Android signing credentials (SECURITY: Never commit!)
+android/key.properties
+android/app/upload-keystore.jks
+android/app/*.jks
+android/app/*.keystore
+google-services.json
+GoogleService-Info.plist
 
 # IntelliJ related
 *.iml

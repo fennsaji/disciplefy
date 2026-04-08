@@ -83,7 +83,7 @@ class AuthStorageService {
           _secureStorage.write(key: entry.key, value: entry.value),
       ]);
 
-      Logger.error(
+      Logger.debug(
           '🔐 [AUTH STORAGE] ✅ Stored in FlutterSecureStorage atomically');
     } catch (e) {
       Logger.debug('🔐 [AUTH STORAGE] ❌ FlutterSecureStorage write failed: $e');
@@ -173,7 +173,7 @@ class AuthStorageService {
       // Router guards will fall back to checking Supabase session directly
     }
 
-    Logger.error('🔐 [AUTH STORAGE] ✅ Atomic auth data storage completed');
+    Logger.debug('🔐 [AUTH STORAGE] ✅ Atomic auth data storage completed');
   }
 
   /// Clears secure storage data in case of partial write failure
@@ -213,7 +213,7 @@ class AuthStorageService {
   Future<void> clearSecureStorage() async {
     try {
       await _secureStorage.deleteAll();
-      Logger.error('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
+      Logger.debug('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
     } catch (e) {
       Logger.debug(
           '🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');

@@ -1,0 +1,17 @@
+# Environment variables (SECURITY: Never commit!)
+.env
+.env.*
+.env.local
+.env.production
+.env.staging
+.env.dev
+
+# Rust build artifacts
+/target/
+
+# Credentials
+*.pem
+*.key
+*.p12
+*.jks
+*service-account*.json

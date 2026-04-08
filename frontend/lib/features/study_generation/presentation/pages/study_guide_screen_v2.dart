@@ -364,6 +364,32 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (!kIsWeb) _setupScreenshotDetection();
     _triggerWalkthroughIfNeeded();
     _notesFocusNode.addListener(_onNotesFocusChanged);
+
+    // Listen for TTS section completions to auto-mark the guide as completed
+    // once the user has listened through the interpretation section.
+    sl<StudyGuideTTSService>().state.addListener(_onTtsStateChanged);
+  }
+
+  /// Marks the study guide as completed when TTS finishes the interpretation
+  /// section (or beyond).
+  void _onTtsStateChanged() {
+    final ttsState = sl<StudyGuideTTSService>().state.value;
+    final completed = ttsState.lastCompletedSection;
+    if (completed == null || _completionMarked) return;
+
+    // These sections are at or past interpretation — trigger completion.
+    const completionTriggers = {
+      StudyGuideSection.interpretation,
+      StudyGuideSection.relatedVerses,
+      StudyGuideSection.discussionQuestions,
+      StudyGuideSection.prayerPoints,
+    };
+
+    if (completionTriggers.contains(completed)) {
+      Logger.debug(
+          '🔊 [TTS→COMPLETION] Interpretation+ section completed via TTS — marking guide done');
+      _markStudyGuideComplete();
+    }
   }
 
   void _onNotesFocusChanged() {
@@ -714,6 +740,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   void dispose() {
     // Unsubscribe from route observer
     appRouteObserver.unsubscribe(this);
+
+    // Remove TTS state listener
+    sl<StudyGuideTTSService>().state.removeListener(_onTtsStateChanged);
 
     // Stop TTS when navigating away
     sl<StudyGuideTTSService>().stop();
@@ -3948,7 +3977,8 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                               // Load and start reading the study guide if not already playing
                               final status = ttsService.state.value.status;
                               if (status == TtsStatus.idle ||
-                                  status == TtsStatus.error) {
+                                  status == TtsStatus.error ||
+                                  status == TtsStatus.completed) {
                                 ttsService.startReading(_currentStudyGuide!,
                                     mode: widget.studyMode);
                               }

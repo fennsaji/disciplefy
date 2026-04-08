@@ -42,6 +42,7 @@ enum TtsStatus {
   loading,
   playing,
   paused,
+  completed,
   error,
 }
 
@@ -62,6 +63,10 @@ class StudyGuideTtsState {
   /// Elapsed time in current section in seconds
   final int elapsedSeconds;
 
+  /// The most recently *finished* section type (null until a section completes).
+  /// Useful for triggering side-effects like study-guide completion.
+  final StudyGuideSection? lastCompletedSection;
+
   const StudyGuideTtsState({
     this.status = TtsStatus.idle,
     this.currentSectionIndex = 0,
@@ -71,6 +76,7 @@ class StudyGuideTtsState {
     this.sectionProgress = 0.0,
     this.estimatedDurationSeconds = 0,
     this.elapsedSeconds = 0,
+    this.lastCompletedSection,
   });
 
   StudyGuideTtsState copyWith({
@@ -82,6 +88,7 @@ class StudyGuideTtsState {
     double? sectionProgress,
     int? estimatedDurationSeconds,
     int? elapsedSeconds,
+    StudyGuideSection? lastCompletedSection,
   }) {
     return StudyGuideTtsState(
       status: status ?? this.status,
@@ -93,6 +100,7 @@ class StudyGuideTtsState {
       estimatedDurationSeconds:
           estimatedDurationSeconds ?? this.estimatedDurationSeconds,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      lastCompletedSection: lastCompletedSection ?? this.lastCompletedSection,
     );
   }
 
@@ -281,6 +289,9 @@ class StudyGuideTTSService {
   /// Whether we're intentionally stopping (to avoid error callbacks).
   bool _isIntentionallyStopping = false;
 
+  /// Elapsed seconds saved when pausing, used to restore timer on resume/seek.
+  int _pausedElapsedSeconds = 0;
+
   /// Timer for updating progress within a section.
   Timer? _progressTimer;
 
@@ -325,9 +336,12 @@ class StudyGuideTTSService {
   }
 
   /// Start the progress timer for tracking playback position.
-  void _startProgressTimer() {
+  ///
+  /// Pass [elapsedOffset] to continue from a saved position (e.g. after pause/seek).
+  void _startProgressTimer({int elapsedOffset = 0}) {
     _stopProgressTimer();
-    _sectionStartTime = DateTime.now();
+    _sectionStartTime =
+        DateTime.now().subtract(Duration(seconds: elapsedOffset));
 
     _progressTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
       if (state.value.status != TtsStatus.playing) return;
@@ -484,7 +498,8 @@ class StudyGuideTTSService {
 
     // Stop any current playback
     if (state.value.status == TtsStatus.playing ||
-        state.value.status == TtsStatus.paused) {
+        state.value.status == TtsStatus.paused ||
+        state.value.status == TtsStatus.completed) {
       await stop();
     }
 
@@ -501,6 +516,9 @@ class StudyGuideTTSService {
     // Initialize TTS if needed
     await _ttsService.initialize();
 
+    // Clear stop flag so auto-advance works (stop() above sets it to true)
+    _isIntentionallyStopping = false;
+
     // Start reading first section
     await _readCurrentSection();
   }
@@ -508,19 +526,19 @@ class StudyGuideTTSService {
   /// Read the current section.
   Future<void> _readCurrentSection() async {
     if (_currentSectionIndex >= _sections.length) {
-      // All sections read
+      // All sections read — keep guide & sections so the bottom sheet still
+      // shows the section list; only explicit stop() clears them.
+      final lastSection = _sections.isNotEmpty ? _sections.last.section : null;
       Logger.debug('🔊 [StudyGuideTTS] All sections completed');
       _notificationService.dismissNotification();
       _resetProgress();
       state.value = state.value.copyWith(
-        status: TtsStatus.idle,
-        currentSectionIndex: 0,
-        currentSectionName: '',
-        sectionProgress: 0.0,
+        status: TtsStatus.completed,
+        sectionProgress: 1.0,
         estimatedDurationSeconds: 0,
         elapsedSeconds: 0,
+        lastCompletedSection: lastSection,
       );
-      _currentGuide = null;
       return;
     }
 
@@ -544,6 +562,9 @@ class StudyGuideTTSService {
 
     // Show/update ongoing notification so user can return to app from lock screen
     _notificationService.updateSection(section.title);
+
+    // Reset saved pause position for the new section
+    _pausedElapsedSeconds = 0;
 
     // Start progress tracking
     _startProgressTimer();
@@ -580,6 +601,12 @@ class StudyGuideTTSService {
 
         // Only advance if we're still in playing state
         if (currentStatus == TtsStatus.playing) {
+          // Record which section just finished
+          final finishedSection = _sections[_currentSectionIndex].section;
+          state.value = state.value.copyWith(
+            lastCompletedSection: finishedSection,
+          );
+
           // Move to next section
           _currentSectionIndex++;
           Logger.debug(
@@ -614,33 +641,66 @@ class StudyGuideTTSService {
       await pause();
     } else if (currentStatus == TtsStatus.paused) {
       await resume();
-    } else if (currentStatus == TtsStatus.idle && _currentGuide != null) {
-      // Resume from where we left off or start fresh
+    } else if ((currentStatus == TtsStatus.idle ||
+            currentStatus == TtsStatus.completed) &&
+        _currentGuide != null) {
+      // After completion, restart from the beginning
+      if (currentStatus == TtsStatus.completed) {
+        _currentSectionIndex = 0;
+      }
+      _isIntentionallyStopping = false;
       await _readCurrentSection();
     }
   }
 
-  /// Pause playback.
+  /// Pause playback (preserves audio position — does NOT restart section on resume).
   Future<void> pause() async {
     Logger.debug('🔊 [StudyGuideTTS] Pausing');
-    // Stop progress timer
     _stopProgressTimer();
-    // Set flag and state BEFORE stopping to prevent race conditions
-    // The completion callback checks both the flag and state
-    _isIntentionallyStopping = true;
+    // Save elapsed position so resume/seek can continue from here
+    _pausedElapsedSeconds = state.value.elapsedSeconds;
     state.value = state.value.copyWith(status: TtsStatus.paused);
-    await _ttsService.stop();
+    await _ttsService.pauseAudio();
   }
 
-  /// Resume playback.
+  /// Resume playback from where it was paused.
   Future<void> resume() async {
     Logger.debug(
-        '🔊 [StudyGuideTTS] Resuming from section $_currentSectionIndex');
-    // Clear the intentional stop flag since we're intentionally resuming
-    _isIntentionallyStopping = false;
-    // Note: _readCurrentSection will restart progress from 0
-    // This is acceptable since we can't seek within TTS audio
-    await _readCurrentSection();
+        '🔊 [StudyGuideTTS] Resuming section $_currentSectionIndex at ${_pausedElapsedSeconds}s');
+    state.value = state.value.copyWith(status: TtsStatus.playing);
+    // Restart timer from the saved elapsed offset so the display is accurate
+    _startProgressTimer(elapsedOffset: _pausedElapsedSeconds);
+    await _ttsService.resumeAudio();
+  }
+
+  /// Seek to a fractional position (0.0–1.0) within the current section.
+  ///
+  /// Uses the real AudioPlayer duration (not the WPM estimate) for accurate
+  /// seeking. Falls back to estimated duration if the real one is unavailable.
+  Future<void> seekToFraction(double fraction) async {
+    final clampedFraction = fraction.clamp(0.0, 1.0);
+    final targetSeconds = (_currentSectionDuration * clampedFraction).round();
+    Logger.debug(
+        '🔊 [StudyGuideTTS] Seeking to ${(clampedFraction * 100).round()}% (${targetSeconds}s est)');
+
+    // Save position so that resume() restarts the progress timer from here
+    _pausedElapsedSeconds = targetSeconds;
+
+    // Update UI immediately
+    state.value = state.value.copyWith(
+      sectionProgress: clampedFraction,
+      elapsedSeconds: targetSeconds,
+    );
+
+    // Seek using the *real* audio duration so the position is accurate
+    final realDuration = await _ttsService.getDuration();
+    if (realDuration != null && realDuration.inMilliseconds > 0) {
+      final targetMs = (realDuration.inMilliseconds * clampedFraction).round();
+      await _ttsService.seekTo(Duration(milliseconds: targetMs));
+    } else {
+      // Fallback: seek using estimated seconds
+      await _ttsService.seekTo(Duration(seconds: targetSeconds));
+    }
   }
 
   /// Stop playback completely.
@@ -673,6 +733,8 @@ class StudyGuideTTSService {
     await _ttsService.stop();
 
     _currentSectionIndex = index;
+    // Clear stop flag so auto-advance continues after the manual skip
+    _isIntentionallyStopping = false;
     await _readCurrentSection();
   }
 
