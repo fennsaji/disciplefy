@@ -501,6 +501,9 @@ class StudyGuideTTSService {
     // Initialize TTS if needed
     await _ttsService.initialize();
 
+    // Clear stop flag so auto-advance works (stop() above sets it to true)
+    _isIntentionallyStopping = false;
+
     // Start reading first section
     await _readCurrentSection();
   }
@@ -673,6 +676,8 @@ class StudyGuideTTSService {
     await _ttsService.stop();
 
     _currentSectionIndex = index;
+    // Clear stop flag so auto-advance continues after the manual skip
+    _isIntentionallyStopping = false;
     await _readCurrentSection();
   }
 
