@@ -677,6 +677,39 @@ class TTSService {
     _currentState = TtsState.paused;
   }
 
+  /// Pause audio playback while preserving position (cloud TTS: true pause).
+  Future<void> pauseAudio() async {
+    if (_cloudTtsAvailable && _useCloudTts) {
+      await _cloudTts.pause();
+    } else {
+      await _flutterTts.pause();
+    }
+    _currentState = TtsState.paused;
+  }
+
+  /// Resume paused audio from the preserved position.
+  Future<void> resumeAudio() async {
+    if (_cloudTtsAvailable && _useCloudTts) {
+      await _cloudTts.resume();
+    }
+    _currentState = TtsState.playing;
+  }
+
+  /// Seek to a specific position in the current cloud TTS audio.
+  Future<void> seekTo(Duration position) async {
+    if (_cloudTtsAvailable && _useCloudTts) {
+      await _cloudTts.seekTo(position);
+    }
+  }
+
+  /// Get the actual duration of the currently loaded audio.
+  Future<Duration?> getDuration() async {
+    if (_cloudTtsAvailable && _useCloudTts) {
+      return _cloudTts.getDuration();
+    }
+    return null;
+  }
+
   // ============================================================
   // STREAMING TTS METHODS
   // ============================================================

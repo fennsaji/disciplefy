@@ -20,6 +20,10 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
   // Available speed options
   static const List<double> _speedOptions = [0.75, 1.0, 1.25, 1.5];
 
+  // Scrubber state — true while the user is dragging the seek slider
+  bool _isScrubbing = false;
+  double _scrubValue = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -280,20 +284,42 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Section progress bar (within current section)
+          const SizedBox(height: 4),
+          // Seek slider for scrubbing within the current section
           Semantics(
             label: 'Section playback progress',
-            value: '${(sectionProgress * 100).round()} percent',
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: sectionProgress,
-                minHeight: 6,
-                backgroundColor:
+            value:
+                '${((_isScrubbing ? _scrubValue : sectionProgress) * 100).round()} percent',
+            slider: true,
+            child: SliderTheme(
+              data: SliderThemeData(
+                trackHeight: 4,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                activeTrackColor: AppTheme.primaryColor,
+                inactiveTrackColor:
                     isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                thumbColor: AppTheme.primaryColor,
+                overlayColor: AppTheme.primaryColor.withOpacity(0.2),
+              ),
+              child: Slider(
+                value: (_isScrubbing ? _scrubValue : sectionProgress)
+                    .clamp(0.0, 1.0),
+                onChangeStart: (value) {
+                  setState(() {
+                    _isScrubbing = true;
+                    _scrubValue = value;
+                  });
+                  _ttsService.pause();
+                },
+                onChanged: (value) {
+                  setState(() => _scrubValue = value);
+                },
+                onChangeEnd: (value) {
+                  _ttsService.seekToFraction(value);
+                  _ttsService.resume();
+                  setState(() => _isScrubbing = false);
+                },
               ),
             ),
           ),

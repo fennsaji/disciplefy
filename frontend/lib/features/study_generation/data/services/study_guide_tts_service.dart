@@ -281,6 +281,9 @@ class StudyGuideTTSService {
   /// Whether we're intentionally stopping (to avoid error callbacks).
   bool _isIntentionallyStopping = false;
 
+  /// Elapsed seconds saved when pausing, used to restore timer on resume/seek.
+  int _pausedElapsedSeconds = 0;
+
   /// Timer for updating progress within a section.
   Timer? _progressTimer;
 
@@ -325,9 +328,12 @@ class StudyGuideTTSService {
   }
 
   /// Start the progress timer for tracking playback position.
-  void _startProgressTimer() {
+  ///
+  /// Pass [elapsedOffset] to continue from a saved position (e.g. after pause/seek).
+  void _startProgressTimer({int elapsedOffset = 0}) {
     _stopProgressTimer();
-    _sectionStartTime = DateTime.now();
+    _sectionStartTime =
+        DateTime.now().subtract(Duration(seconds: elapsedOffset));
 
     _progressTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
       if (state.value.status != TtsStatus.playing) return;
@@ -548,6 +554,9 @@ class StudyGuideTTSService {
     // Show/update ongoing notification so user can return to app from lock screen
     _notificationService.updateSection(section.title);
 
+    // Reset saved pause position for the new section
+    _pausedElapsedSeconds = 0;
+
     // Start progress tracking
     _startProgressTimer();
 
@@ -623,27 +632,54 @@ class StudyGuideTTSService {
     }
   }
 
-  /// Pause playback.
+  /// Pause playback (preserves audio position — does NOT restart section on resume).
   Future<void> pause() async {
     Logger.debug('🔊 [StudyGuideTTS] Pausing');
-    // Stop progress timer
     _stopProgressTimer();
-    // Set flag and state BEFORE stopping to prevent race conditions
-    // The completion callback checks both the flag and state
-    _isIntentionallyStopping = true;
+    // Save elapsed position so resume/seek can continue from here
+    _pausedElapsedSeconds = state.value.elapsedSeconds;
     state.value = state.value.copyWith(status: TtsStatus.paused);
-    await _ttsService.stop();
+    await _ttsService.pauseAudio();
   }
 
-  /// Resume playback.
+  /// Resume playback from where it was paused.
   Future<void> resume() async {
     Logger.debug(
-        '🔊 [StudyGuideTTS] Resuming from section $_currentSectionIndex');
-    // Clear the intentional stop flag since we're intentionally resuming
-    _isIntentionallyStopping = false;
-    // Note: _readCurrentSection will restart progress from 0
-    // This is acceptable since we can't seek within TTS audio
-    await _readCurrentSection();
+        '🔊 [StudyGuideTTS] Resuming section $_currentSectionIndex at ${_pausedElapsedSeconds}s');
+    state.value = state.value.copyWith(status: TtsStatus.playing);
+    // Restart timer from the saved elapsed offset so the display is accurate
+    _startProgressTimer(elapsedOffset: _pausedElapsedSeconds);
+    await _ttsService.resumeAudio();
+  }
+
+  /// Seek to a fractional position (0.0–1.0) within the current section.
+  ///
+  /// Uses the real AudioPlayer duration (not the WPM estimate) for accurate
+  /// seeking. Falls back to estimated duration if the real one is unavailable.
+  Future<void> seekToFraction(double fraction) async {
+    final clampedFraction = fraction.clamp(0.0, 1.0);
+    final targetSeconds = (_currentSectionDuration * clampedFraction).round();
+    Logger.debug(
+        '🔊 [StudyGuideTTS] Seeking to ${(clampedFraction * 100).round()}% (${targetSeconds}s est)');
+
+    // Save position so that resume() restarts the progress timer from here
+    _pausedElapsedSeconds = targetSeconds;
+
+    // Update UI immediately
+    state.value = state.value.copyWith(
+      sectionProgress: clampedFraction,
+      elapsedSeconds: targetSeconds,
+    );
+
+    // Seek using the *real* audio duration so the position is accurate
+    final realDuration = await _ttsService.getDuration();
+    if (realDuration != null && realDuration.inMilliseconds > 0) {
+      final targetMs = (realDuration.inMilliseconds * clampedFraction).round();
+      await _ttsService.seekTo(Duration(milliseconds: targetMs));
+    } else {
+      // Fallback: seek using estimated seconds
+      await _ttsService.seekTo(Duration(seconds: targetSeconds));
+    }
   }
 
   /// Stop playback completely.
