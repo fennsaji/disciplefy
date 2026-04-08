@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 // GoogleFonts import removed - using bundled fonts via AppFonts helper
 import 'core/config/app_config.dart';
+import 'core/constants/payment_constants.dart';
 import 'core/di/injection_container.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import 'features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
@@ -96,6 +97,11 @@ const firebaseMeasurementId = String.fromEnvironment(
 );
 
 void main() async {
+  assert(
+    PaymentConstants.razorpayKeyId.isNotEmpty,
+    'RAZORPAY_KEY_ID must be set via --dart-define=RAZORPAY_KEY_ID=...',
+  );
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configure URL strategy for web to use path-based routing instead of hash routing
