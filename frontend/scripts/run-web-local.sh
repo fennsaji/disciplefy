@@ -107,6 +107,7 @@ flutter run -d chrome \
   --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \
   --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID" \
   --dart-define=FIREBASE_MEASUREMENT_ID="$FIREBASE_MEASUREMENT_ID" \
+  --dart-define=RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID" \
   --dart-define=WEB_OAUTH_REDIRECT_URL="http://localhost:59641/auth/callback"
 
 echo -e "${GREEN}✅ Flutter development session ended${NC}"
