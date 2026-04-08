@@ -86,8 +86,15 @@ class MemoryVerseEntity extends Equatable {
     this.masteryLevel,
   });
 
-  /// Checks if the verse is due for review (next review date has passed)
-  bool get isDue => DateTime.now().isAfter(nextReviewDate);
+  /// Checks if the verse is due for review (date-only comparison so any verse
+  /// scheduled for today shows the Review badge regardless of stored time-of-day)
+  bool get isDue {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final reviewDay =
+        DateTime(nextReviewDate.year, nextReviewDate.month, nextReviewDate.day);
+    return !reviewDay.isAfter(today);
+  }
 
   /// Checks if the verse is mastered (mastery_level is expert or master).
   bool get isMastered =>
