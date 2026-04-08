@@ -524,7 +524,7 @@ class AuthenticationService {
 
       await _supabase.auth.resetPasswordForEmail(email);
 
-      Logger.error('🔐 [EMAIL AUTH] ✅ Password reset email sent');
+      Logger.debug('🔐 [EMAIL AUTH] ✅ Password reset email sent');
     } catch (e) {
       Logger.debug('🔐 [EMAIL AUTH] ❌ Password Reset Error: $e');
       throw auth_exceptions.AuthenticationFailedException(
@@ -656,7 +656,7 @@ class AuthenticationService {
 
       await _profileApiService.syncOAuthProfile(profileData);
 
-      Logger.error('🔐 [EMAIL AUTH] ✅ Profile data synced');
+      Logger.debug('🔐 [EMAIL AUTH] ✅ Profile data synced');
     } catch (e) {
       Logger.warning(
           '🔐 [EMAIL AUTH] ⚠️ Profile sync failed (non-blocking): $e');
@@ -795,7 +795,9 @@ class AuthenticationService {
 
         final result = await _profileApiService.syncOAuthProfile(profileData);
 
-        Logger.error('🔐 [PROFILE SYNC] 📊 API response: $result');
+        if (kDebugMode) {
+          Logger.debug('🔐 [PROFILE SYNC] 📊 API response received');
+        }
 
         result.fold(
           (failure) {
@@ -812,7 +814,7 @@ class AuthenticationService {
           },
         );
       } else {
-        Logger.error('🔐 [PROFILE SYNC] ℹ️ No profile data to sync');
+        Logger.debug('🔐 [PROFILE SYNC] ℹ️ No profile data to sync');
       }
     } catch (e) {
       Logger.debug('🔐 [PROFILE SYNC] ❌ Error syncing profile data: $e');

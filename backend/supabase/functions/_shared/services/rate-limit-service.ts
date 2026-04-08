@@ -67,13 +67,12 @@ export class RateLimitService {
       return dailyCheck;
     } catch (error) {
       console.error('Rate limit check failed:', error);
-      // Fail open: allow the operation if rate limit check fails
       return {
-        allowed: true,
+        allowed: false,
         current_usage: 0,
-        limit: Infinity,
-        reset_at: new Date(Date.now() + 3600000),
-        reason: 'Rate limit check failed, defaulting to allow',
+        limit: 0,
+        reset_at: new Date(Date.now() + 60000),
+        reason: 'Rate limit service unavailable',
       };
     }
   }

@@ -308,8 +308,15 @@ jobs:
       run: |
         echo "🚀 Deploying Edge Functions to ${{ env.DEPLOY_ENV }}..."
 
-        # Deploy all functions with ${{ env.DEPLOY_ENV }} settings
-        supabase functions deploy --no-verify-jwt --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        # Deploy all functions except dev-trigger-webhook (local-only dev utility; never deploy to production)
+        for func_dir in supabase/functions/*/; do
+          func_name=$(basename "$func_dir")
+          if [ "$func_name" = "_shared" ] || [ "$func_name" = "dev-trigger-webhook" ]; then
+            echo "Skipping $func_name"
+            continue
+          fi
+          supabase functions deploy "$func_name" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        done
 
         echo "✅ Edge Functions deployed successfully to ${{ env.DEPLOY_ENV }}"
       env:

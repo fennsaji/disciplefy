@@ -45,7 +45,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // Clear SharedPreferences
       await clearSharedPreferences();
 
-      Logger.error(
+      Logger.debug(
           '🗄️ [LOCAL STORE] ✅ All local storage cleared and reinitialized');
     } catch (e) {
       Logger.debug('🗄️ [LOCAL STORE] ❌ Error clearing all local storage: $e');
@@ -74,7 +74,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       await box.close();
       await Hive.deleteBoxFromDisk(boxName);
 
-      Logger.error(
+      Logger.debug(
           '🗄️ [LOCAL STORE] ✅ Cleared box: $boxName ($itemCount items)');
     } catch (e) {
       Logger.debug('🗄️ [LOCAL STORE] ❌ Error clearing box $boxName: $e');
@@ -93,7 +93,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      Logger.error('🗄️ [LOCAL STORE] ✅ SharedPreferences cleared');
+      Logger.debug('🗄️ [LOCAL STORE] ✅ SharedPreferences cleared');
     } catch (e) {
       Logger.debug('🗄️ [LOCAL STORE] ❌ Failed to clear SharedPreferences: $e');
       rethrow;
@@ -115,7 +115,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
           }
         }
 
-        Logger.error(
+        Logger.debug(
             '🗄️ [LOCAL STORE] ✅ Cleared $clearedKeys user keys from app_settings');
       }
     } catch (e) {
@@ -134,7 +134,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // Reopen essential boxes
       await Hive.openBox('app_settings');
 
-      Logger.error('🗄️ [LOCAL STORE] ✅ Storage reinitialized');
+      Logger.debug('🗄️ [LOCAL STORE] ✅ Storage reinitialized');
     } catch (e) {
       Logger.debug('🗄️ [LOCAL STORE] ❌ Error reinitializing storage: $e');
       rethrow;

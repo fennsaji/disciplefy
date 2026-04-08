@@ -346,10 +346,14 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
     final redirect = box.get('pending_deep_link_redirect') as String?;
     if (redirect != null && redirect.isNotEmpty) {
       box.delete('pending_deep_link_redirect');
-      context.go(Uri.decodeComponent(redirect));
-    } else {
-      context.go('/');
+      final decoded = Uri.decodeComponent(redirect);
+      if (decoded.startsWith('/')) {
+        context.go(decoded);
+        return;
+      }
+      // Reject absolute URLs silently and fall through to default route
     }
+    context.go('/');
   }
 
   void _checkLanguageSelectionAndRedirect() async {

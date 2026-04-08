@@ -58,6 +58,14 @@ class DeepLinkService {
         segments[1] == 'join' &&
         segments[2].isNotEmpty) {
       final token = segments[2].toUpperCase();
+      // Validate: alphanumeric only, 4–20 characters
+      final isValidToken = RegExp(r'^[A-Z0-9]{4,20}$').hasMatch(token);
+      if (!isValidToken) {
+        Logger.warning(
+            'Invalid fellowship token format in deep link: ${uri.path}',
+            tag: _tag);
+        return;
+      }
       _router.go('/fellowship/join/$token');
       return;
     }

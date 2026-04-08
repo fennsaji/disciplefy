@@ -17,37 +17,45 @@ const ALLOWED_ORIGINS = [
  * Get appropriate CORS headers based on request origin
  */
 export function getCorsHeaders(origin?: string | null): Record<string, string> {
-  // Determine if origin is allowed
-  let allowedOrigin = '*'
-  
-  if (origin) {
-    // Check exact matches first
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      allowedOrigin = origin
-    } else {
-      // Check wildcard patterns
-      const isAllowed = ALLOWED_ORIGINS.some(allowedOrigin => {
-        if (allowedOrigin.includes('*')) {
-          const pattern = allowedOrigin.replace(/\*/g, '.*')
-          const regex = new RegExp(`^${pattern}$`)
-          return regex.test(origin)
-        }
-        return false
-      })
-      
-      if (isAllowed) {
-        allowedOrigin = origin
-      }
+  const baseHeaders: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id, x-anonymous-session-id, cache-control',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+    'Vary': 'Origin'
+  }
+
+  if (!origin) {
+    return baseHeaders
+  }
+
+  // Check exact matches
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    return {
+      ...baseHeaders,
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
     }
   }
 
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-session-id, x-anonymous-session-id, cache-control',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-    'Access-Control-Allow-Credentials': 'true',
-    'Vary': 'Origin'
+  // Check wildcard patterns
+  const isAllowed = ALLOWED_ORIGINS.some(allowed => {
+    if (allowed.includes('*')) {
+      const pattern = allowed.replace(/\*/g, '.*')
+      const regex = new RegExp(`^${pattern}$`)
+      return regex.test(origin)
+    }
+    return false
+  })
+
+  if (isAllowed) {
+    return {
+      ...baseHeaders,
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    }
   }
+
+  // Unknown origin — return no Access-Control-Allow-Origin header, blocking cross-origin access
+  return baseHeaders
 }
 
 /**
