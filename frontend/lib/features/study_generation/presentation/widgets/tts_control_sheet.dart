@@ -158,6 +158,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
   Widget _buildPlaybackControls(StudyGuideTtsState state, bool isDark) {
     final isPlaying = state.status == TtsStatus.playing;
     final isPaused = state.status == TtsStatus.paused;
+    final isCompleted = state.status == TtsStatus.completed;
     final isLoading = state.status == TtsStatus.loading;
     final canGoBack = state.currentSectionIndex > 0;
     final canGoForward =
@@ -184,14 +185,19 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             _buildLoadingButton(isDark: isDark)
           else
             _buildControlButton(
-              icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              onPressed: (isPlaying || isPaused)
+              icon: isPlaying
+                  ? Icons.pause_rounded
+                  : (isCompleted
+                      ? Icons.replay_rounded
+                      : Icons.play_arrow_rounded),
+              onPressed: (isPlaying || isPaused || isCompleted)
                   ? () => _ttsService.togglePlayPause()
                   : null,
               isDark: isDark,
               size: 64,
               iconSize: 36,
-              semanticLabel: isPlaying ? 'Pause' : 'Play',
+              semanticLabel:
+                  isPlaying ? 'Pause' : (isCompleted ? 'Replay' : 'Play'),
               isPrimary: true,
             ),
           const SizedBox(width: 24),

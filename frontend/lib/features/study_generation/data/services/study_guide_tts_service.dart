@@ -42,6 +42,7 @@ enum TtsStatus {
   loading,
   playing,
   paused,
+  completed,
   error,
 }
 
@@ -62,6 +63,10 @@ class StudyGuideTtsState {
   /// Elapsed time in current section in seconds
   final int elapsedSeconds;
 
+  /// The most recently *finished* section type (null until a section completes).
+  /// Useful for triggering side-effects like study-guide completion.
+  final StudyGuideSection? lastCompletedSection;
+
   const StudyGuideTtsState({
     this.status = TtsStatus.idle,
     this.currentSectionIndex = 0,
@@ -71,6 +76,7 @@ class StudyGuideTtsState {
     this.sectionProgress = 0.0,
     this.estimatedDurationSeconds = 0,
     this.elapsedSeconds = 0,
+    this.lastCompletedSection,
   });
 
   StudyGuideTtsState copyWith({
@@ -82,6 +88,7 @@ class StudyGuideTtsState {
     double? sectionProgress,
     int? estimatedDurationSeconds,
     int? elapsedSeconds,
+    StudyGuideSection? lastCompletedSection,
   }) {
     return StudyGuideTtsState(
       status: status ?? this.status,
@@ -93,6 +100,7 @@ class StudyGuideTtsState {
       estimatedDurationSeconds:
           estimatedDurationSeconds ?? this.estimatedDurationSeconds,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      lastCompletedSection: lastCompletedSection ?? this.lastCompletedSection,
     );
   }
 
@@ -490,7 +498,8 @@ class StudyGuideTTSService {
 
     // Stop any current playback
     if (state.value.status == TtsStatus.playing ||
-        state.value.status == TtsStatus.paused) {
+        state.value.status == TtsStatus.paused ||
+        state.value.status == TtsStatus.completed) {
       await stop();
     }
 
@@ -517,19 +526,19 @@ class StudyGuideTTSService {
   /// Read the current section.
   Future<void> _readCurrentSection() async {
     if (_currentSectionIndex >= _sections.length) {
-      // All sections read
+      // All sections read — keep guide & sections so the bottom sheet still
+      // shows the section list; only explicit stop() clears them.
+      final lastSection = _sections.isNotEmpty ? _sections.last.section : null;
       Logger.debug('🔊 [StudyGuideTTS] All sections completed');
       _notificationService.dismissNotification();
       _resetProgress();
       state.value = state.value.copyWith(
-        status: TtsStatus.idle,
-        currentSectionIndex: 0,
-        currentSectionName: '',
-        sectionProgress: 0.0,
+        status: TtsStatus.completed,
+        sectionProgress: 1.0,
         estimatedDurationSeconds: 0,
         elapsedSeconds: 0,
+        lastCompletedSection: lastSection,
       );
-      _currentGuide = null;
       return;
     }
 
@@ -592,6 +601,12 @@ class StudyGuideTTSService {
 
         // Only advance if we're still in playing state
         if (currentStatus == TtsStatus.playing) {
+          // Record which section just finished
+          final finishedSection = _sections[_currentSectionIndex].section;
+          state.value = state.value.copyWith(
+            lastCompletedSection: finishedSection,
+          );
+
           // Move to next section
           _currentSectionIndex++;
           Logger.debug(
@@ -626,8 +641,14 @@ class StudyGuideTTSService {
       await pause();
     } else if (currentStatus == TtsStatus.paused) {
       await resume();
-    } else if (currentStatus == TtsStatus.idle && _currentGuide != null) {
-      // Resume from where we left off or start fresh
+    } else if ((currentStatus == TtsStatus.idle ||
+            currentStatus == TtsStatus.completed) &&
+        _currentGuide != null) {
+      // After completion, restart from the beginning
+      if (currentStatus == TtsStatus.completed) {
+        _currentSectionIndex = 0;
+      }
+      _isIntentionallyStopping = false;
       await _readCurrentSection();
     }
   }
