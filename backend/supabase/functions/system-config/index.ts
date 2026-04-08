@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
       flagsObject[flag.featureKey] = {
         enabled: flag.isEnabled,
         displayMode: flag.displayMode, // 'hide' | 'lock'
+        plans: flag.enabledForPlans,  // required by frontend for plan-based access checks
       }
     })
 
