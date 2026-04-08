@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Returns the pending deep-link redirect target, checking URL param first
   /// (works for email auth) then Hive storage (survives OAuth round-trip).
   /// Clears Hive storage after reading so it is not reused.
+  /// Returns null if the target is not a relative path (starts with '/').
   String? _consumeRedirectTarget(BuildContext context) {
     // URL param is present for same-page flows (email auth)
     String? fromUrl;
@@ -41,7 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
       fromUrl = GoRouterState.of(context).uri.queryParameters['redirect'];
     } catch (_) {}
     if (fromUrl != null && fromUrl.isNotEmpty) {
-      return Uri.decodeComponent(fromUrl);
+      final decoded = Uri.decodeComponent(fromUrl);
+      if (!decoded.startsWith('/')) return null; // reject absolute URLs
+      return decoded;
     }
     // Hive key is written before launching Google OAuth so it survives the
     // browser round-trip to Google and back to the OAuth callback URL.
@@ -49,7 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final fromHive = box.get('pending_deep_link_redirect') as String?;
     if (fromHive != null && fromHive.isNotEmpty) {
       box.delete('pending_deep_link_redirect');
-      return Uri.decodeComponent(fromHive);
+      final decoded = Uri.decodeComponent(fromHive);
+      if (!decoded.startsWith('/')) return null; // reject absolute URLs
+      return decoded;
     }
     return null;
   }

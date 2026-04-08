@@ -32,32 +32,19 @@ class AuthValidator {
 
   /// Validates current authentication state
   ///
-  /// Checks both Supabase user and stored auth type
+  /// Checks Supabase user only. A null Supabase user always results in
+  /// unauthenticated state, regardless of any stored user-type string.
+  /// The stored user type may still be read elsewhere for display purposes
+  /// (e.g. showing last sign-in method) but must not gate authentication.
   static Future<AuthStateValidationResult> validateCurrentAuthState({
     required User? supabaseUser,
     required Future<String?> Function() getUserType,
   }) async {
-    // Check Supabase authentication first
+    // Only a live Supabase user constitutes authenticated state.
     if (supabaseUser != null) {
       return AuthStateValidationResult.authenticated(
         user: supabaseUser,
         authType: AuthType.supabase,
-      );
-    }
-
-    // Check stored authentication
-    try {
-      final userType = await getUserType();
-      if (userType != null && userType == 'google') {
-        return AuthStateValidationResult.authenticated(
-          user: null, // No Supabase user for stored sessions
-          authType: AuthType.google,
-        );
-      }
-    } catch (e) {
-      Logger.error('🔐 [AUTH VALIDATOR] Error checking stored auth state: $e');
-      return AuthStateValidationResult.error(
-        message: 'Failed to validate authentication state: $e',
       );
     }
 
@@ -85,9 +72,9 @@ class AuthValidator {
 
   /// Validates password strength
   ///
-  /// Requires minimum 8 characters
+  /// Requires minimum 8 characters with mixed case and at least one digit
   static bool isValidPassword(String password) {
-    return password.length >= 8;
+    return password.length >= 8 && RegExp(r'\d').hasMatch(password);
   }
 
   /// Validates full name

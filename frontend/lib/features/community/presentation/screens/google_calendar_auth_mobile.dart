@@ -29,45 +29,67 @@ Future<String?> requestCalendarAccessToken(
     // Reuse existing signed-in session silently.
     GoogleSignInAccount? account;
     final silentFuture = signIn.attemptLightweightAuthentication();
-    debugPrint(
-        '[CalendarAuth] attemptLightweightAuthentication future: ${silentFuture != null}');
+    if (kDebugMode) {
+      debugPrint(
+          '[CalendarAuth] attemptLightweightAuthentication future: ${silentFuture != null}');
+    }
     if (silentFuture != null) {
       account = await silentFuture;
-      debugPrint('[CalendarAuth] silent account: ${account?.email}');
+      if (kDebugMode) {
+        debugPrint('[CalendarAuth] silent account: ${account?.email}');
+      }
     }
 
     if (account == null) {
-      debugPrint('[CalendarAuth] calling authenticate()...');
+      if (kDebugMode) {
+        debugPrint('[CalendarAuth] calling authenticate()...');
+      }
       account = await signIn.authenticate();
-      debugPrint('[CalendarAuth] authenticate() returned: ${account.email}');
+      if (kDebugMode) {
+        debugPrint('[CalendarAuth] authenticate() returned: ${account.email}');
+      }
     }
 
     // Reject if the authenticated Google account is not the one signed into
     // the app — prevents calendar access leaking to a different account.
     if (userEmail != null && account.email != userEmail) {
-      debugPrint(
-          '[CalendarAuth] email mismatch: account=${account.email}, app=$userEmail');
+      if (kDebugMode) {
+        debugPrint(
+            '[CalendarAuth] email mismatch: account=${account.email}, app=$userEmail');
+      }
       return null;
     }
 
     final authClient = account.authorizationClient;
 
-    debugPrint('[CalendarAuth] checking existing scope authorization...');
+    if (kDebugMode) {
+      debugPrint('[CalendarAuth] checking existing scope authorization...');
+    }
     GoogleSignInClientAuthorization? authz =
         await authClient.authorizationForScopes([_calendarScope]);
-    debugPrint('[CalendarAuth] silent authz: ${authz != null}');
-
-    if (authz == null) {
-      debugPrint('[CalendarAuth] requesting scope interactively...');
-      authz = await authClient.authorizeScopes([_calendarScope]);
-      debugPrint('[CalendarAuth] interactive authz obtained');
+    if (kDebugMode) {
+      debugPrint('[CalendarAuth] silent authz: ${authz != null}');
     }
 
-    debugPrint(
-        '[CalendarAuth] success — token length: ${authz.accessToken.length}');
+    if (authz == null) {
+      if (kDebugMode) {
+        debugPrint('[CalendarAuth] requesting scope interactively...');
+      }
+      authz = await authClient.authorizeScopes([_calendarScope]);
+      if (kDebugMode) {
+        debugPrint('[CalendarAuth] interactive authz obtained');
+      }
+    }
+
+    if (kDebugMode) {
+      debugPrint(
+          '[CalendarAuth] success — token length: ${authz.accessToken.length}');
+    }
     return authz.accessToken;
   } catch (e, st) {
-    debugPrint('[CalendarAuth] ERROR: $e\n$st');
+    if (kDebugMode) {
+      debugPrint('[CalendarAuth] ERROR: $e\n$st');
+    }
     return null;
   }
 }

@@ -40,7 +40,7 @@ serve(async (req) => {
     const body: ValidatePromoRequest = await req.json()
     const { promo_code, plan_code, provider = 'razorpay' } = body
 
-    console.log('[validate-promo-code] Request:', { promo_code, plan_code, provider })
+    console.log('[validate-promo-code] Request:', { promo_code: promo_code ? '***' + promo_code.slice(-3) : null, plan_code, provider })
 
     if (!promo_code) {
       return new Response(
@@ -253,12 +253,12 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('[validate-promo-code] Error:', error)
+    console.error('[validate-promo-code] Unhandled error:', error)
 
     return new Response(
       JSON.stringify({
         valid: false,
-        message: error instanceof Error ? error.message : 'Internal server error'
+        message: 'Internal server error'
       }),
       {
         status: 500,

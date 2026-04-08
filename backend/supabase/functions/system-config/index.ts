@@ -57,7 +57,6 @@ Deno.serve(async (req) => {
     featureFlags.forEach(flag => {
       flagsObject[flag.featureKey] = {
         enabled: flag.isEnabled,
-        plans: flag.enabledForPlans,
         displayMode: flag.displayMode, // 'hide' | 'lock'
       }
     })
