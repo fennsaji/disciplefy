@@ -106,7 +106,7 @@ export class MemoryVerseConfigService {
           configMap.get('memory_verse_min_ease_factor') || '1.3'
         ),
         maxIntervalDays: parseInt(
-          configMap.get('memory_verse_max_interval_days') || '365'
+          configMap.get('memory_verse_max_interval_days') || '180'
         ),
       },
       gamification: {
@@ -136,10 +136,10 @@ export class MemoryVerseConfigService {
   }
 
   /**
-   * Get memory verse limit for specific tier
+   * Get daily review limit for specific tier
    * Returns -1 for unlimited (premium)
    */
-  async getVerseLimits(tier: string): Promise<number> {
+  async getDailyReviewLimits(tier: string): Promise<number> {
     const config = await this.getMemoryVerseConfig()
     const normalizedTier = tier.toLowerCase() as keyof typeof config.verseLimits
 
@@ -220,7 +220,7 @@ export class MemoryVerseConfigService {
         initialEaseFactor: 2.5,
         initialIntervalDays: 1,
         minEaseFactor: 1.3,
-        maxIntervalDays: 365,
+        maxIntervalDays: 180,
       },
       gamification: {
         masteryThreshold: 5,
@@ -272,7 +272,7 @@ export class MemoryVerseConfigService {
         unlockLimit: config.unlockLimits.free,
         unlockLimitText: `${config.unlockLimits.free} mode per verse per day`,
         verseLimit: config.verseLimits.free,
-        verseLimitText: `${config.verseLimits.free} active verses`,
+        verseLimitText: `${config.verseLimits.free} daily verse reviews`,
         modeCount: config.availableModes.free.length,
       },
       {
@@ -281,7 +281,7 @@ export class MemoryVerseConfigService {
         unlockLimit: config.unlockLimits.standard,
         unlockLimitText: `${config.unlockLimits.standard} modes per verse per day`,
         verseLimit: config.verseLimits.standard,
-        verseLimitText: `${config.verseLimits.standard} active verses`,
+        verseLimitText: `${config.verseLimits.standard} daily verse reviews`,
         modeCount: config.availableModes.paid.length,
       },
       {
@@ -290,7 +290,7 @@ export class MemoryVerseConfigService {
         unlockLimit: config.unlockLimits.plus,
         unlockLimitText: `${config.unlockLimits.plus} modes per verse per day`,
         verseLimit: config.verseLimits.plus,
-        verseLimitText: `${config.verseLimits.plus} active verses`,
+        verseLimitText: `${config.verseLimits.plus} daily verse reviews`,
         modeCount: config.availableModes.paid.length,
       },
       {
@@ -299,7 +299,7 @@ export class MemoryVerseConfigService {
         unlockLimit: config.unlockLimits.premium,
         unlockLimitText: 'All modes unlocked',
         verseLimit: config.verseLimits.premium,
-        verseLimitText: 'Unlimited verses',
+        verseLimitText: 'Unlimited daily verse reviews',
         modeCount: config.availableModes.paid.length,
       },
     ]

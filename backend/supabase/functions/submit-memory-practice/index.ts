@@ -186,42 +186,42 @@ function calculateMasteryLevel(
   perfectRecalls: number,
   confidenceRating: number | null
 ): { level: string; percentage: number } {
-  
-  // Mastery level requirements:
+
+  // Recall-focused mastery thresholds (achievable with 2-3 modes):
   // Beginner: Default starting level
-  // Intermediate: 2+ modes mastered, 5+ perfect recalls
-  // Advanced: 4+ modes mastered, 15+ perfect recalls
-  // Expert: 6+ modes mastered, 30+ perfect recalls
-  // Master: 8 modes mastered, 50+ perfect recalls
-  
+  // Intermediate: 1+ modes mastered, 5+ perfect recalls
+  // Advanced: 2+ modes mastered, 10+ perfect recalls
+  // Expert: 2+ modes mastered, 25+ perfect recalls
+  // Master: 3+ modes mastered, 40+ perfect recalls
+
   let level = 'beginner'
   let percentage = 0
-  
-  // Calculate base progress
-  const modeProgress = (modesMastered / 8) * 50 // 50% weight
-  const recallProgress = Math.min(perfectRecalls / 50, 1.0) * 40 // 40% weight
+
+  // Calculate base progress (recall-focused weights)
+  const modeProgress = (modesMastered / 4) * 30 // 30% weight (out of 4 modes, not 8)
+  const recallProgress = Math.min(perfectRecalls / 40, 1.0) * 60 // 60% weight
   const confidenceProgress = confidenceRating ? (confidenceRating / 5.0) * 10 : 0 // 10% weight
-  
+
   percentage = Math.round(modeProgress + recallProgress + confidenceProgress)
-  
-  // Determine level based on criteria
-  if (modesMastered >= 8 && perfectRecalls >= 50) {
+
+  // Determine level based on recall-focused criteria
+  if (modesMastered >= 3 && perfectRecalls >= 40) {
     level = 'master'
     percentage = 100
-  } else if (modesMastered >= 6 && perfectRecalls >= 30) {
+  } else if (modesMastered >= 2 && perfectRecalls >= 25) {
     level = 'expert'
     percentage = Math.max(75, Math.min(99, percentage))
-  } else if (modesMastered >= 4 && perfectRecalls >= 15) {
+  } else if (modesMastered >= 2 && perfectRecalls >= 10) {
     level = 'advanced'
     percentage = Math.max(50, Math.min(74, percentage))
-  } else if (modesMastered >= 2 && perfectRecalls >= 5) {
+  } else if (modesMastered >= 1 && perfectRecalls >= 5) {
     level = 'intermediate'
     percentage = Math.max(25, Math.min(49, percentage))
   } else {
     level = 'beginner'
     percentage = Math.min(24, percentage)
   }
-  
+
   return { level, percentage }
 }
 
@@ -641,9 +641,41 @@ async function handleSubmitMemoryPractice(
     throw new AppError('NOT_FOUND', 'Memory verse not found', 404)
   }
 
-  // ========== Check practice mode unlock status ==========
-  // userPlan is already resolved above via authService.getUserPlan(req) — single source of truth
+  // ========== Daily review limit check ==========
   const userTier = userPlan
+  const dailyReviewLimit = await services.memoryVerseConfigService.getDailyReviewLimits(userTier)
+  if (dailyReviewLimit !== -1) {
+    const today = new Date().toISOString().split('T')[0]
+    // Allow re-practice of verses already reviewed today
+    const alreadyReviewedThisVerse = memoryVerse.last_reviewed
+      ? memoryVerse.last_reviewed.split('T')[0] === today
+      : false
+
+    if (!alreadyReviewedThisVerse) {
+      // Count distinct verses reviewed today
+      const { data: todayReviews } = await services.supabaseServiceClient
+        .from('review_sessions')
+        .select('memory_verse_id')
+        .eq('user_id', userContext.userId)
+        .gte('review_date', `${today}T00:00:00.000Z`)
+        .lte('review_date', `${today}T23:59:59.999Z`)
+      const distinctCount = new Set(todayReviews?.map(r => r.memory_verse_id) || []).size
+
+      if (distinctCount >= dailyReviewLimit) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: {
+            code: 'DAILY_REVIEW_LIMIT_REACHED',
+            message: `You've reached your daily limit of ${dailyReviewLimit} verse reviews on the ${userTier} plan.`,
+            daily_review_limit: dailyReviewLimit,
+            distinct_verses_reviewed_today: distinctCount,
+          }
+        }), { status: 403, headers: { 'Content-Type': 'application/json' } })
+      }
+    }
+  }
+
+  // ========== Check practice mode unlock status ==========
 
   // Initialize unlock service
   const unlockService = new PracticeModeUnlockService(services.supabaseServiceClient)

@@ -93,32 +93,6 @@ async function handleAddMemoryVerseFromDaily(
   await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
   console.log(`✅ [AddMemoryVerseFromDaily] Feature access validated for user ${userContext.userId}`)
 
-  // Enforce per-plan verse count limit (DB-driven)
-  const verseLimit = await services.memoryVerseConfigService.getVerseLimits(userPlan)
-  if (verseLimit !== -1) {
-    const { count, error: countError } = await services.supabaseServiceClient
-      .from('memory_verses')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userContext.userId)
-      .not('mastery_level', 'in', '("expert","master")') // exclude mastered verses (expert/master level don't count against slot limit)
-
-    if (countError) {
-      console.error('[AddMemoryVerseFromDaily] Failed to count existing verses:', countError)
-      throw new AppError('DATABASE_ERROR', 'Failed to check verse limit', 500)
-    }
-
-    const currentCount = count ?? 0
-    console.log(`📊 [AddMemoryVerseFromDaily] Active (non-mastered) verse count: ${currentCount}/${verseLimit} (plan: ${userPlan})`)
-
-    if (currentCount >= verseLimit) {
-      throw new AppError(
-        'VERSE_LIMIT_EXCEEDED',
-        `You have reached your limit of ${verseLimit} memory verse${verseLimit > 1 ? 's' : ''} on the ${userPlan} plan. Upgrade to add more.`,
-        403
-      )
-    }
-  }
-
   // Parse and validate request body
   const body = await req.json() as AddFromDailyRequest
   
