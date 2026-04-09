@@ -4,13 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../tokens/presentation/bloc/token_bloc.dart';
-import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../domain/entities/suggested_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
-import 'verse_limit_exceeded_dialog.dart';
 
 /// Bottom sheet for browsing and selecting suggested Bible verses.
 ///
@@ -145,27 +142,13 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                     _loadSuggestedVerses();
                     widget.onVerseAdded?.call();
                   } else if (state is MemoryVerseError) {
-                    if (state.code == 'VERSE_LIMIT_EXCEEDED') {
-                      String currentPlan = 'standard';
-                      try {
-                        final tokenState = context.read<TokenBloc>().state;
-                        if (tokenState is TokenLoaded) {
-                          currentPlan = tokenState.tokenStatus.userPlan.name;
-                        }
-                      } catch (_) {}
-                      VerseLimitExceededDialog.show(
-                        context,
-                        currentTier: currentPlan,
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              Text('Something went wrong. Please try again.'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text('Something went wrong. Please try again.'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
                   }
                 },
                 // Only rebuild when suggested-verses-specific state changes

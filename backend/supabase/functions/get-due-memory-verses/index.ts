@@ -47,6 +47,8 @@ interface ReviewStatistics {
   readonly upcoming_reviews: number
   readonly mastered_verses: number // mastery_level IN ('expert', 'master')
   readonly fully_mastered_verses: number // mastery_level == 'master'
+  readonly daily_review_limit: number // from config verseLimits (-1 = unlimited)
+  readonly distinct_verses_reviewed_today: number // COUNT(DISTINCT memory_verse_id)
 }
 
 /**
@@ -72,7 +74,9 @@ interface DueVersesResponse extends ApiSuccessResponse<DueVersesData> {}
  */
 async function getReviewStatistics(
   supabaseClient: SupabaseClient,
-  userId: string
+  userId: string,
+  req: Request,
+  services: ServiceContainer
 ): Promise<ReviewStatistics> {
   const now = new Date().toISOString()
   const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
@@ -124,13 +128,33 @@ async function getReviewStatistics(
     .eq('user_id', userId)
     .eq('mastery_level', 'master')
 
+  // Get daily review limit from config
+  let dailyReviewLimit = -1
+  try {
+    const userPlan = await services.authService.getUserPlan(req)
+    dailyReviewLimit = await services.memoryVerseConfigService.getDailyReviewLimits(userPlan)
+  } catch (err) {
+    console.error('[GetDueVerses] Failed to get daily review limit:', err)
+  }
+
+  // Count distinct verses reviewed today
+  const { data: distinctReviewed } = await supabaseClient
+    .from('review_sessions')
+    .select('memory_verse_id')
+    .eq('user_id', userId)
+    .gte('review_date', `${today}T00:00:00.000Z`)
+    .lte('review_date', `${today}T23:59:59.999Z`)
+  const distinctCount = new Set(distinctReviewed?.map(r => r.memory_verse_id) || []).size
+
   return {
     total_verses: totalCount || 0,
     due_verses: dueCount || 0,
     reviewed_today: reviewedTodayCount || 0,
     upcoming_reviews: upcomingCount || 0,
     mastered_verses: masteredCount || 0,
-    fully_mastered_verses: fullyMasteredCount || 0
+    fully_mastered_verses: fullyMasteredCount || 0,
+    daily_review_limit: dailyReviewLimit,
+    distinct_verses_reviewed_today: distinctCount
   }
 }
 
@@ -238,7 +262,9 @@ async function handleGetDueMemoryVerses(
   // Get review statistics
   const statistics = await getReviewStatistics(
     services.supabaseServiceClient,
-    userContext.userId
+    userContext.userId,
+    req,
+    services
   )
 
   // Log analytics event

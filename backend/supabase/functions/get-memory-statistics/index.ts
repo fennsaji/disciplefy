@@ -31,11 +31,11 @@ interface ActivityData {
  * Mastery distribution counts
  */
 interface MasteryDistribution {
-  beginner: number      // 0-2 repetitions
-  intermediate: number  // 3-5 repetitions
-  advanced: number      // 6-8 repetitions
-  expert: number        // 9-11 repetitions
-  master: number        // 12+ repetitions
+  beginner: number
+  intermediate: number
+  advanced: number
+  expert: number
+  master: number
 }
 
 /**
@@ -140,17 +140,17 @@ async function getStreakData(
 }
 
 /**
- * Get mastery distribution
+ * Get mastery distribution using actual mastery_level column
  */
 async function getMasteryDistribution(
   supabaseClient: SupabaseClient,
   userId: string
 ): Promise<MasteryDistribution> {
-  
-  // Fetch all memory verses with their repetition counts
+
+  // Fetch actual mastery_level from memory_verses (set by submit-memory-practice)
   const { data: verses, error } = await supabaseClient
     .from('memory_verses')
-    .select('repetitions')
+    .select('mastery_level')
     .eq('user_id', userId)
 
   if (error) {
@@ -158,7 +158,6 @@ async function getMasteryDistribution(
     throw new AppError('DATABASE_ERROR', 'Failed to fetch mastery distribution', 500)
   }
 
-  // Categorize by mastery level
   const distribution: MasteryDistribution = {
     beginner: 0,
     intermediate: 0,
@@ -169,18 +168,12 @@ async function getMasteryDistribution(
 
   if (verses && verses.length > 0) {
     for (const verse of verses) {
-      const reps = verse.repetitions
+      const level = verse.mastery_level || 'beginner'
 
-      if (reps <= 2) {
-        distribution.beginner++
-      } else if (reps <= 5) {
-        distribution.intermediate++
-      } else if (reps <= 8) {
-        distribution.advanced++
-      } else if (reps <= 11) {
-        distribution.expert++
+      if (level in distribution) {
+        distribution[level as keyof MasteryDistribution]++
       } else {
-        distribution.master++
+        distribution.beginner++
       }
     }
   }

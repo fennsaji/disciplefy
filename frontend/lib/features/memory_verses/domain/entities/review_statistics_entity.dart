@@ -23,6 +23,12 @@ class ReviewStatisticsEntity extends Equatable {
   /// Number of fully mastered verses (comprehensive mastery criteria)
   final int fullyMasteredVerses;
 
+  /// Daily review limit for the user's plan (-1 = unlimited)
+  final int dailyReviewLimit;
+
+  /// Number of distinct verses reviewed today
+  final int distinctVersesReviewedToday;
+
   const ReviewStatisticsEntity({
     required this.totalVerses,
     required this.dueVerses,
@@ -30,7 +36,19 @@ class ReviewStatisticsEntity extends Equatable {
     required this.upcomingReviews,
     required this.masteredVerses,
     required this.fullyMasteredVerses,
+    this.dailyReviewLimit = -1,
+    this.distinctVersesReviewedToday = 0,
   });
+
+  /// Whether the user has reached their daily review limit
+  bool get isDailyReviewLimitReached =>
+      dailyReviewLimit != -1 && distinctVersesReviewedToday >= dailyReviewLimit;
+
+  /// Remaining daily reviews (-1 = unlimited)
+  int get remainingReviews => dailyReviewLimit == -1
+      ? -1
+      : (dailyReviewLimit - distinctVersesReviewedToday)
+          .clamp(0, dailyReviewLimit);
 
   /// Percentage of verses that are mastered (0-100)
   double get masteryPercentage {
@@ -57,6 +75,10 @@ class ReviewStatisticsEntity extends Equatable {
 
   /// Returns a motivational message based on progress
   String get motivationalMessage {
+    if (isDailyReviewLimitReached) {
+      return 'You\'ve used all $dailyReviewLimit daily verse reviews. Upgrade for more!';
+    }
+
     if (dueVerses == 0 && reviewedToday > 0) {
       return 'Great job! All reviews completed for today! 🎉';
     }
@@ -88,6 +110,8 @@ class ReviewStatisticsEntity extends Equatable {
     int? upcomingReviews,
     int? masteredVerses,
     int? fullyMasteredVerses,
+    int? dailyReviewLimit,
+    int? distinctVersesReviewedToday,
   }) {
     return ReviewStatisticsEntity(
       totalVerses: totalVerses ?? this.totalVerses,
@@ -96,6 +120,9 @@ class ReviewStatisticsEntity extends Equatable {
       upcomingReviews: upcomingReviews ?? this.upcomingReviews,
       masteredVerses: masteredVerses ?? this.masteredVerses,
       fullyMasteredVerses: fullyMasteredVerses ?? this.fullyMasteredVerses,
+      dailyReviewLimit: dailyReviewLimit ?? this.dailyReviewLimit,
+      distinctVersesReviewedToday:
+          distinctVersesReviewedToday ?? this.distinctVersesReviewedToday,
     );
   }
 
@@ -107,6 +134,8 @@ class ReviewStatisticsEntity extends Equatable {
         upcomingReviews,
         masteredVerses,
         fullyMasteredVerses,
+        dailyReviewLimit,
+        distinctVersesReviewedToday,
       ];
 
   @override

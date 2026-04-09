@@ -3,21 +3,23 @@ import '../../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../models/memory_verse_config.dart';
 
-/// Dialog shown when user has reached their memory verse limit for their plan.
+/// Dialog shown when user has reached their daily verse review limit for their plan.
 ///
 /// Displays:
-/// - Current plan's verse limit
-/// - Upgrade options with verse limits and pricing
+/// - Current plan's daily review limit
+/// - Upgrade options with daily review limits and pricing
 /// - "Maybe Later" and "Upgrade Now" actions
-class VerseLimitExceededDialog extends StatelessWidget {
+class DailyReviewLimitDialog extends StatelessWidget {
   final String currentTier;
 
-  const VerseLimitExceededDialog({
+  const DailyReviewLimitDialog({
     super.key,
     required this.currentTier,
   });
@@ -28,7 +30,7 @@ class VerseLimitExceededDialog extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      builder: (context) => VerseLimitExceededDialog(
+      builder: (context) => DailyReviewLimitDialog(
         currentTier: currentTier,
       ),
     );
@@ -42,7 +44,7 @@ class VerseLimitExceededDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentTierName = _getTierDisplayName(currentTier);
-    final currentVerseLimit = _getVerseLimitText(currentTier);
+    final currentReviewLimit = _getDailyReviewLimitText(context, currentTier);
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -56,7 +58,7 @@ class VerseLimitExceededDialog extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.lock,
+              Icons.schedule,
               color: theme.colorScheme.error,
               size: 24,
             ),
@@ -64,7 +66,7 @@ class VerseLimitExceededDialog extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Upgrade Required',
+              context.tr(TranslationKeys.dailyReviewLimitTitle),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -78,7 +80,9 @@ class VerseLimitExceededDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You\'ve reached your memory verse limit on the $currentTierName plan. Upgrade to memorize more Scripture.',
+              context.tr(TranslationKeys.dailyReviewLimitMessage, {
+                'plan': currentTierName,
+              }),
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
             const SizedBox(height: 16),
@@ -103,7 +107,10 @@ class VerseLimitExceededDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your $currentTierName Plan: $currentVerseLimit',
+                      context.tr(TranslationKeys.dailyReviewLimitCurrentPlan, {
+                        'plan': currentTierName,
+                        'limit': currentReviewLimit,
+                      }),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -115,7 +122,7 @@ class VerseLimitExceededDialog extends StatelessWidget {
 
             const SizedBox(height: 16),
             Text(
-              'Get more verses with:',
+              context.tr(TranslationKeys.dailyReviewLimitGetMore),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -129,7 +136,7 @@ class VerseLimitExceededDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            'Maybe Later',
+            context.tr(TranslationKeys.dailyReviewLimitMaybeLater),
             style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
@@ -144,13 +151,13 @@ class VerseLimitExceededDialog extends StatelessWidget {
             foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          child: const Text('Upgrade Now'),
+          child: Text(context.tr(TranslationKeys.dailyReviewLimitUpgradeNow)),
         ),
       ],
     );
   }
 
-  String _getVerseLimitText(String tier) {
+  String _getDailyReviewLimitText(BuildContext context, String tier) {
     try {
       final systemConfig = sl<SystemConfigService>();
       final memoryConfig = systemConfig.config?.memoryVerseConfig;
@@ -159,18 +166,22 @@ class VerseLimitExceededDialog extends StatelessWidget {
       }
     } catch (_) {}
     // Fallback defaults
-    switch (tier.toLowerCase()) {
-      case 'free':
-        return '3 active verses';
-      case 'standard':
-        return '5 active verses';
-      case 'plus':
-        return '10 active verses';
-      case 'premium':
-        return 'Unlimited verses';
-      default:
-        return 'Limited verses';
+    final tierLower = tier.toLowerCase();
+    final Map<String, int> fallbackLimits = {
+      'free': 3,
+      'standard': 5,
+      'plus': 10,
+    };
+    if (tierLower == 'premium') {
+      return context.tr(TranslationKeys.dailyReviewLimitUnlimited);
     }
+    final count = fallbackLimits[tierLower];
+    if (count != null) {
+      return context.tr(TranslationKeys.dailyReviewLimitCount, {
+        'count': count.toString(),
+      });
+    }
+    return context.tr(TranslationKeys.dailyReviewLimitLimited);
   }
 
   List<Widget> _buildUpgradePlanOptions(BuildContext context) {
@@ -202,18 +213,22 @@ class VerseLimitExceededDialog extends StatelessWidget {
   }
 
   List<Widget> _buildFallbackOptions(BuildContext context) {
+    final plusLimit = context.tr(TranslationKeys.dailyReviewLimitCount, {
+      'count': '10',
+    });
+    final premiumLimit = context.tr(TranslationKeys.dailyReviewLimitUnlimited);
     try {
       final pricingService = sl<PricingService>();
       return [
-        _buildPlanOption(context, 'Plus', '10 active verses',
+        _buildPlanOption(context, 'Plus', plusLimit,
             pricingService.getFormattedPricePerMonth('plus')),
-        _buildPlanOption(context, 'Premium', 'Unlimited verses',
+        _buildPlanOption(context, 'Premium', premiumLimit,
             pricingService.getFormattedPricePerMonth('premium')),
       ];
     } catch (_) {
       return [
-        _buildPlanOption(context, 'Plus', '10 active verses', ''),
-        _buildPlanOption(context, 'Premium', 'Unlimited verses', ''),
+        _buildPlanOption(context, 'Plus', plusLimit, ''),
+        _buildPlanOption(context, 'Premium', premiumLimit, ''),
       ];
     }
   }

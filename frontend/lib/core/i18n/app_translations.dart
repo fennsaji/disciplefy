@@ -1977,6 +1977,25 @@ class AppTranslations {
       'practice_days': 'Practice Days',
       'verse_count': '{count} verses',
     },
+    'daily_review_limit': {
+      'title': 'Daily Limit Reached',
+      'message':
+          'You\'ve used all your daily verse reviews on the {plan} plan. Upgrade to review more Scripture daily.',
+      'current_plan': 'Your {plan} Plan: {limit}',
+      'get_more': 'Get more daily reviews with:',
+      'maybe_later': 'Maybe Later',
+      'upgrade_now': 'Upgrade Now',
+      'reached_motivation':
+          'You\'ve used all {limit} daily verse reviews. Upgrade for more!',
+      'unlimited': 'Unlimited daily verse reviews',
+      'count': '{count} daily verse reviews',
+      'limited': 'Limited daily reviews',
+    },
+    'plan_features': {
+      'unlimited_daily_reviews': 'Unlimited daily verse reviews',
+      'daily_reviews': '{count} daily verse reviews',
+      'comparison_daily_reviews': 'Daily Reviews',
+    },
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
@@ -3951,6 +3970,25 @@ class AppTranslations {
       'perfect_recalls': 'परफेक्ट स्मरण',
       'practice_days': 'अभ्यास के दिन',
       'verse_count': '{count} पद',
+    },
+    'daily_review_limit': {
+      'title': 'आज की सीमा पूरी',
+      'message':
+          'आपके {plan} प्लान के सभी रोज़ के वचन अभ्यास खत्म हो गए हैं। और वचन अभ्यास करने के लिए अपग्रेड करें।',
+      'current_plan': 'आपका {plan} प्लान: {limit}',
+      'get_more': 'और अभ्यास पाने के लिए:',
+      'maybe_later': 'बाद में',
+      'upgrade_now': 'अभी अपग्रेड करें',
+      'reached_motivation':
+          'आज के {limit} वचन अभ्यास पूरे हुए। और के लिए अपग्रेड करें!',
+      'unlimited': 'असीमित रोज़ के वचन अभ्यास',
+      'count': 'रोज़ {count} वचन अभ्यास',
+      'limited': 'सीमित रोज़ के अभ्यास',
+    },
+    'plan_features': {
+      'unlimited_daily_reviews': 'असीमित रोज़ के वचन अभ्यास',
+      'daily_reviews': 'रोज़ {count} वचन अभ्यास',
+      'comparison_daily_reviews': 'रोज़ के अभ्यास',
     },
   };
 
@@ -6014,6 +6052,25 @@ class AppTranslations {
       'perfect_recalls': 'പരിപൂർണ്ണ ഓർമ്മകൾ',
       'practice_days': 'പ്രാക്ടീസ് ദിവസങ്ങൾ',
       'verse_count': '{count} വാക്യങ്ങൾ',
+    },
+    'daily_review_limit': {
+      'title': 'ഇന്നത്തെ പരിധി കഴിഞ്ഞു',
+      'message':
+          '{plan} പ്ലാനിലെ ഇന്നത്തെ വചന പരിശീലനം എല്ലാം കഴിഞ്ഞു. കൂടുതൽ പരിശീലിക്കാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ.',
+      'current_plan': 'നിങ്ങളുടെ {plan} പ്ലാൻ: {limit}',
+      'get_more': 'കൂടുതൽ പരിശീലനം ലഭിക്കാൻ:',
+      'maybe_later': 'പിന്നീട്',
+      'upgrade_now': 'ഇപ്പോൾ അപ്‌ഗ്രേഡ് ചെയ്യൂ',
+      'reached_motivation':
+          'ഇന്നത്തെ {limit} വചന പരിശീലനം കഴിഞ്ഞു. കൂടുതൽ ലഭിക്കാൻ അപ്‌ഗ്രേഡ് ചെയ്യൂ!',
+      'unlimited': 'എത്ര വേണമെങ്കിലും ദിവസം വചന പരിശീലനം',
+      'count': 'ദിവസം {count} വചന പരിശീലനം',
+      'limited': 'പരിമിതമായ ദിവസ പരിശീലനം',
+    },
+    'plan_features': {
+      'unlimited_daily_reviews': 'എത്ര വേണമെങ്കിലും ദിവസം വചന പരിശീലനം',
+      'daily_reviews': 'ദിവസം {count} വചന പരിശീലനം',
+      'comparison_daily_reviews': 'ദിവസ പരിശീലനം',
     },
   };
 }

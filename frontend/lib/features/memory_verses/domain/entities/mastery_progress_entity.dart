@@ -146,13 +146,13 @@ class MasteryProgressEntity extends Equatable {
   String get nextLevelRequirements {
     switch (masteryLevel) {
       case MasteryLevel.beginner:
-        return 'Master 2 practice modes & achieve 5 perfect recalls';
+        return 'Master 1 practice mode & achieve 5 perfect recalls';
       case MasteryLevel.intermediate:
-        return 'Master 4 practice modes & achieve 15 perfect recalls';
+        return 'Master 2 practice modes & achieve 10 perfect recalls';
       case MasteryLevel.advanced:
-        return 'Master 6 practice modes & achieve 30 perfect recalls';
+        return 'Master 2 practice modes & achieve 25 perfect recalls';
       case MasteryLevel.expert:
-        return 'Master all 8 practice modes & achieve 50 perfect recalls';
+        return 'Master 3 practice modes & achieve 40 perfect recalls';
       case MasteryLevel.master:
         return 'You\'ve achieved mastery! Keep practicing to maintain it.';
     }
@@ -162,13 +162,13 @@ class MasteryProgressEntity extends Equatable {
   bool get canLevelUp {
     switch (masteryLevel) {
       case MasteryLevel.beginner:
-        return modesMastered >= 2 && perfectRecalls >= 5;
+        return modesMastered >= 1 && perfectRecalls >= 5;
       case MasteryLevel.intermediate:
-        return modesMastered >= 4 && perfectRecalls >= 15;
+        return modesMastered >= 2 && perfectRecalls >= 10;
       case MasteryLevel.advanced:
-        return modesMastered >= 6 && perfectRecalls >= 30;
+        return modesMastered >= 2 && perfectRecalls >= 25;
       case MasteryLevel.expert:
-        return modesMastered >= 8 && perfectRecalls >= 50;
+        return modesMastered >= 3 && perfectRecalls >= 40;
       case MasteryLevel.master:
         return false; // Already at max level
     }

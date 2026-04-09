@@ -11,6 +11,8 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
     required super.upcomingReviews,
     required super.masteredVerses,
     required super.fullyMasteredVerses,
+    super.dailyReviewLimit,
+    super.distinctVersesReviewedToday,
   });
 
   /// Creates a model from domain entity
@@ -22,6 +24,8 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       upcomingReviews: entity.upcomingReviews,
       masteredVerses: entity.masteredVerses,
       fullyMasteredVerses: entity.fullyMasteredVerses,
+      dailyReviewLimit: entity.dailyReviewLimit,
+      distinctVersesReviewedToday: entity.distinctVersesReviewedToday,
     );
   }
 
@@ -34,6 +38,9 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       upcomingReviews: json['upcoming_reviews'] as int,
       masteredVerses: json['mastered_verses'] as int,
       fullyMasteredVerses: json['fully_mastered_verses'] as int,
+      dailyReviewLimit: json['daily_review_limit'] as int? ?? -1,
+      distinctVersesReviewedToday:
+          json['distinct_verses_reviewed_today'] as int? ?? 0,
     );
   }
 
@@ -46,6 +53,8 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       'upcoming_reviews': upcomingReviews,
       'mastered_verses': masteredVerses,
       'fully_mastered_verses': fullyMasteredVerses,
+      'daily_review_limit': dailyReviewLimit,
+      'distinct_verses_reviewed_today': distinctVersesReviewedToday,
     };
   }
 
@@ -58,6 +67,8 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       upcomingReviews: upcomingReviews,
       masteredVerses: masteredVerses,
       fullyMasteredVerses: fullyMasteredVerses,
+      dailyReviewLimit: dailyReviewLimit,
+      distinctVersesReviewedToday: distinctVersesReviewedToday,
     );
   }
 
@@ -70,6 +81,8 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
     int? upcomingReviews,
     int? masteredVerses,
     int? fullyMasteredVerses,
+    int? dailyReviewLimit,
+    int? distinctVersesReviewedToday,
   }) {
     return ReviewStatisticsModel(
       totalVerses: totalVerses ?? this.totalVerses,
@@ -78,6 +91,9 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       upcomingReviews: upcomingReviews ?? this.upcomingReviews,
       masteredVerses: masteredVerses ?? this.masteredVerses,
       fullyMasteredVerses: fullyMasteredVerses ?? this.fullyMasteredVerses,
+      dailyReviewLimit: dailyReviewLimit ?? this.dailyReviewLimit,
+      distinctVersesReviewedToday:
+          distinctVersesReviewedToday ?? this.distinctVersesReviewedToday,
     );
   }
 }
