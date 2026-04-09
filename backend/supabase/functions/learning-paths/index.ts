@@ -159,6 +159,25 @@ async function getTopicsCount(
 }
 
 /**
+ * Counts the actual number of completed topics for a user in a learning path
+ * by joining learning_path_topics with user_topic_progress.
+ * This is the authoritative count (not the stale denormalized counter).
+ */
+async function getActualTopicsCompleted(
+  supabaseClient: ReturnType<ServiceContainer['supabaseServiceClient']['from']> extends (...args: any[]) => any ? any : any,
+  learningPathId: string,
+  userId: string
+): Promise<number> {
+  const { data } = await supabaseClient
+    .from('learning_path_topics')
+    .select('topic_id, user_topic_progress!inner(completed_at)')
+    .eq('learning_path_id', learningPathId)
+    .eq('user_topic_progress.user_id', userId)
+    .not('user_topic_progress.completed_at', 'is', null);
+  return data?.length || 0;
+}
+
+/**
  * Gets localized title and description for a learning path
  */
 async function getLocalizedTitleDescription(
@@ -882,10 +901,12 @@ async function handleGetRecommendedPaths(
               supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
             );
 
-            const enrolledTopicsCompleted = enrollmentMap.get(pathData.id);
-            const isEnrolled = enrolledTopicsCompleted !== undefined;
+            const isEnrolled = enrollmentMap.has(pathData.id);
+            const actualCompleted = isEnrolled && userId
+              ? await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId)
+              : 0;
             const progressPercentage = isEnrolled && topicsCountNum > 0
-              ? Math.round((enrolledTopicsCompleted! / topicsCountNum) * 100)
+              ? Math.round((actualCompleted / topicsCountNum) * 100)
               : 0;
 
             pathObjects.push(buildLearningPathResponse(
@@ -1014,8 +1035,9 @@ async function handleGetRecommendedPath(
             pathData.title,
             pathData.description
           );
+          const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, activePath.learning_path_id, userId);
           const progressPercentage = topicsCountNum > 0
-            ? Math.round((activePath.topics_completed / topicsCountNum) * 100)
+            ? Math.round((actualCompleted / topicsCountNum) * 100)
             : 0;
 
           const path = buildLearningPathResponse(
@@ -1114,13 +1136,16 @@ async function handleGetRecommendedPath(
               // Check if user is enrolled
               const { data: existingProgress } = await supabaseServiceClient
                 .from('user_learning_path_progress')
-                .select('topics_completed')
+                .select('learning_path_id')
                 .eq('user_id', userId)
                 .eq('learning_path_id', pathData.id)
                 .single();
 
+              const actualCompleted = existingProgress
+                ? await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId)
+                : 0;
               const progressPercentage = existingProgress && topicsCountNum > 0
-                ? Math.round((existingProgress.topics_completed / topicsCountNum) * 100)
+                ? Math.round((actualCompleted / topicsCountNum) * 100)
                 : 0;
 
               const path = buildLearningPathResponse(
