@@ -75,9 +75,9 @@ class PlanFeaturesExtractor {
         final memoryVerses = memoryConfig.verseLimits[planCodeLower];
         if (memoryVerses != null) {
           if (memoryVerses == -1) {
-            features.add('Unlimited active memory verses');
+            features.add('Unlimited daily verse reviews');
           } else {
-            features.add('$memoryVerses active memory verses');
+            features.add('$memoryVerses daily verse reviews');
           }
         }
       }
@@ -181,7 +181,7 @@ class PlanFeaturesExtractor {
         final currMem = memoryConfig.verseLimits[currPlanCode];
         if (currMem != null) {
           rows.add(PlanComparisonRow(
-            label: 'Memory Verses',
+            label: 'Daily Reviews',
             previousValue: prevMem != null
                 ? (prevMem == -1 ? 'Unlimited' : '$prevMem')
                 : '✗',
@@ -206,16 +206,16 @@ class PlanFeaturesExtractor {
   static void _addFallbackMemoryVerses(List<String> features, String planCode) {
     switch (planCode) {
       case 'free':
-        features.add('3 active memory verses');
+        features.add('3 daily verse reviews');
         break;
       case 'standard':
-        features.add('5 active memory verses');
+        features.add('5 daily verse reviews');
         break;
       case 'plus':
-        features.add('10 active memory verses');
+        features.add('10 daily verse reviews');
         break;
       case 'premium':
-        features.add('Unlimited active memory verses');
+        features.add('Unlimited daily verse reviews');
         break;
     }
   }

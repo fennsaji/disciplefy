@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,9 +16,12 @@ import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
 import '../../domain/repositories/memory_verse_repository.dart';
+import '../bloc/memory_verse_bloc.dart';
+import '../bloc/memory_verse_state.dart';
 import '../widgets/practice_mode_card.dart';
 import '../widgets/practice_mode_info_sheet.dart';
 import '../widgets/unlock_limit_exceeded_dialog.dart';
+import '../widgets/verse_limit_exceeded_dialog.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
@@ -333,6 +337,26 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   }
 
   void _selectMode(PracticeModeType modeType) {
+    // Preemptive daily review limit check
+    final blocState = context.read<MemoryVerseBloc>().state;
+    if (blocState is DueVersesLoaded &&
+        blocState.statistics.isDailyReviewLimitReached) {
+      // Allow re-practice of verses already reviewed today
+      final today = DateTime.now();
+      final alreadyReviewedToday = currentVerse?.lastReviewed != null &&
+          currentVerse!.lastReviewed!.year == today.year &&
+          currentVerse!.lastReviewed!.month == today.month &&
+          currentVerse!.lastReviewed!.day == today.day;
+
+      if (!alreadyReviewedToday) {
+        DailyReviewLimitDialog.show(
+          context,
+          currentTier: _userTier,
+        );
+        return;
+      }
+    }
+
     // Navigate to the appropriate practice page based on mode type
     // All modes use context.push() to maintain proper back navigation stack
     switch (modeType) {

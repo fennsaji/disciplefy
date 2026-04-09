@@ -2248,4 +2248,24 @@ class TranslationKeys {
       'walkthrough.practice_type_it_out.title';
   static const walkthroughPracticeTypeItOutDesc =
       'walkthrough.practice_type_it_out.desc';
+
+  // Daily Review Limit
+  static const dailyReviewLimitTitle = 'daily_review_limit.title';
+  static const dailyReviewLimitMessage = 'daily_review_limit.message';
+  static const dailyReviewLimitCurrentPlan = 'daily_review_limit.current_plan';
+  static const dailyReviewLimitGetMore = 'daily_review_limit.get_more';
+  static const dailyReviewLimitMaybeLater = 'daily_review_limit.maybe_later';
+  static const dailyReviewLimitUpgradeNow = 'daily_review_limit.upgrade_now';
+  static const dailyReviewLimitReachedMotivation =
+      'daily_review_limit.reached_motivation';
+  static const dailyReviewLimitUnlimited = 'daily_review_limit.unlimited';
+  static const dailyReviewLimitCount = 'daily_review_limit.count';
+  static const dailyReviewLimitLimited = 'daily_review_limit.limited';
+
+  // Plan Features — daily reviews
+  static const planFeatureUnlimitedDailyReviews =
+      'plan_features.unlimited_daily_reviews';
+  static const planFeatureDailyReviews = 'plan_features.daily_reviews';
+  static const planComparisonDailyReviews =
+      'plan_features.comparison_daily_reviews';
 }

@@ -760,6 +760,16 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             return;
           }
 
+          if (failure.code == 'DAILY_REVIEW_LIMIT_REACHED') {
+            Logger.debug(
+                '⏰ [BLOC] Daily review limit reached: ${failure.code}');
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+            ));
+            return;
+          }
+
           // Generic error for other failures
           emit(MemoryVerseError(
             message: failure.message,

@@ -13,7 +13,6 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
-import '../widgets/verse_limit_exceeded_dialog.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
@@ -38,6 +37,7 @@ import '../widgets/streak_display_widget.dart';
 import '../widgets/daily_goal_progress_widget.dart';
 import '../widgets/milestone_celebration_dialog.dart';
 import '../widgets/streak_protection_dialog.dart';
+import '../widgets/verse_limit_exceeded_dialog.dart';
 import '../widgets/memory_verse_navigation_bar.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
@@ -305,41 +305,30 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                       .read<MemoryVerseBloc>()
                       .add(const LoadMemoryStreakEvent());
                 } else if (state is MemoryVerseError) {
-                  if (state.code == 'VERSE_LIMIT_EXCEEDED') {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        VerseLimitExceededDialog.show(
-                          context,
-                          currentTier: _getCurrentPlan(),
-                        );
-                      }
-                    });
-                  } else {
-                    final isOffline = context.read<ConnectivityBloc>().state
-                        is ConnectivityOffline;
-                    if (!isOffline) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.error,
-                                  color: Colors.white, size: 16),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                    'Something went wrong. Please try again.'),
-                              ),
-                            ],
-                          ),
-                          backgroundColor: AppColors.error,
-                          action: SnackBarAction(
-                            label: context.tr(TranslationKeys.commonRetry),
-                            textColor: Colors.white,
-                            onPressed: _loadVerses,
-                          ),
+                  final isOffline = context.read<ConnectivityBloc>().state
+                      is ConnectivityOffline;
+                  if (!isOffline) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.error,
+                                color: Colors.white, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                  'Something went wrong. Please try again.'),
+                            ),
+                          ],
                         ),
-                      );
-                    }
+                        backgroundColor: AppColors.error,
+                        action: SnackBarAction(
+                          label: context.tr(TranslationKeys.commonRetry),
+                          textColor: Colors.white,
+                          onPressed: _loadVerses,
+                        ),
+                      ),
+                    );
                   }
                 } else if (state is PracticeSessionSubmitted) {
                   // Silently refresh verse list so stats (review count, next date)
@@ -952,7 +941,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   /// Returns the user's current plan from TokenBloc state, defaulting to 'standard'
-  /// (safe default for VERSE_LIMIT_EXCEEDED since free users can't reach this error)
   String _getCurrentPlan() {
     try {
       final tokenState = context.read<TokenBloc>().state;
@@ -1197,6 +1185,32 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   void _navigateToReviewPage(BuildContext context, String verseId) {
+    // Check daily review limit before navigating
+    final blocState = context.read<MemoryVerseBloc>().state;
+    if (blocState is DueVersesLoaded) {
+      final stats = blocState.statistics;
+      if (stats.isDailyReviewLimitReached) {
+        // Allow re-practice of verses already reviewed today
+        final verse = blocState.verses.firstWhere(
+          (v) => v.id == verseId,
+          orElse: () => blocState.verses.first,
+        );
+        final today = DateTime.now();
+        final alreadyReviewedToday = verse.lastReviewed != null &&
+            verse.lastReviewed!.year == today.year &&
+            verse.lastReviewed!.month == today.month &&
+            verse.lastReviewed!.day == today.day;
+
+        if (!alreadyReviewedToday) {
+          DailyReviewLimitDialog.show(
+            context,
+            currentTier: _getCurrentPlan(),
+          );
+          return;
+        }
+      }
+    }
+
     // Navigate to practice mode selection to let user choose their preferred mode
     context.push('/memory-verses/practice/$verseId');
   }

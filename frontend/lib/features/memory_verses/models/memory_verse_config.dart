@@ -253,13 +253,13 @@ class MemoryVerseConfig {
     return '$limit mode${limit > 1 ? 's' : ''} per verse per day';
   }
 
-  /// Get user-friendly verse limit text
+  /// Get user-friendly daily review limit text
   String getVerseLimitText(String tier) {
     final limit = getVerseLimitForTier(tier);
     if (limit == -1) {
-      return 'Unlimited verses';
+      return 'Unlimited daily verse reviews';
     }
-    return '$limit active verse${limit > 1 ? 's' : ''}';
+    return '$limit daily verse review${limit > 1 ? 's' : ''}';
   }
 
   /// Get recommended upgrade tier

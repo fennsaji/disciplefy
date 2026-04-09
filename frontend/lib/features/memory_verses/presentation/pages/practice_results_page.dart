@@ -17,6 +17,7 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/tier_locked_mode_dialog.dart';
 import '../widgets/unlock_limit_exceeded_dialog.dart';
+import '../widgets/verse_limit_exceeded_dialog.dart';
 
 /// Unified Practice Results Page for all memory verse practice modes.
 ///
@@ -152,6 +153,15 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             limit: 1,
             tier: 'free', // TODO: Get from user subscription
             verseReference: params.verseReference,
+          );
+        }
+
+        // Handle daily review limit reached
+        if (state is MemoryVerseError &&
+            state.code == 'DAILY_REVIEW_LIMIT_REACHED') {
+          DailyReviewLimitDialog.show(
+            context,
+            currentTier: 'free', // TODO: Get from user subscription
           );
         }
       },
