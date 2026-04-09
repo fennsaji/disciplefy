@@ -413,6 +413,21 @@ verify_jwt = false
 [functions.razorpay-webhook]
 verify_jwt = false
 
+[functions.send-daily-verse-notification]
+verify_jwt = false
+
+[functions.send-memory-verse-notification]
+verify_jwt = false
+
+[functions.send-recommended-topic-notification]
+verify_jwt = false
+
+[functions.send-streak-notification]
+verify_jwt = false
+
+[functions.send-streak-reminder-notification]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
