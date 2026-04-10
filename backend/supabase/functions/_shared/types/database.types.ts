@@ -2927,10 +2927,10 @@ export type Database = {
       check_memory_achievements: {
         Args: { p_user_id: string }
         Returns: {
-          out_achievement_id: string
-          out_achievement_name: string
-          out_is_new: boolean
-          out_xp_reward: number
+          achievement_id: string
+          achievement_name: string
+          is_new: boolean
+          xp_reward: number
         }[]
       }
       check_mode_unlock_status: {

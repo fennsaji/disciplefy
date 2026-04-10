@@ -949,6 +949,11 @@ async function handleSubmitMemoryPractice(
       xp_reward: a.xp_reward
     }))
 
+  // Add achievement XP rewards to total
+  for (const achievement of newAchievements) {
+    totalXP += achievement.xp_reward
+  }
+
   // Check challenge progress (reviews_count type challenges)
   const { data: activeChallenges } = await services.supabaseServiceClient
     .from('memory_challenges')

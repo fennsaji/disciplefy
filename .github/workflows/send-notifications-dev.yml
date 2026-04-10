@@ -77,6 +77,7 @@ jobs:
 
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-daily-verse-notification" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
@@ -127,6 +128,7 @@ jobs:
 
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-recommended-topic-notification" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
@@ -176,6 +178,7 @@ jobs:
 
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-streak-reminder-notification" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
@@ -226,6 +229,7 @@ jobs:
 
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=reminder" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
@@ -280,6 +284,7 @@ jobs:
 
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=overdue" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
@@ -330,6 +335,7 @@ jobs:
 
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/fellowship-meetings/reminder" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -d '{}' \
