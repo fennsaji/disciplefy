@@ -10,6 +10,10 @@
 
 BEGIN;
 
+-- Must DROP first because the existing function has different OUT parameter names
+-- (out_achievement_id, etc.) and PostgreSQL cannot change return type with CREATE OR REPLACE
+DROP FUNCTION IF EXISTS check_memory_achievements(UUID);
+
 CREATE OR REPLACE FUNCTION check_memory_achievements(p_user_id UUID)
 RETURNS TABLE (
     achievement_id TEXT,
