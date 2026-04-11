@@ -875,15 +875,14 @@ async function handleGetRecommendedPaths(
         const topPaths = scoredPaths.slice(0, limit);
 
         if (topPaths.length > 0) {
-          // Fetch enrollment info for the user in one query
+          // Fetch enrollment info for the user (include all enrollments, not just non-completed)
           const { data: enrollments } = await supabaseServiceClient
             .from('user_learning_path_progress')
-            .select('learning_path_id, topics_completed')
-            .eq('user_id', userId)
-            .is('completed_at', null);
+            .select('learning_path_id')
+            .eq('user_id', userId);
 
-          const enrollmentMap = new Map(
-            (enrollments || []).map((e) => [e.learning_path_id, e.topics_completed as number])
+          const enrolledPathIds = new Set(
+            (enrollments || []).map((e) => e.learning_path_id as string)
           );
 
           const pathObjects: LearningPath[] = [];
@@ -901,13 +900,17 @@ async function handleGetRecommendedPaths(
               supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
             );
 
-            const isEnrolled = enrollmentMap.has(pathData.id);
-            const actualCompleted = isEnrolled && userId
+            const isEnrolled = enrolledPathIds.has(pathData.id);
+            // Always compute progress from user_topic_progress for authenticated users
+            const actualCompleted = userId
               ? await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId)
               : 0;
-            const progressPercentage = isEnrolled && topicsCountNum > 0
+            const progressPercentage = topicsCountNum > 0
               ? Math.round((actualCompleted / topicsCountNum) * 100)
               : 0;
+
+            // Skip paths that are fully completed (all topics done)
+            if (progressPercentage >= 100) continue;
 
             pathObjects.push(buildLearningPathResponse(
               pathData, topicsCountNum, isEnrolled, progressPercentage,
@@ -1141,23 +1144,27 @@ async function handleGetRecommendedPath(
                 .eq('learning_path_id', pathData.id)
                 .single();
 
-              const actualCompleted = existingProgress
+              // Always compute progress from user_topic_progress
+              const actualCompleted = userId
                 ? await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId)
                 : 0;
-              const progressPercentage = existingProgress && topicsCountNum > 0
+              const progressPercentage = topicsCountNum > 0
                 ? Math.round((actualCompleted / topicsCountNum) * 100)
                 : 0;
 
-              const path = buildLearningPathResponse(
-                pathData,
-                topicsCountNum,
-                !!existingProgress,
-                progressPercentage,
-                localized.title,
-                localized.description
-              );
+              // Only recommend if not fully completed
+              if (progressPercentage < 100) {
+                const path = buildLearningPathResponse(
+                  pathData,
+                  topicsCountNum,
+                  !!existingProgress,
+                  progressPercentage,
+                  localized.title,
+                  localized.description
+                );
 
-              return createRecommendedPathResponse(path, 'personalized');
+                return createRecommendedPathResponse(path, 'personalized');
+              }
             }
           }
         }
