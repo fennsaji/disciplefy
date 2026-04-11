@@ -129,6 +129,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   })  : _connectivityBloc = connectivityBloc,
         super(const MemoryVerseInitial()) {
     on<LoadDueVerses>(_onLoadDueVerses);
+    on<LoadMoreVerses>(_onLoadMoreVerses);
     on<AddVerseFromDaily>(_onAddVerseFromDaily);
     on<AddVerseManually>(_onAddVerseManually);
     on<SubmitReview>(_onSubmitReview);
@@ -255,6 +256,55 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
           code: 'UNEXPECTED_ERROR',
         ));
       }
+    }
+  }
+
+  /// Handles LoadMoreVerses event for pagination.
+  ///
+  /// Appends the next page of verses to the existing list.
+  Future<void> _onLoadMoreVerses(
+    LoadMoreVerses event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DueVersesLoaded ||
+        currentState.isLoadingMore ||
+        !currentState.hasMore) {
+      return;
+    }
+
+    try {
+      final offset = currentState.verses.length;
+      Logger.debug(
+          '📖 [BLOC] Loading more verses (limit: ${event.limit}, offset: $offset)');
+
+      emit(currentState.copyWith(isLoadingMore: true));
+
+      final result = await getDueVerses(
+        limit: event.limit,
+        offset: offset,
+        language: event.language,
+      );
+
+      result.fold(
+        (failure) {
+          Logger.error('❌ [BLOC] Load more verses failed: ${failure.message}');
+          emit(currentState.copyWith(isLoadingMore: false));
+        },
+        (data) {
+          final (newVerses, statistics) = data;
+          Logger.info('✅ [BLOC] Loaded ${newVerses.length} more verses');
+          final hasMore = newVerses.length >= event.limit;
+          emit(DueVersesLoaded(
+            verses: [...currentState.verses, ...newVerses],
+            statistics: statistics,
+            hasMore: hasMore,
+          ));
+        },
+      );
+    } catch (e) {
+      Logger.error('❌ [BLOC] Unexpected error loading more verses: $e');
+      emit(currentState.copyWith(isLoadingMore: false));
     }
   }
 

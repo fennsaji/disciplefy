@@ -68,22 +68,27 @@ class DueVersesLoaded extends MemoryVerseState {
   /// UI can show a subtle top indicator without blocking the list.
   final bool isRefreshingInBackground;
 
+  /// True while loading more verses (pagination).
+  final bool isLoadingMore;
+
   const DueVersesLoaded({
     required this.verses,
     required this.statistics,
     this.hasMore = true,
     this.isRefreshingInBackground = false,
+    this.isLoadingMore = false,
   });
 
   @override
   List<Object?> get props =>
-      [verses, statistics, hasMore, isRefreshingInBackground];
+      [verses, statistics, hasMore, isRefreshingInBackground, isLoadingMore];
 
   DueVersesLoaded copyWith({
     List<MemoryVerseEntity>? verses,
     ReviewStatisticsEntity? statistics,
     bool? hasMore,
     bool? isRefreshingInBackground,
+    bool? isLoadingMore,
   }) {
     return DueVersesLoaded(
       verses: verses ?? this.verses,
@@ -91,6 +96,7 @@ class DueVersesLoaded extends MemoryVerseState {
       hasMore: hasMore ?? this.hasMore,
       isRefreshingInBackground:
           isRefreshingInBackground ?? this.isRefreshingInBackground,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
 }

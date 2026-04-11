@@ -39,6 +39,20 @@ class LoadDueVerses extends MemoryVerseEvent {
   List<Object?> get props => [limit, offset, language, forceRefresh];
 }
 
+/// Event to load more verses for pagination (append to existing list).
+class LoadMoreVerses extends MemoryVerseEvent {
+  final int limit;
+  final String? language;
+
+  const LoadMoreVerses({
+    this.limit = 20,
+    this.language,
+  });
+
+  @override
+  List<Object?> get props => [limit, language];
+}
+
 /// Event to add a Daily Verse to the memory deck.
 ///
 /// Triggers conversion of a daily verse into a memory verse with

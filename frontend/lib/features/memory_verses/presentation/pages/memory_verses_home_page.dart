@@ -57,6 +57,7 @@ class MemoryVersesHomePage extends StatefulWidget {
 class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
   VerseLanguage? _selectedLanguageFilter;
+  final ScrollController _scrollController = ScrollController();
   bool _hasTriggeredMemoryVersePrompt = false;
   StreamSubscription<TokenState>? _tokenSubscription;
   MemoryStreakEntity? _memoryStreak;
@@ -75,13 +76,27 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _checkPlanAccess();
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _tokenSubscription?.cancel();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final state = context.read<MemoryVerseBloc>().state;
+      if (state is DueVersesLoaded && state.hasMore && !state.isLoadingMore) {
+        context.read<MemoryVerseBloc>().add(LoadMoreVerses(
+              language: _selectedLanguageFilter?.code,
+            ));
+      }
+    }
   }
 
   /// Checks if user has access to Memory Verses (Standard+ only)
@@ -469,6 +484,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
@@ -545,6 +561,13 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           else
             SliverToBoxAdapter(
               child: _buildFilteredEmptyMessage(),
+            ),
+          if (state.isLoadingMore)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
