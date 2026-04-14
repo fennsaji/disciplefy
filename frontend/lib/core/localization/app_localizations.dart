@@ -2423,6 +2423,7 @@ class AppLocalizations {
       'Apologetics': 'विश्वास की रक्षा',
       'Life & Relationships': 'जीवन और रिश्ते',
       'Theology': 'धर्मशास्त्र',
+      'Epistles': 'पत्रियाँ',
     },
     'ml': {
       'Foundations': 'അടിത്തറ',
@@ -2431,6 +2432,7 @@ class AppLocalizations {
       'Apologetics': 'വിശ്വാസ സംരക്ഷണം',
       'Life & Relationships': 'ജീവിതവും ബന്ധങ്ങളും',
       'Theology': 'ദൈവശാസ്ത്രം',
+      'Epistles': 'ലേഖനങ്ങൾ',
     },
   };
 

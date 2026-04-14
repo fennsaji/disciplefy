@@ -11,13 +11,10 @@
  * despite token inefficiency (Hindi: 0.28 words/token, Malayalam: 0.09 words/token)
  */
 
-import { type LLMGenerationParams, type LanguageConfig, type PromptPair } from '../llm-types.ts'
+import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
-  THEOLOGICAL_FOUNDATION,
-  JSON_OUTPUT_RULES,
-  createLanguageBlock,
+  createSharedFoundation,
   createVerseReferenceBlock,
-  getDiscipleLevelContext,
   getLanguageExamples
 } from './prompt-builder.ts'
 
@@ -34,7 +31,7 @@ export interface DeepPassResult {
 export function createDeepPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
-): PromptPair {
+): CacheablePromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
 
   const pathParts = [
@@ -59,13 +56,10 @@ export function createDeepPass1Prompt(
     ? 'റോമർ 8:1-39'
     : 'Romans 8:1-39'
 
-  const systemMessage = `You are a Bible scholar creating WORD STUDIES with theological depth.
+  // Deep mode doesn't use native writing style (scholarly tone)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are a Bible scholar creating WORD STUDIES with theological depth.
 
 STUDY MODE: WORD STUDY - PASS 1/2 (Key Word Analysis)
 This is part 1 of a 2-part WORD STUDY generation (12 minutes total).
@@ -77,9 +71,9 @@ Tone: Scholarly precision, exegetically rich, doctrinally sound.`
 
 ${createVerseReferenceBlock(language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 PASS 1: DEEP STUDY FOUNDATION (Summary + Context + Analysis)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 
@@ -134,11 +128,7 @@ EACH paragraph MUST have 6-8 sentences (depth without repetition).
 - PROVIDE cross-references with exegetical analysis
 - DEMONSTRATE mastery of grammatical-historical hermeneutical method
 
-⚠️ SENTENCE COUNTING IS MANDATORY:
-- A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
-- Count each sentence as you write: "1. [sentence]. 2. [sentence]... 7. [sentence]."
-- If you reach 5 sentences, ADD 1-3 MORE SENTENCES to reach 6-8
-- Each paragraph should be 200-280 words of dense scholarly content
+Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 200-280 words.
 
 ## Paragraph 1 (6-8 sentences): Verse-by-Verse Exegesis
 
@@ -171,23 +161,7 @@ Analyze how this shapes Christian belief:
 
 Target: 200-280 words, 6-8 complete sentences with doctrinal precision.
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 1:
-
-Before completing your response, COUNT and verify:
-1. Does "summary" have 130-160 words (6-8 sentences)? [Count: ___]
-2. Does "context" have 50-70 words (MINIMAL)? [Count: ___]
-3. ⚠️ CRITICAL: Does "passage" contain ONLY the Scripture reference (NOT full verse text)? [Format correct: Yes/No]
-4. Does "interpretationPart1" have EXACTLY 3 paragraphs? [Count: ___]
-5. Does EACH paragraph have 6-8 sentences? [Count each: ___ ___ ___]
-6. Is "interpretationPart1" 700-900 words total? [Estimated count: ___]
-7. Did you include original language insights (Hebrew/Greek)? [Check: Yes/No]
-8. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-9. Is total Pass 1 output ~800-900 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
-
-You must generate FULL CONTENT for each field as specified above.
+VERIFY: summary 130-160 words | context 50-70 words | passage reference ONLY (MANDATORY) | interpretationPart1: 3 paragraphs, 6-8 sentences each, 700-900 words | Includes Hebrew/Greek insights | Verse refs in ${languageConfig.name} | Total ~800-900 words. Generate FULL CONTENT - no placeholders. FIX any issues BEFORE output.
 
 ${getLanguageExamples(language)}
 
@@ -199,7 +173,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 3 paragraphs]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
@@ -209,25 +183,22 @@ export function createDeepPass2Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
-): PromptPair {
+): CacheablePromptPair {
   const { language, discipleLevel } = params
 
-  const systemMessage = `You are a Bible scholar and teacher completing an in-depth study guide.
+  // Deep mode doesn't use native writing style (scholarly tone)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are a Bible scholar and teacher completing an in-depth study guide.
 
 STUDY MODE: DEEP STUDY - PASS 2/2 (Application + Resources)
 This is part 2 of a 2-part deep study generation. Focus on practical transformation.
 Target output: ~700 words for this pass.
 Continue the scholarly tone with practical application.`
 
-  const userMessage = `═══════════════════════════════════════════════════════════════════════════
+  const userMessage = `---
 PASS 2: DEEP STUDY APPLICATION (Practical Transformation + Resources)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 CONTEXT FROM PASS 1:
 - Study Summary: ${pass1Result.summary.substring(0, 200)}...
@@ -262,11 +233,7 @@ EACH paragraph MUST have 6-8 sentences with DEEP PRACTICAL APPLICATION.
 - BRIDGE theological insights from Pass 1 to actionable life change
 - ADDRESS real struggles, challenges, and growth opportunities
 
-⚠️ SENTENCE COUNTING IS MANDATORY:
-- A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
-- Count each sentence as you write: "1. [sentence]. 2. [sentence]... 7. [sentence]."
-- If you reach 5 sentences, ADD 1-3 MORE SENTENCES to reach 6-8
-- Each paragraph should be 250-320 words of transformative content
+Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 250-320 words.
 
 ## Paragraph 1 (6-8 sentences): Life Transformation
 
@@ -298,27 +265,9 @@ Target: 250-320 words, 6-8 complete sentences with contemporary insight and acti
 - reflectionAnswers: 5-7 applications (15-20 words each)
 - 5 yes/no questions for engagement
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 2:
+VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | 5-7 prayerPoints (40-60 words each) | 5-7 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "interpretationPart2" have EXACTLY 2 paragraphs? [Count: ___]
-2. Does EACH paragraph have 6-8 sentences? [Count each: ___ ___]
-3. Is "interpretationPart2" 550-700 words total? [Estimated count: ___]
-4. Does "relatedVerses" contain 7-10 verses? [Count: ___]
-5. Are all verses in ${languageConfig.name}? [Check: Yes/No]
-6. Does "reflectionQuestions" contain 8-12 questions? [Count: ___]
-7. Does "prayerPoints" contain 5-7 prayer points? [Count: ___]
-8. Is each prayer point 40-60 words? [Check: Yes/No]
-9. Are "summaryInsights" 5-7 items at 15-20 words each? [Count: ___]
-10. Are "interpretationInsights" 5-7 items at 15-20 words each? [Count: ___]
-11. Are "reflectionAnswers" 5-7 items at 15-20 words each? [Count: ___]
-12. Are all 5 yes/no questions present? [Check: Yes/No]
-13. Is total Pass 2 output ~700 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -338,7 +287,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "prayerQuestion": "[YOUR QUESTION]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**

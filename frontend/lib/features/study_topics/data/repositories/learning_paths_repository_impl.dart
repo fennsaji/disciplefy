@@ -20,10 +20,12 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   // Cache for category-grouped paths
   LearningPathCategoriesResult? _cachedCategories;
   DateTime? _categoriesCacheTimestamp;
+  String? _categoriesCachedLanguage;
 
   // Cache for learning paths (flat, used for enrolled paths / recommended)
   LearningPathsResult? _cachedPaths;
   DateTime? _cacheTimestamp;
+  String? _pathsCachedLanguage;
   static const _cacheDuration = Duration(hours: 24);
 
   // Cache for path details
@@ -54,7 +56,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         offset == 0 &&
         search == null &&
         fellowshipId == null &&
-        _isCacheValid()) {
+        _isCacheValid(language)) {
       return Right(_cachedPaths!);
     }
 
@@ -74,6 +76,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       if (offset == 0 && search == null) {
         _cachedPaths = result;
         _cacheTimestamp = DateTime.now();
+        _pathsCachedLanguage = language;
       }
 
       return Right(result);
@@ -100,7 +103,9 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     bool forceRefresh = false,
   }) async {
     // Only cache the first page
-    if (!forceRefresh && categoryOffset == 0 && _isCategoriesCacheValid()) {
+    if (!forceRefresh &&
+        categoryOffset == 0 &&
+        _isCategoriesCacheValid(language)) {
       return Right(_cachedCategories!);
     }
 
@@ -117,6 +122,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       if (categoryOffset == 0) {
         _cachedCategories = result;
         _categoriesCacheTimestamp = DateTime.now();
+        _categoriesCachedLanguage = language;
       }
 
       return Right(result);
@@ -365,29 +371,37 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   void clearCache() {
     _cachedCategories = null;
     _categoriesCacheTimestamp = null;
+    _categoriesCachedLanguage = null;
     _cachedPaths = null;
     _cacheTimestamp = null;
+    _pathsCachedLanguage = null;
     _detailsCache.clear();
     _detailsCacheTimestamps.clear();
     _cachedRecommendedPath = null;
     _recommendedPathCacheTimestamp = null;
+    _recommendedPathCachedLanguage = null;
     _cachedPersonalizedPaths = null;
     _personalizedPathsCacheTimestamp = null;
+    _personalizedPathsCachedLanguage = null;
     // Also clear the persistent Hive cache so stale data is not served after
     // events like enrollment, language change, or DB migrations.
     _remoteDataSource.clearCache();
   }
 
-  bool _isCategoriesCacheValid() {
-    if (_cachedCategories == null || _categoriesCacheTimestamp == null) {
+  bool _isCategoriesCacheValid(String language) {
+    if (_cachedCategories == null ||
+        _categoriesCacheTimestamp == null ||
+        _categoriesCachedLanguage != language) {
       return false;
     }
     return DateTime.now().difference(_categoriesCacheTimestamp!) <
         _cacheDuration;
   }
 
-  bool _isCacheValid() {
-    if (_cachedPaths == null || _cacheTimestamp == null) {
+  bool _isCacheValid(String language) {
+    if (_cachedPaths == null ||
+        _cacheTimestamp == null ||
+        _pathsCachedLanguage != language) {
       return false;
     }
     return DateTime.now().difference(_cacheTimestamp!) < _cacheDuration;
@@ -402,22 +416,28 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         _cacheDuration;
   }
 
-  // Cache for personalized paths
+  // Cache for personalized paths (keyed by language)
+  String? _personalizedPathsCachedLanguage;
   List<LearningPath>? _cachedPersonalizedPaths;
   DateTime? _personalizedPathsCacheTimestamp;
 
-  bool _isRecommendedPathCacheValid() {
+  // Track cached language for recommended path
+  String? _recommendedPathCachedLanguage;
+
+  bool _isRecommendedPathCacheValid(String language) {
     if (_cachedRecommendedPath == null ||
-        _recommendedPathCacheTimestamp == null) {
+        _recommendedPathCacheTimestamp == null ||
+        _recommendedPathCachedLanguage != language) {
       return false;
     }
     return DateTime.now().difference(_recommendedPathCacheTimestamp!) <
         _cacheDuration;
   }
 
-  bool _isPersonalizedPathsCacheValid() {
+  bool _isPersonalizedPathsCacheValid(String language) {
     if (_cachedPersonalizedPaths == null ||
-        _personalizedPathsCacheTimestamp == null) {
+        _personalizedPathsCacheTimestamp == null ||
+        _personalizedPathsCachedLanguage != language) {
       return false;
     }
     return DateTime.now().difference(_personalizedPathsCacheTimestamp!) <
@@ -429,7 +449,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     String language = 'en',
     int limit = 5,
   }) async {
-    if (_isPersonalizedPathsCacheValid()) {
+    if (_isPersonalizedPathsCacheValid(language)) {
       return Right(_cachedPersonalizedPaths!);
     }
 
@@ -441,6 +461,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       final paths = response.toEntity();
       _cachedPersonalizedPaths = paths;
       _personalizedPathsCacheTimestamp = DateTime.now();
+      _personalizedPathsCachedLanguage = language;
       return Right(paths);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
@@ -462,8 +483,8 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     Logger.debug(
         '[LearningPathsRepo] getRecommendedPath called with forceRefresh: $forceRefresh');
 
-    // Check cache first (skip if forceRefresh)
-    if (!forceRefresh && _isRecommendedPathCacheValid()) {
+    // Check cache first (skip if forceRefresh or language changed)
+    if (!forceRefresh && _isRecommendedPathCacheValid(language)) {
       Logger.debug(
           '[LearningPathsRepo] Returning cached data (progress: ${_cachedRecommendedPath?.path.progressPercentage}%)');
       return Right(_cachedRecommendedPath!);
@@ -489,6 +510,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       // Update cache
       _cachedRecommendedPath = result;
       _recommendedPathCacheTimestamp = DateTime.now();
+      _recommendedPathCachedLanguage = language;
 
       return Right(result);
     } on ServerException catch (e) {

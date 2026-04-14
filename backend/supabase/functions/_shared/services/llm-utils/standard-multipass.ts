@@ -10,15 +10,11 @@
  * Hindi standard studies already meet targets with single-pass generation.
  */
 
-import { type LLMGenerationParams, type LanguageConfig, type PromptPair } from '../llm-types.ts'
+import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
-  THEOLOGICAL_FOUNDATION,
-  JSON_OUTPUT_RULES,
-  createLanguageBlock,
+  createSharedFoundation,
   createVerseReferenceBlock,
   getWordCountTarget,
-  getDiscipleLevelContext,
-  createNativeWritingStyle,
   getLanguageExamples
 } from './prompt-builder.ts'
 
@@ -35,7 +31,7 @@ export interface StandardPassResult {
 export function createStandardPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
-): PromptPair {
+): CacheablePromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
   const wordTarget = getWordCountTarget(languageConfig, 'standard')
 
@@ -48,28 +44,22 @@ export function createStandardPass1Prompt(
     ? `Create a STANDARD STUDY for: \"${inputValue}\"`
     : `Create a STANDARD STUDY on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const systemMessage = `You are a Bible teacher creating balanced, accessible study guides.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are a Bible teacher creating balanced, accessible study guides.
 
 STUDY MODE: STANDARD STUDY - PASS 1/2 (Foundation + Teaching)
 This is part 1 of a multi-pass standard study generation. Focus on solid teaching.
 Target output: ~700 words for this pass.
-Tone: Clear, accessible, biblically grounded, practical.
-
-${createNativeWritingStyle(language)}`
+Tone: Clear, accessible, biblically grounded, practical.`
 
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 PASS 1: STANDARD STUDY FOUNDATION (Summary + Context + Teaching)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 
@@ -123,11 +113,7 @@ If the study input is a single verse (e.g., "John 3:16"), you MUST reach the ful
 - Showing the verse's role in its LITERARY CONTEXT (surrounding chapter/book)
 Do NOT stop early because one verse "runs out" of material. Cross-references and doctrinal connections are required to fill the target length.
 
-⚠️ SENTENCE COUNTING IS MANDATORY:
-- A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
-- Count each sentence as you write: "1. [sentence]. 2. [sentence]... 6. [sentence]."
-- If you reach 5 sentences, ADD 1-3 MORE SENTENCES to reach 6-8
-- Each paragraph should be 200-280 words of flowing prose
+Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 200-280 words.
 
 ## Paragraph 1 (6-8 sentences): Verse Explanation
 
@@ -156,23 +142,9 @@ Extract 2-3 timeless principles and connect to broader biblical teaching:
 
 Target: 200-280 words, 6-8 complete sentences with biblical support.
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 1:
+VERIFY: summary 80-100 words | context 40-60 words | passage reference ONLY (MANDATORY) | interpretationPart1: 2 paragraphs, 6-8 sentences each, 500-650 words total | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "summary" have 80-100 words (5-6 sentences)? [Count: ___]
-2. Does "context" have 40-60 words (MINIMAL)? [Count: ___]
-3. ⚠️ CRITICAL: Does "passage" contain ONLY the Scripture reference (NOT full verse text)? [Format correct: Yes/No]
-4. Does "interpretationPart1" have EXACTLY 2 paragraphs? [Count: ___]
-5. Does EACH paragraph in interpretationPart1 have 6-8 sentences? [Count each: ___ ___]
-6. Is "interpretationPart1" 500-650 words total? [Estimated count: ___]
-7. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-8. Is total Pass 1 output ~700 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -184,7 +156,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart1": "[YOUR 500-650 WORD INTERPRETATION PART 1 HERE - 2 paragraphs]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
@@ -194,27 +166,21 @@ export function createStandardPass2Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
-): PromptPair {
+): CacheablePromptPair {
   const { language, discipleLevel } = params
 
-  const systemMessage = `You are a Bible teacher completing a balanced, accessible study guide.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are a Bible teacher completing a balanced, accessible study guide.
 
 STUDY MODE: STANDARD STUDY - PASS 2/2 (Application + Resources)
 This is part 2 of a 2-part standard study generation. Focus on practical life change.
 Target output: ~500 words for this pass.
-Continue the clear, practical, biblically grounded tone.
+Continue the clear, practical, biblically grounded tone.`
 
-${createNativeWritingStyle(language)}`
-
-  const userMessage = `═══════════════════════════════════════════════════════════════════════════
+  const userMessage = `---
 PASS 2: STANDARD STUDY APPLICATION (Life Application + Resources)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 CONTEXT FROM PASS 1:
 - Study Summary: ${pass1Result.summary.substring(0, 200)}...
@@ -281,24 +247,9 @@ Target: 150-200 words, 5-7 complete sentences that are actionable, not vague.
 - reflectionAnswers: 4-5 applications (15-20 words each)
 - 5 yes/no questions for engagement
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 2:
+VERIFY: interpretationPart2: 2 paragraphs, 5-7 sentences each, 350-450 words | 3-5 prayerPoints (40-50 words each) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | Verse refs in ${languageConfig.name} | Total ~500 words. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "interpretationPart2" have EXACTLY 2 paragraphs? [Count: ___]
-2. Does EACH paragraph have 5-7 sentences? [Count each: ___ ___]
-3. Is "interpretationPart2" 350-450 words total? [Estimated count: ___]
-4. Does "prayerPoints" contain 3-5 prayer points? [Count: ___]
-5. Is each prayer point 40-50 words? [Check: Yes/No]
-6. Are "summaryInsights" 4-5 items at 15-20 words each? [Count: ___]
-7. Are "interpretationInsights" 4-5 items at 15-20 words each? [Count: ___]
-8. Are "reflectionAnswers" 4-5 items at 15-20 words each? [Count: ___]
-9. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-10. Is total Pass 2 output ~500 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -318,7 +269,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "prayerQuestion": "[YOUR QUESTION]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**

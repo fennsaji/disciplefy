@@ -11,16 +11,12 @@
  * Preachers will expand this core content to 50-60 minutes during live delivery.
  */
 
-import { type LLMGenerationParams, type LanguageConfig, type PromptPair } from '../llm-types.ts'
+import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
-  THEOLOGICAL_FOUNDATION,
-  JSON_OUTPUT_RULES,
-  createLanguageBlock,
+  createSharedFoundation,
   createVerseReferenceBlock,
   getSermonHeadings,
   getWordCountTarget,
-  getDiscipleLevelContext,
-  createNativeWritingStyle,
   getLanguageExamples
 } from './prompt-builder.ts'
 
@@ -37,7 +33,7 @@ export interface SermonPassResult {
 export function createSermonPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
-): PromptPair {
+): CacheablePromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
   const headings = getSermonHeadings(language)
   const wordTarget = getWordCountTarget(languageConfig, 'sermon')
@@ -52,28 +48,22 @@ export function createSermonPass1Prompt(
     ? `Create an ${sermonFormat} sermon outline for: "${inputValue}"`
     : `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const systemMessage = `You are an experienced preacher creating sermon outlines for pastors.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are an experienced preacher creating sermon outlines for pastors.
 
 STUDY MODE: SERMON OUTLINE - PASS 1/4 (Introduction + First Point)
 This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
 Target output: ${params.language === 'ml' ? '~600 words for Malayalam (STRICT token limit to avoid timeout)' : '~1,800 words'}
-Tone: Theologically rich, pastorally wise, suitable for preacher preparation.
-
-${createNativeWritingStyle(language)}`
+Tone: Theologically rich, pastorally wise, suitable for preacher preparation.`
 
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 PASS 1/4: SERMON FOUNDATION (Summary + Context + Passage + Intro + Point 1)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 
@@ -126,14 +116,7 @@ Keep it SHORT and FOCUSED - only what's necessary to understand the sermon text.
 
 ${params.language === 'ml' ? '⚠️ MALAYALAM STRICT TIMEOUT LIMIT: Pass 1 limited to ~600 words total to avoid Edge Function timeout.\nYou MUST stay within this limit - quality over quantity for Malayalam.' : ''}
 
-⚠️ PREACHER-FACING EXPLANATION REQUIREMENTS (MANDATORY):
-- PROVIDE CORE theological content and conceptual ideas (not full manuscript)
-- Give 3-4 concise paragraphs per section (not 5-7 lengthy ones)
-- FOCUS on doctrinal clarity and key applications (preachers will elaborate)
-- CONCEPTUAL illustrations (the idea, not the full story with dialogue)
-- 2-3 KEY VERSES per point (not exhaustive lists)
-- 3-4 FOCUSED applications (not 5-7)
-- Pastors will expand this during live delivery to fill the time
+PREACHER-FACING: Core theological content + conceptual ideas (not full manuscript). 3-4 paragraphs/section. Conceptual illustrations. 2-3 verses/point. 3-4 focused applications. Pastors expand during delivery.
 
 ## ${headings.introduction} (${params.language === 'ml' ? '150-200 words' : '450-550 words'})
 
@@ -184,29 +167,13 @@ Keep focused - preacher will add examples.
 
 **${headings.transition}** (${params.language === 'ml' ? '20-30 words' : '50-70 words'}): One paragraph bridging to Point 2.
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 1:
+VERIFY BEFORE OUTPUT:
+- summary: ${params.language === 'ml' ? '100-130' : '250-350'} words | context: ${params.language === 'ml' ? '30-40' : '50-100'} words | passage: reference ONLY (MANDATORY)
+- interpretationPart1 MUST include BOTH Introduction (${params.language === 'ml' ? '150-200' : '450-550'} words) AND Point 1 (${params.language === 'ml' ? '300-350' : '1000-1200'} words) — DO NOT stop after Introduction!
+- Total: ${params.language === 'ml' ? '~600 words (STRICT timeout limit)' : '~1,800 words'} | Verse refs in ${languageConfig.name} | Conceptual illustrations only
+FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "summary" have ${params.language === 'ml' ? '100-130' : '250-350'} words? [Count: ___]
-2. Does "context" have ${params.language === 'ml' ? '30-40 words (MINIMAL)' : '50-100 words (MINIMAL)'}? [Count: ___]
-3. ⚠️ CRITICAL: Does "passage" contain ONLY the Scripture reference (NOT full verse text)? [Format correct: Yes/No]
-4. 🚨 CRITICAL: Does "interpretationPart1" include Introduction (Hook conceptual, Bridge, Preview, Transition)? [Check: Yes/No]
-5. 🚨 CRITICAL: Does "interpretationPart1" include Point 1 (Main Teaching, Scripture Foundation 2 verses, Conceptual Illustration, Application 2 points, Transition)? [Check: Yes/No]
-6. 🚨 STOP HERE: If Point 1 is missing, GO BACK and add it before outputting JSON!
-7. Is Introduction ${params.language === 'ml' ? '150-200 words' : '450-550 words'}? [Count: ___]
-8. Is Point 1 ${params.language === 'ml' ? '300-350 words' : '1000-1200 words'}? [Count: ___]
-9. Is "interpretationPart1" TOTAL ${params.language === 'ml' ? '450-550 words' : '1450-1750 words'}? [Estimated count: ___]
-10. Is content PREACHER-FACING (core ideas, not full manuscript)? [Check: Yes/No]
-11. Are illustrations CONCEPTUAL (ideas, not full stories)? [Check: Yes/No]
-12. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-13. Is total Pass 1 output ${params.language === 'ml' ? '~600 words (STRICT limit to avoid timeout!)' : '~1,800 words'}? [Estimated: ___]
-
-⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -218,7 +185,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart1": "[YOUR ${params.language === 'ml' ? '450-550' : '1450-1750'} WORD PREACHER-FACING EXPLANATION HERE - Introduction (conceptual hook, bridge, preview, transition) + Point 1 (core teaching, 2 verses, conceptual illustration, 2 applications, transition)]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
@@ -228,28 +195,22 @@ export function createSermonPass2Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
-): PromptPair {
+): CacheablePromptPair {
   const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
-  const systemMessage = `You are an experienced preacher continuing a sermon manuscript.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are an experienced preacher continuing a sermon manuscript.
 
 STUDY MODE: SERMON OUTLINE - PASS 2/4 (Point 2 Only)
 This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1.
 Target output: ${params.language === 'ml' ? '~400 words for Malayalam (STRICT timeout limit)' : '~1,000-1,200 words'}
-Provide CORE content that preachers will expand during delivery.
+Provide CORE content that preachers will expand during delivery.`
 
-${createNativeWritingStyle(language)}`
-
-  const userMessage = `═══════════════════════════════════════════════════════════════════════════
+  const userMessage = `---
 PASS 2/4: MAIN TEACHING POINT 2 (Point 2 Only)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 CONTEXT FROM PASS 1:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
@@ -265,14 +226,7 @@ Generate this JSON structure:
 
 **INTERPRETATION PART 2 (${params.language === 'ml' ? '400 words' : '1000-1200 words'}):**
 
-⚠️ PREACHER-FACING EXPLANATION REQUIREMENTS (MANDATORY):
-- PROVIDE CORE theological content and conceptual ideas (not full manuscript)
-- Give ${params.language === 'ml' ? '1-2 concise paragraphs per section' : '3-4 concise paragraphs per section'} (not lengthy ones)
-- FOCUS on doctrinal clarity and key applications (preachers will elaborate)
-- CONCEPTUAL illustrations (the idea, not full story)
-- ${params.language === 'ml' ? '2 KEY VERSES' : '2-3 KEY VERSES per point'} (not exhaustive lists)
-- ${params.language === 'ml' ? '2 FOCUSED applications' : '3-4 FOCUSED applications'}
-- Pastors will expand this during live delivery
+PREACHER-FACING: Core content, conceptual illustrations, ${params.language === 'ml' ? '2 verses, 2 applications' : '2-3 verses, 3-4 applications'}. Pastors expand during delivery.
 
 ## ${headings.point} 2: [Memorable Title] (${params.language === 'ml' ? '400 words' : '1000-1200 words'})
 
@@ -285,21 +239,9 @@ Use ${params.language === 'ml' ? 'CONDENSED' : 'SAME'} STRUCTURE as Point 1:
 
 This is usually the theological weight center of the sermon.
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 2:
+VERIFY: Point 2 complete with all components (Main Teaching, Scripture, Illustration, Application, Transition) | ${params.language === 'ml' ? '~400 words (STRICT limit)' : '1000-1200 words'} | Verse refs in ${languageConfig.name} | Conceptual illustrations only. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "interpretationPart2" have all required sections? [Check: Point 2 complete]
-2. Does Point 2 have all components (Main Teaching, Scripture 2 verses, Conceptual Illustration, Application ${params.language === 'ml' ? '2' : '3-4'} points, Transition)? [Check: Yes/No]
-3. Is Point 2 ${params.language === 'ml' ? '~400' : '1000-1200'} words? [Count: ___]
-4. Is content PREACHER-FACING (core ideas, not full manuscript)? [Check: Yes/No]
-5. Are illustrations CONCEPTUAL (ideas, not full stories)? [Check: Yes/No]
-6. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-7. Is total Pass 2 output ${params.language === 'ml' ? '~400 words (STRICT limit!)' : '~1,000-1,200 words'}? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THIS IS A PLACEHOLDER!
-You must generate FULL CONTENT for this field as specified above.
+Generate FULL CONTENT - no literal "..." placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -308,7 +250,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart2": "[YOUR 1000-1200 WORD PREACHER-FACING EXPLANATION HERE - Point 2 (core teaching, 2-3 verses, conceptual illustration, 3-4 applications, transition)]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
@@ -319,28 +261,22 @@ export function createSermonPass3Prompt(
   languageConfig: LanguageConfig,
   pass1Result: { summary: string },
   pass2Result: { interpretationPart2: string }
-): PromptPair {
+): CacheablePromptPair {
   const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
-  const systemMessage = `You are an experienced preacher continuing a sermon manuscript.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are an experienced preacher continuing a sermon manuscript.
 
 STUDY MODE: SERMON OUTLINE - PASS 3/4 (Point 3 Only)
 This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1 and Pass 2.
 Target output: ${params.language === 'ml' ? '~350 words for Malayalam (STRICT timeout limit)' : '~700-900 words'}
-Provide CORE content that preachers will expand during delivery.
+Provide CORE content that preachers will expand during delivery.`
 
-${createNativeWritingStyle(language)}`
-
-  const userMessage = `═══════════════════════════════════════════════════════════════════════════
+  const userMessage = `---
 PASS 3/4: FINAL TEACHING POINT (Point 3 Only)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 CONTEXT FROM PREVIOUS PASSES:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
@@ -356,14 +292,7 @@ Generate this JSON structure:
 
 **INTERPRETATION PART 3 (${params.language === 'ml' ? '350 words' : '700-900 words'}):**
 
-⚠️ PREACHER-FACING EXPLANATION REQUIREMENTS (MANDATORY):
-- PROVIDE CORE theological content and conceptual ideas (not full manuscript)
-- Give ${params.language === 'ml' ? '1-2 concise paragraphs per section (highly condensed)' : '2-3 concise paragraphs per section (condensed from Point 2 structure)'}
-- FOCUS on doctrinal clarity and key applications (preachers will elaborate)
-- CONCEPTUAL illustrations (the idea, not full story)
-- ${params.language === 'ml' ? '2 KEY VERSES' : '2-3 KEY VERSES per point'} (not exhaustive lists)
-- ${params.language === 'ml' ? '2 FOCUSED applications' : '2-3 FOCUSED applications'}
-- Pastors will expand this during live delivery
+PREACHER-FACING: Core content (${params.language === 'ml' ? 'highly condensed' : 'condensed'}), conceptual illustrations, ${params.language === 'ml' ? '2 verses, 2 applications' : '2-3 verses, 2-3 applications'}. Pastors expand during delivery.
 
 ## ${headings.point} 3: [Memorable Title] (${params.language === 'ml' ? '350 words' : '700-900 words'})
 
@@ -374,21 +303,9 @@ ${params.language === 'ml' ? 'Highly condensed' : 'Condensed'} structure:
 - **${headings.application}** (${params.language === 'ml' ? '60-80 words' : '120-150 words'}): 2${params.language === 'ml' ? '' : '-3'} strong applications (${params.language === 'ml' ? '30-40 words' : '50-70 words'} each)
 - **${headings.transition}** (${params.language === 'ml' ? '20-30 words' : '40-60 words'}): Bridge to Conclusion
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 3:
+VERIFY: Point 3 complete with all components (Main Teaching, Scripture, Illustration, Application, Transition) | ${params.language === 'ml' ? '~350 words (STRICT limit)' : '700-900 words'} | Verse refs in ${languageConfig.name} | Conceptual illustrations only. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "interpretationPart3" have all required sections? [Check: Point 3 complete]
-2. Does Point 3 have all components (Main Teaching, Scripture 2 verses, Conceptual Illustration, Application 2 points, Transition)? [Check: Yes/No]
-3. Is Point 3 ${params.language === 'ml' ? '~350' : '700-900'} words? [Count: ___]
-4. Is content PREACHER-FACING (core ideas, not full manuscript)? [Check: Yes/No]
-5. Are illustrations CONCEPTUAL (ideas, not full stories)? [Check: Yes/No]
-6. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-7. Is total Pass 3 output ${params.language === 'ml' ? '~350 words (STRICT limit!)' : '~700-900 words'}? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THIS IS A PLACEHOLDER!
-You must generate FULL CONTENT for this field as specified above.
+Generate FULL CONTENT - no literal "..." placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -397,7 +314,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart3": "[YOUR 700-900 WORD PREACHER-FACING EXPLANATION HERE - Point 3 (core teaching, 2-3 verses, conceptual illustration, 2-3 applications, transition)]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
@@ -407,28 +324,22 @@ export function createSermonPass4Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig,
   pass1Result: { summary: string }
-): PromptPair {
+): CacheablePromptPair {
   const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
-  const systemMessage = `You are an experienced preacher completing a sermon manuscript.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are an experienced preacher completing a sermon manuscript.
 
 STUDY MODE: SERMON OUTLINE - PASS 4/4 (Conclusion + Altar Call + Extras)
 This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home powerfully.
 Target output: ${params.language === 'ml' ? '~550 words for Malayalam (STRICT timeout limit)' : '~1,100 words'}
-Provide CORE conclusion and altar call outline that preachers will expand.
+Provide CORE conclusion and altar call outline that preachers will expand.`
 
-${createNativeWritingStyle(language)}`
-
-  const userMessage = `═══════════════════════════════════════════════════════════════════════════
+  const userMessage = `---
 PASS 4/4: CONCLUSION + INVITATION + SUPPORTING MATERIALS
-═══════════════════════════════════════════════════════════════════════════
+---
 
 CONTEXT FROM PREVIOUS PASSES:
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2) + Point 3 (Pass 3)
@@ -455,21 +366,10 @@ Generate this JSON structure (IMPORTANT: interpretationPart4 MUST be LAST for st
 
 **INTERPRETATION PART 4 - CONCLUSION (${params.language === 'ml' ? '220-250 words' : '350-450 words'}):**
 
-⚠️ PREACHER-FACING EXPLANATION REQUIREMENTS:
-- PROVIDE CORE conclusion content (not full manuscript)
-- Give concise summaries of each point
-- FOCUS on unified gospel truth (preachers will add emotional intensity)
-- Keep it CLEAR and MEMORABLE
+Core conclusion content (not full manuscript). Clear, memorable, gospel-centered.
 
 ## ${headings.conclusion}
-
-Write 4 ${params.language === 'ml' ? 'VERY concise paragraphs' : 'concise paragraphs'}:
-- **Summary of Point 1** (${params.language === 'ml' ? '50-60 words' : '80-100 words'}): Restate the main truth with fresh language
-- **Summary of Point 2** (${params.language === 'ml' ? '50-60 words' : '80-100 words'}): Connect to Point 1, show building argument
-- **Summary of Point 3** (${params.language === 'ml' ? '50-60 words' : '80-100 words'}): Bring all points together into unified gospel truth
-- **Gospel Climax** (${params.language === 'ml' ? '70-90 words' : '100-120 words'}): Tie everything to Christ's finished work. Make the gospel clear and compelling.
-
-Keep summaries CONCISE - give the core idea, preacher will add emotional intensity.
+4 paragraphs: Point 1 summary (${params.language === 'ml' ? '50-60' : '80-100'} words) → Point 2 summary (${params.language === 'ml' ? '50-60' : '80-100'} words) → Point 3 summary (${params.language === 'ml' ? '50-60' : '80-100'} words) → Gospel Climax (${params.language === 'ml' ? '70-90' : '100-120'} words, tie to Christ's finished work)
 
 **PRAYER POINTS - ALTAR CALL OUTLINE (${params.language === 'ml' ? '180-220 words' : '300-400 words'} as single string):**
 
@@ -507,28 +407,14 @@ Preacher will expand into full prayer during delivery. End with Amen.
 - reflectionAnswers: ${params.language === 'ml' ? '3 applications (12-15 words each)' : '5 applications (15-20 words each)'}
 - 5 yes/no questions for engagement
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 4:
+VERIFY BEFORE OUTPUT:
+- interpretationPart4: ${params.language === 'ml' ? '220-250' : '350-450'} words (4 paragraphs: 3 point summaries + gospel climax)
+- prayerPoints (altar call): ${params.language === 'ml' ? '180-220' : '300-400'} words with Gospel Recap, Invitation, Response Options, Closing Prayer
+- All supporting fields present: ${params.language === 'ml' ? '3-4' : '5-7'} relatedVerses, ${params.language === 'ml' ? '3-4' : '5-7'} reflectionQuestions, ${params.language === 'ml' ? '3' : '5'} summaryInsights/interpretationInsights/reflectionAnswers, 5 yes/no questions
+- Total: ${params.language === 'ml' ? '~550 words (STRICT limit)' : '~1,100 words'} | Verse refs in ${languageConfig.name}
+FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "interpretationPart4" have all required sections? [Check: Conclusion complete with 4 paragraphs]
-2. Does EACH paragraph in Conclusion have appropriate content? [Verify each paragraph has core teaching]
-3. Is "interpretationPart4" ${params.language === 'ml' ? '220-250' : '350-450'} words total? [Estimated count: ___]
-4. Does Altar Call have all components (Gospel Recap, Invitation, Response Options, Closing Prayer)? [Check: Yes/No]
-5. Is Altar Call ${params.language === 'ml' ? '180-220' : '300-400'} words total? [Estimated count: ___]
-6. Does Altar Call have CONCISE outline content (not full manuscript)? [Check: Yes/No]
-7. Does "relatedVerses" contain ${params.language === 'ml' ? '3-4' : '5-7'} verses? [Count: ___]
-8. Are all verses in ${languageConfig.name}? [Check: Yes/No]
-9. Does "reflectionQuestions" contain ${params.language === 'ml' ? '3-4' : '5-7'} questions? [Count: ___]
-10. Are "summaryInsights" ${params.language === 'ml' ? '3 items at 12-15 words each' : '5 items at 15-20 words each'}? [Count: ___]
-11. Are "interpretationInsights" ${params.language === 'ml' ? '3 items at 12-15 words each' : '5 items at 15-20 words each'}? [Count: ___]
-12. Are "reflectionAnswers" ${params.language === 'ml' ? '3 items at 12-15 words each' : '5 items at 15-20 words each'}? [Count: ___]
-13. Are all 5 yes/no questions present? [Check: Yes/No]
-14. Is total Pass 4 output ${params.language === 'ml' ? '~550 words (STRICT limit!)' : '~1,100 words'}? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -548,7 +434,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "prayerQuestion": "[YOUR INVITATION QUESTION - ${params.language === 'ml' ? '8-12' : '10-15'} words]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
