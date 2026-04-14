@@ -225,6 +225,25 @@ class StreamingStudyGuideContent {
   /// Changed from hardcoded 6 to dynamic totalSections to support all study modes
   bool get isComplete => sectionsLoaded >= totalSections;
 
+  /// Whether all 7 required content fields are present (non-null and non-empty).
+  /// Matches REQUIRED_SECTIONS from backend streaming-json-parser.ts:
+  ///   summary, interpretation, context, passage, relatedVerses, reflectionQuestions, prayerPoints
+  bool get hasRequiredContent =>
+      summary != null &&
+      summary!.isNotEmpty &&
+      interpretation != null &&
+      interpretation!.isNotEmpty &&
+      context != null &&
+      context!.isNotEmpty &&
+      passage != null &&
+      passage!.isNotEmpty &&
+      relatedVerses != null &&
+      relatedVerses!.isNotEmpty &&
+      reflectionQuestions != null &&
+      reflectionQuestions!.isNotEmpty &&
+      prayerPoints != null &&
+      prayerPoints!.isNotEmpty;
+
   /// Create a copy with a new section added
   StreamingStudyGuideContent copyWithSection(StudyStreamSectionEvent section) {
     return StreamingStudyGuideContent(

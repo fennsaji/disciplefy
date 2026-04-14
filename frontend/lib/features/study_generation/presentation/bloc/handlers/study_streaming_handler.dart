@@ -155,21 +155,37 @@ class StudyStreamingHandler {
         '🌊 [STREAMING_HANDLER] Tokens consumed: ${event.tokensConsumed}');
     Logger.debug('🌊 [STREAMING_HANDLER] From cache: ${event.fromCache}');
 
-    // Convert streaming content to a complete study guide
-    // For now, we keep the streaming state but mark it as complete
-    // The UI can detect isComplete and render accordingly
     final content = currentState.content;
 
-    // Create a new streaming state with completion info.
+    // Validate required content is present before marking complete.
+    // If the backend sent 'complete' but required sections are missing,
+    // treat it as a partial failure so the user isn't charged for incomplete content.
+    if (!content.hasRequiredContent) {
+      Logger.debug(
+          '🌊 [STREAMING_HANDLER] Complete received but required content missing — treating as partial failure');
+      emit(StudyGenerationStreamingFailed(
+        partialContent: content,
+        failure: ServerFailure(
+          message:
+              'Study generation returned incomplete content. Please try again.',
+          code: 'INCOMPLETE_GENERATION',
+        ),
+        canRetry: true,
+        inputType: currentState.inputType,
+        inputValue: currentState.inputValue,
+        language: currentState.language,
+      ));
+      return;
+    }
+
+    // All required content present — mark as complete.
     // Set sectionsLoaded = totalSections so isComplete flips to true.
-    // The backend complete event is authoritative — trust it even if a section
-    // was skipped (e.g. an optional passage section with no content).
     emit(StudyGenerationStreaming(
       content: content.copyWith(
         studyGuideId: event.studyGuideId,
         isFromCache: event.fromCache,
-        sectionsLoaded:
-            content.totalSections, // Mark complete: trust the backend
+        sectionsLoaded: content
+            .totalSections, // Mark complete: all required content verified
       ),
       inputType: currentState.inputType,
       inputValue: currentState.inputValue,
