@@ -339,7 +339,7 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
     latencyMs = Date.now() - startTime
 
     // 7a. Validate content completeness before saving
-    const missingFields = validateStudyGuideCompleteness(generatedContent)
+    const missingFields = validateStudyGuideCompleteness(generatedContent as unknown as Record<string, unknown>)
     if (missingFields.length > 0) {
       throw new AppError(
         'INCOMPLETE_GENERATION',

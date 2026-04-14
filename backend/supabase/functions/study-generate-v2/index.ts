@@ -771,6 +771,12 @@ async function handleStudyGenerateV2(
       // This establishes the SSE connection before any async operations
       emit(': keepalive\n\n')
 
+      // Token consumption tracking — declared outside try so catch block can refund
+      let consumptionResult
+      let tokensWereConsumed = false
+      let dailyTokensUsed = 0
+      let purchasedTokensUsed = 0
+
       try {
         // Handle cached content
         if (existingContent) {
@@ -979,10 +985,6 @@ async function handleStudyGenerateV2(
 
         // --- NEW GENERATION: Consume tokens BEFORE streaming ---
 
-        let consumptionResult
-        let tokensWereConsumed = false
-        let dailyTokensUsed = 0
-        let purchasedTokensUsed = 0
         // TODO: Remove or update this when learning path token pricing is finalized.
         if (isFreeGeneration || tokenService.isUnlimitedPlan(userPlan)) {
           consumptionResult = {
@@ -1727,7 +1729,7 @@ async function handleStudyGenerateV2(
         }
 
         // Validate content completeness before saving
-        const missingFields = validateStudyGuideCompleteness(studyGuideData)
+        const missingFields = validateStudyGuideCompleteness(studyGuideData as unknown as Record<string, unknown>)
         if (missingFields.length > 0) {
           console.error(`❌ [STUDY-V2] Partial content detected. Missing: ${missingFields.join(', ')}`)
           // Refund tokens - content is incomplete
