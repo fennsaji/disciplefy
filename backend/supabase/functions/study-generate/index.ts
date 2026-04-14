@@ -322,37 +322,72 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
   }
 
   // 7. Generate new content using LLM service
-  const startTime = Date.now()
-  const generatedContent = await llmService.generateStudyGuide({
-    inputType: input_type,
-    inputValue: input_value,
-    topicDescription: topic_description,  // Provides additional context for topic-based guides
-    language: targetLanguage,
-    tier: userPlan  // Premium English users get GPT-4.1-mini
-  })
-  const latencyMs = Date.now() - startTime
+  // Wrap generation + save in try-catch to refund tokens on failure
+  let generatedContent
+  let savedGuide
+  let latencyMs: number
 
-  // 8. Save to repository
-  const savedGuide = await studyGuideRepository.saveStudyGuide(
-    studyGuideInput,
-    {
-      summary: generatedContent.summary,
-      interpretation: generatedContent.interpretation,
-      context: generatedContent.context,
-      relatedVerses: generatedContent.relatedVerses,
-      reflectionQuestions: generatedContent.reflectionQuestions,
-      prayerPoints: generatedContent.prayerPoints,
-      interpretationInsights: generatedContent.interpretationInsights,
-      summaryInsights: generatedContent.summaryInsights,
-      reflectionAnswers: generatedContent.reflectionAnswers,
-      contextQuestion: generatedContent.contextQuestion,
-      summaryQuestion: generatedContent.summaryQuestion,
-      relatedVersesQuestion: generatedContent.relatedVersesQuestion,
-      reflectionQuestion: generatedContent.reflectionQuestion,
-      prayerQuestion: generatedContent.prayerQuestion
-    },
-    userContext
-  )
+  try {
+    const startTime = Date.now()
+    generatedContent = await llmService.generateStudyGuide({
+      inputType: input_type,
+      inputValue: input_value,
+      topicDescription: topic_description,  // Provides additional context for topic-based guides
+      language: targetLanguage,
+      tier: userPlan  // Premium English users get GPT-4.1-mini
+    })
+    latencyMs = Date.now() - startTime
+
+    // 7a. Validate content completeness before saving
+    const missingFields = validateStudyGuideCompleteness(generatedContent)
+    if (missingFields.length > 0) {
+      throw new AppError(
+        'INCOMPLETE_GENERATION',
+        `Study guide generation returned partial content. Missing: ${missingFields.join(', ')}`,
+        500
+      )
+    }
+
+    // 8. Save to repository
+    savedGuide = await studyGuideRepository.saveStudyGuide(
+      studyGuideInput,
+      {
+        summary: generatedContent.summary,
+        interpretation: generatedContent.interpretation,
+        context: generatedContent.context,
+        relatedVerses: generatedContent.relatedVerses,
+        reflectionQuestions: generatedContent.reflectionQuestions,
+        prayerPoints: generatedContent.prayerPoints,
+        interpretationInsights: generatedContent.interpretationInsights,
+        summaryInsights: generatedContent.summaryInsights,
+        reflectionAnswers: generatedContent.reflectionAnswers,
+        contextQuestion: generatedContent.contextQuestion,
+        summaryQuestion: generatedContent.summaryQuestion,
+        relatedVersesQuestion: generatedContent.relatedVersesQuestion,
+        reflectionQuestion: generatedContent.reflectionQuestion,
+        prayerQuestion: generatedContent.prayerQuestion
+      },
+      userContext
+    )
+  } catch (generationError) {
+    // Generation, validation, or save failed - refund tokens to the user
+    if (!tokenService.isUnlimitedPlan(userPlan)) {
+      console.error('❌ [StudyGenerate] Generation failed, refunding tokens:', generationError)
+      const refundResult = await tokenService.refundTokens(
+        identifier,
+        consumptionResult.dailyTokensUsed ?? tokenCost,
+        consumptionResult.purchasedTokensUsed ?? 0
+      )
+      if (refundResult.success) {
+        console.log('✅ [StudyGenerate] Tokens refunded successfully')
+      } else {
+        console.error('⚠️ [StudyGenerate] Token refund failed:', refundResult.errorMessage)
+      }
+    }
+
+    // Re-throw so the function factory handles the error response
+    throw generationError
+  }
 
   // 9. Log analytics for successful generation
   await analyticsLogger.logEvent('study_guide_generated', {
@@ -458,6 +493,32 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
     language: requestBody.language,
     study_mode: requestBody.study_mode
   }
+}
+
+/**
+ * Validates that LLM-generated study guide content has all required sections.
+ * Matches REQUIRED_SECTIONS from streaming-json-parser.ts:
+ *   summary, interpretation, context, passage, relatedVerses, reflectionQuestions, prayerPoints
+ * Returns an array of missing/empty field names. Empty array = complete.
+ */
+function validateStudyGuideCompleteness(content: Record<string, unknown>): string[] {
+  const missing: string[] = []
+
+  // Required text sections - must be non-empty strings
+  for (const field of ['summary', 'interpretation', 'context', 'passage']) {
+    if (!content[field] || typeof content[field] !== 'string' || (content[field] as string).trim().length === 0) {
+      missing.push(field)
+    }
+  }
+
+  // Required array sections - must be non-empty arrays
+  for (const field of ['relatedVerses', 'reflectionQuestions', 'prayerPoints']) {
+    if (!Array.isArray(content[field]) || (content[field] as unknown[]).length === 0) {
+      missing.push(field)
+    }
+  }
+
+  return missing
 }
 
 /**

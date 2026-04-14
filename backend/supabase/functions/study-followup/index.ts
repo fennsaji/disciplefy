@@ -490,9 +490,12 @@ async function handleStudyFollowUp(
   }
 
   // Only consume tokens AFTER passing the limit check
+  let followUpDailyTokensUsed = 0
+  let followUpPurchasedTokensUsed = 0
+  const followUpIdentifier = userContext.userId || userContext.sessionId || 'unknown'
   try {
     const result = await tokenService.consumeTokens(
-      userContext.userId || userContext.sessionId || 'unknown',
+      followUpIdentifier,
       userPlan,
       followUpTokenCost,
       {
@@ -524,6 +527,9 @@ async function handleStudyFollowUp(
       )
     }
 
+    followUpDailyTokensUsed = result.dailyTokensUsed ?? followUpTokenCost
+    followUpPurchasedTokensUsed = result.purchasedTokensUsed ?? 0
+
     console.log('🪙 [FOLLOW-UP] Token consumption successful:', {
       cost: followUpTokenCost,
       userPlan,
@@ -532,7 +538,7 @@ async function handleStudyFollowUp(
 
   } catch (error) {
     console.error('❌ [FOLLOW-UP] Token service error:', error)
-    
+
     // Check if it's an AppError with specific code
     if (error instanceof AppError) {
       if (error.code === 'INSUFFICIENT_TOKENS') {
@@ -550,7 +556,7 @@ async function handleStudyFollowUp(
         { status: error.statusCode || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    
+
     // Generic error fallback
     return new Response(
       JSON.stringify({ error: 'SERVER_ERROR', message: 'Token validation failed' }),
@@ -704,6 +710,22 @@ async function handleStudyFollowUp(
             setTimeout(sendChunk, 300)
           } catch (error) {
             console.error('[FOLLOW-UP] Stream error:', error)
+
+            // Refund tokens on LLM generation failure
+            if (followUpDailyTokensUsed > 0 || followUpPurchasedTokensUsed > 0) {
+              console.log('💸 [FOLLOW-UP] Generation failed, refunding tokens...')
+              const refundResult = await tokenService.refundTokens(
+                followUpIdentifier,
+                followUpDailyTokensUsed,
+                followUpPurchasedTokensUsed
+              )
+              if (refundResult.success) {
+                console.log('✅ [FOLLOW-UP] Tokens refunded successfully')
+              } else {
+                console.error('⚠️ [FOLLOW-UP] Token refund failed:', refundResult.errorMessage)
+              }
+            }
+
             controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
               type: 'error',
               message: 'Failed to generate response'
@@ -808,6 +830,22 @@ async function handleStudyFollowUp(
 
     } catch (error) {
       console.error('❌ [FOLLOW-UP] LLM generation failed (JSON):', error)
+
+      // Refund tokens on LLM generation failure
+      if (followUpDailyTokensUsed > 0 || followUpPurchasedTokensUsed > 0) {
+        console.log('💸 [FOLLOW-UP] Generation failed (JSON), refunding tokens...')
+        const refundResult = await tokenService.refundTokens(
+          followUpIdentifier,
+          followUpDailyTokensUsed,
+          followUpPurchasedTokensUsed
+        )
+        if (refundResult.success) {
+          console.log('✅ [FOLLOW-UP] Tokens refunded successfully')
+        } else {
+          console.error('⚠️ [FOLLOW-UP] Token refund failed:', refundResult.errorMessage)
+        }
+      }
+
       return new Response(
         JSON.stringify({ error: 'SERVER_ERROR', message: 'Failed to generate response' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

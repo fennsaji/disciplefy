@@ -172,6 +172,32 @@ function checkIsCreator(
 }
 
 /**
+ * Validates that LLM-generated study guide content has all required sections.
+ * Matches REQUIRED_SECTIONS from streaming-json-parser.ts:
+ *   summary, interpretation, context, passage, relatedVerses, reflectionQuestions, prayerPoints
+ * Returns an array of missing/empty field names. Empty array = complete.
+ */
+function validateStudyGuideCompleteness(content: Record<string, unknown>): string[] {
+  const missing: string[] = []
+
+  // Required text sections - must be non-empty strings
+  for (const field of ['summary', 'interpretation', 'context', 'passage']) {
+    if (!content[field] || typeof content[field] !== 'string' || (content[field] as string).trim().length === 0) {
+      missing.push(field)
+    }
+  }
+
+  // Required array sections - must be non-empty arrays
+  for (const field of ['relatedVerses', 'reflectionQuestions', 'prayerPoints']) {
+    if (!Array.isArray(content[field]) || (content[field] as unknown[]).length === 0) {
+      missing.push(field)
+    }
+  }
+
+  return missing
+}
+
+/**
  * Look up the recommended study mode for a learning path topic.
  *
  * TODO: Remove or update this when learning path token pricing is finalized.
@@ -954,6 +980,9 @@ async function handleStudyGenerateV2(
         // --- NEW GENERATION: Consume tokens BEFORE streaming ---
 
         let consumptionResult
+        let tokensWereConsumed = false
+        let dailyTokensUsed = 0
+        let purchasedTokensUsed = 0
         // TODO: Remove or update this when learning path token pricing is finalized.
         if (isFreeGeneration || tokenService.isUnlimitedPlan(userPlan)) {
           consumptionResult = {
@@ -984,6 +1013,10 @@ async function handleStudyGenerateV2(
             emitError('TOKEN_LIMIT_EXCEEDED', consumptionResult.errorMessage || 'Insufficient tokens', false)
             return
           }
+
+          tokensWereConsumed = true
+          dailyTokensUsed = consumptionResult.dailyTokensUsed ?? tokenCost
+          purchasedTokensUsed = consumptionResult.purchasedTokensUsed ?? 0
         }
 
         console.log('🪙 [STUDY-V2] Tokens consumed, starting generation')
@@ -1684,7 +1717,30 @@ async function handleStudyGenerateV2(
         // Type guard: Ensure study guide data was generated before saving
         if (!studyGuideData) {
           console.error('❌ [STUDY-V2] Study guide data was not generated')
+          // Refund tokens - no content was generated
+          if (tokensWereConsumed) {
+            console.log('💸 [STUDY-V2] No content generated, refunding tokens...')
+            await tokenService.refundTokens(identifier, dailyTokensUsed, purchasedTokensUsed)
+          }
           emit(createErrorEvent('LM-E-004', 'Study guide generation failed', true))
+          return
+        }
+
+        // Validate content completeness before saving
+        const missingFields = validateStudyGuideCompleteness(studyGuideData)
+        if (missingFields.length > 0) {
+          console.error(`❌ [STUDY-V2] Partial content detected. Missing: ${missingFields.join(', ')}`)
+          // Refund tokens - content is incomplete
+          if (tokensWereConsumed) {
+            console.log('💸 [STUDY-V2] Partial content, refunding tokens...')
+            const refundResult = await tokenService.refundTokens(identifier, dailyTokensUsed, purchasedTokensUsed)
+            console.log(refundResult.success ? '✅ [STUDY-V2] Tokens refunded' : `⚠️ [STUDY-V2] Refund failed: ${refundResult.errorMessage}`)
+          }
+          // Mark in-progress as failed
+          if (inProgressId) {
+            await studyGuideRepository.markInProgressFailed(inProgressId, 'INCOMPLETE_GENERATION', `Missing: ${missingFields.join(', ')}`)
+          }
+          emitError('LM-E-005', `Study guide generation returned partial content. Missing: ${missingFields.join(', ')}`, true)
           return
         }
 
@@ -1785,6 +1841,21 @@ async function handleStudyGenerateV2(
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         const isRetryable = !(error instanceof AppError && error.statusCode >= 400 && error.statusCode < 500)
         const errorCode = error instanceof AppError ? error.code : 'LM-E-001'
+
+        // Refund tokens if they were consumed before the failure
+        if (tokensWereConsumed) {
+          console.log('💸 [STUDY-V2] Generation failed, refunding tokens...')
+          const refundResult = await tokenService.refundTokens(
+            identifier,
+            dailyTokensUsed,
+            purchasedTokensUsed
+          )
+          if (refundResult.success) {
+            console.log('✅ [STUDY-V2] Tokens refunded successfully')
+          } else {
+            console.error('⚠️ [STUDY-V2] Token refund failed:', refundResult.errorMessage)
+          }
+        }
 
         // Mark in-progress record as failed
         if (inProgressId) {
