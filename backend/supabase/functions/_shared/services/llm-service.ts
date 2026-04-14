@@ -20,7 +20,8 @@ import type {
   LLMProvider,
   LanguageConfig,
   LLMUsageMetadata,
-  LLMResponseWithUsage
+  LLMResponseWithUsage,
+  CacheablePromptPair
 } from './llm-types.ts'
 import { CostTrackingContext } from './llm-types.ts'
 
@@ -277,7 +278,7 @@ export class LLMService {
    * @returns Usage metadata from the LLM API
    */
   async *streamFromPrompt(
-    prompt: { systemMessage: string; userMessage: string },
+    prompt: { systemMessage: string; userMessage: string } | CacheablePromptPair,
     params: LLMGenerationParams
   ): AsyncGenerator<string, LLMUsageMetadata, unknown> {
     this.validateParams(params)
@@ -296,15 +297,21 @@ export class LLMService {
 
     const languageConfig = getLanguageConfigOrDefault(params.language)
     const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
+    const isCacheable = 'sharedSystem' in prompt
 
-    console.log(`[LLM-StreamPass] Streaming with ${selectedProvider} for language: ${languageConfig.name}`)
+    console.log(`[LLM-StreamPass] Streaming with ${selectedProvider} for language: ${languageConfig.name}${isCacheable ? ' (cacheable)' : ''}`)
 
     try {
       if (selectedProvider === 'openai') {
+        // OpenAI doesn't support split-block caching — concatenate
+        const systemMessage = isCacheable
+          ? (prompt as CacheablePromptPair).sharedSystem + '\n\n' + (prompt as CacheablePromptPair).passSystem
+          : (prompt as { systemMessage: string }).systemMessage
+        const userMessage = prompt.userMessage
         // For multi-pass, disable schema enforcement - let prompt define JSON structure
         const generator = this.getOpenAIClient().streamStudyGuide(
-          prompt.systemMessage,
-          prompt.userMessage,
+          systemMessage,
+          userMessage,
           languageConfig,
           params,
           false // useSchema = false for multi-pass prompts
@@ -321,12 +328,21 @@ export class LLMService {
         }
         return usage!
       } else if (selectedProvider === 'anthropic') {
-        const generator = this.getAnthropicClient().streamStudyGuide(
-          prompt.systemMessage,
-          prompt.userMessage,
-          languageConfig,
-          params
-        )
+        // Use cached prefix streaming for CacheablePromptPair
+        const generator = isCacheable
+          ? this.getAnthropicClient().streamWithCachedPrefix(
+              (prompt as CacheablePromptPair).sharedSystem,
+              (prompt as CacheablePromptPair).passSystem,
+              prompt.userMessage,
+              languageConfig,
+              params
+            )
+          : this.getAnthropicClient().streamStudyGuide(
+              (prompt as { systemMessage: string }).systemMessage,
+              prompt.userMessage,
+              languageConfig,
+              params
+            )
         // Manually iterate to capture return value
         let usage: LLMUsageMetadata | undefined
         while (true) {
@@ -356,7 +372,7 @@ export class LLMService {
    * @returns Response with content and usage metadata
    */
   async callForSermonPass(
-    prompt: { systemMessage: string; userMessage: string },
+    prompt: { systemMessage: string; userMessage: string } | CacheablePromptPair,
     params: LLMGenerationParams
   ): Promise<LLMResponseWithUsage<string>> {
     this.validateParams(params)
@@ -377,22 +393,37 @@ export class LLMService {
 
     const languageConfig = getLanguageConfigOrDefault(params.language)
     const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
+    const isCacheable = 'sharedSystem' in prompt
 
-    console.log(`[LLM-SermonPass] Calling ${selectedProvider} for language: ${languageConfig.name}`)
+    console.log(`[LLM-SermonPass] Calling ${selectedProvider} for language: ${languageConfig.name}${isCacheable ? ' (cacheable)' : ''}`)
 
     try {
       if (selectedProvider === 'openai') {
+        // OpenAI doesn't support split-block caching — concatenate
+        const systemMessage = isCacheable
+          ? (prompt as CacheablePromptPair).sharedSystem + '\n\n' + (prompt as CacheablePromptPair).passSystem
+          : (prompt as { systemMessage: string }).systemMessage
         // Disable JSON schema for multi-pass - prompts define custom field names
         return await this.getOpenAIClient().callForStudyGuide(
-          prompt.systemMessage,
+          systemMessage,
           prompt.userMessage,
           languageConfig,
           params,
           false  // useSchema = false for multi-pass
         )
       } else if (selectedProvider === 'anthropic') {
+        // Use cached prefix call for CacheablePromptPair
+        if (isCacheable) {
+          return await this.getAnthropicClient().callWithCachedPrefix(
+            (prompt as CacheablePromptPair).sharedSystem,
+            (prompt as CacheablePromptPair).passSystem,
+            prompt.userMessage,
+            languageConfig,
+            params
+          )
+        }
         return await this.getAnthropicClient().callForStudyGuide(
-          prompt.systemMessage,
+          (prompt as { systemMessage: string }).systemMessage,
           prompt.userMessage,
           languageConfig,
           params
@@ -452,22 +483,30 @@ export class LLMService {
     } = await import('./llm-utils/sermon-multipass.ts')
 
     try {
+      // Helper to call a CacheablePromptPair with the right provider method
+      const callCacheablePrompt = async (prompt: { sharedSystem: string; passSystem: string; userMessage: string }) => {
+        if (selectedProvider === 'openai') {
+          // OpenAI doesn't support split-block caching — concatenate
+          return await this.getOpenAIClient().callForStudyGuide(
+            prompt.sharedSystem + '\n\n' + prompt.passSystem,
+            prompt.userMessage,
+            languageConfig,
+            params
+          )
+        }
+        return await this.getAnthropicClient().callWithCachedPrefix(
+          prompt.sharedSystem,
+          prompt.passSystem,
+          prompt.userMessage,
+          languageConfig,
+          params
+        )
+      }
+
       // PASS 1: Summary + Context + Interpretation Part 1
       console.log(`[LLM-MultiPass] 🔄 Starting Pass 1/4 (Summary + Context + Intro + Point 1)`)
       const pass1Prompt = createSermonPass1Prompt(params, languageConfig)
-      const pass1Result = selectedProvider === 'openai'
-        ? await this.getOpenAIClient().callForStudyGuide(
-            pass1Prompt.systemMessage,
-            pass1Prompt.userMessage,
-            languageConfig,
-            params
-          )
-        : await this.getAnthropicClient().callForStudyGuide(
-            pass1Prompt.systemMessage,
-            pass1Prompt.userMessage,
-            languageConfig,
-            params
-          )
+      const pass1Result = await callCacheablePrompt(pass1Prompt)
 
       costContext.addCall(pass1Result.usage)
       const pass1Data = JSON.parse(cleanJSONResponse(pass1Result.content))
@@ -476,19 +515,7 @@ export class LLMService {
       // PASS 2: Interpretation Part 2 (Point 2)
       console.log(`[LLM-MultiPass] 🔄 Starting Pass 2/4 (Point 2)`)
       const pass2Prompt = createSermonPass2Prompt(params, languageConfig, pass1Data)
-      const pass2Result = selectedProvider === 'openai'
-        ? await this.getOpenAIClient().callForStudyGuide(
-            pass2Prompt.systemMessage,
-            pass2Prompt.userMessage,
-            languageConfig,
-            params
-          )
-        : await this.getAnthropicClient().callForStudyGuide(
-            pass2Prompt.systemMessage,
-            pass2Prompt.userMessage,
-            languageConfig,
-            params
-          )
+      const pass2Result = await callCacheablePrompt(pass2Prompt)
 
       costContext.addCall(pass2Result.usage)
       const pass2Data = JSON.parse(cleanJSONResponse(pass2Result.content))
@@ -497,19 +524,7 @@ export class LLMService {
       // PASS 3: Interpretation Part 3 (Point 3)
       console.log(`[LLM-MultiPass] 🔄 Starting Pass 3/4 (Point 3)`)
       const pass3Prompt = createSermonPass3Prompt(params, languageConfig, pass1Data, pass2Data)
-      const pass3Result = selectedProvider === 'openai'
-        ? await this.getOpenAIClient().callForStudyGuide(
-            pass3Prompt.systemMessage,
-            pass3Prompt.userMessage,
-            languageConfig,
-            params
-          )
-        : await this.getAnthropicClient().callForStudyGuide(
-            pass3Prompt.systemMessage,
-            pass3Prompt.userMessage,
-            languageConfig,
-            params
-          )
+      const pass3Result = await callCacheablePrompt(pass3Prompt)
 
       costContext.addCall(pass3Result.usage)
       const pass3Data = JSON.parse(cleanJSONResponse(pass3Result.content))
@@ -518,19 +533,7 @@ export class LLMService {
       // PASS 4: Conclusion + Altar Call + Supporting Fields
       console.log(`[LLM-MultiPass] 🔄 Starting Pass 4/4 (Conclusion + Altar Call + Extras)`)
       const pass4Prompt = createSermonPass4Prompt(params, languageConfig, pass1Data)
-      const pass4Result = selectedProvider === 'openai'
-        ? await this.getOpenAIClient().callForStudyGuide(
-            pass4Prompt.systemMessage,
-            pass4Prompt.userMessage,
-            languageConfig,
-            params
-          )
-        : await this.getAnthropicClient().callForStudyGuide(
-            pass4Prompt.systemMessage,
-            pass4Prompt.userMessage,
-            languageConfig,
-            params
-          )
+      const pass4Result = await callCacheablePrompt(pass4Prompt)
 
       costContext.addCall(pass4Result.usage)
       const pass4Data = JSON.parse(cleanJSONResponse(pass4Result.content))
@@ -635,7 +638,7 @@ Return ONLY the numeric score, nothing else.`
 
       const userPrompt = `Analyze this feedback message and return its sentiment score:\n\n"${message}"`
 
-      // Use the faster Anthropic Haiku model for sentiment analysis (cheaper and faster)
+      // Use Claude Haiku 4.5 for sentiment analysis (73% cheaper, 10-token response)
       const selectedProvider = this.provider === 'anthropic' && this.availableProviders.has('anthropic')
         ? 'anthropic'
         : this.selectOptimalProvider('en')
@@ -643,15 +646,16 @@ Return ONLY the numeric score, nothing else.`
       let result: LLMResponseWithUsage<string>
 
       if (selectedProvider === 'anthropic') {
-        const client = await this.getAnthropicClient()
+        const client = this.getAnthropicClient()
         result = await client.call({
           systemMessage: systemPrompt,
           userMessage: userPrompt,
           temperature: 0.3,
-          maxTokens: 10 // Low token count for just the numeric score
+          maxTokens: 10,
+          model: 'claude-haiku-4-5-20251001'
         })
       } else {
-        const client = await this.getOpenAIClient()
+        const client = this.getOpenAIClient()
         result = await client.call({
           systemMessage: systemPrompt,
           userMessage: userPrompt,

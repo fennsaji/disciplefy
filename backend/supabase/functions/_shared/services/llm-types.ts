@@ -148,7 +148,11 @@ export interface AnthropicRequest {
     role: 'user' | 'assistant'
     content: string
   }>
-  system?: string
+  system?: string | Array<{
+    type: 'text'
+    text: string
+    cache_control?: { type: 'ephemeral'; ttl?: string }
+  }>
 }
 
 /**
@@ -162,6 +166,8 @@ export interface AnthropicResponse {
   usage: {
     input_tokens: number
     output_tokens: number
+    cache_creation_input_tokens?: number
+    cache_read_input_tokens?: number
   }
   stop_reason: string
 }
@@ -208,6 +214,23 @@ export interface LanguageConfig {
  */
 export interface PromptPair {
   readonly systemMessage: string
+  readonly userMessage: string
+}
+
+/**
+ * Cacheable prompt pair for multi-pass generation with Anthropic prompt caching.
+ * Splits the system message into a shared prefix (cached across passes) and
+ * pass-specific instructions (different per pass).
+ *
+ * Block 1 (sharedSystem): THEOLOGICAL_FOUNDATION + JSON_OUTPUT_RULES + language block + disciple level + native writing style
+ * Block 2 (passSystem): Role sentence + STUDY MODE header + pass-specific instructions
+ *
+ * Anthropic requires minimum 1024 tokens for caching. Hindi/Malayalam exceed this (~1200 tokens),
+ * English does not (~680 tokens). When below minimum, blocks are concatenated as plain string.
+ */
+export interface CacheablePromptPair {
+  readonly sharedSystem: string
+  readonly passSystem: string
   readonly userMessage: string
 }
 

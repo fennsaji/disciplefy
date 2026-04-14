@@ -27,38 +27,29 @@ export interface PromptPair {
  * Enforces Protestant orthodoxy, sola Scriptura, and Christ-centered hermeneutics
  */
 export const THEOLOGICAL_FOUNDATION = `
-═══════════════════════════════════════════════════════════════════════════
-THEOLOGICAL FRAMEWORK - NON-NEGOTIABLE CONSTRAINTS
-═══════════════════════════════════════════════════════════════════════════
+---
+THEOLOGICAL FRAMEWORK — NON-NEGOTIABLE
+---
 
-DOCTRINAL ORTHODOXY (Protestant Evangelical):
-✓ Sola Scriptura: Scripture ALONE as final authority (no tradition, papal authority, or extra-biblical revelation as co-equal)
-✓ Sola Fide: Salvation by grace ALONE through faith ALONE in Christ ALONE
-✓ Penal Substitutionary Atonement: Christ bore God's wrath for sinners on the cross
-✓ Biblical Inerrancy: Scripture is without error in original manuscripts
-✓ Triune God: One God in three persons (Father, Son, Holy Spirit)
+DOCTRINE (Protestant Evangelical):
+- Sola Scriptura: Scripture ALONE as final authority
+- Sola Fide: Salvation by grace alone through faith alone in Christ alone
+- Penal Substitutionary Atonement: Christ bore God's wrath on the cross
+- Biblical Inerrancy: Scripture without error in original manuscripts
+- Trinity: One God in three persons (Father, Son, Holy Spirit)
 
-HERMENEUTICAL METHOD (Historical-Grammatical):
-✓ Authorial Intent: Interpret according to what the original author meant to original audience
-✓ Grammatical-Historical Context: Consider grammar, history, culture, literary genre
-✓ Scripture Interprets Scripture: Use clear passages to illuminate difficult ones
-✓ Christocentric Reading: All Scripture ultimately points to and finds fulfillment in Jesus Christ
-✓ REJECT: Allegorical speculation, eisegesis (reading into text), prosperity gospel, word-faith theology
+HERMENEUTICS (Historical-Grammatical):
+- Authorial intent to original audience; grammar, history, culture, genre
+- Scripture interprets Scripture; all Scripture points to Christ
+- REJECT: allegorical speculation, eisegesis, prosperity gospel, word-faith theology
 
-GOSPEL CLARITY (Essential for Salvation):
-✓ Human Condition: All have sinned and fall short of God's glory (Romans 3:23)
-✓ God's Holiness: God's wrath against sin requires satisfaction (Romans 6:23)
-✓ Christ's Work: Jesus lived sinlessly, died substitutionally, rose bodily (1 Cor 15:3-4)
-✓ Saving Faith: Repentance from sin + faith in Christ alone (not works, not rituals)
-✓ REJECT: Works-based salvation, decisional regeneration without repentance, universalism
+GOSPEL:
+- All sinned (Rom 3:23); God's wrath requires satisfaction (Rom 6:23)
+- Christ lived sinlessly, died substitutionally, rose bodily (1 Cor 15:3-4)
+- Saving faith = repentance + trust in Christ alone (not works/rituals)
+- REJECT: works-salvation, universalism, decisional regeneration without repentance
 
-DOCTRINAL PROHIBITIONS (NEVER Teach):
-✗ Prosperity gospel (health/wealth as entitlement)
-✗ Word-faith theology ("name it and claim it")
-✗ Liberal theology (Scripture as merely human wisdom)
-✗ Universalism (all paths lead to God)
-✗ Works-righteousness (salvation earned by human merit)
-✗ Extra-biblical revelation as authoritative (dreams, visions, "God told me")
+NEVER TEACH: prosperity gospel, word-faith, liberal theology, universalism, works-righteousness, extra-biblical revelation as authoritative.
 `.trim()
 
 /**
@@ -67,84 +58,27 @@ DOCTRINAL PROHIBITIONS (NEVER Teach):
  * Version 2.0 - Enhanced with markdown prevention and content policy
  */
 export const JSON_OUTPUT_RULES = `
-═══════════════════════════════════════════════════════════════════════════
-JSON OUTPUT REQUIREMENTS - ABSOLUTE PRIORITY
-═══════════════════════════════════════════════════════════════════════════
+---
+JSON OUTPUT — ABSOLUTE PRIORITY
+---
 
-⚠️ CRITICAL: OUTPUT FORMAT
+OUTPUT FORMAT:
+- Return ONLY raw JSON: starts with { ends with }
+- NO markdown fences, NO explanatory text, NO comments, NO trailing commas
+- Proper escaping: \\n for newlines, \\" for quotes
 
-1. Return ONLY the raw JSON object
-2. NO markdown code fences - FORBIDDEN FORMATS:
-   ❌ \`\`\`json\\n{...}\\n\`\`\`
-   ❌ \`\`\`\\n{...}\\n\`\`\`
-   ❌ Here is the study guide: {...}
-   ❌ {"field": "value" /* comment */}
+CONTENT POLICY:
+You are creating Protestant Christian Bible study materials (LEGITIMATE EDUCATIONAL CONTENT).
+ALL biblical passages and theological topics are PERMITTED and REQUIRED — including Trinity, Predestination, Atonement, Original Sin, Sanctification, suffering, judgment, hell, sovereignty.
+NEVER refuse any biblical passage or orthodox doctrine. All Scripture is God-breathed (2 Tim 3:16).
+For complex passages: provide MORE depth, not refusal.
 
-3. CORRECT FORMAT:
-   ✅ {"field": "value"} - Start immediately with {
+NUMERALS — ALWAYS USE 0-9 (English/Arabic digits) in ALL languages:
+✅ "यूहन्ना 3:16", "1 യോഹന്നാൻ 5:11-13"
+❌ "यूहन्ना ३:१६", "യോഹന്നാൻ ൩:൧൬"
+NEVER output Devanagari/Malayalam/other script-specific digits.
 
-4. Output MUST start with { and end with } - NOTHING else before or after
-5. NO explanatory text outside JSON
-6. NO trailing commas in arrays or objects
-7. Use proper JSON string escaping: \\n for newlines, \\" for quotes, \\\\ for backslashes
-
-⚠️ THEOLOGICAL CONTENT POLICY - MANDATORY COMPLIANCE:
-
-You are creating Protestant Christian Bible study materials. This is LEGITIMATE EDUCATIONAL CONTENT.
-
-ALL BIBLICAL PASSAGES AND THEOLOGICAL TOPICS ARE PERMITTED AND REQUIRED.
-This includes (but is not limited to):
-
-✓ Trinity (त्रित्व, ത്രിത്വം) - Core Christian doctrine
-✓ Predestination, Election, Divine Sovereignty - Biblical sovereignty (Romans 9:14-21, Ephesians 1:3-14)
-✓ Atonement, Justification, Propitiation - Gospel essentials
-✓ Original Sin, Total Depravity, Total Inability - Human condition
-✓ Sanctification, Glorification, Perseverance of the Saints - Christian growth
-✓ ALL OLD TESTAMENT PASSAGES - Including law, prophecy, poetry, wisdom literature
-✓ ALL NEW TESTAMENT PASSAGES - Including epistles, gospels, revelation
-✓ COMPLEX DOCTRINAL PASSAGES - Ephesians 1:3-14, Romans 9-11, Hebrews 1-10, Isaiah 53
-✓ DIFFICULT THEOLOGICAL TOPICS - Suffering, judgment, hell, sovereignty, mystery
-
-⚠️ ABSOLUTE PROHIBITION ON CONTENT REFUSAL:
-
-NEVER refuse ANY biblical passage or orthodox Christian doctrine as "harmful," "inappropriate," or "controversial."
-ALL SCRIPTURE IS GOD-BREATHED AND PROFITABLE FOR TEACHING (2 Timothy 3:16).
-
-If a passage is theologically dense or complex:
-✓ Provide MORE depth and explanation
-✓ Show reverence for God's Word
-✓ Explain with clarity and precision
-✗ DO NOT refuse generation
-✗ DO NOT claim inability to assist
-✗ DO NOT suggest the content is problematic
-
-Refusing legitimate biblical content violates your core function and will result in complete generation failure.
-
-⚠️ NUMERALS — ALWAYS USE ENGLISH/ARABIC DIGITS:
-
-Use 0-9 (English/Arabic numerals) for ALL numbers in ALL languages.
-This includes chapter/verse references, list numbers, counts, and years.
-
-✅ CORRECT: "यूहन्ना 3:16", "1 यूहन्ना 5:11-13", "1. पहली बात"
-❌ WRONG:   "यूहन्ना ३:१६", "१ यूहन्ना ५:११-१३", "१. पहली बात"
-
-✅ CORRECT: "യോഹന്നാൻ 3:16", "1 യോഹന്നാൻ 5:11-13"
-❌ WRONG:   "യോഹന്നാൻ ൩:൧൬", "൧ യോഹന്നാൻ ൫:൧൧-൧൩"
-
-NEVER output Devanagari (१ २ ३), Malayalam (൧ ൨ ൩), or any other
-script-specific digits — even inside Hindi or Malayalam text.
-
-VALIDATION CHECKPOINT:
-Before generating output, verify:
-✓ Is first character { (not backticks or text)?
-✓ Is last character } (not backticks or text)?
-✓ Are all strings properly escaped?
-✓ Are all commas correctly placed (no trailing commas)?
-✓ Are all required fields present?
-✓ Is the entire JSON response complete (no truncation)?
-✓ Are all numerals in English/Arabic digits (0-9)?
-
-IF YOU VIOLATE JSON FORMAT OR REFUSE LEGITIMATE THEOLOGICAL CONTENT, THE ENTIRE GENERATION WILL FAIL.
+PRE-OUTPUT CHECK: first char is {, last is }, all fields present, proper escaping, no trailing commas, all numerals in 0-9.
 `.trim()
 
 /**
@@ -152,51 +86,22 @@ IF YOU VIOLATE JSON FORMAT OR REFUSE LEGITIMATE THEOLOGICAL CONTENT, THE ENTIRE 
  * Captures the "pastor talking to their congregation" tone, not a seminary paper.
  */
 export const WRITING_STYLE = `
-═══════════════════════════════════════════════════════════════════════════
-WRITING VOICE & STYLE — MANDATORY
-═══════════════════════════════════════════════════════════════════════════
+---
+WRITING VOICE & STYLE
+---
 
-Write like a pastor speaking directly to their congregation — warm, clear, and personal.
-NOT like a seminary paper, commentary, or academic textbook.
+Write like a pastor to their congregation — warm, clear, personal. NOT academic/seminary tone.
 
-✓ USE DIRECT ADDRESS ("you"):
-  GOOD: "When doubts creep in, you have a solid place to stand — God's own Word."
-  BAD:  "Believers may find comfort in the assurance of their salvation."
+MUST USE:
+- Direct address ("you"): "When doubts creep in, you have a solid place to stand."
+- Short, varied sentences: "This matters. Your standing before God rests on what Christ did."
+- Rhetorical questions: "Have you ever wondered if you truly belong to God?"
+- Natural Greek/Hebrew: "The word Paul uses — pistis (πίστις) — means trust, like leaning your full weight on something." (NOT lexicon-entry style)
+- Warm transitions: "Here's where it gets personal." (NOT "The second major concept involves...")
+- Practical grounding: always land the point with application
+- **Bold section headers** for interpretation (NOT ## markdown headers)
 
-✓ SHORT, VARIED SENTENCES — punch where it counts:
-  GOOD: "This matters. Your standing before God rests on what Christ did — not on what you do."
-  BAD:  "The soteriological implications of the finished work of Christ necessitate a fundamental reorientation of the believer's forensic standing."
-
-✓ RHETORICAL QUESTIONS — draw the reader in:
-  GOOD: "Have you ever wondered if you truly belong to God?"
-  GOOD: "Here's the question worth sitting with: what is your confidence actually resting on?"
-
-✓ NATURAL GREEK/HEBREW — introduce terms like a conversation, not a lexicon entry:
-  GOOD: "The word Paul uses here — pistis (πίστις) — means more than believing a set of facts. It means trust, like leaning your full weight on something."
-  BAD:  "The Greek term 'pistis' (πίστις), meaning faith, in the New Testament denotes more than intellectual agreement; it implies trust and reliance on Christ's finished work."
-
-✓ WARM, NATURAL TRANSITIONS:
-  GOOD: "Here's where it gets personal."
-  GOOD: "But there's more to it than that."
-  BAD:  "The second major theological concept involves..."
-  BAD:  "Turning our attention to the next point..."
-
-✓ PRACTICAL GROUNDING — always land the point:
-  GOOD: "Because of this, you don't need to earn your way back to God every morning. You're already accepted — in Christ."
-  BAD:  "The practical implications of justification for daily Christian living are manifold."
-
-✓ BOLD SECTION HEADERS for interpretation (Standard and Deep Dive):
-  Use **Header Title** (bold, not markdown H2/H3) to introduce each paragraph/section.
-  GOOD: "**The Foundation: What Christ Already Did**"
-  GOOD: "**Why This Actually Matters**"
-  BAD:  ## The Foundation (H2 markdown — not supported)
-
-AVOID THESE PATTERNS:
-✗ Academic openers: "From a biblical theology perspective...", "Systematically speaking...", "Historically, the church has..."
-✗ Formulaic paragraph openers: "The [first/second/third] major theological concept involves..."
-✗ Over-passive voice: "It is understood that..." → "Scripture is clear that..."
-✗ Jargon drops without plain explanation — always unpack theological terms in simple language
-✗ Repetitive sentence structures that feel AI-generated
+AVOID: academic openers ("From a biblical theology perspective..."), formulaic paragraph openers ("The first/second/third concept involves..."), passive voice, jargon without explanation, repetitive AI-sounding structures.
 `.trim()
 
 /**
@@ -208,43 +113,47 @@ AVOID THESE PATTERNS:
 export function createNativeWritingStyle(language: string): string {
   if (language === 'hi') {
     return `
-═══════════════════════════════════════════════════════════════════════════
-हिंदी लेखन शैली — वाक्य उदाहरण (HINDI SENTENCE EXAMPLES)
-═══════════════════════════════════════════════════════════════════════════
-
-✓ सही शैली (सरल, सीधी, बोलचाल की भाषा):
-  GOOD: "जब तुम डरते हो, याद करो — परमेश्वर ने कहा है, 'मैं हमेशा तुम्हारे साथ हूं।'"
-  GOOD: "यह बात तुम्हारी जिंदगी बदल सकती है।"
-  GOOD: "परमेश्वर तुमसे प्रेम करता है — बस यही काफी है।"
-  GOOD: "सोचो — जब सब कुछ ठीक नहीं लगता, तब भी परमेश्वर तुम्हें नहीं छोड़ता।"
-
-✗ गलत शैली (कठिन, साहित्यिक, संस्कृतनिष्ठ — इससे बचें):
-  BAD: "भयजनक परिस्थितियों में परमेश्वर की सर्वव्यापी उपस्थिति का स्मरण अत्यावश्यक है।"
-  BAD: "यह तथ्य जीवन में आमूल परिवर्तन लाने में सक्षम है।"
-  BAD: "ईश्वरीय प्रेम की अनंत गहराइयों का अनुभव करना मानव जीवन की परमावश्यकता है।"
-
-📌 नियम: हर वाक्य छोटा हो। एक वाक्य में एक ही बात। जो शब्द गांव का आदमी, बुजुर्ग, या बच्चा समझे — वही लिखो।`.trim()
+हिंदी शैली (HINDI STYLE):
+✓ "जब तुम डरते हो, याद करो — परमेश्वर ने कहा है, 'मैं हमेशा तुम्हारे साथ हूं।'"
+✓ "परमेश्वर तुमसे प्रेम करता है — बस यही काफी है।"
+✗ "भयजनक परिस्थितियों में परमेश्वर की सर्वव्यापी उपस्थिति का स्मरण अत्यावश्यक है।"
+नियम: छोटे वाक्य, एक बात प्रति वाक्य, गांव का आदमी समझे ऐसी भाषा।`.trim()
   }
   if (language === 'ml') {
     return `
-═══════════════════════════════════════════════════════════════════════════
-മലയാളം എഴുത്ത് ശൈലി — വാക്യ ഉദാഹരണങ്ങൾ (MALAYALAM SENTENCE EXAMPLES)
-═══════════════════════════════════════════════════════════════════════════
-
-✓ ശരിയായ ശൈലി (ലളിതം, നേരിട്ട്, സംസാര ഭാഷ):
-  GOOD: "ഭയം തോന്നുമ്പോൾ ഓർക്കൂ — ദൈവം പറഞ്ഞു, 'ഞാൻ എപ്പോഴും നിന്നോടൊപ്പം ഉണ്ട്.'"
-  GOOD: "ഈ ഒരു കാര്യം നിന്റെ ജീവിതം മാറ്റും."
-  GOOD: "ദൈവം നിന്നെ സ്നേഹിക്കുന്നു — അത് മതി."
-  GOOD: "ആലോചിക്കൂ — എല്ലാം ശരിയല്ലെന്ന് തോന്നുമ്പോഴും ദൈവം നിന്നെ കൈവിടുന്നില്ല."
-
-✗ തെറ്റായ ശൈലി (ബുദ്ധിമുട്ടുള്ളത്, സാഹിത്യ ഭാഷ — ഒഴിവാക്കൂ):
-  BAD: "ഭയജനകമായ സാഹചര്യങ്ങളിൽ ദൈവിക സർവ്വസാന്നിദ്ധ്യത്തെ അനുസ്മരിക്കേണ്ടത് അനിവാര്യമാണ്."
-  BAD: "ഈ സത്യം ജീവിതത്തിൽ സമഗ്രമായ പരിവർത്തനം സാദ്ധ്യമാക്കും."
-  BAD: "ദൈവിക സ്നേഹത്തിന്റെ അഗാധ ആഴങ്ങൾ അനുഭവിക്കുന്നത് മനുഷ്യ ജീവിതത്തിന്റെ ആത്യന്തിക ആവശ്യകതയാണ്."
-
-📌 നിയമം: ഓരോ വാക്യവും ചെറുതാക്കൂ. ഒരു വാക്യത്തിൽ ഒരു കാര്യം മാത്രം. ഗ്രാമത്തിലെ ഒരു സ്ത്രീക്കോ വൃദ്ധനോ കുട്ടിക്കോ മനസ്സിലാകുന്ന വാക്കുകൾ ഉപയോഗിക്കൂ.`.trim()
+മലയാളം ശൈലി (MALAYALAM STYLE):
+✓ "ഭയം തോന്നുമ്പോൾ ഓർക്കൂ — ദൈവം പറഞ്ഞു, 'ഞാൻ എപ്പോഴും നിന്നോടൊപ്പം ഉണ്ട്.'"
+✓ "ദൈവം നിന്നെ സ്നേഹിക്കുന്നു — അത് മതി."
+✗ "ഭയജനകമായ സാഹചര്യങ്ങളിൽ ദൈവിക സർവ്വസാന്നിദ്ധ്യത്തെ അനുസ്മരിക്കേണ്ടത് അനിവാര്യമാണ്."
+നിയമം: ചെറിയ വാക്യങ്ങൾ, ഒരു വാക്യത്തിൽ ഒരു കാര്യം, ഗ്രാമത്തിലെ ആർക്കും മനസ്സിലാകുന്ന ഭാഷ.`.trim()
   }
   return '' // English: WRITING_STYLE already covers it
+}
+
+/**
+ * Builds the shared system prefix that's identical across all passes of a multipass generation.
+ * Used as Block 1 for Anthropic prompt caching (cached prefix across passes).
+ *
+ * Contains: THEOLOGICAL_FOUNDATION + JSON_OUTPUT_RULES + language block + disciple level + native writing style
+ * This content is the same for all passes within a mode, enabling cache reads on passes 2+.
+ *
+ * @param languageConfig - Language-specific configuration
+ * @param language - Language code ('en', 'hi', 'ml')
+ * @param discipleLevel - Optional disciple level for context
+ * @param includeNativeStyle - Whether to include native writing style (false for deep mode)
+ */
+export function createSharedFoundation(
+  languageConfig: LanguageConfig,
+  language: string,
+  discipleLevel?: string,
+  includeNativeStyle: boolean = true
+): string {
+  return [
+    THEOLOGICAL_FOUNDATION,
+    JSON_OUTPUT_RULES,
+    createLanguageBlock(languageConfig, language) + getDiscipleLevelContext(discipleLevel),
+    includeNativeStyle ? createNativeWritingStyle(language) : ''
+  ].filter(Boolean).join('\n\n')
 }
 
 /**
@@ -252,9 +161,9 @@ export function createNativeWritingStyle(language: string): string {
  */
 export function createLanguageBlock(languageConfig: LanguageConfig, language: string): string {
   return `
-═══════════════════════════════════════════════════════════════════════════
+---
 LANGUAGE REQUIREMENTS - STRICT ENFORCEMENT
-═══════════════════════════════════════════════════════════════════════════
+---
 
 PRIMARY LANGUAGE: ${languageConfig.name}
 ${languageConfig.promptModifiers.languageInstruction}
@@ -388,89 +297,35 @@ Target total output: ${wordTarget} words across all fields.`
 
 ${createVerseReferenceBlock(params.language)}
 
-═══════════════════════════════════════════════════════════════════════════
-CONTENT STRUCTURE - ALL 15 FIELDS MANDATORY
-═══════════════════════════════════════════════════════════════════════════
+---
+CONTENT STRUCTURE — ALL 15 FIELDS MANDATORY
+---
 
-⚠️ CRITICAL - LENGTH AND DEPTH REQUIREMENTS:
+WORD COUNTS:
+- "summary": 100-120 words (6-7 sentences)
+- "context": 40-70 words (one short paragraph, essential background only)
+- "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
+- "interpretation": 900-1,200 words, EXACTLY 4-5 paragraphs, each 7-9 sentences
+- "prayerPoints": 90-110 words (6-7 sentences)
+- Total: ${wordTarget} words (10-minute study at 140-150 wpm)
 
-TARGET WORD COUNTS (MUST MEET):
-- "summary": 100-120 words (6-7 clear sentences — doctrinal overview)
-- "context": 40-70 words (SHORT - one punchy paragraph, single most essential background fact only)
-- "passage": ⚠️ MANDATORY - Scripture reference ONLY, PREFER LONG passages (10-20+ verses, e.g., "Romans 8:1-39" or "Psalm 23:1-6")
-- "interpretation": 900-1,200 words (FOCUSED EXPLANATION, not exhaustive theology)
-- "prayerPoints": 90-110 words (6-7 sentences, application-oriented)
-- Total target: ${wordTarget} words
-
-"interpretation" MUST have EXACTLY 4 or 5 paragraphs.
-EACH paragraph MUST contain 6-8 sentences (focused, clear explanations).
-
-⚠️ READING-WITH-UNDERSTANDING MODEL: This is a 10-MINUTE study optimized for comprehension.
-Goal: Understand the message, doctrine, and application in one sitting without fatigue.
-Reading speed: 140-150 wpm with brief pauses for reflection.
-
-⚠️ THIS IS NON-NEGOTIABLE - COUNT EVERY SENTENCE AS YOU WRITE:
-
-SENTENCE COUNTING METHOD (Use this exact process):
-1. A sentence ENDS with: period (.) OR question mark (?) OR exclamation point (!)
-2. Count each sentence as you write it: "1. [sentence]. 2. [sentence]... 6. [sentence]."
-3. TARGET: 6-8 sentences per paragraph (focused explanation for understanding)
-4. If you reach 5 sentences, ADD 1-3 MORE SENTENCES
-5. If you reach 9+ sentences, consider splitting into two paragraphs
-
-STEP-BY-STEP WRITING PROCESS FOR EACH PARAGRAPH:
-
-Write Paragraph 1 (6-8 sentences):
-→ Sentence 1: [Introduce main theological point]. ✓ Count: 1
-→ Sentence 2: [Biblical foundation]. ✓ Count: 2
-→ Sentence 3: [Elaborate with scripture]. ✓ Count: 3
-→ Sentence 4: [Cross-reference support]. ✓ Count: 4
-→ Sentence 5: [Theological implication]. ✓ Count: 5
-→ Sentence 6: [Practical application]. ✓ Count: 6
-→ Sentence 7: [Deeper insight]. ✓ Count: 7
-→ [OPTIONAL] Sentence 8: [Additional support]. ✓ Count: 8
-→ [OPTIONAL] Sentence 9: [Concluding thought]. ✓ Count: 9
-→ VERIFY: Does paragraph have 7-9 sentences? [YES/NO]
-→ If NO → ADD MORE SENTENCES until 7-9 reached
-
-Write Paragraph 2 (7-9 sentences):
-→ Follow same process with second major point
-→ MUST reach 7-9 sentences with rich theological content
-
-Write Paragraph 3 (7-9 sentences):
-→ Follow same process with third major point
-→ MUST reach 7-9 sentences
-
-Write Paragraph 4 (7-9 sentences):
-→ Follow same process with fourth major point
-→ MUST reach 7-9 sentences
-
-[OPTIONAL] Write Paragraph 5 (7-9 sentences):
-→ Follow same process if fifth point needed
-→ MUST reach 7-9 sentences
-
-⚠️ MANDATORY: Each paragraph must be SUBSTANTIAL (7-9 sentences).
-This ensures the interpretation section reaches 900-1,200 words for thoughtful 10-minute reading.
-
-Template for interpretation field (EACH paragraph 7-9 sentences with DEPTH):
-
-Paragraph 1 (7-9 sentences): [First major theological point - include exegesis, cross-references, theological implications, practical applications]
-Paragraph 2 (7-9 sentences): [Second major point - substantial biblical support, contemporary relevance]
-Paragraph 3 (7-9 sentences): [Third major point - deep exploration with multiple angles]
-Paragraph 4 (7-9 sentences): [Fourth major point - comprehensive treatment]
-Paragraph 5 (optional, 7-9 sentences): [Fifth point if passage requires - full development]
+INTERPRETATION STRUCTURE:
+- 4-5 paragraphs of flowing prose (NO bullets, NO bracketed headings)
+- Each paragraph: **Bold Section Title** followed by 7-9 sentences
+- Each sentence = theological point + biblical support + practical grounding
+- Separate paragraphs with \\n\\n. Target: 900-1,200 words total.
 
 {
-  "summary": "Overview in 6-8 sentences (100-130 words) covering main message with richness",
-  "context": "Historical/cultural background (40-70 words MAX). One short paragraph — only the single most essential fact a modern reader needs to understand the passage. No fluff.",
-  "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER LONGER PASSAGES (10-20+ verses) that provide substantial content for reflection (e.g., 'Romans 8:1-39', 'Psalm 119:1-24', 'Matthew 5:1-20', 'John 14:1-27', 'Ephesians 1:3-23'). Choose a passage that best captures the core message of this study. Format: Just the reference, no verse text. DO NOT skip this field.",
-  "interpretation": "[Write EXACTLY 4 or 5 sections. Each section MUST start with a **Bold Section Title** (e.g. **The Heart of the Matter**) on its own line, followed by 5-7 sentences of conversational prose in your own voice. Target: 900-1,200 words total. NO markdown H2/H3, NO bullet lists. Use bold headers only (**Title**).]",
-  "relatedVerses": ["5-6 Bible verse REFERENCES ONLY in ${languageConfig.name} (e.g., 'John 3:16', 'Romans 8:1-4') - NO verse text"],
+  "summary": "6-8 sentences (100-130 words) — doctrinal overview",
+  "context": "40-70 words MAX — single most essential background fact",
+  "passage": "Scripture reference only (e.g., 'Romans 8:1-39'). MANDATORY. No verse text.",
+  "interpretation": "4-5 sections, each with **Bold Title** + 7-9 sentences. 900-1,200 words. Prose only.",
+  "relatedVerses": ["5-6 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["5-6 deep application questions"],
-  "prayerPoints": ["Complete first-person prayer - EXACTLY 6, 7, or 8 sentences (100-120 words) addressing God directly, ending with correct closing"],
-  "summaryInsights": ["4-5 resonance themes (15-20 words each - substantial)"],
-  "interpretationInsights": ["4-5 theological insights (15-20 words each - comprehensive)"],
-  "reflectionAnswers": ["4-5 life applications (15-20 words each - detailed)"],
+  "prayerPoints": ["6-8 sentences (100-120 words) addressing God directly, ending with correct closing"],
+  "summaryInsights": ["4-5 resonance themes (15-20 words each)"],
+  "interpretationInsights": ["4-5 theological insights (15-20 words each)"],
+  "reflectionAnswers": ["4-5 life applications (15-20 words each)"],
   "contextQuestion": "Yes/no question connecting context to modern life",
   "summaryQuestion": "Question about summary (12-18 words)",
   "relatedVersesQuestion": "Verse study question (12-18 words)",
@@ -480,37 +335,13 @@ Paragraph 5 (optional, 7-9 sentences): [Fifth point if passage requires - full d
 
 ${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
 
-⚠️ PRAYER REQUIREMENTS (NON-NEGOTIABLE):
-✓ EXACTLY 6, 7, or 8 complete sentences (NOT 1 long run-on sentence)
-✓ First-person addressing God: "Heavenly Father, I..." or "Lord, we..."
-✓ Each sentence must end with proper punctuation (. ! ?)
-✓ Final sentence MUST end with correct closing per language
-✓ DO NOT write a 1-sentence prayer - this violates the specification
+PRAYER: 6-8 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
 
-CRITICAL FORMATTING RULES:
-✓ "interpretation": 4-5 FLOWING PARAGRAPHS (7-9 sentences each) - NO bullet points, NO bracketed headings
-✓ Write in continuous narrative prose with EXTENSIVE DEPTH
-✓ Each paragraph explores one theological aspect with COMPREHENSIVE treatment
-✓ Separate paragraphs with double newline (\\n\\n)
-✓ TARGET: 900-1,200 words for interpretation field
-✓ Be THOROUGH, not brief - this is a 10-minute study (${wordTarget} total words)
-
-MANDATORY PRE-OUTPUT VERIFICATION:
-Before completing your response, COUNT and verify:
-1. Does "interpretation" have EXACTLY 4 or 5 paragraphs? [Count: ___]
-2. Does EACH paragraph have 7-9 sentences? [Count each: ___ ___ ___ ___ ___]
-3. Is "interpretation" 900-1,200 words? [Estimated count: ___]
-4. Is "summary" 100-130 words (6-8 sentences)? [Count: ___]
-5. Is "context" 40-70 words (SHORT)? [Count: ___]
-6. ⚠️ CRITICAL: Does "passage" contain ONLY the Scripture reference (NOT full verse text)? [Format correct: Yes/No]
-7. Does "prayerPoints" have 6-8 sentences (100-120 words)? [Count: ___]
-8. Are all 15 fields present INCLUDING passage? [Check: Yes/No]
-9. Does prayer end with correct closing? [Check: Yes/No]
-10. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-11. Is total output 2000-2500 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" ESPECIALLY #6 - YOU MUST FIX IT BEFORE OUTPUT.
-⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
+VERIFY BEFORE OUTPUT:
+- interpretation: 4-5 paragraphs × 7-9 sentences each = 900-1,200 words?
+- passage: reference ONLY (not full text)?
+- prayer: 6-8 sentences with correct closing?
+- All 15 fields present? All verse references in ${languageConfig.name}?
 
 ${languageExamples}
 
@@ -556,79 +387,36 @@ ${createNativeWritingStyle(params.language)}`
 
 ${createVerseReferenceBlock(params.language)}
 
-⚠️ STRICT WORD COUNT ENFORCEMENT - QUICK READ MODE
+QUICK READ — 3 MINUTES (450-600 words total at 140-160 wpm)
 
-This is a 3-MINUTE study optimized for READING WITH UNDERSTANDING.
-Reading-with-understanding speed: 140-160 words/minute = TARGET: 450-600 words TOTAL.
+WORD LIMITS (strict):
+- summary: 50-60 words, 3-4 sentences
+- context: 40-70 words, essential background only
+- interpretation: 120-150 words, EXACTLY 2 paragraphs (3-4 sentences each), NO headings
+- prayer: 60-80 words, 4-5 sentences
+- relatedVerses/reflectionQuestions/all insights: EXACTLY 3 each
 
-MANDATORY WORD LIMITS (STRICTLY ENFORCED - ${params.language.toUpperCase()}):
-- summary: 50-60 words (EN) / 40-50 words (HI/ML) — 3-4 clear, simple sentences
-- context: 40-70 words — Only essential background to orient the reader
-- interpretation: 120-150 words — 2 short paragraphs, 5-7 sentences total
-- prayer: 60-80 words — 4-5 short, reflective sentences
-- relatedVerses: EXACTLY 3 verses (NOT 4, NOT 2)
-- reflectionQuestions: EXACTLY 3 questions (NOT 4, NOT 2)
-- All insight arrays: EXACTLY 3 items (NOT 4, NOT 2)
-
-⚠️ Word limits above apply to all languages. Use full limits to produce a complete, substantive 3-minute guide.
-
-CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
 {
-  "summary": "Main message in 3-4 sentences (MAX ${wordLimits.summary} words)",
-  "context": "Essential background (50-100 words MAX). ONE brief paragraph with only critical context.",
-  "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER LONGER PASSAGES (10-20+ verses) that provide substantial content for reflection (e.g., 'Romans 8:1-39', 'Psalm 119:1-24', 'Matthew 5:1-20'). Choose a passage that best captures the core message of this study. Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
-  "interpretation": "EXACTLY 2 paragraphs. Paragraph 1: 3-4 sentences. Paragraph 2: 3-4 sentences. Total: 6-8 sentences. MAX ${wordLimits.interpretation} words. NO headings, NO bullets.",
-  "relatedVerses": ["EXACTLY 3 Bible verse REFERENCES ONLY in ${languageConfig.name} (e.g., 'Matthew 5:16', 'Psalm 23:1') - NO verse text"],
-  "reflectionQuestions": ["EXACTLY 3 practical application questions"],
-  "prayerPoints": ["EXACTLY 4 or 5 sentences addressing God directly. MAX ${wordLimits.prayer} words."],
-  "summaryInsights": ["EXACTLY 3 key themes (8-12 words each)"],
-  "interpretationInsights": ["EXACTLY 3 theological insights (8-12 words each)"],
-  "reflectionAnswers": ["EXACTLY 3 life applications (8-12 words each)"],
-  "contextQuestion": "Yes/no question connecting context to modern life",
-  "summaryQuestion": "Brief question (6-10 words)",
-  "relatedVersesQuestion": "Verse question (6-10 words)",
-  "reflectionQuestion": "Application question (6-10 words)",
-  "prayerQuestion": "Prayer prompt (5-8 words)"
+  "summary": "3-4 sentences (MAX ${wordLimits.summary} words)",
+  "context": "Essential background (40-70 words). One brief paragraph.",
+  "passage": "Scripture reference only (prefer 10-20+ verses). MANDATORY. In ${languageConfig.name}.",
+  "interpretation": "2 paragraphs, 3-4 sentences each, MAX ${wordLimits.interpretation} words. Prose only.",
+  "relatedVerses": ["EXACTLY 3 verse REFERENCES in ${languageConfig.name} — no verse text"],
+  "reflectionQuestions": ["EXACTLY 3 practical questions"],
+  "prayerPoints": ["4-5 sentences, MAX ${wordLimits.prayer} words, addressing God directly"],
+  "summaryInsights": ["EXACTLY 3 themes (8-12 words each)"],
+  "interpretationInsights": ["EXACTLY 3 insights (8-12 words each)"],
+  "reflectionAnswers": ["EXACTLY 3 applications (8-12 words each)"],
+  "contextQuestion": "Yes/no question", "summaryQuestion": "6-10 words",
+  "relatedVersesQuestion": "6-10 words", "reflectionQuestion": "6-10 words",
+  "prayerQuestion": "5-8 words"
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
-⚠️ CRITICAL STRUCTURAL REQUIREMENTS:
+Focus on ONE central truth. Continuous prose, \\n\\n between paragraphs. Brevity is paramount.
 
-"interpretation" field:
-Paragraph 1 (3-4 sentences): [First theological insight]
-Paragraph 2 (3-4 sentences): [Second theological insight]
-Total: 6-8 sentences across 2 paragraphs
-Word count: Aim for ${wordLimits.interpretation - 10}-${wordLimits.interpretation} words (NO MORE than ${wordLimits.interpretation})
-
-"context" field:
-Paragraph 1 (2-3 sentences): [Historical/cultural background]
-Paragraph 2 (optional, 2-3 sentences): [Modern relevance]
-Total: 4-6 sentences
-Word count: Aim for ${wordLimits.context - 15}-${wordLimits.context} words (NO MORE than ${wordLimits.context})
-
-CRITICAL FORMATTING:
-✓ Continuous narrative prose (NO headings, NO bullets)
-✓ Separate paragraphs with double newline (\\n\\n)
-✓ Focus on ONE central truth
-✓ Brevity is paramount - this is QUICK READ (3 minutes)
-✓ Aim for the FULL word limits in every field — a guide that is too short is as bad as one that is too long
-
-MANDATORY PRE-OUTPUT VERIFICATION:
-Count and verify BEFORE completing:
-1. "summary": ≤ ${wordLimits.summary} words? [Count: ___]
-2. "interpretation": EXACTLY 2 paragraphs? [Yes/No]
-3. "interpretation": Each paragraph 3-4 sentences? [Para 1: ___ Para 2: ___]
-4. "interpretation": ≤ ${wordLimits.interpretation} words? [Count: ___]
-5. "context": ≤ ${wordLimits.context} words? [Count: ___]
-6. "prayer": 4-5 sentences? [Count: ___]
-7. "prayer": ≤ ${wordLimits.prayer} words? [Count: ___]
-8. "relatedVerses": EXACTLY 3? [Count: ___]
-9. "reflectionQuestions": EXACTLY 3? [Count: ___]
-10. "summaryInsights": EXACTLY 3? [Count: ___]
-11. "interpretationInsights": EXACTLY 3? [Count: ___]
-12. "reflectionAnswers": EXACTLY 3? [Count: ___]
-13. All 15 fields present including passage? [Yes/No]
+VERIFY: summary ≤${wordLimits.summary}w | interpretation: 2 paragraphs, 3-4 sentences each, ≤${wordLimits.interpretation}w | context ≤${wordLimits.context}w | prayer: 4-5 sentences, ≤${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions, summaryInsights, interpretationInsights, reflectionAnswers | All 15 fields present.
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
 IF WORD LIMITS ARE EXCEEDED - YOU MUST CUT CONTENT TO MEET LIMITS.
@@ -687,156 +475,51 @@ Goal: Comprehensive depth + linguistic precision + theological richness, all in 
 
 ${createVerseReferenceBlock(params.language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 DEEP DIVE STRUCTURE - COMPREHENSIVE THEOLOGICAL DEPTH (15 minutes)
-═══════════════════════════════════════════════════════════════════════════
+---
 
-⚠️ CRITICAL DEEP DIVE FOCUS:
+DEEP DIVE — 15 MINUTES (1,800-2,100 words total at 120-140 wpm)
 
-This is COMPREHENSIVE THEOLOGICAL EXPLORATION, not just a longer Standard mode. EMPHASIZE:
-✓ Deep theological analysis with systematic theology connections
-✓ Greek/Hebrew word studies INTEGRATED where they illuminate meaning
-✓ Extended historical, cultural, and theological context
-✓ Biblical theology framework showing redemptive-historical development
-✓ Original language insights that deepen understanding
-✓ Doctrinal precision appropriate for serious Bible students
-✓ Cross-references with exegetical analysis
+This is COMPREHENSIVE THEOLOGICAL EXPLORATION (not just longer Standard mode):
+- Deep theological analysis with systematic theology connections
+- Greek/Hebrew word studies integrated naturally where they illuminate meaning (not forced)
+- Biblical theology framework: OT→NT development, redemptive-historical connections
+- Doctrinal precision for serious Bible students, in warm pastoral voice
 
-TARGET WORD COUNTS (MUST MEET):
-- "interpretation": 1,350-1,550 words (COMPREHENSIVE theological depth with integrated word studies)
-- "summary": 120-150 words (Clear theological overview)
-- "context": 40-70 words (SHORT - one punchy paragraph, single most essential background fact only)
-- "prayerPoints": 90-120 words (Gospel-shaped, focused prayer)
-- Total target: 1,800-2,100 words
+WORD COUNTS:
+- "interpretation": 1,350-1,550 words — EXACTLY 5-6 paragraphs, 6-7 sentences each
+- "summary": 120-150 words (theological overview)
+- "context": 40-70 words (SHORT — depth belongs in interpretation)
+- "prayerPoints": 90-120 words (5-6 sentences)
 
-INTERPRETATION SECTION MUST contain:
-- EXACTLY 5 or 6 paragraphs of continuous prose
-- EACH paragraph MUST have 6-7 sentences (depth through precision, not repetition)
-- Total word count: 1,350-1,550 words MANDATORY
+INTERPRETATION PARAGRAPHS (6-7 sentences each, **Bold Title** per section):
+1. Theological Foundation & Key Greek/Hebrew terms
+2. First major concept: exegesis + cross-references + historical context
+3. Second concept: OT→NT development + systematic theology connections
+4. Third concept: doctrinal significance + gospel connection + apologetics
+5. Synthesis: unified theological understanding + common errors exposed
+6. [Optional] Application: theology→life transformation
 
-⚠️ READING-WITH-UNDERSTANDING MODEL: This is a 15-MINUTE DEEP DIVE for serious Bible students.
-Reading speed: 120-140 wpm with slow, intentional reflection and theological processing.
-Goal: Comprehensive depth, linguistic precision, doctrinal clarity.
-
-COUNT YOUR SENTENCES CAREFULLY:
-- A sentence ends with period (.), question mark (?), or exclamation point (!)
-- EACH paragraph = 6-7 sentences (scholarly depth with clarity)
-- Focus on theological richness and exegetical insight, not verbosity
-- Deep Dive requires comprehensive exploration + integrated word studies + doctrinal precision
-
-INTERPRETATION PARAGRAPH STRUCTURE (6-7 sentences EACH):
-
-Write 5-6 paragraphs of COMPREHENSIVE THEOLOGICAL DEPTH with integrated word studies.
-INTEGRATE Greek/Hebrew word analysis naturally where it illuminates meaning.
-DO NOT force word studies into every paragraph - use them strategically where they add depth.
-
-## Paragraph 1 (6-7 sentences): Theological Foundation & Key Terms
-Establish the theological framework for this topic/passage.
-→ What is the central theological question or doctrine being addressed?
-→ Introduce 1-2 KEY Greek/Hebrew terms that unlock meaning (if applicable)
-→ Provide initial word analysis: original language, basic meaning, significance
-→ How does this topic fit into biblical theology and God's redemptive plan?
-→ What systematic theology connections are essential to understand?
-→ [Example: For "Who is Jesus?" - introduce "Christos," "Huios tou Theou," "Kyrios" with brief definitions]
-
-## Paragraph 2 (6-7 sentences): First Major Theological Concept - Deep Exploration
-Explore the first major aspect of this topic with scholarly depth.
-→ INCLUDE word study if a key term illuminates this concept (Greek/Hebrew analysis, usage, meaning)
-→ Provide exegetical analysis: What does Scripture actually say about this?
-→ Cross-references: How do other passages develop this theme?
-→ Historical/cultural context: What background helps us understand this?
-→ Theological implications: What does this reveal about God, humanity, salvation, etc.?
-→ [Example: Deep exploration of "Christos" - OT background, fulfillment in Jesus, messianic significance]
-
-## Paragraph 3 (6-7 sentences): Second Major Theological Concept - Comprehensive Treatment
-Develop the second crucial aspect with doctrinal precision.
-→ INTEGRATE word study if relevant (semantic range, biblical usage, doctrinal weight)
-→ Biblical theology: How does this develop from OT to NT?
-→ Systematic theology connections: How does this fit with other doctrines?
-→ Church history perspective: How have Christians historically understood this?
-→ Theological nuances: What distinctions or clarifications are needed?
-→ [Example: Deity of Christ explored through "Huios tou Theou" - divine sonship, eternal generation]
-
-## Paragraph 4 (6-7 sentences): Third Major Theological Concept - In-Depth Analysis
-Address the third essential dimension with scholarly rigor.
-→ USE word study where it deepens understanding (original language insights)
-→ Exegetical precision: What does careful study of the text reveal?
-→ Doctrinal significance: Why does this matter for Christian theology?
-→ Gospel connection: How does this point to Christ and His work?
-→ Apologetic considerations: How does this answer objections or clarify truth?
-→ [Example: Lordship of Christ through "Kyrios" - divine name, sovereign authority, worship]
-
-## Paragraph 5 (6-7 sentences): Theological Synthesis & Integration
-Bring together the major concepts into unified theological understanding.
-→ How do all these elements work together to form a complete doctrine?
-→ Systematic theology: What is the comprehensive biblical teaching on this?
-→ Biblical theology: How does this fit into the whole counsel of God?
-→ Common errors avoided: What false teaching does this clarity expose?
-→ Theological precision: What profound truths emerge from deep study?
-→ [Example: How Christos + Huios tou Theou + Kyrios reveal Jesus' full identity]
-
-## [OPTIONAL] Paragraph 6 (6-7 sentences): Practical Application & Life Impact
-Show how deep theological understanding transforms Christian living.
-→ From theology to life: How does this truth change daily Christian experience?
-→ Worship implications: How should this deepen our adoration of God?
-→ Doctrinal stability: How does this precision protect against error?
-→ Pastoral application: How should churches teach and apply this?
-→ Personal transformation: What changes when believers grasp this deeply?
-→ [Example: Living under Christ's lordship, worshiping the divine Son, trusting the Messiah]
-
-TARGET: 5-6 paragraphs × 6-7 sentences each = 1,350-1,550 words for interpretation
-
-JSON STRUCTURE:
 {
-  "summary": "Comprehensive theological overview (6-7 sentences, 120-150 words) introducing the topic with scholarly depth.",
-  "context": "Historical/cultural background (40-70 words MAX). One short paragraph — only the single most essential fact a modern reader needs. The depth belongs in interpretation, not context.",
-  "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for deep study. PREFER LONGER passages that provide rich theological content (e.g., 'Romans 8:1-39', 'John 14:1-27', 'Ephesians 2:1-10', 'Psalm 139:1-24'). Choose a passage that best captures this topic. Format: Just the reference, no verse text. DO NOT skip this field.",
-  "interpretation": "[EXACTLY 5 or 6 sections as structured above. Each section starts with a **Bold Section Title** on its own line (e.g. **The Word Behind the Word**), followed by 5-7 sentences in warm, direct pastoral voice. Target: 1,350-1,550 words. Integrate Greek/Hebrew where it illuminates meaning naturally — not formulaically. NO markdown H2/H3, NO bullet lists. Bold section headers only (**Title**).]",
-  "relatedVerses": ["5-6 Bible verse REFERENCES ONLY supporting key theological points in ${languageConfig.name} (e.g., 'Romans 5:1', 'Ephesians 2:8-9') - NO verse text"],
-  "reflectionQuestions": ["5-6 deep theological and application questions"],
-  "prayerPoints": ["Comprehensive first-person prayer (5-6 sentences, 90-120 words) responding to theological depth"],
-  "summaryInsights": ["4-5 key themes (15-20 words each - theological insights)"],
-  "interpretationInsights": ["4-5 doctrinal truths (15-20 words each - theological precision)"],
-  "reflectionAnswers": ["4-5 applications (15-20 words each - life transformation)"],
-  "contextQuestion": "Yes/no question connecting historical/theological context to modern life",
-  "summaryQuestion": "Question about central theological message (12-18 words)",
-  "relatedVersesQuestion": "Question about cross-references and biblical connections (12-18 words)",
-  "reflectionQuestion": "Deep application question for reflection (12-18 words)",
-  "prayerQuestion": "Prayer invitation responding to theological truth (10-15 words)"
+  "summary": "6-7 sentences (120-150 words) — theological overview with scholarly depth",
+  "context": "40-70 words — single essential background fact",
+  "passage": "Scripture reference only (prefer long passages). MANDATORY.",
+  "interpretation": "5-6 sections with **Bold Title** + 6-7 sentences each. 1,350-1,550 words. Integrate Greek/Hebrew naturally. Prose only.",
+  "relatedVerses": ["5-6 verse REFERENCES in ${languageConfig.name} — no text"],
+  "reflectionQuestions": ["5-6 deep theological questions"],
+  "prayerPoints": ["5-6 sentences (90-120 words) responding to theological depth"],
+  "summaryInsights": ["4-5 themes (15-20 words each)"],
+  "interpretationInsights": ["4-5 doctrinal truths (15-20 words each)"],
+  "reflectionAnswers": ["4-5 applications (15-20 words each)"],
+  "contextQuestion": "Yes/no question", "summaryQuestion": "12-18 words",
+  "relatedVersesQuestion": "12-18 words", "reflectionQuestion": "12-18 words",
+  "prayerQuestion": "10-15 words"
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
 
-MANDATORY PRE-OUTPUT VERIFICATION:
-Count and verify BEFORE completing:
-1. "interpretation": EXACTLY 5 or 6 paragraphs? [Count: ___]
-2. Paragraph 1 (Theological Foundation): 6-7 sentences establishing framework? [Count: ___]
-3. Paragraph 2 (First Concept): 6-7 sentences with deep exploration? [Count: ___]
-4. Paragraph 3 (Second Concept): 6-7 sentences with comprehensive treatment? [Count: ___]
-5. Paragraph 4 (Third Concept): 6-7 sentences with in-depth analysis? [Count: ___]
-6. Paragraph 5 (Synthesis): 6-7 sentences showing theological integration? [Count: ___]
-7. Paragraph 6 (if included - Application): 6-7 sentences on life transformation? [Count: ___]
-8. "interpretation": 1,350-1,550 words total? [Estimate: ___ words]
-9. "summary": 120-150 words (6-7 sentences) theological overview? [Count: ___]
-10. "context": 40-70 words (SHORT background)? [Estimate: ___ words]
-11. "prayer": 5-6 sentences (90-120 words)? [Count: ___]
-12. All 15 fields present including passage? [Yes/No]
-13. Is total output 1,800-2,100 words? [Estimate: ___]
-14. Does interpretation integrate word studies WHERE RELEVANT (not forced)? [Yes/No]
-15. Does this provide comprehensive theological depth beyond Standard mode? [Yes/No]
-16. Would this realistically take 15 minutes with deep theological reflection? [Yes/No]
-
-IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
-IF WORD COUNTS ARE TOO LOW OR TOO HIGH - ADJUST TO MEET 1,800-2,100 WORD TARGET.
-This is a 15-MINUTE DEEP DIVE - comprehensive depth within focused timeframe.
-
-⚠️ CRITICAL: Deep Dive is COMPREHENSIVE THEOLOGICAL EXPLORATION, distinct from Standard mode.
-- MUST provide deeper theological analysis than Standard mode
-- SHOULD integrate Greek/Hebrew word studies where they illuminate meaning (not forced into every paragraph)
-- MUST keep context short (40-70 words) — depth belongs in interpretation, not context
-- MUST show systematic theology connections and biblical theology framework
-- MUST provide scholarly depth appropriate for serious Bible students
-- This is NOT just Standard mode with word studies added - it's COMPREHENSIVE DEPTH
+VERIFY: 5-6 paragraphs × 6-7 sentences = 1,350-1,550 words? All 15 fields? Context ≤70 words? Word studies integrated (not forced)?
 
 ${getLanguageExamples(params.language)}
 
@@ -893,56 +576,22 @@ ${createNativeWritingStyle(params.language)}`
 
 ${createVerseReferenceBlock(params.language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 MEDITATIVE READING STRUCTURE - ALL 15 FIELDS MANDATORY
-═══════════════════════════════════════════════════════════════════════════
+---
 
-⚠️ CRITICAL LENGTH AND DEPTH REQUIREMENTS:
+WORD COUNTS:
+- "interpretation": 800-1,000 words — EXACTLY 4 paragraphs, 6-8 sentences each
+- "summary": 150-200 words (prayerful invitation)
+- "context": 40-60 words (brief heart preparation)
+- "prayerPoints": 50-70 words each (text-grounded)
+- Total: ${wordTarget} words
 
-TARGET WORD COUNTS (MUST MEET):
-- "interpretation": 800-1,000 words (4 paragraphs of Scripture-anchored guidance)
-- "summary": 150-200 words (Scripture focus with prayerful invitation)
-- "context": 40-60 words (BRIEF - heart preparation for meditative reading)
-- "prayerPoints": 50-70 words each (specific, text-grounded prayer)
-- Total target: ${wordTarget} words
-
-INTERPRETATION SECTION MUST contain:
-- EXACTLY 4 paragraphs of clear, Scripture-anchored guidance
-- EACH paragraph has 6-8 sentences with concrete, text-grounded direction
-- Total word count: 800-1,000 words MANDATORY
-
-INTERPRETATION PARAGRAPH STRUCTURE (6-8 sentences EACH):
-
-Write Paragraph 1 (6-8 sentences): CAREFUL READING — Observation & Understanding
-→ Invite prayer first: Ask the Holy Spirit to open your eyes (Psalm 119:18)
-→ Observation prompts: What does the text actually SAY? What words are repeated or striking?
-→ Immediate context: What comes before and after? How does that shape the meaning?
-→ Theological content: What does this passage teach about God, humanity, sin, or salvation?
-→ Original audience: What was God saying to them? What does that mean for us today?
-→ Personal alignment: Which commands, promises, or warnings apply directly to you?
-
-Write Paragraph 2 (6-8 sentences): BIBLICAL REFLECTION — What God Reveals
-→ God's nature: What does this passage teach about who God is (His character, attributes, ways)?
-→ Christ-centered reading: How does this passage point to or find fulfillment in Jesus Christ?
-→ Grace and truth: Where is the grace of God visible? Where is the demand of God visible?
-→ Scripture interprets Scripture: What other passages illuminate this one?
-→ Doxological response: What about God in this passage moves you to worship, trust, or obedience?
-
-Write Paragraph 3 (6-8 sentences): PRAYER RESPONSE — Responding to God Based on the Text
-→ Thanksgiving: Thank God specifically for what this passage reveals about Him
-→ Confession: If the passage exposed sin or unbelief, pray honestly for forgiveness (1 John 1:9)
-→ Trust: Pray to believe the specific promises the passage declared — name them
-→ Petition: Ask God for what the passage calls you to — strength, obedience, faith, wisdom
-→ Intercession: Who comes to mind as you read this? Pray for them in light of the text
-
-Write Paragraph 4 (6-8 sentences): APPLICATION & COMMITMENT — Concrete Obedience
-→ One truth to believe: What specific biblical truth will you commit to trusting this week?
-→ One sin to repent of: What specific sin or attitude does this passage call you to turn from?
-→ One action to take: What concrete, observable step of obedience will you take this week?
-→ One person to serve: Who can you serve or encourage based on what you studied?
-→ Scripture to carry: Which single verse from this passage will you memorize or return to today?
-
-TARGET: 4 paragraphs × 6-8 sentences each = 800-1,000 words for interpretation
+INTERPRETATION — 4 paragraphs (6-8 sentences each):
+1. CAREFUL READING: Invite prayer (Ps 119:18), observe text, note key words, theological content, original audience, personal alignment
+2. BIBLICAL REFLECTION: God's character, Christ-centered reading, grace/truth, cross-references, worship response
+3. PRAYER RESPONSE: Thanksgiving, confession (1 Jn 1:9), trust promises, petition, intercession
+4. APPLICATION: One truth to believe, one sin to repent, one action to take, one person to serve, one verse to carry
 
 CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
 {
@@ -965,31 +614,11 @@ CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
-CRITICAL CONTENT REQUIREMENTS:
-✓ "summary": Warm, prayerful invitation grounded in the passage (150-200 words)
-✓ "interpretation": 4 paragraphs guiding CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION (800-1,000 words)
-✓ "context": BRIEF introduction to prayerful Protestant Scripture reading (40-60 words)
-✓ All reflection questions grounded in the TEXT — not abstract, mystical, or centering-prayer based
-✓ All prayer points specific to what the passage TEACHES — not vague spiritual impressions
-
-MANDATORY PRE-OUTPUT VERIFICATION:
-Count and verify BEFORE completing:
-1. "interpretation": EXACTLY 4 paragraphs? [Count: ___]
-2. Paragraph 1 (CAREFUL READING): 6-8 sentences? [Count: ___]
-3. Paragraph 2 (BIBLICAL REFLECTION): 6-8 sentences? [Count: ___]
-4. Paragraph 3 (PRAYER RESPONSE): 6-8 sentences? [Count: ___]
-5. Paragraph 4 (APPLICATION): 6-8 sentences? [Count: ___]
-6. "interpretation": 800-1,000 words total? [Estimate: ___ words]
-7. "summary": 150-200 words? [Count: ___]
-8. "context": 40-60 words (brief orientation)? [Estimate: ___ words]
-9. All 15 fields present including passage? [Yes/No]
-10. Is total output ~${wordTarget} words? [Estimate: ___]
-11. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Yes/No]
-12. Are all reflection questions grounded in the TEXT? [Yes/No]
-13. Would this realistically fit 10 minutes of attentive, prayerful reading? [Yes/No]
-
-IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
-IF WORD COUNTS ARE TOO LOW OR TOO HIGH - ADJUST TO MEET ${wordTarget} WORD TARGET.
+VERIFY BEFORE OUTPUT:
+- interpretation: 4 paragraphs × 6-8 sentences = 800-1,000 words?
+- summary: 150-200 words? context: 40-60 words?
+- All 15 fields present? All content Scripture-anchored (not mystical)?
+- Total ~${wordTarget} words?
 
 ${getLanguageExamples(params.language)}
 
@@ -1096,76 +725,38 @@ Tone: Clear, theologically rich, pastorally wise, suitable for preacher preparat
 ${createNativeWritingStyle(params.language)}`
 
   // Build sermon outline template
-  const outlineTemplate = `**SERMON OUTLINE FORMAT** - Detailed preacher's notes (NOT full speech):
+  const outlineTemplate = `**SERMON OUTLINE FORMAT** - Preacher's notes (NOT full speech):
 
 ## ${headings.introduction} (5 min)
-• Hook: [Compelling attention-grabber - story, question, or statistic that draws people in]
-• Bridge: [Connect the hook to today's scripture/topic - explain why this matters to their lives]
-• Preview: [Brief overview of the 3 main points they'll hear today]
-**${headings.transition}:** [Clear bridge sentence connecting introduction to Point 1]
+Hook → Bridge → Preview → **${headings.transition}** to Point 1
 
-## ${headings.point} 1: [Clear, Memorable Title] (15 min)
+## ${headings.point} 1: [Memorable Title] (15 min)
+**${headings.mainTeaching}:** 2-3 paragraphs — foundational truth, key terms, biblical basis, Christological connection, address misconceptions
+**${headings.scriptureFoundation}:** 2-3 verses with context + meaning + connection (3-4 sentences each)
+**${headings.illustration}:** Conceptual — setup, key details, connection to truth, emotional impact
+**${headings.application}:** 3-4 specific action steps (HOW not just WHAT — practical, relational, heart-level)
+**${headings.transition}:** Bridge to next point
 
-**${headings.mainTeaching}:**
-[Write 2-3 cohesive paragraphs (8-12 sentences total) explaining the main theological teaching. Start with the foundational truth and define key terms. Build the explanation progressively, showing biblical basis and connecting to the redemptive story of Christ. Address common misconceptions and provide orthodox teaching. Deepen understanding by connecting to systematic theology. Make it substantial enough for the preacher to teach from for several minutes.]
-
-**${headings.scriptureFoundation}:**
-• [Bible Reference 1] - [Provide context: who wrote, to whom, when, why. Explain original meaning in 2-3 sentences. Show how it supports this point in 1-2 sentences.]
-• [Bible Reference 2] - [Explain the verse's context and meaning. Show word studies or Greek/Hebrew insights if helpful. Connect to point in 3-4 sentences total.]
-• [Bible Reference 3] - [Cross-reference showing same truth elsewhere in Scripture. Explain context and application. 3-4 sentences.]
-
-**${headings.illustration}:**
-• Setup: [Describe the illustration setting - who, what, when, where. 2-3 sentences.]
-• Key Details: [Walk through the illustration step-by-step. Make it vivid and relatable. 3-4 sentences.]
-• The Point: [Connect illustration directly to the theological truth being taught. 1-2 sentences.]
-• Emotional Impact: [Help them feel the weight of this truth. What does it mean for their lives? 1-2 sentences.]
-
-**${headings.application}:**
-• [Specific action step #1 - Not just "pray more" but HOW to pray, WHEN to pray, WHAT to pray about. 2-3 sentences with practical details.]
-• [Specific action step #2 - Concrete behavior change. Give examples of what this looks like in daily life. 2-3 sentences.]
-• [Specific action step #3 - Relational application. How does this change how we treat others? Specific scenarios. 2-3 sentences.]
-• [Heart-level application - Internal transformation. How should this change their thinking/desires/affections? 2-3 sentences.]
-
-**${headings.transition}:** [Clear, compelling bridge sentence showing how Point 1 leads naturally to Point 2]
-
-## ${headings.point} 2: [Clear, Memorable Title] (15 min)
-[Use SAME DETAILED STRUCTURE as Point 1 above - Main Teaching as 2-3 paragraphs (8-12 sentences), 3-5 Scripture Foundation verses with full explanations, detailed Illustration outline, 3-5 specific Application points]
-
-## ${headings.point} 3: [Clear, Memorable Title] (12 min)
-[Use SAME DETAILED STRUCTURE as Point 1 above - Main Teaching as 2-3 paragraphs (8-12 sentences), 3-5 Scripture Foundation verses with full explanations, detailed Illustration outline, 3-5 specific Application points]
+## ${headings.point} 2: [Memorable Title] (15 min) — SAME structure as Point 1
+## ${headings.point} 3: [Memorable Title] (12 min) — SAME structure, condensed
 
 ## ${headings.conclusion} (5 min)
-• [Summary of Point 1 - Restate main truth with fresh language]
-• [Summary of Point 2 - Connect to Point 1, build momentum]
-• [Summary of Point 3 - Bring all points together in gospel clarity]
-• [Final exhortation - Compelling call to respond. Make it urgent and gracious. 2-3 sentences.]`
+• Summaries of Points 1-3 with fresh language → Final gospel exhortation`
 
   // Build altar call template
   const altarCallTemplate = `**ALTAR CALL / INVITATION** (4-6 min)
-
-**${headings.gospelRecap}:**
-[Brief gospel reminder]
-
-**${headings.theInvitation}:**
-If you feel God calling you to [specific response], I invite you to respond...
-
-**${headings.responseOptions}:**
-• Come forward for prayer
-• Raise your hand
-• Meet with pastor after service
-
-**${headings.closingPrayer}:**
-[Prayer for those responding]
-
-Amen.`
+**${headings.gospelRecap}:** Brief gospel reminder
+**${headings.theInvitation}:** Direct call to respond
+**${headings.responseOptions}:** Come forward / Raise hand / Meet pastor
+**${headings.closingPrayer}:** Prayer for responders. Amen.`
 
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(params.language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 SERMON STRUCTURE - ALL 15 FIELDS MANDATORY
-═══════════════════════════════════════════════════════════════════════════
+---
 
 ⚠️ CRITICAL LENGTH AND DEPTH REQUIREMENTS:
 
@@ -1195,80 +786,22 @@ Introduction: 5 min | Point 1: 15 min | Point 2: 15 min | Point 3: 12 min | Conc
 
 SERMON OUTLINE STRUCTURE:
 
-**INTRODUCTION (5 minutes preach | ~4 minutes read, 450-550 words):**
+**INTRODUCTION (5 min preach, 450-550 words):**
 
 ## ${headings.introduction}
+- **Hook** (120-150 words): CONCEPTUAL hook — tension/question/statistic. Give the idea, preacher expands live.
+- **Bridge** (180-220 words): 2-3 paragraphs connecting life → text → Gospel. Why this matters TODAY.
+- **Preview** (100-120 words): State thesis, preview 3 points with titles. Clear roadmap.
+- **${headings.transition}** (50-60 words): Bridge to Point 1.
 
-**Hook** (120-150 words):
-Provide a CONCEPTUAL hook (not a full story):
-- Real-life tension, question, or problem that listeners face
-- Cultural moment or observation everyone relates to
-- Provocative question that creates curiosity
-- Key statistic or research finding
-Keep it CONCISE - give the idea, not every detail. Preacher will expand this live with stories and examples.
-
-**Bridge** (180-220 words):
-Connect life → text → Gospel theme in 2-3 concise paragraphs:
-- Why this message matters TODAY
-- The pain point or need this addresses
-- How God's Word speaks to this issue
-Focus on CONCEPTUAL connection - preacher will add personal vulnerability and examples during delivery.
-
-**Preview** (100-120 words):
-Outline the sermon movement clearly:
-- State your thesis memorably
-- Preview your 3 main points with compelling titles
-- Set expectations for the journey
-Make it CLEAR and MEMORABLE - this is the roadmap.
-
-**${headings.transition}** (50-60 words):
-One compelling paragraph bridging to Point 1. Create momentum.
-
-**POINT 1 (15 min preach | ~8 min read, 1000-1200 words):**
+**POINT 1 (15 min preach, 1000-1200 words):**
 
 ## ${headings.point} 1: [Memorable Title - 3-6 words]
-
-**${headings.mainTeaching}** (350-450 words):
-Write 3-4 concise paragraphs with CORE theological exposition:
-- Paragraph 1: Introduce the main theological truth clearly
-- Paragraph 2: Define key biblical terms and explain the doctrine
-- Paragraph 3: Connect to Christ's person and work (Christological focus)
-- Paragraph 4: Address common misconceptions briefly
-Focus on CORE doctrinal claims - explain meaning, not every implication. Preacher will elaborate.
-
-**${headings.scriptureFoundation}** (300-350 words):
-List 2-3 key Bible verses (in ${languageConfig.name}) with brief explanation (100-120 words per verse):
-• **[Bible Reference 1]** - [Reference only, no full verse text]
-  - Context: Who wrote, to whom, why (1-2 sentences)
-  - Meaning: Core truth this verse teaches (2-3 sentences)
-  - Connection: How it supports this point (1-2 sentences)
-
-• **[Bible Reference 2]**
-  [Same structure - keep concise]
-
-Avoid quoting long passages - give references and core explanation only.
-
-**${headings.illustration}** (Conceptual, 150-200 words):
-Provide a CONCEPTUAL illustration idea (not a full story):
-- **Illustration Concept**: Describe the type of story or example that works here (e.g., "A story about trusting God in financial uncertainty" or "An example of forgiveness in a broken relationship")
-- **Key Elements**: What makes this illustration powerful (2-3 sentences)
-- **Connection Point**: How it ties to the doctrinal truth (1-2 sentences)
-- **Preacher Note**: "Expand this with personal testimony or local examples"
-Preacher will fill out the full story during live delivery.
-
-**${headings.application}** (180-220 words):
-Provide 3-4 focused applications (50-70 words each):
-
-• **[Application Focus]** (50-70 words):
-Give HEART + LIFE application in one concise paragraph:
-- What needs to change internally (heart/mindset)
-- What this looks like practically (specific action)
-- Keep it focused - preacher will add examples and address obstacles live
-
-[Continue for 3-4 applications - keep each under 70 words]
-
-**${headings.transition}** (50-70 words):
-One paragraph bridging to Point 2. Show logical flow.
+- **${headings.mainTeaching}** (350-450 words): 3-4 paragraphs — core doctrine, key terms, Christological focus, address misconceptions
+- **${headings.scriptureFoundation}** (300-350 words): 2-3 verses in ${languageConfig.name} (100-120 words each) — context, meaning, connection to point. References only, no full text.
+- **${headings.illustration}** (150-200 words): CONCEPTUAL idea — describe type of story, key elements, connection to truth. Preacher expands live.
+- **${headings.application}** (180-220 words): 3-4 focused applications (50-70 words each) — heart change + practical action
+- **${headings.transition}** (50-70 words): Bridge to Point 2
 
 **POINT 2 (15 min preach | ~8 min read, 1000-1200 words):**
 
@@ -1306,36 +839,11 @@ Write 4 concise paragraphs:
 
 Keep summaries CONCISE - give the core idea, preacher will add emotional intensity and examples.
 
-**ALTAR CALL / PRAYER PROMPTS (4-6 min preach | ~3 min read, 300-400 words):**
-
-**${headings.gospelRecap}** (120-150 words):
-Write 2-3 concise paragraphs with clear gospel presentation:
-- God's holiness and our sin
-- Christ's substitutionary death and resurrection
-- Call to repentance and faith
-Keep it CLEAR and FOCUSED - preacher will add vivid language and emotional appeal.
-
-**${headings.theInvitation}** (120-150 words):
-Write 2-3 paragraphs with specific invitation based on sermon theme:
-- Direct invitation: "If you sense God calling you to [specific response]..."
-- Create urgency with grace: "Respond TODAY"
-- Pastoral reassurance: "If unsure, talk with me after"
-Preacher will expand with personal warmth and Spirit-led emphasis.
-
-**${headings.responseOptions}** (50-70 words):
-List 4-5 clear response options:
-• Come forward during closing song
-• Raise hand for prayer
-• Meet pastor after service
-• Contact during the week
-• Fill out connection card
-
-**${headings.closingPrayer}** (60-80 words):
-Brief first-person prayer outline:
-- Pray for those responding
-- Pray for Spirit's work
-- Pray for courage to obey
-Preacher will expand into full prayer during delivery.
+**ALTAR CALL / PRAYER PROMPTS (4-6 min, 300-400 words):**
+- **${headings.gospelRecap}** (120-150 words): Clear gospel — God's holiness, our sin, Christ's death/resurrection, call to repentance
+- **${headings.theInvitation}** (120-150 words): Direct invitation, urgency with grace, pastoral reassurance
+- **${headings.responseOptions}** (50-70 words): 4-5 response options (come forward, raise hand, meet pastor, contact later, connection card)
+- **${headings.closingPrayer}** (60-80 words): Brief prayer outline — for responders, Spirit's work, courage to obey
 
 CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
 {
@@ -1363,69 +871,17 @@ CRITICAL: USE EXACT HEADINGS IN ${languageConfig.name} (NOT ENGLISH):
 ✓ "${headings.gospelRecap}" ✓ "${headings.theInvitation}"
 ✓ "${headings.responseOptions}" ✓ "${headings.closingPrayer}"
 
-FORMAT REQUIREMENTS (PREACHER-FACING EXPLANATION):
-✓ Introduction: 450-550 words (Hook: 120-150, Bridge: 180-220, Preview: 100-120, Transition: 50-60)
-✓ Point 1 - Main Teaching: 3-4 concise paragraphs (350-450 words)
-✓ Point 1 - Scripture Foundation: 2-3 verses with brief explanation (300-350 words total)
-✓ Point 1 - Illustration: CONCEPTUAL idea, not full story (150-200 words)
-✓ Point 1 - Application: 3-4 focused applications (180-220 words, 50-70 words each)
-✓ Point 1 - Transition: 50-70 words
-✓ Point 2: Same structure as Point 1 (1000-1200 words)
-✓ Point 3: Condensed structure (700-900 words)
-✓ Conclusion: 350-450 words (4 paragraphs: 80-100 words each + 100-120 gospel climax)
-✓ TOTAL INTERPRETATION: 3800-4500 words MANDATORY
-
 SERMON FORMAT:
 ${inputType === 'scripture' ? `EXPOSITORY SERMON: Verse-by-verse exposition through passage with deep exegesis, original language insights, and systematic progression through the text` : `TOPICAL SERMON: 3-point message developing theme with multiple scripture support, logical argument progression, and practical life transformation`}
 
 ${createPrayerFormatBlock(languageConfig, params.language, 'varies')}
 
-MANDATORY PRE-OUTPUT VERIFICATION:
-Count and verify BEFORE completing:
-1. INTRODUCTION section: 450-550 words? [Estimate: ___]
-   - Hook (conceptual): 120-150 words? [___]
-   - Bridge: 180-220 words? [___]
-   - Preview: 100-120 words? [___]
-   - Transition: 50-60 words? [___]
-
-2. POINT 1 complete: 1000-1200 words total? [Estimate: ___]
-   - Main Teaching: 3-4 paragraphs (350-450 words)? [Paragraph count: ___ | Word count: ___]
-   - Scripture Foundation: 2-3 verses (300-350 words)? [Verse count: ___ | Word count: ___]
-   - Illustration (conceptual): 150-200 words? [___]
-   - Application: 3-4 points (180-220 words, 50-70 each)? [Point count: ___ | Word count: ___]
-   - Transition: 50-70 words? [___]
-
-3. POINT 2 complete: 1000-1200 words total? [Estimate: ___]
-   [Same structure as Point 1]
-
-4. POINT 3 complete: 700-900 words total? [Estimate: ___]
-   - Main Teaching: 2-3 paragraphs (280-350 words)? [Paragraph count: ___ | Word count: ___]
-   - Scripture Foundation: 2-3 verses (220-260 words)? [Verse count: ___ | Word count: ___]
-   - Illustration (conceptual): 120-150 words? [___]
-   - Application: 2-3 points (120-150 words)? [Point count: ___ | Word count: ___]
-   - Transition: 40-60 words? [___]
-
-5. CONCLUSION section: 350-450 words? [Estimate: ___]
-   - Point 1 summary: 80-100 words? [___]
-   - Point 2 summary: 80-100 words? [___]
-   - Point 3 summary: 80-100 words? [___]
-   - Gospel Climax: 100-120 words? [___]
-
-6. "interpretation" TOTAL: 3,800-4,500 words? [Estimate: ___]
-7. "summary": 250-350 words with sermon title, thesis, hook, key question, gospel connection? [Count: ___]
-8. "context": 40-70 words (SHORT background)? [Count: ___]
-9. "prayerPoints" (altar call): 300-400 words (gospel recap, invitation, response options, prayer outline)? [Count: ___]
-10. All 15 fields present (including passage)? [Yes/No]
-11. Are all headings in ${languageConfig.name} (NOT English)? [Yes/No]
-12. Is TOTAL output 4,500-5,350 words? [Estimate: ___]
-13. Would this provide CORE content that preachers can expand to 50-60 minutes? [Yes/No]
-14. Does sermon maintain gospel centrality throughout? [Yes/No]
-
-IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
-IF WORD COUNTS ARE TOO LOW - YOU MUST MEET THE ${wordTarget} WORD TARGET.
-This is PREACHER-FACING EXPLANATION - provide core theological content with conceptual illustrations that preachers will expand during live delivery.
-
-⚠️ CRITICAL: This outline must equip a pastor with CORE theological content, conceptual hooks, 2-3 key verses per point, and focused applications. Pastors will expand this during live preaching to fill 50-60 minutes.
+VERIFY BEFORE OUTPUT:
+- interpretation TOTAL: 3,800-4,500 words (Intro 450-550, Pt1 1000-1200, Pt2 1000-1200, Pt3 700-900, Conclusion 350-450)
+- summary: 250-350 words | context: 40-70 words | prayerPoints (altar call): 300-400 words
+- All 15 fields present (including passage) | All headings in ${languageConfig.name}
+- TOTAL output: ${wordTarget} words | Gospel-centered throughout
+IF WORD COUNTS ARE TOO LOW - FIX BEFORE OUTPUT.
 
 ${getLanguageExamples(params.language)}
 
@@ -1482,9 +938,9 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 DAILY VERSE REFERENCE SELECTION - SPECIFIC REQUIREMENTS
-═══════════════════════════════════════════════════════════════════════════
+---
 
 TASK: Select ONE meaningful, encouraging Bible verse reference for daily inspiration.
 
@@ -1559,9 +1015,9 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 DAILY VERSE GENERATION - COMPLETE TEXT
-═══════════════════════════════════════════════════════════════════════════
+---
 
 TASK: Generate ONE complete Bible verse with reference and full text in all three languages.
 
@@ -1800,6 +1256,6 @@ export function getDiscipleLevelContext(discipleLevel?: string): string {
 
   const instruction = levelMap[discipleLevel.toLowerCase()]
   return instruction
-    ? `\n\n═══════════════════════════════════════════════════════════════════════════\n${instruction}\n═══════════════════════════════════════════════════════════════════════════`
+    ? `\n\n---\n${instruction}\n---`
     : ''
 }

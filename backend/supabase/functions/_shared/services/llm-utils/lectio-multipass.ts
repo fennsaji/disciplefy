@@ -16,14 +16,10 @@
  * despite token inefficiency (Hindi: 0.28 words/token, Malayalam: 0.09 words/token)
  */
 
-import { type LLMGenerationParams, type LanguageConfig, type PromptPair } from '../llm-types.ts'
+import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
-  THEOLOGICAL_FOUNDATION,
-  JSON_OUTPUT_RULES,
-  createLanguageBlock,
+  createSharedFoundation,
   createVerseReferenceBlock,
-  getDiscipleLevelContext,
-  createNativeWritingStyle,
   getLanguageExamples
 } from './prompt-builder.ts'
 
@@ -40,7 +36,7 @@ export interface LectioPassResult {
 export function createLectioPass1Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig
-): PromptPair {
+): CacheablePromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
 
   const pathParts = [
@@ -52,13 +48,9 @@ export function createLectioPass1Prompt(
     ? `Create a MEDITATIVE READING guide for: \"${inputValue}\"`
     : `Create a MEDITATIVE READING guide on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const systemMessage = `You are a Bible study guide leading prayerful Scripture reading and personal application.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are a Bible study guide leading prayerful Scripture reading and personal application.
 
 STUDY MODE: MEDITATIVE READING - PASS 1/2 (Careful Reading + Biblical Reflection)
 This is part 1 of a multi-pass Meditative Reading generation. Focus on slow, careful reading of the biblical text and deep reflection on what Scripture itself says.
@@ -70,17 +62,15 @@ PROTESTANT DISTINCTIVES (MANDATORY):
 - "God speaking" means God speaking through His written Word (2 Timothy 3:16-17), not mystical inner voices
 - Prayer is a believer's response to what Scripture reveals, not a technique for achieving spiritual states
 - Silence and stillness are valid postures for reflection, but never as emptying techniques or centering practices
-- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text
-
-${createNativeWritingStyle(language)}`
+- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text`
 
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(language)}
 
-═══════════════════════════════════════════════════════════════════════════
+---
 PASS 1: MEDITATIVE READING FOUNDATION (Careful Reading + Biblical Reflection)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 
@@ -138,11 +128,7 @@ Each section MUST begin with a **bold header** translated into ${languageConfig.
 - EMPHASIZE the Holy Spirit's role in illuminating the written Word (John 16:13)
 - BALANCE structured study with personal, prayerful response to what Scripture reveals
 
-⚠️ SENTENCE COUNTING IS MANDATORY:
-- A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
-- Count each sentence as you write: "1. [sentence]. 2. [sentence]... 7. [sentence]."
-- If you reach 5 sentences, ADD 1-3 MORE SENTENCES to reach 6-8
-- Each section should be 300-400 words of prayerful, text-grounded guidance
+Count sentences as you write (end with ./!/?). Each section: 6-8 sentences, 300-400 words.
 
 ## CAREFUL READING: First and Second Pass Through the Text
 
@@ -169,24 +155,9 @@ Work through the passage focusing on what it reveals about God:
 
 Target: 300-400 words, 6-8 complete sentences with theological depth.
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 1:
+VERIFY: summary 150-200 words | context 40-60 words | passage reference ONLY (MANDATORY) | interpretationPart1: 2 sections with bold headers, 6-8 sentences each, 700-900 words | Prayerful & Scripture-anchored tone (not mystical) | Verse refs in ${languageConfig.name} | Total ~950-1100 words. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "summary" have 150-200 words (6-8 sentences)? [Count: ___]
-2. Does "context" have 40-60 words (MINIMAL)? [Count: ___]
-3. ⚠️ CRITICAL: Does "passage" contain ONLY the Scripture reference (NOT full verse text)? [Format correct: Yes/No]
-4. Does "interpretationPart1" have EXACTLY 2 sections? [Count: ___]
-5. Does EACH section have 6-8 sentences? [Count each: ___ ___]
-6. Is "interpretationPart1" 700-900 words total? [Estimated count: ___]
-7. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Check: Yes/No]
-8. Are all verse references in ${languageConfig.name}? [Check: Yes/No]
-9. Is total Pass 1 output ~950-1100 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-⚠️ DO NOT SKIP THE PASSAGE FIELD - IT IS MANDATORY!
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -198,7 +169,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 2 sections, each with bold header in ${languageConfig.name}]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
@@ -208,16 +179,12 @@ export function createLectioPass2Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig,
   pass1Result: { summary: string; context: string; interpretationPart1: string }
-): PromptPair {
+): CacheablePromptPair {
   const { language, discipleLevel } = params
 
-  const systemMessage = `You are a Bible study guide completing a Meditative Reading guide.
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
-${THEOLOGICAL_FOUNDATION}
-
-${JSON_OUTPUT_RULES}
-
-${createLanguageBlock(languageConfig, language)}${getDiscipleLevelContext(discipleLevel)}
+  const passSystem = `You are a Bible study guide completing a Meditative Reading guide.
 
 STUDY MODE: MEDITATIVE READING - PASS 2/2 (Prayer Response + Application & Commitment)
 This is part 2 of a 2-part Meditative Reading generation. Focus on prayerful response to Scripture and concrete life application.
@@ -227,13 +194,11 @@ Continue the prayerful, Scripture-anchored tone. All prayer and application must
 PROTESTANT DISTINCTIVES (MANDATORY):
 - Prayer is response to what Scripture reveals — always grounded in the text
 - Application must be specific, concrete, and measurable — not vague spiritual feelings
-- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word
+- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word`
 
-${createNativeWritingStyle(language)}`
-
-  const userMessage = `═══════════════════════════════════════════════════════════════════════════
+  const userMessage = `---
 PASS 2: MEDITATIVE READING RESPONSE (Prayer + Application & Commitment + Resources)
-═══════════════════════════════════════════════════════════════════════════
+---
 
 CONTEXT FROM PASS 1:
 - Summary: ${pass1Result.summary.substring(0, 200)}...
@@ -280,11 +245,7 @@ Do NOT put prayer paragraphs in prayerPoints. They belong in interpretationPart2
 - GUIDE into authentic, specific prayer about real-life situations in light of God's Word
 - BALANCE structured prayer prompts with freedom for personal, Spirit-led prayer
 
-⚠️ SENTENCE COUNTING IS MANDATORY:
-- A sentence ends with: period (.) OR question mark (?) OR exclamation point (!)
-- Count each sentence as you write: "1. [sentence]. 2. [sentence]... 6. [sentence]."
-- If you reach 4 sentences, ADD 1-3 MORE SENTENCES to reach 5-7
-- Each section should be 250-320 words of prayerful, grounded guidance
+Count sentences as you write (end with ./!/?). Each section: 5-7 sentences, 250-320 words.
 
 ## PRAYER RESPONSE: Responding to God Based on the Text
 
@@ -325,29 +286,9 @@ Target: 250-320 words, 6-8 complete sentences with specific, accountable applica
 - reflectionAnswers: 4-5 concrete life applications (15-20 words each)
 - 5 yes/no questions connecting the text to personal life
 
-⚠️ MANDATORY PRE-OUTPUT VERIFICATION FOR PASS 2:
+VERIFY: interpretationPart2: 2 sections with bold headers, 5-7 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | 4-5 prayerPoints (50-70 words each) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
 
-Before completing your response, COUNT and verify:
-1. Does "interpretationPart2" have EXACTLY 2 sections? [Count: ___]
-2. Does EACH section have 5-7 sentences? [Count each: ___ ___]
-3. Is "interpretationPart2" 500-650 words total? [Estimated count: ___]
-4. Does "relatedVerses" contain 5-7 verses? [Count: ___]
-5. Are all verses in ${languageConfig.name}? [Check: Yes/No]
-6. Does "reflectionQuestions" contain 5-7 questions? [Count: ___]
-7. Are questions grounded in the text (not abstract or mystical)? [Check: Yes/No]
-8. Does "prayerPoints" contain 4-5 prayer topics? [Count: ___]
-9. Is each prayer point 50-70 words? [Check: Yes/No]
-10. Are "summaryInsights" 4-5 items at 15-20 words each? [Count: ___]
-11. Are "interpretationInsights" 4-5 items at 15-20 words each? [Count: ___]
-12. Are "reflectionAnswers" 4-5 items at 15-20 words each? [Count: ___]
-13. Are all 5 yes/no questions present? [Check: Yes/No]
-14. Is the tone prayerful and Scripture-anchored (not mystical or centering-prayer based)? [Check: Yes/No]
-15. Is total Pass 2 output ~600-750 words? [Estimated: ___]
-
-IF ANY ANSWER IS "NO" OR OUTSIDE RANGE - YOU MUST FIX IT BEFORE OUTPUT.
-
-⚠️ CRITICAL: DO NOT OUTPUT LITERAL "..." or [...] - THESE ARE PLACEHOLDERS!
-You must generate FULL CONTENT for each field as specified above.
+Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
 ${getLanguageExamples(language)}
 
@@ -367,7 +308,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "prayerQuestion": "[YOUR QUESTION]"
 }`
 
-  return { systemMessage, userMessage }
+  return { sharedSystem, passSystem, userMessage }
 }
 
 /**
