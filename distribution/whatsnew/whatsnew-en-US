@@ -1,13 +1,11 @@
 🙏 Disciplefy - Beta Update
 
 ✨ What's New:
-• Memory Verses: unlimited verses, scroll to load more
-• Upgrade prompt shown before you start practice (not after)
-• Mastery levels are now easier to achieve
-• Learning path progress tracks actual completions
-
-• Voice Buddy: pause resumes from same position, no restart
-• Voice Buddy: drag the seek slider to jump within a section
-• Learning path guides (recommended mode) now free for all
+• New Epistles learning paths: Philippians, Ephesians, Galatians, 1 & 2 Peter, Corinthians and more
+• Language switch now updates all learning paths instantly
+• Incomplete study guides detected and handled gracefully
+• Token refund on failed or partial study generation
+• Faster study generation with optimized AI prompts
+• Duplicate learning paths merged for cleaner browsing
 
 📖 Keep growing in your faith!
