@@ -64,9 +64,11 @@ export interface TokenInfo {
 export interface TokenConsumptionResult {
   readonly success: boolean             // Whether consumption succeeded
   readonly availableTokens: number      // Remaining daily tokens
-  readonly purchasedTokens: number      // Remaining purchased tokens  
+  readonly purchasedTokens: number      // Remaining purchased tokens
   readonly dailyLimit: number           // Daily limit for user plan
   readonly totalTokens: number          // Total remaining tokens
+  readonly dailyTokensUsed: number      // Daily tokens consumed in this operation (for refunds)
+  readonly purchasedTokensUsed: number  // Purchased tokens consumed in this operation (for refunds)
   readonly errorMessage?: string        // Error message if success is false
 }
 

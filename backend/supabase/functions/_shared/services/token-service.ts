@@ -168,6 +168,57 @@ export class TokenService {
   }
 
   /**
+   * Refunds tokens after a failed operation (e.g. study generation failure)
+   *
+   * Uses the exact daily/purchased breakdown from the original consumption
+   * to restore tokens atomically. Non-throwing: logs errors but returns
+   * a failure result so callers can proceed with error handling.
+   *
+   * @param identifier - User ID or session ID
+   * @param dailyTokensUsed - Daily tokens consumed in the original operation
+   * @param purchasedTokensUsed - Purchased tokens consumed in the original operation
+   * @returns Promise resolving to refund result
+   */
+  async refundTokens(
+    identifier: string,
+    dailyTokensUsed: number,
+    purchasedTokensUsed: number
+  ): Promise<{ success: boolean; errorMessage?: string }> {
+    if (dailyTokensUsed === 0 && purchasedTokensUsed === 0) {
+      return { success: true } // Nothing to refund
+    }
+
+    try {
+      this.validateIdentifier(identifier)
+
+      const { data, error } = await this.supabaseClient
+        .rpc('refund_user_tokens', {
+          p_identifier: identifier,
+          p_daily_tokens_used: dailyTokensUsed,
+          p_purchased_tokens_used: purchasedTokensUsed
+        })
+        .single() as { data: { success: boolean; available_tokens: number; purchased_tokens: number; error_message: string } | null, error: any }
+
+      if (error) {
+        console.error('[TokenService] Refund RPC error:', error)
+        return { success: false, errorMessage: 'Database error during refund' }
+      }
+
+      if (!data || !data.success) {
+        console.error('[TokenService] Refund failed:', data?.error_message)
+        return { success: false, errorMessage: data?.error_message || 'Refund failed' }
+      }
+
+      console.log(`[TokenService] ✅ Refunded tokens: daily=${dailyTokensUsed}, purchased=${purchasedTokensUsed} for ${identifier.substring(0, 8)}...`)
+      return { success: true }
+
+    } catch (error) {
+      console.error('[TokenService] Unexpected error refunding tokens:', error)
+      return { success: false, errorMessage: 'Unexpected error during refund' }
+    }
+  }
+
+  /**
    * Adds purchased tokens to a user's account
    * 
    * Adds tokens that never reset to the user's purchased token balance.
@@ -440,6 +491,8 @@ export class TokenService {
       purchasedTokens: data.purchased_tokens,
       dailyLimit: data.daily_limit,
       totalTokens: data.available_tokens + data.purchased_tokens,
+      dailyTokensUsed: data.daily_tokens_used,
+      purchasedTokensUsed: data.purchased_tokens_used,
       errorMessage: data.error_message
     }
   }
