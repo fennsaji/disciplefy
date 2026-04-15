@@ -120,13 +120,33 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- FIX: get_user_gamification_stats rank_data CTE
 -- =============================================================================
 -- The rank_data CTE was also ranking by study XP only, not total XP.
--- Recreate the full function with the corrected rank calculation.
+-- Must keep the RETURNS TABLE(...) signature from migration 20260410.
 
 CREATE OR REPLACE FUNCTION get_user_gamification_stats(p_user_id UUID)
-RETURNS JSON AS $$
-DECLARE
-    result JSON;
+RETURNS TABLE (
+    -- XP & Rank
+    total_xp BIGINT,
+    leaderboard_rank BIGINT,
+    -- Study Streak
+    study_current_streak INTEGER,
+    study_longest_streak INTEGER,
+    study_last_date DATE,
+    total_study_days INTEGER,
+    -- Verse Streak
+    verse_current_streak INTEGER,
+    verse_longest_streak INTEGER,
+    -- Counts
+    total_studies_completed BIGINT,
+    total_time_spent_seconds BIGINT,
+    total_memory_verses BIGINT,
+    total_voice_sessions BIGINT,
+    total_saved_guides BIGINT,
+    -- Achievements
+    achievements_unlocked INTEGER,
+    achievements_total INTEGER
+) AS $$
 BEGIN
+    RETURN QUERY
     WITH study_xp AS (
         SELECT
             COALESCE(SUM(utp.xp_earned), 0)::BIGINT AS xp
@@ -198,23 +218,33 @@ BEGIN
             (SELECT COUNT(*) FROM memory_verses WHERE user_id = p_user_id) AS memory,
             (SELECT COUNT(*) FROM voice_conversations WHERE user_id = p_user_id AND status = 'completed') AS voice,
             (SELECT COUNT(*) FROM user_study_guides WHERE user_id = p_user_id AND is_saved = TRUE) AS saved
+    ),
+    achievement_counts AS (
+        SELECT
+            (SELECT COUNT(*) FROM user_achievements WHERE user_id = p_user_id)::INTEGER AS unlocked,
+            (SELECT COUNT(*) FROM achievements)::INTEGER AS total
     )
-    SELECT json_build_object(
-        'total_xp', COALESCE((SELECT xp FROM xp_data), 0),
-        'rank', (SELECT rank FROM rank_data),
-        'study_streak', COALESCE((SELECT current_streak FROM study_streak_data), 0),
-        'longest_study_streak', COALESCE((SELECT longest_streak FROM study_streak_data), 0),
-        'last_study_date', (SELECT last_study_date FROM study_streak_data),
-        'total_study_days', COALESCE((SELECT total_study_days FROM study_streak_data), 0),
-        'verse_streak', COALESCE((SELECT current_streak FROM verse_streak_data), 0),
-        'longest_verse_streak', COALESCE((SELECT longest_streak FROM verse_streak_data), 0),
-        'studies_completed', COALESCE((SELECT studies FROM counts), 0),
-        'time_spent_seconds', COALESCE((SELECT time_spent FROM counts), 0),
-        'memory_verses_count', COALESCE((SELECT memory FROM counts), 0),
-        'voice_sessions_count', COALESCE((SELECT voice FROM counts), 0),
-        'saved_studies_count', COALESCE((SELECT saved FROM counts), 0)
-    ) INTO result;
-
-    RETURN result;
+    SELECT
+        xd.xp AS total_xp,
+        rd.rank AS leaderboard_rank,
+        COALESCE(ssd.current_streak, 0) AS study_current_streak,
+        COALESCE(ssd.longest_streak, 0) AS study_longest_streak,
+        ssd.last_study_date AS study_last_date,
+        COALESCE(ssd.total_study_days, 0) AS total_study_days,
+        COALESCE(vsd.current_streak, 0) AS verse_current_streak,
+        COALESCE(vsd.longest_streak, 0) AS verse_longest_streak,
+        c.studies AS total_studies_completed,
+        c.time_spent AS total_time_spent_seconds,
+        c.memory AS total_memory_verses,
+        c.voice AS total_voice_sessions,
+        c.saved AS total_saved_guides,
+        ac.unlocked AS achievements_unlocked,
+        ac.total AS achievements_total
+    FROM xp_data xd
+    CROSS JOIN counts c
+    CROSS JOIN achievement_counts ac
+    LEFT JOIN rank_data rd ON TRUE
+    LEFT JOIN study_streak_data ssd ON TRUE
+    LEFT JOIN verse_streak_data vsd ON TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
