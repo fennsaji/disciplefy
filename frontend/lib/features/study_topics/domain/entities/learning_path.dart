@@ -66,6 +66,32 @@ class LearningPath extends Equatable {
   int get topicsCompleted =>
       topicsCount > 0 ? (progressPercentage / 100 * topicsCount).round() : 0;
 
+  /// Create a copy with updated fields.
+  LearningPath copyWith({
+    bool? isEnrolled,
+    int? progressPercentage,
+  }) {
+    return LearningPath(
+      id: id,
+      slug: slug,
+      title: title,
+      description: description,
+      iconName: iconName,
+      color: color,
+      totalXp: totalXp,
+      estimatedDays: estimatedDays,
+      discipleLevel: discipleLevel,
+      recommendedMode: recommendedMode,
+      allowNonSequentialAccess: allowNonSequentialAccess,
+      isFeatured: isFeatured,
+      topicsCount: topicsCount,
+      isEnrolled: isEnrolled ?? this.isEnrolled,
+      progressPercentage: progressPercentage ?? this.progressPercentage,
+      category: category,
+      fellowshipCompleted: fellowshipCompleted,
+    );
+  }
+
   /// Whether the path is completed
   bool get isCompleted => progressPercentage >= 100;
 
