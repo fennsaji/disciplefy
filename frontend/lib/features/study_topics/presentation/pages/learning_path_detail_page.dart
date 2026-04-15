@@ -1193,30 +1193,32 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     // Determine if topic is locked based on sequential progression
     // A topic is unlocked if:
     // - Path allows non-sequential access (all topics unlocked), OR
-    // - It's the first topic (index 0), OR
-    // - It's already completed (can always revisit), OR
-    // - The previous topic is completed (sequential unlock)
+    // - It's completed or in-progress (can always revisit), OR
+    // - It's at or before the first incomplete topic after the last completed one
+    //   (i.e., all topics up to lastCompletedIndex + 1 are unlocked)
     final bool isLocked;
     if (path.allowNonSequentialAccess) {
-      // Path allows non-sequential access = all topics unlocked
       isLocked = false;
-    } else if (index == 0) {
-      // First topic is always unlocked
-      isLocked = false;
-    } else if (topic.isCompleted) {
-      // Completed topics are always accessible
-      isLocked = false;
-    } else if (path.topics[index - 1].isCompleted) {
-      // Previous topic completed = this one is unlocked
+    } else if (topic.isCompleted || topic.isInProgress) {
       isLocked = false;
     } else {
-      // Previous topic not completed = locked
-      isLocked = true;
+      // Find the last completed topic index
+      int lastCompletedIndex = -1;
+      for (int i = path.topics.length - 1; i >= 0; i--) {
+        if (path.topics[i].isCompleted) {
+          lastCompletedIndex = i;
+          break;
+        }
+      }
+      // Unlock everything up to and including the next topic after last completed
+      isLocked = index > lastCompletedIndex + 1;
     }
 
+    // "Next" is the first non-completed topic that's unlocked
     final isNext = path.isEnrolled &&
+        !isLocked &&
         !topic.isCompleted &&
-        (index == 0 || (index > 0 && path.topics[index - 1].isCompleted));
+        !path.topics.take(index).any((t) => !t.isCompleted);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),

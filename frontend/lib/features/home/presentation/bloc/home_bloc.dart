@@ -340,8 +340,37 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         }
       } else {
         final recommended = result.fold((_) => null, (r) => r)!;
+        var path = recommended.path;
+        var reason = recommended.reason;
+
+        // If the API returned a path with 0% progress (e.g. auth timing issue
+        // caused the backend to treat the user as anonymous), cross-reference
+        // with the enrolled paths cache which uses the correct SQL function.
+        if (!path.isEnrolled || path.progressPercentage == 0) {
+          final enrolledResult =
+              await _learningPathsRepository.getEnrolledPaths(
+            language: languageCode,
+          );
+          enrolledResult.fold((_) => null, (enrolled) {
+            final match = enrolled
+                .where((p) => p.id == path.id && p.isEnrolled)
+                .firstOrNull;
+            if (match != null && match.progressPercentage > 0) {
+              Logger.info(
+                'Enriching recommended path with enrolled data: ${match.progressPercentage}%',
+                tag: 'HOME_BLOC',
+              );
+              path = path.copyWith(
+                isEnrolled: true,
+                progressPercentage: match.progressPercentage,
+              );
+              reason = LearningPathRecommendationReason.active;
+            }
+          });
+        }
+
         Logger.info(
-          'Loaded recommended learning path: ${recommended.path.title} (reason: ${recommended.reason.name})',
+          'Loaded recommended learning path: ${path.title} (reason: ${reason.name}, progress: ${path.progressPercentage}%)',
           tag: 'HOME_BLOC',
         );
 
@@ -349,8 +378,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         if (updatedState is HomeCombinedState) {
           emit(updatedState.copyWith(
             isLoadingActivePath: false,
-            activeLearningPath: recommended.path,
-            learningPathReason: recommended.reason,
+            activeLearningPath: path,
+            learningPathReason: reason,
           ));
         }
       }
