@@ -80,12 +80,12 @@ interface LearningPath {
   topics_count: number;
   is_enrolled: boolean;
   progress_percentage: number;
+  topics_completed: number;
   category: string;
 }
 
 interface LearningPathDetail extends LearningPath {
   allow_non_sequential_access: boolean;
-  topics_completed: number;
   enrolled_at: string | null;
   topics: LearningPathTopic[];
 }
@@ -217,7 +217,8 @@ function buildLearningPathResponse(
   isEnrolled: boolean,
   progressPercentage: number,
   localizedTitle: string,
-  localizedDescription: string
+  localizedDescription: string,
+  topicsCompleted?: number
 ): LearningPath {
   return {
     id: pathData.id,
@@ -233,6 +234,7 @@ function buildLearningPathResponse(
     topics_count: topicsCount,
     is_enrolled: isEnrolled,
     progress_percentage: progressPercentage,
+    topics_completed: topicsCompleted ?? (topicsCount > 0 ? Math.round(progressPercentage * topicsCount / 100) : 0),
     category: (pathData as Record<string, unknown>).category as string || '',
   };
 }
@@ -360,6 +362,10 @@ function mapPathRow(row: Record<string, unknown>): LearningPath {
     topics_count: row.total_topics as number,
     is_enrolled: row.is_enrolled as boolean,
     progress_percentage: row.progress_percentage as number,
+    topics_completed: (row.topics_completed as number) ??
+      (row.total_topics && row.progress_percentage
+        ? Math.round((row.progress_percentage as number) * (row.total_topics as number) / 100)
+        : 0),
     category: row.category as string,
   };
 }
@@ -1207,11 +1213,26 @@ async function handleGetRecommendedPath(
         pathData.description
       );
 
+      // Check enrollment and compute actual progress
+      let anyFeaturedEnrolled = false;
+      let anyFeaturedProgress = 0;
+      if (userId) {
+        const { data: progress } = await supabaseServiceClient
+          .from('user_learning_path_progress')
+          .select('learning_path_id')
+          .eq('user_id', userId)
+          .eq('learning_path_id', pathData.id)
+          .single();
+        anyFeaturedEnrolled = !!progress;
+        const completed = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
+        anyFeaturedProgress = topicsCountNum > 0 ? Math.round((completed / topicsCountNum) * 100) : 0;
+      }
+
       const path = buildLearningPathResponse(
         pathData,
         topicsCountNum,
-        false,
-        0,
+        anyFeaturedEnrolled,
+        anyFeaturedProgress,
         localized.title,
         localized.description
       );
@@ -1238,17 +1259,20 @@ async function handleGetRecommendedPath(
     if (userId) {
       const { data: userProgress } = await supabaseServiceClient
         .from('user_learning_path_progress')
-        .select('topics_completed')
+        .select('learning_path_id')
         .eq('user_id', userId)
         .eq('learning_path_id', featuredPath.id)
         .single();
 
       if (userProgress) {
         isEnrolled = true;
-        progressPercentage = topicsCountNum > 0
-          ? Math.round((userProgress.topics_completed / topicsCountNum) * 100)
-          : 0;
       }
+
+      // Always compute progress from actual completions
+      const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, featuredPath.id, userId);
+      progressPercentage = topicsCountNum > 0
+        ? Math.round((actualCompleted / topicsCountNum) * 100)
+        : 0;
     }
 
     const path = buildLearningPathResponse(
