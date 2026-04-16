@@ -248,7 +248,7 @@ async function handleAdminStudyGenerator(
             summary: existingContent.content.summary || '',
             interpretation: existingContent.content.interpretation || '',
             context: existingContent.content.context || '',
-            passage: existingContent.content.passage || undefined,
+            passage: existingContent.content.passage || '',
             relatedVerses: [...(existingContent.content.relatedVerses || [])],
             reflectionQuestions: [...(existingContent.content.reflectionQuestions || [])],
             prayerPoints: [...(existingContent.content.prayerPoints || [])],

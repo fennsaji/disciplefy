@@ -224,22 +224,20 @@ async function getLearningPathRecommendedMode(
 async function* streamCachedContent(
   studyGuide: CompleteStudyGuide
 ): AsyncGenerator<string, void, unknown> {
+  // Build sections in SECTION_ORDER: summary, context, passage, interpretation, ...
+  // Passage is required (cache invalidation ensures it exists before reaching here)
   const sections: ParsedSection[] = [
     { type: 'summary', content: studyGuide.summary, index: 0 },
     { type: 'context', content: studyGuide.context, index: 1 },
-    { type: 'interpretation', content: studyGuide.interpretation, index: 2 },
-    { type: 'relatedVerses', content: studyGuide.relatedVerses, index: 3 },
-    { type: 'reflectionQuestions', content: studyGuide.reflectionQuestions, index: 4 },
-    { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 5 }
+    { type: 'passage', content: studyGuide.passage || '', index: 2 },
+    { type: 'interpretation', content: studyGuide.interpretation, index: 3 },
+    { type: 'relatedVerses', content: studyGuide.relatedVerses, index: 4 },
+    { type: 'reflectionQuestions', content: studyGuide.reflectionQuestions, index: 5 },
+    { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 6 },
   ]
 
   // Add optional sections if present (in SECTION_ORDER)
-  let currentIndex = 6
-
-  // Add passage if present (matches new content logic at line 1102-1104)
-  if (studyGuide.passage) {
-    sections.push({ type: 'passage', content: studyGuide.passage, index: currentIndex++ })
-  }
+  let currentIndex = 7
 
   if (studyGuide.interpretationInsights) {
     sections.push({ type: 'interpretationInsights', content: studyGuide.interpretationInsights, index: currentIndex++ })
@@ -778,8 +776,16 @@ async function handleStudyGenerateV2(
       let purchasedTokensUsed = 0
 
       try {
+        // Invalidate stale cache entries missing required fields (e.g. passage added later)
+        const isCacheValid = existingContent
+          ? !!(existingContent.content.passage && existingContent.content.summary && existingContent.content.interpretation)
+          : false
+
         // Handle cached content
-        if (existingContent) {
+        if (existingContent && !isCacheValid) {
+          console.log('⚠️ [STUDY-V2] Cache invalidated: missing required fields (passage/summary/interpretation), regenerating')
+        }
+        if (existingContent && isCacheValid) {
           const isCreator = checkIsCreator(existingContent, userContext)
 
           // Non-creator needs to pay tokens for cached content
@@ -815,7 +821,7 @@ async function handleStudyGenerateV2(
             summary: existingContent.content.summary || '',
             interpretation: existingContent.content.interpretation || '',
             context: existingContent.content.context || '',
-            passage: existingContent.content.passage || undefined,  // Add passage field
+            passage: existingContent.content.passage || '',
             relatedVerses: [...(existingContent.content.relatedVerses || [])],
             reflectionQuestions: [...(existingContent.content.reflectionQuestions || [])],
             prayerPoints: [...(existingContent.content.prayerPoints || [])],
@@ -837,9 +843,8 @@ async function handleStudyGenerateV2(
             prayerQuestion: existingContent.content.prayerQuestion || undefined
           }
 
-          // Calculate total sections for this cached guide (base 6 + optional fields)
-          const cachedSectionCount = 6 +
-            (cachedGuide.passage ? 1 : 0) +  // Add passage to section count
+          // Calculate total sections for this cached guide (base 7: summary, context, passage, interpretation, relatedVerses, reflectionQuestions, prayerPoints)
+          const cachedSectionCount = 7 +
             (cachedGuide.interpretationInsights ? 1 : 0) +
             (cachedGuide.summaryInsights ? 1 : 0) +
             (cachedGuide.reflectionAnswers ? 1 : 0) +
