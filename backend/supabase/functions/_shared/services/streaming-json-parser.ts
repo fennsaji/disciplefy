@@ -58,7 +58,7 @@ export interface CompleteStudyGuide {
   summary: string
   interpretation: string
   context: string
-  passage?: string  // LLM-generated Scripture passage (3-8 verses) for Standard mode
+  passage: string  // LLM-generated Scripture passage reference for meditation
   relatedVerses: string[]
   reflectionQuestions: string[]
   prayerPoints: string[]
@@ -452,15 +452,13 @@ export class StreamingJsonParser {
       summary: this.parsedData.summary!,
       interpretation: this.parsedData.interpretation!,
       context: this.parsedData.context!,
+      passage: this.parsedData.passage || '',
       relatedVerses: this.parsedData.relatedVerses!,
       reflectionQuestions: this.parsedData.reflectionQuestions!,
       prayerPoints: this.parsedData.prayerPoints!
     }
 
     // Add optional fields if present
-    if (this.parsedData.passage) {
-      result.passage = this.parsedData.passage
-    }
     if (this.parsedData.interpretationInsights) {
       result.interpretationInsights = this.parsedData.interpretationInsights
     }
@@ -554,15 +552,13 @@ export class StreamingJsonParser {
           summary: parsed.summary,
           interpretation: parsed.interpretation,
           context: parsed.context,
+          passage: typeof parsed.passage === 'string' ? parsed.passage : '',
           relatedVerses: parsed.relatedVerses,
           reflectionQuestions: parsed.reflectionQuestions,
           prayerPoints: parsed.prayerPoints
         }
 
         // Add optional fields if present and valid
-        if (typeof parsed.passage === 'string') {
-          result.passage = parsed.passage
-        }
         if (Array.isArray(parsed.interpretationInsights)) {
           result.interpretationInsights = parsed.interpretationInsights
         }

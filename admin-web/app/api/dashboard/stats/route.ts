@@ -31,11 +31,11 @@ export async function GET() {
       ? ((totalLLMCost - previousTotalLLMCost) / previousTotalLLMCost) * 100
       : 0
 
-    // Get active subscriptions
+    // Get active subscriptions (includes trial status)
     const { count: activeSubscriptions } = await supabase
       .from('subscriptions')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
+      .in('status', ['active', 'trial'])
 
     // Get subscriptions created today
     const today = new Date()
@@ -68,19 +68,19 @@ export async function GET() {
     // Get total tokens consumed in last 30 days
     const { data: tokenUsage } = await supabase
       .from('token_usage_history')
-      .select('amount')
+      .select('token_cost')
       .gte('created_at', thirtyDaysAgo.toISOString())
 
-    const totalTokens = tokenUsage?.reduce((sum, record) => sum + Math.abs(record.amount || 0), 0) || 0
+    const totalTokens = tokenUsage?.reduce((sum, record) => sum + (record.token_cost || 0), 0) || 0
 
     // Get tokens for previous 30 days
     const { data: previousTokenUsage } = await supabase
       .from('token_usage_history')
-      .select('amount')
+      .select('token_cost')
       .gte('created_at', sixtyDaysAgo.toISOString())
       .lt('created_at', thirtyDaysAgo.toISOString())
 
-    const previousTotalTokens = previousTokenUsage?.reduce((sum, record) => sum + Math.abs(record.amount || 0), 0) || 0
+    const previousTotalTokens = previousTokenUsage?.reduce((sum, record) => sum + (record.token_cost || 0), 0) || 0
     const tokenChange = previousTotalTokens > 0
       ? ((totalTokens - previousTotalTokens) / previousTotalTokens) * 100
       : 0

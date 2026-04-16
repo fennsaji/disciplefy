@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} overflow-hidden`}>
         <ThemeProvider>
           <QueryProvider>{children}</QueryProvider>
           <Toaster richColors position="top-right" />

@@ -1049,16 +1049,21 @@ async function handleGetRecommendedPath(
             ? Math.round((actualCompleted / topicsCountNum) * 100)
             : 0;
 
-          const path = buildLearningPathResponse(
-            pathData,
-            topicsCountNum,
-            true,
-            progressPercentage,
-            localized.title,
-            localized.description
-          );
+          // Skip completed paths — fall through to next priority
+          if (progressPercentage >= 100) {
+            console.log(`[RECOMMENDED_PATH] Active path ${pathData.title} is 100% complete, skipping`);
+          } else {
+            const path = buildLearningPathResponse(
+              pathData,
+              topicsCountNum,
+              true,
+              progressPercentage,
+              localized.title,
+              localized.description
+            );
 
-          return createRecommendedPathResponse(path, 'active');
+            return createRecommendedPathResponse(path, 'active');
+          }
         }
       }
     }

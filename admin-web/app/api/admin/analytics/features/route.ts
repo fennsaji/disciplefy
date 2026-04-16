@@ -65,75 +65,66 @@ export async function GET(request: NextRequest) {
       .from('user_profiles')
       .select('*', { count: 'exact', head: true })
 
+    // Helper: count distinct users from fetched rows
+    const countDistinctUsers = (rows: { user_id: string }[] | null) =>
+      new Set((rows || []).map(r => r.user_id).filter(Boolean)).size
+
     // Study Guides Feature
-    const { count: studyGuideUsers } = await supabaseAdmin
+    const { data: studyGuideData } = await supabaseAdmin
       .from('user_study_guides')
-      .select('user_id', { count: 'exact', head: true })
+      .select('user_id')
       .gte('created_at', dateFilter.toISOString())
 
-    const { count: totalStudyGuides } = await supabaseAdmin
-      .from('user_study_guides')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', dateFilter.toISOString())
+    const studyGuideUsers = countDistinctUsers(studyGuideData)
+    const totalStudyGuides = studyGuideData?.length || 0
 
     // Memory Verses Feature
-    const { count: memoryVerseUsers } = await supabaseAdmin
+    const { data: memoryVerseData } = await supabaseAdmin
       .from('memory_verses')
-      .select('user_id', { count: 'exact', head: true })
+      .select('user_id')
       .gte('created_at', dateFilter.toISOString())
 
-    const { count: totalMemoryVerses } = await supabaseAdmin
-      .from('memory_verses')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', dateFilter.toISOString())
+    const memoryVerseUsers = countDistinctUsers(memoryVerseData)
+    const totalMemoryVerses = memoryVerseData?.length || 0
 
-    // Learning Paths Feature
-    const { count: learningPathUsers } = await supabaseAdmin
+    // Learning Paths Feature (all enrollments, not just recent - users enrolled earlier are still active)
+    const { data: learningPathData } = await supabaseAdmin
       .from('user_learning_path_progress')
-      .select('user_id', { count: 'exact', head: true })
-      .gte('enrolled_at', dateFilter.toISOString())
+      .select('user_id, progress_percentage')
 
-    const { data: pathCompletions } = await supabaseAdmin
-      .from('user_learning_path_progress')
-      .select('progress_percentage')
-      .gte('enrolled_at', dateFilter.toISOString())
+    const learningPathUsers = countDistinctUsers(learningPathData as { user_id: string }[] | null)
+    const pathCompletions = learningPathData
 
     const avgPathCompletion = pathCompletions && pathCompletions.length > 0
       ? Math.round(pathCompletions.reduce((sum, p) => sum + (p.progress_percentage || 0), 0) / pathCompletions.length)
       : 0
 
     // Voice Buddy Feature
-    const { count: voiceBuddyUsers } = await supabaseAdmin
+    const { data: voiceBuddyData } = await supabaseAdmin
       .from('voice_conversations')
-      .select('user_id', { count: 'exact', head: true })
+      .select('user_id')
       .gte('created_at', dateFilter.toISOString())
 
-    const { count: totalVoiceConversations } = await supabaseAdmin
-      .from('voice_conversations')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', dateFilter.toISOString())
+    const voiceBuddyUsers = countDistinctUsers(voiceBuddyData)
+    const totalVoiceConversations = voiceBuddyData?.length || 0
 
     // Daily Verse Feature
     const { data: dailyVerseEvents } = await supabaseAdmin
       .from('analytics_events')
       .select('user_id')
-      .eq('event_type', 'daily_verse_viewed')
+      .eq('event_type', 'daily_verse_accessed')
       .gte('created_at', dateFilter.toISOString())
 
-    const dailyVerseUsers = new Set(
-      (dailyVerseEvents || []).map(e => e.user_id).filter(Boolean)
-    ).size
+    const dailyVerseUsers = countDistinctUsers(dailyVerseEvents)
 
     // Achievements Feature
-    const { count: achievementUsers } = await supabaseAdmin
+    const { data: achievementData } = await supabaseAdmin
       .from('user_achievements')
-      .select('user_id', { count: 'exact', head: true })
+      .select('user_id')
       .gte('unlocked_at', dateFilter.toISOString())
 
-    const { count: totalAchievements } = await supabaseAdmin
-      .from('user_achievements')
-      .select('*', { count: 'exact', head: true })
-      .gte('unlocked_at', dateFilter.toISOString())
+    const achievementUsers = countDistinctUsers(achievementData)
+    const totalAchievements = achievementData?.length || 0
 
     // Study Modes Usage
     const { data: studyModesData } = await supabaseAdmin

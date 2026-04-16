@@ -47,6 +47,10 @@ export class AnalyticsLogger {
         ? ipAddress.split(',')[0].trim() || null
         : null
 
+      // Extract user_id and session_id from event data for the indexed table columns
+      const userId = (eventData.userId ?? eventData.user_id) as string | undefined
+      const sessionId = (eventData.sessionId ?? eventData.session_id) as string | undefined
+
       // Insert analytics event
       const { error } = await this.supabaseClient
         .from('analytics_events')
@@ -54,6 +58,8 @@ export class AnalyticsLogger {
           event_type: eventType,
           event_data: sanitizedData,
           ip_address: normalizedIp,
+          user_id: userId || null,
+          session_id: sessionId || null,
           created_at: new Date().toISOString()
         })
 

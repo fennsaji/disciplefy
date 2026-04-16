@@ -167,3 +167,54 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     )
   }
 }
+
+/**
+ * DELETE - Delete a study guide
+ */
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+
+    // Verify user authentication
+    const supabaseUser = await createClient()
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Verify admin status
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.is_admin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 403 })
+    }
+
+    // Delete related records first, then the study guide
+    await supabaseAdmin.from('user_study_guides').delete().eq('study_guide_id', id)
+    await supabaseAdmin.from('study_guide_conversations').delete().eq('study_guide_id', id)
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('study_guides')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      console.error('Failed to delete study guide:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete study guide', detail: deleteError.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ message: 'Study guide deleted successfully' })
+  } catch (error) {
+    console.error('API route error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
