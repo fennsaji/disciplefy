@@ -70,11 +70,16 @@ function AnalyticsEventsTab() {
     },
   })
 
+  // Filter out infra-level events (function_request logs on every API call)
+  const INFRA_EVENTS = ['function_request']
+
   const eventTypeData = data?.by_type
-    ? Object.entries(data.by_type).map(([name, value]) => ({
-        name: name.replace(/_/g, ' '),
-        value: Number(value),
-      }))
+    ? Object.entries(data.by_type)
+        .filter(([name]) => !INFRA_EVENTS.includes(name))
+        .map(([name, value]) => ({
+          name: name.replace(/_/g, ' '),
+          value: Number(value),
+        }))
     : []
 
   return (
