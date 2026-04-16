@@ -332,6 +332,7 @@ export function sanitizeStudyGuideResponse(response: Record<string, unknown>): L
     summary: sanitizeText(response.summary as string),
     interpretation: sanitizeText(response.interpretation as string),
     context: sanitizeText(response.context as string),
+    passage: sanitizeText((response.passage as string) || ''),
     relatedVerses: (response.relatedVerses as string[]).map(verse => sanitizeText(verse)),
     reflectionQuestions: (response.reflectionQuestions as string[]).map(q => sanitizeText(q)),
     prayerPoints: (response.prayerPoints as string[]).map(point => sanitizeText(point)),
