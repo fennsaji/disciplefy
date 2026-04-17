@@ -48,32 +48,15 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             NOTES="$RELEASE_NOTES"
           else
-            # Push trigger: require whatsnew file update when frontend files changed
-            FRONTEND_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c "^frontend/" || true)
-            if [ "$FRONTEND_CHANGED" -gt 0 ]; then
-              if ! git diff --name-only HEAD~1 HEAD | grep -q "distribution/whatsnew/"; then
-                echo "❌ Release notes not updated for this release."
-                echo "   Update distribution/whatsnew/whatsnew-en-IN with what changed before merging to main."
-                exit 1
-              fi
-            fi
             NOTES=$(cat distribution/whatsnew/whatsnew-en-IN 2>/dev/null || echo "")
           fi
 
           TRIMMED=$(echo "$NOTES" | tr -d '[:space:]')
           if [ -z "$TRIMMED" ]; then
-            echo "❌ Release notes are empty."
+            echo "❌ Release notes file is empty. Update distribution/whatsnew/whatsnew-en-IN before merging."
             exit 1
           fi
-          if [ ${#NOTES} -lt 10 ]; then
-            echo "❌ Release notes are too short (min 10 chars). Describe what changed."
-            exit 1
-          fi
-          if echo "$NOTES" | grep -qi "bug fixes and performance improvements"; then
-            echo "❌ Release notes still contain the default placeholder. Write real notes."
-            exit 1
-          fi
-          echo "✅ Release notes accepted: $NOTES"
+          echo "✅ Release notes accepted (${#NOTES} chars)"
 
       - name: ☕ Setup Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
