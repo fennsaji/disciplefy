@@ -799,6 +799,17 @@ class MockLanguagePreferenceService extends _i1.Mock
       ) as _i8.Future<String?>);
 
   @override
+  _i8.Future<void> cacheLearningPathStudyModePreference(String? modeValue) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #cacheLearningPathStudyModePreference,
+          [modeValue],
+        ),
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
+
+  @override
   _i8.Future<_i19.StudyMode?> getStudyModePreference() => (super.noSuchMethod(
         Invocation.method(
           #getStudyModePreference,

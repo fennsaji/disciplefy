@@ -41,7 +41,7 @@ frontend/.packages
 frontend/.pub-cache/
 frontend/.pub/
 frontend/build/
-frontend/pubspec.lock
+# Note: pubspec.lock is committed for apps (ensures reproducible CI builds)
 
 # Flutter coverage
 frontend/coverage/
