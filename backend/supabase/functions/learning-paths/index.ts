@@ -1123,60 +1123,61 @@ async function handleGetRecommendedPath(
             completedPathIds
           );
 
-          // Get top recommendation (first in sorted list)
-          if (scoredPaths.length > 0) {
-            const topPath = scoredPaths[0];
-            console.log(`[RECOMMENDED_PATH] Found personalized path via scoring: ${topPath.pathTitle} (score: ${topPath.score})`);
+          // Iterate through scored paths to find first non-completed recommendation
+          for (const candidatePath of scoredPaths) {
+            console.log(`[RECOMMENDED_PATH] Evaluating personalized path: ${candidatePath.pathTitle} (score: ${candidatePath.score})`);
 
             // Fetch full path data for response
             const { data: pathData, error: pathError } = await supabaseServiceClient
               .from('learning_paths')
               .select('*')
-              .eq('id', topPath.pathId)
+              .eq('id', candidatePath.pathId)
               .single();
 
             if (pathError || !pathData) {
-              console.error('[RECOMMENDED_PATH] Error fetching recommended path data:', pathError);
-            } else {
-              const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-              const localized = await getLocalizedTitleDescription(
-                supabaseServiceClient,
-                pathData.id,
-                language,
-                pathData.title,
-                pathData.description
-              );
-
-              // Check if user is enrolled
-              const { data: existingProgress } = await supabaseServiceClient
-                .from('user_learning_path_progress')
-                .select('learning_path_id')
-                .eq('user_id', userId)
-                .eq('learning_path_id', pathData.id)
-                .single();
-
-              // Always compute progress from user_topic_progress
-              const actualCompleted = userId
-                ? await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId)
-                : 0;
-              const progressPercentage = topicsCountNum > 0
-                ? Math.round((actualCompleted / topicsCountNum) * 100)
-                : 0;
-
-              // Only recommend if not fully completed
-              if (progressPercentage < 100) {
-                const path = buildLearningPathResponse(
-                  pathData,
-                  topicsCountNum,
-                  !!existingProgress,
-                  progressPercentage,
-                  localized.title,
-                  localized.description
-                );
-
-                return createRecommendedPathResponse(path, 'personalized');
-              }
+              console.error('[RECOMMENDED_PATH] Error fetching path data:', pathError);
+              continue;
             }
+
+            const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+            const localized = await getLocalizedTitleDescription(
+              supabaseServiceClient,
+              pathData.id,
+              language,
+              pathData.title,
+              pathData.description
+            );
+
+            // Check if user is enrolled
+            const { data: existingProgress } = await supabaseServiceClient
+              .from('user_learning_path_progress')
+              .select('learning_path_id')
+              .eq('user_id', userId)
+              .eq('learning_path_id', pathData.id)
+              .single();
+
+            // Always compute progress from user_topic_progress
+            const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
+            const progressPercentage = topicsCountNum > 0
+              ? Math.round((actualCompleted / topicsCountNum) * 100)
+              : 0;
+
+            // Skip fully completed paths — try the next scored path
+            if (progressPercentage >= 100) {
+              console.log(`[RECOMMENDED_PATH] Skipping ${candidatePath.pathTitle} — already completed (${progressPercentage}%)`);
+              continue;
+            }
+
+            const path = buildLearningPathResponse(
+              pathData,
+              topicsCountNum,
+              !!existingProgress,
+              progressPercentage,
+              localized.title,
+              localized.description
+            );
+
+            return createRecommendedPathResponse(path, 'personalized');
           }
         }
       }
@@ -1184,31 +1185,28 @@ async function handleGetRecommendedPath(
 
     // Priority 3: Return featured learning path (for anonymous or non-personalized users)
     console.log('[RECOMMENDED_PATH] Falling back to featured path...');
-    const { data: featuredPath, error: featuredError } = await supabaseServiceClient
+
+    // Fetch all featured paths ordered by priority so we can skip completed ones
+    const { data: featuredPaths, error: featuredError } = await supabaseServiceClient
       .from('learning_paths')
       .select('*')
-      .eq('slug', DEFAULT_FEATURED_PATH_SLUG)
       .eq('is_active', true)
-      .single();
+      .or(`slug.eq.${DEFAULT_FEATURED_PATH_SLUG},is_featured.eq.true`)
+      .order('display_order', { ascending: true });
 
-    if (featuredError || !featuredPath) {
-      // Fallback to any featured path
-      const { data: anyFeatured } = await supabaseServiceClient
-        .from('learning_paths')
-        .select('*')
-        .eq('is_featured', true)
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .limit(1)
-        .single();
+    if (featuredError || !featuredPaths || featuredPaths.length === 0) {
+      console.log('[RECOMMENDED_PATH] No featured path found');
+      return createRecommendedPathResponse(null, 'featured');
+    }
 
-      if (!anyFeatured) {
-        console.log('[RECOMMENDED_PATH] No featured path found');
-        return createRecommendedPathResponse(null, 'featured');
-      }
+    // Put the default featured path first, then the rest
+    const sortedFeatured = [
+      ...featuredPaths.filter(p => p.slug === DEFAULT_FEATURED_PATH_SLUG),
+      ...featuredPaths.filter(p => p.slug !== DEFAULT_FEATURED_PATH_SLUG),
+    ];
 
-      // Use anyFeatured
-      const pathData = anyFeatured;
+    // Iterate through featured paths to find the first non-completed one
+    for (const pathData of sortedFeatured) {
       const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
       const localized = await getLocalizedTitleDescription(
         supabaseServiceClient,
@@ -1218,26 +1216,40 @@ async function handleGetRecommendedPath(
         pathData.description
       );
 
-      // Check enrollment and compute actual progress
-      let anyFeaturedEnrolled = false;
-      let anyFeaturedProgress = 0;
+      let isEnrolled = false;
+      let progressPercentage = 0;
+
       if (userId) {
-        const { data: progress } = await supabaseServiceClient
+        const { data: userProgress } = await supabaseServiceClient
           .from('user_learning_path_progress')
           .select('learning_path_id')
           .eq('user_id', userId)
           .eq('learning_path_id', pathData.id)
           .single();
-        anyFeaturedEnrolled = !!progress;
-        const completed = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
-        anyFeaturedProgress = topicsCountNum > 0 ? Math.round((completed / topicsCountNum) * 100) : 0;
+
+        if (userProgress) {
+          isEnrolled = true;
+        }
+
+        const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
+        progressPercentage = topicsCountNum > 0
+          ? Math.round((actualCompleted / topicsCountNum) * 100)
+          : 0;
       }
+
+      // Skip completed paths for authenticated users
+      if (userId && progressPercentage >= 100) {
+        console.log(`[RECOMMENDED_PATH] Skipping featured path ${pathData.title} — completed (${progressPercentage}%)`);
+        continue;
+      }
+
+      console.log(`[RECOMMENDED_PATH] Using featured path: ${pathData.title} (progress: ${progressPercentage}%)`);
 
       const path = buildLearningPathResponse(
         pathData,
         topicsCountNum,
-        anyFeaturedEnrolled,
-        anyFeaturedProgress,
+        isEnrolled,
+        progressPercentage,
         localized.title,
         localized.description
       );
@@ -1245,50 +1257,24 @@ async function handleGetRecommendedPath(
       return createRecommendedPathResponse(path, 'featured');
     }
 
-    // Use the default featured path
-    console.log(`[RECOMMENDED_PATH] Using default featured path: ${featuredPath.title}`);
-
-    const topicsCountNum = await getTopicsCount(supabaseServiceClient, featuredPath.id);
-    const localized = await getLocalizedTitleDescription(
-      supabaseServiceClient,
-      featuredPath.id,
-      language,
-      featuredPath.title,
-      featuredPath.description
+    // All featured paths completed — return the first one anyway (for anonymous users this won't happen)
+    console.log('[RECOMMENDED_PATH] All featured paths completed, returning first one');
+    const fallbackPath = sortedFeatured[0];
+    const fallbackTopicsCount = await getTopicsCount(supabaseServiceClient, fallbackPath.id);
+    const fallbackLocalized = await getLocalizedTitleDescription(
+      supabaseServiceClient, fallbackPath.id, language, fallbackPath.title, fallbackPath.description
     );
-
-    // Check if user is enrolled (authenticated users only)
-    let isEnrolled = false;
-    let progressPercentage = 0;
-
-    if (userId) {
-      const { data: userProgress } = await supabaseServiceClient
-        .from('user_learning_path_progress')
-        .select('learning_path_id')
-        .eq('user_id', userId)
-        .eq('learning_path_id', featuredPath.id)
-        .single();
-
-      if (userProgress) {
-        isEnrolled = true;
-      }
-
-      // Always compute progress from actual completions
-      const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, featuredPath.id, userId);
-      progressPercentage = topicsCountNum > 0
-        ? Math.round((actualCompleted / topicsCountNum) * 100)
-        : 0;
-    }
+    const fallbackActualCompleted = userId
+      ? await getActualTopicsCompleted(supabaseServiceClient, fallbackPath.id, userId)
+      : 0;
+    const fallbackProgress = fallbackTopicsCount > 0
+      ? Math.round((fallbackActualCompleted / fallbackTopicsCount) * 100)
+      : 0;
 
     const path = buildLearningPathResponse(
-      featuredPath,
-      topicsCountNum,
-      isEnrolled,
-      progressPercentage,
-      localized.title,
-      localized.description
+      fallbackPath, fallbackTopicsCount, false, fallbackProgress,
+      fallbackLocalized.title, fallbackLocalized.description
     );
-
     return createRecommendedPathResponse(path, 'featured');
   } catch (error) {
     console.error('[RECOMMENDED_PATH] Error:', error);

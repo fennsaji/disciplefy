@@ -8,6 +8,8 @@ import 'package:showcaseview/showcaseview.dart';
 import '../../animations/app_animations.dart';
 import '../../di/injection_container.dart';
 import '../../services/system_config_service.dart';
+import '../../../features/home/presentation/bloc/home_bloc.dart';
+import '../../../features/home/presentation/bloc/home_event.dart';
 import '../../../features/tokens/presentation/bloc/token_bloc.dart';
 import '../../../features/tokens/presentation/bloc/token_state.dart';
 import '../../../features/walkthrough/domain/walkthrough_screen.dart';
@@ -143,6 +145,12 @@ class _AppShellState extends State<AppShell>
         _pendingTabIndex == null &&
         _waitingForIndex == null) {
       return;
+    }
+
+    // Refresh learning path when switching TO the home tab from another tab
+    // so completed paths get replaced by the next recommendation
+    if (branchIndex == 0 && widget.navigationShell.currentIndex != 0) {
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
     }
 
     // Allow interrupting ongoing animation or loading with new tab selection
