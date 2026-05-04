@@ -341,7 +341,7 @@ WORD COUNTS:
 - "context": 40-70 words (one short paragraph, essential background only)
 - "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
 - "interpretation": 900-1,200 words, EXACTLY 4-5 paragraphs, each 7-9 sentences
-- "prayerPoints": 3-5 prayer points (40-50 words each, SINGLE paragraph, no line breaks)
+- "prayerPoints": ONE single prayer paragraph (6-8 sentences, 150-200 words)
 - Total: ${wordTarget} words (10-minute study at 140-150 wpm)
 
 INTERPRETATION STRUCTURE:
@@ -357,7 +357,7 @@ INTERPRETATION STRUCTURE:
   "interpretation": "4-5 sections, each with **Bold Title** + 7-9 sentences. 900-1,200 words. Prose only.",
   "relatedVerses": ["5-7 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["5-7 deep application questions"],
-  "prayerPoints": ["3-5 prayer points (40-50 words each) as SINGLE paragraphs, addressing God directly, ending with correct closing"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 150-200 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."],
   "summaryInsights": ["4-5 resonance themes (15-20 words each)"],
   "interpretationInsights": ["4-5 theological insights (15-20 words each)"],
   "reflectionAnswers": ["4-5 life applications (15-20 words each)"],
@@ -527,7 +527,7 @@ WORD COUNTS:
 - "interpretation": 1,350-1,550 words — EXACTLY 5-6 paragraphs, 6-8 sentences each
 - "summary": 120-150 words (theological overview)
 - "context": 40-70 words (SHORT — depth belongs in interpretation)
-- "prayerPoints": 5-7 prayer points (40-60 words each, SINGLE paragraph, no line breaks)
+- "prayerPoints": ONE single prayer paragraph (6-8 sentences, 200-250 words)
 
 INTERPRETATION PARAGRAPHS (6-8 sentences each, **Bold Title** per section):
 1. Theological Foundation & Key Greek/Hebrew terms
@@ -544,7 +544,7 @@ INTERPRETATION PARAGRAPHS (6-8 sentences each, **Bold Title** per section):
   "interpretation": "5-6 sections with **Bold Title** + 6-8 sentences each. 1,350-1,550 words. Integrate Greek/Hebrew naturally. Prose only.",
   "relatedVerses": ["7-10 verse REFERENCES in ${languageConfig.name} — no text"],
   "reflectionQuestions": ["8-12 deep theological questions"],
-  "prayerPoints": ["5-7 prayer points (40-60 words each) as SINGLE paragraphs, responding to theological depth"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 200-250 words). Respond to theological depth, address God directly, end with correct closing. Do NOT split into multiple items."],
   "summaryInsights": ["5-7 themes (15-20 words each)"],
   "interpretationInsights": ["5-7 doctrinal truths (15-20 words each)"],
   "reflectionAnswers": ["5-7 applications (15-20 words each)"],
@@ -620,7 +620,7 @@ WORD COUNTS:
 - "interpretation": 800-1,000 words — EXACTLY 4 paragraphs, 6-8 sentences each
 - "summary": 150-200 words (prayerful invitation)
 - "context": 40-60 words (brief heart preparation)
-- "prayerPoints": 50-70 words each (text-grounded)
+- "prayerPoints": ONE single prayer paragraph (5-7 sentences, 150-200 words, text-grounded)
 - Total: ${wordTarget} words
 
 INTERPRETATION — 4 paragraphs (6-8 sentences each):
@@ -637,7 +637,7 @@ CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
   "interpretation": "[EXACTLY 4 paragraphs as structured above. EACH paragraph MUST begin with a **bold header** in ${languageConfig.name} followed by 6-8 sentences of Scripture-anchored guidance. Target: 800-1,000 words. Guide through: CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION & COMMITMENT. NO bullets. Flowing prayerful prose grounded in the text.]",
   "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
   "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What specific sin or attitude does this passage call you to repent of?", "What one concrete step of obedience will you take this week based on this text?"],
-  "prayerPoints": ["4-5 specific prayer topics arising from the passage (50-70 words each, as a SINGLE paragraph, no line breaks). Address God directly. Ground the prayer in what the text reveals. Close with appropriate ending for ${languageConfig.name}"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (5-7 sentences, 150-200 words). Address God directly. Ground the prayer in what the text reveals. Respond to Scripture studied. Close with appropriate ending for ${languageConfig.name}. Do NOT split into multiple items."],
   "summaryInsights": ["4-5 key biblical truths from the passage (15-20 words each)"],
   "interpretationInsights": ["4-5 theological insights revealed by the text (15-20 words each)"],
   "reflectionAnswers": ["4-5 concrete life applications from the text (15-20 words each)"],

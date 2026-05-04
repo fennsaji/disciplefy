@@ -212,7 +212,7 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "interpretationPart2": "[500-650 words: **[Prayer Response header in ${languageConfig.name}]** + PRAYER RESPONSE (responding to God in prayer, 250-320 words) + **[Application & Commitment header in ${languageConfig.name}]** + APPLICATION & COMMITMENT (concrete, specific obedience, 250-320 words). EACH SECTION MUST BEGIN WITH A BOLD **HEADER** IN ${languageConfig.name}.]",
   "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support or expand the passage studied (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
   "reflectionQuestions": [5-7 reflection questions grounded in the text studied],
-  "prayerPoints": [4-5 specific prayer topics arising directly from the passage - each 50-70 words as a SINGLE paragraph (no line breaks)],
+  "prayerPoints": [ONE single continuous prayer paragraph (5-7 sentences, 150-200 words) arising from the passage. Do NOT split into multiple items.],
   "summaryInsights": [4-5 key biblical truths from the passage - 15-20 words each],
   "interpretationInsights": [4-5 theological insights revealed by the text - 15-20 words each],
   "reflectionAnswers": [4-5 concrete life applications - 15-20 words each],
@@ -280,13 +280,13 @@ Target: 250-320 words, 6-8 complete sentences with specific, accountable applica
 **SUPPORTING MATERIALS:**
 - relatedVerses: 5-7 additional verses that support the passage's themes in ${languageConfig.name}
 - reflectionQuestions: 5-7 questions grounded in the text (not abstract or mystical)
-- prayerPoints: 4-5 specific prayer topics (50-70 words each), arising from the passage
+- prayerPoints: ONE single prayer paragraph (5-7 sentences, 150-200 words), arising from the passage
 - summaryInsights: 4-5 key biblical truths (15-20 words each)
 - interpretationInsights: 4-5 theological insights (15-20 words each)
 - reflectionAnswers: 4-5 concrete life applications (15-20 words each)
 - 5 yes/no questions connecting the text to personal life
 
-VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | 4-5 prayerPoints (50-70 words each) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | prayerPoints: 1 item, single paragraph (5-7 sentences, 150-200 words) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
@@ -297,7 +297,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart2": "[YOUR 500-650 WORD INTERPRETATION PART 2 HERE - 2 sections with bold headers in ${languageConfig.name}]",
   "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
   "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
-  "prayerPoints": ["[PRAYER 1: 50-70 words]", "[PRAYER 2]", "[PRAYER 3]", "[PRAYER 4]"],
+  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 5-7 sentences, 150-200 words, grounded in the passage]"],
   "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]"],
   "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]"],
   "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]"],

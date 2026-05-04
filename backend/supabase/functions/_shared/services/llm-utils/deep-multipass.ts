@@ -211,7 +211,7 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "interpretationPart2": "[550-700 words: PRACTICAL APPLICATION with life transformation, contemporary relevance, and action steps]",
   "relatedVerses": [7-10 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Colossians 1:15-20', 'Hebrews 1:1-4') - NO verse text],
   "reflectionQuestions": [8-12 deep reflection questions mixing theology and application],
-  "prayerPoints": [5-7 prayer points based on the study - each 40-60 words as a SINGLE paragraph (no line breaks)],
+  "prayerPoints": [ONE single continuous prayer paragraph (6-8 sentences, 200-250 words) responding to the theological depth. Do NOT split into multiple items.],
   "summaryInsights": [5-7 key takeaways - 15-20 words each],
   "interpretationInsights": [5-7 theological truths taught - 15-20 words each],
   "reflectionAnswers": [5-7 life applications - 15-20 words each],
@@ -259,13 +259,13 @@ Target: 275-350 words, 6-8 complete sentences with contemporary insight and acti
 **SUPPORTING MATERIALS:**
 - relatedVerses: 7-10 additional verses in ${languageConfig.name}
 - reflectionQuestions: 8-12 deep questions (theological + practical)
-- prayerPoints: 5-7 prayer points (40-60 words each)
+- prayerPoints: ONE single prayer paragraph (6-8 sentences, 200-250 words)
 - summaryInsights: 5-7 takeaways (15-20 words each)
 - interpretationInsights: 5-7 theological truths (15-20 words each)
 - reflectionAnswers: 5-7 applications (15-20 words each)
 - 5 yes/no questions for engagement
 
-VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | 5-7 prayerPoints (40-60 words each) | 5-7 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | prayerPoints: 1 item, single paragraph (6-8 sentences, 200-250 words) | 5-7 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
@@ -276,7 +276,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
   "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]", "[VERSE 6]", "[VERSE 7]"],
   "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]", "[QUESTION 6]", "[QUESTION 7]", "[QUESTION 8]"],
-  "prayerPoints": ["[PRAYER 1: 40-60 words]", "[PRAYER 2]", "[PRAYER 3]", "[PRAYER 4]", "[PRAYER 5]"],
+  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 6-8 sentences, 200-250 words, addressing God directly]"],
   "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]", "[INSIGHT 5]"],
   "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]", "[TRUTH 5]"],
   "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]", "[APPLICATION 5]"],
