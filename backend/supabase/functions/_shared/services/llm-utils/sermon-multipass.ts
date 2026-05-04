@@ -16,7 +16,6 @@ import {
   createSharedFoundation,
   createVerseReferenceBlock,
   getSermonHeadings,
-  getWordCountTarget,
   getLanguageExamples
 } from './prompt-builder.ts'
 
@@ -36,7 +35,6 @@ export function createSermonPass1Prompt(
 ): CacheablePromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
   const headings = getSermonHeadings(language)
-  const wordTarget = getWordCountTarget(languageConfig, 'sermon')
 
   const sermonFormat = inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL (3-Point)'
   const pathParts = [
@@ -48,13 +46,13 @@ export function createSermonPass1Prompt(
     ? `Create an ${sermonFormat} sermon outline for: "${inputValue}"`
     : `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
   const passSystem = `You are an experienced preacher creating sermon outlines for pastors.
 
 STUDY MODE: SERMON OUTLINE - PASS 1/4 (Introduction + First Point)
 This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
-Target output: ${params.language === 'ml' ? '~600 words for Malayalam (STRICT token limit to avoid timeout)' : '~1,800 words'}
+Target output: ~1,800 words
 Tone: Theologically rich, pastorally wise, suitable for preacher preparation.`
 
   const userMessage = `${taskDescription}
@@ -76,10 +74,10 @@ Generate the following JSON structure with THESE SPECIFIC FIELDS ONLY:
 
 CRITICAL INSTRUCTIONS FOR PASS 1:
 
-**SUMMARY (${params.language === 'ml' ? '100-130 words - Malayalam STRICT token limit' : '250-350 words'}):**
+**SUMMARY (250-350 words):**
 
 Write a COMPELLING sermon overview as CONTINUOUS NARRATIVE PROSE (NOT separate bullets).
-This must be ${params.language === 'ml' ? '4-5' : '8-12'} complete sentences flowing together as a single paragraph.
+This must be 8-12 complete sentences flowing together as a single paragraph.
 
 Include these elements in flowing prose:
 1. Begin with a compelling 3-6 word sermon title as the opening phrase
@@ -100,77 +98,76 @@ CRITICAL:
 - Write as a SINGLE FLOWING PARAGRAPH of 8-12 sentences
 - NOT as separate bullet points or title only
 
-**CONTEXT (${params.language === 'ml' ? '30-40 words - Malayalam STRICT limit' : '50-100 words'}):**
+**CONTEXT (50-100 words):**
 Write MINIMAL essential Scripture background only (1 concise paragraph):
 • Brief historical context (authorship, date, original audience)
 • Literary genre and placement in Bible
 • Core theological framework for understanding the passage
 Keep it SHORT and FOCUSED - only what's necessary to understand the sermon text.
 
-**INTERPRETATION PART 1 (${params.language === 'ml' ? '450-550 words - Malayalam STRICT limit' : '1450-1750 words'}):**
+**INTERPRETATION PART 1 (1450-1750 words):**
 
 🚨 CRITICAL: You MUST generate BOTH Introduction AND Point 1 in this pass!
 ❌ DO NOT stop after Introduction - Point 1 is MANDATORY!
-✅ interpretationPart1 = Introduction ${params.language === 'ml' ? '(150-200 words) + Point 1 (300-350 words)' : '(450-550 words) + Point 1 (1000-1200 words)'}
+✅ interpretationPart1 = Introduction (450-550 words) + Point 1 (1000-1200 words)
 ✅ BOTH sections REQUIRED in this single field!
 
-${params.language === 'ml' ? '⚠️ MALAYALAM STRICT TIMEOUT LIMIT: Pass 1 limited to ~600 words total to avoid Edge Function timeout.\nYou MUST stay within this limit - quality over quantity for Malayalam.' : ''}
+PREACHER-FACING: Core theological content + conceptual ideas (not full manuscript). 3-4 paragraphs/section. Conceptual illustrations. 2-3 verses/point. 3 focused applications. Pastors expand during delivery.
 
-PREACHER-FACING: Core theological content + conceptual ideas (not full manuscript). 3-4 paragraphs/section. Conceptual illustrations. 2-3 verses/point. 3-4 focused applications. Pastors expand during delivery.
+## ${headings.introduction} (450-550 words)
 
-## ${headings.introduction} (${params.language === 'ml' ? '150-200 words' : '450-550 words'})
-
-**Hook (Conceptual)** (${params.language === 'ml' ? '40-50 words' : '120-150 words'}): Provide a CONCEPTUAL hook idea (not full story):
+**Hook (Conceptual)** (120-150 words): Provide a CONCEPTUAL hook idea (not full story):
 - Real-life tension, question, or problem
 - Cultural moment or observation
 - Key statistic or research finding
 Give the IDEA clearly - preacher will add details and personal stories during delivery.
 
-**Bridge** (${params.language === 'ml' ? '60-80 words' : '180-220 words'}): Write ${params.language === 'ml' ? '1-2 concise paragraphs' : '2-3 concise paragraphs'} connecting life → text → Gospel theme:
+**Bridge** (180-220 words): Write 2-3 concise paragraphs connecting life → text → Gospel theme:
 - Why this message matters TODAY
 - The pain point this addresses
 - How God's Word speaks to this issue
 Focus on CONCEPTUAL connection - preacher will add examples.
 
-**Preview** (${params.language === 'ml' ? '30-40 words' : '100-120 words'}): Write 1 paragraph outlining sermon journey:
+**Preview** (100-120 words): Write 1 paragraph outlining sermon journey:
 - State thesis clearly
 - Preview 3 main points with titles
 Make it CLEAR and MEMORABLE.
 
-**${headings.transition}** (${params.language === 'ml' ? '20-30 words' : '50-60 words'}): One compelling paragraph bridging to Point 1.
+**${headings.transition}** (50-60 words): One compelling paragraph bridging to Point 1.
 
-## ${headings.point} 1: [Memorable Title]  (${params.language === 'ml' ? '300-350 words' : '1000-1200 words'})
+## ${headings.point} 1: [Memorable Title]  (1000-1200 words)
 
-**${headings.mainTeaching}** (${params.language === 'ml' ? '100-120 words' : '350-450 words'}): Write ${params.language === 'ml' ? '1-2 paragraphs' : '3-4 concise paragraphs'} with CORE theological exposition:
+**${headings.mainTeaching}** (350-450 words): Write 3-4 concise paragraphs with CORE theological exposition:
 - Introduce the main theological truth
 - Define key biblical terms and explain the doctrine
 - Connect to Christ's person and work
 Focus on CORE doctrinal claims - preachers will elaborate.
 
-**${headings.scriptureFoundation}** (${params.language === 'ml' ? '80-100 words' : '300-350 words'}): List ${params.language === 'ml' ? '2 verses' : '2-3 key verses'} in ${languageConfig.name} with brief explanation (${params.language === 'ml' ? '40-50 words per verse' : '100-120 words per verse'}):
+**${headings.scriptureFoundation}** (300-350 words): List 2-3 key verses in ${languageConfig.name} with brief explanation (100-120 words per verse):
 - Context: Who wrote, to whom, why (1 sentence)
 - Meaning: Core truth this verse teaches (1-2 sentences)
 - Connection: How it supports this point (1 sentence)
 Keep CONCISE - avoid quoting long passages.
 
-**${headings.illustration}** (Conceptual, ${params.language === 'ml' ? '40-50 words' : '150-200 words'}): Provide CONCEPTUAL illustration idea:
+**${headings.illustration}** (Conceptual, 150-200 words): Provide CONCEPTUAL illustration idea:
 - Describe the type of story/example that works
 - Key elements that make it powerful
 - Connection point to doctrinal truth
 Preacher will fill out full story during delivery.
 
-**${headings.application}** (${params.language === 'ml' ? '40-50 words' : '180-220 words'}): Provide ${params.language === 'ml' ? '2 focused applications' : '3-4 focused applications'} (${params.language === 'ml' ? '20-25 words each' : '50-70 words each'}):
+**${headings.application}** (180-220 words): Provide 3 focused applications (50-70 words each):
 - Heart + Life application
 - What needs to change internally
 - What this looks like practically
 Keep focused - preacher will add examples.
 
-**${headings.transition}** (${params.language === 'ml' ? '20-30 words' : '50-70 words'}): One paragraph bridging to Point 2.
+**${headings.transition}** (50-70 words): One paragraph bridging to Point 2.
 
 VERIFY BEFORE OUTPUT:
-- summary: ${params.language === 'ml' ? '100-130' : '250-350'} words | context: ${params.language === 'ml' ? '30-40' : '50-100'} words | passage: reference ONLY (MANDATORY)
-- interpretationPart1 MUST include BOTH Introduction (${params.language === 'ml' ? '150-200' : '450-550'} words) AND Point 1 (${params.language === 'ml' ? '300-350' : '1000-1200'} words) — DO NOT stop after Introduction!
-- Total: ${params.language === 'ml' ? '~600 words (STRICT timeout limit)' : '~1,800 words'} | Verse refs in ${languageConfig.name} | Conceptual illustrations only
+- summary: 250-350 words | context: 50-100 words | passage: reference ONLY (MANDATORY)
+- interpretationPart1 MUST include BOTH Introduction (450-550 words) AND Point 1 (1000-1200 words) — DO NOT stop after Introduction!
+- Point 1 MUST have: 2-3 verses, 3 applications
+- Total: ~1,800 words | Verse refs in ${languageConfig.name} | Conceptual illustrations only
 FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." placeholders.
@@ -179,10 +176,10 @@ ${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
-  "summary": "[YOUR ${params.language === 'ml' ? '100-130' : '250-350'} WORD SUMMARY HERE]",
-  "context": "[YOUR ${params.language === 'ml' ? '30-40' : '50-100'} WORD CONTEXT HERE]",
+  "summary": "[YOUR 250-350 WORD SUMMARY HERE]",
+  "context": "[YOUR 50-100 WORD CONTEXT HERE]",
   "passage": "[Scripture reference ONLY - e.g., 'Romans 8:1-39' in ${languageConfig.name}]",
-  "interpretationPart1": "[YOUR ${params.language === 'ml' ? '450-550' : '1450-1750'} WORD PREACHER-FACING EXPLANATION HERE - Introduction (conceptual hook, bridge, preview, transition) + Point 1 (core teaching, 2 verses, conceptual illustration, 2 applications, transition)]"
+  "interpretationPart1": "[YOUR 1450-1750 WORD PREACHER-FACING EXPLANATION HERE - Introduction (conceptual hook, bridge, preview, transition) + Point 1 (core teaching, 2-3 verses, conceptual illustration, 3 applications, transition)]"
 }`
 
   return { sharedSystem, passSystem, userMessage }
@@ -199,13 +196,13 @@ export function createSermonPass2Prompt(
   const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
   const passSystem = `You are an experienced preacher continuing a sermon manuscript.
 
 STUDY MODE: SERMON OUTLINE - PASS 2/4 (Point 2 Only)
 This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1.
-Target output: ${params.language === 'ml' ? '~400 words for Malayalam (STRICT timeout limit)' : '~1,000-1,200 words'}
+Target output: ~1,000-1,200 words
 Provide CORE content that preachers will expand during delivery.`
 
   const userMessage = `---
@@ -221,25 +218,25 @@ NOW GENERATE Point 2 ONLY following the SAME STRUCTURE as Point 1.
 Generate this JSON structure:
 
 {
-  "interpretationPart2": "[${params.language === 'ml' ? '400 words' : '1000-1200 words'}: Point 2 with core teaching, 2 verses, conceptual illustration, focused applications, and transition]"
+  "interpretationPart2": "[1000-1200 words: Point 2 with core teaching, 2-3 verses, conceptual illustration, focused applications, and transition]"
 }
 
-**INTERPRETATION PART 2 (${params.language === 'ml' ? '400 words' : '1000-1200 words'}):**
+**INTERPRETATION PART 2 (1000-1200 words):**
 
-PREACHER-FACING: Core content, conceptual illustrations, ${params.language === 'ml' ? '2 verses, 2 applications' : '2-3 verses, 3-4 applications'}. Pastors expand during delivery.
+PREACHER-FACING: Core content, conceptual illustrations, 2-3 verses, 3 applications. Pastors expand during delivery.
 
-## ${headings.point} 2: [Memorable Title] (${params.language === 'ml' ? '400 words' : '1000-1200 words'})
+## ${headings.point} 2: [Memorable Title] (1000-1200 words)
 
-Use ${params.language === 'ml' ? 'CONDENSED' : 'SAME'} STRUCTURE as Point 1:
-- **${headings.mainTeaching}** (${params.language === 'ml' ? '120-150 words' : '350-450 words'}): ${params.language === 'ml' ? '1-2 concise paragraphs' : '3-4 concise paragraphs'} with core theological exposition
-- **${headings.scriptureFoundation}** (${params.language === 'ml' ? '100-120 words' : '300-350 words'}): 2${params.language === 'ml' ? '' : '-3'} verses with brief explanations (${params.language === 'ml' ? '50-60 words' : '100-120 words'} each)
-- **${headings.illustration}** (Conceptual, ${params.language === 'ml' ? '50-60 words' : '150-200 words'}): Conceptual illustration idea
-- **${headings.application}** (${params.language === 'ml' ? '60-80 words' : '180-220 words'}): ${params.language === 'ml' ? '2 focused applications (30-40 words each)' : '3-4 focused applications (50-70 words each)'}
-- **${headings.transition}** (${params.language === 'ml' ? '20-30 words' : '50-70 words'}): One paragraph bridging to Point 3
+Use SAME STRUCTURE as Point 1:
+- **${headings.mainTeaching}** (350-450 words): 3-4 concise paragraphs with core theological exposition
+- **${headings.scriptureFoundation}** (300-350 words): 2-3 verses with brief explanations (100-120 words each)
+- **${headings.illustration}** (Conceptual, 150-200 words): Conceptual illustration idea
+- **${headings.application}** (180-220 words): 3 focused applications (50-70 words each)
+- **${headings.transition}** (50-70 words): One paragraph bridging to Point 3
 
 This is usually the theological weight center of the sermon.
 
-VERIFY: Point 2 complete with all components (Main Teaching, Scripture, Illustration, Application, Transition) | ${params.language === 'ml' ? '~400 words (STRICT limit)' : '1000-1200 words'} | Verse refs in ${languageConfig.name} | Conceptual illustrations only. FIX any issues BEFORE output.
+VERIFY: Point 2 complete with all components (Main Teaching, Scripture, Illustration, Application, Transition) | 1000-1200 words | Verse refs in ${languageConfig.name} | Conceptual illustrations only. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
@@ -247,7 +244,7 @@ ${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
-  "interpretationPart2": "[YOUR 1000-1200 WORD PREACHER-FACING EXPLANATION HERE - Point 2 (core teaching, 2-3 verses, conceptual illustration, 3-4 applications, transition)]"
+  "interpretationPart2": "[YOUR 1000-1200 WORD PREACHER-FACING EXPLANATION HERE - Point 2 (core teaching, 2-3 verses, conceptual illustration, 3 applications, transition)]"
 }`
 
   return { sharedSystem, passSystem, userMessage }
@@ -260,18 +257,18 @@ export function createSermonPass3Prompt(
   params: LLMGenerationParams,
   languageConfig: LanguageConfig,
   pass1Result: { summary: string },
-  pass2Result: { interpretationPart2: string }
+  _pass2Result: { interpretationPart2: string }
 ): CacheablePromptPair {
   const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
   const passSystem = `You are an experienced preacher continuing a sermon manuscript.
 
 STUDY MODE: SERMON OUTLINE - PASS 3/4 (Point 3 Only)
 This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1 and Pass 2.
-Target output: ${params.language === 'ml' ? '~350 words for Malayalam (STRICT timeout limit)' : '~700-900 words'}
+Target output: ~700-900 words
 Provide CORE content that preachers will expand during delivery.`
 
   const userMessage = `---
@@ -282,28 +279,28 @@ CONTEXT FROM PREVIOUS PASSES:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2)
 
-NOW GENERATE Point 3 ONLY following a ${params.language === 'ml' ? 'HIGHLY CONDENSED' : 'CONDENSED'} STRUCTURE.
+NOW GENERATE Point 3 ONLY following a CONDENSED STRUCTURE.
 
 Generate this JSON structure:
 
 {
-  "interpretationPart3": "[${params.language === 'ml' ? '350 words' : '700-900 words'}: Point 3 with core teaching, 2 verses, conceptual illustration, focused applications, and transition]"
+  "interpretationPart3": "[700-900 words: Point 3 with core teaching, 2-3 verses, conceptual illustration, focused applications, and transition]"
 }
 
-**INTERPRETATION PART 3 (${params.language === 'ml' ? '350 words' : '700-900 words'}):**
+**INTERPRETATION PART 3 (700-900 words):**
 
-PREACHER-FACING: Core content (${params.language === 'ml' ? 'highly condensed' : 'condensed'}), conceptual illustrations, ${params.language === 'ml' ? '2 verses, 2 applications' : '2-3 verses, 2-3 applications'}. Pastors expand during delivery.
+PREACHER-FACING: Core content (condensed), conceptual illustrations, 2-3 verses, 2-3 applications. Pastors expand during delivery.
 
-## ${headings.point} 3: [Memorable Title] (${params.language === 'ml' ? '350 words' : '700-900 words'})
+## ${headings.point} 3: [Memorable Title] (700-900 words)
 
-${params.language === 'ml' ? 'Highly condensed' : 'Condensed'} structure:
-- **${headings.mainTeaching}** (${params.language === 'ml' ? '100-120 words' : '280-350 words'}): ${params.language === 'ml' ? '1-2 paragraphs' : '2-3 paragraphs'} with core teaching
-- **${headings.scriptureFoundation}** (${params.language === 'ml' ? '80-100 words' : '220-260 words'}): 2${params.language === 'ml' ? '' : '-3'} verses with brief explanations (${params.language === 'ml' ? '40-50 words' : '80-100 words'} each)
-- **${headings.illustration}** (Conceptual, ${params.language === 'ml' ? '50-60 words' : '120-150 words'}): Conceptual illustration idea
-- **${headings.application}** (${params.language === 'ml' ? '60-80 words' : '120-150 words'}): 2${params.language === 'ml' ? '' : '-3'} strong applications (${params.language === 'ml' ? '30-40 words' : '50-70 words'} each)
-- **${headings.transition}** (${params.language === 'ml' ? '20-30 words' : '40-60 words'}): Bridge to Conclusion
+Condensed structure:
+- **${headings.mainTeaching}** (280-350 words): 2-3 paragraphs with core teaching
+- **${headings.scriptureFoundation}** (220-260 words): 2-3 verses with brief explanations (80-100 words each)
+- **${headings.illustration}** (Conceptual, 120-150 words): Conceptual illustration idea
+- **${headings.application}** (120-150 words): 2-3 strong applications (50-70 words each)
+- **${headings.transition}** (40-60 words): Bridge to Conclusion
 
-VERIFY: Point 3 complete with all components (Main Teaching, Scripture, Illustration, Application, Transition) | ${params.language === 'ml' ? '~350 words (STRICT limit)' : '700-900 words'} | Verse refs in ${languageConfig.name} | Conceptual illustrations only. FIX any issues BEFORE output.
+VERIFY: Point 3 complete with all components (Main Teaching, Scripture, Illustration, Application, Transition) | 700-900 words | Verse refs in ${languageConfig.name} | Conceptual illustrations only. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
@@ -328,13 +325,13 @@ export function createSermonPass4Prompt(
   const { language, discipleLevel } = params
   const headings = getSermonHeadings(language)
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
   const passSystem = `You are an experienced preacher completing a sermon manuscript.
 
 STUDY MODE: SERMON OUTLINE - PASS 4/4 (Conclusion + Altar Call + Extras)
 This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home powerfully.
-Target output: ${params.language === 'ml' ? '~550 words for Malayalam (STRICT timeout limit)' : '~1,100 words'}
+Target output: ~1,100 words
 Provide CORE conclusion and altar call outline that preachers will expand.`
 
   const userMessage = `---
@@ -350,68 +347,69 @@ NOW COMPLETE THE SERMON with conclusion, altar call, and supporting materials.
 Generate this JSON structure (IMPORTANT: interpretationPart4 MUST be LAST for streaming):
 
 {
-  "relatedVerses": ["${params.language === 'ml' ? '3-4' : '5-7'} Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Acts 4:12', '1 Timothy 2:5-6') - NO verse text"],
-  "reflectionQuestions": ["${params.language === 'ml' ? '3-4' : '5-7'} discussion questions mixing theology and application"],
-  "prayerPoints": ["[${params.language === 'ml' ? '180-220 words' : '300-400 words'} ALTAR CALL OUTLINE with gospel recap, invitation, response options, prayer outline]"],
-  "summaryInsights": ["[${params.language === 'ml' ? '3 sermon takeaways - 12-15 words each' : '5 sermon takeaways - 15-20 words each'}]"],
-  "interpretationInsights": ["[${params.language === 'ml' ? '3 theological truths taught - 12-15 words each' : '5 theological truths taught - 15-20 words each'}]"],
-  "reflectionAnswers": ["[${params.language === 'ml' ? '3 life applications - 12-15 words each' : '5 life applications - 15-20 words each'}]"],
+  "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Acts 4:12', '1 Timothy 2:5-6') - NO verse text"],
+  "reflectionQuestions": ["5-7 discussion questions mixing theology and application"],
+  "prayerPoints": ["[300-400 words ALTAR CALL OUTLINE with gospel recap, invitation, response options, prayer outline]"],
+  "summaryInsights": ["[5 sermon takeaways - 15-20 words each]"],
+  "interpretationInsights": ["[5 theological truths taught - 15-20 words each]"],
+  "reflectionAnswers": ["[5 life applications - 15-20 words each]"],
   "contextQuestion": "[Yes/no question connecting biblical context to modern life]",
-  "summaryQuestion": "[Question about sermon thesis - 10-15 words]",
-  "relatedVersesQuestion": "[Question encouraging scripture study - 10-15 words]",
-  "reflectionQuestion": "[Application question for reflection - 10-15 words]",
-  "prayerQuestion": "[Invitation question encouraging commitment - 8-12 words]",
-  "interpretationPart4": "[${params.language === 'ml' ? '220-250 words' : '350-450 words'}: Conclusion with summaries of all 3 points (${params.language === 'ml' ? '50-60 words each' : '80-100 words each'}) + gospel climax (${params.language === 'ml' ? '70-90 words' : '100-120 words'})]"
+  "summaryQuestion": "[Question about sermon thesis - 12-18 words]",
+  "relatedVersesQuestion": "[Question encouraging scripture study - 12-18 words]",
+  "reflectionQuestion": "[Application question for reflection - 12-18 words]",
+  "prayerQuestion": "[Invitation question encouraging commitment - 10-15 words]",
+  "interpretationPart4": "[350-450 words: Conclusion with summaries of all 3 points (80-100 words each) + gospel climax (100-120 words)]"
 }
 
-**INTERPRETATION PART 4 - CONCLUSION (${params.language === 'ml' ? '220-250 words' : '350-450 words'}):**
+**INTERPRETATION PART 4 - CONCLUSION (350-450 words):**
 
 Core conclusion content (not full manuscript). Clear, memorable, gospel-centered.
 
 ## ${headings.conclusion}
-4 paragraphs: Point 1 summary (${params.language === 'ml' ? '50-60' : '80-100'} words) → Point 2 summary (${params.language === 'ml' ? '50-60' : '80-100'} words) → Point 3 summary (${params.language === 'ml' ? '50-60' : '80-100'} words) → Gospel Climax (${params.language === 'ml' ? '70-90' : '100-120'} words, tie to Christ's finished work)
+4 paragraphs: Point 1 summary (80-100 words) → Point 2 summary (80-100 words) → Point 3 summary (80-100 words) → Gospel Climax (100-120 words, tie to Christ's finished work)
 
-**PRAYER POINTS - ALTAR CALL OUTLINE (${params.language === 'ml' ? '180-220 words' : '300-400 words'} as single string):**
+**PRAYER POINTS - ALTAR CALL OUTLINE (300-400 words as single string):**
 
 Write CONCISE altar call outline in paragraphs:
 
-**${headings.gospelRecap}** (${params.language === 'ml' ? '70-90 words' : '120-150 words'}): Write ${params.language === 'ml' ? '1-2 concise paragraphs' : '2-3 concise paragraphs'} with clear gospel presentation:
+**${headings.gospelRecap}** (120-150 words): Write 2-3 concise paragraphs with clear gospel presentation:
 - God's holiness and our sin
 - Christ's substitutionary death and resurrection
 - Call to repentance and faith
 Keep it CLEAR and FOCUSED - preacher will add vivid language.
 
-**${headings.theInvitation}** (${params.language === 'ml' ? '60-80 words' : '120-150 words'}): Write ${params.language === 'ml' ? '1-2 paragraphs' : '2-3 paragraphs'} with specific invitation:
+**${headings.theInvitation}** (120-150 words): Write 2-3 paragraphs with specific invitation:
 - Direct invitation based on sermon theme
 - Create urgency with grace
 - Pastoral reassurance for those unsure
 Preacher will expand with personal warmth.
 
-**${headings.responseOptions}** (${params.language === 'ml' ? '30-40 words' : '50-70 words'}): List ${params.language === 'ml' ? '3-4' : '4-5'} clear response options:
+**${headings.responseOptions}** (50-70 words): List 4-5 clear response options:
 • Come forward during closing song
 • Raise hand for prayer
 • Meet pastor after service
-${params.language === 'ml' ? '' : '• Contact during the week\n'}• Fill out connection card
+• Contact during the week
+• Fill out connection card
 
-**${headings.closingPrayer}** (${params.language === 'ml' ? '40-50 words' : '60-80 words'}): Brief first-person prayer outline:
+**${headings.closingPrayer}** (60-80 words): Brief first-person prayer outline:
 - Pray for those responding
 - Pray for Spirit's work
 - Pray for courage to obey
 Preacher will expand into full prayer during delivery. End with Amen.
 
 **SUPPORTING MATERIALS:**
-- relatedVerses: ${params.language === 'ml' ? '3-4' : '5-7'} verse REFERENCES ONLY in ${languageConfig.name} (e.g., '2 Corinthians 5:21') - NO verse text
-- reflectionQuestions: ${params.language === 'ml' ? '3-4' : '5-7'} discussion questions
-- summaryInsights: ${params.language === 'ml' ? '3 takeaways (12-15 words each)' : '5 takeaways (15-20 words each)'}
-- interpretationInsights: ${params.language === 'ml' ? '3 theological truths (12-15 words each)' : '5 theological truths (15-20 words each)'}
-- reflectionAnswers: ${params.language === 'ml' ? '3 applications (12-15 words each)' : '5 applications (15-20 words each)'}
+- relatedVerses: 5-7 verse REFERENCES ONLY in ${languageConfig.name} (e.g., '2 Corinthians 5:21') - NO verse text
+- reflectionQuestions: 5-7 discussion questions
+- summaryInsights: 5 takeaways (15-20 words each)
+- interpretationInsights: 5 theological truths (15-20 words each)
+- reflectionAnswers: 5 applications (15-20 words each)
 - 5 yes/no questions for engagement
 
 VERIFY BEFORE OUTPUT:
-- interpretationPart4: ${params.language === 'ml' ? '220-250' : '350-450'} words (4 paragraphs: 3 point summaries + gospel climax)
-- prayerPoints (altar call): ${params.language === 'ml' ? '180-220' : '300-400'} words with Gospel Recap, Invitation, Response Options, Closing Prayer
-- All supporting fields present: ${params.language === 'ml' ? '3-4' : '5-7'} relatedVerses, ${params.language === 'ml' ? '3-4' : '5-7'} reflectionQuestions, ${params.language === 'ml' ? '3' : '5'} summaryInsights/interpretationInsights/reflectionAnswers, 5 yes/no questions
-- Total: ${params.language === 'ml' ? '~550 words (STRICT limit)' : '~1,100 words'} | Verse refs in ${languageConfig.name}
+- interpretationPart4: 350-450 words (4 paragraphs: 3 point summaries + gospel climax)
+- prayerPoints (altar call): 300-400 words with Gospel Recap, Invitation, Response Options, Closing Prayer
+- All supporting fields present: 5-7 relatedVerses, 5-7 reflectionQuestions, 5 summaryInsights/interpretationInsights/reflectionAnswers, 5 yes/no questions
+- Total: ~1,100 words | Verse refs in ${languageConfig.name}
 FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
@@ -420,18 +418,18 @@ ${getLanguageExamples(language)}
 
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
-  "interpretationPart4": "[YOUR ${params.language === 'ml' ? '220-250' : '350-450'} WORD CONCLUSION HERE - PREACHER-FACING OUTLINE]",
-  "prayerPoints": ["[YOUR ${params.language === 'ml' ? '180-220' : '300-400'} WORD ALTAR CALL HERE AS SINGLE STRING - CONCISE OUTLINE]"],
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]"${params.language === 'ml' ? '' : ', "[VERSE 4]", "[VERSE 5]"'}],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]"${params.language === 'ml' ? '' : ', "[QUESTION 4]", "[QUESTION 5]"'}],
-  "summaryInsights": ["[INSIGHT 1: ${params.language === 'ml' ? '12-15' : '15-20'} words]", "[INSIGHT 2]", "[INSIGHT 3]"${params.language === 'ml' ? '' : ', "[INSIGHT 4]", "[INSIGHT 5]"'}],
-  "interpretationInsights": ["[TRUTH 1: ${params.language === 'ml' ? '12-15' : '15-20'} words]", "[TRUTH 2]", "[TRUTH 3]"${params.language === 'ml' ? '' : ', "[TRUTH 4]", "[TRUTH 5]"'}],
-  "reflectionAnswers": ["[APPLICATION 1: ${params.language === 'ml' ? '12-15' : '15-20'} words]", "[APPLICATION 2]", "[APPLICATION 3]"${params.language === 'ml' ? '' : ', "[APPLICATION 4]", "[APPLICATION 5]"'}],
+  "interpretationPart4": "[YOUR 350-450 WORD CONCLUSION HERE - PREACHER-FACING OUTLINE]",
+  "prayerPoints": ["[YOUR 300-400 WORD ALTAR CALL HERE AS SINGLE STRING - CONCISE OUTLINE]"],
+  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
+  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
+  "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]", "[INSIGHT 5]"],
+  "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]", "[TRUTH 5]"],
+  "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]", "[APPLICATION 5]"],
   "contextQuestion": "[YOUR YES/NO QUESTION ABOUT BIBLICAL CONTEXT]",
-  "summaryQuestion": "[YOUR QUESTION ABOUT SERMON THESIS - ${params.language === 'ml' ? '10-15' : '12-18'} words]",
-  "relatedVersesQuestion": "[YOUR QUESTION ENCOURAGING SCRIPTURE STUDY - ${params.language === 'ml' ? '10-15' : '12-18'} words]",
-  "reflectionQuestion": "[YOUR APPLICATION QUESTION - ${params.language === 'ml' ? '10-15' : '12-18'} words]",
-  "prayerQuestion": "[YOUR INVITATION QUESTION - ${params.language === 'ml' ? '8-12' : '10-15'} words]"
+  "summaryQuestion": "[YOUR QUESTION ABOUT SERMON THESIS - 12-18 words]",
+  "relatedVersesQuestion": "[YOUR QUESTION ENCOURAGING SCRIPTURE STUDY - 12-18 words]",
+  "reflectionQuestion": "[YOUR APPLICATION QUESTION - 12-18 words]",
+  "prayerQuestion": "[YOUR INVITATION QUESTION - 10-15 words]"
 }`
 
   return { sharedSystem, passSystem, userMessage }

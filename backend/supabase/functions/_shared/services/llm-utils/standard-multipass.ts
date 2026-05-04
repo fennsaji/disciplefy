@@ -14,7 +14,6 @@ import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair
 import {
   createSharedFoundation,
   createVerseReferenceBlock,
-  getWordCountTarget,
   getLanguageExamples
 } from './prompt-builder.ts'
 
@@ -33,7 +32,6 @@ export function createStandardPass1Prompt(
   languageConfig: LanguageConfig
 ): CacheablePromptPair {
   const { inputType, inputValue, topicDescription, pathTitle, pathDescription, discipleLevel, language } = params
-  const wordTarget = getWordCountTarget(languageConfig, 'standard')
 
   const pathParts = [
     pathTitle ? `Part of Learning Path: ${pathTitle}` : '',
@@ -102,7 +100,8 @@ Keep it SHORT and FOCUSED - only what's essential to understand the study.
 **INTERPRETATION PART 1 - MAIN TEACHING (500-650 words):**
 
 This section MUST contain EXACTLY 2 paragraphs of continuous narrative prose.
-EACH paragraph MUST have 6-8 sentences.
+EACH paragraph MUST begin with a **Bold Section Title** followed by 6-8 sentences.
+Use **Bold Title** format (NOT ## markdown headers).
 
 ⚠️ SINGLE-VERSE INPUT — MANDATORY EXPANSION:
 If the study input is a single verse (e.g., "John 3:16"), you MUST reach the full word count by:
@@ -113,7 +112,7 @@ If the study input is a single verse (e.g., "John 3:16"), you MUST reach the ful
 - Showing the verse's role in its LITERARY CONTEXT (surrounding chapter/book)
 Do NOT stop early because one verse "runs out" of material. Cross-references and doctrinal connections are required to fill the target length.
 
-Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 200-280 words.
+Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 250-325 words.
 
 ## Paragraph 1 (6-8 sentences): Verse Explanation
 
@@ -128,7 +127,7 @@ Break down the passage clearly with depth:
 - [OPTIONAL] Original language insights if relevant
 - [OPTIONAL] Historical background connection
 
-Target: 200-280 words, 6-8 complete sentences with rich content.
+Target: 250-325 words, 6-8 complete sentences with rich content.
 
 ## Paragraph 2 (6-8 sentences): Key Principles & Theological Insights
 
@@ -140,7 +139,7 @@ Extract 2-3 timeless principles and connect to broader biblical teaching:
 - What theological doctrines are supported here?
 - Christological connections (how it points to Christ)
 
-Target: 200-280 words, 6-8 complete sentences with biblical support.
+Target: 250-325 words, 6-8 complete sentences with biblical support.
 
 VERIFY: summary 80-100 words | context 40-60 words | passage reference ONLY (MANDATORY) | interpretationPart1: 2 paragraphs, 6-8 sentences each, 500-650 words total | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
 
@@ -194,7 +193,7 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "interpretationPart2": "[350-450 words: PRACTICAL APPLICATION with life transformation and specific action steps]",
   "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'John 14:6', 'Romans 12:1-2') - NO verse text],
   "reflectionQuestions": [5-7 reflection questions mixing understanding and application],
-  "prayerPoints": [3-5 prayer points based on the study - each 40-50 words],
+  "prayerPoints": [3-5 prayer points based on the study - each 40-50 words as a SINGLE paragraph (no line breaks)],
   "summaryInsights": [4-5 key takeaways - 15-20 words each],
   "interpretationInsights": [4-5 biblical truths taught - 15-20 words each],
   "reflectionAnswers": [4-5 life applications - 15-20 words each],
@@ -208,7 +207,8 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
 **INTERPRETATION PART 2 - PRACTICAL APPLICATION (350-450 words):**
 
 This section MUST contain EXACTLY 2 paragraphs of continuous narrative prose.
-EACH paragraph MUST have 5-7 sentences with PRACTICAL, ACTION-ORIENTED content.
+EACH paragraph MUST begin with a **Bold Section Title** followed by 5-7 sentences with PRACTICAL, ACTION-ORIENTED content.
+Use **Bold Title** format (NOT ## markdown headers).
 
 ⚠️ PRACTICAL APPLICATION EMPHASIS:
 - Focus on HOW to apply, not just WHAT to apply
@@ -226,7 +226,7 @@ Show how this truth changes daily life with specificity:
 - Heart Transformation: What attitudes or desires need renewal?
 - Behavioral Changes: What specific actions demonstrate obedience?
 
-Target: 150-200 words, 5-7 complete sentences with practical depth.
+Target: 175-225 words, 5-7 complete sentences with practical depth.
 
 ## Paragraph 2 (5-7 sentences): Specific Action Steps
 
@@ -236,7 +236,7 @@ Provide CONCRETE steps for the next 7 days:
 - With Others: How to apply this in relationships
 - In Challenges: How to use this when facing difficulties
 
-Target: 150-200 words, 5-7 complete sentences that are actionable, not vague.
+Target: 175-225 words, 5-7 complete sentences that are actionable, not vague.
 
 **SUPPORTING MATERIALS:**
 - relatedVerses: 5-7 verse REFERENCES ONLY in ${languageConfig.name} (e.g., 'Galatians 5:22-23') - NO verse text

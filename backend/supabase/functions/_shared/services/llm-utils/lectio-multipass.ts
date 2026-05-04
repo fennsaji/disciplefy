@@ -48,7 +48,7 @@ export function createLectioPass1Prompt(
     ? `Create a MEDITATIVE READING guide for: \"${inputValue}\"`
     : `Create a MEDITATIVE READING guide on: \"${inputValue}\"${topicDescription ? `\n\nContext: ${topicDescription}` : ''}${pathContext}`
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
   const passSystem = `You are a Bible study guide leading prayerful Scripture reading and personal application.
 
@@ -182,7 +182,7 @@ export function createLectioPass2Prompt(
 ): CacheablePromptPair {
   const { language, discipleLevel } = params
 
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
 
   const passSystem = `You are a Bible study guide completing a Meditative Reading guide.
 
@@ -212,7 +212,7 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "interpretationPart2": "[500-650 words: **[Prayer Response header in ${languageConfig.name}]** + PRAYER RESPONSE (responding to God in prayer, 250-320 words) + **[Application & Commitment header in ${languageConfig.name}]** + APPLICATION & COMMITMENT (concrete, specific obedience, 250-320 words). EACH SECTION MUST BEGIN WITH A BOLD **HEADER** IN ${languageConfig.name}.]",
   "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support or expand the passage studied (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
   "reflectionQuestions": [5-7 reflection questions grounded in the text studied],
-  "prayerPoints": [4-5 specific prayer topics arising directly from the passage - each 50-70 words],
+  "prayerPoints": [4-5 specific prayer topics arising directly from the passage - each 50-70 words as a SINGLE paragraph (no line breaks)],
   "summaryInsights": [4-5 key biblical truths from the passage - 15-20 words each],
   "interpretationInsights": [4-5 theological insights revealed by the text - 15-20 words each],
   "reflectionAnswers": [4-5 concrete life applications - 15-20 words each],
@@ -245,7 +245,7 @@ Do NOT put prayer paragraphs in prayerPoints. They belong in interpretationPart2
 - GUIDE into authentic, specific prayer about real-life situations in light of God's Word
 - BALANCE structured prayer prompts with freedom for personal, Spirit-led prayer
 
-Count sentences as you write (end with ./!/?). Each section: 5-7 sentences, 250-320 words.
+Count sentences as you write (end with ./!/?). Each section: 6-8 sentences, 250-320 words.
 
 ## PRAYER RESPONSE: Responding to God Based on the Text
 
@@ -286,7 +286,7 @@ Target: 250-320 words, 6-8 complete sentences with specific, accountable applica
 - reflectionAnswers: 4-5 concrete life applications (15-20 words each)
 - 5 yes/no questions connecting the text to personal life
 
-VERIFY: interpretationPart2: 2 sections with bold headers, 5-7 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | 4-5 prayerPoints (50-70 words each) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | 4-5 prayerPoints (50-70 words each) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
