@@ -122,7 +122,9 @@ async fn generate_for_locale(
 
     match post::create_post_if_not_exists(pool, input).await? {
         Some(p) => tracing::info!(slug = %p.slug, locale, "Blog post created"),
-        None => tracing::warn!(locale, title = %display_title, "Blog post already exists for this slug, skipping"),
+        None => {
+            tracing::warn!(locale, title = %display_title, "Blog post already exists for this slug, skipping")
+        }
     }
     Ok(())
 }
