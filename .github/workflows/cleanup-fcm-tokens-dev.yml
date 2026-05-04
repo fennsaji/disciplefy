@@ -63,6 +63,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET_DEV }}
           SUPABASE_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_DEV_ANON_KEY }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           echo "Starting FCM token cleanup (Development)..."
@@ -73,8 +74,10 @@ jobs:
           echo "Dry run mode: $dry_run_value"
 
           # Call the cleanup Edge Function with dedicated cron secret
+          # Authorization header required by Supabase gateway before request reaches the function
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "${SUPABASE_URL}/functions/v1/cleanup-fcm-tokens" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
             -H "X-Cron-Secret: ${CRON_SECRET}" \
             -H "Content-Type: application/json" \
             -d "{\"dry_run\": ${dry_run_value}}")
@@ -162,6 +165,7 @@ jobs:
 # Required Secrets:
 # - SUPABASE_DEV_PROJECT_ID: Your Supabase development project ID
 # - SUPABASE_ACCESS_TOKEN: Supabase API access token
+# - SUPABASE_DEV_ANON_KEY: Supabase dev anonymous key (required by Supabase gateway auth)
 # - CRON_SECRET_DEV: Dedicated secret for development cron job authentication
 # - SUPABASE_DEV_URL: Your Supabase development project URL
 #

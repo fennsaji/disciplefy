@@ -63,13 +63,16 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           echo "Starting FCM token cleanup (Production)..."
           echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
           # Call the cleanup Edge Function with dedicated cron secret
+          # Authorization header required by Supabase gateway before request reaches the function
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "${SUPABASE_URL}/functions/v1/cleanup-fcm-tokens" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
             -H "X-Cron-Secret: ${CRON_SECRET}" \
             -H "Content-Type: application/json")
 
@@ -155,6 +158,7 @@ jobs:
 # Required Secrets:
 # - SUPABASE_PROJECT_ID: Your Supabase project ID
 # - SUPABASE_ACCESS_TOKEN: Supabase API access token
+# - SUPABASE_ANON_KEY: Supabase anonymous key (required by Supabase gateway auth)
 # - CRON_SECRET: Dedicated secret for cron job authentication (use X-Cron-Secret header)
 # - SUPABASE_URL: Your Supabase project URL
 #
