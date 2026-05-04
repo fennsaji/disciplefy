@@ -148,8 +148,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       homeBloc.add(const LoadForYouTopics());
     }
     // Load active learning path for the For You section
-    if (current is! HomeCombinedState || current.activeLearningPath == null) {
-      homeBloc.add(const LoadActiveLearningPath());
+    // Also re-fetch if the current path is completed (100%) so the next path is shown
+    if (current is! HomeCombinedState ||
+        current.activeLearningPath == null ||
+        (current.activeLearningPath?.isCompleted ?? false)) {
+      homeBloc.add(LoadActiveLearningPath(
+        forceRefresh: current is HomeCombinedState &&
+            (current.activeLearningPath?.isCompleted ?? false),
+      ));
     }
   }
 

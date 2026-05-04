@@ -1,5 +1,7 @@
 // frontend/lib/features/walkthrough/presentation/walkthrough_tooltip.dart
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -82,17 +84,21 @@ class WalkthroughTooltip extends StatelessWidget {
   static const _gold = Color(0xFFFFEEC0);
 
   // Tooltip bubble dimensions
-  static const double _tooltipWidth = 280;
+  static const double _maxTooltipWidth = 280;
   static const double _tooltipHeight = 160; // includes arrow height
+  static const double _tooltipHorizontalMargin = 48; // 24px each side
 
   @override
   Widget build(BuildContext context) {
     final videoUrl = WalkthroughVideoConfig.getVideoUrl(screen);
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tooltipWidth =
+        math.min(_maxTooltipWidth, screenWidth - _tooltipHorizontalMargin);
 
     return Showcase.withWidget(
       key: showcaseKey,
-      width: _tooltipWidth,
+      width: tooltipWidth,
       height: _tooltipHeight,
       tooltipPosition: tooltipPosition,
       // Gold border ring around the highlighted widget
@@ -115,6 +121,7 @@ class WalkthroughTooltip extends StatelessWidget {
         watchVideoLabel: l10n.walkthroughWatchVideo,
         arrowAtBottom: tooltipPosition == TooltipPosition.top,
         arrowAlignment: arrowAlignment,
+        maxWidth: tooltipWidth,
       ),
       child: child,
     );
@@ -146,6 +153,9 @@ class _TooltipContent extends StatelessWidget {
   /// Defaults to [Alignment.center].
   final Alignment arrowAlignment;
 
+  /// Maximum width of the tooltip bubble, responsive to screen size.
+  final double maxWidth;
+
   const _TooltipContent({
     required this.title,
     required this.description,
@@ -154,6 +164,7 @@ class _TooltipContent extends StatelessWidget {
     required this.onNext,
     required this.gotItLabel,
     required this.watchVideoLabel,
+    required this.maxWidth,
     this.videoUrl,
     this.arrowAtBottom = true,
     this.arrowAlignment = Alignment.center,
@@ -165,7 +176,7 @@ class _TooltipContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bubble = Container(
-      width: 280,
+      width: maxWidth,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,

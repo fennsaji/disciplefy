@@ -56,8 +56,7 @@ export function createDeepPass1Prompt(
     ? 'റോമർ 8:1-39'
     : 'Romans 8:1-39'
 
-  // Deep mode doesn't use native writing style (scholarly tone)
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
   const passSystem = `You are a Bible scholar creating WORD STUDIES with theological depth.
 
@@ -118,7 +117,8 @@ Keep it SHORT and FOCUSED - only what's necessary to understand the deep study.
 **INTERPRETATION PART 1 (700-900 words):**
 
 This section MUST contain EXACTLY 3 paragraphs of continuous scholarly prose.
-EACH paragraph MUST have 6-8 sentences (depth without repetition).
+EACH paragraph MUST begin with a **Bold Section Title** followed by 6-8 sentences (depth without repetition).
+Use **Bold Title** format (NOT ## markdown headers).
 
 ⚠️ SCHOLARLY DEPTH REQUIREMENTS (MANDATORY):
 - INCLUDE original language insights (Hebrew/Greek words, grammar, syntax)
@@ -128,7 +128,7 @@ EACH paragraph MUST have 6-8 sentences (depth without repetition).
 - PROVIDE cross-references with exegetical analysis
 - DEMONSTRATE mastery of grammatical-historical hermeneutical method
 
-Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 200-280 words.
+Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 235-300 words.
 
 ## Paragraph 1 (6-8 sentences): Verse-by-Verse Exegesis
 
@@ -139,7 +139,7 @@ Break down the key verses with scholarly rigor:
 - Cross-references: Related passages with exegetical connections
 - Historical-cultural background: ANE context, Greco-Roman world
 
-Target: 200-280 words, 6-8 complete sentences with scholarly precision.
+Target: 235-300 words, 6-8 complete sentences with scholarly precision.
 
 ## Paragraph 2 (6-8 sentences): Theological Interpretation
 
@@ -149,7 +149,7 @@ Explore the core theological dimensions:
 - Soteriology: Implications for salvation, grace, faith, justification
 - Historical theological perspectives (Augustine, Calvin, Wesley, etc.)
 
-Target: 200-280 words, 6-8 complete sentences with theological depth.
+Target: 235-300 words, 6-8 complete sentences with theological depth.
 
 ## Paragraph 3 (6-8 sentences): Doctrinal Implications
 
@@ -159,7 +159,7 @@ Analyze how this shapes Christian belief:
 - Integration with broader systematic and biblical theology
 - Pastoral and apologetic value of this passage
 
-Target: 200-280 words, 6-8 complete sentences with doctrinal precision.
+Target: 235-300 words, 6-8 complete sentences with doctrinal precision.
 
 VERIFY: summary 130-160 words | context 50-70 words | passage reference ONLY (MANDATORY) | interpretationPart1: 3 paragraphs, 6-8 sentences each, 700-900 words | Includes Hebrew/Greek insights | Verse refs in ${languageConfig.name} | Total ~800-900 words. Generate FULL CONTENT - no placeholders. FIX any issues BEFORE output.
 
@@ -186,8 +186,7 @@ export function createDeepPass2Prompt(
 ): CacheablePromptPair {
   const { language, discipleLevel } = params
 
-  // Deep mode doesn't use native writing style (scholarly tone)
-  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel, false)
+  const sharedSystem = createSharedFoundation(languageConfig, language, discipleLevel)
 
   const passSystem = `You are a Bible scholar and teacher completing an in-depth study guide.
 
@@ -212,7 +211,7 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "interpretationPart2": "[550-700 words: PRACTICAL APPLICATION with life transformation, contemporary relevance, and action steps]",
   "relatedVerses": [7-10 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Colossians 1:15-20', 'Hebrews 1:1-4') - NO verse text],
   "reflectionQuestions": [8-12 deep reflection questions mixing theology and application],
-  "prayerPoints": [5-7 prayer points based on the study - each 40-60 words],
+  "prayerPoints": [ONE single continuous prayer paragraph (6-8 sentences, 200-250 words) responding to the theological depth. Do NOT split into multiple items.],
   "summaryInsights": [5-7 key takeaways - 15-20 words each],
   "interpretationInsights": [5-7 theological truths taught - 15-20 words each],
   "reflectionAnswers": [5-7 life applications - 15-20 words each],
@@ -226,14 +225,15 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
 **INTERPRETATION PART 2 - PRACTICAL APPLICATION (550-700 words):**
 
 This section MUST contain EXACTLY 2 paragraphs of continuous transformative prose.
-EACH paragraph MUST have 6-8 sentences with DEEP PRACTICAL APPLICATION.
+EACH paragraph MUST begin with a **Bold Section Title** followed by 6-8 sentences with DEEP PRACTICAL APPLICATION.
+Use **Bold Title** format (NOT ## markdown headers).
 
 ⚠️ PRACTICAL DEPTH REQUIREMENTS (MANDATORY):
 - MAINTAIN scholarly tone while being practically transformative
 - BRIDGE theological insights from Pass 1 to actionable life change
 - ADDRESS real struggles, challenges, and growth opportunities
 
-Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 250-320 words.
+Count sentences as you write (end with ./!/?). Each paragraph: 6-8 sentences, 275-350 words.
 
 ## Paragraph 1 (6-8 sentences): Life Transformation
 
@@ -244,7 +244,7 @@ Transform theological truth into life change:
 - Behavioral Changes: Specific actions that demonstrate obedience
 - Relational Impact: How this affects marriage, family, friendships
 
-Target: 250-320 words, 6-8 complete sentences with transformative depth.
+Target: 275-350 words, 6-8 complete sentences with transformative depth.
 
 ## Paragraph 2 (6-8 sentences): Contemporary Relevance & Action Steps
 
@@ -254,18 +254,18 @@ Apply to modern contexts with concrete steps:
 - Spiritual Practices: Recommended disciplines for deepening this truth
 - Crisis Application: How this helps in suffering, loss, doubt, failure
 
-Target: 250-320 words, 6-8 complete sentences with contemporary insight and actionable steps.
+Target: 275-350 words, 6-8 complete sentences with contemporary insight and actionable steps.
 
 **SUPPORTING MATERIALS:**
 - relatedVerses: 7-10 additional verses in ${languageConfig.name}
 - reflectionQuestions: 8-12 deep questions (theological + practical)
-- prayerPoints: 5-7 prayer points (40-60 words each)
+- prayerPoints: ONE single prayer paragraph (6-8 sentences, 200-250 words)
 - summaryInsights: 5-7 takeaways (15-20 words each)
 - interpretationInsights: 5-7 theological truths (15-20 words each)
 - reflectionAnswers: 5-7 applications (15-20 words each)
 - 5 yes/no questions for engagement
 
-VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | 5-7 prayerPoints (40-60 words each) | 5-7 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | prayerPoints: 1 item, single paragraph (6-8 sentences, 200-250 words) | 5-7 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
@@ -276,7 +276,7 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
   "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
   "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]", "[VERSE 6]", "[VERSE 7]"],
   "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]", "[QUESTION 6]", "[QUESTION 7]", "[QUESTION 8]"],
-  "prayerPoints": ["[PRAYER 1: 40-60 words]", "[PRAYER 2]", "[PRAYER 3]", "[PRAYER 4]", "[PRAYER 5]"],
+  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 6-8 sentences, 200-250 words, addressing God directly]"],
   "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]", "[INSIGHT 5]"],
   "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]", "[TRUTH 5]"],
   "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]", "[APPLICATION 5]"],

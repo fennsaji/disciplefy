@@ -84,10 +84,11 @@ PRE-OUTPUT CHECK: first char is {, last is }, all fields present, proper escapin
 /**
  * Writing style & voice — applied to Standard, Quick, and Deep Dive modes.
  * Captures the "pastor talking to their congregation" tone, not a seminary paper.
+ * Examples are in English for illustration — apply the SAME techniques in the target language.
  */
 export const WRITING_STYLE = `
 ---
-WRITING VOICE & STYLE
+WRITING VOICE & STYLE (apply these techniques in the TARGET LANGUAGE — examples below are illustrative)
 ---
 
 Write like a pastor to their congregation — warm, clear, personal. NOT academic/seminary tone.
@@ -113,19 +114,51 @@ AVOID: academic openers ("From a biblical theology perspective..."), formulaic p
 export function createNativeWritingStyle(language: string): string {
   if (language === 'hi') {
     return `
-हिंदी शैली (HINDI STYLE):
+हिंदी शैली — WRITING TECHNIQUES (HINDI STYLE):
+
+सीधे संबोधन ("तुम/आप"):
 ✓ "जब तुम डरते हो, याद करो — परमेश्वर ने कहा है, 'मैं हमेशा तुम्हारे साथ हूं।'"
-✓ "परमेश्वर तुमसे प्रेम करता है — बस यही काफी है।"
 ✗ "भयजनक परिस्थितियों में परमेश्वर की सर्वव्यापी उपस्थिति का स्मरण अत्यावश्यक है।"
-नियम: छोटे वाक्य, एक बात प्रति वाक्य, गांव का आदमी समझे ऐसी भाषा।`.trim()
+
+छोटे, मिले-जुले वाक्य:
+✓ "यह बात बहुत ज़रूरी है। परमेश्वर के सामने तुम्हारा खड़ा होना यीशु के काम पर टिका है।"
+✗ "उपरोक्त सत्य का महत्व अत्यंत गहन है क्योंकि..."
+
+सवालात्मक शैली:
+✓ "क्या तुमने कभी सोचा है कि तुम सच में परमेश्वर के हो?"
+
+गर्मजोशी भरे बदलाव:
+✓ "अब बात आती है तुम्हारी ज़िंदगी की।"
+✗ "दूसरी प्रमुख अवधारणा यह है कि..."
+
+व्यावहारिक आधार:
+✓ हर बात को रोज़मर्रा की ज़िंदगी से जोड़ो
+
+नियम: छोटे वाक्य, एक बात प्रति वाक्य, गांव का आदमी समझे ऐसी भाषा। **बोल्ड शीर्षक** interpretation में।`.trim()
   }
   if (language === 'ml') {
     return `
-മലയാളം ശൈലി (MALAYALAM STYLE):
+മലയാളം ശൈലി — WRITING TECHNIQUES (MALAYALAM STYLE):
+
+നേരിട്ടുള്ള അഭിസംബോധന ("നിങ്ങൾ/നീ"):
 ✓ "ഭയം തോന്നുമ്പോൾ ഓർക്കൂ — ദൈവം പറഞ്ഞു, 'ഞാൻ എപ്പോഴും നിന്നോടൊപ്പം ഉണ്ട്.'"
-✓ "ദൈവം നിന്നെ സ്നേഹിക്കുന്നു — അത് മതി."
 ✗ "ഭയജനകമായ സാഹചര്യങ്ങളിൽ ദൈവിക സർവ്വസാന്നിദ്ധ്യത്തെ അനുസ്മരിക്കേണ്ടത് അനിവാര്യമാണ്."
-നിയമം: ചെറിയ വാക്യങ്ങൾ, ഒരു വാക്യത്തിൽ ഒരു കാര്യം, ഗ്രാമത്തിലെ ആർക്കും മനസ്സിലാകുന്ന ഭാഷ.`.trim()
+
+ചെറിയ, വൈവിധ്യമുള്ള വാക്യങ്ങൾ:
+✓ "ഇത് വളരെ പ്രധാനമാണ്. ദൈവത്തിന്റെ മുമ്പിൽ നിന്റെ നിലനിൽപ്പ് യേശു ചെയ്തതിന്മേൽ ആണ്."
+✗ "മേൽപ്പറഞ്ഞ സത്യത്തിന്റെ പ്രാധാന്യം അത്യന്തം ഗഹനമാണ്..."
+
+ചോദ്യരൂപത്തിലുള്ള ശൈലി:
+✓ "നീ ശരിക്കും ദൈവത്തിന്റെ സ്വന്തമാണെന്ന് നിനക്ക് എപ്പോഴെങ്കിലും തോന്നിയിട്ടുണ്ടോ?"
+
+സൗമ്യമായ പരിവർത്തനങ്ങൾ:
+✓ "ഇവിടെ നിന്നാണ് ഇത് നിന്റെ ജീവിതത്തെ തൊടുന്നത്."
+✗ "രണ്ടാമത്തെ പ്രധാന ആശയം ഉൾക്കൊള്ളുന്നത്..."
+
+പ്രായോഗിക അടിത്തറ:
+✓ ഓരോ കാര്യവും ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക
+
+നിയമം: ചെറിയ വാക്യങ്ങൾ, ഒരു വാക്യത്തിൽ ഒരു കാര്യം, ഗ്രാമത്തിലെ ആർക്കും മനസ്സിലാകുന്ന ഭാഷ. **ബോൾഡ് ശീർഷകങ്ങൾ** interpretation-ൽ.`.trim()
   }
   return '' // English: WRITING_STYLE already covers it
 }
@@ -140,19 +173,20 @@ export function createNativeWritingStyle(language: string): string {
  * @param languageConfig - Language-specific configuration
  * @param language - Language code ('en', 'hi', 'ml')
  * @param discipleLevel - Optional disciple level for context
- * @param includeNativeStyle - Whether to include native writing style (false for deep mode)
+ * @param includeWritingStyle - Whether to include WRITING_STYLE pastoral tone block (false for lectio/sermon which have their own style). Native writing style examples are always included for non-English.
  */
 export function createSharedFoundation(
   languageConfig: LanguageConfig,
   language: string,
   discipleLevel?: string,
-  includeNativeStyle: boolean = true
+  includeWritingStyle: boolean = true
 ): string {
   return [
     THEOLOGICAL_FOUNDATION,
     JSON_OUTPUT_RULES,
     createLanguageBlock(languageConfig, language) + getDiscipleLevelContext(discipleLevel),
-    includeNativeStyle ? createNativeWritingStyle(language) : ''
+    includeWritingStyle ? WRITING_STYLE : '',
+    createNativeWritingStyle(language) // Always included for HI/ML (returns '' for EN)
   ].filter(Boolean).join('\n\n')
 }
 
@@ -239,11 +273,12 @@ function createPrayerFormatBlock(languageConfig: LanguageConfig, language: strin
   return `
 PRAYER FORMAT REQUIREMENTS:
 1. Structure: [Address God] → [Prayer content based on study] → [Closing]
-2. Length: ${sentenceCount} complete sentences
+2. Length: ${sentenceCount} complete sentences as a SINGLE continuous paragraph (NO line breaks, NO multiple paragraphs)
 3. Person: First-person ("I"/"we"), addressing God directly
 4. Tone: Reverent, personal, aligned with study content
 5. Closing: "${closings[language as SupportedLanguage] || closings.en}"
 6. Language: ENTIRE prayer in ${languageConfig.name} (including closing)
+7. Format: ONE paragraph only — do NOT split into multiple paragraphs
 `.trim()
 }
 
@@ -278,7 +313,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, params.language)}
+${createLanguageBlock(languageConfig, params.language)}${getDiscipleLevelContext(params.discipleLevel)}
 
 STUDY MODE: STANDARD (10 minutes reading-with-understanding time)
 Reading-with-understanding speed: 140-150 words/minute = ${wordTarget} words TARGET
@@ -302,11 +337,11 @@ CONTENT STRUCTURE — ALL 15 FIELDS MANDATORY
 ---
 
 WORD COUNTS:
-- "summary": 100-120 words (6-7 sentences)
+- "summary": 100-130 words (6-8 sentences)
 - "context": 40-70 words (one short paragraph, essential background only)
 - "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
 - "interpretation": 900-1,200 words, EXACTLY 4-5 paragraphs, each 7-9 sentences
-- "prayerPoints": 90-110 words (6-7 sentences)
+- "prayerPoints": ONE single prayer paragraph (6-8 sentences, 150-200 words)
 - Total: ${wordTarget} words (10-minute study at 140-150 wpm)
 
 INTERPRETATION STRUCTURE:
@@ -320,9 +355,9 @@ INTERPRETATION STRUCTURE:
   "context": "40-70 words MAX — single most essential background fact",
   "passage": "Scripture reference only (e.g., 'Romans 8:1-39'). MANDATORY. No verse text.",
   "interpretation": "4-5 sections, each with **Bold Title** + 7-9 sentences. 900-1,200 words. Prose only.",
-  "relatedVerses": ["5-6 verse REFERENCES in ${languageConfig.name} — no verse text"],
-  "reflectionQuestions": ["5-6 deep application questions"],
-  "prayerPoints": ["6-8 sentences (100-120 words) addressing God directly, ending with correct closing"],
+  "relatedVerses": ["5-7 verse REFERENCES in ${languageConfig.name} — no verse text"],
+  "reflectionQuestions": ["5-7 deep application questions"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 150-200 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."],
   "summaryInsights": ["4-5 resonance themes (15-20 words each)"],
   "interpretationInsights": ["4-5 theological insights (15-20 words each)"],
   "reflectionAnswers": ["4-5 life applications (15-20 words each)"],
@@ -369,7 +404,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, params.language)}
+${createLanguageBlock(languageConfig, params.language)}${getDiscipleLevelContext(params.discipleLevel)}
 
 STUDY MODE: QUICK READ (3 minutes = 450-600 words)
 Reading-with-understanding speed: 140-160 words/minute (careful reading, minimal pauses)
@@ -382,7 +417,6 @@ ${createNativeWritingStyle(params.language)}`
   // Word limits for Quick Read — unified across languages (previous HI/ML reduction caused guides to fall short of target)
   const wordLimits = { summary: 60, interpretation: 150, context: 70, prayer: 80 }
 
-  const wordTarget = getWordCountTarget(languageConfig, 'quick')
   const userMessage = `${taskDescription}
 
 ${createVerseReferenceBlock(params.language)}
@@ -450,7 +484,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, params.language)}
+${createLanguageBlock(languageConfig, params.language)}${getDiscipleLevelContext(params.discipleLevel)}
 
 STUDY MODE: DEEP DIVE (15 minutes reading-with-understanding time)
 Reading-with-understanding speed: 120-140 words/minute (slow, focused reflection)
@@ -458,6 +492,8 @@ Focus: COMPREHENSIVE theological depth + integrated word studies + extended cont
 Tone: Warm pastoral depth — conversational but substantive, like a thorough sermon from a scholar-pastor.
 
 ${WRITING_STYLE}
+
+${createNativeWritingStyle(params.language)}
 
 ⚠️ CRITICAL DISTINCTION: This is DEEP THEOLOGICAL EXPLORATION, NOT just a longer Standard mode.
 Emphasize:
@@ -488,12 +524,12 @@ This is COMPREHENSIVE THEOLOGICAL EXPLORATION (not just longer Standard mode):
 - Doctrinal precision for serious Bible students, in warm pastoral voice
 
 WORD COUNTS:
-- "interpretation": 1,350-1,550 words — EXACTLY 5-6 paragraphs, 6-7 sentences each
+- "interpretation": 1,350-1,550 words — EXACTLY 5-6 paragraphs, 6-8 sentences each
 - "summary": 120-150 words (theological overview)
 - "context": 40-70 words (SHORT — depth belongs in interpretation)
-- "prayerPoints": 90-120 words (5-6 sentences)
+- "prayerPoints": ONE single prayer paragraph (6-8 sentences, 200-250 words)
 
-INTERPRETATION PARAGRAPHS (6-7 sentences each, **Bold Title** per section):
+INTERPRETATION PARAGRAPHS (6-8 sentences each, **Bold Title** per section):
 1. Theological Foundation & Key Greek/Hebrew terms
 2. First major concept: exegesis + cross-references + historical context
 3. Second concept: OT→NT development + systematic theology connections
@@ -505,13 +541,13 @@ INTERPRETATION PARAGRAPHS (6-7 sentences each, **Bold Title** per section):
   "summary": "6-7 sentences (120-150 words) — theological overview with scholarly depth",
   "context": "40-70 words — single essential background fact",
   "passage": "Scripture reference only (prefer long passages). MANDATORY.",
-  "interpretation": "5-6 sections with **Bold Title** + 6-7 sentences each. 1,350-1,550 words. Integrate Greek/Hebrew naturally. Prose only.",
-  "relatedVerses": ["5-6 verse REFERENCES in ${languageConfig.name} — no text"],
-  "reflectionQuestions": ["5-6 deep theological questions"],
-  "prayerPoints": ["5-6 sentences (90-120 words) responding to theological depth"],
-  "summaryInsights": ["4-5 themes (15-20 words each)"],
-  "interpretationInsights": ["4-5 doctrinal truths (15-20 words each)"],
-  "reflectionAnswers": ["4-5 applications (15-20 words each)"],
+  "interpretation": "5-6 sections with **Bold Title** + 6-8 sentences each. 1,350-1,550 words. Integrate Greek/Hebrew naturally. Prose only.",
+  "relatedVerses": ["7-10 verse REFERENCES in ${languageConfig.name} — no text"],
+  "reflectionQuestions": ["8-12 deep theological questions"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 200-250 words). Respond to theological depth, address God directly, end with correct closing. Do NOT split into multiple items."],
+  "summaryInsights": ["5-7 themes (15-20 words each)"],
+  "interpretationInsights": ["5-7 doctrinal truths (15-20 words each)"],
+  "reflectionAnswers": ["5-7 applications (15-20 words each)"],
   "contextQuestion": "Yes/no question", "summaryQuestion": "12-18 words",
   "relatedVersesQuestion": "12-18 words", "reflectionQuestion": "12-18 words",
   "prayerQuestion": "10-15 words"
@@ -519,7 +555,7 @@ INTERPRETATION PARAGRAPHS (6-7 sentences each, **Bold Title** per section):
 
 ${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
 
-VERIFY: 5-6 paragraphs × 6-7 sentences = 1,350-1,550 words? All 15 fields? Context ≤70 words? Word studies integrated (not forced)?
+VERIFY: 5-6 paragraphs × 6-8 sentences = 1,350-1,550 words? All 15 fields? Context ≤70 words? Word studies integrated (not forced)?
 
 ${getLanguageExamples(params.language)}
 
@@ -584,7 +620,7 @@ WORD COUNTS:
 - "interpretation": 800-1,000 words — EXACTLY 4 paragraphs, 6-8 sentences each
 - "summary": 150-200 words (prayerful invitation)
 - "context": 40-60 words (brief heart preparation)
-- "prayerPoints": 50-70 words each (text-grounded)
+- "prayerPoints": ONE single prayer paragraph (5-7 sentences, 150-200 words, text-grounded)
 - Total: ${wordTarget} words
 
 INTERPRETATION — 4 paragraphs (6-8 sentences each):
@@ -598,10 +634,10 @@ CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
   "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Prayerful, warm invitation to read this passage carefully — 150-200 words. State what the passage is about and what God reveals through it. Invite the reader to come with open Bible, open heart, and dependence on the Holy Spirit.]",
   "context": "Brief introduction to prayerful Scripture reading as a Protestant spiritual discipline (40-60 words): coming to God's Word expectantly, asking the Holy Spirit for understanding (1 Corinthians 2:12-14), reading observationally and responding in prayer and obedience.",
   "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused reading (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9', '1 John 4:7-12'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
-  "interpretation": "[EXACTLY 4 paragraphs as structured above. EACH paragraph with 6-8 sentences of Scripture-anchored guidance. Target: 800-1,000 words. Guide through: CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION & COMMITMENT. NO headings, NO bullets. Flowing prayerful prose grounded in the text.]",
+  "interpretation": "[EXACTLY 4 paragraphs as structured above. EACH paragraph MUST begin with a **bold header** in ${languageConfig.name} followed by 6-8 sentences of Scripture-anchored guidance. Target: 800-1,000 words. Guide through: CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION & COMMITMENT. NO bullets. Flowing prayerful prose grounded in the text.]",
   "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
   "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What specific sin or attitude does this passage call you to repent of?", "What one concrete step of obedience will you take this week based on this text?"],
-  "prayerPoints": ["Specific prayer topic arising from the passage (4-5 sentences, 50-70 words). Address God directly. Ground the prayer in what the text reveals. Close with appropriate ending for ${languageConfig.name}"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (5-7 sentences, 150-200 words). Address God directly. Ground the prayer in what the text reveals. Respond to Scripture studied. Close with appropriate ending for ${languageConfig.name}. Do NOT split into multiple items."],
   "summaryInsights": ["4-5 key biblical truths from the passage (15-20 words each)"],
   "interpretationInsights": ["4-5 theological insights revealed by the text (15-20 words each)"],
   "reflectionAnswers": ["4-5 concrete life applications from the text (15-20 words each)"],
@@ -707,7 +743,7 @@ ${THEOLOGICAL_FOUNDATION}
 
 ${JSON_OUTPUT_RULES}
 
-${createLanguageBlock(languageConfig, params.language)}
+${createLanguageBlock(languageConfig, params.language)}${getDiscipleLevelContext(params.discipleLevel)}
 
 STUDY MODE: SERMON OUTLINE (50-60 minutes SPOKEN delivery time)
 ⚠️ NOTE: This is a PREACHER-FACING EXPLANATION, not a full manuscript.
@@ -724,31 +760,7 @@ Tone: Clear, theologically rich, pastorally wise, suitable for preacher preparat
 
 ${createNativeWritingStyle(params.language)}`
 
-  // Build sermon outline template
-  const outlineTemplate = `**SERMON OUTLINE FORMAT** - Preacher's notes (NOT full speech):
-
-## ${headings.introduction} (5 min)
-Hook → Bridge → Preview → **${headings.transition}** to Point 1
-
-## ${headings.point} 1: [Memorable Title] (15 min)
-**${headings.mainTeaching}:** 2-3 paragraphs — foundational truth, key terms, biblical basis, Christological connection, address misconceptions
-**${headings.scriptureFoundation}:** 2-3 verses with context + meaning + connection (3-4 sentences each)
-**${headings.illustration}:** Conceptual — setup, key details, connection to truth, emotional impact
-**${headings.application}:** 3-4 specific action steps (HOW not just WHAT — practical, relational, heart-level)
-**${headings.transition}:** Bridge to next point
-
-## ${headings.point} 2: [Memorable Title] (15 min) — SAME structure as Point 1
-## ${headings.point} 3: [Memorable Title] (12 min) — SAME structure, condensed
-
-## ${headings.conclusion} (5 min)
-• Summaries of Points 1-3 with fresh language → Final gospel exhortation`
-
-  // Build altar call template
-  const altarCallTemplate = `**ALTAR CALL / INVITATION** (4-6 min)
-**${headings.gospelRecap}:** Brief gospel reminder
-**${headings.theInvitation}:** Direct call to respond
-**${headings.responseOptions}:** Come forward / Raise hand / Meet pastor
-**${headings.closingPrayer}:** Prayer for responders. Amen.`
+  // Sermon outline and altar call structure are embedded directly in the prompt below
 
   const userMessage = `${taskDescription}
 
@@ -874,7 +886,7 @@ CRITICAL: USE EXACT HEADINGS IN ${languageConfig.name} (NOT ENGLISH):
 SERMON FORMAT:
 ${inputType === 'scripture' ? `EXPOSITORY SERMON: Verse-by-verse exposition through passage with deep exegesis, original language insights, and systematic progression through the text` : `TOPICAL SERMON: 3-point message developing theme with multiple scripture support, logical argument progression, and practical life transformation`}
 
-${createPrayerFormatBlock(languageConfig, params.language, 'varies')}
+${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
 
 VERIFY BEFORE OUTPUT:
 - interpretation TOTAL: 3,800-4,500 words (Intro 450-550, Pt1 1000-1200, Pt2 1000-1200, Pt3 700-900, Conclusion 350-450)
@@ -1105,7 +1117,7 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
  * v3.4: Dynamic token allocation to fix Hindi Sermon shortfall (47% → 100%)
  * and Malayalam underperformance (35-50% → 100% on adjusted targets)
  */
-export function calculateOptimalTokens(params: LLMGenerationParams, languageConfig: LanguageConfig): number {
+export function calculateOptimalTokens(params: LLMGenerationParams, _languageConfig: LanguageConfig): number {
   const { language, studyMode = 'standard' } = params
 
   // Base token allocations for English (optimized for 0.70 words/token efficiency)
