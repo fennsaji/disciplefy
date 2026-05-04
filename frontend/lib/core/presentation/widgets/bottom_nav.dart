@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as flutter_services;
 import 'package:showcaseview/showcaseview.dart';
@@ -81,9 +83,9 @@ class DisciplefyBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     // Compute arrow alignment for Community tab dynamically so the arrow
     // accurately points at the tab icon regardless of screen width.
-    const double tooltipWidth = 280.0;
-    const double arrowWidth = 20.0;
     final double screenWidth = MediaQuery.of(context).size.width;
+    final double tooltipWidth = math.min(280.0, screenWidth - 48);
+    const double arrowWidth = 20.0;
     // Community is the 4th of 4 equal tabs → center at 7/8 of screen width.
     final double tabCenterX = screenWidth * 7.0 / 8.0;
     // showcaseview clamps the tooltip so its right edge ≤ screen width.
