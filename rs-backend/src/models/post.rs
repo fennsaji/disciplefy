@@ -380,6 +380,52 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
     Ok(post)
 }
 
+/// Like `create_post`, but silently skips if a post with the same slug already exists.
+/// Returns `Ok(None)` when skipped (duplicate slug), `Ok(Some(post))` on successful insert.
+pub async fn create_post_if_not_exists(
+    pool: &PgPool,
+    input: CreatePostInput,
+) -> Result<Option<BlogPost>, AppError> {
+    validate_create_input(&input)?;
+
+    let slug = input.slug.unwrap_or_else(|| {
+        let base = slug::slugify(&input.title);
+        format!("{}-{}", base, &input.locale)
+    });
+
+    let published_at = if input.status == "published" {
+        Some(Utc::now())
+    } else {
+        None
+    };
+
+    let post = sqlx::query_as::<_, BlogPost>(
+        "INSERT INTO blog_posts (slug, title, excerpt, content, locale, tags, featured, status,
+                                 source_type, source_topic_id, source_learning_path_id,
+                                 source_guide_id, published_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         ON CONFLICT (slug) DO NOTHING
+         RETURNING *",
+    )
+    .bind(&slug)
+    .bind(&input.title)
+    .bind(&input.excerpt)
+    .bind(&input.content)
+    .bind(&input.locale)
+    .bind(&input.tags)
+    .bind(input.featured)
+    .bind(&input.status)
+    .bind(&input.source_type)
+    .bind(input.source_topic_id)
+    .bind(input.source_learning_path_id)
+    .bind(input.source_guide_id)
+    .bind(published_at)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(post)
+}
+
 pub async fn update_post(
     pool: &PgPool,
     id: Uuid,
