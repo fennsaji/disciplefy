@@ -28,6 +28,10 @@
 export type SectionType =
   | 'summary'
   | 'interpretation'
+  | 'interpretationPart1'
+  | 'interpretationPart2'
+  | 'interpretationPart3'
+  | 'interpretationPart4'
   | 'context'
   | 'passage'
   | 'relatedVerses'
@@ -82,6 +86,11 @@ const SECTION_ORDER: SectionType[] = [
   'context',
   'passage',
   'interpretation',
+  // Multi-pass interpretation parts (used by multipass generators, ignored in single-pass)
+  'interpretationPart1',
+  'interpretationPart2',
+  'interpretationPart3',
+  'interpretationPart4',
   'relatedVerses',
   'reflectionQuestions',
   'prayerPoints',
@@ -215,7 +224,7 @@ export class StreamingJsonParser {
 
       if (extracted !== null) {
         this.emittedSections.add(sectionType)
-        this.parsedData[sectionType] = extracted as any
+        ;(this.parsedData as Record<string, unknown>)[sectionType] = extracted
 
         newSections.push({
           type: sectionType,

@@ -349,7 +349,7 @@ async function streamAndParsePass2WithEmission(
   totalSections: number,
   pass1Data: any,
   combinePasses: any
-): Promise<{ data: Record<string, unknown>, usage: LLMUsageMetadata }> {
+): Promise<{ data: Record<string, unknown>, usage: LLMUsageMetadata, emittedSections: Set<string> }> {
   const parser = new StreamingJsonParser()
   let accumulatedChunks = ''
   const emittedSections = new Set<string>()
@@ -459,7 +459,7 @@ async function streamAndParsePass2WithEmission(
   const { cleanJSONResponse } = await import('../_shared/services/llm-utils/response-parser.ts')
   const data = JSON.parse(cleanJSONResponse(accumulatedChunks))
 
-  return { data, usage: usage! }
+  return { data, usage: usage!, emittedSections }
 }
 
 /**
@@ -475,7 +475,7 @@ async function streamAndParseSermonPass4WithEmission(
   pass2Data: any,
   pass3Data: any,
   combineSermonPasses: any
-): Promise<{ data: Record<string, unknown>, usage: LLMUsageMetadata }> {
+): Promise<{ data: Record<string, unknown>, usage: LLMUsageMetadata, emittedSections: Set<string> }> {
   const parser = new StreamingJsonParser()
   let accumulatedChunks = ''
   const emittedSections = new Set<string>()
@@ -559,7 +559,7 @@ async function streamAndParseSermonPass4WithEmission(
   const { cleanJSONResponse } = await import('../_shared/services/llm-utils/response-parser.ts')
   const data = JSON.parse(cleanJSONResponse(accumulatedChunks))
 
-  return { data, usage: usage! }
+  return { data, usage: usage!, emittedSections }
 }
 
 /**
@@ -1365,8 +1365,11 @@ async function handleStudyGenerateV2(
             )
             studyGuideData = completeSermon as unknown as CompleteStudyGuide
 
-            // NOTE: Full interpretation (Part1+Part2+Part3+Part4) already emitted during Pass 4 streaming
-            // No need for redundant emission here
+            // Safety net: emit full 4-part interpretation if parser missed interpretationPart4 during streaming
+            if (!pass4Result.emittedSections.has('interpretationPart4') && studyGuideData.interpretation) {
+              console.log(`[LLM-MultiPass] ⚠️ interpretationPart4 not emitted during streaming, emitting full sermon interpretation now (${studyGuideData.interpretation.length} chars)`)
+              emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, 14))
+            }
 
             // Emit optional sections (6+) immediately
             let currentIndex = 6
@@ -1553,9 +1556,11 @@ async function handleStudyGenerateV2(
               )
               studyGuideData = completeStudy as unknown as CompleteStudyGuide
 
-              // NOTE: Full interpretation (Part1+Part2) already emitted during Pass 2 streaming
-              // NOTE: All insights and questions already emitted during Pass 2 streaming
-              // No need for redundant emission here
+              // Safety net: emit combined interpretation if parser missed interpretationPart2 during streaming
+              if (!pass2Result.emittedSections.has('interpretationPart2') && studyGuideData.interpretation) {
+                console.log(`[LLM-MultiPass] ⚠️ interpretationPart2 not emitted during streaming, emitting combined interpretation now (${studyGuideData.interpretation.length} chars)`)
+                emit(createSectionEvent({ type: 'interpretation', content: studyGuideData.interpretation, index: 2 }, 14))
+              }
             }
 
           } catch (multiPassError) {
