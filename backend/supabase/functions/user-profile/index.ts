@@ -15,7 +15,7 @@ import { extractOAuthProfileData, createProfileUpdateData, logProfileExtraction 
 
 interface UserProfile {
   id: string
-  language_preference: string
+  language_preference: string | null
   theme_preference: string
   first_name: string | null
   last_name: string | null
@@ -213,7 +213,7 @@ async function createDefaultProfile(
 
   return {
     id: userId,
-    language_preference: updateData?.language_preference || 'en',
+    language_preference: updateData?.language_preference || null,
     theme_preference: updateData?.theme_preference || 'light',
     first_name: updateData?.first_name || oauthData.first_name || null,
     last_name: updateData?.last_name || oauthData.last_name || null,
@@ -364,7 +364,7 @@ async function handleGetProfile(
   // Merge preferences into profile response
   const profileWithPreferences = {
     ...userProfile,
-    learning_path_study_mode: preferences?.learning_path_study_mode || null,
+    learning_path_study_mode: preferences?.learning_path_study_mode || 'recommended',
   }
 
   return new Response(
@@ -392,7 +392,7 @@ async function handleUpdateProfile(
   // Merge preferences into profile response
   const profileWithPreferences = {
     ...profile,
-    learning_path_study_mode: preferences?.learning_path_study_mode || null,
+    learning_path_study_mode: preferences?.learning_path_study_mode || 'recommended',
   }
 
   return new Response(

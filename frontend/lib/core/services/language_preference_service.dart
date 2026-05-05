@@ -9,6 +9,7 @@ import '../../features/user_profile/data/models/user_profile_model.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_cache_coordinator.dart';
+import '../constants/study_mode_preferences.dart';
 import '../utils/logger.dart';
 
 /// Service for managing user language preferences
@@ -236,7 +237,18 @@ class LanguagePreferenceService {
           return false;
         }
 
-        // Profile exists - check if it has language preference
+        // Profile exists - check if it has a non-null language preference.
+        // First check the raw cached profile map (preserves null from backend)
+        // to correctly identify new users who haven't chosen a language yet.
+        final cachedProfile = _authStateProvider.userProfile;
+        if (cachedProfile != null &&
+            cachedProfile['language_preference'] == null) {
+          Logger.debug(
+              '🔍 [LANGUAGE_SELECTION] Profile exists but language_preference is null — new user');
+          _cacheLanguageCompletion(currentUserId, false);
+          return false;
+        }
+
         final languageResult =
             await _userProfileService.getLanguagePreference();
         final hasLanguage = languageResult.fold(
@@ -650,12 +662,16 @@ class LanguagePreferenceService {
       if (dbMode != null) {
         _prefs.setString(_learningPathModePreferenceKey, dbMode);
       } else {
-        _prefs.remove(_learningPathModePreferenceKey);
+        // DB default is 'recommended' — treat null (no user_preferences row) the same
+        _prefs.setString(
+            _learningPathModePreferenceKey, StudyModePreferences.recommended);
       }
-      return dbMode;
+      return dbMode ?? StudyModePreferences.recommended;
     }
     // Profile not loaded (cold start offline) — return last persisted value
-    return _prefs.getString(_learningPathModePreferenceKey);
+    // Default to 'recommended' to match DB schema default
+    return _prefs.getString(_learningPathModePreferenceKey) ??
+        StudyModePreferences.recommended;
   }
 
   /// Persists the learning-path study mode locally so it is available offline.
