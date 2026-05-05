@@ -50,19 +50,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // Blog posts — only include the canonical locale URL for each post (post.locale)
-  // to avoid submitting duplicate-locale URLs for posts that don't have translations.
+  // Blog posts — each post is listed once under its own locale prefix.
+  // e.g. an "en" post → /blog/slug, an "ml" post → /ml/blog/slug.
   const seenSlugs = new Set<string>();
   for (const locale of locales) {
     let page = 1;
     let hasMore = true;
     while (hasMore) {
       const { posts, pagination } = await getAllPosts(locale as Locale, page, 100);
-      const prefix = locale === "en" ? "" : `/${locale}`;
       for (const post of posts) {
-        const canonicalKey = `${post.locale ?? locale}:${post.slug}`;
-        if (seenSlugs.has(canonicalKey)) continue;
-        seenSlugs.add(canonicalKey);
+        if (seenSlugs.has(post.slug)) continue;
+        seenSlugs.add(post.slug);
+        // Use the post's actual locale for the URL prefix, not the query locale
+        const postLocale = post.locale ?? locale;
+        const prefix = postLocale === "en" ? "" : `/${postLocale}`;
         entries.push({
           url: `${BASE}${prefix}/blog/${post.slug}`,
           lastModified: post.published_at ? new Date(post.published_at) : new Date(),
