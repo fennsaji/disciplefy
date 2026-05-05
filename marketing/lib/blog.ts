@@ -18,10 +18,25 @@ export interface PostMeta {
   read_time: number;
 }
 
+export interface LearningPathInfo {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  disciple_level: string;
+}
+
+export interface LearningPathMeta {
+  slug: string;
+  title: string;
+  post_count: number;
+}
+
 export interface Post extends PostMeta {
   id: string;
   content: string;
   status: string;
+  learning_path?: LearningPathInfo | null;
 }
 
 export interface Pagination {
@@ -39,6 +54,7 @@ export async function getAllPosts(
   page = 1,
   limit = 10,
   tag?: string,
+  learningPath?: string,
 ): Promise<{ posts: PostMeta[]; pagination: Pagination }> {
   const params = new URLSearchParams({
     locale,
@@ -46,6 +62,7 @@ export async function getAllPosts(
     limit: String(limit),
   });
   if (tag) params.set("tag", tag);
+  if (learningPath) params.set("learning_path", learningPath);
 
   const url = `${BLOG_API_URL}/api/v1/posts?${params}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -113,6 +130,30 @@ export async function searchPosts(query: string, locale: Locale): Promise<PostMe
   }
 }
 
+export interface AdjacentPost {
+  slug: string;
+  title: string;
+}
+
+export interface AdjacentPosts {
+  prev: AdjacentPost | null;
+  next: AdjacentPost | null;
+}
+
+export async function getAdjacentPosts(slug: string): Promise<AdjacentPosts> {
+  try {
+    const res = await fetch(
+      `${BLOG_API_URL}/api/v1/posts/${encodeURIComponent(slug)}/adjacent`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return { prev: null, next: null };
+    const json = await res.json();
+    return json.data ?? { prev: null, next: null };
+  } catch {
+    return { prev: null, next: null };
+  }
+}
+
 export async function getTags(locale: Locale): Promise<string[]> {
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/posts/tags?locale=${locale}`, {
@@ -123,6 +164,20 @@ export async function getTags(locale: Locale): Promise<string[]> {
     return json.data ?? [];
   } catch (err) {
     console.error("Failed to fetch tags:", err);
+    return [];
+  }
+}
+
+export async function getLearningPaths(locale: Locale): Promise<LearningPathMeta[]> {
+  try {
+    const res = await fetch(`${BLOG_API_URL}/api/v1/learning-paths?locale=${locale}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data ?? [];
+  } catch (err) {
+    console.error("Failed to fetch learning paths:", err);
     return [];
   }
 }

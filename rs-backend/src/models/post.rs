@@ -141,6 +141,7 @@ pub struct ListPostsQuery {
     pub limit: i64,
     pub tag: Option<String>,
     pub featured: Option<bool>,
+    pub learning_path: Option<String>,
 }
 
 fn default_page() -> i64 {
@@ -192,11 +193,13 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM blog_posts WHERE locale = $1 AND status = 'published'
          AND ($2::text IS NULL OR $2 = ANY(tags))
-         AND ($3::bool IS NULL OR featured = $3)",
+         AND ($3::bool IS NULL OR featured = $3)
+         AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4))",
     )
     .bind(&q.locale)
     .bind(&q.tag)
     .bind(q.featured)
+    .bind(&q.learning_path)
     .fetch_one(pool)
     .await?;
 
@@ -207,12 +210,14 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
          WHERE locale = $1 AND status = 'published'
            AND ($2::text IS NULL OR $2 = ANY(tags))
            AND ($3::bool IS NULL OR featured = $3)
+           AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4))
          ORDER BY published_at DESC NULLS LAST
-         LIMIT $4 OFFSET $5",
+         LIMIT $5 OFFSET $6",
     )
     .bind(&q.locale)
     .bind(&q.tag)
     .bind(q.featured)
+    .bind(&q.learning_path)
     .bind(limit)
     .bind(offset)
     .fetch_all(pool)
@@ -261,14 +266,36 @@ pub async fn search_posts(pool: &PgPool, q: &SearchQuery) -> Result<PaginatedPos
     let limit = q.limit.clamp(1, 50);
     let offset = (q.page.max(1) - 1) * limit;
 
+    // Build prefix query: split words and append :* for partial matching
+    // e.g. "steward faith" → "steward:* & faith:*"
+    let prefix_query =
+        q.q.split_whitespace()
+            .filter(|w| !w.is_empty())
+            .map(|w| format!("{}:*", w.replace('\'', "''")))
+            .collect::<Vec<_>>()
+            .join(" & ");
+
+    if prefix_query.is_empty() {
+        return Ok(PaginatedPosts {
+            posts: vec![],
+            pagination: Pagination {
+                page: 1,
+                limit,
+                total: 0,
+                total_pages: 0,
+                has_more: false,
+            },
+        });
+    }
+
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM blog_posts
          WHERE locale = $1 AND status = 'published'
            AND to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content,''))
-               @@ plainto_tsquery('simple', $2)"
+               @@ to_tsquery('simple', $2)"
     )
     .bind(&q.locale)
-    .bind(&q.q)
+    .bind(&prefix_query)
     .fetch_one(pool)
     .await?;
 
@@ -278,15 +305,15 @@ pub async fn search_posts(pool: &PgPool, q: &SearchQuery) -> Result<PaginatedPos
          FROM blog_posts
          WHERE locale = $1 AND status = 'published'
            AND to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content,''))
-               @@ plainto_tsquery('simple', $2)
+               @@ to_tsquery('simple', $2)
          ORDER BY ts_rank(
            to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content,'')),
-           plainto_tsquery('simple', $2)
+           to_tsquery('simple', $2)
          ) DESC
          LIMIT $3 OFFSET $4"
     )
     .bind(&q.locale)
-    .bind(&q.q)
+    .bind(&prefix_query)
     .bind(limit)
     .bind(offset)
     .fetch_all(pool)
@@ -308,6 +335,138 @@ pub async fn search_posts(pool: &PgPool, q: &SearchQuery) -> Result<PaginatedPos
             has_more: q.page.max(1) < total_pages,
         },
     })
+}
+
+// ── Learning path info ─────────────────────────────────────
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct LearningPathInfo {
+    pub id: Uuid,
+    pub slug: String,
+    pub title: String,
+    pub description: String,
+    pub disciple_level: String,
+}
+
+pub async fn get_learning_path_for_post(
+    pool: &PgPool,
+    post: &BlogPost,
+) -> Result<Option<LearningPathInfo>, AppError> {
+    let Some(path_id) = post.source_learning_path_id else {
+        return Ok(None);
+    };
+    let locale = &post.locale;
+    let info = sqlx::query_as::<_, LearningPathInfo>(
+        "SELECT lp.id, lp.slug,
+                COALESCE(lpt.title, lp.title) AS title,
+                COALESCE(lpt.description, lp.description) AS description,
+                lp.disciple_level
+         FROM learning_paths lp
+         LEFT JOIN learning_path_translations lpt
+               ON lpt.learning_path_id = lp.id AND lpt.lang_code = $2
+         WHERE lp.id = $1",
+    )
+    .bind(path_id)
+    .bind(locale)
+    .fetch_optional(pool)
+    .await?;
+    Ok(info)
+}
+
+// ── Learning paths list ───────────────────────────────────
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct LearningPathListItem {
+    pub slug: String,
+    pub title: String,
+    pub post_count: i64,
+}
+
+pub async fn list_learning_paths(
+    pool: &PgPool,
+    locale: &str,
+) -> Result<Vec<LearningPathListItem>, AppError> {
+    let paths = sqlx::query_as::<_, LearningPathListItem>(
+        "SELECT lp.slug,
+                COALESCE(lpt.title, lp.title) AS title,
+                COUNT(bp.id) AS post_count
+         FROM learning_paths lp
+         LEFT JOIN learning_path_translations lpt
+               ON lpt.learning_path_id = lp.id AND lpt.lang_code = $1
+         JOIN blog_posts bp
+               ON bp.source_learning_path_id = lp.id
+               AND bp.locale = $1 AND bp.status = 'published'
+         WHERE lp.is_active = true
+         GROUP BY lp.slug, lp.title, lpt.title, lp.display_order
+         HAVING COUNT(bp.id) > 0
+         ORDER BY lp.display_order",
+    )
+    .bind(locale)
+    .fetch_all(pool)
+    .await?;
+    Ok(paths)
+}
+
+// ── Adjacent posts (next/prev) ────────────────────────────
+
+#[derive(Debug, sqlx::FromRow, Serialize)]
+pub struct AdjacentPostMeta {
+    pub slug: String,
+    pub title: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdjacentPosts {
+    pub prev: Option<AdjacentPostMeta>,
+    pub next: Option<AdjacentPostMeta>,
+}
+
+pub async fn get_adjacent_posts(pool: &PgPool, slug: &str) -> Result<AdjacentPosts, AppError> {
+    // Get the current post's locale and published_at
+    let current = sqlx::query_as::<_, (String, Option<DateTime<Utc>>)>(
+        "SELECT locale, published_at FROM blog_posts WHERE slug = $1 AND status = 'published'",
+    )
+    .bind(slug)
+    .fetch_optional(pool)
+    .await?;
+
+    let Some((locale, published_at)) = current else {
+        return Ok(AdjacentPosts {
+            prev: None,
+            next: None,
+        });
+    };
+
+    let Some(pub_date) = published_at else {
+        return Ok(AdjacentPosts {
+            prev: None,
+            next: None,
+        });
+    };
+
+    // Previous post: published before this one (most recent older post)
+    let prev = sqlx::query_as::<_, AdjacentPostMeta>(
+        "SELECT slug, title FROM blog_posts
+         WHERE locale = $1 AND status = 'published' AND published_at < $2
+         ORDER BY published_at DESC LIMIT 1",
+    )
+    .bind(&locale)
+    .bind(pub_date)
+    .fetch_optional(pool)
+    .await?;
+
+    // Next post: published after this one (oldest newer post)
+    let next = sqlx::query_as::<_, AdjacentPostMeta>(
+        "SELECT slug, title FROM blog_posts
+         WHERE locale = $1 AND status = 'published' AND published_at > $2
+         ORDER BY published_at ASC LIMIT 1",
+    )
+    .bind(&locale)
+    .bind(pub_date)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(AdjacentPosts { prev, next })
 }
 
 fn validate_create_input(input: &CreatePostInput) -> Result<(), AppError> {
@@ -493,7 +652,7 @@ pub async fn find_next_ungenerated_topic(
     pool: &PgPool,
 ) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
     let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
-        "SELECT lpt.id, rt.title, rt.description, rt.input_type,
+        "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type,
                 COALESCE(lp.recommended_mode, 'standard') AS study_mode,
                 lp.id AS path_id, lp.title AS path_title, lp.description AS path_description,
                 lp.disciple_level, lp.category,
@@ -519,7 +678,7 @@ pub async fn find_next_ungenerated_topic(
          WHERE lp.is_active = true AND rt.is_active = true
            AND (
                SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
-               WHERE bp.source_topic_id = lpt.id
+               WHERE bp.source_topic_id IN (lpt.topic_id, lpt.id)
                AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])
            ) < 3
          ORDER BY lp.display_order, lpt.position
@@ -536,7 +695,7 @@ pub async fn find_next_partially_generated_topic(
     pool: &PgPool,
 ) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
     let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
-        "SELECT lpt.id, rt.title, rt.description, rt.input_type,
+        "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type,
                 COALESCE(lp.recommended_mode, 'standard') AS study_mode,
                 lp.id AS path_id, lp.title AS path_title, lp.description AS path_description,
                 lp.disciple_level, lp.category,
@@ -562,7 +721,7 @@ pub async fn find_next_partially_generated_topic(
          WHERE lp.is_active = true AND rt.is_active = true
            AND (
                SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
-               WHERE bp.source_topic_id = lpt.id
+               WHERE bp.source_topic_id IN (lpt.topic_id, lpt.id)
                AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])
            ) BETWEEN 1 AND 2
          ORDER BY lp.display_order, lpt.position
@@ -574,12 +733,18 @@ pub async fn find_next_partially_generated_topic(
 }
 
 /// Returns the list of locales that already have blog posts for the given topic.
-pub async fn get_generated_locales(pool: &PgPool, topic_id: Uuid) -> Result<Vec<String>, AppError> {
+/// Checks both lpt.id and lpt.topic_id to handle both old records (stored lpt.id)
+/// and new records (store recommended_topics.id via lpt.topic_id).
+pub async fn get_generated_locales(pool: &PgPool, lpt_id: Uuid) -> Result<Vec<String>, AppError> {
     let locales: Vec<String> = sqlx::query_scalar(
-        "SELECT DISTINCT locale FROM blog_posts
-         WHERE source_topic_id = $1 AND locale = ANY(ARRAY['en', 'hi', 'ml'])",
+        "SELECT DISTINCT bp.locale FROM blog_posts bp
+         WHERE bp.source_topic_id IN (
+             $1,
+             (SELECT topic_id FROM learning_path_topics WHERE id = $1)
+         )
+         AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])",
     )
-    .bind(topic_id)
+    .bind(lpt_id)
     .fetch_all(pool)
     .await?;
     Ok(locales)

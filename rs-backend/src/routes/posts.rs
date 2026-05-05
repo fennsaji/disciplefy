@@ -23,6 +23,7 @@ pub async fn get_post(
     Path(slug): Path<String>,
 ) -> Result<Json<Value>, AppError> {
     let p = post::get_post_by_slug(&state.pool, &slug).await?;
+    let learning_path = post::get_learning_path_for_post(&state.pool, &p).await?;
     let word_count = p.content.split_whitespace().count() as i32;
     let read_time = (word_count as f64 / 200.0).ceil() as i32;
 
@@ -41,6 +42,7 @@ pub async fn get_post(
             "status": p.status,
             "published_at": p.published_at,
             "read_time": read_time.max(1),
+            "learning_path": learning_path,
         }
     })))
 }
@@ -68,5 +70,28 @@ pub async fn search_posts(
         "success": true,
         "data": result.posts,
         "pagination": result.pagination,
+    })))
+}
+
+pub async fn get_adjacent_posts(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    let adjacent = post::get_adjacent_posts(&state.pool, &slug).await?;
+    Ok(Json(json!({
+        "success": true,
+        "data": adjacent,
+    })))
+}
+
+pub async fn list_learning_paths(
+    State(state): State<AppState>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<Value>, AppError> {
+    let locale = params.get("locale").map(|s| s.as_str()).unwrap_or("en");
+    let paths = post::list_learning_paths(&state.pool, locale).await?;
+    Ok(Json(json!({
+        "success": true,
+        "data": paths,
     })))
 }

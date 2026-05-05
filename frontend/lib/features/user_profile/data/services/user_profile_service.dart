@@ -157,13 +157,11 @@ class UserProfileService {
     return false;
   }
 
-  /// Get user profile as Map for AuthBloc compatibility
+  /// Get user profile as raw Map for AuthBloc compatibility.
+  /// Returns raw API JSON (preserves null values like language_preference: null
+  /// for new users who haven't completed language selection).
   Future<Map<String, dynamic>?> getUserProfileAsMap(String userId) async {
-    final result = await getUserProfileById(userId);
-    return result.fold(
-      (failure) => null,
-      (profile) => UserProfileModel.fromEntity(profile).toMap(),
-    );
+    return await _apiService.getUserProfileRawMap();
   }
 
   /// Get current user profile as Map for AuthBloc compatibility

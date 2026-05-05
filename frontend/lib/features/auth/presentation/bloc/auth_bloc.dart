@@ -231,13 +231,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         if (validationResult.isSuccess) {
           final user = validationResult.user!;
 
-          // Create or update user profile with retry
-          await _retryOperation(() => _userProfileService.upsertUserProfile(
-                userId: user.id,
-                languagePreference: 'en', // Default language
-              ));
-
           // Load user profile data with retry and caching
+          // Profile is auto-created by the backend GET endpoint if it doesn't exist.
+          // Language is NOT set here — the router guard will redirect new users
+          // to the language selection screen.
           final profile =
               await _retryOperation(() => _getProfileWithCache(user.id));
 
@@ -664,13 +661,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         if (validationResult.isSuccess) {
           final user = validationResult.user!;
 
-          // Create or update user profile with retry
-          await _retryOperation(() => _userProfileService.upsertUserProfile(
-                userId: user.id,
-                languagePreference: 'en', // Default language
-              ));
-
           // Load user profile data with retry and caching
+          // Profile is auto-created by the backend GET endpoint if it doesn't exist.
+          // Language is NOT set here — the router guard will redirect new users
+          // to the language selection screen.
           final profile =
               await _retryOperation(() => _getProfileWithCache(user.id));
 

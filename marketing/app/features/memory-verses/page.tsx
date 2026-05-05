@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/memory-verses"),
   openGraph: {
     images: [{
-      url: `/og?title=Memory+Verses&subtitle=Spaced+Repetition+for+God%27s+Word`,
+      url: `https://www.disciplefy.in/og?title=Memory+Verses&subtitle=Spaced+Repetition+for+God%27s+Word`,
       width: 1200,
       height: 630,
       alt: "Bible Memory Verse App — Disciplefy",

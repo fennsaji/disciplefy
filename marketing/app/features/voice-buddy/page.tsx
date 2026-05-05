@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: getAlternates("/features/voice-buddy"),
   openGraph: {
     images: [{
-      url: `/og?title=Voice+Buddy&subtitle=Talk+to+Your+AI+Bible+Companion`,
+      url: `https://www.disciplefy.in/og?title=Voice+Buddy&subtitle=Talk+to+Your+AI+Bible+Companion`,
       width: 1200,
       height: 630,
       alt: "AI Voice Bible Study App — Disciplefy",

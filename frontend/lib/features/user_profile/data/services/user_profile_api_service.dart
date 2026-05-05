@@ -76,6 +76,27 @@ class UserProfileApiService {
     }
   }
 
+  /// Get current user's profile as raw JSON map (no type coercion).
+  /// Returns null values as-is from the API (e.g., language_preference: null for new users).
+  Future<Map<String, dynamic>?> getUserProfileRawMap() async {
+    try {
+      final headers = await _httpService.createHeaders();
+      const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
+
+      final response = await _httpService.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final profileData = data['data'] ?? data;
+        if (profileData['id'] == null) return null;
+        return profileData as Map<String, dynamic>;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Update user profile language preference
   Future<Either<Failure, UserProfileEntity>> updateLanguagePreference(
       String languageCode) async {

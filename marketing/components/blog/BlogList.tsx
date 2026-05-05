@@ -60,6 +60,8 @@ export function BlogList({
   query,
   tags,
   locale,
+  learningPaths,
+  activeLearningPath,
 }: {
   posts: PostMeta[];
   pagination: Pagination;
@@ -68,6 +70,8 @@ export function BlogList({
   query?: string;
   tags: string[];
   locale: string;
+  learningPaths?: { slug: string; title: string; post_count: number }[];
+  activeLearningPath?: string;
 }) {
   const hero = BLOG_HERO[locale] ?? BLOG_HERO.en;
   return (
@@ -97,7 +101,7 @@ export function BlogList({
 
         {/* Posts grid */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <BlogFilters tags={tags} activeTag={tag} query={query} locale={locale} />
+          <BlogFilters tags={tags} activeTag={tag} query={query} locale={locale} learningPaths={learningPaths} activeLearningPath={activeLearningPath} />
 
           {posts.length === 0 ? (
             <div className="text-center py-20">
@@ -114,11 +118,23 @@ export function BlogList({
               </div>
 
               {pagination.total_pages > 1 && (
-                <div className="flex justify-center gap-2 mt-12">
+                <div className="flex justify-center items-center gap-2 mt-12">
+                  {/* First page */}
+                  {pagination.page > 2 && (
+                    <Link
+                      href={`${basePath}?page=1${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`}
+                      className="px-3 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-primary/30 transition-colors"
+                      title="First page"
+                    >
+                      <span aria-hidden="true">&laquo;</span>
+                    </Link>
+                  )}
+
+                  {/* Page numbers */}
                   {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map((p) => (
                     <Link
                       key={p}
-                      href={`${basePath}?page=${p}${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
+                      href={`${basePath}?page=${p}${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         p === pagination.page
                           ? "bg-primary text-white"
@@ -128,6 +144,17 @@ export function BlogList({
                       {p}
                     </Link>
                   ))}
+
+                  {/* Last page */}
+                  {pagination.page < pagination.total_pages - 1 && (
+                    <Link
+                      href={`${basePath}?page=${pagination.total_pages}${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`}
+                      className="px-3 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-primary/30 transition-colors"
+                      title="Last page"
+                    >
+                      <span aria-hidden="true">&raquo;</span>
+                    </Link>
+                  )}
                 </div>
               )}
             </>

@@ -177,28 +177,12 @@ export async function GET(req: NextRequest) {
             padding: "40px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              background: "rgba(165,180,252,0.06)",
-              border: "1px solid rgba(165,180,252,0.15)",
-              borderRadius: "28px",
-              overflow: "hidden",
-              width: "260px",
-              height: "260px",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`${origin}/splash-og.png`}
-              width={260}
-              height={260}
-              style={{ objectFit: "cover", objectPosition: "center top" }}
-              alt=""
-            />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${origin}/logo-dark.png`}
+            width={240}
+            alt=""
+          />
         </div>
       </div>
     ),
