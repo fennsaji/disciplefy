@@ -7,7 +7,7 @@ import { BlogPostCTA } from "@/components/blog/BlogPostCTA";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { formatDate } from "@/lib/format";
 import { getBlogPostingJsonLd, getBreadcrumbJsonLd } from "@/lib/seo";
-import type { Post } from "@/lib/blog";
+import type { Post, AdjacentPosts } from "@/lib/blog";
 import { Link } from "@/lib/navigation";
 
 // Minimal server-side UI strings — avoids async getTranslations in a server component
@@ -41,9 +41,11 @@ function getGradient(tags: string[]) {
 export function BlogPostContent({
   post,
   locale = "en",
+  adjacent,
 }: {
   post: Post;
   locale?: string;
+  adjacent?: AdjacentPosts;
 }) {
   const gradient = getGradient(post.tags);
   const ui = UI_STRINGS[(locale as UILocale) in UI_STRINGS ? (locale as UILocale) : "en"];
@@ -94,6 +96,23 @@ export function BlogPostContent({
             </div>
           )}
 
+          {/* Learning Path badge */}
+          {post.learning_path && (
+            <Link
+              href={`/blog?learning_path=${post.learning_path.slug}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-5 rounded-lg
+                         bg-gradient-to-r from-indigo-500/10 to-violet-500/10
+                         border border-indigo-500/20 dark:border-indigo-400/20
+                         text-sm font-medium text-indigo-700 dark:text-indigo-300
+                         hover:border-indigo-500/40 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+              </svg>
+              {post.learning_path.title}
+            </Link>
+          )}
+
           {/* Title */}
           <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl leading-tight text-gray-900 dark:text-white mb-6">
             {post.title}
@@ -126,6 +145,34 @@ export function BlogPostContent({
 
         {/* ── App CTA ──────────────────────────────────── */}
         <BlogPostCTA gradient={gradient} />
+
+        {/* ── Next / Previous navigation ─────────────── */}
+        {adjacent && (adjacent.prev || adjacent.next) && (
+          <nav className="mt-12 pt-8 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-2 gap-4" aria-label="Post navigation">
+            {adjacent.prev ? (
+              <Link
+                href={`/blog/${adjacent.prev.slug}`}
+                className="group flex flex-col gap-1 p-4 rounded-xl border border-[var(--border)] hover:border-primary/40 transition-colors"
+              >
+                <span className="text-xs font-medium text-[var(--muted)] group-hover:text-primary transition-colors">&larr; Previous</span>
+                <span className="text-sm font-semibold text-[var(--text)] line-clamp-2">{adjacent.prev.title}</span>
+              </Link>
+            ) : (
+              <div />
+            )}
+            {adjacent.next ? (
+              <Link
+                href={`/blog/${adjacent.next.slug}`}
+                className="group flex flex-col gap-1 p-4 rounded-xl border border-[var(--border)] hover:border-primary/40 transition-colors text-right"
+              >
+                <span className="text-xs font-medium text-[var(--muted)] group-hover:text-primary transition-colors">Next &rarr;</span>
+                <span className="text-sm font-semibold text-[var(--text)] line-clamp-2">{adjacent.next.title}</span>
+              </Link>
+            ) : (
+              <div />
+            )}
+          </nav>
+        )}
       </main>
 
       <Footer />

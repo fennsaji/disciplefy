@@ -13,6 +13,11 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/posts/tags", get(posts::get_tags))
         .route("/api/v1/posts/search", get(posts::search_posts))
         .route("/api/v1/posts/:slug", get(posts::get_post))
+        .route(
+            "/api/v1/posts/:slug/adjacent",
+            get(posts::get_adjacent_posts),
+        )
+        .route("/api/v1/learning-paths", get(posts::list_learning_paths))
         .route("/api/v1/admin/posts", post(admin::create_post))
         .route(
             "/api/v1/admin/posts/:id",

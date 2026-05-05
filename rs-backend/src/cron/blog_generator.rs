@@ -12,6 +12,8 @@ const LOCALES: &[&str] = &["en", "hi", "ml"];
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct LearningPathTopic {
     pub id: Uuid,
+    /// The recommended_topics.id — used as source_topic_id in blog_posts
+    pub topic_id: Uuid,
     pub title: String,
     pub description: Option<String>,
     pub input_type: String,
@@ -115,7 +117,7 @@ async fn generate_for_locale(
         status: "published".to_string(),
         slug: Some(slug),
         source_type: Some("learning_path_topic".to_string()),
-        source_topic_id: Some(topic.id),
+        source_topic_id: Some(topic.topic_id),
         source_learning_path_id: Some(topic.path_id),
         source_guide_id: None,
     };

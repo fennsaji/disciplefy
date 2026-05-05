@@ -16,11 +16,15 @@ export function BlogFilters({
   activeTag,
   query,
   locale,
+  learningPaths,
+  activeLearningPath,
 }: {
   tags: string[]
   activeTag?: string
   query?: string
   locale: string
+  learningPaths?: { slug: string; title: string; post_count: number }[]
+  activeLearningPath?: string
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -71,6 +75,35 @@ export function BlogFilters({
         ))}
       </div>
 
+      {/* Learning path filter */}
+      {learningPaths && learningPaths.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => pushParams({ learning_path: undefined, tag: undefined })}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              !activeLearningPath
+                ? 'bg-indigo-600 text-white'
+                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-indigo-500/40 hover:text-[var(--text)]'
+            }`}
+          >
+            All Paths
+          </button>
+          {learningPaths.map((lp) => (
+            <button
+              key={lp.slug}
+              onClick={() => pushParams({ learning_path: activeLearningPath === lp.slug ? undefined : lp.slug, tag: undefined })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeLearningPath === lp.slug
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-indigo-500/40 hover:text-[var(--text)]'
+              }`}
+            >
+              {lp.title} ({lp.post_count})
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         {/* Search input */}
         <div className="relative flex-1 max-w-sm">
@@ -106,7 +139,7 @@ export function BlogFilters({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => pushParams({ tag: undefined, q: query })}
+              onClick={() => pushParams({ tag: undefined, q: query, learning_path: activeLearningPath })}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                 !activeTag
                   ? 'bg-primary text-white'
@@ -118,7 +151,7 @@ export function BlogFilters({
             {tags.map((t) => (
               <button
                 key={t}
-                onClick={() => pushParams({ tag: activeTag === t ? undefined : t, q: query })}
+                onClick={() => pushParams({ tag: activeTag === t ? undefined : t, learning_path: undefined })}
                 className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                   activeTag === t
                     ? 'bg-primary text-white'
