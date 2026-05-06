@@ -678,7 +678,10 @@ pub async fn find_next_ungenerated_topic(
          WHERE lp.is_active = true AND rt.is_active = true
            AND (
                SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
-               WHERE bp.source_topic_id IN (lpt.topic_id, lpt.id)
+               WHERE (
+                   bp.source_topic_id = lpt.topic_id
+                   OR bp.source_topic_id IN (SELECT x.id FROM learning_path_topics x WHERE x.topic_id = lpt.topic_id)
+               )
                AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])
            ) < 3
          ORDER BY lp.display_order, lpt.position
@@ -721,7 +724,10 @@ pub async fn find_next_partially_generated_topic(
          WHERE lp.is_active = true AND rt.is_active = true
            AND (
                SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
-               WHERE bp.source_topic_id IN (lpt.topic_id, lpt.id)
+               WHERE (
+                   bp.source_topic_id = lpt.topic_id
+                   OR bp.source_topic_id IN (SELECT x.id FROM learning_path_topics x WHERE x.topic_id = lpt.topic_id)
+               )
                AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])
            ) BETWEEN 1 AND 2
          ORDER BY lp.display_order, lpt.position
@@ -733,14 +739,17 @@ pub async fn find_next_partially_generated_topic(
 }
 
 /// Returns the list of locales that already have blog posts for the given topic.
-/// Checks both lpt.id and lpt.topic_id to handle both old records (stored lpt.id)
-/// and new records (store recommended_topics.id via lpt.topic_id).
+/// Checks the recommended_topics.id (topic_id) AND all lpt.id values for that topic
+/// to handle old records (stored any lpt.id) and new records (store topic_id).
 pub async fn get_generated_locales(pool: &PgPool, lpt_id: Uuid) -> Result<Vec<String>, AppError> {
     let locales: Vec<String> = sqlx::query_scalar(
         "SELECT DISTINCT bp.locale FROM blog_posts bp
-         WHERE bp.source_topic_id IN (
-             $1,
-             (SELECT topic_id FROM learning_path_topics WHERE id = $1)
+         WHERE (
+             bp.source_topic_id = (SELECT topic_id FROM learning_path_topics WHERE id = $1)
+             OR bp.source_topic_id IN (
+                 SELECT x.id FROM learning_path_topics x
+                 WHERE x.topic_id = (SELECT topic_id FROM learning_path_topics WHERE id = $1)
+             )
          )
          AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])",
     )
