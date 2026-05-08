@@ -11,6 +11,9 @@ const LOCALE_LABELS: Record<string, string> = {
   ml: 'മലയാളം',
 }
 
+const selectClass =
+  'appearance-none bg-[var(--surface)] border border-[var(--border)] text-sm rounded-xl px-3 py-2 pr-8 text-[var(--text)] focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors cursor-pointer'
+
 export function BlogFilters({
   tags,
   activeTag,
@@ -57,110 +60,91 @@ export function BlogFilters({
   )
 
   return (
-    <div className="flex flex-col gap-4 mb-8">
-      {/* Language switcher */}
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(LOCALE_LABELS).map(([loc, label]) => (
-          <button
-            key={loc}
-            onClick={() => switchLocale(loc)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-              locale === loc
-                ? 'bg-primary text-white'
-                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-primary/40 hover:text-[var(--text)]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+    <div className="flex flex-col sm:flex-row gap-3 mb-8 items-start sm:items-center">
+      {/* Search input */}
+      <div className="relative flex-1 w-full sm:max-w-sm">
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)] pointer-events-none"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round"
+            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input
+          type="search"
+          defaultValue={query}
+          placeholder="Search articles…"
+          className="w-full pl-9 pr-4 py-2 rounded-xl text-sm
+                     bg-[var(--surface)] border border-[var(--border)]
+                     text-[var(--text)] placeholder:text-[var(--muted)]
+                     focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30
+                     transition-colors"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              pushParams({ q: (e.target as HTMLInputElement).value.trim() || undefined, tag: undefined })
+            }
+          }}
+          onChange={(e) => {
+            const val = e.target.value.trim()
+            if (val === '') pushParams({ q: undefined })
+          }}
+        />
       </div>
 
-      {/* Learning path filter */}
-      {learningPaths && learningPaths.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => pushParams({ learning_path: undefined, tag: undefined })}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              !activeLearningPath
-                ? 'bg-indigo-600 text-white'
-                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-indigo-500/40 hover:text-[var(--text)]'
-            }`}
+      <div className="flex gap-2 flex-wrap">
+        {/* Language dropdown */}
+        <div className="relative">
+          <select
+            value={locale}
+            onChange={(e) => switchLocale(e.target.value)}
+            className={selectClass}
           >
-            All Paths
-          </button>
-          {learningPaths.map((lp) => (
-            <button
-              key={lp.slug}
-              onClick={() => pushParams({ learning_path: activeLearningPath === lp.slug ? undefined : lp.slug, tag: undefined })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                activeLearningPath === lp.slug
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-indigo-500/40 hover:text-[var(--text)]'
-              }`}
-            >
-              {lp.title} ({lp.post_count})
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        {/* Search input */}
-        <div className="relative flex-1 max-w-sm">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)] pointer-events-none"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round"
-              d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-          </svg>
-          <input
-            type="search"
-            defaultValue={query}
-            placeholder="Search articles…"
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm
-                       bg-[var(--surface)] border border-[var(--border)]
-                       text-[var(--text)] placeholder:text-[var(--muted)]
-                       focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30
-                       transition-colors"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                pushParams({ q: (e.target as HTMLInputElement).value.trim() || undefined, tag: undefined })
-              }
-            }}
-            onChange={(e) => {
-              const val = e.target.value.trim()
-              if (val === '') pushParams({ q: undefined })
-            }}
-          />
-        </div>
-
-        {/* Tag pills */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => pushParams({ tag: undefined, q: query, learning_path: activeLearningPath })}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                !activeTag
-                  ? 'bg-primary text-white'
-                  : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-primary/40 hover:text-[var(--text)]'
-              }`}
-            >
-              All
-            </button>
-            {tags.map((t) => (
-              <button
-                key={t}
-                onClick={() => pushParams({ tag: activeTag === t ? undefined : t, learning_path: undefined })}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                  activeTag === t
-                    ? 'bg-primary text-white'
-                    : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:border-primary/40 hover:text-[var(--text)]'
-                }`}
-              >
-                {t}
-              </button>
+            {Object.entries(LOCALE_LABELS).map(([loc, label]) => (
+              <option key={loc} value={loc}>{label}</option>
             ))}
+          </select>
+          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+
+        {/* Learning path dropdown */}
+        {learningPaths && learningPaths.length > 0 && (
+          <div className="relative">
+            <select
+              value={activeLearningPath ?? ''}
+              onChange={(e) => pushParams({ learning_path: e.target.value || undefined, tag: undefined })}
+              className={selectClass}
+            >
+              <option value="">All Paths</option>
+              {learningPaths.map((lp) => (
+                <option key={lp.slug} value={lp.slug}>
+                  {lp.title} ({lp.post_count})
+                </option>
+              ))}
+            </select>
+            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        )}
+
+        {/* Tag dropdown */}
+        {tags.length > 0 && (
+          <div className="relative">
+            <select
+              value={activeTag ?? ''}
+              onChange={(e) => pushParams({ tag: e.target.value || undefined, learning_path: undefined })}
+              className={selectClass}
+            >
+              <option value="">All Topics</option>
+              {tags.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
         )}
       </div>
