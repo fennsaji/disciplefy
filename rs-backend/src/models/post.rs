@@ -684,6 +684,7 @@ pub async fn unpublish_post(pool: &PgPool, id: Uuid) -> Result<BlogPost, AppErro
 
 pub async fn find_next_ungenerated_topic(
     pool: &PgPool,
+    exclude_ids: &[Uuid],
 ) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
     let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
         "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type,
@@ -710,6 +711,7 @@ pub async fn find_next_ungenerated_topic(
          LEFT JOIN learning_path_translations ml_lp
                ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
          WHERE lp.is_active = true AND rt.is_active = true
+           AND lpt.id != ALL($1)
            AND (
                SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
                WHERE (
@@ -721,6 +723,7 @@ pub async fn find_next_ungenerated_topic(
          ORDER BY lp.display_order, lpt.position
          LIMIT 1",
     )
+    .bind(exclude_ids)
     .fetch_optional(pool)
     .await?;
     Ok(topic)
@@ -730,6 +733,7 @@ pub async fn find_next_ungenerated_topic(
 /// three). Used by the retry cron to avoid generating brand-new topics.
 pub async fn find_next_partially_generated_topic(
     pool: &PgPool,
+    exclude_ids: &[Uuid],
 ) -> Result<Option<crate::cron::blog_generator::LearningPathTopic>, AppError> {
     let topic = sqlx::query_as::<_, crate::cron::blog_generator::LearningPathTopic>(
         "SELECT lpt.id, lpt.topic_id, rt.title, rt.description, rt.input_type,
@@ -756,6 +760,7 @@ pub async fn find_next_partially_generated_topic(
          LEFT JOIN learning_path_translations ml_lp
                ON ml_lp.learning_path_id = lp.id AND ml_lp.lang_code = 'ml'
          WHERE lp.is_active = true AND rt.is_active = true
+           AND lpt.id != ALL($1)
            AND (
                SELECT COUNT(DISTINCT bp.locale) FROM blog_posts bp
                WHERE (
@@ -767,6 +772,7 @@ pub async fn find_next_partially_generated_topic(
          ORDER BY lp.display_order, lpt.position
          LIMIT 1",
     )
+    .bind(exclude_ids)
     .fetch_optional(pool)
     .await?;
     Ok(topic)
