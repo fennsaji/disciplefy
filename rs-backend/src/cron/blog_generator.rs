@@ -139,9 +139,10 @@ pub async fn run_blog_retry(pool: &PgPool, config: &Config, http: &Client) -> Re
     tracing::info!("Starting blog retry CRON job");
 
     const MAX_SKIP_ATTEMPTS: usize = 10;
+    let mut excluded_ids: Vec<Uuid> = Vec::new();
 
     for attempt in 0..MAX_SKIP_ATTEMPTS {
-        let topic = match post::find_next_partially_generated_topic(pool).await? {
+        let topic = match post::find_next_partially_generated_topic(pool, &excluded_ids).await? {
             Some(t) => t,
             None => {
                 tracing::info!("No partially-generated topics found — nothing to retry");
@@ -166,6 +167,7 @@ pub async fn run_blog_retry(pool: &PgPool, config: &Config, http: &Client) -> Re
                 attempt,
                 "All locale slugs exist (retry), tagged and skipping"
             );
+            excluded_ids.push(topic.id);
             continue;
         }
 
@@ -240,10 +242,11 @@ pub async fn run_blog_generation(
     tracing::info!("Starting blog generation CRON job");
 
     const MAX_SKIP_ATTEMPTS: usize = 20;
+    let mut excluded_ids: Vec<Uuid> = Vec::new();
 
     for attempt in 0..MAX_SKIP_ATTEMPTS {
-        // 1. Find the next topic that the SQL query thinks is missing locales
-        let topic = match post::find_next_ungenerated_topic(pool).await? {
+        // 1. Find the next topic, excluding already-tried IDs from this run
+        let topic = match post::find_next_ungenerated_topic(pool, &excluded_ids).await? {
             Some(t) => t,
             None => {
                 tracing::info!(
@@ -271,6 +274,7 @@ pub async fn run_blog_generation(
                 attempt,
                 "All locale slugs exist, tagged and skipping to next topic"
             );
+            excluded_ids.push(topic.id);
             continue;
         }
 
