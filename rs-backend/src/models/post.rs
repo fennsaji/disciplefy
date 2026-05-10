@@ -585,6 +585,40 @@ pub async fn create_post_if_not_exists(
     Ok(post)
 }
 
+/// Returns true if a blog post with the given slug already exists.
+pub async fn slug_exists(pool: &PgPool, slug: &str) -> Result<bool, AppError> {
+    let exists: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM blog_posts WHERE slug = $1)")
+            .bind(slug)
+            .fetch_one(pool)
+            .await?;
+    Ok(exists)
+}
+
+/// Tags an existing blog post (found by slug) with source tracking fields.
+/// Used when the CRON hits a slug conflict — ensures the topic is marked as "done"
+/// so the next CRON run doesn't re-pick it.
+pub async fn tag_existing_post_source(
+    pool: &PgPool,
+    slug: &str,
+    source_topic_id: Uuid,
+    source_learning_path_id: Uuid,
+) -> Result<(), AppError> {
+    sqlx::query(
+        "UPDATE blog_posts
+         SET source_topic_id = $2,
+             source_learning_path_id = $3,
+             source_type = 'learning_path_topic'
+         WHERE slug = $1",
+    )
+    .bind(slug)
+    .bind(source_topic_id)
+    .bind(source_learning_path_id)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 pub async fn update_post(
     pool: &PgPool,
     id: Uuid,
@@ -736,27 +770,6 @@ pub async fn find_next_partially_generated_topic(
     .fetch_optional(pool)
     .await?;
     Ok(topic)
-}
-
-/// Returns the list of locales that already have blog posts for the given topic.
-/// Checks the recommended_topics.id (topic_id) AND all lpt.id values for that topic
-/// to handle old records (stored any lpt.id) and new records (store topic_id).
-pub async fn get_generated_locales(pool: &PgPool, lpt_id: Uuid) -> Result<Vec<String>, AppError> {
-    let locales: Vec<String> = sqlx::query_scalar(
-        "SELECT DISTINCT bp.locale FROM blog_posts bp
-         WHERE (
-             bp.source_topic_id = (SELECT topic_id FROM learning_path_topics WHERE id = $1)
-             OR bp.source_topic_id IN (
-                 SELECT x.id FROM learning_path_topics x
-                 WHERE x.topic_id = (SELECT topic_id FROM learning_path_topics WHERE id = $1)
-             )
-         )
-         AND bp.locale = ANY(ARRAY['en', 'hi', 'ml'])",
-    )
-    .bind(lpt_id)
-    .fetch_all(pool)
-    .await?;
-    Ok(locales)
 }
 
 /// Fetch a study guide by ID with all columns needed for blog generation.

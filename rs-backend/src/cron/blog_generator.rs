@@ -10,6 +10,7 @@ use crate::services::{content_formatter, study_api};
 const LOCALES: &[&str] = &["en", "hi", "ml"];
 
 #[derive(Debug, Clone, sqlx::FromRow)]
+#[allow(dead_code)]
 pub struct LearningPathTopic {
     pub id: Uuid,
     /// The recommended_topics.id — used as source_topic_id in blog_posts
@@ -104,7 +105,6 @@ async fn generate_for_locale(
         locale,
     );
 
-    // Always derive the slug from the English title so it stays URL-friendly
     let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
 
     let input = post::CreatePostInput {
@@ -115,7 +115,7 @@ async fn generate_for_locale(
         tags: blog.tags,
         featured: false,
         status: "published".to_string(),
-        slug: Some(slug),
+        slug: Some(slug.clone()),
         source_type: Some("learning_path_topic".to_string()),
         source_topic_id: Some(topic.topic_id),
         source_learning_path_id: Some(topic.path_id),
@@ -125,7 +125,9 @@ async fn generate_for_locale(
     match post::create_post_if_not_exists(pool, input).await? {
         Some(p) => tracing::info!(slug = %p.slug, locale, "Blog post created"),
         None => {
-            tracing::warn!(locale, title = %display_title, "Blog post already exists for this slug, skipping")
+            // Slug conflict — tag existing post so topic is marked done
+            post::tag_existing_post_source(pool, &slug, topic.topic_id, topic.path_id).await?;
+            tracing::info!(locale, slug = %slug, "Slug existed, tagged with source");
         }
     }
     Ok(())
@@ -136,84 +138,100 @@ async fn generate_for_locale(
 pub async fn run_blog_retry(pool: &PgPool, config: &Config, http: &Client) -> Result<(), AppError> {
     tracing::info!("Starting blog retry CRON job");
 
-    let topic = match post::find_next_partially_generated_topic(pool).await? {
-        Some(t) => t,
-        None => {
-            tracing::info!("No partially-generated topics found — nothing to retry");
-            return Ok(());
+    const MAX_SKIP_ATTEMPTS: usize = 10;
+
+    for attempt in 0..MAX_SKIP_ATTEMPTS {
+        let topic = match post::find_next_partially_generated_topic(pool).await? {
+            Some(t) => t,
+            None => {
+                tracing::info!("No partially-generated topics found — nothing to retry");
+                return Ok(());
+            }
+        };
+
+        // Check which locales actually need generation (by slug existence)
+        let mut missing_locales: Vec<&str> = Vec::new();
+        for locale in LOCALES {
+            let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+            if !post::slug_exists(pool, &slug).await? {
+                missing_locales.push(locale);
+            } else {
+                post::tag_existing_post_source(pool, &slug, topic.topic_id, topic.path_id).await?;
+            }
         }
-    };
 
-    tracing::info!(topic = %topic.title, "Found partially-generated topic, retrying missing locales");
+        if missing_locales.is_empty() {
+            tracing::info!(
+                topic = %topic.title,
+                attempt,
+                "All locale slugs exist (retry), tagged and skipping"
+            );
+            continue;
+        }
 
-    let already_generated = post::get_generated_locales(pool, topic.id).await?;
-    let missing_locales: Vec<&str> = LOCALES
-        .iter()
-        .copied()
-        .filter(|l| !already_generated.contains(&l.to_string()))
-        .collect();
+        tracing::info!(
+            topic = %topic.title,
+            missing = ?missing_locales,
+            "Retrying missing locales in parallel"
+        );
 
-    if missing_locales.is_empty() {
-        tracing::info!(topic = %topic.title, "All locales already generated, skipping");
+        let mut handles = Vec::with_capacity(missing_locales.len());
+
+        for locale in missing_locales {
+            let locale = locale.to_string();
+            let http = http.clone();
+            let config = config.clone();
+            let pool = pool.clone();
+            let topic = topic.clone();
+
+            let handle = tokio::spawn(async move {
+                let result = generate_for_locale(&http, &config, &pool, &topic, &locale).await;
+                (locale, result)
+            });
+            handles.push(handle);
+        }
+
+        let mut generated = 0usize;
+        let mut failed = 0usize;
+
+        for handle in handles {
+            match handle.await {
+                Ok((locale, Ok(()))) => {
+                    tracing::info!(locale, "Locale retried successfully");
+                    generated += 1;
+                }
+                Ok((locale, Err(e))) => {
+                    tracing::error!(locale, "Retry failed: {}", e);
+                    failed += 1;
+                }
+                Err(e) => {
+                    tracing::error!("Retry task panicked: {}", e);
+                    failed += 1;
+                }
+            }
+        }
+
+        tracing::info!(
+            generated,
+            failed,
+            topic = %topic.title,
+            "Blog retry complete"
+        );
+
         return Ok(());
     }
 
-    tracing::info!(
-        topic = %topic.title,
-        missing = ?missing_locales,
-        already_done = ?already_generated,
-        "Retrying missing locales in parallel"
-    );
-
-    let mut handles = Vec::with_capacity(missing_locales.len());
-
-    for locale in missing_locales {
-        let locale = locale.to_string();
-        let http = http.clone();
-        let config = config.clone();
-        let pool = pool.clone();
-        let topic = topic.clone();
-
-        let handle = tokio::spawn(async move {
-            let result = generate_for_locale(&http, &config, &pool, &topic, &locale).await;
-            (locale, result)
-        });
-        handles.push(handle);
-    }
-
-    let mut generated = 0usize;
-    let mut failed = 0usize;
-
-    for handle in handles {
-        match handle.await {
-            Ok((locale, Ok(()))) => {
-                tracing::info!(locale, "Locale retried successfully");
-                generated += 1;
-            }
-            Ok((locale, Err(e))) => {
-                tracing::error!(locale, "Retry failed: {}", e);
-                failed += 1;
-            }
-            Err(e) => {
-                tracing::error!("Retry task panicked: {}", e);
-                failed += 1;
-            }
-        }
-    }
-
-    tracing::info!(
-        generated,
-        failed,
-        topic = %topic.title,
-        "Blog retry complete"
-    );
-
+    tracing::warn!("Blog retry: exhausted skip attempts without finding a topic to retry");
     Ok(())
 }
 
 /// Main blog generation function -- called by CRON scheduler or manual trigger.
 /// Generates posts for ONE topic per run (all missing locales in parallel),
 /// picking the next topic that is missing at least one locale.
+///
+/// Uses a loop to skip topics whose slugs already exist in the DB (even if
+/// `source_topic_id` tracking is stale). Tags skipped topics so future runs
+/// skip them via the SQL query directly.
 pub async fn run_blog_generation(
     pool: &PgPool,
     config: &Config,
@@ -221,82 +239,97 @@ pub async fn run_blog_generation(
 ) -> Result<(), AppError> {
     tracing::info!("Starting blog generation CRON job");
 
-    // 1. Find the next topic that is missing at least one locale
-    let topic = match post::find_next_ungenerated_topic(pool).await? {
-        Some(t) => t,
-        None => {
-            tracing::info!(
-                "All topics already have blog posts for all locales — nothing to generate"
-            );
-            return Ok(());
+    const MAX_SKIP_ATTEMPTS: usize = 20;
+
+    for attempt in 0..MAX_SKIP_ATTEMPTS {
+        // 1. Find the next topic that the SQL query thinks is missing locales
+        let topic = match post::find_next_ungenerated_topic(pool).await? {
+            Some(t) => t,
+            None => {
+                tracing::info!(
+                    "All topics already have blog posts for all locales — nothing to generate"
+                );
+                return Ok(());
+            }
+        };
+
+        // 2. Check which locales actually need generation (by slug existence)
+        let mut missing_locales: Vec<&str> = Vec::new();
+        for locale in LOCALES {
+            let slug = format!("{}-{}", slug::slugify(&topic.title), locale);
+            if !post::slug_exists(pool, &slug).await? {
+                missing_locales.push(locale);
+            } else {
+                // Tag existing post so SQL query skips this topic next time
+                post::tag_existing_post_source(pool, &slug, topic.topic_id, topic.path_id).await?;
+            }
         }
-    };
 
-    tracing::info!(topic = %topic.title, "Found topic with missing locales");
+        if missing_locales.is_empty() {
+            tracing::info!(
+                topic = %topic.title,
+                attempt,
+                "All locale slugs exist, tagged and skipping to next topic"
+            );
+            continue;
+        }
 
-    // 2. Determine which locales are still missing
-    let already_generated = post::get_generated_locales(pool, topic.id).await?;
-    let missing_locales: Vec<&str> = LOCALES
-        .iter()
-        .copied()
-        .filter(|l| !already_generated.contains(&l.to_string()))
-        .collect();
+        // 3. Generate missing locales
+        tracing::info!(
+            topic = %topic.title,
+            missing = ?missing_locales,
+            "Generating missing locales in parallel"
+        );
 
-    if missing_locales.is_empty() {
-        tracing::info!(topic = %topic.title, "All locales already generated, skipping");
+        let mut handles = Vec::with_capacity(missing_locales.len());
+
+        for locale in missing_locales {
+            let locale = locale.to_string();
+            let http = http.clone();
+            let config = config.clone();
+            let pool = pool.clone();
+            let topic = topic.clone();
+
+            let handle = tokio::spawn(async move {
+                let result = generate_for_locale(&http, &config, &pool, &topic, &locale).await;
+                (locale, result)
+            });
+            handles.push(handle);
+        }
+
+        let mut generated = 0usize;
+        let mut failed = 0usize;
+
+        for handle in handles {
+            match handle.await {
+                Ok((locale, Ok(()))) => {
+                    tracing::info!(locale, "Locale generated successfully");
+                    generated += 1;
+                }
+                Ok((locale, Err(e))) => {
+                    tracing::error!(locale, "Study API failed: {}", e);
+                    failed += 1;
+                }
+                Err(e) => {
+                    tracing::error!("Generation task panicked: {}", e);
+                    failed += 1;
+                }
+            }
+        }
+
+        tracing::info!(
+            generated,
+            failed,
+            topic = %topic.title,
+            "Blog generation complete"
+        );
+
         return Ok(());
     }
 
-    tracing::info!(
-        topic = %topic.title,
-        missing = ?missing_locales,
-        already_done = ?already_generated,
-        "Generating missing locales in parallel"
+    tracing::warn!(
+        "Exhausted {} skip attempts without finding a topic to generate",
+        MAX_SKIP_ATTEMPTS
     );
-
-    // 3. Spawn one task per missing locale and run them in parallel
-    let mut handles = Vec::with_capacity(missing_locales.len());
-
-    for locale in missing_locales {
-        let locale = locale.to_string();
-        let http = http.clone();
-        let config = config.clone();
-        let pool = pool.clone();
-        let topic = topic.clone();
-
-        let handle = tokio::spawn(async move {
-            let result = generate_for_locale(&http, &config, &pool, &topic, &locale).await;
-            (locale, result)
-        });
-        handles.push(handle);
-    }
-
-    let mut generated = 0usize;
-    let mut failed = 0usize;
-
-    for handle in handles {
-        match handle.await {
-            Ok((locale, Ok(()))) => {
-                tracing::info!(locale, "Locale generated successfully");
-                generated += 1;
-            }
-            Ok((locale, Err(e))) => {
-                tracing::error!(locale, "Study API failed: {}", e);
-                failed += 1;
-            }
-            Err(e) => {
-                tracing::error!("Generation task panicked: {}", e);
-                failed += 1;
-            }
-        }
-    }
-
-    tracing::info!(
-        generated,
-        failed,
-        topic = %topic.title,
-        "Blog generation complete"
-    );
-
     Ok(())
 }
