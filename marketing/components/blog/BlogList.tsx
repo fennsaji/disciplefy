@@ -117,46 +117,55 @@ export function BlogList({
                 ))}
               </div>
 
-              {pagination.total_pages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-12">
-                  {/* First page */}
-                  {pagination.page > 2 && (
-                    <Link
-                      href={`${basePath}?page=1${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`}
-                      className="px-3 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-primary/30 transition-colors"
-                      title="First page"
-                    >
-                      <span aria-hidden="true">&laquo;</span>
-                    </Link>
-                  )}
+              {pagination.total_pages > 1 && (() => {
+                const qs = (p: number) =>
+                  `${basePath}?page=${p}${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`;
 
-                  {/* Page numbers */}
-                  {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map((p) => (
-                    <Link
-                      key={p}
-                      href={`${basePath}?page=${p}${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        p === pagination.page
-                          ? "bg-primary text-white"
-                          : "bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-primary/30"
-                      }`}
-                    >
-                      {p}
-                    </Link>
-                  ))}
+                const btnClass = "px-3 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-primary/30 transition-colors";
+                const activeClass = "px-3 py-2 rounded-lg text-sm font-medium bg-primary text-white";
+                // Show at most 5 page numbers, centered around current page
+                const { page: cur, total_pages: total } = pagination;
+                const delta = 2;
+                let start = Math.max(1, cur - delta);
+                let end = Math.min(total, cur + delta);
+                if (end - start < delta * 2) {
+                  if (start === 1) end = Math.min(total, start + delta * 2);
+                  else start = Math.max(1, end - delta * 2);
+                }
 
-                  {/* Last page */}
-                  {pagination.page < pagination.total_pages - 1 && (
-                    <Link
-                      href={`${basePath}?page=${pagination.total_pages}${tag ? `&tag=${tag}` : ""}${query ? `&q=${encodeURIComponent(query)}` : ""}${activeLearningPath ? `&learning_path=${activeLearningPath}` : ""}`}
-                      className="px-3 py-2 rounded-lg text-sm font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-primary/30 transition-colors"
-                      title="Last page"
-                    >
-                      <span aria-hidden="true">&raquo;</span>
-                    </Link>
-                  )}
-                </div>
-              )}
+                const pages: (number | "ellipsis-start" | "ellipsis-end")[] = [];
+                if (start > 1) { pages.push(1); if (start > 2) pages.push("ellipsis-start"); }
+                for (let i = start; i <= end; i++) pages.push(i);
+                if (end < total) { if (end < total - 1) pages.push("ellipsis-end"); pages.push(total); }
+
+                return (
+                  <div className="flex justify-center items-center gap-1.5 mt-12">
+                    {/* Prev */}
+                    {cur > 1 && (
+                      <Link href={qs(cur - 1)} className={btnClass} title="Previous">
+                        <span aria-hidden="true">&lsaquo;</span>
+                      </Link>
+                    )}
+
+                    {pages.map((p) =>
+                      typeof p === "string" ? (
+                        <span key={p} className="px-1 text-[var(--muted)]">&hellip;</span>
+                      ) : (
+                        <Link key={p} href={qs(p)} className={p === cur ? activeClass : btnClass}>
+                          {p}
+                        </Link>
+                      )
+                    )}
+
+                    {/* Next */}
+                    {cur < total && (
+                      <Link href={qs(cur + 1)} className={btnClass} title="Next">
+                        <span aria-hidden="true">&rsaquo;</span>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
         </section>
