@@ -533,29 +533,17 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp>
               // Navigation
               routerConfig: AppRouter.router,
 
-              // Font scaling + responsive max-width centering for large screens
+              // Font scaling only — max-width centering is handled by
+              // MaxWidthWrapper inside each page / AppShell so that the
+              // Navigator's Overlay stays full-screen (required for
+              // showcaseview tooltips to position correctly on desktop).
               builder: (context, child) {
-                const maxContentWidth = 900.0;
                 final mq = MediaQuery.of(context);
-                final sidePadding = mq.size.width > maxContentWidth
-                    ? (mq.size.width - maxContentWidth) / 2
-                    : 0.0;
-
-                final scaledChild = MediaQuery(
+                return MediaQuery(
                   data: mq.copyWith(
                     textScaler: TextScaler.linear(fontScaleService.scaleFactor),
                   ),
                   child: child!,
-                );
-
-                if (sidePadding == 0) return scaledChild;
-
-                return ColoredBox(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: sidePadding),
-                    child: scaledChild,
-                  ),
                 );
               },
             ),

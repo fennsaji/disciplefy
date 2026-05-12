@@ -16,6 +16,7 @@ import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/domain/walkthrough_repository.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import 'bottom_nav.dart' as bottom_nav;
+import 'max_width_wrapper.dart';
 import '../../widgets/offline_banner.dart';
 
 /// Main App Shell with Bottom Navigation
@@ -292,7 +293,7 @@ class _AppShellState extends State<AppShell>
                           child: widget.navigationShell,
                         ),
                       ),
-                      // Loading indicator overlay - shown during async navigation
+                      // Loading indicator overlay
                       if (_showLoadingIndicator)
                         Semantics(
                           label: 'Loading content',
@@ -314,10 +315,22 @@ class _AppShellState extends State<AppShell>
                 ),
               ],
             ),
-            bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
-              currentIndex: _mapBranchIndexToTabIndex(currentIndex),
-              tabs: _getFilteredTabs(),
-              onTap: _onTabChange,
+            bottomNavigationBar: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: MaxWidthWrapper.maxWidth,
+                    ),
+                    child: bottom_nav.DisciplefyBottomNav(
+                      currentIndex: _mapBranchIndexToTabIndex(currentIndex),
+                      tabs: _getFilteredTabs(),
+                      onTap: _onTabChange,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
