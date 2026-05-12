@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Disciplefy+vs+YouVersion&subtitle=Which+Bible+App+Is+Better?`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Disciplefy vs YouVersion comparison",
     }],
   },

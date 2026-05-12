@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Download+Disciplefy&subtitle=Free+Bible+Study+App`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Download Disciplefy — Free Bible Study App",
     }],
   },

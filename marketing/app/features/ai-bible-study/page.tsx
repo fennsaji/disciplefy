@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=AI+Bible+Study&subtitle=Instant+Personalised+Study+Guides`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "AI Bible Study Guide App — Disciplefy",
     }],
   },

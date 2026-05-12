@@ -23,7 +23,7 @@ export const metadata: Metadata = {
       {
         url: "/og?title=Disciplefy&subtitle=AI Bible Study in Your Language",
         width: 1200,
-        height: 630,
+        height: 675,
       },
     ],
   },
