@@ -9,6 +9,7 @@ import '../../localization/app_localizations.dart';
 import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
+import 'max_width_wrapper.dart';
 
 /// Navigation tab data model for bottom navigation
 class NavTab {
@@ -83,7 +84,12 @@ class DisciplefyBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     // Compute arrow alignment for Community tab dynamically so the arrow
     // accurately points at the tab icon regardless of screen width.
-    final double screenWidth = MediaQuery.of(context).size.width;
+    // Use the constrained width (not full viewport) because the bottom nav
+    // is wrapped in a ConstrainedBox(maxWidth: 900) on desktop.
+    final double screenWidth = math.min(
+      MediaQuery.of(context).size.width,
+      MaxWidthWrapper.maxWidth,
+    );
     final double tooltipWidth = math.min(280.0, screenWidth - 48);
     const double arrowWidth = 20.0;
     // Community is the 4th of 4 equal tabs → center at 7/8 of screen width.

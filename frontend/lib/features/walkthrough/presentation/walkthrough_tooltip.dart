@@ -84,7 +84,8 @@ class WalkthroughTooltip extends StatelessWidget {
   static const _gold = Color(0xFFFFEEC0);
 
   // Tooltip bubble dimensions
-  static const double _maxTooltipWidth = 280;
+  static const double _maxTooltipWidthPhone = 280;
+  static const double _maxTooltipWidthDesktop = 380;
   static const double _tooltipHeight = 160; // includes arrow height
   static const double _tooltipHorizontalMargin = 48; // 24px each side
 
@@ -93,8 +94,10 @@ class WalkthroughTooltip extends StatelessWidget {
     final videoUrl = WalkthroughVideoConfig.getVideoUrl(screen);
     final l10n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
+    final maxWidth =
+        screenWidth > 600 ? _maxTooltipWidthDesktop : _maxTooltipWidthPhone;
     final tooltipWidth =
-        math.min(_maxTooltipWidth, screenWidth - _tooltipHorizontalMargin);
+        math.min(maxWidth, screenWidth - _tooltipHorizontalMargin);
 
     return Showcase.withWidget(
       key: showcaseKey,

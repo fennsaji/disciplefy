@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../navigation/route_observer.dart';
 import '../animations/page_transitions.dart';
+import '../presentation/widgets/max_width_wrapper.dart';
 import '../screens/maintenance_screen.dart';
 import '../services/system_config_service.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
@@ -122,8 +123,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.maintenance,
         name: 'maintenance',
-        builder: (context, state) => MaintenanceScreen(
-          configService: sl<SystemConfigService>(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: MaintenanceScreen(
+            configService: sl<SystemConfigService>(),
+          ),
         ),
       ),
 
@@ -132,19 +135,21 @@ class AppRouter {
         path: AppRoutes.onboarding,
         name: 'onboarding',
         pageBuilder: (context, state) => fadeTransitionPage(
-          child: const OnboardingScreen(),
+          child: const MaxWidthWrapper(child: OnboardingScreen()),
           state: state,
         ),
       ),
       GoRoute(
         path: AppRoutes.languageSelection,
         name: 'language_selection',
-        builder: (context, state) => const LanguageSelectionScreen(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: LanguageSelectionScreen()),
       ),
       GoRoute(
         path: AppRoutes.profileSetup,
         name: 'profile_setup',
-        builder: (context, state) => const ProfileSetupScreen(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: ProfileSetupScreen()),
       ),
       // GoRoute(
       //   path: AppRoutes.onboardingLanguage,
@@ -168,10 +173,12 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.home,
                 name: 'home',
-                builder: (context, state) => BlocProvider<MemoryVerseBloc>(
-                  create: (_) =>
-                      sl<MemoryVerseBloc>()..add(const LoadDueVerses()),
-                  child: const HomeScreen(),
+                builder: (context, state) => MaxWidthWrapper(
+                  child: BlocProvider<MemoryVerseBloc>(
+                    create: (_) =>
+                        sl<MemoryVerseBloc>()..add(const LoadDueVerses()),
+                    child: const HomeScreen(),
+                  ),
                 ),
               ),
             ],
@@ -182,7 +189,8 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.generateStudy,
                 name: 'generate_study',
-                builder: (context, state) => const GenerateStudyScreen(),
+                builder: (context, state) =>
+                    const MaxWidthWrapper(child: GenerateStudyScreen()),
               ),
             ],
           ),
@@ -195,7 +203,8 @@ class AppRouter {
                 builder: (context, state) {
                   // Extract topic_id from query parameters for notification deep linking
                   final topicId = state.uri.queryParameters['topic_id'];
-                  return StudyTopicsScreen(topicId: topicId);
+                  return MaxWidthWrapper(
+                      child: StudyTopicsScreen(topicId: topicId));
                 },
               ),
             ],
@@ -206,9 +215,11 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.community,
                 name: 'community',
-                builder: (context, state) => BlocProvider.value(
-                  value: sl<SubscriptionBloc>(),
-                  child: const CommunityTabScreen(),
+                builder: (context, state) => MaxWidthWrapper(
+                  child: BlocProvider.value(
+                    value: sl<SubscriptionBloc>(),
+                    child: const CommunityTabScreen(),
+                  ),
                 ),
                 routes: [
                   // IMPORTANT: /community/join and /community/create MUST be listed before
@@ -216,12 +227,14 @@ class AppRouter {
                   GoRoute(
                     path: 'join',
                     name: 'community_join',
-                    builder: (context, state) => const JoinFellowshipScreen(),
+                    builder: (context, state) =>
+                        const MaxWidthWrapper(child: JoinFellowshipScreen()),
                   ),
                   GoRoute(
                     path: 'create',
                     name: 'community_create',
-                    builder: (context, state) => const CreateFellowshipScreen(),
+                    builder: (context, state) =>
+                        const MaxWidthWrapper(child: CreateFellowshipScreen()),
                   ),
                   GoRoute(
                     path: ':fellowshipId',
@@ -232,10 +245,12 @@ class AppRouter {
                       final fellowship = state.extra is FellowshipEntity
                           ? state.extra as FellowshipEntity
                           : null;
-                      return FellowshipHomeScreen(
-                        fellowshipId: fellowshipId,
-                        fellowshipName: fellowship?.name,
-                        fellowship: fellowship,
+                      return MaxWidthWrapper(
+                        child: FellowshipHomeScreen(
+                          fellowshipId: fellowshipId,
+                          fellowshipName: fellowship?.name,
+                          fellowship: fellowship,
+                        ),
                       );
                     },
                     routes: [
@@ -248,10 +263,12 @@ class AppRouter {
                           final fellowship = state.extra is FellowshipEntity
                               ? state.extra as FellowshipEntity
                               : null;
-                          return FellowshipHomeScreen(
-                            fellowshipId: fellowshipId,
-                            fellowshipName: fellowship?.name,
-                            fellowship: fellowship,
+                          return MaxWidthWrapper(
+                            child: FellowshipHomeScreen(
+                              fellowshipId: fellowshipId,
+                              fellowshipName: fellowship?.name,
+                              fellowship: fellowship,
+                            ),
                           );
                         },
                       ),
@@ -264,10 +281,12 @@ class AppRouter {
                           final fellowship = state.extra is FellowshipEntity
                               ? state.extra as FellowshipEntity
                               : null;
-                          return FellowshipHomeScreen(
-                            fellowshipId: fellowshipId,
-                            fellowshipName: fellowship?.name,
-                            fellowship: fellowship,
+                          return MaxWidthWrapper(
+                            child: FellowshipHomeScreen(
+                              fellowshipId: fellowshipId,
+                              fellowshipName: fellowship?.name,
+                              fellowship: fellowship,
+                            ),
                           );
                         },
                       ),
@@ -280,10 +299,12 @@ class AppRouter {
                           final fellowship = state.extra is FellowshipEntity
                               ? state.extra as FellowshipEntity
                               : null;
-                          return FellowshipHomeScreen(
-                            fellowshipId: fellowshipId,
-                            fellowshipName: fellowship?.name,
-                            fellowship: fellowship,
+                          return MaxWidthWrapper(
+                            child: FellowshipHomeScreen(
+                              fellowshipId: fellowshipId,
+                              fellowshipName: fellowship?.name,
+                              fellowship: fellowship,
+                            ),
                           );
                         },
                       ),
@@ -311,9 +332,11 @@ class AppRouter {
             initialTabIndex = 0; // Saved tab
           }
           return slideRightTransitionPage(
-            child: SavedScreen(
-              initialTabIndex: initialTabIndex,
-              navigationSource: sourceParam,
+            child: MaxWidthWrapper(
+              child: SavedScreen(
+                initialTabIndex: initialTabIndex,
+                navigationSource: sourceParam,
+              ),
             ),
             state: state,
           );
@@ -323,7 +346,7 @@ class AppRouter {
         path: AppRoutes.settings,
         name: 'settings',
         pageBuilder: (context, state) => slideUpTransitionPage(
-          child: const SettingsScreen(),
+          child: const MaxWidthWrapper(child: SettingsScreen()),
           state: state,
         ),
       ),
@@ -331,21 +354,24 @@ class AppRouter {
         path: '/offline-guides',
         name: 'offline_guides',
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: const OfflineGuidesScreen(),
+          child: const MaxWidthWrapper(child: OfflineGuidesScreen()),
           state: state,
         ),
       ),
       GoRoute(
         path: AppRoutes.notificationSettings,
         name: 'notification_settings',
-        builder: (context, state) => const NotificationSettingsScreen(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: NotificationSettingsScreen()),
       ),
       GoRoute(
         path: AppRoutes.tokenManagement,
         name: 'token_management',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const TokenManagementPage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const TokenManagementPage(),
+          ),
         ),
       ),
       GoRoute(
@@ -354,73 +380,91 @@ class AppRouter {
         builder: (context, state) {
           final tokenStatus = state.extra as TokenStatus?;
           if (tokenStatus == null) {
-            return const Scaffold(
-              body: Center(child: Text('Error: Missing token status')),
+            return const MaxWidthWrapper(
+              child: Scaffold(
+                body: Center(child: Text('Error: Missing token status')),
+              ),
             );
           }
-          return TokenPurchasePage(
-            tokenStatus: tokenStatus,
-            userEmail: Supabase.instance.client.auth.currentUser?.email ?? '',
-            userPhone: Supabase.instance.client.auth.currentUser?.phone ?? '',
+          return MaxWidthWrapper(
+            child: TokenPurchasePage(
+              tokenStatus: tokenStatus,
+              userEmail: Supabase.instance.client.auth.currentUser?.email ?? '',
+              userPhone: Supabase.instance.client.auth.currentUser?.phone ?? '',
+            ),
           );
         },
       ),
       GoRoute(
         path: AppRoutes.purchaseHistory,
         name: 'purchase_history',
-        builder: (context, state) => const PurchaseHistoryPage(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: PurchaseHistoryPage()),
       ),
       GoRoute(
         path: AppRoutes.usageHistory,
         name: 'usage_history',
-        builder: (context, state) => const TokenUsageHistoryPage(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: TokenUsageHistoryPage()),
       ),
       GoRoute(
         path: AppRoutes.premiumUpgrade,
         name: 'premium_upgrade',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const PremiumUpgradePage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const PremiumUpgradePage(),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.plusUpgrade,
         name: 'plus_upgrade',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const PlusUpgradePage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const PlusUpgradePage(),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.standardUpgrade,
         name: 'standard_upgrade',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const StandardUpgradePage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const StandardUpgradePage(),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.subscriptionManagement,
         name: 'subscription_management',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const SubscriptionManagementPage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const SubscriptionManagementPage(),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.myPlan,
         name: 'my_plan',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const MyPlanPage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const MyPlanPage(),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.subscriptionPaymentHistory,
         name: 'subscription_payment_history',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<SubscriptionBloc>(),
-          child: const SubscriptionPaymentHistoryPage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider.value(
+            value: sl<SubscriptionBloc>(),
+            child: const SubscriptionPaymentHistoryPage(),
+          ),
         ),
       ),
 
@@ -429,11 +473,13 @@ class AppRouter {
         path: AppRoutes.memoryVerses,
         name: 'memory_verses',
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: LockedFeatureWrapper(
-            featureKey: 'memory_verses',
-            child: BlocProvider(
-              create: (context) => sl<MemoryVerseBloc>(),
-              child: const MemoryVersesHomePage(),
+          child: MaxWidthWrapper(
+            child: LockedFeatureWrapper(
+              featureKey: 'memory_verses',
+              child: BlocProvider(
+                create: (context) => sl<MemoryVerseBloc>(),
+                child: const MemoryVersesHomePage(),
+              ),
             ),
           ),
           state: state,
@@ -454,11 +500,13 @@ class AppRouter {
           final verseId = extra['verseId'] as String? ?? '';
           final verseIds = extra['verseIds'] as List<String>?;
 
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: VerseReviewPage(
-              verseId: verseId,
-              verseIds: verseIds,
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: VerseReviewPage(
+                verseId: verseId,
+                verseIds: verseIds,
+              ),
             ),
           );
         },
@@ -476,9 +524,11 @@ class AppRouter {
         },
         builder: (context, state) {
           final params = state.extra as PracticeResultParams;
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: PracticeResultsPage(params: params),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: PracticeResultsPage(params: params),
+            ),
           );
         },
       ),
@@ -488,11 +538,13 @@ class AppRouter {
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
           final lastMode = state.uri.queryParameters['lastMode'];
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: PracticeModeSelectionPage(
-              verseId: verseId,
-              lastPracticeMode: lastMode,
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: PracticeModeSelectionPage(
+                verseId: verseId,
+                lastPracticeMode: lastMode,
+              ),
             ),
           );
         },
@@ -502,9 +554,11 @@ class AppRouter {
         name: 'word_bank_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: WordBankPracticePage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: WordBankPracticePage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -513,9 +567,11 @@ class AppRouter {
         name: 'cloze_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: ClozeReviewPage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: ClozeReviewPage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -524,9 +580,11 @@ class AppRouter {
         name: 'first_letter_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: FirstLetterHintsPage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: FirstLetterHintsPage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -535,9 +593,11 @@ class AppRouter {
         name: 'progressive_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: ProgressiveRevealPracticePage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: ProgressiveRevealPracticePage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -546,9 +606,11 @@ class AppRouter {
         name: 'word_scramble_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: WordScramblePracticePage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: WordScramblePracticePage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -557,9 +619,11 @@ class AppRouter {
         name: 'audio_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: AudioPracticePage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: AudioPracticePage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -568,9 +632,11 @@ class AppRouter {
         name: 'type_it_out_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
-          return BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: TypeItOutPracticePage(verseId: verseId),
+          return MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: TypeItOutPracticePage(verseId: verseId),
+            ),
           );
         },
       ),
@@ -578,7 +644,7 @@ class AppRouter {
         path: AppRoutes.memoryChampions,
         name: 'memory_champions',
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: const MemoryChampionsPage(),
+          child: const MaxWidthWrapper(child: MemoryChampionsPage()),
           state: state,
         ),
       ),
@@ -586,9 +652,11 @@ class AppRouter {
         path: AppRoutes.memoryStats,
         name: 'memory_stats',
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: const MemoryStatsPage(),
+          child: MaxWidthWrapper(
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: const MemoryStatsPage(),
+            ),
           ),
           state: state,
         ),
@@ -613,12 +681,14 @@ class AppRouter {
               extra['conversationType'] as ConversationType? ??
                   ConversationType.general;
 
-          return LockedFeatureWrapper(
-            featureKey: 'ai_discipler',
-            child: VoiceConversationPage(
-              studyGuideId: studyGuideId,
-              relatedScripture: relatedScripture,
-              conversationType: conversationType,
+          return MaxWidthWrapper(
+            child: LockedFeatureWrapper(
+              featureKey: 'ai_discipler',
+              child: VoiceConversationPage(
+                studyGuideId: studyGuideId,
+                relatedScripture: relatedScripture,
+                conversationType: conversationType,
+              ),
             ),
           );
         },
@@ -626,11 +696,13 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.voicePreferences,
         name: 'voice_preferences',
-        builder: (context, state) => BlocProvider(
-          create: (_) => VoicePreferencesBloc(
-            repository: sl<VoiceBuddyRepository>(),
-          )..add(const LoadVoicePreferences()),
-          child: const VoicePreferencesPageWrapper(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: BlocProvider(
+            create: (_) => VoicePreferencesBloc(
+              repository: sl<VoiceBuddyRepository>(),
+            )..add(const LoadVoicePreferences()),
+            child: const VoicePreferencesPageWrapper(),
+          ),
         ),
       ),
 
@@ -645,7 +717,9 @@ class AppRouter {
             final extra = state.extra as Map<String, dynamic>;
             onComplete = extra['onComplete'] as VoidCallback?;
           }
-          return PersonalizationQuestionnairePage(onComplete: onComplete);
+          return MaxWidthWrapper(
+            child: PersonalizationQuestionnairePage(onComplete: onComplete),
+          );
         },
       ),
 
@@ -657,11 +731,13 @@ class AppRouter {
         builder: (context, state) {
           final pathId = state.pathParameters['pathId'] ?? '';
           final source = state.uri.queryParameters['source'];
-          return LockedFeatureWrapper(
-            featureKey: 'learning_paths',
-            child: BlocProvider(
-              create: (context) => sl<LearningPathsBloc>(),
-              child: LearningPathDetailPage(pathId: pathId, source: source),
+          return MaxWidthWrapper(
+            child: LockedFeatureWrapper(
+              featureKey: 'learning_paths',
+              child: BlocProvider(
+                create: (context) => sl<LearningPathsBloc>(),
+                child: LearningPathDetailPage(pathId: pathId, source: source),
+              ),
             ),
           );
         },
@@ -672,11 +748,13 @@ class AppRouter {
         path: AppRoutes.leaderboard,
         name: 'leaderboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => LockedFeatureWrapper(
-          featureKey: 'leaderboard',
-          child: BlocProvider(
-            create: (context) => sl<LeaderboardBloc>(),
-            child: const LeaderboardPage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: LockedFeatureWrapper(
+            featureKey: 'leaderboard',
+            child: BlocProvider(
+              create: (context) => sl<LeaderboardBloc>(),
+              child: const LeaderboardPage(),
+            ),
           ),
         ),
       ),
@@ -686,11 +764,13 @@ class AppRouter {
         path: AppRoutes.statsDashboard,
         name: 'stats_dashboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => LockedFeatureWrapper(
-          featureKey: 'leaderboard',
-          child: BlocProvider.value(
-            value: sl<GamificationBloc>(),
-            child: const StatsDashboardPage(),
+        builder: (context, state) => MaxWidthWrapper(
+          child: LockedFeatureWrapper(
+            featureKey: 'leaderboard',
+            child: BlocProvider.value(
+              value: sl<GamificationBloc>(),
+              child: const StatsDashboardPage(),
+            ),
           ),
         ),
       ),
@@ -701,9 +781,11 @@ class AppRouter {
         name: 'reflection_journal',
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: LockedFeatureWrapper(
-            featureKey: 'reflections',
-            child: const ReflectionJournalScreen(),
+          child: MaxWidthWrapper(
+            child: LockedFeatureWrapper(
+              featureKey: 'reflections',
+              child: const ReflectionJournalScreen(),
+            ),
           ),
           state: state,
         ),
@@ -716,7 +798,7 @@ class AppRouter {
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
-          child: const DeleteAccountPage(),
+          child: const MaxWidthWrapper(child: DeleteAccountPage()),
         ),
       ),
 
@@ -725,29 +807,17 @@ class AppRouter {
         path: AppRoutes.pricing,
         name: 'pricing',
         parentNavigatorKey: rootNavigatorKey,
-        // Use pageBuilder + state.pageKey so GoRouter assigns a stable ValueKey
-        // to the page. Without pageBuilder, GoRouter wraps the builder result in
-        // a new MaterialPage on every refresh (auth events, token refreshes), which
-        // temporarily places TWO page entries in the navigator for the same route.
-        // That causes ScrollableState._gestureDetectorKey (an internal GlobalKey
-        // inside SingleChildScrollView) to appear in two active element positions
-        // simultaneously, triggering: '_elements.contains(element): is not true'.
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
-          child: BlocProvider.value(
-            value: sl<SubscriptionBloc>(),
-            // UniqueKey() on PricingPage forces Flutter to REPLACE (not update)
-            // the element every time pageBuilder is called. This prevents the
-            // preserved ScrollableState._gestureDetectorKey from being activated
-            // at two tree positions simultaneously during GoRouter rebuilds and
-            // hot reload, which was causing:
-            //   '_elements.contains(element)': is not true
-            // in _InactiveElements.remove → Element._retakeInactiveElement.
-            child: PricingPage(
-              key: UniqueKey(),
-              platformService: PlatformDetectionService(),
-              dataSource: SubscriptionRemoteDataSourceImpl(
-                supabaseClient: Supabase.instance.client,
+          child: MaxWidthWrapper(
+            child: BlocProvider.value(
+              value: sl<SubscriptionBloc>(),
+              child: PricingPage(
+                key: UniqueKey(),
+                platformService: PlatformDetectionService(),
+                dataSource: SubscriptionRemoteDataSourceImpl(
+                  supabaseClient: Supabase.instance.client,
+                ),
               ),
             ),
           ),
@@ -759,14 +829,15 @@ class AppRouter {
         path: AppRoutes.login,
         name: 'login',
         pageBuilder: (context, state) => fadeTransitionPage(
-          child: const LoginScreen(),
+          child: const MaxWidthWrapper(child: LoginScreen()),
           state: state,
         ),
       ),
       GoRoute(
         path: AppRoutes.phoneAuth,
         name: 'phone_auth',
-        builder: (context, state) => const PhoneNumberInputScreen(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: PhoneNumberInputScreen()),
       ),
       GoRoute(
         path: AppRoutes.phoneAuthVerify,
@@ -787,23 +858,27 @@ class AppRouter {
           final expiresIn = extra['expiresIn'] as int? ?? 60;
           final sentAt = extra['sentAt'] as DateTime? ?? DateTime.now();
 
-          return OTPVerificationScreen(
-            phoneNumber: phoneNumber,
-            countryCode: countryCode,
-            expiresIn: expiresIn,
-            sentAt: sentAt,
+          return MaxWidthWrapper(
+            child: OTPVerificationScreen(
+              phoneNumber: phoneNumber,
+              countryCode: countryCode,
+              expiresIn: expiresIn,
+              sentAt: sentAt,
+            ),
           );
         },
       ),
       GoRoute(
         path: AppRoutes.emailAuth,
         name: 'email_auth',
-        builder: (context, state) => const EmailAuthScreen(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: EmailAuthScreen()),
       ),
       GoRoute(
         path: AppRoutes.passwordReset,
         name: 'password_reset',
-        builder: (context, state) => const PasswordResetScreen(),
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: PasswordResetScreen()),
       ),
       GoRoute(
         path: AppRoutes.authCallback,
@@ -816,24 +891,26 @@ class AppRouter {
           final errorDescription =
               state.uri.queryParameters['error_description'];
 
-          return AuthCallbackPage(
-            code: code,
-            state: stateParam,
-            error: error,
-            errorDescription: errorDescription,
+          return MaxWidthWrapper(
+            child: AuthCallbackPage(
+              code: code,
+              state: stateParam,
+              error: error,
+              errorDescription: errorDescription,
+            ),
           );
         },
       ),
 
       // Fellowship invite deep link — top-level, outside shell, public
-      // Handles https://app.disciplefy.in/fellowship/join/:token on Android App Links
-      // and the same path natively on Flutter web.
       GoRoute(
         path: '/fellowship/join/:token',
         name: 'fellowship_join_deep',
         builder: (context, state) {
           final token = state.pathParameters['token'] ?? '';
-          return JoinFellowshipScreen(initialToken: token);
+          return MaxWidthWrapper(
+            child: JoinFellowshipScreen(initialToken: token),
+          );
         },
       ),
 
@@ -891,18 +968,20 @@ class AppRouter {
               StudyMode.standard;
 
           return slideRightTransitionPage(
-            child: StudyGuideScreenV2(
-              topicId: topicId,
-              input: input,
-              type: type,
-              description: description,
-              pathTitle: pathTitle,
-              pathDescription: pathDescription,
-              pathDiscipleLevel: pathDiscipleLevel,
-              language: language,
-              navigationSource: navigationSource,
-              studyMode: studyMode,
-              existingGuideData: existingGuideData,
+            child: MaxWidthWrapper(
+              child: StudyGuideScreenV2(
+                topicId: topicId,
+                input: input,
+                type: type,
+                description: description,
+                pathTitle: pathTitle,
+                pathDescription: pathDescription,
+                pathDiscipleLevel: pathDiscipleLevel,
+                language: language,
+                navigationSource: navigationSource,
+                studyMode: studyMode,
+                existingGuideData: existingGuideData,
+              ),
             ),
             state: state,
           );
@@ -935,17 +1014,19 @@ class AppRouter {
               studyModeFromString(modeString) ?? StudyMode.standard;
 
           return slideRightTransitionPage(
-            child: StudyGuideScreenV2(
-              topicId: topicId,
-              input: input,
-              type: type,
-              description: description,
-              pathTitle: pathTitle,
-              pathDescription: pathDescription,
-              pathDiscipleLevel: pathDiscipleLevel,
-              language: language,
-              navigationSource: navigationSource,
-              studyMode: studyMode,
+            child: MaxWidthWrapper(
+              child: StudyGuideScreenV2(
+                topicId: topicId,
+                input: input,
+                type: type,
+                description: description,
+                pathTitle: pathTitle,
+                pathDescription: pathDescription,
+                pathDiscipleLevel: pathDiscipleLevel,
+                language: language,
+                navigationSource: navigationSource,
+                studyMode: studyMode,
+              ),
             ),
             state: state,
           );
@@ -958,12 +1039,14 @@ class AppRouter {
         name: 'error',
         builder: (context, state) {
           final error = state.extra as String?;
-          return ErrorPage(error: error);
+          return MaxWidthWrapper(child: ErrorPage(error: error));
         },
       ),
     ],
-    errorBuilder: (context, state) => ErrorPage(
-      error: 'Page not found: ${state.matchedLocation}',
+    errorBuilder: (context, state) => MaxWidthWrapper(
+      child: ErrorPage(
+        error: 'Page not found: ${state.matchedLocation}',
+      ),
     ),
   );
 }
