@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Fellowship&subtitle=Group+Bible+Study+with+Google+Meet`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Christian Fellowship Groups — Disciplefy",
     }],
   },

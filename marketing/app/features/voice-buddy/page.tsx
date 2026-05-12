@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Voice+Buddy&subtitle=Talk+to+Your+AI+Bible+Companion`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "AI Voice Bible Study App — Disciplefy",
     }],
   },

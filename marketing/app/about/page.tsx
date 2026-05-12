@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=About+Disciplefy&subtitle=Our+Mission`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "About Disciplefy — Our Mission",
     }],
   },

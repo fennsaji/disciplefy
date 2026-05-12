@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       images: [{
         url: `https://www.disciplefy.in/og?title=${encodeURIComponent(post.title)}&subtitle=Disciplefy+Blog`,
         width: 1200,
-        height: 630,
+        height: 675,
         alt: post.title,
       }],
     },

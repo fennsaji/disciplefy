@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Memory+Verses&subtitle=Spaced+Repetition+for+God%27s+Word`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Bible Memory Verse App — Disciplefy",
     }],
   },

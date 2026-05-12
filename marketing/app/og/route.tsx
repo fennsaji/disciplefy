@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
           display: "flex",
           flexDirection: "row",
           width: "1200px",
-          height: "630px",
+          height: "675px",
           background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
           fontFamily: "Poppins",
         }}
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
             flexDirection: "column",
             justifyContent: "center",
             flex: 1,
-            padding: "64px 56px 64px 64px",
+            padding: "64px 32px 64px 64px",
           }}
         >
           {/* Category badge */}
@@ -173,14 +173,14 @@ export async function GET(req: NextRequest) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "340px",
-            padding: "40px",
+            width: "360px",
+            paddingRight: "64px",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${origin}/logo-dark.png`}
-            width={240}
+            width={300}
             alt=""
           />
         </div>
@@ -188,7 +188,7 @@ export async function GET(req: NextRequest) {
     ),
     {
       width: 1200,
-      height: 630,
+      height: 675,
       fonts: [{ name: "Poppins", data: poppinsData, weight: 700 }],
       headers: {
         "Cache-Control":

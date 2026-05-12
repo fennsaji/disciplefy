@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Follow-Up+Chat&subtitle=Ask+Deeper+Bible+Questions`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Bible Study Follow-Up Chat — Disciplefy",
     }],
   },

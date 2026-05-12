@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Learning+Paths&subtitle=Structured+Discipleship+Journeys`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Bible Discipleship Learning Paths — Disciplefy",
     }],
   },

@@ -91,7 +91,7 @@ export function getBlogPostingJsonLd(
       "@type": "ImageObject",
       url: `${BASE}/og?title=${encodeURIComponent(post.title)}&subtitle=Disciplefy+Blog`,
       width: 1200,
-      height: 630,
+      height: 675,
     },
   };
 }

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     images: [{
       url: `https://www.disciplefy.in/og?title=Daily+Bible+Verse&subtitle=Fresh+Devotional+Every+Day`,
       width: 1200,
-      height: 630,
+      height: 675,
       alt: "Bible Verse of the Day App for Android — Disciplefy",
     }],
   },
