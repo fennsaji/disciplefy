@@ -295,6 +295,15 @@ fi
 
 echo -e "${GREEN}✅ Device ready: ${DEVICE_ID}${NC}"
 
+# Set up adb reverse port forwarding for emulators
+# This maps the emulator's localhost:54321 to the host's localhost:54321,
+# which is more reliable than the 10.0.2.2 special alias
+if is_emulator "$DEVICE_ID"; then
+    echo -e "${BLUE}🔗 Setting up adb reverse port forwarding...${NC}"
+    adb -s "$DEVICE_ID" reverse tcp:54321 tcp:54321
+    echo -e "${GREEN}✅ Port forwarding: emulator localhost:54321 → host localhost:54321${NC}"
+fi
+
 # Check if Supabase is accessible
 # Note: If using Android emulator address (10.0.2.2), test with localhost (127.0.0.1) instead
 # because 10.0.2.2 only resolves from within the emulator
@@ -358,6 +367,15 @@ flutter run -d "$DEVICE_ID" \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
   --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
   --dart-define=APP_URL="$APP_URL" \
-  --dart-define=FLUTTER_ENV="$FLUTTER_ENV"
+  --dart-define=FLUTTER_ENV="$FLUTTER_ENV" \
+  --dart-define=GOOGLE_CLOUD_TTS_API_KEY="$GOOGLE_CLOUD_TTS_API_KEY" \
+  --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+  --dart-define=FIREBASE_AUTH_DOMAIN="$FIREBASE_AUTH_DOMAIN" \
+  --dart-define=FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
+  --dart-define=FIREBASE_STORAGE_BUCKET="$FIREBASE_STORAGE_BUCKET" \
+  --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \
+  --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID" \
+  --dart-define=FIREBASE_MEASUREMENT_ID="$FIREBASE_MEASUREMENT_ID" \
+  --dart-define=RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID"
 
 echo -e "${GREEN}✅ Flutter development session ended${NC}"
