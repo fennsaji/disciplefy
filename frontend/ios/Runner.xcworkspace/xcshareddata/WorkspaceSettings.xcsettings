@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PreviewsEnabled</key>
+	<false/>
+	<key>BuildLocationStyle</key>
+	<string>UseAppPreferences</string>
+	<key>DerivedDataCustomLocation</key>
+	<string>/tmp/xcode-derived-data</string>
+	<key>DerivedDataLocationStyle</key>
+	<string>AbsolutePath</string>
+</dict>
+</plist>

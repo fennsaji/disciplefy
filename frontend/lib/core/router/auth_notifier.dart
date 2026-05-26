@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/logger.dart';
 
@@ -67,6 +68,16 @@ class AuthNotifier extends ChangeNotifier {
               '✅ [AUTH NOTIFIER] Session restoration complete - auth initialized after ${timeSinceInit}ms');
         }
 
+        // Keep local session_expires_at in sync with Supabase token refreshes.
+        // Without this, the RouterGuard's _isSessionExpired() reads a stale
+        // expiry from Hive and incorrectly treats the user as logged out,
+        // causing a redirect bounce (home → login → home → error page).
+        if (authState.session != null &&
+            (authState.event == AuthChangeEvent.tokenRefreshed ||
+                authState.event == AuthChangeEvent.signedIn)) {
+          _syncSessionExpiry(authState.session!);
+        }
+
         // Notify if auth state changed, if this is the first initialization,
         // or if this is a signedOut event — even when the Supabase session was
         // already null (e.g. expired) we must notify so the router re-evaluates
@@ -117,6 +128,28 @@ class AuthNotifier extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get isInitialized =>
       _isInitialized; // ANDROID FIX: Expose initialization state
+
+  /// Sync Hive session_expires_at with the latest Supabase token expiry.
+  /// Prevents RouterGuard from treating auto-refreshed sessions as expired.
+  void _syncSessionExpiry(Session session) {
+    try {
+      final expiresAt = session.expiresAt;
+      if (expiresAt == null) return;
+
+      final expiresAtDt =
+          DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000, isUtc: true);
+
+      if (!Hive.isBoxOpen('app_settings')) return;
+      final box = Hive.box('app_settings');
+      box.put('session_expires_at', expiresAtDt.toIso8601String());
+
+      Logger.debug(
+          '🔄 [AUTH NOTIFIER] Synced session_expires_at to ${expiresAtDt.toIso8601String()}');
+    } catch (e) {
+      Logger.error('Failed to sync session expiry to Hive',
+          tag: 'AUTH_NOTIFIER', error: e);
+    }
+  }
 
   @override
   void dispose() {

@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/bible_data.dart';
@@ -261,6 +264,25 @@ class CloudTTSService {
     }
   }
 
+  /// Write audio bytes to a temp .mp3 file.
+  /// iOS AVPlayer requires a proper file extension to determine the codec.
+  Future<String> _writeTempMp3(Uint8List audioBytes) async {
+    final dir = await getTemporaryDirectory();
+    final file =
+        File('${dir.path}/tts_${DateTime.now().millisecondsSinceEpoch}.mp3');
+    await file.writeAsBytes(audioBytes);
+    return file.path;
+  }
+
+  /// Delete a temp .mp3 file after a short delay to allow playback to start.
+  void _cleanupTempFile(String path) {
+    Future.delayed(const Duration(seconds: 30), () {
+      try {
+        File(path).deleteSync();
+      } catch (_) {}
+    });
+  }
+
   /// Play audio bytes.
   /// Creates a fresh AudioPlayer for each playback to avoid web platform issues.
   Future<void> _playAudio(
@@ -271,10 +293,6 @@ class CloudTTSService {
       _playerCompleteSubscription = null;
 
       // Capture and clear reference BEFORE stopping to prevent double-stop on web.
-      // On web, calling stop() on a disposed AudioPlayer throws WebAudioError even
-      // inside a try-catch because the platform rejects the promise before Dart
-      // can intercept it. Clearing the reference first makes subsequent stop()
-      // calls a safe no-op via the null-aware operator.
       final oldPlayer = _audioPlayer;
       _audioPlayer = null;
       try {
@@ -295,8 +313,6 @@ class CloudTTSService {
         _isSpeaking = false;
         _playerCompleteSubscription?.cancel();
         _playerCompleteSubscription = null;
-        // Clear field reference BEFORE disposing so any concurrent stop() call
-        // sees null and skips the disposed player.
         if (identical(_audioPlayer, player)) _audioPlayer = null;
         try {
           player.dispose();
@@ -318,9 +334,15 @@ class CloudTTSService {
         onComplete?.call();
       });
 
-      // Play from bytes
-      await player.play(BytesSource(audioBytes));
-      Logger.error('🔊 [CLOUD TTS] Playback started');
+      // Write to temp .mp3 file for iOS compatibility (AVPlayer needs extension)
+      if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
+        final path = await _writeTempMp3(audioBytes);
+        await player.play(DeviceFileSource(path));
+        _cleanupTempFile(path);
+      } else {
+        await player.play(BytesSource(audioBytes));
+      }
+      Logger.debug('🔊 [CLOUD TTS] Playback started');
     } catch (e) {
       Logger.debug('🔊 [CLOUD TTS] Error playing audio: $e');
       _isSpeaking = false;
@@ -807,8 +829,14 @@ class CloudTTSService {
         onChunkComplete();
       });
 
-      // Play
-      await player.play(BytesSource(audioBytes));
+      // Write to temp .mp3 file for iOS compatibility (AVPlayer needs extension)
+      if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
+        final path = await _writeTempMp3(audioBytes);
+        await player.play(DeviceFileSource(path));
+        _cleanupTempFile(path);
+      } else {
+        await player.play(BytesSource(audioBytes));
+      }
     } catch (e) {
       Logger.error('🔊 [CLOUD TTS] Error playing chunk: $e');
       onChunkComplete();

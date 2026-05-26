@@ -81,7 +81,7 @@ export default function VsYouversionPage() {
         <section className="mb-12">
           <h2 className="font-display font-bold text-2xl mb-4">Who is Disciplefy for?</h2>
           <p className="text-[var(--muted)]">
-            Disciplefy is built for Indian Christians who want to go deeper with AI-powered study guides in Hindi and Malayalam. The AI generates full study guides — context, interpretation, and application — for any verse or topic. YouVersion does not offer this.
+            Disciplefy is built for Indian Christians who want to go deeper with study guides in Hindi and Malayalam. It generates full study guides — context, interpretation, and application — for any verse or topic. YouVersion does not offer this.
           </p>
         </section>
 

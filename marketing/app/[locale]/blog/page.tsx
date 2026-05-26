@@ -13,7 +13,7 @@ import { getAlternates } from "@/lib/seo";
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   return {
     title: "Bible Study Blog — Disciplefy",
-    description: "Free Bible study guides, devotionals, and theological insights in English, Hindi & Malayalam. Deepen your faith with AI-powered Scripture exploration.",
+    description: "Free Bible study guides, devotionals, and theological insights in English, Hindi & Malayalam. Deepen your faith with Scripture exploration in your language.",
     alternates: getAlternates("/blog", params.locale),
     openGraph: {
       title: "Bible Study Blog — Disciplefy",

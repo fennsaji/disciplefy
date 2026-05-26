@@ -158,15 +158,16 @@ flutter:
 # Flutter Launcher Icons Configuration
 flutter_launcher_icons:
   android: true
-  ios: false
+  ios: true
+  remove_alpha_ios: true
   image_path: "web/icons/icon-512.png"
   adaptive_icon_background: "#6A4FB6"  # Primary purple color
   adaptive_icon_foreground: "web/icons/icon-512.png"
 
 # Flutter Native Splash Configuration
 flutter_native_splash:
-  # Splash screen background color
-  color: "#FFFFFF"
+  # Splash screen background color (matches splash_screen.png background)
+  color: "#FBEDD9"
 
   # Splash screen image (centered)
   image: "web/splash_screen.png"
@@ -179,10 +180,10 @@ flutter_native_splash:
   android_12:
     # Android 12+ uses a different splash screen system
     image: "web/splash_screen.png"
-    color: "#FFFFFF"
+    color: "#FBEDD9"
 
-  # iOS configuration (disabled for now)
-  ios: false
+  # iOS configuration
+  ios: true
 
   # Web configuration (disabled - we use custom web splash)
   web: false
