@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>CFBundleDisplayName</key>
+		<string>Disciplefy</string>
+		<key>CFBundleExecutable</key>
+		<string>$(EXECUTABLE_NAME)</string>
+		<key>CFBundleIdentifier</key>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>Disciplefy</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>$(FLUTTER_BUILD_NAME)</string>
+		<key>CFBundleSignature</key>
+		<string>????</string>
+		<key>CFBundleVersion</key>
+		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>UILaunchStoryboardName</key>
+		<string>LaunchScreen</string>
+		<key>UIMainStoryboardFile</key>
+		<string>Main</string>
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+		<!-- URL Schemes for OAuth -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<!-- Custom app scheme for Supabase OAuth redirects -->
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>disciplefy-oauth</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.disciplefy.biblestudy</string>
+				</array>
+			</dict>
+			<!-- Google Sign-In reverse client ID (must match REVERSED_CLIENT_ID in GoogleService-Info.plist) -->
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>google-signin</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.16888340359-mlgetf72t019egd30vm8ppvkm4rsdtot</string>
+				</array>
+			</dict>
+		</array>
+		<!-- External URL schemes the app can open -->
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>https</string>
+			<string>http</string>
+			<string>googlechromes</string>
+			<string>googlechrome</string>
+		</array>
+		<!-- Network security -->
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
+		<!-- Permission usage descriptions -->
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Disciplefy needs microphone access for voice-based Bible study features.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Disciplefy uses speech recognition for voice-based Bible study interaction.</string>
+		<!-- Background modes -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>audio</string>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		<!-- Prevent landscape on iPhone -->
+		<key>UIRequiresFullScreen</key>
+		<true/>
+		<key>UIStatusBarHidden</key>
+		<false/>
+	</dict>
+</plist>
