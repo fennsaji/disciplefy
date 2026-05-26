@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/config/app_config.dart';
@@ -273,6 +274,15 @@ class CloudTTSService {
     return file.path;
   }
 
+  /// Delete a temp .mp3 file after a short delay to allow playback to start.
+  void _cleanupTempFile(String path) {
+    Future.delayed(const Duration(seconds: 30), () {
+      try {
+        File(path).deleteSync();
+      } catch (_) {}
+    });
+  }
+
   /// Play audio bytes.
   /// Creates a fresh AudioPlayer for each playback to avoid web platform issues.
   Future<void> _playAudio(
@@ -325,9 +335,10 @@ class CloudTTSService {
       });
 
       // Write to temp .mp3 file for iOS compatibility (AVPlayer needs extension)
-      if (Platform.isIOS || Platform.isMacOS) {
+      if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
         final path = await _writeTempMp3(audioBytes);
         await player.play(DeviceFileSource(path));
+        _cleanupTempFile(path);
       } else {
         await player.play(BytesSource(audioBytes));
       }
@@ -819,9 +830,10 @@ class CloudTTSService {
       });
 
       // Write to temp .mp3 file for iOS compatibility (AVPlayer needs extension)
-      if (Platform.isIOS || Platform.isMacOS) {
+      if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
         final path = await _writeTempMp3(audioBytes);
         await player.play(DeviceFileSource(path));
+        _cleanupTempFile(path);
       } else {
         await player.play(BytesSource(audioBytes));
       }
