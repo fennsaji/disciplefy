@@ -10,7 +10,7 @@ import messages from "@/messages/en.json";
 
 export const metadata: Metadata = {
   title: "Bible Study Blog — Disciplefy",
-  description: "Free Bible study guides, devotionals, and theological insights in English, Hindi & Malayalam. Deepen your faith with AI-powered Scripture exploration.",
+  description: "Free Bible study guides, devotionals, and theological insights in English, Hindi & Malayalam. Deepen your faith with Scripture exploration in your language.",
   alternates: getAlternates("/blog"),
   openGraph: {
     title: "Bible Study Blog — Disciplefy",

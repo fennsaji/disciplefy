@@ -7,7 +7,7 @@ import messages from "@/messages/en.json";
 
 export const metadata: Metadata = {
   title: "Download Disciplefy — Free Bible Study App",
-  description: "Download the free Disciplefy Bible study app. AI-powered study guides in English, Hindi, and Malayalam.",
+  description: "Download the free Disciplefy Bible study app. Study guides in English, Hindi, and Malayalam.",
   alternates: getAlternates("/download"),
   openGraph: {
     images: [{

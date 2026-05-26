@@ -24,7 +24,7 @@ export default function StudyGuidesPage() {
   return (
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
-        title="Bible Study Guides — Free & AI-Powered"
+        title="Bible Study Guides — Free, In Your Language"
         description="Access AI-generated study guides for any Bible passage. Save, revisit, and grow in your faith. Free on Android."
         howItWorks={[
           "Search by Bible passage or spiritual topic",
