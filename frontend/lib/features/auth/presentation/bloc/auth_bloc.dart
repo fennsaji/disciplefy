@@ -309,7 +309,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           Logger.debug('🔐 [AUTH BLOC] 📄 Loading user profile...');
           final profile =
               await _retryOperation(() => _getProfileWithCache(user.id));
-          Logger.error(
+          Logger.debug(
               '🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
 
           Logger.debug('🔐 [AUTH BLOC] ✅ Emitting AuthenticatedState...');

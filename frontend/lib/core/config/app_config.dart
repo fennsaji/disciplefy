@@ -218,7 +218,7 @@ class AppConfig {
       Logger.debug('  - FLUTTER_ENV: $_flutterEnv');
       Logger.debug('  - Supabase URL: $supabaseUrl');
       Logger.debug('  - Google Client ID: $googleClientId');
-      Logger.error(
+      Logger.debug(
           '  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
       Logger.debug('  - Platform: ${kIsWeb ? "Web" : "Mobile"}');
       if (kIsWeb) {
