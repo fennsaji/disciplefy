@@ -1158,7 +1158,7 @@ class _SubscriptionManagementPageState
   Future<void> _openStoreSubscriptions(bool isAndroid) async {
     final Uri uri = isAndroid
         ? Uri.parse(
-            'https://play.google.com/store/account/subscriptions?package=com.disciplefy.bible_study_app',
+            'https://play.google.com/store/account/subscriptions?package=com.disciplefy.bible_study',
           )
         : Uri.parse('https://apps.apple.com/account/subscriptions');
 
