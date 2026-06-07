@@ -456,6 +456,7 @@ Future<void> initializeDependencies() async {
         managePersonalNotes: sl<ManagePersonalNotesUseCase>(),
         validationService: sl(),
         authService: sl(),
+        localDataSource: sl<StudyLocalDataSource>(),
       ));
 
   //! Settings
