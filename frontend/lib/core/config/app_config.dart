@@ -59,7 +59,7 @@ class AppConfig {
 
   static const String mobileOAuthRedirectScheme = String.fromEnvironment(
     'MOBILE_OAUTH_REDIRECT_SCHEME',
-    defaultValue: 'com.disciplefy.bible_study_app',
+    defaultValue: 'com.disciplefy.biblestudy',
   );
 
   /// Get OAuth redirect URL (compile-time constant, not runtime)
@@ -88,11 +88,8 @@ class AppConfig {
     return '$mobileOAuthRedirectScheme://auth/callback';
   }
 
-  // OAuth redirect schemes for deep linking
-  static const List<String> oauthRedirectSchemes = [
-    'com.disciplefy.bible_study',
-    'io.supabase.flutter',
-  ];
+  // OAuth redirect scheme for deep linking (must match Info.plist and AndroidManifest.xml)
+  static const String oauthRedirectScheme = mobileOAuthRedirectScheme;
 
   // Auth endpoints
   static const String authSessionEndpoint = '/auth-session';
