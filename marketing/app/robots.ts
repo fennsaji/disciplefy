@@ -61,6 +61,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: "https://disciplefy.in/sitemap.xml",
+    sitemap: "https://www.disciplefy.in/sitemap.xml",
   };
 }
