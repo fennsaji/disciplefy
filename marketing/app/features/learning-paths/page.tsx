@@ -28,12 +28,12 @@ export default function LearningPathsPage() {
         description="Structured discipleship journeys on Grace, Prayer, Faith, and more. Each path walks you through a curated sequence of lessons so you're growing with direction, not just studying random verses."
         howItWorks={[
           "Choose a discipleship journey — Grace, Prayer, Faith, or others",
-          "Work through a curated sequence of AI-generated lessons at your own pace",
+          "Work through a curated sequence of lessons at your own pace",
           "Complete each lesson, track your progress, and move to the next step",
         ]}
         downloadCta="Download Free"
         relatedFeatures={[
-          { href: "/features/ai-bible-study", label: "AI Bible Study" },
+          { href: "/features/ai-bible-study", label: "Bible Study" },
           { href: "/features/study-guides", label: "Study Guides" },
           { href: "/features/fellowship", label: "Fellowship" },
         ]}

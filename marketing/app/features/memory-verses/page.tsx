@@ -34,7 +34,7 @@ export default function MemoryVersesPage() {
         downloadCta="Download Free"
         relatedFeatures={[
           { href: "/features/daily-verse", label: "Daily Verse" },
-          { href: "/features/ai-bible-study", label: "AI Bible Study" },
+          { href: "/features/ai-bible-study", label: "Bible Study" },
           { href: "/features/learning-paths", label: "Learning Paths" },
         ]}
       />

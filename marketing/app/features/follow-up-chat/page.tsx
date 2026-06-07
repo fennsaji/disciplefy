@@ -8,7 +8,7 @@ import messages from "@/messages/en.json";
 export const metadata: Metadata = {
   title: "Bible Study Follow-Up Chat App — Disciplefy",
   description:
-    "Ask deeper questions about any Bible study guide. Your AI keeps the context so every follow-up feels like a natural conversation.",
+    "Ask deeper questions about any Bible study guide. The conversation keeps the context so every follow-up feels natural.",
   alternates: getAlternates("/features/follow-up-chat"),
   openGraph: {
     images: [{
@@ -25,7 +25,7 @@ export default function FollowUpChatPage() {
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Follow-Up Chat — Go Deeper"
-        description="After reading a study guide, ask any follow-up question you have. The AI remembers the passage and context so you get precise, relevant answers — not generic responses."
+        description="After reading a study guide, ask any follow-up question you have. The conversation remembers the passage and context so you get precise, relevant answers — not generic responses."
         howItWorks={[
           "Open any study guide and tap the chat icon",
           "Ask any question about the passage — application, history, theology, or life",
@@ -33,7 +33,7 @@ export default function FollowUpChatPage() {
         ]}
         downloadCta="Download Free"
         relatedFeatures={[
-          { href: "/features/ai-bible-study", label: "AI Bible Study" },
+          { href: "/features/ai-bible-study", label: "Bible Study" },
           { href: "/features/voice-buddy", label: "Voice Buddy" },
           { href: "/features/study-guides", label: "Study Guides" },
         ]}

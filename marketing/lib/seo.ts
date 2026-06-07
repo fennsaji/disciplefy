@@ -54,9 +54,9 @@ export const pricingJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "What is a token?", acceptedAnswer: { "@type": "Answer", text: "Tokens are the currency for AI features in Disciplefy. Each study guide, follow-up, or AI Discipler call uses a small number of tokens." } },
+    { "@type": "Question", name: "What is a token?", acceptedAnswer: { "@type": "Answer", text: "Tokens are the currency for generated content in Disciplefy. Each study guide, follow-up, or voice Discipler call uses a small number of tokens." } },
     { "@type": "Question", name: "Can I switch plans?", acceptedAnswer: { "@type": "Answer", text: "Yes, you can upgrade or downgrade at any time. Changes take effect at the start of your next billing cycle." } },
-    { "@type": "Question", name: "What languages are supported?", acceptedAnswer: { "@type": "Answer", text: "English, Hindi, and Malayalam. All AI features work in all three languages." } },
+    { "@type": "Question", name: "What languages are supported?", acceptedAnswer: { "@type": "Answer", text: "English, Hindi, and Malayalam. All features work in all three languages." } },
   ],
 };
 
@@ -133,7 +133,7 @@ export const downloadPageJsonLd = {
         {
           "@type": "Question",
           name: "Is Disciplefy free?",
-          acceptedAnswer: { "@type": "Answer", text: "Yes — the core app is completely free. Premium plans with more AI tokens are available." },
+          acceptedAnswer: { "@type": "Answer", text: "Yes — the core app is completely free. Premium plans with more tokens are available." },
         },
         {
           "@type": "Question",
@@ -147,7 +147,7 @@ export const downloadPageJsonLd = {
         },
         {
           "@type": "Question",
-          name: "How does the AI Bible study work?",
+          name: "How does Bible study work in the app?",
           acceptedAnswer: { "@type": "Answer", text: "Enter a Bible verse or question; Disciplefy generates a complete study guide in your language." },
         },
       ],
