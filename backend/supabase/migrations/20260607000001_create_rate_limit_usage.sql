@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS rate_limit_usage (
   CONSTRAINT rate_limit_usage_unique UNIQUE (identifier, user_type, window_start)
 );
 
--- Lookup index for the SELECT in getUsageFromRateLimitTable()
-CREATE INDEX IF NOT EXISTS idx_rate_limit_usage_lookup
-  ON rate_limit_usage (identifier, user_type, window_start);
+-- Lookup index for getUsageFromRateLimitTable()'s SELECT is provided by the
+-- rate_limit_usage_unique constraint's btree index on the same leading columns
+-- (identifier, user_type, window_start) — no separate index needed.
 
 -- Cleanup index for purging expired windows
 CREATE INDEX IF NOT EXISTS idx_rate_limit_usage_window_start
