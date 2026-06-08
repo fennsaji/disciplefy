@@ -1,0 +1,498 @@
+-- =====================================================
+-- Migration: The Four Gospels Learning Paths
+-- =====================================================
+-- Category: Gospels (new)
+-- Paths (display_order 1-4):
+--   Matthew (29 topics), Mark (22), Luke (27), John (22) = 100 topics
+-- Each topic is one chapter (huge chapters split at natural pericope
+-- boundaries, covering all verses contiguously). Descriptions begin
+-- "Read <ref>." so the generated study guide reads the whole passage.
+-- Theological authoring & review: Paul the Apostle agents.
+-- English only; hi/ml translations to follow.
+--
+-- ORDERING: get_learning_path_categories sorts by priority (categories with a
+-- featured path rank above those without), then min(display_order), then
+-- category name. Matthew is is_featured=true so the Gospels category joins the
+-- featured tier; with min display_order 1 (tied with Foundations) the A-Z
+-- tiebreaker yields: Foundations, then Gospels, then the rest.
+-- =====================================================
+
+BEGIN;
+
+-- =====================================================
+-- PART 1: RECOMMENDED TOPICS (one per chapter / chapter-part)
+-- =====================================================
+
+-- The Gospel of Matthew (29 topics)
+INSERT INTO recommended_topics (id, title, description, category, tags, display_order, xp_value) VALUES
+  ('d0100000-e29b-41d4-a716-446655440001', 'Matthew 1: The King''s Genealogy and Birth',
+   'Read Matthew 1. Matthew opens by tracing Jesus'' lineage from Abraham through David, establishing Him as the promised Messiah and rightful heir to David''s throne. The genealogy includes surprising names of grace, then the angel announces the virgin conception by the Holy Spirit. Jesus is named Savior because He will save His people from their sins, and Immanuel, God with us. The incarnation fulfills prophecy and grounds our hope.',
+   'Life of Christ', ARRAY['matthew', 'genealogy', 'incarnation', 'prophecy'], 501, 50),
+  ('d0100000-e29b-41d4-a716-446655440002', 'Matthew 2: Worship, Hostility, and Refuge',
+   'Read Matthew 2. Magi from the east seek the newborn King and worship Him, while Herod plots His death, exposing two responses to Christ that persist today. God sovereignly protects His Son through the flight to Egypt and the return to Nazareth, fulfilling Scripture at every turn. The Gentiles'' worship foreshadows the gospel reaching all nations, and God''s faithfulness reassures us that no earthly power can thwart His redemptive plan.',
+   'Life of Christ', ARRAY['matthew', 'worship', 'prophecy', 'sovereignty'], 502, 50),
+  ('d0100000-e29b-41d4-a716-446655440003', 'Matthew 3: Repentance and the Baptism of Jesus',
+   'Read Matthew 3. John the Baptist prepares the way, calling Israel to repentance and warning that fruit, not heritage, evidences true faith. He points away from himself to the mightier One who baptizes with the Spirit. Though sinless, Jesus is baptized to fulfill all righteousness, identifying with sinners He came to save. The Father''s voice and the descending Spirit reveal the Trinity, affirming the beloved Son at the threshold of His ministry.',
+   'Life of Christ', ARRAY['matthew', 'repentance', 'baptism', 'trinity'], 503, 50),
+  ('d0100000-e29b-41d4-a716-446655440004', 'Matthew 4: Temptation, Light, and Calling',
+   'Read Matthew 4. In the wilderness Jesus, the true Israel, overcomes Satan''s temptations by wielding Scripture, succeeding where Adam and Israel failed. He then begins proclaiming the kingdom, calling sinners to repent because the King has come. Calling fishermen to follow Him, He launches a ministry of teaching, preaching, and healing. His sinless triumph qualifies Him as our substitute and models dependence on God''s Word against every assault.',
+   'Life of Christ', ARRAY['matthew', 'temptation', 'scripture', 'discipleship'], 504, 50),
+  ('d0100000-e29b-41d4-a716-446655440005', 'Matthew 5:1-16: The Beatitudes and Kingdom Witness',
+   'Read Matthew 5:1-16. Jesus begins the Sermon on the Mount by describing the character of kingdom citizens: poor in spirit, mourning, meek, hungering for righteousness, merciful, pure, peacemaking, and persecuted. These Beatitudes describe heart transformation, not entry requirements earned by works. He then calls disciples salt and light, whose good works display grace and glorify the Father, showing that genuine faith inevitably bears visible, God-honoring fruit.',
+   'Life of Christ', ARRAY['matthew', 'beatitudes', 'discipleship', 'kingdom'], 505, 50),
+  ('d0100000-e29b-41d4-a716-446655440006', 'Matthew 5:17-48: Christ Fulfills the Law',
+   'Read Matthew 5:17-48. Jesus declares He came not to abolish but to fulfill the Law and the Prophets, then exposes the heart''s true demands behind the commandments. Anger, lust, faithlessness, retaliation, and hatred all violate God''s righteousness. The required perfection drives us to Christ, the only one who fulfilled it. Far from lowering the standard, Jesus deepens it, revealing our need for the righteousness He alone provides through grace.',
+   'Life of Christ', ARRAY['matthew', 'law', 'righteousness', 'sermon-on-the-mount'], 506, 50),
+  ('d0100000-e29b-41d4-a716-446655440007', 'Matthew 6: Devotion, Prayer, and Trust',
+   'Read Matthew 6. Jesus warns against practicing righteousness for human applause, teaching that giving, prayer, and fasting are for God''s eyes alone. He gives the Lord''s Prayer as a pattern of God-centered devotion and dependence. Calling disciples to store treasure in heaven, He frees them from anxiety by pointing to a Father who feeds the birds and clothes the lilies. Seek first His kingdom, and trust the Father''s faithful provision.',
+   'Life of Christ', ARRAY['matthew', 'prayer', 'trust', 'discipleship'], 507, 50),
+  ('d0100000-e29b-41d4-a716-446655440008', 'Matthew 7: The Narrow Way and True Disciples',
+   'Read Matthew 7. Jesus concludes the Sermon on the Mount, addressing judgment, persistent prayer, and the Golden Rule. He warns of the narrow gate, false prophets known by their fruit, and the sobering truth that not all who say Lord, Lord enter the kingdom. Hearing and doing His words distinguishes the wise builder from the foolish. The crowds marvel at His authority, for He teaches as the King who must be obeyed.',
+   'Life of Christ', ARRAY['matthew', 'discipleship', 'judgment', 'authority'], 508, 50),
+  ('d0100000-e29b-41d4-a716-446655440009', 'Matthew 8: The Authority of the King over Sickness and Nature',
+   'Read Matthew 8. Matthew gathers miracles displaying Jesus'' authority: cleansing a leper, healing the centurion''s servant by a word, restoring Peter''s mother-in-law, and bearing our diseases as Isaiah foretold. He stills a storm and casts out demons, proving His power over nature and the unseen world. Following Jesus demands counting the cost. These signs authenticate His identity and reveal compassion flowing from divine power toward the broken.',
+   'Life of Christ', ARRAY['matthew', 'miracles', 'authority', 'faith'], 509, 50),
+  ('d0100000-e29b-41d4-a716-446655440010', 'Matthew 9: Authority to Forgive and Call Sinners',
+   'Read Matthew 9. Jesus forgives a paralytic''s sins, claiming divine prerogative, then heals him to prove His authority. He calls Matthew the tax collector and dines with sinners, declaring He came not for the righteous but to call sinners to repentance. Healing the sick and raising the dead, He shows compassion on the harassed crowds and calls for laborers for the harvest. Grace seeks the unworthy and outcast.',
+   'Life of Christ', ARRAY['matthew', 'forgiveness', 'grace', 'mission'], 510, 50),
+  ('d0100000-e29b-41d4-a716-446655440011', 'Matthew 10: Sending the Twelve',
+   'Read Matthew 10. Jesus commissions twelve apostles, granting authority and instructing them to proclaim the kingdom. He warns of persecution, urging fearless confession because the Father values them above sparrows. Allegiance to Christ surpasses every earthly tie, and whoever loses his life for Him will find it. Discipleship costs everything yet promises eternal reward. The mission advances under the King''s authority and the Father''s sovereign care over His servants.',
+   'Life of Christ', ARRAY['matthew', 'mission', 'discipleship', 'persecution'], 511, 50),
+  ('d0100000-e29b-41d4-a716-446655440012', 'Matthew 11: The Identity of Jesus and Rest for the Weary',
+   'Read Matthew 11. John''s question prompts Jesus to point to His messianic works as proof of His identity. Jesus rebukes unrepentant cities that witnessed His miracles yet refused to turn. He rejoices that the Father reveals truth to the humble, not the self-wise. Then He extends a tender invitation: come to Him, all who are weary, and find rest for your souls. Salvation''s rest is found in Christ alone.',
+   'Life of Christ', ARRAY['matthew', 'rest', 'repentance', 'grace'], 512, 50),
+  ('d0100000-e29b-41d4-a716-446655440013', 'Matthew 12: Lord of the Sabbath and Mounting Opposition',
+   'Read Matthew 12. Jesus declares Himself Lord of the Sabbath, prioritizing mercy over legalism and healing on the holy day. When Pharisees attribute His power to Satan, He warns of the unforgivable blasphemy against the Spirit, exposing hardened unbelief. Words reveal the heart, and the sign of Jonah points to His coming resurrection. True kinship belongs to those who do the Father''s will, not merely physical relatives.',
+   'Life of Christ', ARRAY['matthew', 'sabbath', 'opposition', 'heart'], 513, 50),
+  ('d0100000-e29b-41d4-a716-446655440014', 'Matthew 13: Parables of the Kingdom',
+   'Read Matthew 13. Jesus teaches in parables, revealing the kingdom to receptive hearts while concealing it from the hardened. The sower shows varied responses to the word; the wheat and tares, mustard seed, and leaven depict the kingdom''s hidden growth and final separation. The treasure and pearl portray its surpassing worth, and the net foretells judgment. The kingdom comes unexpectedly, demands everything, and grows by God''s sovereign work.',
+   'Life of Christ', ARRAY['matthew', 'parables', 'kingdom', 'judgment'], 514, 50),
+  ('d0100000-e29b-41d4-a716-446655440015', 'Matthew 14: Provision and Power over the Storm',
+   'Read Matthew 14. After John the Baptist''s martyrdom, Jesus withdraws yet has compassion on the crowds, feeding five thousand from five loaves and two fish. He reveals divine power by walking on the sea and rescuing sinking Peter, who doubted. The disciples worship Him as the Son of God. Crowds touch His garment and are healed. Christ proves Himself the all-sufficient provider and sustainer worthy of faith and worship.',
+   'Life of Christ', ARRAY['matthew', 'provision', 'faith', 'miracles'], 515, 50),
+  ('d0100000-e29b-41d4-a716-446655440016', 'Matthew 15: True Defilement and Persistent Faith',
+   'Read Matthew 15. Jesus confronts the Pharisees for elevating human tradition above God''s commandment, teaching that defilement flows from the heart, not unwashed hands. He exposes the inner source of sin. A Canaanite woman''s persistent, humble faith moves Him to heal her daughter, foreshadowing grace for the Gentiles. He then feeds four thousand, again displaying compassion and provision. God values heart-faith over external ritual and welcomes all who trust Him.',
+   'Life of Christ', ARRAY['matthew', 'heart', 'faith', 'tradition'], 516, 50),
+  ('d0100000-e29b-41d4-a716-446655440017', 'Matthew 16: Peter''s Confession and the Cost of Following',
+   'Read Matthew 16. Rejecting the Pharisees'' demand for signs, Jesus warns of false teaching. At Caesarea Philippi, Peter confesses Jesus as the Christ, the Son of the living God, a truth revealed by the Father. Jesus promises to build His church and then foretells His death and resurrection. He rebukes Peter''s resistance to the cross and calls disciples to deny themselves, take up their cross, and follow Him.',
+   'Life of Christ', ARRAY['matthew', 'confession', 'cross', 'discipleship'], 517, 50),
+  ('d0100000-e29b-41d4-a716-446655440018', 'Matthew 17: The Transfiguration and the Glory of the Son',
+   'Read Matthew 17. On the mountain Jesus is transfigured, His face shining and Moses and Elijah appearing, while the Father''s voice commands, This is my beloved Son; listen to Him. The glory affirms His deity and surpasses the Law and Prophets. Descending, Jesus heals a demon-possessed boy, teaching about faith, and again foretells His death and resurrection. Even in glory, He moves resolutely toward the cross for our salvation.',
+   'Life of Christ', ARRAY['matthew', 'transfiguration', 'glory', 'faith'], 518, 50),
+  ('d0100000-e29b-41d4-a716-446655440019', 'Matthew 18: Humility, Forgiveness, and Church Discipline',
+   'Read Matthew 18. Jesus teaches that greatness in the kingdom requires childlike humility and warns severely against causing little ones to stumble. The Father seeks the straying sheep, and Jesus outlines steps for restoring a sinning brother and exercising church discipline. The parable of the unforgiving servant reveals that those forgiven an immense debt must forgive others from the heart. Grace received compels grace extended within the redeemed community.',
+   'Life of Christ', ARRAY['matthew', 'forgiveness', 'humility', 'church'], 519, 50),
+  ('d0100000-e29b-41d4-a716-446655440020', 'Matthew 19: Marriage, Riches, and the Kingdom',
+   'Read Matthew 19. Jesus upholds God''s design for marriage as a lifelong, one-flesh union rooted in creation, addressing divorce with grace and truth. He blesses children, teaching that the kingdom belongs to the dependent. The rich young ruler turns away sorrowful, revealing that wealth can rival God. Salvation is impossible for man but possible with God, and those who leave all for Christ receive abundant eternal reward.',
+   'Life of Christ', ARRAY['matthew', 'marriage', 'riches', 'kingdom'], 520, 50),
+  ('d0100000-e29b-41d4-a716-446655440021', 'Matthew 20: Grace, Service, and the Suffering Servant',
+   'Read Matthew 20. The parable of the vineyard workers reveals God''s sovereign generosity, granting equal grace regardless of merit, silencing every claim of entitlement. Jesus foretells His death a third time, then redefines greatness as servanthood: the Son of Man came not to be served but to serve and to give His life as a ransom for many. He heals two blind men, embodying the mercy He proclaims.',
+   'Life of Christ', ARRAY['matthew', 'grace', 'service', 'ransom'], 521, 50),
+  ('d0100000-e29b-41d4-a716-446655440022', 'Matthew 21: The Triumphal Entry and Confrontation',
+   'Read Matthew 21. Jesus enters Jerusalem as the humble King foretold by Zechariah, hailed with Hosannas. He cleanses the temple, restoring it as a house of prayer, and curses the fruitless fig tree, picturing barren religion. Confronting the chief priests, He tells parables of the two sons and the wicked tenants, exposing their rejection of God''s Son. The rejected stone becomes the cornerstone of God''s redemptive plan.',
+   'Life of Christ', ARRAY['matthew', 'triumphal-entry', 'temple', 'judgment'], 522, 50),
+  ('d0100000-e29b-41d4-a716-446655440023', 'Matthew 22: The Wedding Feast and Silencing the Critics',
+   'Read Matthew 22. The parable of the wedding feast warns that many are invited but only those clothed in righteousness enter, picturing the necessity of God-provided salvation. Jesus answers traps about taxes, resurrection, and the law, declaring that the greatest commandments are wholehearted love for God and neighbor. He then silences His opponents by showing the Messiah is David''s Lord, affirming His divine identity beyond mere human descent.',
+   'Life of Christ', ARRAY['matthew', 'kingdom', 'love', 'messiah'], 523, 50),
+  ('d0100000-e29b-41d4-a716-446655440024', 'Matthew 23: Woes to the Hypocrites',
+   'Read Matthew 23. Jesus pronounces seven woes on the scribes and Pharisees, condemning their hypocrisy, pride, and burdening of others while neglecting justice, mercy, and faith. They appear righteous outwardly yet are inwardly corrupt. His searing rebuke exposes religion without regeneration. Yet His final words lament over Jerusalem with tender sorrow, longing to gather her children. True righteousness is inward and Spirit-wrought, never mere external performance or display.',
+   'Life of Christ', ARRAY['matthew', 'hypocrisy', 'judgment', 'righteousness'], 524, 50),
+  ('d0100000-e29b-41d4-a716-446655440025', 'Matthew 24: The Olivet Discourse and Christ''s Return',
+   'Read Matthew 24. Jesus foretells the temple''s destruction and signs preceding the end: deception, tribulation, and the gospel preached to all nations. He warns against false messiahs and assures that His coming will be unmistakable and glorious. No one knows the day or hour, so disciples must stay watchful and faithful. Christ''s certain return calls believers to readiness, perseverance, and steadfast service while awaiting His glorious appearing.',
+   'Life of Christ', ARRAY['matthew', 'eschatology', 'return', 'watchfulness'], 525, 50),
+  ('d0100000-e29b-41d4-a716-446655440026', 'Matthew 25: Readiness and the Final Judgment',
+   'Read Matthew 25. Three parables press the call to readiness: the ten virgins urge preparedness, the talents demand faithful stewardship, and the sheep and goats portray the final judgment. Christ separates the nations, and genuine faith proves itself in deeds of mercy toward His people, though such works flow from grace and never earn salvation. The King returns to judge, rewarding faithfulness and condemning empty profession to eternal separation.',
+   'Life of Christ', ARRAY['matthew', 'judgment', 'stewardship', 'readiness'], 526, 50),
+  ('d0100000-e29b-41d4-a716-446655440027', 'Matthew 26: The Last Supper and Gethsemane',
+   'Read Matthew 26. As the cross nears, a woman anoints Jesus and Judas conspires to betray Him. At the Last Supper Jesus institutes a new covenant in His blood, poured out for the forgiveness of sins. In Gethsemane He submits to the Father''s will in anguished prayer. He is betrayed, arrested, and unjustly tried, while Peter denies Him. The sinless Savior willingly walks toward His atoning death.',
+   'Life of Christ', ARRAY['matthew', 'last-supper', 'covenant', 'atonement'], 527, 50),
+  ('d0100000-e29b-41d4-a716-446655440028', 'Matthew 27: The Crucifixion of the King',
+   'Read Matthew 27. Jesus is condemned before Pilate, mocked, and crucified between criminals, bearing the wrath of God for sinners. Darkness covers the land and He cries out, forsaken in our place, satisfying divine justice. At His death the temple veil tears, opening access to God, and the earth quakes. He is buried in a borrowed tomb, sealed and guarded. The substitutionary atonement is accomplished for all who believe.',
+   'Life of Christ', ARRAY['matthew', 'crucifixion', 'atonement', 'substitution'], 528, 50),
+  ('d0100000-e29b-41d4-a716-446655440029', 'Matthew 28: The Resurrection and the Great Commission',
+   'Read Matthew 28. On the first day the tomb stands empty, and the angel announces that Jesus has risen as He said, conquering sin and death. The risen Christ appears, dispelling fear and confirming His bodily resurrection, the cornerstone of our hope. He claims all authority in heaven and earth and commissions His disciples to make disciples of all nations, baptizing and teaching, with the promise of His abiding presence forever.',
+   'Life of Christ', ARRAY['matthew', 'resurrection', 'great-commission', 'hope'], 529, 50)
+ON CONFLICT (id) DO NOTHING;
+
+-- The Gospel of Mark (22 topics)
+INSERT INTO recommended_topics (id, title, description, category, tags, display_order, xp_value) VALUES
+  ('d0200000-e29b-41d4-a716-446655440001', 'Mark 1: The Beginning of the Gospel of Jesus Christ',
+   'Read Mark 1. Mark opens at full speed: John the Baptist prepares the way, Jesus is baptized and affirmed by the Father, the Spirit descends, and He overcomes temptation. He launches His ministry preaching, ''Repent and believe in the gospel,'' calls His first disciples, casts out demons, and heals the sick. From the first verse Jesus is declared the Christ, the Son of God, whose authoritative word demands repentance and faith.',
+   'Life of Christ', ARRAY['mark', 'gospel', 'kingdom', 'discipleship'], 601, 50),
+  ('d0200000-e29b-41d4-a716-446655440002', 'Mark 2: Authority to Forgive Sins',
+   'Read Mark 2. Jesus heals a paralytic to prove He has authority on earth to forgive sins, revealing His divine identity. He calls Levi the tax collector, declaring He came not for the righteous but to call sinners. Questions about fasting and the Sabbath show that the old forms cannot contain the new reality He brings. Salvation is His gift to those who know their need, not the self-sufficient.',
+   'Life of Christ', ARRAY['mark', 'forgiveness', 'grace', 'authority'], 602, 50),
+  ('d0200000-e29b-41d4-a716-446655440003', 'Mark 3: The Lord of the Sabbath and His New Family',
+   'Read Mark 3. Jesus heals on the Sabbath, exposing hardened hearts that prize tradition over mercy. He appoints the Twelve to be with Him and to preach. Accused of casting out demons by Satan, He warns of blasphemy against the Holy Spirit—the persistent, unrepentant rejection of the Spirit''s witness to Christ. He defines His true family as those who do God''s will, redrawing belonging around faith and obedience, not bloodline.',
+   'Life of Christ', ARRAY['mark', 'sabbath', 'discipleship', 'kingdom'], 603, 50),
+  ('d0200000-e29b-41d4-a716-446655440004', 'Mark 4: Parables of the Kingdom',
+   'Read Mark 4:1-34. Jesus teaches in parables: the sower scatters the word, and the four soils reveal how hearts respond to it. The lamp, the growing seed, and the mustard seed show that God''s kingdom advances quietly yet certainly, by His power rather than human effort. These parables both reveal truth to the receptive and conceal it from the hardened, summoning us to hear, receive, and bear fruit in genuine faith.',
+   'Life of Christ', ARRAY['mark', 'parables', 'kingdom', 'faith'], 604, 50),
+  ('d0200000-e29b-41d4-a716-446655440005', 'Mark 4: Jesus Calms the Storm',
+   'Read Mark 4:35-41. As a violent storm threatens to swamp the boat, Jesus sleeps, then rises and rebukes the wind and waves into perfect calm. The terrified disciples ask, ''Who then is this, that even the wind and sea obey him?'' The answer is unmistakable: He is the Lord of creation, the God who commands the seas. Their fear exposes weak faith, yet His power invites deeper trust in Him.',
+   'Life of Christ', ARRAY['mark', 'faith', 'sovereignty', 'jesus'], 605, 50),
+  ('d0200000-e29b-41d4-a716-446655440006', 'Mark 5: Deliverance of the Gerasene Demoniac',
+   'Read Mark 5:1-20. Jesus crosses into Gentile territory and confronts a man enslaved by a legion of demons, untamable and tormented. With a word He delivers him, and the man is found clothed and in his right mind. The townspeople, fearful, beg Jesus to leave, but He sends the restored man home to proclaim how much the Lord has done for him. Christ''s authority over evil extends even to the Gentiles.',
+   'Life of Christ', ARRAY['mark', 'deliverance', 'mercy', 'mission'], 606, 50),
+  ('d0200000-e29b-41d4-a716-446655440007', 'Mark 5: Faith That Touches Jesus',
+   'Read Mark 5:21-43. Two desperate people meet Jesus: a synagogue ruler whose daughter is dying, and a woman bleeding twelve years. She touches His garment in faith and is healed; He tells her, ''Your faith has made you well.'' Though the girl dies, Jesus raises her, showing His power over disease and death itself. He honors faith that runs to Him in helplessness, meeting both the prominent and the outcast with compassion and power.',
+   'Life of Christ', ARRAY['mark', 'faith', 'healing', 'compassion'], 607, 50),
+  ('d0200000-e29b-41d4-a716-446655440008', 'Mark 6: Rejection, Mission, and a Martyr',
+   'Read Mark 6:1-29. Jesus is dishonored in His hometown, where unbelief limits the works He does among them. He sends the Twelve out two by two to preach repentance and heal, equipping His church for mission. Mark then recounts the death of John the Baptist, beheaded by Herod for faithful witness. Faithfulness to God''s truth may bring rejection and even death, yet the gospel advances and the kingdom''s messengers go forward in obedience.',
+   'Life of Christ', ARRAY['mark', 'mission', 'unbelief', 'faithfulness'], 608, 50),
+  ('d0200000-e29b-41d4-a716-446655440009', 'Mark 6: The Shepherd Who Feeds and Walks on Water',
+   'Read Mark 6:30-56. Moved with compassion for crowds like sheep without a shepherd, Jesus teaches them and feeds five thousand from five loaves and two fish, with twelve baskets left over. Then He walks on the sea and stills the wind, declaring, ''It is I; do not be afraid.'' These signs reveal Him as the true Shepherd and the divine ''I AM,'' the One who provides abundantly and rules over creation for His people.',
+   'Life of Christ', ARRAY['mark', 'provision', 'shepherd', 'jesus'], 609, 50),
+  ('d0200000-e29b-41d4-a716-446655440010', 'Mark 7: Clean Hearts and a Gentile''s Faith',
+   'Read Mark 7. Jesus rebukes the Pharisees for elevating human tradition above God''s commandment and exposes that defilement flows from the sinful heart, not external rituals. He declares all foods clean, anticipating the gospel''s reach beyond Israel. A Syrophoenician woman''s humble, persistent faith wins healing for her daughter, and a deaf man is restored. Christ diagnoses the true problem—the corrupt heart—and welcomes faith from every nation that comes to Him.',
+   'Life of Christ', ARRAY['mark', 'heart', 'tradition', 'faith'], 610, 50),
+  ('d0200000-e29b-41d4-a716-446655440011', 'Mark 8: Bread Enough and Blind Hearts',
+   'Read Mark 8:1-21. Jesus again has compassion on a hungry crowd and feeds four thousand, displaying His sufficiency for both Jew and Gentile. The Pharisees demand a sign, refusing to believe; Jesus warns the disciples against their leaven of hardened unbelief. Even the Twelve fail to grasp who He is, fixated on physical bread. The passage exposes how easily the heart misses Christ''s glory and calls us to spiritual sight that perceives and trusts Him.',
+   'Life of Christ', ARRAY['mark', 'provision', 'unbelief', 'faith'], 611, 50),
+  ('d0200000-e29b-41d4-a716-446655440012', 'Mark 8: Who Do You Say I Am?',
+   'Read Mark 8:22-38. A blind man healed in two stages mirrors the disciples'' dawning sight. At Caesarea Philippi, Peter confesses, ''You are the Christ''—the gospel''s hinge. Jesus then makes His first passion prediction: the Son of Man must suffer, die, and rise. He rebukes Peter''s resistance to the cross and calls all who follow Him to deny themselves, take up their cross, and lose their lives to save them. True discipleship embraces the crucified Christ.',
+   'Life of Christ', ARRAY['mark', 'confession', 'discipleship', 'cross'], 612, 50),
+  ('d0200000-e29b-41d4-a716-446655440013', 'Mark 9: The Transfiguration and the Faith That Cries for Help',
+   'Read Mark 9:1-29. On the mountain Jesus is transfigured, His glory unveiled, and the Father commands, ''This is my beloved Son; listen to him.'' Moses and Elijah testify that the Law and Prophets find fulfillment in Him. Descending, Jesus delivers a boy His disciples could not free, drawing from the father the honest prayer, ''I believe; help my unbelief!'' Christ''s divine glory and His power over evil meet our weak yet sincere, dependent faith.',
+   'Life of Christ', ARRAY['mark', 'glory', 'faith', 'prayer'], 613, 50),
+  ('d0200000-e29b-41d4-a716-446655440014', 'Mark 9: True Greatness in the Kingdom',
+   'Read Mark 9:30-50. Jesus again foretells His death and resurrection, but the disciples argue about who is greatest. He overturns their values: greatness means being last of all and servant of all, welcoming the lowly as one welcomes Him. He warns with severe urgency against causing others to stumble and against sin that would lead to destruction, calling for radical, decisive holiness. Discipleship is humble service flowing from genuine devotion to Christ.',
+   'Life of Christ', ARRAY['mark', 'humility', 'service', 'holiness'], 614, 50),
+  ('d0200000-e29b-41d4-a716-446655440015', 'Mark 10: The Cost and Reward of Following',
+   'Read Mark 10. Jesus upholds God''s design for marriage, blesses children as models of kingdom-receiving faith, and shows the rich man that no one is saved by works—''with God all things are possible.'' He predicts His death a third time and teaches that greatness is servanthood: the Son of Man came ''to give his life as a ransom for many.'' Blind Bartimaeus receives sight by faith. Salvation is grace, and following Jesus is the road to the cross.',
+   'Life of Christ', ARRAY['mark', 'grace', 'ransom', 'discipleship'], 615, 50),
+  ('d0200000-e29b-41d4-a716-446655440016', 'Mark 11: The King Enters Jerusalem',
+   'Read Mark 11. Jesus enters Jerusalem as the long-awaited King, hailed with hosannas yet riding humbly toward the cross. He curses a barren fig tree, enacting judgment on fruitless religion, and cleanses the temple, reclaiming it as a house of prayer for all nations. When the authorities challenge His authority, He silences them. The triumphal entry sets in motion the climactic week in which the King will lay down His life for His people.',
+   'Life of Christ', ARRAY['mark', 'king', 'judgment', 'worship'], 616, 50),
+  ('d0200000-e29b-41d4-a716-446655440017', 'Mark 12: The Son, the Greatest Commandment, and the Widow''s Gift',
+   'Read Mark 12. In the parable of the tenants Jesus identifies Himself as the rejected Son and cornerstone whom God vindicates. He answers traps about taxes and the resurrection with divine wisdom, affirms the living God of the patriarchs, and names the greatest commandments: love God wholly and your neighbor as yourself. Exposing hollow religion, He commends a poor widow''s wholehearted gift. God sees the heart and treasures love and trust offered fully to Him.',
+   'Life of Christ', ARRAY['mark', 'love', 'resurrection', 'stewardship'], 617, 50),
+  ('d0200000-e29b-41d4-a716-446655440018', 'Mark 13: Watching for the Son of Man',
+   'Read Mark 13. Foretelling the temple''s destruction, Jesus prepares His disciples for tribulation, deception, and persecution before the end. He promises that the gospel must first be preached to all nations and that the Son of Man will return in glory to gather His elect. No one knows the day or hour, so He repeatedly commands, ''Watch.'' Believers live in faithful, sober expectancy, trusting Christ''s certain word and persevering until He comes again.',
+   'Life of Christ', ARRAY['mark', 'prophecy', 'second-coming', 'watchfulness'], 618, 50),
+  ('d0200000-e29b-41d4-a716-446655440019', 'Mark 14: Anointed for Burial and the New Covenant',
+   'Read Mark 14:1-31. As plots against Jesus form and Judas agrees to betray Him, a woman anoints Him for burial in extravagant devotion. At the Passover meal Jesus institutes the Lord''s Supper, giving bread and cup as His body and blood ''poured out for many''—the new covenant sealed in His sacrificial death. He foretells the disciples'' desertion and Peter''s denial. The cross is no accident but the appointed means of redemption He willingly embraces.',
+   'Life of Christ', ARRAY['mark', 'covenant', 'sacrifice', 'communion'], 619, 50),
+  ('d0200000-e29b-41d4-a716-446655440020', 'Mark 14: Gethsemane, Betrayal, and Denial',
+   'Read Mark 14:32-72. In Gethsemane Jesus, in agony, surrenders to the Father''s will: ''Not what I will, but what you will.'' He is betrayed by Judas, arrested, and abandoned by His disciples. Before the council He is condemned for confessing the truth—He is the Christ, the Son of the Blessed One. Meanwhile Peter denies Him three times and weeps bitterly. The sinless Savior moves toward the cross in willing obedience, bearing human failure and divine purpose.',
+   'Life of Christ', ARRAY['mark', 'obedience', 'betrayal', 'cross'], 620, 50),
+  ('d0200000-e29b-41d4-a716-446655440021', 'Mark 15: The Crucifixion of the King',
+   'Read Mark 15. Condemned by Pilate though innocent, Jesus is mocked, scourged, and crucified between two criminals. In darkness He cries, ''My God, my God, why have you forsaken me?''—bearing the wrath our sin deserved as our substitute. He dies, the temple veil tears in two, opening the way to God, and a centurion confesses, ''Truly this man was the Son of God.'' Here the sinless Christ satisfies divine justice and secures redemption for all who believe.',
+   'Life of Christ', ARRAY['mark', 'crucifixion', 'atonement', 'redemption'], 621, 50),
+  ('d0200000-e29b-41d4-a716-446655440022', 'Mark 16: He Has Risen',
+   'Read Mark 16. On the first day of the week, women find the stone rolled away and an angel announcing, ''He has risen; he is not here.'' The bodily resurrection of Jesus is the Father''s vindication of His Son and the foundation of our hope and justification. (The earliest manuscripts end at verse 8; verses 9-20, while long received by the church, are textually disputed and add nothing essential to the gospel.) The risen Christ commissions His people to proclaim Him.',
+   'Life of Christ', ARRAY['mark', 'resurrection', 'hope', 'mission'], 622, 50)
+ON CONFLICT (id) DO NOTHING;
+
+-- The Gospel of Luke (27 topics)
+INSERT INTO recommended_topics (id, title, description, category, tags, display_order, xp_value) VALUES
+  ('d0300000-e29b-41d4-a716-446655440001', 'Luke 1: An Orderly Account and the Promise of John',
+   'Read Luke 1:1-25. Luke addresses Theophilus, grounding his Gospel in careful, eyewitness investigation so we may know the certainty of these things. The angel Gabriel announces to the priest Zechariah that his barren wife Elizabeth will bear John, the forerunner who will turn many to the Lord. Doubting, Zechariah is struck silent. God keeps covenant promises, works through ordinary faithful people, and prepares the way for the Messiah.',
+   'Life of Christ', ARRAY['luke', 'gospel', 'john-baptist', 'promise'], 701, 50),
+  ('d0300000-e29b-41d4-a716-446655440002', 'Luke 1: The Annunciation and Mary''s Magnificat',
+   'Read Luke 1:26-56. Gabriel announces to the virgin Mary that she will conceive Jesus by the Holy Spirit, the Son of the Most High whose kingdom will never end. Mary submits in humble faith, visits Elizabeth, and bursts into the Magnificat. Her song magnifies God as her Savior, exalting His mercy, holiness, and power to lift the lowly. This affirms the incarnation, the virgin conception, and salvation as God''s gracious initiative.',
+   'Life of Christ', ARRAY['luke', 'incarnation', 'mary', 'magnificat'], 702, 50),
+  ('d0300000-e29b-41d4-a716-446655440003', 'Luke 1: The Birth of John and Zechariah''s Song',
+   'Read Luke 1:57-80. John is born, and Zechariah''s tongue is loosed when he confirms the angel''s word. Filled with the Spirit, he prophesies the Benedictus, praising God for raising up a horn of salvation in David''s house and for the tender mercy that brings light to those in darkness. John will go before the Lord to prepare His way. God remembers His covenant and fulfills His redemptive promises in Christ.',
+   'Life of Christ', ARRAY['luke', 'john-baptist', 'prophecy', 'covenant'], 703, 50),
+  ('d0300000-e29b-41d4-a716-446655440004', 'Luke 2: The Birth of the Savior',
+   'Read Luke 2. Jesus is born in Bethlehem, laid in a manger, and announced by angels to shepherds as a Savior, Christ the Lord. At His presentation, Simeon and Anna recognize Him as God''s salvation prepared for all peoples. As a boy in the temple, Jesus shows awareness of His Father''s house. The incarnate Son enters human history in genuine humility, fulfilling prophecy and bringing peace to those on whom God''s favor rests.',
+   'Life of Christ', ARRAY['luke', 'incarnation', 'nativity', 'savior'], 704, 50),
+  ('d0300000-e29b-41d4-a716-446655440005', 'Luke 3: John''s Preaching and Jesus'' Baptism',
+   'Read Luke 3. John preaches a baptism of repentance for the forgiveness of sins, calling for fruit in keeping with repentance and pointing to One mightier who will baptize with the Spirit. Jesus is baptized, the Spirit descends, and the Father declares Him the beloved Son. The genealogy traces Jesus back to Adam, marking Him as the Savior of all humanity. Repentance and faith, not mere heritage, mark those prepared for the kingdom.',
+   'Life of Christ', ARRAY['luke', 'repentance', 'baptism', 'trinity'], 705, 50),
+  ('d0300000-e29b-41d4-a716-446655440006', 'Luke 4: Temptation and the Start of Jesus'' Ministry',
+   'Read Luke 4. Led by the Spirit, Jesus overcomes Satan''s temptations by Scripture alone, succeeding where Israel failed. In Nazareth He reads Isaiah and declares its fulfillment in Himself, announcing good news to the poor and liberty to captives. Rejected by His hometown, He teaches with authority and casts out demons. The Messiah''s saving mission begins, grounded in the written Word and confirmed by power over evil.',
+   'Life of Christ', ARRAY['luke', 'temptation', 'ministry', 'authority'], 706, 50),
+  ('d0300000-e29b-41d4-a716-446655440007', 'Luke 5: Calling Disciples and Authority to Forgive',
+   'Read Luke 5. After a miraculous catch of fish, Peter falls before Jesus in awareness of his sin, and is called to catch men. Jesus cleanses a leper, then forgives and heals a paralytic, proving the Son of Man''s authority on earth to forgive sins. He calls Levi the tax collector, declaring He came to call sinners to repentance, not the self-righteous. Salvation is for those who know their need of grace.',
+   'Life of Christ', ARRAY['luke', 'discipleship', 'forgiveness', 'grace'], 707, 50),
+  ('d0300000-e29b-41d4-a716-446655440008', 'Luke 6: Lord of the Sabbath and the Sermon on the Plain',
+   'Read Luke 6. Jesus asserts His lordship over the Sabbath and heals, exposing legalism. He chooses the twelve apostles, then teaches the Sermon on the Plain: blessings and woes, radical love for enemies, mercy, and warnings against hypocritical judging. A tree is known by its fruit, and the wise build on hearing and doing His words. True discipleship flows from a transformed heart, not external conformity.',
+   'Life of Christ', ARRAY['luke', 'sabbath', 'discipleship', 'sermon'], 708, 50),
+  ('d0300000-e29b-41d4-a716-446655440009', 'Luke 7: Faith, Compassion, and Forgiveness',
+   'Read Luke 7. Jesus commends the centurion''s great faith, raises the widow''s son at Nain, and reassures imprisoned John that the messianic signs confirm His identity. A sinful woman anoints His feet with tears, and Jesus declares her many sins forgiven because of her faith, contrasting her love with the Pharisee''s coldness. Christ''s compassion reaches the outsider and the broken, and forgiveness is received through faith, producing grateful love.',
+   'Life of Christ', ARRAY['luke', 'faith', 'forgiveness', 'compassion'], 709, 50),
+  ('d0300000-e29b-41d4-a716-446655440010', 'Luke 8: Parables and Power over Nature, Demons, and Death',
+   'Read Luke 8. Jesus teaches the parable of the sower, explaining that the word bears fruit in honest, persevering hearts. He calms the storm, delivers the Gerasene demoniac, heals the bleeding woman through faith, and raises Jairus''s daughter. His authority extends over nature, evil spirits, sickness, and death. The kingdom advances as the word is received and obeyed, and Jesus is revealed as the sovereign Lord worthy of trust.',
+   'Life of Christ', ARRAY['luke', 'parables', 'faith', 'miracles'], 710, 50),
+  ('d0300000-e29b-41d4-a716-446655440011', 'Luke 9: Peter''s Confession and the Transfiguration',
+   'Read Luke 9:1-50. Jesus sends out the Twelve, feeds five thousand, and asks who the crowds say He is. Peter confesses Him as the Christ of God, and Jesus foretells His death and calls disciples to take up the cross. On the mountain He is transfigured in glory, and the Father commands, listen to Him. This turning point reveals Christ''s divine glory and the necessity of His atoning death and self-denying discipleship.',
+   'Life of Christ', ARRAY['luke', 'confession', 'transfiguration', 'cross'], 711, 50),
+  ('d0300000-e29b-41d4-a716-446655440012', 'Luke 9: Resolutely Toward Jerusalem',
+   'Read Luke 9:51-62. Jesus sets His face to go to Jerusalem, knowing the cross awaits. A Samaritan village rejects Him, but He rebukes the disciples'' desire for vengeance. Three would-be followers learn the cost of discipleship: there is no comfortable nest, no delayed obedience, and no looking back once the hand is on the plow. Following Christ demands undivided, wholehearted commitment that treasures Him above all earthly ties.',
+   'Life of Christ', ARRAY['luke', 'discipleship', 'cost', 'commitment'], 712, 50),
+  ('d0300000-e29b-41d4-a716-446655440013', 'Luke 10: Mission, the Good Samaritan, and the One Thing Needful',
+   'Read Luke 10. Jesus sends seventy-two to proclaim the kingdom, rejoicing that their names are written in heaven. He praises the Father for revealing truth to the humble. The parable of the Good Samaritan redefines neighbor-love as active mercy across barriers. At Bethany, Martha is anxious while Mary chooses the better portion at Jesus'' feet. Genuine discipleship rests first in hearing Christ, from which love and service rightly flow.',
+   'Life of Christ', ARRAY['luke', 'mission', 'mercy', 'discipleship'], 713, 50),
+  ('d0300000-e29b-41d4-a716-446655440014', 'Luke 11: Prayer and Confronting Hypocrisy',
+   'Read Luke 11. Jesus teaches the disciples to pray, urging persistent, confident asking of a good Father who gives the Holy Spirit. He answers charges that He casts out demons by Satan, warning that a divided kingdom falls and neutrality is impossible. He pronounces woes on Pharisees and lawyers who prize outward purity and tradition while neglecting justice and the love of God. God desires sincere hearts, not religious pretense.',
+   'Life of Christ', ARRAY['luke', 'prayer', 'hypocrisy', 'kingdom'], 714, 50),
+  ('d0300000-e29b-41d4-a716-446655440015', 'Luke 12: Fear God, Seek the Kingdom, Stay Ready',
+   'Read Luke 12. Jesus warns against hypocrisy and the fear of man, calling disciples to fear God who values them dearly. The rich fool stores up treasure but is not rich toward God. Disciples are freed from anxiety to seek the kingdom, trusting the Father''s care. Jesus urges watchfulness for His return and faithful stewardship. Eternal realities must govern earthly priorities, for everyone gives account to the returning Lord.',
+   'Life of Christ', ARRAY['luke', 'stewardship', 'anxiety', 'readiness'], 715, 50),
+  ('d0300000-e29b-41d4-a716-446655440016', 'Luke 13: Repent and Enter the Narrow Door',
+   'Read Luke 13. Jesus calls all to repent, warning that without repentance people perish, yet the patient gardener pictures God''s mercy. He heals a bent woman on the Sabbath, exposing hardened hearts, and likens the kingdom to mustard seed and leaven. He urges striving to enter through the narrow door, for many will be excluded. He laments over Jerusalem''s unbelief. Salvation requires genuine repentance and faith, not assumed privilege.',
+   'Life of Christ', ARRAY['luke', 'repentance', 'kingdom', 'judgment'], 716, 50),
+  ('d0300000-e29b-41d4-a716-446655440017', 'Luke 14: Humility, the Great Banquet, and the Cost of Discipleship',
+   'Read Luke 14. Healing on the Sabbath, Jesus teaches humility, urging guests to take the lowest place and hosts to invite those who cannot repay. The parable of the great banquet shows God inviting the poor and outcast as the complacent refuse. Jesus warns that discipleship costs everything; one must count the cost and surrender all to follow Him. Grace is freely offered, yet it claims the whole of life in glad allegiance to Christ.',
+   'Life of Christ', ARRAY['luke', 'humility', 'grace', 'discipleship'], 717, 50),
+  ('d0300000-e29b-41d4-a716-446655440018', 'Luke 15: The Parables of Grace',
+   'Read Luke 15. Answering critics who despise His welcome of sinners, Jesus tells three parables: the lost sheep, the lost coin, and the prodigal son. Heaven rejoices over one sinner who repents. The father runs to embrace his returning son, restoring him by sheer grace, while the elder brother exposes self-righteous resentment. These parables unveil the seeking, forgiving heart of God toward the repentant, displaying the gospel of grace that saves the undeserving.',
+   'Life of Christ', ARRAY['luke', 'grace', 'repentance', 'parables'], 718, 50),
+  ('d0300000-e29b-41d4-a716-446655440019', 'Luke 16: Money, Eternity, and the Word',
+   'Read Luke 16. The shrewd manager teaches wise, eternal use of worldly wealth, for one cannot serve both God and money. Jesus rebukes the money-loving Pharisees, affirming the abiding authority of God''s law. The rich man and Lazarus reveals the fixed, irreversible reality of eternity after death and the sufficiency of Scripture to lead to repentance. How we handle wealth reveals the heart, and Scripture, not signs, awakens true faith.',
+   'Life of Christ', ARRAY['luke', 'money', 'eternity', 'scripture'], 719, 50),
+  ('d0300000-e29b-41d4-a716-446655440020', 'Luke 17: Faith, Gratitude, and the Coming Kingdom',
+   'Read Luke 17. Jesus teaches about avoiding stumbling blocks, forgiving repeatedly, and serving as unworthy servants who claim no merit. Ten lepers are cleansed, but only one Samaritan returns to give thanks, his faith making him whole. Jesus declares the kingdom of God is already in their midst and warns that His return will be sudden and visible. Saving faith expresses itself in humility, gratitude, and readiness for the Lord''s appearing.',
+   'Life of Christ', ARRAY['luke', 'faith', 'gratitude', 'kingdom'], 720, 50),
+  ('d0300000-e29b-41d4-a716-446655440021', 'Luke 18: Prayer, Humility, and Receiving the Kingdom',
+   'Read Luke 18. Jesus urges persistent prayer through the persistent widow and contrasts the self-righteous Pharisee with the justified tax collector who pleads for mercy. He welcomes children, teaching that the kingdom is received in childlike dependence. The rich ruler turns away, unwilling to part with wealth, while Jesus foretells His death and heals a blind beggar who calls Him Son of David. Justification comes by humble faith, never by self-confident merit.',
+   'Life of Christ', ARRAY['luke', 'prayer', 'humility', 'justification'], 721, 50),
+  ('d0300000-e29b-41d4-a716-446655440022', 'Luke 19: Zacchaeus, the Pounds, and the Triumphal Entry',
+   'Read Luke 19. Jesus saves Zacchaeus, declaring He came to seek and save the lost, with transformed living flowing from grace. The parable of the ten minas calls servants to faithful stewardship before the King returns. Jesus enters Jerusalem as the humble King to shouts of praise, weeps over the city''s blindness, and cleanses the temple. The Savior pursues sinners, rewards faithfulness, and rightly claims worship as Israel''s promised King.',
+   'Life of Christ', ARRAY['luke', 'salvation', 'stewardship', 'kingship'], 722, 50),
+  ('d0300000-e29b-41d4-a716-446655440023', 'Luke 20: The Authority of Christ Tested',
+   'Read Luke 20. In the temple, Jesus'' authority is challenged, and He answers with the parable of the wicked tenants, exposing rejection of God''s beloved Son, the rejected stone now made the cornerstone. He silences traps about taxes to Caesar and the resurrection, affirming God as the God of the living. He questions how the Christ can be both David''s son and Lord, and warns against the proud scribes. Christ''s divine authority stands unassailable.',
+   'Life of Christ', ARRAY['luke', 'authority', 'resurrection', 'christ'], 723, 50),
+  ('d0300000-e29b-41d4-a716-446655440024', 'Luke 21: The Widow''s Gift and Signs of the End',
+   'Read Luke 21. Jesus commends the poor widow whose tiny offering outweighs the rich, for she gave all she had. He foretells the temple''s destruction, coming tribulations, the fall of Jerusalem, and His glorious return as the Son of Man. Disciples are called to endurance, watchfulness, and prayer rather than fear. History moves toward Christ''s certain return; His unfailing words summon His people to faithful, sober readiness amid trial.',
+   'Life of Christ', ARRAY['luke', 'endurance', 'return', 'watchfulness'], 724, 50),
+  ('d0300000-e29b-41d4-a716-446655440025', 'Luke 22: The Last Supper and Gethsemane',
+   'Read Luke 22. Judas agrees to betray Jesus. At the Passover, Jesus institutes the Lord''s Supper, giving His body and blood as the new covenant for the forgiveness of sins. He foretells Peter''s denial and teaches greatness through servanthood. In Gethsemane He submits to the Father''s will in anguished prayer, is betrayed and arrested, and Peter denies Him. The sinless Savior willingly moves toward the cross to secure redemption for His people.',
+   'Life of Christ', ARRAY['luke', 'lords-supper', 'atonement', 'gethsemane'], 725, 50),
+  ('d0300000-e29b-41d4-a716-446655440026', 'Luke 23: The Crucifixion of the Savior',
+   'Read Luke 23. Though Pilate and Herod find no guilt in Him, Jesus is condemned and crucified between two criminals. He prays for His executioners and promises paradise to the repentant thief, who is saved by faith alone. Darkness falls, the temple curtain tears, and Jesus commits His spirit to the Father. The innocent Son dies as the substitute for sinners, satisfying divine justice and opening the way to God through His atoning death.',
+   'Life of Christ', ARRAY['luke', 'crucifixion', 'atonement', 'substitution'], 726, 50),
+  ('d0300000-e29b-41d4-a716-446655440027', 'Luke 24: The Resurrection and the Emmaus Road',
+   'Read Luke 24. On the first day, women find the tomb empty and angels announce that Jesus is risen, just as He foretold. Walking to Emmaus, the risen Christ opens the Scriptures, showing how all of them point to His suffering and glory. He appears bodily to the disciples, eats before them, commissions repentance and forgiveness to all nations, and ascends. The bodily resurrection vindicates Christ and seals the gospel of salvation.',
+   'Life of Christ', ARRAY['luke', 'resurrection', 'emmaus', 'gospel'], 727, 50)
+ON CONFLICT (id) DO NOTHING;
+
+-- The Gospel of John (22 topics)
+INSERT INTO recommended_topics (id, title, description, category, tags, display_order, xp_value) VALUES
+  ('d0400000-e29b-41d4-a716-446655440001', 'John 1: The Word Made Flesh',
+   'Read John 1. John opens not at Bethlehem but in eternity: the Word was with God and was God, the Creator through whom all things were made. This eternal Word became flesh and dwelt among us, full of grace and truth. John the Baptist testifies, and Jesus calls His first disciples. Here John sets his entire theme—the divine, pre-existent Son revealing the Father and offering the right to become God''s children through belief in His name.',
+   'Life of Christ', ARRAY['john', 'incarnation', 'christology', 'prologue'], 801, 50),
+  ('d0400000-e29b-41d4-a716-446655440002', 'John 2: The First Sign and the Temple Cleansed',
+   'Read John 2. At Cana, Jesus turns water into wine—the first of His signs—revealing His glory so that His disciples believed. Then He cleanses the temple, claiming authority over His Father''s house and foretelling His death and resurrection in raising the temple of His body. John shows that Jesus is greater than the old order: He inaugurates the joy of the new covenant and embodies God''s true dwelling, even while many believed only superficially in His miracles.',
+   'Life of Christ', ARRAY['john', 'signs', 'glory', 'temple'], 802, 50),
+  ('d0400000-e29b-41d4-a716-446655440003', 'John 3: You Must Be Born Again',
+   'Read John 3. Nicodemus comes by night, and Jesus declares that no one can see the kingdom unless born again by the Spirit. The new birth is God''s sovereign work, not human effort. Then comes the gospel''s heart: God so loved the world that He gave His only Son, that whoever believes in Him should not perish but have eternal life. Salvation rests on Christ lifted up, received by faith alone—light has come, and belief or unbelief determines judgment.',
+   'Life of Christ', ARRAY['john', 'new-birth', 'gospel', 'faith'], 803, 50),
+  ('d0400000-e29b-41d4-a716-446655440004', 'John 4: Living Water for the Samaritan Woman',
+   'Read John 4. Jesus crosses social and ethnic barriers to offer a Samaritan woman living water that becomes a spring of eternal life. He reveals true worship in spirit and truth and openly declares Himself the Messiah. Her testimony brings many Samaritans to believe. Returning to Galilee, Jesus heals an official''s son by His word alone. John shows the Savior of the world reaching beyond Israel, granting life by grace to all who believe regardless of background or distance.',
+   'Life of Christ', ARRAY['john', 'living-water', 'worship', 'faith'], 804, 50),
+  ('d0400000-e29b-41d4-a716-446655440005', 'John 5: The Son''s Authority and the Father''s Witness',
+   'Read John 5. Jesus heals a man paralyzed thirty-eight years at Bethesda, prompting conflict over the Sabbath. He responds by claiming equality with God—working as the Father works, giving life and executing judgment as the Son. He summons witnesses to His identity: the Baptist, His works, the Father, and the Scriptures, which testify of Him. John presses the reader to honor the Son as they honor the Father, for eternal life comes through hearing and believing His word.',
+   'Life of Christ', ARRAY['john', 'authority', 'sabbath', 'witness'], 805, 50),
+  ('d0400000-e29b-41d4-a716-446655440006', 'John 6: Feeding the Five Thousand and Walking on Water',
+   'Read John 6:1-21. Jesus feeds five thousand from five loaves and two fish, a sign of His abundant provision and a foreshadow of the bread to come. The crowd, seeing the miracle, seeks to make Him king by force, but He withdraws. That night He walks upon the sea and calms His disciples'' fear with ''It is I; do not be afraid.'' John displays Christ''s creative power over nature and His sovereign presence, preparing for the great discourse on the bread of life.',
+   'Life of Christ', ARRAY['john', 'signs', 'provision', 'miracle'], 806, 50),
+  ('d0400000-e29b-41d4-a716-446655440007', 'John 6: I Am the Bread of Life',
+   'Read John 6:22-71. Jesus declares Himself the bread of life: whoever comes to Him will never hunger, and whoever believes will never thirst. He teaches that no one comes unless the Father draws him, and that He will raise up His own at the last day. His hard saying about eating His flesh and drinking His blood—a call to feed on Him by faith—sifts the crowd. Many turn back, but Peter confesses, ''You have the words of eternal life.''',
+   'Life of Christ', ARRAY['john', 'i-am', 'bread-of-life', 'faith'], 807, 50),
+  ('d0400000-e29b-41d4-a716-446655440008', 'John 7: Rivers of Living Water at the Feast',
+   'Read John 7. At the Feast of Tabernacles, Jesus teaches openly amid division over His identity. He points to the Father as the source of His doctrine and invites the thirsty to come and drink, promising rivers of living water—the Spirit to be given after His glorification. Officers sent to arrest Him return amazed: ''No one ever spoke like this man.'' John captures the rising tension, the wonder, and the unbelief, as the crowds wrestle with whether Jesus is the Christ.',
+   'Life of Christ', ARRAY['john', 'living-water', 'spirit', 'division'], 808, 50),
+  ('d0400000-e29b-41d4-a716-446655440009', 'John 8: The Light of the World and the Great I AM',
+   'Read John 8. Jesus proclaims, ''I am the light of the world,'' offering the light of life to all who follow Him. He confronts unbelief, exposing slavery to sin and promising that the truth will set His disciples free. The dispute climaxes with His staggering claim, ''Before Abraham was, I AM,'' invoking the divine name and asserting His eternal deity. The hostile crowd takes up stones, but John leaves the reader facing the question of who Jesus truly is.',
+   'Life of Christ', ARRAY['john', 'i-am', 'light', 'deity'], 809, 50),
+  ('d0400000-e29b-41d4-a716-446655440010', 'John 9: Healing the Man Born Blind',
+   'Read John 9. Jesus heals a man blind from birth, declaring the works of God displayed in him and Himself the light of the world. As the Pharisees interrogate and finally expel the healed man, his spiritual sight grows even as theirs hardens. He worships Jesus as Lord. John frames the sign as a parable of grace: those who admit their blindness receive sight, while those who claim to see remain in guilt and judgment.',
+   'Life of Christ', ARRAY['john', 'signs', 'light', 'faith'], 810, 50),
+  ('d0400000-e29b-41d4-a716-446655440011', 'John 10: The Good Shepherd Lays Down His Life',
+   'Read John 10. Jesus is the good shepherd who lays down His life for the sheep and the door through which they are saved. His sheep hear His voice, follow Him, and can never be snatched from His hand—a sure promise of the believer''s security in the Father and the Son. He claims, ''I and the Father are one,'' provoking charges of blasphemy. John presents Christ''s substitutionary, willing death and the unbreakable bond between the Shepherd and His own.',
+   'Life of Christ', ARRAY['john', 'good-shepherd', 'security', 'deity'], 811, 50),
+  ('d0400000-e29b-41d4-a716-446655440012', 'John 11: The Resurrection and the Life',
+   'Read John 11. At the tomb of Lazarus, Jesus declares, ''I am the resurrection and the life; whoever believes in me, though he die, yet shall he live.'' Moved with deep emotion, He weeps, then calls Lazarus out of death—the climactic sign pointing to His own coming victory over the grave. Many believe, yet the council resolves to kill Him, and Caiaphas unwittingly prophesies that one man would die for the people. Life-giving power and the path to the cross converge.',
+   'Life of Christ', ARRAY['john', 'i-am', 'resurrection', 'signs'], 812, 50),
+  ('d0400000-e29b-41d4-a716-446655440013', 'John 12: The Hour Has Come',
+   'Read John 12. Mary anoints Jesus for His burial, and He enters Jerusalem as the promised King to shouts of Hosanna. Declaring that His hour has come, He likens His death to a seed that must fall and die to bear much fruit, and foretells being lifted up to draw all people to Himself. Despite many signs, much of the nation remains in unbelief, fulfilling prophecy. John closes Jesus'' public ministry with a final call to walk in the light.',
+   'Life of Christ', ARRAY['john', 'the-hour', 'kingship', 'unbelief'], 813, 50),
+  ('d0400000-e29b-41d4-a716-446655440014', 'John 13: The Servant King and the New Commandment',
+   'Read John 13. On the eve of His death, Jesus washes His disciples'' feet, displaying the full extent of His love and modeling humble, cleansing service. He foretells His betrayal by Judas and Peter''s denial. Then He gives a new commandment—that they love one another as He has loved them—making such love the mark of true discipleship. John opens the Upper Room teaching by uniting Christ''s sacrificial love with the love that is to define His people.',
+   'Life of Christ', ARRAY['john', 'servanthood', 'love', 'discipleship'], 814, 50),
+  ('d0400000-e29b-41d4-a716-446655440015', 'John 14: The Way, the Truth, and the Life',
+   'Read John 14. Jesus comforts His troubled disciples: He goes to prepare a place and will return for them. He declares, ''I am the way, the truth, and the life; no one comes to the Father except through me,'' affirming His exclusive role in salvation and His oneness with the Father. He promises the Holy Spirit, another Helper, to indwell and teach them, and leaves His peace. John shows that knowing Christ is knowing God Himself.',
+   'Life of Christ', ARRAY['john', 'i-am', 'the-way', 'holy-spirit'], 815, 50),
+  ('d0400000-e29b-41d4-a716-446655440016', 'John 15: The True Vine',
+   'Read John 15. Jesus declares, ''I am the true vine,'' and calls His disciples to abide in Him, for apart from Him they can do nothing. Genuine union with Christ bears lasting fruit and proves true discipleship, while fruitlessness reveals no real life within. He commands them to love one another and warns that the world will hate them as it hated Him. John binds together abiding faith, obedient love, and the costly witness of belonging to Christ.',
+   'Life of Christ', ARRAY['john', 'i-am', 'abiding', 'fruitfulness'], 816, 50),
+  ('d0400000-e29b-41d4-a716-446655440017', 'John 16: The Work of the Spirit and Lasting Joy',
+   'Read John 16. Jesus prepares His disciples for persecution and explains that His departure is to their advantage, for He will send the Spirit. The Spirit will convict the world concerning sin, righteousness, and judgment, and will guide believers into all truth, glorifying Christ. Their sorrow will turn to joy that no one can take away. He assures them of the Father''s love and concludes, ''I have overcome the world.'' John grounds enduring hope in Christ''s certain victory.',
+   'Life of Christ', ARRAY['john', 'holy-spirit', 'joy', 'victory'], 817, 50),
+  ('d0400000-e29b-41d4-a716-446655440018', 'John 17: The High Priestly Prayer',
+   'Read John 17. Jesus prays to the Father, asking to be glorified that He might glorify Him, and defining eternal life as knowing the only true God and Jesus Christ whom He sent. He intercedes for His disciples—that they be kept, sanctified in truth, and one as He and the Father are one. He prays even for those who will believe through their word, that all His own may behold His glory. John reveals the Son''s heart as our great High Priest.',
+   'Life of Christ', ARRAY['john', 'intercession', 'unity', 'glory'], 818, 50),
+  ('d0400000-e29b-41d4-a716-446655440019', 'John 18: Betrayed, Arrested, and on Trial',
+   'Read John 18. Judas betrays Jesus in the garden, where Jesus, declaring ''I am he,'' surrenders willingly to protect His own. Peter denies Him three times as foretold. Before Annas, Caiaphas, and Pilate, Jesus testifies to the truth and to a kingdom not of this world. Pilate finds no guilt yet yields to the crowd. John portrays the Son moving sovereignly toward the cross—never a victim, but laying down His life in obedience to drink the cup the Father gave.',
+   'Life of Christ', ARRAY['john', 'trial', 'sovereignty', 'kingdom'], 819, 50),
+  ('d0400000-e29b-41d4-a716-446655440020', 'John 19: It Is Finished',
+   'Read John 19. Scourged, mocked, and condemned, Jesus is crucified between two others, the King of the Jews. From the cross He entrusts His mother to John, then cries, ''It is finished''—the full, atoning work of bearing sin''s penalty complete—and gives up His spirit. Soldiers pierce His side, and He is buried in a new tomb, fulfilling Scripture at every turn. John presents the cross as Christ''s deliberate, substitutionary sacrifice, satisfying divine justice for sinners.',
+   'Life of Christ', ARRAY['john', 'cross', 'atonement', 'it-is-finished'], 820, 50),
+  ('d0400000-e29b-41d4-a716-446655440021', 'John 20: The Lord Is Risen',
+   'Read John 20. On the first day, the tomb is empty; the risen Jesus appears to Mary Magdalene, then to His disciples, showing His pierced hands and side. He breathes on them, commissions them, and meets doubting Thomas, who confesses, ''My Lord and my God!'' Jesus blesses those who believe without seeing. John states his purpose plainly: these signs are written that you may believe Jesus is the Christ, the Son of God, and have life in His name.',
+   'Life of Christ', ARRAY['john', 'resurrection', 'faith', 'life'], 821, 50),
+  ('d0400000-e29b-41d4-a716-446655440022', 'John 21: Do You Love Me? — Peter Restored',
+   'Read John 21. The risen Jesus appears by the Sea of Galilee, providing a miraculous catch of fish and breakfast for His weary disciples. Gently and threefold, mirroring Peter''s threefold denial, He restores Peter, calling him to love Him and to feed His sheep. He foretells the manner of Peter''s death and renews the call, ''Follow me.'' John closes testifying to the trustworthiness of his witness, affirming that the world itself could not contain all Jesus did.',
+   'Life of Christ', ARRAY['john', 'restoration', 'discipleship', 'witness'], 822, 50)
+ON CONFLICT (id) DO NOTHING;
+
+-- =====================================================
+-- PART 2: LEARNING PATHS + TOPIC MAPPINGS
+-- =====================================================
+
+-- The Gospel of Matthew
+INSERT INTO learning_paths (id, slug, title, description, icon_name, color, estimated_days, difficulty_level, disciple_level, recommended_mode, is_featured, display_order, category)
+VALUES (
+  'aaa00000-0000-0000-0000-000000000042', 'gospel-of-matthew', 'The Gospel of Matthew',
+  'Walk through Matthew from start to finish — one study per chapter. Meet Jesus as the promised King of Israel: His royal genealogy and birth, the Sermon on the Mount, the parables of the kingdom, His miracles and confrontations, and the climactic cross, resurrection, and Great Commission. Read every chapter and let Matthew show you the King who fulfills all Scripture.',
+  'auto_stories', '#2563EB', 30, 'beginner', 'seeker', 'standard', true, 1, 'Gospels'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO learning_path_topics (learning_path_id, topic_id, position, is_milestone) VALUES
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440001', 0, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440002', 1, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440003', 2, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440004', 3, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440005', 4, true),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440006', 5, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440007', 6, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440008', 7, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440009', 8, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440010', 9, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440011', 10, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440012', 11, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440013', 12, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440014', 13, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440015', 14, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440016', 15, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440017', 16, true),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440018', 17, true),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440019', 18, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440020', 19, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440021', 20, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440022', 21, true),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440023', 22, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440024', 23, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440025', 24, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440026', 25, false),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440027', 26, true),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440028', 27, true),
+  ('aaa00000-0000-0000-0000-000000000042', 'd0100000-e29b-41d4-a716-446655440029', 28, true)
+ON CONFLICT DO NOTHING;
+
+-- The Gospel of Mark
+INSERT INTO learning_paths (id, slug, title, description, icon_name, color, estimated_days, difficulty_level, disciple_level, recommended_mode, is_featured, display_order, category)
+VALUES (
+  'aaa00000-0000-0000-0000-000000000043', 'gospel-of-mark', 'The Gospel of Mark',
+  'Move at full speed through Mark, the shortest and most action-packed Gospel — one study per chapter. See Jesus the Servant on the move: casting out demons, healing the sick, stilling storms, and pressing toward Jerusalem. From "Repent and believe the gospel" to the empty tomb, read every chapter and meet the Son of God who came to give His life as a ransom for many.',
+  'healing', '#DC2626', 21, 'beginner', 'seeker', 'standard', false, 2, 'Gospels'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO learning_path_topics (learning_path_id, topic_id, position, is_milestone) VALUES
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440001', 0, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440002', 1, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440003', 2, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440004', 3, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440005', 4, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440006', 5, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440007', 6, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440008', 7, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440009', 8, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440010', 9, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440011', 10, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440012', 11, true),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440013', 12, true),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440014', 13, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440015', 14, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440016', 15, true),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440017', 16, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440018', 17, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440019', 18, true),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440020', 19, false),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440021', 20, true),
+  ('aaa00000-0000-0000-0000-000000000043', 'd0200000-e29b-41d4-a716-446655440022', 21, true)
+ON CONFLICT DO NOTHING;
+
+-- The Gospel of Luke
+INSERT INTO learning_paths (id, slug, title, description, icon_name, color, estimated_days, difficulty_level, disciple_level, recommended_mode, is_featured, display_order, category)
+VALUES (
+  'aaa00000-0000-0000-0000-000000000044', 'gospel-of-luke', 'The Gospel of Luke',
+  'Journey through Luke, the Gospel of compassion — one study per chapter. From the careful orderly account and the songs of Mary and Zechariah to the birth of the Savior, the parables of grace, and the road to Emmaus, Luke shows Jesus seeking and saving the lost. Read every chapter and meet the Savior whose mercy reaches the poor, the outsider, and the sinner.',
+  'volunteer_activism', '#059669', 28, 'beginner', 'seeker', 'standard', false, 3, 'Gospels'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO learning_path_topics (learning_path_id, topic_id, position, is_milestone) VALUES
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440001', 0, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440002', 1, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440003', 2, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440004', 3, true),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440005', 4, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440006', 5, true),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440007', 6, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440008', 7, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440009', 8, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440010', 9, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440011', 10, true),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440012', 11, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440013', 12, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440014', 13, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440015', 14, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440016', 15, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440017', 16, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440018', 17, true),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440019', 18, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440020', 19, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440021', 20, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440022', 21, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440023', 22, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440024', 23, false),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440025', 24, true),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440026', 25, true),
+  ('aaa00000-0000-0000-0000-000000000044', 'd0300000-e29b-41d4-a716-446655440027', 26, true)
+ON CONFLICT DO NOTHING;
+
+-- The Gospel of John
+INSERT INTO learning_paths (id, slug, title, description, icon_name, color, estimated_days, difficulty_level, disciple_level, recommended_mode, is_featured, display_order, category)
+VALUES (
+  'aaa00000-0000-0000-0000-000000000045', 'gospel-of-john', 'The Gospel of John',
+  'Behold the glory of Christ in John''s Gospel — one study per chapter. From "the Word became flesh" through the seven signs, the "I AM" sayings, the Upper Room, the cross, and the resurrection, John writes so that you may believe Jesus is the Christ, the Son of God, and have life in His name. Read every chapter and meet the eternal Son who reveals the Father.',
+  'import_contacts', '#7C3AED', 22, 'beginner', 'follower', 'standard', false, 4, 'Gospels'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO learning_path_topics (learning_path_id, topic_id, position, is_milestone) VALUES
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440001', 0, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440002', 1, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440003', 2, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440004', 3, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440005', 4, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440006', 5, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440007', 6, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440008', 7, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440009', 8, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440010', 9, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440011', 10, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440012', 11, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440013', 12, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440014', 13, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440015', 14, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440016', 15, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440017', 16, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440018', 17, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440019', 18, false),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440020', 19, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440021', 20, true),
+  ('aaa00000-0000-0000-0000-000000000045', 'd0400000-e29b-41d4-a716-446655440022', 21, true)
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- PART 3: RECOMPUTE TOTAL XP
+-- =====================================================
+SELECT compute_learning_path_total_xp('aaa00000-0000-0000-0000-000000000042');
+SELECT compute_learning_path_total_xp('aaa00000-0000-0000-0000-000000000043');
+SELECT compute_learning_path_total_xp('aaa00000-0000-0000-0000-000000000044');
+SELECT compute_learning_path_total_xp('aaa00000-0000-0000-0000-000000000045');
+
+COMMIT;
