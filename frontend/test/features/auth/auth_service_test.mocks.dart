@@ -264,9 +264,9 @@ class MockAuthenticationService extends _i1.Mock
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> testOAuthProfileSync() => (super.noSuchMethod(
+  _i5.Future<void> syncOAuthProfile() => (super.noSuchMethod(
         Invocation.method(
-          #testOAuthProfileSync,
+          #syncOAuthProfile,
           [],
         ),
         returnValue: _i5.Future<void>.value(),

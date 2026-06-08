@@ -28,12 +28,12 @@ export default function DailyVersePage() {
         description="Start every day with a fresh Bible verse and short devotional in your language. Free on Android."
         howItWorks={[
           "Open the app each morning to receive a new daily verse",
-          "Read a short AI-written devotional in English, Hindi, or Malayalam",
+          "Read a short devotional in English, Hindi, or Malayalam",
           "Save your favourite verses to revisit any time",
         ]}
         downloadCta="Download Free"
         relatedFeatures={[
-          { href: "/features/ai-bible-study", label: "AI Bible Study" },
+          { href: "/features/ai-bible-study", label: "Bible Study" },
           { href: "/features/study-guides", label: "Study Guides" },
           { href: "/features/fellowship", label: "Fellowship" },
         ]}

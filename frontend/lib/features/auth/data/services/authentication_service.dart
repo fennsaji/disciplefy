@@ -823,12 +823,10 @@ class AuthenticationService {
     }
   }
 
-  /// Manual test method for OAuth profile sync (DEBUG ONLY)
-  Future<void> testOAuthProfileSync() async {
-    if (kDebugMode) {
-      Logger.debug('🔐 [PROFILE SYNC TEST] 🧪 Manual test triggered');
-      await _syncOAuthProfileData();
-    }
+  /// Sync OAuth profile data (name, avatar) from provider to backend.
+  /// Called on sign-in events and app start for existing sessions.
+  Future<void> syncOAuthProfile() async {
+    await _syncOAuthProfileData();
   }
 
   /// Generate a device fingerprint for session binding

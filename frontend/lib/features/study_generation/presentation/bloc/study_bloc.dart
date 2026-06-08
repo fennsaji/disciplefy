@@ -32,6 +32,7 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
   /// [managePersonalNotes] is the use case responsible for personal notes operations.
   /// [validationService] is the service responsible for input validation.
   /// [authService] is the service responsible for authentication checks.
+  /// [localDataSource] is the data source for locally cached study guides.
   /// [streamService] is the service responsible for SSE streaming (optional).
   StudyBloc({
     required GenerateStudyGuide generateStudyGuide,
@@ -39,12 +40,13 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     required ManagePersonalNotesUseCase managePersonalNotes,
     required InputValidationService validationService,
     required AuthService authService,
+    required StudyLocalDataSource localDataSource,
     StudyStreamService? streamService,
   }) : super(const StudyInitial()) {
     // Initialize handlers with their dependencies
     _generationHandler = StudyGenerationHandler(
       generateStudyGuide: generateStudyGuide,
-      localDataSource: StudyLocalDataSourceImpl(),
+      localDataSource: localDataSource,
     );
     _saveHandler = StudySaveHandler(
       saveGuideService: saveGuideService,

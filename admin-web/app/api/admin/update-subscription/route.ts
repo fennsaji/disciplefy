@@ -27,18 +27,28 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Get session (includes user and access token)
-    const { data: { session }, error: sessionError } = await supabaseAuth.auth.getSession()
+    // Validate the JWT against Supabase Auth. getUser() revalidates the token,
+    // unlike getSession() which only reads it from the cookie/storage.
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser()
 
-    if (sessionError || !session || !session.user) {
-      console.error('Auth error:', sessionError)
+    if (userError || !user) {
+      console.error('Auth error:', userError)
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
         { status: 401 }
       )
     }
 
-    const user = session.user
+    // Retrieve the access token to forward to the Edge Function. The user is
+    // already validated above; getSession() here is only used to read the token.
+    const { data: { session } } = await supabaseAuth.auth.getSession()
+
+    if (!session?.access_token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No valid session token' },
+        { status: 401 }
+      )
+    }
 
     // Create Supabase client with service role for admin operations
     const supabase = createClient(

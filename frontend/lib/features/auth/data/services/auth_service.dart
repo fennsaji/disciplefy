@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,6 +17,9 @@ import '../../../../core/utils/logger.dart';
 class AuthService {
   final AuthenticationService _authService;
   final AuthStorageService _storageService;
+
+  /// Subscription for OAuth profile-sync monitoring; cancelled in [dispose].
+  StreamSubscription<AuthState>? _profileSyncSubscription;
 
   /// Constructor with dependency injection for better testability
   AuthService({
@@ -186,7 +191,7 @@ class AuthService {
     _checkExistingOAuthUser();
 
     // Listen to auth state changes and sync profile for new OAuth users
-    authStateChanges.listen((authState) async {
+    _profileSyncSubscription = authStateChanges.listen((authState) async {
       if (authState.event == AuthChangeEvent.signedIn) {
         // Check current user after sign in event
         final user = currentUser;
@@ -194,7 +199,7 @@ class AuthService {
           // New OAuth user signed in - trigger profile sync
           Logger.debug(
               '🔄 [AUTH SERVICE] OAuth user signed in, triggering profile sync');
-          await _authService.testOAuthProfileSync();
+          await _authService.syncOAuthProfile();
         }
       }
     });
@@ -212,10 +217,13 @@ class AuthService {
         Logger.debug(
             '🔄 [AUTH SERVICE] User: ${currentUser!.email} (${currentUser!.id})');
       }
-      await _authService.testOAuthProfileSync();
+      await _authService.syncOAuthProfile();
     }
   }
 
   /// Dispose resources
-  void dispose() => _authService.dispose();
+  void dispose() {
+    _profileSyncSubscription?.cancel();
+    _authService.dispose();
+  }
 }

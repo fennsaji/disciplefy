@@ -672,7 +672,7 @@ class AppLocalizations {
       'achievement_category_study': 'अध्ययन गाइड',
       'achievement_category_streak': 'अध्ययन स्ट्रीक्स',
       'achievement_category_memory': 'स्मृति वचन',
-      'achievement_category_voice': 'वॉइस डिसाइपलर',
+      'achievement_category_voice': 'वॉयस डिसाइप्लर',
       'achievement_category_saved': 'सहेजे गए गाइड',
 
       // First Century Christian Facts for Loading Screen (60 facts - Hindi)

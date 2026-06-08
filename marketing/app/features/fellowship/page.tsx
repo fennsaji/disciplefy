@@ -35,7 +35,7 @@ export default function FellowshipPage() {
         ]}
         downloadCta="Download Free"
         relatedFeatures={[
-          { href: "/features/ai-bible-study", label: "AI Bible Study" },
+          { href: "/features/ai-bible-study", label: "Bible Study" },
           { href: "/features/learning-paths", label: "Learning Paths" },
           { href: "/features/study-guides", label: "Study Guides" },
         ]}

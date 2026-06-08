@@ -141,7 +141,7 @@
     "faqs": [
       {
         "q": "What is a credit?",
-        "a": "Credits are the currency for AI features in Disciplefy. Each study guide, follow-up question, or Disciple AI session uses a small number of credits. Your plan resets your credit count daily."
+        "a": "Credits are the currency for generated content in Disciplefy. Each study guide, follow-up question, or voice Discipler session uses a small number of credits. Your plan resets your credit count daily."
       },
       {
         "q": "Can I switch plans?",

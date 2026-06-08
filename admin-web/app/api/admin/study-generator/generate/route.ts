@@ -212,25 +212,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get the user's session token to pass in query params for EventSource
-    const { data: { session } } = await supabaseUser.auth.getSession()
-
-    if (!session?.access_token) {
-      return NextResponse.json(
-        { error: 'No valid session token' },
-        { status: 401 }
-      )
-    }
-
-    // Return the parameters needed for the client to connect via SSE
-    // Include auth tokens in query params since EventSource doesn't support headers
+    // Return the parameters needed for the client to connect via SSE.
+    // Do NOT include auth tokens here: the EventSource connects to the
+    // same-origin GET handler below, which re-authenticates via the cookie
+    // session (getUser) and supplies its own token to the Edge Function.
+    // Putting the JWT in the URL would expose it in browser history,
+    // server access logs and the Referer header.
     const streamParams: any = {
       input_type: edgeInputType,
       input_value: edgeInputValue,
       language: language,
       mode: study_mode,
-      authorization: session.access_token,
-      apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     }
 
     if (topicDescription) {

@@ -1,7 +1,7 @@
 // marketing/components/sections/FeaturePageContent.tsx
 "use client";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { Link } from "@/lib/navigation"; // locale-aware — preserves /hi/ /ml/ prefix
 import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";

@@ -623,7 +623,7 @@ class StudyGuideTTSService {
         speakingRate: state.value.speechRate,
         onComplete: onSectionComplete,
       );
-      Logger.error('🔊 [StudyGuideTTS] speakWithSettings returned');
+      Logger.debug('🔊 [StudyGuideTTS] speakWithSettings returned');
     } catch (e) {
       Logger.debug('🔊 [StudyGuideTTS] Error reading section: $e');
       state.value = state.value.copyWith(

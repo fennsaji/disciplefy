@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 const FEATURES = [
-  { feature: "AI study guides", disciplefy: true, youversion: false },
+  { feature: "Personalised study guides", disciplefy: true, youversion: false },
   { feature: "Hindi support", disciplefy: true, youversion: false },
   { feature: "Malayalam support", disciplefy: true, youversion: false },
   { feature: "Daily verse", disciplefy: true, youversion: true },
