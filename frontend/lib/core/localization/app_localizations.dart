@@ -2424,6 +2424,7 @@ class AppLocalizations {
       'Life & Relationships': 'जीवन और रिश्ते',
       'Theology': 'धर्मशास्त्र',
       'Epistles': 'पत्रियाँ',
+      'Gospels': 'सुसमाचार',
     },
     'ml': {
       'Foundations': 'അടിത്തറ',
@@ -2433,6 +2434,7 @@ class AppLocalizations {
       'Life & Relationships': 'ജീവിതവും ബന്ധങ്ങളും',
       'Theology': 'ദൈവശാസ്ത്രം',
       'Epistles': 'ലേഖനങ്ങൾ',
+      'Gospels': 'സുവിശേഷങ്ങൾ',
     },
   };
 
