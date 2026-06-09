@@ -10,6 +10,7 @@
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.disciplefy.biblestudy"
+TEAM_ID        = "4V6VA2U9MW"
 WORKSPACE      = "Runner.xcworkspace"
 SCHEME         = "Runner"
 MATCH_PROFILE  = "match AppStore #{APP_IDENTIFIER}"
@@ -70,16 +71,29 @@ platform :ios do
   end
 
   def build_ios
+    # The project ships with automatic signing, which on CI tries to create a
+    # *development* profile and needs a logged-in Apple ID. Switch the Runner
+    # target to manual signing so the archive uses the match distribution profile.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: TEAM_ID,
+      code_sign_identity: "Apple Distribution",
+      profile_name: MATCH_PROFILE,
+      bundle_identifier: APP_IDENTIFIER,
+      targets: ["Runner"]
+    )
+
     build_app(
       workspace: WORKSPACE,
       scheme: SCHEME,
       configuration: "Release",
       export_method: "app-store",
-      export_options: {
-        provisioningProfiles: { APP_IDENTIFIER => MATCH_PROFILE }
-      },
       # Flutter already compiled via `flutter build ios --no-codesign`; gym re-archives.
-      xcargs: "-allowProvisioningUpdates"
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: { APP_IDENTIFIER => MATCH_PROFILE }
+      }
     )
   end
 end
