@@ -52,11 +52,17 @@ platform :ios do
   # --- helpers -------------------------------------------------------------
 
   def asc_api_key
+    # Decode the base64 .p8 to a real file. Spaceship (match) can use key_content,
+    # but altool (upload_to_testflight) needs the key as a PEM file on disk —
+    # handing it the base64 string causes "file isn't in the correct format (259)".
+    require "base64"
+    require "tmpdir"
+    key_path = File.expand_path("fastlane_asc_api_key.p8", Dir.tmpdir)
+    File.write(key_path, Base64.decode64(ENV["APP_STORE_CONNECT_API_KEY_BASE64"]))
     app_store_connect_api_key(
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
       issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content: ENV["APP_STORE_CONNECT_API_KEY_BASE64"],
-      is_key_content_base64: true,
+      key_filepath: key_path,
       in_house: false
     )
   end
