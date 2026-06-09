@@ -9,7 +9,7 @@ Guide for shipping the Disciplefy iOS app to **TestFlight** (beta) and the **App
 | Item | Value |
 |------|-------|
 | Bundle ID | `com.disciplefy.biblestudy` |
-| Apple Team ID | `3M43UY7L33` |
+| Apple Team ID | `4V6VA2U9MW` |
 | Version source | `frontend/pubspec.yaml` (`version: <name>+<build>`) → `CFBundleShortVersionString`/`CFBundleVersion` |
 | Signing tool (CI) | **fastlane** `match` (certs/profiles) + `pilot`/`deliver` (upload) |
 | Encryption | `ITSAppUsesNonExemptEncryption=false` set in `Info.plist` (app uses only HTTPS + standard hashing) |
@@ -46,7 +46,7 @@ flutter build ipa --release \
 ```
 
 Upload via **either**:
-- **Xcode**: open `build/ios/archive/Runner.xcarchive` → Distribute App → App Store Connect → Upload (Xcode auto-signs with team `3M43UY7L33`), **or**
+- **Xcode**: open `build/ios/archive/Runner.xcarchive` → Distribute App → App Store Connect → Upload (Xcode auto-signs with team `4V6VA2U9MW`), **or**
 - **Transporter** app: open the generated `.ipa` → Deliver.
 
 Build appears in App Store Connect → **TestFlight** in ~5–15 min. Add an internal tester, install via the TestFlight app, and confirm sign-in/core flows. This validates the app record + signing before automating.
@@ -62,46 +62,50 @@ App Store Connect → your app → complete metadata:
 
 ---
 
-## Phase 4 — CI/CD automation (mirrors Android)
+## Phase 4 — CI/CD automation (mirrors Android) — SCAFFOLDED
 
-Uses **fastlane match + pilot** on a `macos-latest` runner.
+CI builds on a **`macos-latest`** runner with **Xcode 26** (Apple requires the iOS 26 SDK).
+This is the primary deploy path — local builds need macOS 15.6+/Xcode 26, which the CI
+runner provides, so no local upgrade is required.
 
-### Workflows to add (`.github/workflows/`)
+### Workflows (`.github/workflows/`) — created
 | Workflow | Trigger | Action | Android equivalent |
 |----------|---------|--------|--------------------|
-| `ios-deploy-testflight.yml` | push to `main` (paths: `frontend/**`) + `workflow_dispatch` | fastlane build + `pilot upload` to TestFlight | `android-deploy-playstore-beta.yml` |
-| `ios-deploy-appstore.yml` | push tag `v[0-9]*.[0-9]*.[0-9]*` + `workflow_dispatch` | `deliver` submit to App Store | `android-deploy-playstore-production.yml` |
+| `ios-deploy-testflight.yml` | push to `main` (paths: `frontend/**`) + `workflow_dispatch` | match → `flutter build ios --no-codesign` → gym → TestFlight (`pilot`) | `android-deploy-playstore-beta.yml` |
+| `ios-deploy-appstore.yml` | push tag `v[0-9]*.[0-9]*.[0-9]*` + `workflow_dispatch` | match → build → App Store (`deliver`, no auto-submit) | `android-deploy-playstore-production.yml` |
 
-Build-number convention to match Android: TestFlight uses `github.run_number`; production offsets (`+10000`) so prod builds always exceed beta.
+Build numbers: TestFlight uses `github.run_number`; production offsets `+10000` so prod always exceeds beta.
 
-### Files to add
-- `frontend/ios/fastlane/Fastfile` — `beta` lane (build + pilot) and `release` lane (deliver)
-- `frontend/ios/fastlane/Appfile` — bundle ID, Apple ID, team ID
-- `frontend/ios/fastlane/Matchfile` — cert repo URL + type `appstore`
-- `frontend/ios/Gemfile` — pins fastlane
-- `frontend/ios/ExportOptions.plist` — `method=app-store`, team `3M43UY7L33`
+**Build model:** Flutter compiles in the workflow step (`flutter build ios --release --no-codesign --dart-define=…`), writing DART_DEFINES + version into `Generated.xcconfig`; fastlane `gym` then re-archives the workspace (reusing those defines) and signs with the match profile. Auth is via the App Store Connect API key (no Apple ID / 2FA in CI).
 
-### One-time `match` init (run locally)
-Create a **private** git repo for certificates, then:
-```bash
-cd frontend/ios
-fastlane match appstore   # generates + stores distribution cert + provisioning profile
-```
+### Files created
+- `frontend/ios/fastlane/Fastfile` — `beta` (TestFlight) and `release` (App Store) lanes
+- `frontend/ios/fastlane/Appfile` — bundle ID `com.disciplefy.biblestudy`, team `4V6VA2U9MW`
+- `frontend/ios/fastlane/Matchfile` — `appstore` type, `readonly`, git storage
+- `frontend/ios/Gemfile` — fastlane + cocoapods
+
+### One-time `match` init (run locally — needs only CLI tools, not Xcode 26)
+1. Create a **private** git repo (e.g. `disciplefy-ios-certs`).
+2. ```bash
+   cd frontend/ios && bundle install
+   export MATCH_GIT_URL=<private-repo-url>
+   bundle exec fastlane match appstore   # creates + stores the distribution cert + App Store profile
+   ```
+   Authenticate with the App Store Connect API key (set `APP_STORE_CONNECT_*` env vars) to avoid 2FA. Set a `MATCH_PASSWORD` when prompted — that's the encryption passphrase.
 
 ### GitHub Secrets required
-Collect during Phases 1–2:
-
 | Secret | Source |
 |--------|--------|
-| `APP_STORE_CONNECT_API_KEY_ID` | Phase 1 step 2 (Key ID) |
-| `APP_STORE_CONNECT_ISSUER_ID` | Phase 1 step 2 (Issuer ID) |
-| `APP_STORE_CONNECT_API_KEY_P8` | the `.p8` contents, base64-encoded |
+| `APP_STORE_CONNECT_API_KEY_ID` | App Store Connect → Integrations → API key (Key ID) |
+| `APP_STORE_CONNECT_ISSUER_ID` | same page (Issuer ID) |
+| `APP_STORE_CONNECT_API_KEY_BASE64` | the `.p8` contents, base64-encoded (`base64 -i AuthKey_XXXX.p8 \| pbcopy`) |
 | `MATCH_GIT_URL` | private cert repo URL |
-| `MATCH_PASSWORD` | match encryption passphrase |
-| `MATCH_GIT_BASIC_AUTH` | base64 `user:token` for the cert repo |
-| `GOOGLE_SERVICE_INFO_PLIST` | `GoogleService-Info.plist`, base64-encoded |
+| `MATCH_PASSWORD` | match encryption passphrase (chosen during init) |
+| `MATCH_GIT_BASIC_AUTH` | base64 of `username:github_PAT` (PAT with repo read access to the cert repo) |
+| `GOOGLE_SERVICE_INFO_PLIST` | `frontend/ios/Runner/GoogleService-Info.plist`, base64-encoded (it's gitignored) |
+| `GOOGLE_OAUTH_CLIENT_ID_IOS` | iOS Google OAuth client / serverClientId used for Supabase token validation — verify this is the value that makes Google sign-in work on iOS |
 
-Reuse existing dart-define secrets: `SUPABASE_PROJECT_REF`, `SUPABASE_ANON_KEY`, `GOOGLE_OAUTH_CLIENT_ID_*`, `GOOGLE_CLOUD_TTS_API_KEY`, `RAZORPAY_KEY_ID`.
+Reuse existing secrets: `SUPABASE_PROJECT_REF`, `SUPABASE_ANON_KEY`, `GOOGLE_CLOUD_TTS_API_KEY`, `RAZORPAY_KEY_ID`.
 
 ---
 
@@ -120,4 +124,6 @@ Reuse existing dart-define secrets: `SUPABASE_PROJECT_REF`, `SUPABASE_ANON_KEY`,
 - iOS CI **must** run on macOS runners (more GH minutes than Android's ubuntu).
 - The Supabase **production** dashboard must include the redirect URL `com.disciplefy.biblestudy://auth/callback` (Authentication → URL Configuration) for OAuth deep-links.
 - First App Store review is manual and can take 24–48h; TestFlight external testers also require a (lighter) Beta App Review.
+- **Brand-new Apple team:** automatic signing needs ≥1 registered device to create a *development* profile, even though App Store distribution itself needs none. With fastlane `match` (distribution-only) this is avoided in CI; for *local* dev builds, register a device under Developer portal → Devices.
+- **iOS 26 SDK:** Apple rejects uploads built with older SDKs. CI uses Xcode 26 via `maxim-lobanov/setup-xcode` (`latest-stable`). If the build fails against the iOS 26 SDK, bump `FLUTTER_VERSION` in the workflows to a release with Xcode 26 support.
 - Keep `CFBundleVersion` (build number) strictly increasing per upload, or App Store Connect rejects the binary.

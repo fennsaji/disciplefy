@@ -1,0 +1,85 @@
+# Fastlane lanes for the Disciplefy iOS app.
+#
+# Build model: Flutter compiles the Dart/iOS code in the CI step BEFORE fastlane
+# runs (`flutter build ios --release --no-codesign --dart-define=...`), which writes
+# DART_DEFINES + version into ios/Flutter/Generated.xcconfig. `build_app` (gym) then
+# re-archives the workspace, reusing those defines, and signs with the match profile.
+#
+# Auth is via the App Store Connect API key (no Apple ID / 2FA needed in CI).
+
+default_platform(:ios)
+
+APP_IDENTIFIER = "com.disciplefy.biblestudy"
+WORKSPACE      = "Runner.xcworkspace"
+SCHEME         = "Runner"
+MATCH_PROFILE  = "match AppStore #{APP_IDENTIFIER}"
+
+platform :ios do
+  before_all do
+    # On CI: create a temporary keychain so match can install the signing identity.
+    setup_ci if ENV["CI"]
+  end
+
+  desc "Build and upload a new build to TestFlight"
+  lane :beta do
+    api_key = asc_api_key
+    install_signing(api_key)
+    build_ios
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    )
+  end
+
+  desc "Build and upload to App Store Connect (no auto-submit)"
+  lane :release do
+    api_key = asc_api_key
+    install_signing(api_key)
+    build_ios
+    upload_to_app_store(
+      api_key: api_key,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,               # skip HTML preview
+      skip_metadata: true,       # metadata managed in App Store Connect UI
+      skip_screenshots: true,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  # --- helpers -------------------------------------------------------------
+
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_BASE64"],
+      is_key_content_base64: true,
+      in_house: false
+    )
+  end
+
+  def install_signing(api_key)
+    match(
+      type: "appstore",
+      readonly: true,
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER
+    )
+  end
+
+  def build_ios
+    build_app(
+      workspace: WORKSPACE,
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: { APP_IDENTIFIER => MATCH_PROFILE }
+      },
+      # Flutter already compiled via `flutter build ios --no-codesign`; gym re-archives.
+      xcargs: "-allowProvisioningUpdates"
+    )
+  end
+end

@@ -1,0 +1,5 @@
+app_identifier("com.disciplefy.biblestudy")
+team_id("4V6VA2U9MW")
+
+# Apple ID / itc_team_id are not needed: CI authenticates via the
+# App Store Connect API key (see Fastfile `asc_api_key`).

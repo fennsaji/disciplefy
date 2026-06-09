@@ -1,0 +1,11 @@
+# Certificates + provisioning profiles are stored (encrypted) in a private git repo.
+# MATCH_GIT_URL, MATCH_PASSWORD and MATCH_GIT_BASIC_AUTHORIZATION come from env/secrets.
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+
+type("appstore")
+app_identifier(["com.disciplefy.biblestudy"])
+
+# CI never creates/regenerates certs — it only reads them. Run `fastlane match appstore`
+# locally once (read-write) to populate the repo.
+readonly(true)

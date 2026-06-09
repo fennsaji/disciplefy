@@ -1,0 +1,113 @@
+name: Deploy iOS to App Store
+
+# Production releases — mirrors android-deploy-playstore-production.yml.
+# Push a version tag (v1.2.3) → builds with Xcode 26 → uploads to App Store Connect.
+# Does NOT auto-submit for review (submit manually in App Store Connect).
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.32.8'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    name: Build IPA & Upload to App Store
+    runs-on: macos-latest
+    timeout-minutes: 60
+    environment: production
+
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📋 Extract version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          # Offset by 10000 so production build numbers always exceed TestFlight betas.
+          BUILD_NUMBER=$(( ${{ github.run_number }} + 10000 ))
+          echo "version_name=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Version: $VERSION+$BUILD_NUMBER"
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"; TAG_VERSION="${TAG#v}"
+            if [ "$TAG_VERSION" != "$VERSION" ]; then
+              echo "❌ Tag ($TAG_VERSION) does not match pubspec.yaml ($VERSION). Bump pubspec before tagging."
+              exit 1
+            fi
+            echo "✅ Tag matches pubspec version"
+          fi
+
+      - name: 🛠️ Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: 🐦 Setup Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: 💎 Setup Ruby + fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: frontend/ios
+
+      - name: 📦 Get Flutter dependencies
+        run: cd frontend && flutter pub get
+
+      - name: 📝 Create GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > frontend/ios/Runner/GoogleService-Info.plist
+
+      - name: 🔨 Build iOS (no codesign)
+        run: |
+          cd frontend
+          flutter build ios --release --no-codesign \
+            --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_IOS }} \
+            --dart-define=APP_URL=https://www.disciplefy.in \
+            --dart-define=FLUTTER_ENV=production \
+            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }} \
+            --dart-define=RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }} \
+            --build-name=${{ steps.version.outputs.version_name }} \
+            --build-number=${{ steps.version.outputs.build_number }}
+
+      - name: 🚀 Fastlane release (match → archive → App Store)
+        working-directory: frontend/ios
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+        run: bundle exec fastlane release
+
+      - name: 🧹 Security cleanup
+        if: always()
+        run: rm -f frontend/ios/Runner/GoogleService-Info.plist
+
+      - name: 🏷️ Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: iOS v${{ steps.version.outputs.version_name }}
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
