@@ -13,9 +13,5 @@
 		<string>applinks:app.disciplefy.in</string>
 		<string>applinks:wzdcwxvyjuxjgzpnukvm.supabase.co</string>
 	</array>
-	<key>com.apple.developer.in-app-payments</key>
-	<array>
-		<string>merchant.com.disciplefy.biblestudy</string>
-	</array>
 </dict>
 </plist>
