@@ -58,6 +58,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     // Register event handlers
     on<AuthInitializeRequested>(_onAuthInitialize);
     on<GoogleSignInRequested>(_onGoogleSignIn);
+    on<AppleSignInRequested>(_onAppleSignIn);
     on<GoogleOAuthCallbackRequested>(_onGoogleOAuthCallback);
     on<SessionCheckRequested>(_onSessionCheck);
     on<SessionValidationRequested>(_onSessionValidation);
@@ -254,6 +255,46 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       },
       onError: (e) => emit(_mapExceptionToErrorState(e)),
       operationName: 'Google Sign-In',
+    );
+  }
+
+  /// Handles native Apple sign-in (iOS).
+  Future<void> _onAppleSignIn(
+    AppleSignInRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    await _retryWithExponentialBackoff(
+      operation: () async {
+        emit(const auth_states.AuthLoadingState());
+
+        final success = await _authService.signInWithApple();
+
+        final validationResult = AuthValidator.validateAuthenticationSuccess(
+          success: success,
+          currentUser: _authService.currentUser,
+          operationName: 'Apple Sign-In',
+        );
+
+        if (validationResult.isSuccess) {
+          final user = validationResult.user!;
+
+          final profile =
+              await _retryOperation(() => _getProfileWithCache(user.id));
+
+          RouterGuard.invalidateLanguageSelectionCache();
+
+          emit(auth_states.AuthenticatedState(
+            user: user,
+            profile: profile,
+          ));
+        } else {
+          final errorMessage =
+              validationResult.errorMessage ?? 'Apple sign-in failed';
+          throw auth_exceptions.AuthenticationFailedException(errorMessage);
+        }
+      },
+      onError: (e) => emit(_mapExceptionToErrorState(e)),
+      operationName: 'Apple Sign-In',
     );
   }
 

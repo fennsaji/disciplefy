@@ -10,6 +10,7 @@
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.disciplefy.biblestudy"
+TEAM_ID        = "4V6VA2U9MW"
 WORKSPACE      = "Runner.xcworkspace"
 SCHEME         = "Runner"
 MATCH_PROFILE  = "match AppStore #{APP_IDENTIFIER}"
@@ -51,11 +52,17 @@ platform :ios do
   # --- helpers -------------------------------------------------------------
 
   def asc_api_key
+    # Decode the base64 .p8 to a real file. Spaceship (match) can use key_content,
+    # but altool (upload_to_testflight) needs the key as a PEM file on disk —
+    # handing it the base64 string causes "file isn't in the correct format (259)".
+    require "base64"
+    require "tmpdir"
+    key_path = File.expand_path("fastlane_asc_api_key.p8", Dir.tmpdir)
+    File.write(key_path, Base64.decode64(ENV["APP_STORE_CONNECT_API_KEY_BASE64"]))
     app_store_connect_api_key(
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
       issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content: ENV["APP_STORE_CONNECT_API_KEY_BASE64"],
-      is_key_content_base64: true,
+      key_filepath: key_path,
       in_house: false
     )
   end
@@ -70,16 +77,29 @@ platform :ios do
   end
 
   def build_ios
+    # The project ships with automatic signing, which on CI tries to create a
+    # *development* profile and needs a logged-in Apple ID. Switch the Runner
+    # target to manual signing so the archive uses the match distribution profile.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: TEAM_ID,
+      code_sign_identity: "Apple Distribution",
+      profile_name: MATCH_PROFILE,
+      bundle_identifier: APP_IDENTIFIER,
+      targets: ["Runner"]
+    )
+
     build_app(
       workspace: WORKSPACE,
       scheme: SCHEME,
       configuration: "Release",
       export_method: "app-store",
-      export_options: {
-        provisioningProfiles: { APP_IDENTIFIER => MATCH_PROFILE }
-      },
       # Flutter already compiled via `flutter build ios --no-codesign`; gym re-archives.
-      xcargs: "-allowProvisioningUpdates"
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: { APP_IDENTIFIER => MATCH_PROFILE }
+      }
     )
   end
 end

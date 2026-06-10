@@ -313,6 +313,7 @@ class AppTranslations {
       'welcome': 'Welcome to Disciplefy',
       'subtitle': 'Deepen your faith through guided Bible study',
       'continue_with_google': 'Continue with Google',
+      'continue_with_apple': 'Continue with Apple',
       'features_title': 'What you\'ll get:',
       'feature_ai_study_guides': 'Personalized Study Guides',
       'feature_ai_study_guides_subtitle':
@@ -2295,6 +2296,7 @@ class AppTranslations {
       'welcome': 'Disciplefy में आपका स्वागत है',
       'subtitle': 'निर्देशित बाइबिल अध्ययन से अपने विश्वास को बढ़ाएं',
       'continue_with_google': 'Google के साथ जारी रखें',
+      'continue_with_apple': 'Apple के साथ जारी रखें',
       'features_title': 'आपको क्या मिलेगा:',
       'feature_ai_study_guides': 'व्यक्तिगत अध्ययन गाइड',
       'feature_ai_study_guides_subtitle': 'किसी भी आयत की सरल व्याख्या',
@@ -4291,6 +4293,7 @@ class AppTranslations {
       'welcome': 'Disciplefy-ലേക്ക് സ്വാഗതം',
       'subtitle': 'ബൈബിൾ അധ്യയനം ചെയ്ത് വിശ്വാസം വളര്‍ത്തുക',
       'continue_with_google': 'Google ഉപയോഗിച്ച് തുടരുക',
+      'continue_with_apple': 'Apple ഉപയോഗിച്ച് തുടരുക',
       'features_title': 'നിങ്ങൾക്ക് ലഭിക്കുന്നത്:',
       'feature_ai_study_guides': 'വ്യക്തിഗത പഠന ഗൈഡുകൾ',
       'feature_ai_study_guides_subtitle':

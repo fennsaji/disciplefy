@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -329,6 +332,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
+              // Apple Sign-In Button — iOS only (required by App Store
+              // Guideline 4.8 when other social logins are offered).
+              if (!kIsWeb && Platform.isIOS) ...[
+                _buildAppleSignInButton(context, isLoading),
+                const SizedBox(height: 16),
+              ],
+
               // Email Sign-In Button
               _buildEmailSignInButton(context, isLoading),
 
@@ -566,6 +576,66 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       textAlign: TextAlign.center,
     );
+  }
+
+  /// Builds the Sign in with Apple button (iOS only), following Apple's
+  /// Human Interface Guidelines: black button, Apple logo, white label.
+  Widget _buildAppleSignInButton(BuildContext context, bool isLoading) {
+    const bgColor = Colors.black;
+    const fgColor = Colors.white;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: isLoading ? null : () => _handleAppleSignIn(context),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: isLoading ? bgColor.withOpacity(0.6) : bgColor,
+          foregroundColor: fgColor,
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(fgColor),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.apple, color: fgColor, size: 22),
+                  const SizedBox(width: 12),
+                  Text(
+                    context.tr(TranslationKeys.loginContinueWithApple),
+                    style: AppFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: fgColor,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  /// Handles Apple sign-in button tap
+  void _handleAppleSignIn(BuildContext context) {
+    String? redirectTo;
+    try {
+      redirectTo = GoRouterState.of(context).uri.queryParameters['redirect'];
+    } catch (_) {}
+    if (redirectTo != null && redirectTo.isNotEmpty) {
+      Hive.box('app_settings').put('pending_deep_link_redirect', redirectTo);
+    }
+    context.read<AuthBloc>().add(const AppleSignInRequested());
   }
 
   /// Handles Google sign-in button tap

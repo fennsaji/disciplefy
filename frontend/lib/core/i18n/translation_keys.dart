@@ -225,6 +225,7 @@ class TranslationKeys {
   static const loginWelcome = 'login.welcome';
   static const loginSubtitle = 'login.subtitle';
   static const loginContinueWithGoogle = 'login.continue_with_google';
+  static const loginContinueWithApple = 'login.continue_with_apple';
 
   static const loginFeaturesTitle = 'login.features_title';
   static const loginFeatureAiStudyGuides = 'login.feature_ai_study_guides';
