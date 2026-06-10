@@ -119,6 +119,25 @@ Reuse existing secrets: `SUPABASE_PROJECT_REF`, `SUPABASE_ANON_KEY`, `GOOGLE_CLO
 
 ---
 
+## Authentication providers (native, via `signInWithIdToken`)
+
+Both social logins use the **native** Supabase ID-token flow, not web OAuth. For each, Supabase's provider **Client IDs** list must include the platform client ID whose value becomes the idToken's `aud`:
+
+| Provider | idToken `aud` on iOS | Supabase "Client IDs" must include |
+|----------|----------------------|-----------------------------------|
+| Google | iOS OAuth client (`...mlgetf72t019...`) | the **iOS** client ID (Android works off the web client) |
+| Apple | app **bundle ID** | `com.disciplefy.biblestudy` |
+
+**Production dashboard setup (one-time):**
+- **Google** → Authentication → Providers → Google → *Client IDs*: comma-separated list including the **iOS** client. (Without it, iOS Google login fails with "Something went wrong" while Android works.)
+- **Apple** → Authentication → Providers → Apple → enable, and add `com.disciplefy.biblestudy` to *Client IDs*. No client secret needed for the native flow (that's only for web Apple OAuth). The app sends a hashed nonce to Apple + raw nonce to Supabase, so leave "Skip nonce checks" **off**.
+
+`config.toml` mirrors this for local dev (`[auth.external.google]`, `[auth.external.apple]`). Keep the dashboard and `config.toml` in sync if you manage config via `supabase config push`.
+
+Apple Sign-In is **required by App Store Guideline 4.8** whenever another social login is offered. The button is iOS-only (`Platform.isIOS`) and uses `sign_in_with_apple` + `signInWithIdToken`.
+
+---
+
 ## Gotchas
 
 - iOS CI **must** run on macOS runners (more GH minutes than Android's ubuntu).
