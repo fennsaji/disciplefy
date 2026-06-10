@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
@@ -265,33 +268,91 @@ class OAuthService {
     }
   }
 
-  /// Sign in with Apple OAuth (iOS/Web only)
-  /// FIXED: Updated for corrected PKCE flow configuration
+  /// Native Sign in with Apple (iOS).
+  ///
+  /// Uses the native Apple authorization sheet via `sign_in_with_apple`, then
+  /// exchanges the returned identity token with Supabase via [signInWithIdToken].
+  /// A hashed nonce is sent to Apple and the raw nonce to Supabase so the token
+  /// can be verified without weakening security (no "skip nonce" required).
   Future<bool> signInWithApple() async {
     try {
-      Logger.debug('🍎 [OAUTH SERVICE] 🚀 Starting Apple OAuth PKCE flow...');
+      Logger.debug('🍎 [OAUTH SERVICE] 🚀 Starting native Apple Sign-In...');
 
-      // FIXED: Same as Google - use native Supabase PKCE flow
-      // Apple OAuth will also redirect to Supabase auth endpoints
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        // NO redirectTo - native PKCE flow with Supabase auth endpoints
-        // NO authScreenLaunchMode - use default platform behavior
+      // Nonce: Apple receives the SHA-256 hash, Supabase receives the raw value.
+      final rawNonce = _generateNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
       );
 
-      Logger.debug(
-          '🍎 [OAUTH SERVICE] ✅ Apple OAuth PKCE flow initiated successfully');
-      return true;
-    } catch (e) {
-      Logger.error('🍎 [OAUTH SERVICE] ❌ Apple Sign-In Error: $e');
-
-      if (e.toString().contains('redirect_uri_mismatch')) {
-        throw auth_exceptions.AuthConfigException(
-            'Apple OAuth redirect URI mismatch. Ensure Apple Developer Console configuration matches Supabase auth endpoints.');
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw auth_exceptions.AuthenticationFailedException(
+            'Apple Sign-In did not return an identity token');
       }
 
+      Logger.debug('🍎 [OAUTH SERVICE] ✅ Apple credential received');
+
+      final AuthResponse response =
+          await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+
+      if (response.user == null) {
+        throw auth_exceptions.AuthenticationFailedException(
+            'Failed to create Supabase session');
+      }
+
+      // Apple returns the user's name ONLY on the first authorization. Persist
+      // it to user metadata so the profile isn't left blank on later logins.
+      final fullName = [credential.givenName, credential.familyName]
+          .where((p) => p != null && p.isNotEmpty)
+          .join(' ');
+      if (fullName.isNotEmpty) {
+        try {
+          await Supabase.instance.client.auth.updateUser(
+            UserAttributes(data: {'full_name': fullName, 'name': fullName}),
+          );
+        } catch (e) {
+          Logger.error(
+              '🍎 [OAUTH SERVICE] Failed to set Apple display name: $e');
+        }
+      }
+
+      Logger.debug('🍎 [OAUTH SERVICE] ✅ Supabase session created via Apple');
+      return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        throw const auth_exceptions.OAuthCancelledException(
+            'Apple Sign-In was cancelled');
+      }
+      Logger.error(
+          '🍎 [OAUTH SERVICE] ❌ Apple authorization error: ${e.code} - ${e.message}');
+      throw auth_exceptions.AuthenticationFailedException(
+          'Apple Sign-In failed: ${e.message}');
+    } on auth_exceptions.OAuthCancelledException {
       rethrow;
+    } catch (e) {
+      Logger.error('🍎 [OAUTH SERVICE] ❌ Apple Sign-In Error: $e');
+      throw auth_exceptions.AuthenticationFailedException(
+          'Apple Sign-In failed: ${e.toString()}');
     }
+  }
+
+  /// Generates a cryptographically secure random nonce for Apple Sign-In.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
+        .join();
   }
 
   /// Sign out from Google if available

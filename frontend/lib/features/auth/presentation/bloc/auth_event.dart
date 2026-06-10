@@ -20,6 +20,11 @@ class GoogleSignInRequested extends AuthEvent {
   const GoogleSignInRequested();
 }
 
+/// Event to trigger native Apple sign-in (iOS).
+class AppleSignInRequested extends AuthEvent {
+  const AppleSignInRequested();
+}
+
 /// Event to check current session state (for OAuth callbacks)
 class SessionCheckRequested extends AuthEvent {
   const SessionCheckRequested();
