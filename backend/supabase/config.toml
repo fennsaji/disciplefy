@@ -314,8 +314,10 @@ skip_nonce_check = true
 # signInWithOAuth scopes param + access_type=offline to get providerRefreshToken.
 
 [auth.external.apple]
-enabled = false
-client_id = ""
+enabled = true
+# Native Sign in with Apple: the idToken audience is the app bundle ID.
+# (Add a Services ID here too, comma-separated, if web Apple OAuth is added later.)
+client_id = "com.disciplefy.biblestudy"
 # DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
 secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
 # Overrides the default auth redirectUrl.
