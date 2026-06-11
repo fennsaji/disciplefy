@@ -92,12 +92,17 @@ export async function getRelatedPosts(
   locale: Locale,
   limit = 2,
 ): Promise<PostMeta[]> {
+  const tag = post.tags[0];
+  const learningPathSlug = post.learning_path?.slug;
+  // No relation signal → don't pad with generic recent posts.
+  if (!learningPathSlug && !tag) return [];
+
   const { posts } = await getAllPosts(
     locale,
     1,
     limit + 2,
-    post.learning_path ? undefined : post.tags[0],
-    post.learning_path?.slug,
+    learningPathSlug ? undefined : tag,
+    learningPathSlug,
   );
   return posts.filter((p) => p.slug !== post.slug).slice(0, limit);
 }
