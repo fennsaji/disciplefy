@@ -1,12 +1,14 @@
 name: Deploy iOS to App Store
 
 # Production releases — mirrors android-deploy-playstore-production.yml.
-# Push a version tag (v1.2.3) → builds with Xcode 26 → uploads to App Store Connect.
+# Trigger: manual dispatch, or push a platform-specific tag (ios-v1.2.3) so a
+# shared "v*" tag can't fire iOS + Android prod at once.
+# → builds with Xcode 26 → uploads to App Store Connect.
 # Does NOT auto-submit for review (submit manually in App Store Connect).
 on:
   push:
     tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - 'ios-v[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
 
 env:
@@ -37,7 +39,7 @@ jobs:
           echo "✅ Version: $VERSION+$BUILD_NUMBER"
 
           if [ "${{ github.event_name }}" = "push" ]; then
-            TAG="${{ github.ref_name }}"; TAG_VERSION="${TAG#v}"
+            TAG="${{ github.ref_name }}"; TAG_VERSION="${TAG#ios-v}"
             if [ "$TAG_VERSION" != "$VERSION" ]; then
               echo "❌ Tag ($TAG_VERSION) does not match pubspec.yaml ($VERSION). Bump pubspec before tagging."
               exit 1
