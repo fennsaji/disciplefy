@@ -16,6 +16,7 @@ const BLOG_HERO: Record<string, {
   published: string;
   noResults: string;
   noPosts: string;
+  viewAllPaths: string;
 }> = {
   en: {
     tagline: "Disciplefy Blog",
@@ -27,6 +28,7 @@ const BLOG_HERO: Record<string, {
     published: "published",
     noResults: "No results for",
     noPosts: "No posts yet. Check back soon.",
+    viewAllPaths: "Browse Learning Paths",
   },
   hi: {
     tagline: "Disciplefy ब्लॉग",
@@ -38,6 +40,7 @@ const BLOG_HERO: Record<string, {
     published: "प्रकाशित",
     noResults: "कोई परिणाम नहीं",
     noPosts: "अभी कोई पोस्ट नहीं। जल्द वापस देखें।",
+    viewAllPaths: "अध्ययन पथ देखें",
   },
   ml: {
     tagline: "Disciplefy ബ്ലോഗ്",
@@ -49,6 +52,7 @@ const BLOG_HERO: Record<string, {
     published: "പ്രസിദ്ധീകരിച്ചത്",
     noResults: "ഫലങ്ങളൊന്നുമില്ല",
     noPosts: "ഇതുവരെ പോസ്റ്റുകളൊന്നുമില്ല. ഉടൻ തിരിച്ചുവരൂ.",
+    viewAllPaths: "പഠന പാതകൾ കാണുക",
   },
 };
 
@@ -96,6 +100,15 @@ export function BlogList({
                 {pagination.total} {pagination.total === 1 ? hero.article : hero.articles} {hero.published}
               </p>
             )}
+            <div className="mt-6">
+              <Link
+                href="/paths"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-5 py-3 text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                {hero.viewAllPaths}
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
           </div>
         </section>
 
