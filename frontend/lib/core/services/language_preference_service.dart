@@ -249,51 +249,35 @@ class LanguagePreferenceService {
           return false;
         }
 
-        final languageResult =
-            await _userProfileService.getLanguagePreference();
-        final hasLanguage = languageResult.fold(
-          (failure) {
-            Logger.error(
-                '❌ [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
-
-            // Failure: Use locally stored/cached value as fallback instead of overwriting
-            final locallyMarked =
-                _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-            Logger.debug(
-                '📦 [LANGUAGE_SELECTION] Using cached local completion status: $locallyMarked');
-
-            // Return local state, DO NOT cache false when remote call failed
-            return locallyMarked;
-          },
-          (language) {
-            Logger.info(
-                '✅ [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
-            return true; // Has language preference in DB means completed
-          },
-        );
-
-        // Only cache the result if it came from a successful remote call
-        // Don't cache when using fallback local state
-        if (languageResult.isRight()) {
-          _cacheLanguageCompletion(currentUserId, hasLanguage);
-        } else {
-          Logger.warning(
-              '⚠️ [LANGUAGE_SELECTION] Not caching result - using fallback local state due to API failure');
-        }
-
-        // If we have a language preference in DB (successful call), mark local storage for consistency
-        if (hasLanguage && languageResult.isRight()) {
+        // Determine completion from the RAW (null-preserving) language value.
+        // The typed profile model coerces a null `language_preference` to 'en'
+        // (UserProfileModel), which would hide new users who haven't chosen a
+        // language yet — so use the raw map here, not getLanguagePreference().
+        // getUserProfileAsMap() returns the raw API JSON (preserves null);
+        // the userId arg is ignored by the API service (it uses the auth token).
+        final rawProfile =
+            await _userProfileService.getUserProfileAsMap(currentUserId ?? '');
+        if (rawProfile == null) {
+          // Raw profile unavailable (transient API error) → fall back to the
+          // local flag and DON'T cache, so we re-check next time.
           final locallyMarked =
               _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-          Logger.debug(
-              '🔍 [LANGUAGE_SELECTION] Locally marked as completed: $locallyMarked');
+          Logger.warning(
+              '⚠️ [LANGUAGE_SELECTION] Raw profile unavailable — using local flag: $locallyMarked');
+          return locallyMarked;
+        }
 
-          // If not locally marked but has DB preference, mark it locally for consistency
-          if (!locallyMarked) {
-            Logger.debug(
-                '🔄 [LANGUAGE_SELECTION] Marking locally as completed for consistency');
-            await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-          }
+        final rawLang = rawProfile['language_preference'] as String?;
+        final hasLanguage = rawLang != null && rawLang.isNotEmpty;
+        Logger.info(
+            '🔍 [LANGUAGE_SELECTION] Raw language_preference="${rawLang ?? 'null'}" → completed=$hasLanguage');
+
+        _cacheLanguageCompletion(currentUserId, hasLanguage);
+
+        // Keep the local flag consistent when the DB already has a language.
+        if (hasLanguage &&
+            !(_prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false)) {
+          await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
         }
 
         return hasLanguage;
