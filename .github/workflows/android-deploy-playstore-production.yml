@@ -1,10 +1,11 @@
 name: Deploy Android to Play Store (Production)
 
-# Production releases triggered by version tags or manual dispatch
+# Production releases: manual dispatch, or a platform-specific tag (android-v1.2.3)
+# so a shared "v*" tag can't fire Android + iOS prod at once.
 on:
   push:
     tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - 'android-v[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
     inputs:
       rollout_percentage:
@@ -49,7 +50,7 @@ jobs:
           # If triggered by tag, validate tag matches pubspec
           if [ "${{ github.event_name }}" = "push" ]; then
             TAG="${{ github.ref_name }}"
-            TAG_VERSION="${TAG#v}"
+            TAG_VERSION="${TAG#android-v}"
             if [ "$TAG_VERSION" != "$VERSION" ]; then
               echo "❌ Tag version ($TAG_VERSION) does not match pubspec.yaml ($VERSION)"
               echo "   Update pubspec.yaml version before tagging."
