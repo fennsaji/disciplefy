@@ -8,12 +8,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "Googlebot",
         allow: ["/"],
-        disallow: ["/api/", "/_next/", "/og", "/*.json$"],
+        disallow: ["/api/", "/_next/", "/*.json$"],
       },
       {
         userAgent: "Bingbot",
         allow: ["/"],
-        disallow: ["/api/", "/_next/", "/og", "/*.json$"],
+        disallow: ["/api/", "/_next/", "/*.json$"],
       },
       // ── AI training crawlers: block completely ─────────────────────────────
       // These bots scrape content to train large language models.
@@ -40,13 +40,13 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "AhrefsBot",
         allow: ["/"],
-        disallow: ["/api/", "/_next/", "/og", "/*.json$"],
+        disallow: ["/api/", "/_next/", "/*.json$"],
         crawlDelay: 10,
       },
       {
         userAgent: "SemrushBot",
         allow: ["/"],
-        disallow: ["/api/", "/_next/", "/og", "/*.json$"],
+        disallow: ["/api/", "/_next/", "/*.json$"],
         crawlDelay: 10,
       },
       // ── All other bots: allow public content, block non-essential routes ───
@@ -56,7 +56,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",      // Backend API routes — not for indexing
           "/_next/",    // Next.js build assets
-          "/og",        // OG image generation endpoint
+          // NOTE: /og (OG image generator) is intentionally crawlable so Google can
+          // fetch og:image / structured-data images for rich results.
           "/*.json$",   // i18n message files
         ],
       },

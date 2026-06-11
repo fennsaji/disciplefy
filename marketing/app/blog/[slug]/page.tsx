@@ -7,7 +7,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
-import { getPost, getAdjacentPosts } from "@/lib/blog";
+import { getPost, getAdjacentPosts, getRelatedPosts } from "@/lib/blog";
+import { type Locale } from "@/i18n";
 import messages from "@/messages/en.json";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -41,11 +42,14 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   const post = await getPost(params.slug);
   if (!post) notFound();
 
-  const adjacent = await getAdjacentPosts(params.slug);
+  const [adjacent, related] = await Promise.all([
+    getAdjacentPosts(params.slug),
+    getRelatedPosts(post, (post.locale as Locale) || "en"),
+  ]);
 
   return (
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
-      <BlogPostContent post={post} adjacent={adjacent} />
+      <BlogPostContent post={post} adjacent={adjacent} related={related} />
     </NextIntlClientProvider>
   );
 }

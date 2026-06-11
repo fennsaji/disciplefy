@@ -11,6 +11,7 @@ const staticPages = [
   "/pricing",
   "/about",
   "/blog",
+  "/paths",
   "/privacy",
   "/terms",
   "/refund",
