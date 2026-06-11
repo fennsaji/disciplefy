@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
-import { getPost, getAdjacentPosts } from "@/lib/blog";
+import { getPost, getAdjacentPosts, getRelatedPosts } from "@/lib/blog";
 import { type Locale } from "@/i18n";
 
 export async function generateMetadata({
@@ -49,8 +49,11 @@ export default async function LocaleBlogPostPage({
   const post = await getPost(params.slug);
   if (!post) notFound();
 
-  const adjacent = await getAdjacentPosts(params.slug);
+  const [adjacent, related] = await Promise.all([
+    getAdjacentPosts(params.slug),
+    getRelatedPosts(post, (post.locale as Locale) || params.locale),
+  ]);
 
   // URL locale controls site chrome (navbar, footer); blog content stays in its own locale.
-  return <BlogPostContent post={post} locale={params.locale} adjacent={adjacent} />;
+  return <BlogPostContent post={post} locale={params.locale} adjacent={adjacent} related={related} />;
 }

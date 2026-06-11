@@ -85,6 +85,36 @@ export async function getAllPosts(
   return { posts: [], pagination: EMPTY_PAGINATION };
 }
 
+// Related posts: prefer the same learning path, otherwise the first tag.
+// Returns up to `limit` posts, excluding the current one.
+export async function getRelatedPosts(
+  post: Post,
+  locale: Locale,
+  limit = 2,
+): Promise<PostMeta[]> {
+  const { posts } = await getAllPosts(
+    locale,
+    1,
+    limit + 2,
+    post.learning_path ? undefined : post.tags[0],
+    post.learning_path?.slug,
+  );
+  return posts.filter((p) => p.slug !== post.slug).slice(0, limit);
+}
+
+// The blog API appends an app-download CTA footer ("---" + an italic line linking
+// to app.disciplefy.in) to every post. The marketing site renders its own localized
+// BlogPostCTA card, so strip that backend footer to avoid a duplicate app CTA.
+function stripAppCtaFooter(content: string): string {
+  if (!content) return content;
+  const trimmed = content.replace(/\s+$/, "");
+  const idx = trimmed.lastIndexOf("\n---");
+  if (idx !== -1 && trimmed.slice(idx).includes("app.disciplefy.in")) {
+    return trimmed.slice(0, idx).replace(/\s+$/, "");
+  }
+  return content;
+}
+
 // cache() deduplicates concurrent calls with the same slug within a single request
 // (e.g. generateMetadata + page component both call getPost for the same slug).
 export const getPost = cache(async function getPost(slug: string): Promise<Post | null> {
@@ -106,7 +136,11 @@ export const getPost = cache(async function getPost(slug: string): Promise<Post 
       }
 
       const json = await res.json();
-      return json.data ?? null;
+      const post: Post | null = json.data ?? null;
+      if (post && typeof post.content === "string") {
+        post.content = stripAppCtaFooter(post.content);
+      }
+      return post;
     } catch (err) {
       // Network / timeout error → retry
       if (attempt < 3) { await delay(300 * attempt); continue; }

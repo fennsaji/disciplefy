@@ -9,13 +9,13 @@ import { AppDownloadLink } from "@/components/blog/AppDownloadLink";
 export const mdxComponents: MDXComponents = {
   h1: (props) => (
     <h1
-      className="font-display font-extrabold text-3xl mt-12 mb-5 text-gray-900 dark:text-white leading-tight"
+      className="scroll-mt-24 font-display font-extrabold text-3xl mt-12 mb-5 text-gray-900 dark:text-white leading-tight"
       {...props}
     />
   ),
   h2: (props) => (
     <h2
-      className="font-display font-bold text-2xl mt-12 mb-4 leading-snug
+      className="scroll-mt-24 font-display font-bold text-2xl mt-12 mb-4 leading-snug
                  text-primary dark:text-indigo-300
                  border-l-[3px] border-primary dark:border-indigo-400 pl-4"
       {...props}
@@ -23,13 +23,13 @@ export const mdxComponents: MDXComponents = {
   ),
   h3: (props) => (
     <h3
-      className="font-display font-semibold text-xl mt-8 mb-3 leading-snug text-gray-800 dark:text-slate-100"
+      className="scroll-mt-24 font-display font-semibold text-xl mt-8 mb-3 leading-snug text-gray-800 dark:text-slate-100"
       {...props}
     />
   ),
   h4: (props) => (
     <h4
-      className="font-display font-semibold text-lg mt-6 mb-2 text-gray-700 dark:text-slate-300"
+      className="scroll-mt-24 font-display font-semibold text-lg mt-6 mb-2 text-gray-700 dark:text-slate-300"
       {...props}
     />
   ),
