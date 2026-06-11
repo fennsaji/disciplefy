@@ -58,7 +58,9 @@ export function BlogPostContent({
   const gradient = getGradient(post.tags);
   const ui = UI_STRINGS[(locale as UILocale) in UI_STRINGS ? (locale as UILocale) : "en"];
   const toc = extractToc(post.content);
-  const shareUrl = `https://www.disciplefy.in${locale === "en" ? "" : `/${locale}`}/blog/${post.slug}`;
+  // Always share the post's own canonical (single-locale) URL, not the page-chrome locale.
+  const postLocale = post.locale ?? locale;
+  const shareUrl = `https://www.disciplefy.in${postLocale === "en" ? "" : `/${postLocale}`}/blog/${post.slug}`;
   return (
     <>
       <Navbar />
