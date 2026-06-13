@@ -491,3 +491,5 @@ target/
 .worktrees/
 
 .guides/
+
+secrets/*
