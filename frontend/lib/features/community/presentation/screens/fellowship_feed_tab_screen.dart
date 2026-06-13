@@ -100,19 +100,27 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: context.appScaffold,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreatePostSheet,
-        backgroundColor: context.appInteractive,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: Text(
-          l10n.feedNewPost,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
+      floatingActionButton:
+          BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+        buildWhen: (prev, curr) =>
+            prev.canShowPostButton != curr.canShowPostButton,
+        builder: (context, state) {
+          if (!state.canShowPostButton) return const SizedBox.shrink();
+          return FloatingActionButton.extended(
+            onPressed: _openCreatePostSheet,
+            backgroundColor: context.appInteractive,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add),
+            label: Text(
+              l10n.feedNewPost,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          );
+        },
       ),
       body: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
         builder: (context, state) {
@@ -205,7 +213,9 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          l10n.feedEmpty,
+                          state.canPost
+                              ? l10n.feedEmpty
+                              : l10n.feedEmptyReadOnly,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Inter',

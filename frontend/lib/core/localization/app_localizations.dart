@@ -276,6 +276,7 @@ class AppLocalizations {
       'feedLoadError': 'Something went wrong.',
       'feedRetry': 'Retry',
       'feedEmpty': 'No posts yet.\nBe the first to share!',
+      'feedEmptyReadOnly': 'No posts yet.\nCheck back soon for updates.',
       'postTypePrayer': 'Prayer',
       'postTypePraise': 'Praise',
       'postTypeQuestion': 'Question',
@@ -326,6 +327,19 @@ class AppLocalizations {
       'inviteGenerating': 'Generating invite...',
       'inviteShareCode': 'Share this code',
       'inviteExpires': 'Expires in 7 days',
+      'inviteManageTitle': 'Invite Links',
+      'inviteManageSubtitle':
+          'Anyone with an active link can join. Revoke a link to disable it.',
+      'inviteGenerateLink': 'Generate New Link',
+      'inviteNoLinks': 'No active invite links',
+      'inviteNoLinksDescription':
+          'Generate a link to invite people to this fellowship.',
+      'inviteUnlimited': 'Unlimited joins',
+      'inviteJoinedSuffix': 'joined',
+      'inviteCopyLink': 'Copy link',
+      'inviteLinkCopied': 'Invite link copied',
+      'inviteCopyCode': 'Copy code',
+      'inviteCodeCopied': 'Invite code copied',
       'lessonsAdvanceGuide': 'Advance to Next Guide',
       'lessonsFinishPath': 'Finish Path',
       'lessonsResetProgress': 'Reset Progress',
@@ -384,6 +398,11 @@ class AppLocalizations {
       'createFellowshipDescLabel': 'Description (optional)',
       'createFellowshipDescHint': 'What will your fellowship study together?',
       'createFellowshipMaxLabel': 'Max Members (2–50)',
+      'createFellowshipWhoCanPostLabel': 'Who can post',
+      'createFellowshipPostEveryone': 'Everyone',
+      'createFellowshipPostAdminsOnly': 'Only admins',
+      'createFellowshipUnlimitedLabel': 'Unlimited members',
+      'createFellowshipUnlimitedHint': 'No cap on how many people can join',
       'createFellowshipButton': 'Create Fellowship',
       'createFellowshipSuccess': 'Fellowship created!',
       'createFellowshipFailed': 'Failed to create fellowship.',
@@ -829,6 +848,7 @@ class AppLocalizations {
       'feedLoadError': 'कुछ गलत हो गया।',
       'feedRetry': 'पुनः प्रयास',
       'feedEmpty': 'अभी कोई पोस्ट नहीं।\nपहले साझा करें!',
+      'feedEmptyReadOnly': 'अभी कोई पोस्ट नहीं।\nअपडेट के लिए जल्द ही देखें।',
       'postTypePrayer': 'प्रार्थना',
       'postTypePraise': 'स्तुति',
       'postTypeQuestion': 'प्रश्न',
@@ -881,6 +901,19 @@ class AppLocalizations {
       'inviteGenerating': 'आमंत्रण बना रहे हैं...',
       'inviteShareCode': 'यह कोड साझा करें',
       'inviteExpires': '7 दिनों में समाप्त',
+      'inviteManageTitle': 'आमंत्रण लिंक',
+      'inviteManageSubtitle':
+          'सक्रिय लिंक वाला कोई भी व्यक्ति शामिल हो सकता है। लिंक रद्द करके उसे निष्क्रिय करें।',
+      'inviteGenerateLink': 'नया लिंक बनाएं',
+      'inviteNoLinks': 'कोई सक्रिय आमंत्रण लिंक नहीं',
+      'inviteNoLinksDescription':
+          'इस फ़ेलोशिप में लोगों को आमंत्रित करने के लिए एक लिंक बनाएं।',
+      'inviteUnlimited': 'असीमित जुड़ाव',
+      'inviteJoinedSuffix': 'शामिल हुए',
+      'inviteCopyLink': 'लिंक कॉपी करें',
+      'inviteLinkCopied': 'आमंत्रण लिंक कॉपी किया गया',
+      'inviteCopyCode': 'कोड कॉपी करें',
+      'inviteCodeCopied': 'आमंत्रण कोड कॉपी किया गया',
       'lessonsAdvanceGuide': 'अगले गाइड पर जाएं',
       'lessonsFinishPath': 'पाठ पूर्ण करें',
       'lessonsResetProgress': 'प्रगति रीसेट करें',
@@ -938,6 +971,11 @@ class AppLocalizations {
       'createFellowshipDescLabel': 'विवरण (वैकल्पिक)',
       'createFellowshipDescHint': 'आपकी संगति मिलकर क्या अध्ययन करेगी?',
       'createFellowshipMaxLabel': 'अधिकतम सदस्य (2–50)',
+      'createFellowshipWhoCanPostLabel': 'कौन पोस्ट कर सकता है',
+      'createFellowshipPostEveryone': 'सभी',
+      'createFellowshipPostAdminsOnly': 'केवल एडमिन',
+      'createFellowshipUnlimitedLabel': 'असीमित सदस्य',
+      'createFellowshipUnlimitedHint': 'शामिल होने वालों की कोई सीमा नहीं',
       'createFellowshipButton': 'संगति बनाएं',
       'createFellowshipSuccess': 'संगति बन गई!',
       'createFellowshipFailed': 'संगति बनाना विफल।',
@@ -1383,6 +1421,8 @@ class AppLocalizations {
       'feedLoadError': 'എന്തോ തകരാറുണ്ടായി.',
       'feedRetry': 'വീണ്ടും ശ്രമിക്കുക',
       'feedEmpty': 'ഇതുവരെ പോസ്റ്റുകൾ ഇല്ല.\nആദ്യം പങ്കുവെക്കൂ!',
+      'feedEmptyReadOnly':
+          'ഇതുവരെ പോസ്റ്റുകൾ ഇല്ല.\nഅപ്ഡേറ്റുകൾക്കായി ഉടൻ പരിശോധിക്കൂ.',
       'postTypePrayer': 'പ്രാർഥന',
       'postTypePraise': 'സ്തുതി',
       'postTypeQuestion': 'ചോദ്യം',
@@ -1436,6 +1476,19 @@ class AppLocalizations {
       'inviteGenerating': 'ക്ഷണം സൃഷ്ടിക്കുന്നു...',
       'inviteShareCode': 'ഈ കോഡ് പങ്കിടുക',
       'inviteExpires': '7 ദിവസത്തിൽ കാലഹരണം',
+      'inviteManageTitle': 'ക്ഷണ ലിങ്കുകൾ',
+      'inviteManageSubtitle':
+          'സജീവ ലിങ്ക് ഉള്ള ആർക്കും ചേരാം. ലിങ്ക് റദ്ദാക്കി അത് നിർജ്ജീവമാക്കുക.',
+      'inviteGenerateLink': 'പുതിയ ലിങ്ക് സൃഷ്ടിക്കുക',
+      'inviteNoLinks': 'സജീവ ക്ഷണ ലിങ്കുകൾ ഇല്ല',
+      'inviteNoLinksDescription':
+          'ഈ കൂട്ടായ്മയിലേക്ക് ആളുകളെ ക്ഷണിക്കാൻ ഒരു ലിങ്ക് സൃഷ്ടിക്കുക.',
+      'inviteUnlimited': 'പരിധിയില്ലാത്ത ചേരൽ',
+      'inviteJoinedSuffix': 'ചേർന്നു',
+      'inviteCopyLink': 'ലിങ്ക് പകർത്തുക',
+      'inviteLinkCopied': 'ക്ഷണ ലിങ്ക് പകർത്തി',
+      'inviteCopyCode': 'കോഡ് പകർത്തുക',
+      'inviteCodeCopied': 'ക്ഷണ കോഡ് പകർത്തി',
       'lessonsAdvanceGuide': 'അടുത്ത ഗൈഡിലേക്ക് മുന്നേറുക',
       'lessonsFinishPath': 'പഠനം പൂർത്തിയാക്കുക',
       'lessonsResetProgress': 'പുരോഗതി പുനഃക്രമീകരിക്കുക',
@@ -1495,6 +1548,11 @@ class AppLocalizations {
       'createFellowshipDescLabel': 'വിവരണം (ഐച്ഛികം)',
       'createFellowshipDescHint': 'നിങ്ങളുടെ കൂട്ടായ്മ എന്ത് പഠിക്കും?',
       'createFellowshipMaxLabel': 'പരമാവധി അംഗങ്ങൾ (2–50)',
+      'createFellowshipWhoCanPostLabel': 'ആർക്ക് പോസ്റ്റ് ചെയ്യാം',
+      'createFellowshipPostEveryone': 'എല്ലാവരും',
+      'createFellowshipPostAdminsOnly': 'അഡ്മിൻ മാത്രം',
+      'createFellowshipUnlimitedLabel': 'പരിധിയില്ലാത്ത അംഗങ്ങൾ',
+      'createFellowshipUnlimitedHint': 'ചേരാനാകുന്നവരുടെ എണ്ണത്തിന് പരിധിയില്ല',
       'createFellowshipButton': 'കൂട്ടായ്മ ഉണ്ടാക്കുക',
       'createFellowshipSuccess': 'കൂട്ടായ്മ ഉണ്ടായി!',
       'createFellowshipFailed': 'കൂട്ടായ്മ ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല.',
@@ -1911,6 +1969,8 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['feedLoadError']!;
   String get feedRetry => _localizedValues[locale.languageCode]!['feedRetry']!;
   String get feedEmpty => _localizedValues[locale.languageCode]!['feedEmpty']!;
+  String get feedEmptyReadOnly =>
+      _localizedValues[locale.languageCode]!['feedEmptyReadOnly']!;
   String get postTypePrayer =>
       _localizedValues[locale.languageCode]!['postTypePrayer']!;
   String get postTypePraise =>
@@ -1987,6 +2047,28 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['membersInviteComingSoon']!;
   String get membersCopy =>
       _localizedValues[locale.languageCode]!['membersCopy']!;
+  String get inviteManageTitle =>
+      _localizedValues[locale.languageCode]!['inviteManageTitle']!;
+  String get inviteManageSubtitle =>
+      _localizedValues[locale.languageCode]!['inviteManageSubtitle']!;
+  String get inviteGenerateLink =>
+      _localizedValues[locale.languageCode]!['inviteGenerateLink']!;
+  String get inviteNoLinks =>
+      _localizedValues[locale.languageCode]!['inviteNoLinks']!;
+  String get inviteNoLinksDescription =>
+      _localizedValues[locale.languageCode]!['inviteNoLinksDescription']!;
+  String get inviteUnlimited =>
+      _localizedValues[locale.languageCode]!['inviteUnlimited']!;
+  String get inviteJoinedSuffix =>
+      _localizedValues[locale.languageCode]!['inviteJoinedSuffix']!;
+  String get inviteCopyLink =>
+      _localizedValues[locale.languageCode]!['inviteCopyLink']!;
+  String get inviteLinkCopied =>
+      _localizedValues[locale.languageCode]!['inviteLinkCopied']!;
+  String get inviteCopyCode =>
+      _localizedValues[locale.languageCode]!['inviteCopyCode']!;
+  String get inviteCodeCopied =>
+      _localizedValues[locale.languageCode]!['inviteCodeCopied']!;
 
   // Leave / Mute / Invite / Lessons — additional keys
   String get leaveFellowshipTitle =>
@@ -2104,6 +2186,16 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['createFellowshipDescHint']!;
   String get createFellowshipMaxLabel =>
       _localizedValues[locale.languageCode]!['createFellowshipMaxLabel']!;
+  String get createFellowshipWhoCanPostLabel => _localizedValues[
+      locale.languageCode]!['createFellowshipWhoCanPostLabel']!;
+  String get createFellowshipPostEveryone =>
+      _localizedValues[locale.languageCode]!['createFellowshipPostEveryone']!;
+  String get createFellowshipPostAdminsOnly =>
+      _localizedValues[locale.languageCode]!['createFellowshipPostAdminsOnly']!;
+  String get createFellowshipUnlimitedLabel =>
+      _localizedValues[locale.languageCode]!['createFellowshipUnlimitedLabel']!;
+  String get createFellowshipUnlimitedHint =>
+      _localizedValues[locale.languageCode]!['createFellowshipUnlimitedHint']!;
   String get createFellowshipButton =>
       _localizedValues[locale.languageCode]!['createFellowshipButton']!;
   String get createFellowshipSuccess =>

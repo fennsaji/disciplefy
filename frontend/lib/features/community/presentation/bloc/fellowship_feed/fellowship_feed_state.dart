@@ -42,6 +42,15 @@ class FellowshipFeedState extends Equatable {
   /// The current user's Supabase auth UID. Used to gate the delete button.
   final String? currentUserId;
 
+  /// Who may post: `'all_members'` or `'mentor_only'`. Drives FAB visibility.
+  final String postingPermission;
+
+  /// True once posting context (permission + role) is known — either supplied
+  /// by a passed-in entity or fetched from the server. The post button stays
+  /// hidden until this is true so refresh/deep-link doesn't briefly flash a
+  /// button the user may not be allowed to use.
+  final bool postingContextResolved;
+
   // ── Comments state ─────────────────────────────────────────────────────────
 
   /// The post whose comments are currently loaded (set when sheet opens).
@@ -72,6 +81,8 @@ class FellowshipFeedState extends Equatable {
     this.submitting = false,
     this.isMentor = false,
     this.currentUserId,
+    this.postingPermission = 'all_members',
+    this.postingContextResolved = false,
     this.activePostId,
     this.comments = const [],
     this.commentsStatus = FellowshipCommentsStatus.initial,
@@ -83,6 +94,16 @@ class FellowshipFeedState extends Equatable {
   /// Returns the initial state (used as the BLoC seed value).
   const FellowshipFeedState.initial() : this();
 
+  /// True when the current user is allowed to create posts: either posting is
+  /// open to all members, or the user is the mentor.
+  bool get canPost => postingPermission != 'mentor_only' || isMentor;
+
+  /// Whether the post button (FAB / "Post something") should be shown: posting
+  /// context must be resolved AND the user must be allowed to post. Gating on
+  /// [postingContextResolved] avoids flashing the button on refresh/deep-link
+  /// before the server confirms permissions.
+  bool get canShowPostButton => postingContextResolved && canPost;
+
   @override
   List<Object?> get props => [
         status,
@@ -93,6 +114,8 @@ class FellowshipFeedState extends Equatable {
         submitting,
         isMentor,
         currentUserId,
+        postingPermission,
+        postingContextResolved,
         activePostId,
         comments,
         commentsStatus,
@@ -113,6 +136,8 @@ class FellowshipFeedState extends Equatable {
     bool? submitting,
     bool? isMentor,
     String? currentUserId,
+    String? postingPermission,
+    bool? postingContextResolved,
     String? activePostId,
     List<FellowshipCommentEntity>? comments,
     FellowshipCommentsStatus? commentsStatus,
@@ -130,6 +155,9 @@ class FellowshipFeedState extends Equatable {
       submitting: submitting ?? this.submitting,
       isMentor: isMentor ?? this.isMentor,
       currentUserId: currentUserId ?? this.currentUserId,
+      postingPermission: postingPermission ?? this.postingPermission,
+      postingContextResolved:
+          postingContextResolved ?? this.postingContextResolved,
       activePostId: activePostId ?? this.activePostId,
       comments: comments ?? this.comments,
       commentsStatus: commentsStatus ?? this.commentsStatus,

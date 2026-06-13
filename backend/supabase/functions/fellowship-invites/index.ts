@@ -46,16 +46,14 @@ async function handleListInvites(req: Request, services: ServiceContainer): Prom
       .update({ is_revoked: true })
       .eq('fellowship_id', fellowshipId)
       .eq('is_revoked', false)
-      .is('used_at', null)
       .lt('expires_at', new Date().toISOString())
   ).catch(() => {})
 
   const { data: invites, error } = await db
     .from('fellowship_invites')
-    .select('id, token, expires_at, used_at, created_at')
+    .select('id, token, expires_at, max_uses, use_count, created_at')
     .eq('fellowship_id', fellowshipId)
     .eq('is_revoked', false)
-    .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
 
@@ -87,13 +85,19 @@ async function handleCreateInvite(req: Request, services: ServiceContainer): Pro
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
-  let body: { fellowship_id: string }
+  let body: { fellowship_id: string; max_uses?: number | null }
   try {
-    body = await req.json() as { fellowship_id: string }
+    body = await req.json() as { fellowship_id: string; max_uses?: number | null }
   } catch {
     throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400)
   }
   if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+  // max_uses: null/undefined = unlimited (reusable link); otherwise a positive integer cap.
+  if (body.max_uses !== undefined && body.max_uses !== null) {
+    if (typeof body.max_uses !== 'number' || !Number.isInteger(body.max_uses) || body.max_uses < 1) {
+      throw new AppError('VALIDATION_ERROR', 'max_uses must be a positive integer or null (unlimited)', 400)
+    }
+  }
 
   const db = services.supabaseServiceClient
 
@@ -112,7 +116,6 @@ async function handleCreateInvite(req: Request, services: ServiceContainer): Pro
     .select('*', { count: 'exact', head: true })
     .eq('fellowship_id', body.fellowship_id)
     .eq('is_revoked', false)
-    .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
 
   if (countError) {
@@ -126,7 +129,7 @@ async function handleCreateInvite(req: Request, services: ServiceContainer): Pro
 
   const { data: invite, error } = await db
     .from('fellowship_invites')
-    .insert({ fellowship_id: body.fellowship_id, created_by: user.id })
+    .insert({ fellowship_id: body.fellowship_id, created_by: user.id, max_uses: body.max_uses ?? null })
     .select()
     .single()
 
@@ -142,6 +145,8 @@ async function handleCreateInvite(req: Request, services: ServiceContainer): Pro
         id: invite.id,
         token: invite.token,
         expires_at: invite.expires_at,
+        max_uses: invite.max_uses,
+        use_count: invite.use_count,
         join_url: `https://app.disciplefy.in/fellowship/join/${invite.token}`
       }
     }),
@@ -176,11 +181,15 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     .select('*, fellowships(id, name, max_members)')
     .eq('token', body.token)
     .eq('is_revoked', false)
-    .is('used_at', null)
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 
   if (!invite) throw new AppError('NOT_FOUND', 'Invite link is invalid or expired', 404)
+
+  // Reusable link: enforce the optional usage cap (null max_uses = unlimited).
+  if (invite.max_uses !== null && (invite.use_count ?? 0) >= invite.max_uses) {
+    throw new AppError('VALIDATION_ERROR', 'This invite link has reached its usage limit', 400)
+  }
 
   const fellowship = invite.fellowships as any
   if (!fellowship) throw new AppError('NOT_FOUND', 'Fellowship not found', 404)
@@ -207,7 +216,7 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     throw new AppError('DATABASE_ERROR', 'Failed to check member capacity', 500)
   }
 
-  if ((memberCount || 0) >= fellowship.max_members) {
+  if (fellowship.max_members !== null && (memberCount || 0) >= fellowship.max_members) {
     throw new AppError('VALIDATION_ERROR', 'Fellowship is full', 400)
   }
 
@@ -225,12 +234,13 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     throw new AppError('DATABASE_ERROR', 'Failed to join fellowship', 500)
   }
 
-  const { error: markUsedError } = await db
+  // Reusable link: increment the join counter instead of single-use marking.
+  const { error: usageError } = await db
     .from('fellowship_invites')
-    .update({ used_at: new Date().toISOString(), used_by: user.id })
+    .update({ use_count: (invite.use_count ?? 0) + 1 })
     .eq('id', invite.id)
-  if (markUsedError) {
-    console.error('[fellowship-invites/join] Failed to mark invite used — token may be reusable:', invite.id, markUsedError)
+  if (usageError) {
+    console.error('[fellowship-invites/join] Failed to increment use_count:', invite.id, usageError)
   }
 
   // Fire-and-forget: notify new member of upcoming meetings (non-blocking)

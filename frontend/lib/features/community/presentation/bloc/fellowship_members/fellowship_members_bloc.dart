@@ -90,13 +90,17 @@ class FellowshipMembersBloc
         inviteStatus: FellowshipInviteStatus.failure,
         inviteError: failure.message,
       )),
-      (data) => emit(state.copyWith(
-        inviteStatus: FellowshipInviteStatus.success,
-        inviteToken: data['token'] as String?,
-        inviteId: data['id'] as String?,
-        inviteJoinUrl: data['join_url'] as String?,
-        clearInviteError: true,
-      )),
+      (data) {
+        emit(state.copyWith(
+          inviteStatus: FellowshipInviteStatus.success,
+          inviteToken: data['token'] as String?,
+          inviteId: data['id'] as String?,
+          inviteJoinUrl: data['join_url'] as String?,
+          clearInviteError: true,
+        ));
+        // Refresh the full list so the new link appears in the manage screen.
+        add(const FellowshipInvitesListRequested());
+      },
     );
   }
 

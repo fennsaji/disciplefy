@@ -41,6 +41,10 @@ class FellowshipEntity extends Equatable {
   /// Whether the fellowship is publicly discoverable.
   final bool isPublic;
 
+  /// Who is allowed to post in the feed: `'all_members'` (mentor + members)
+  /// or `'mentor_only'` (only the mentor).
+  final String postingPermission;
+
   const FellowshipEntity({
     required this.id,
     required this.name,
@@ -52,7 +56,12 @@ class FellowshipEntity extends Equatable {
     this.currentStudy,
     this.mentorName,
     this.isPublic = false,
+    this.postingPermission = 'all_members',
   });
+
+  /// True when the current user is allowed to create posts in this fellowship.
+  bool get canCurrentUserPost =>
+      postingPermission != 'mentor_only' || userRole == 'mentor';
 
   @override
   List<Object?> get props => [
@@ -66,5 +75,6 @@ class FellowshipEntity extends Equatable {
         currentStudy,
         mentorName,
         isPublic,
+        postingPermission,
       ];
 }

@@ -32,15 +32,30 @@ class FellowshipCreateRequested extends FellowshipListEvent {
   final bool isPublic;
   final String language;
 
+  /// 'all_members' (mentor + members can post) or 'mentor_only' (only mentor).
+  final String postingPermission;
+
+  /// When true, sends an unlimited member cap (app-admin only).
+  final bool unlimitedMembers;
+
   const FellowshipCreateRequested({
     required this.name,
     this.description,
     this.maxMembers,
     this.isPublic = false,
     this.language = 'en',
+    this.postingPermission = 'all_members',
+    this.unlimitedMembers = false,
   });
 
   @override
-  List<Object?> get props =>
-      [name, description, maxMembers, isPublic, language];
+  List<Object?> get props => [
+        name,
+        description,
+        maxMembers,
+        isPublic,
+        language,
+        postingPermission,
+        unlimitedMembers
+      ];
 }

@@ -36,6 +36,9 @@ class FellowshipModel {
   /// Whether the fellowship is publicly discoverable.
   final bool isPublic;
 
+  /// Who is allowed to post: `'all_members'` or `'mentor_only'`.
+  final String postingPermission;
+
   const FellowshipModel({
     required this.id,
     required this.name,
@@ -47,6 +50,7 @@ class FellowshipModel {
     this.currentStudy,
     this.mentorName,
     this.isPublic = false,
+    this.postingPermission = 'all_members',
   });
 
   /// Creates a [FellowshipModel] from a JSON map (API response).
@@ -66,6 +70,7 @@ class FellowshipModel {
           : null,
       mentorName: json['mentor_name'] as String?,
       isPublic: json['is_public'] as bool? ?? false,
+      postingPermission: json['posting_permission'] as String? ?? 'all_members',
     );
   }
 
@@ -81,5 +86,6 @@ class FellowshipModel {
         currentStudy: currentStudy?.toEntity(),
         mentorName: mentorName,
         isPublic: isPublic,
+        postingPermission: postingPermission,
       );
 }

@@ -88,6 +88,8 @@ abstract class CommunityRemoteDatasource {
     int? maxMembers,
     bool isPublic = false,
     String language = 'en',
+    String postingPermission = 'all_members',
+    bool unlimitedMembers = false,
   });
 
   /// Sets (or replaces) the active learning path for [fellowshipId].
@@ -815,6 +817,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     int? maxMembers,
     bool isPublic = false,
     String language = 'en',
+    String postingPermission = 'all_members',
+    bool unlimitedMembers = false,
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipCreateEndpoint';
@@ -822,11 +826,14 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       if (description != null && description.isNotEmpty) {
         bodyMap['description'] = description;
       }
-      if (maxMembers != null) {
+      if (unlimitedMembers) {
+        bodyMap['max_members'] = null; // explicit null = unlimited (admin only)
+      } else if (maxMembers != null) {
         bodyMap['max_members'] = maxMembers;
       }
       bodyMap['is_public'] = isPublic;
       bodyMap['language'] = language;
+      bodyMap['posting_permission'] = postingPermission;
       final body = jsonEncode(bodyMap);
 
       final headers = await _httpService.createHeaders();
