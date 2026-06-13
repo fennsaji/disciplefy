@@ -413,6 +413,9 @@ verify_jwt = false
 [functions.google-play-webhook]
 verify_jwt = false
 
+[functions.apple-appstore-notifications]
+verify_jwt = false
+
 [functions.razorpay-webhook]
 verify_jwt = false
 
