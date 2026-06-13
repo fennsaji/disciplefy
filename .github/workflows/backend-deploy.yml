@@ -228,6 +228,9 @@ jobs:
         RAZORPAY_FIRSTMONTH_PREMIUM_OFFER_ID=${{ secrets.RAZORPAY_FIRSTMONTH_PREMIUM_OFFER_ID }}
         # Apple App Store IAP — shared secret for verifyReceipt validation
         APPLE_SHARED_SECRET=${{ secrets.APPLE_SHARED_SECRET }}
+        # Apple App Store Server Notifications V2 — bundle id allow-list + numeric app id
+        APPLE_BUNDLE_ID=${{ secrets.APPLE_BUNDLE_ID }}
+        APPLE_APP_APPLE_ID=${{ secrets.APPLE_APP_APPLE_ID }}
 
         # SMS Configuration (${{ env.DEPLOY_ENV }})
         TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
