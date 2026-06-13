@@ -14,13 +14,37 @@ class FellowshipFeedInitialized extends FellowshipFeedEvent {
   final bool isMentor;
   final String? currentUserId;
 
+  /// Who may post: `'all_members'` or `'mentor_only'`.
+  final String postingPermission;
+
+  /// True when [postingPermission]/[isMentor] came from a known source (a
+  /// passed-in entity), so the post button can show without waiting for the
+  /// server. False when they're defaults (deep link / refresh).
+  final bool postingContextResolved;
+
   const FellowshipFeedInitialized({
     required this.isMentor,
     this.currentUserId,
+    this.postingPermission = 'all_members',
+    this.postingContextResolved = false,
   });
 
   @override
-  List<Object?> get props => [isMentor, currentUserId];
+  List<Object?> get props =>
+      [isMentor, currentUserId, postingPermission, postingContextResolved];
+}
+
+/// Fetches authoritative posting context (posting_permission + caller role)
+/// from the server. Used so FAB/empty-state gating is correct even when the
+/// screen was opened without a passed-in [FellowshipEntity] (deep link, web
+/// refresh).
+class FellowshipFeedContextRequested extends FellowshipFeedEvent {
+  final String fellowshipId;
+
+  const FellowshipFeedContextRequested({required this.fellowshipId});
+
+  @override
+  List<Object?> get props => [fellowshipId];
 }
 
 /// Loads the first page of posts for the given fellowship, discarding any

@@ -80,6 +80,15 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
             ..add(FellowshipFeedInitialized(
               isMentor: isMentor,
               currentUserId: currentUserId,
+              postingPermission: fellowship?.postingPermission ?? 'all_members',
+              // Known immediately when the entity was passed; otherwise wait
+              // for the server (avoids flashing the post button on refresh).
+              postingContextResolved: fellowship != null,
+            ))
+            // Authoritative posting context — corrects FAB/empty-state gating
+            // when the entity wasn't passed (deep link / web refresh).
+            ..add(FellowshipFeedContextRequested(
+              fellowshipId: widget.fellowshipId,
             ))
             ..add(FellowshipFeedLoadRequested(
               fellowshipId: widget.fellowshipId,
@@ -402,30 +411,39 @@ class _FellowshipHomeContent extends StatelessWidget {
       ],
       child: Scaffold(
         backgroundColor: context.appScaffold,
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            final feedBloc = context.read<FellowshipFeedBloc>();
-            showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => BlocProvider.value(
-                value: feedBloc,
-                child: FellowshipCreatePostSheet(fellowshipId: fellowshipId),
+        floatingActionButton:
+            BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+          buildWhen: (prev, curr) =>
+              prev.canShowPostButton != curr.canShowPostButton,
+          builder: (context, feedState) {
+            if (!feedState.canShowPostButton) return const SizedBox.shrink();
+            return FloatingActionButton.extended(
+              onPressed: () {
+                final feedBloc = context.read<FellowshipFeedBloc>();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => BlocProvider.value(
+                    value: feedBloc,
+                    child:
+                        FellowshipCreatePostSheet(fellowshipId: fellowshipId),
+                  ),
+                );
+              },
+              backgroundColor: context.appInteractive,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: Text(
+                l10n.feedNewPost,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             );
           },
-          backgroundColor: context.appInteractive,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.add),
-          label: Text(
-            l10n.feedNewPost,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
         ),
         appBar: AppBar(
           backgroundColor: context.appScaffold,
@@ -861,7 +879,7 @@ class _FeedPreviewSection extends StatelessWidget {
                           size: 36, color: context.appTextTertiary),
                       const SizedBox(height: 8),
                       Text(
-                        l10n.feedEmpty,
+                        state.canPost ? l10n.feedEmpty : l10n.feedEmptyReadOnly,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Inter',
@@ -869,20 +887,22 @@ class _FeedPreviewSection extends StatelessWidget {
                           color: context.appTextSecondary,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: onViewAll,
-                        icon: const Icon(Icons.add, size: 16),
-                        label: Text(l10n.feedPostSomething),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          side: BorderSide(
-                              color: Theme.of(context).colorScheme.primary),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                      if (state.canShowPostButton) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: onViewAll,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: Text(l10n.feedPostSomething),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            side: BorderSide(
+                                color: Theme.of(context).colorScheme.primary),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
                         ),
-                      ),
+                      ],
                     ]),
                   ),
                 );

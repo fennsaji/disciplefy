@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../core/di/injection_container.dart';
+import '../../../../../core/services/language_preference_service.dart';
 import '../../../../../features/community/domain/entities/fellowship_comment_entity.dart';
 import '../../../../../features/community/domain/entities/fellowship_post_entity.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
@@ -21,6 +23,7 @@ class FellowshipFeedBloc
       : _repository = repository,
         super(const FellowshipFeedState.initial()) {
     on<FellowshipFeedInitialized>(_onInitialized);
+    on<FellowshipFeedContextRequested>(_onContextRequested);
     on<FellowshipFeedLoadRequested>(_onLoadRequested);
     on<FellowshipFeedLoadMoreRequested>(_onLoadMoreRequested);
     on<FellowshipPostCreateRequested>(_onPostCreateRequested);
@@ -40,7 +43,38 @@ class FellowshipFeedBloc
     emit(state.copyWith(
       isMentor: event.isMentor,
       currentUserId: event.currentUserId,
+      postingPermission: event.postingPermission,
+      postingContextResolved: event.postingContextResolved,
     ));
+  }
+
+  /// Fetches authoritative posting context from the server and updates the
+  /// posting permission + mentor flag. Self-correcting: the optimistic values
+  /// passed to [FellowshipFeedInitialized] may be stale or absent (deep link /
+  /// web refresh), so this overrides them once the network responds.
+  Future<void> _onContextRequested(
+    FellowshipFeedContextRequested event,
+    Emitter<FellowshipFeedState> emit,
+  ) async {
+    final lang =
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+    final result =
+        await _repository.getFellowship(event.fellowshipId, lang.code);
+
+    result.fold(
+      // On failure, fall back to whatever optimistic values we have but still
+      // mark resolved so the button isn't hidden forever.
+      (_) => emit(state.copyWith(postingContextResolved: true)),
+      (data) {
+        final role = data['caller_role'] as String?;
+        final permission = data['posting_permission'] as String?;
+        emit(state.copyWith(
+          postingPermission: permission ?? state.postingPermission,
+          isMentor: role != null ? role == 'mentor' : state.isMentor,
+          postingContextResolved: true,
+        ));
+      },
+    );
   }
 
   // ---------------------------------------------------------------------------
