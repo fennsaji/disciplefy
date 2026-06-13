@@ -104,6 +104,8 @@ abstract class CommunityRepository {
     int? maxMembers,
     bool isPublic = false,
     String language = 'en',
+    String postingPermission = 'all_members',
+    bool unlimitedMembers = false,
   });
 
   /// Sets (or replaces) the active learning path for [fellowshipId].

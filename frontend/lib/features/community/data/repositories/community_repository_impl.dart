@@ -264,6 +264,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
     int? maxMembers,
     bool isPublic = false,
     String language = 'en',
+    String postingPermission = 'all_members',
+    bool unlimitedMembers = false,
   }) async {
     try {
       await _datasource.createFellowship(
@@ -272,6 +274,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
         maxMembers: maxMembers,
         isPublic: isPublic,
         language: language,
+        postingPermission: postingPermission,
+        unlimitedMembers: unlimitedMembers,
       );
       return const Right(null);
     } on NetworkException catch (e) {

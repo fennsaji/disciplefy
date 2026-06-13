@@ -69,6 +69,8 @@ class FellowshipListBloc
       maxMembers: event.maxMembers,
       isPublic: event.isPublic,
       language: event.language,
+      postingPermission: event.postingPermission,
+      unlimitedMembers: event.unlimitedMembers,
     );
 
     await result.fold(

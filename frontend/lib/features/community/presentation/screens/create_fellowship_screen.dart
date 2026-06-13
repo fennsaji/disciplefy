@@ -35,6 +35,8 @@ class _CreateFellowshipScreenState extends State<CreateFellowshipScreen> {
   bool _hasName = false;
   bool _isPublic = false;
   String _language = 'en';
+  String _postingPermission = 'all_members';
+  bool _unlimitedMembers = false;
 
   @override
   void initState() {
@@ -65,9 +67,11 @@ class _CreateFellowshipScreenState extends State<CreateFellowshipScreen> {
           FellowshipCreateRequested(
             name: name,
             description: desc.isNotEmpty ? desc : null,
-            maxMembers: maxRaw,
+            maxMembers: _unlimitedMembers ? null : maxRaw,
             isPublic: _isPublic,
             language: _language,
+            postingPermission: _postingPermission,
+            unlimitedMembers: _unlimitedMembers,
           ),
         );
   }
@@ -84,8 +88,13 @@ class _CreateFellowshipScreenState extends State<CreateFellowshipScreen> {
         hasName: _hasName,
         isPublic: _isPublic,
         language: _language,
+        postingPermission: _postingPermission,
+        unlimitedMembers: _unlimitedMembers,
         onIsPublicChanged: (v) => setState(() => _isPublic = v),
         onLanguageChanged: (v) => setState(() => _language = v),
+        onPostingPermissionChanged: (v) =>
+            setState(() => _postingPermission = v),
+        onUnlimitedChanged: (v) => setState(() => _unlimitedMembers = v),
         onCreatePressed: _onCreatePressed,
       ),
     );
@@ -104,8 +113,12 @@ class _CreateFellowshipConsumer extends StatelessWidget {
   final bool hasName;
   final bool isPublic;
   final String language;
+  final String postingPermission;
+  final bool unlimitedMembers;
   final ValueChanged<bool> onIsPublicChanged;
   final ValueChanged<String> onLanguageChanged;
+  final ValueChanged<String> onPostingPermissionChanged;
+  final ValueChanged<bool> onUnlimitedChanged;
   final void Function(BuildContext) onCreatePressed;
 
   const _CreateFellowshipConsumer({
@@ -116,8 +129,12 @@ class _CreateFellowshipConsumer extends StatelessWidget {
     required this.hasName,
     required this.isPublic,
     required this.language,
+    required this.postingPermission,
+    required this.unlimitedMembers,
     required this.onIsPublicChanged,
     required this.onLanguageChanged,
+    required this.onPostingPermissionChanged,
+    required this.onUnlimitedChanged,
     required this.onCreatePressed,
   });
 
@@ -160,8 +177,12 @@ class _CreateFellowshipConsumer extends StatelessWidget {
               hasName: hasName,
               isPublic: isPublic,
               language: language,
+              postingPermission: postingPermission,
+              unlimitedMembers: unlimitedMembers,
               onIsPublicChanged: onIsPublicChanged,
               onLanguageChanged: onLanguageChanged,
+              onPostingPermissionChanged: onPostingPermissionChanged,
+              onUnlimitedChanged: onUnlimitedChanged,
               onCreatePressed: () => onCreatePressed(context),
             ),
             if (isLoading) const _LoadingOverlay(),
@@ -185,8 +206,12 @@ class _CreateFellowshipBody extends StatelessWidget {
   final bool hasName;
   final bool isPublic;
   final String language;
+  final String postingPermission;
+  final bool unlimitedMembers;
   final ValueChanged<bool> onIsPublicChanged;
   final ValueChanged<String> onLanguageChanged;
+  final ValueChanged<String> onPostingPermissionChanged;
+  final ValueChanged<bool> onUnlimitedChanged;
   final VoidCallback onCreatePressed;
 
   const _CreateFellowshipBody({
@@ -198,8 +223,12 @@ class _CreateFellowshipBody extends StatelessWidget {
     required this.hasName,
     required this.isPublic,
     required this.language,
+    required this.postingPermission,
+    required this.unlimitedMembers,
     required this.onIsPublicChanged,
     required this.onLanguageChanged,
+    required this.onPostingPermissionChanged,
+    required this.onUnlimitedChanged,
     required this.onCreatePressed,
   });
 
@@ -352,35 +381,118 @@ class _CreateFellowshipBody extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // ── Max members field ────────────────────────────────────────
-                _FieldLabel(label: l10n.createFellowshipMaxLabel),
+                // ── Max members (+ admin-only unlimited toggle) ──────────────
+                BlocBuilder<AuthBloc, auth_states.AuthState>(
+                  builder: (context, authState) {
+                    final isAdmin =
+                        authState is auth_states.AuthenticatedState &&
+                            authState.isAdmin;
+                    final hideMaxField = isAdmin && unlimitedMembers;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!hideMaxField) ...[
+                          _FieldLabel(label: l10n.createFellowshipMaxLabel),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: maxController,
+                            enabled: !isLoading,
+                            textInputAction: TextInputAction.done,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              color: context.appTextPrimary,
+                            ),
+                            decoration: _inputDecoration(
+                              context: context,
+                              hintText: '12',
+                              prefixIcon: Icons.people_rounded,
+                            ),
+                            validator: (v) {
+                              if (hideMaxField) return null;
+                              final n = int.tryParse(v?.trim() ?? '');
+                              if (n == null || n < 2 || n > 50) {
+                                return l10n.createFellowshipMaxError;
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              if (!isLoading && hasName) onCreatePressed();
+                            },
+                          ),
+                        ],
+                        // Unlimited members — admin only, grouped with the cap.
+                        if (isAdmin) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.createFellowshipUnlimitedLabel,
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: context.appTextPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      l10n.createFellowshipUnlimitedHint,
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 13,
+                                        color: context.appTextSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: unlimitedMembers,
+                                activeColor:
+                                    Theme.of(context).colorScheme.primary,
+                                onChanged:
+                                    isLoading ? null : onUnlimitedChanged,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── Who can post (any creator can choose) ────────────────────
+                _FieldLabel(label: l10n.createFellowshipWhoCanPostLabel),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: maxController,
-                  enabled: !isLoading,
-                  textInputAction: TextInputAction.done,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    color: context.appTextPrimary,
-                  ),
-                  decoration: _inputDecoration(
-                    context: context,
-                    hintText: '12',
-                    prefixIcon: Icons.people_rounded,
-                  ),
-                  validator: (v) {
-                    final n = int.tryParse(v?.trim() ?? '');
-                    if (n == null || n < 2 || n > 50) {
-                      return l10n.createFellowshipMaxError;
-                    }
-                    return null;
-                  },
-                  onFieldSubmitted: (_) {
-                    if (!isLoading && hasName) onCreatePressed();
-                  },
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(
+                      value: 'all_members',
+                      label: Text(l10n.createFellowshipPostEveryone),
+                      icon: const Icon(Icons.groups_rounded, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: 'mentor_only',
+                      label: Text(l10n.createFellowshipPostAdminsOnly),
+                      icon: const Icon(Icons.shield_rounded, size: 18),
+                    ),
+                  ],
+                  selected: {postingPermission},
+                  showSelectedIcon: false,
+                  onSelectionChanged: isLoading
+                      ? null
+                      : (s) => onPostingPermissionChanged(s.first),
                 ),
 
                 // ── Admin-only fields ─────────────────────────────────────────
