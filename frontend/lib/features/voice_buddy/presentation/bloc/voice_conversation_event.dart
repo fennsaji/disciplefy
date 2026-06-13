@@ -225,3 +225,14 @@ class SpeechStatusChanged extends VoiceConversationEvent {
   @override
   List<Object?> get props => [status];
 }
+
+/// Emitted when the speech recognizer reports an error (e.g. error_listen_failed,
+/// error_no_match). Used to stop the continuous-listen retry storm.
+class SpeechRecognitionErrorOccurred extends VoiceConversationEvent {
+  final String errorMsg;
+
+  const SpeechRecognitionErrorOccurred(this.errorMsg);
+
+  @override
+  List<Object?> get props => [errorMsg];
+}

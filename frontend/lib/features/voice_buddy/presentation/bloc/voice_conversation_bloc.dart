@@ -49,6 +49,10 @@ class VoiceConversationBloc
   /// Whether user has started speaking in current session
   bool _hasStartedSpeaking = false;
 
+  /// Consecutive speech-recognizer start failures (error_listen_failed). Used to
+  /// break the continuous-listen retry loop instead of spinning forever.
+  int _consecutiveListenFailures = 0;
+
   /// Buffer for accumulating text chunks during streaming TTS
   String _streamingSentenceBuffer = '';
 
@@ -93,6 +97,7 @@ class VoiceConversationBloc
     on<ChangeLanguage>(_onChangeLanguage);
     on<PlaybackCompleted>(_onPlaybackCompleted);
     on<SpeechStatusChanged>(_onSpeechStatusChanged);
+    on<SpeechRecognitionErrorOccurred>(_onSpeechRecognitionError);
   }
 
   /// Called by VAD service when silence is detected (ready to auto-send)
@@ -349,6 +354,7 @@ class VoiceConversationBloc
     try {
       await _speechService.startListening(
         languageCode: state.languageCode,
+        onError: (error) => add(SpeechRecognitionErrorOccurred(error.errorMsg)),
         // Defaults: listenFor=60s, pauseFor=60s
         // 3-second silence detection is handled by _silenceAfterSpeechTimer
         onResult: (result) {
@@ -400,6 +406,9 @@ class VoiceConversationBloc
           // Use _bestTranscription (not `text`) to avoid sending a truncated
           // result when stop() caused the engine to return fewer words.
           if (result.finalResult && _bestTranscription.isNotEmpty) {
+            // A successful result proves the recognizer started fine — reset the
+            // failure counter so a future hiccup gets the full retry budget again.
+            _consecutiveListenFailures = 0;
             // Cancel silence timer since we're sending via finalResult
             _silenceAfterSpeechTimer?.cancel();
             _silenceAfterSpeechTimer = null;
@@ -1319,6 +1328,41 @@ class VoiceConversationBloc
     Emitter<VoiceConversationState> emit,
   ) {
     emit(state.copyWith(languageCode: event.languageCode));
+  }
+
+  /// Handles speech-recognizer errors. `error_no_match` is benign (heard nothing).
+  /// `error_listen_failed` means the recognizer couldn't start — on the iOS
+  /// Simulator (where it never can) or after repeated failures, we stop the
+  /// continuous-listen retry loop and surface a clear message instead of spinning.
+  Future<void> _onSpeechRecognitionError(
+    SpeechRecognitionErrorOccurred event,
+    Emitter<VoiceConversationState> emit,
+  ) async {
+    if (event.errorMsg != 'error_listen_failed') return;
+
+    _consecutiveListenFailures++;
+
+    final isSimulator = await _speechService.isIosSimulator();
+    if (!isSimulator && _consecutiveListenFailures < 2) {
+      return; // transient — allow the normal flow to retry within budget
+    }
+
+    // Give up: stop the retry storm and tell the user what's actually wrong.
+    _consecutiveListenFailures = 0;
+    _silenceAfterSpeechTimer?.cancel();
+    _silenceAfterSpeechTimer = null;
+    _vadService.stop();
+    await _speechService.cancelListening();
+    _speechSubscription?.cancel();
+
+    emit(state.copyWith(
+      status: VoiceConversationStatus.error,
+      isListening: false,
+      isContinuousMode: false, // prevent the auto re-arm loop
+      errorMessage: isSimulator
+          ? 'Voice input isn\'t available on the iOS Simulator. Please use a real device.'
+          : 'Couldn\'t start the microphone. Please check permissions and try again.',
+    ));
   }
 
   /// Handle speech recognition status changes.
