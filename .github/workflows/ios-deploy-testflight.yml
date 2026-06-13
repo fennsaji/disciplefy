@@ -28,6 +28,9 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          # TestFlight betas use the plain run number (small: 1, 2, 3…).
+          # Production builds offset by 10000 (see ios-deploy-appstore.yml) so the
+          # two tracks stay numerically distinct; groups differentiate them in TestFlight.
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=${{ github.run_number }}" >> $GITHUB_OUTPUT
           echo "✅ Version: $VERSION+${{ github.run_number }}"

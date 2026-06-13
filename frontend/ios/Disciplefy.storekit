@@ -1,0 +1,90 @@
+{
+  "identifier" : "DISCIPLEFY_STOREKIT_CONFIG",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "6778309947",
+    "_developerTeamID" : "4V6VA2U9MW",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "en_IN",
+    "_storefront" : "IND",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21500100",
+      "localizations" : [],
+      "name" : "Disciplefy Membership",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "499",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "21500101",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI study, Voice Discipler & all features",
+              "displayName" : "Premium",
+              "locale" : "en_IN"
+            }
+          ],
+          "productID" : "com.disciplefy.premium_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Disciplefy Premium (Monthly)",
+          "subscriptionGroupID" : "21500100",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "149",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "21500102",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All study modes, more Voice sessions, lead groups",
+              "displayName" : "Plus",
+              "locale" : "en_IN"
+            }
+          ],
+          "productID" : "com.disciplefy.plus_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Disciplefy Plus (Monthly)",
+          "subscriptionGroupID" : "21500100",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "79",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "21500103",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Voice Discipler, core study modes & Fellowship",
+              "displayName" : "Standard",
+              "locale" : "en_IN"
+            }
+          ],
+          "productID" : "com.disciplefy.standard_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Disciplefy Standard (Monthly)",
+          "subscriptionGroupID" : "21500100",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

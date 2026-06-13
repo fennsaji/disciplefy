@@ -32,7 +32,8 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          # Offset by 10000 so production build numbers always exceed TestFlight betas.
+          # Offset by 10000 so production build numbers always exceed TestFlight betas
+          # (which use the plain run number). The two tracks stay numerically distinct.
           BUILD_NUMBER=$(( ${{ github.run_number }} + 10000 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT

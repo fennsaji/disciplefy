@@ -219,6 +219,15 @@ else
     echo -e "${YELLOW}⚠️  OAuth credentials not found in ${ENV_FILE}${NC}"
 fi
 
+# Apple Sign-In: config.toml [auth.external.apple] references
+# env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET). If it's unset, the CLI silently drops
+# the whole apple block (provider stays disabled → "provider_disabled" at runtime).
+# Native iOS sign-in (signInWithIdToken) verifies the Apple ID token directly and
+# does NOT use this client secret, so a non-empty local placeholder is sufficient.
+export SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=$(grep "^SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d'=' -f2- || true)
+export SUPABASE_AUTH_EXTERNAL_APPLE_SECRET="${SUPABASE_AUTH_EXTERNAL_APPLE_SECRET:-local-dev-placeholder}"
+echo -e "${GREEN}✅ Apple Sign-In secret exported (placeholder ok for native flow)${NC}"
+
 # Load IAP environment variables BEFORE starting Supabase.
 # config.toml [edge_runtime.secrets] uses env() references, so these must be
 # exported to the shell environment BEFORE `supabase start` is called.

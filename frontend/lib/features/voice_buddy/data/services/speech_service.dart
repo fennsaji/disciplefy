@@ -1,3 +1,7 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../../../core/utils/logger.dart';
@@ -18,6 +22,24 @@ class SpeechService {
   /// Whether speech recognition is available on the device.
   bool get isAvailable => _speechToText.isAvailable;
 
+  bool? _isIosSimulator;
+
+  /// True when running on the iOS Simulator, where `speech_to_text` cannot start
+  /// the audio engine (SFSpeechRecognizer) and always fails with
+  /// `error_listen_failed`. Callers use this to show a clear message instead of
+  /// retrying endlessly. Cached after the first lookup.
+  Future<bool> isIosSimulator() async {
+    if (_isIosSimulator != null) return _isIosSimulator!;
+    if (kIsWeb || !Platform.isIOS) return _isIosSimulator = false;
+    try {
+      final info = await DeviceInfoPlugin().iosInfo;
+      _isIosSimulator = !info.isPhysicalDevice;
+    } catch (_) {
+      _isIosSimulator = false;
+    }
+    return _isIosSimulator!;
+  }
+
   /// Initialize the speech recognition service.
   ///
   /// Returns true if initialization was successful.
@@ -27,8 +49,9 @@ class SpeechService {
     try {
       _isInitialized = await _speechToText.initialize(
         onError: (error) {
-          // Log error but don't throw - let caller handle via result
+          // Log error but don't throw - let caller handle via the callback/result
           Logger.error('🎙️ [SPEECH] Error: ${error.errorMsg}');
+          _onError?.call(error);
         },
         onStatus: (status) {
           // Status updates: listening, notListening, done
@@ -61,6 +84,9 @@ class SpeechService {
   /// Callback for status changes (listening, notListening, done)
   void Function(String status)? _onStatusChange;
 
+  /// Callback for recognition errors (e.g. error_listen_failed, error_no_match).
+  void Function(SpeechRecognitionError error)? _onError;
+
   /// Start listening for speech input.
   ///
   /// [languageCode] - The language to recognize (e.g., 'en-US', 'hi-IN', 'ml-IN')
@@ -74,6 +100,7 @@ class SpeechService {
     required void Function(SpeechRecognitionResult result) onResult,
     void Function(double level)? onSoundLevelChange,
     void Function(String status)? onStatusChange,
+    void Function(SpeechRecognitionError error)? onError,
     Duration pauseFor = const Duration(seconds: 60),
     Duration listenFor = const Duration(seconds: 60),
     bool partialResults = true,
@@ -89,16 +116,23 @@ class SpeechService {
       await stopListening();
     }
 
-    // Store the status callback for use in initialize's onStatus
+    // Store callbacks for use in initialize's onStatus/onError handlers.
     _onStatusChange = onStatusChange;
+    _onError = onError;
 
     await _speechToText.listen(
       onResult: onResult,
       localeId: languageCode,
       pauseFor: pauseFor,
       listenFor: listenFor,
-      partialResults: partialResults,
       onSoundLevelChange: onSoundLevelChange,
+      // dictation mode suits free-form conversation (the default `confirmation`
+      // mode stops too early); cancelOnError avoids a stuck session.
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        partialResults: partialResults,
+        cancelOnError: true,
+      ),
     );
   }
 
