@@ -48,6 +48,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         description,
         is_active,
         is_public,
+        posting_permission,
         created_at,
         mentor_user_id
       )
@@ -130,6 +131,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         joined_at: membership.joined_at,
         created_at: fellowship.created_at,
         is_public: fellowship.is_public ?? false,
+        posting_permission: fellowship.posting_permission ?? 'all_members',
         mentor_name: mentorNameMap.get(fellowship.mentor_user_id) ?? null,
         current_study: study
           ? {
@@ -284,6 +286,7 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
         name: fellowship.name,
         description: fellowship.description,
         max_members: fellowship.max_members,
+        posting_permission: fellowship.posting_permission,
         member_count: memberCount || 0,
         is_active: fellowship.is_active,
         active_study: study ? {
@@ -479,7 +482,7 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
-  let body: { name: string; description?: string; max_members?: number; is_public?: boolean; language?: string }
+  let body: { name: string; description?: string; max_members?: number | null; is_public?: boolean; language?: string; posting_permission?: string }
   try {
     body = await req.json()
   } catch {
@@ -489,10 +492,15 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   if (!body.name || typeof body.name !== 'string') throw new AppError('VALIDATION_ERROR', 'name is required', 400)
   const name = body.name.trim()
   if (name.length < 3 || name.length > 60) throw new AppError('VALIDATION_ERROR', 'name must be 3–60 characters', 400)
-  if (body.max_members !== undefined) {
+  // max_members: a number 2..50, or null = unlimited (app-admin only — checked below).
+  if (body.max_members !== undefined && body.max_members !== null) {
     if (typeof body.max_members !== 'number' || !Number.isInteger(body.max_members) || body.max_members < 2 || body.max_members > 50) {
-      throw new AppError('VALIDATION_ERROR', 'max_members must be an integer between 2 and 50', 400)
+      throw new AppError('VALIDATION_ERROR', 'max_members must be an integer between 2 and 50 (or null for unlimited)', 400)
     }
+  }
+  const postingPermission = body.posting_permission ?? 'all_members'
+  if (postingPermission !== 'all_members' && postingPermission !== 'mentor_only') {
+    throw new AppError('VALIDATION_ERROR', "posting_permission must be 'all_members' or 'mentor_only'", 400)
   }
   if (body.description && body.description.trim().length > 500) {
     throw new AppError('VALIDATION_ERROR', 'description must be 500 characters or fewer', 400)
@@ -537,6 +545,9 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   if (body.is_public === true && !isAdmin) {
     throw new AppError('PERMISSION_DENIED', 'Only admins can create public fellowships', 403)
   }
+  if (body.max_members === null && !isAdmin) {
+    throw new AppError('PERMISSION_DENIED', 'Only admins can create unlimited-size fellowships', 403)
+  }
 
   const { data: fellowship, error: createError } = await db
     .from('fellowships')
@@ -544,9 +555,11 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
       name,
       description: body.description?.trim() || null,
       mentor_user_id: user.id,
-      max_members: body.max_members || 12,
+      // null = unlimited (admin-gated above); undefined → default 12
+      max_members: body.max_members === undefined ? 12 : body.max_members,
       is_public: body.is_public ?? false,
       language,
+      posting_permission: postingPermission,
     })
     .select()
     .single()
@@ -579,6 +592,7 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
         max_members: fellowship.max_members,
         is_public: fellowship.is_public,
         language: fellowship.language,
+        posting_permission: fellowship.posting_permission,
         mentor_user_id: fellowship.mentor_user_id,
         created_at: fellowship.created_at
       },
@@ -648,7 +662,7 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
     console.error('[fellowship/join] Count error:', countError)
     throw new AppError('DATABASE_ERROR', 'Failed to check member capacity', 500)
   }
-  if ((memberCount || 0) >= fellowship.max_members) throw new AppError('VALIDATION_ERROR', 'Fellowship is full', 400)
+  if (fellowship.max_members !== null && (memberCount || 0) >= fellowship.max_members) throw new AppError('VALIDATION_ERROR', 'Fellowship is full', 400)
 
   if (existing) {
     const { error: updateError } = await db.from('fellowship_members')
@@ -840,7 +854,7 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
-  let body: { fellowship_id: string; name?: string; description?: string; max_members?: number }
+  let body: { fellowship_id: string; name?: string; description?: string; max_members?: number | null; posting_permission?: string }
   try {
     body = await req.json()
   } catch {
@@ -886,10 +900,24 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     updates.description = desc || null
   }
   if (body.max_members !== undefined) {
-    if (typeof body.max_members !== 'number' || !Number.isInteger(body.max_members) || body.max_members < 2 || body.max_members > 50) {
-      throw new AppError('VALIDATION_ERROR', 'max_members must be an integer between 2 and 50', 400)
+    if (body.max_members === null) {
+      // Unlimited — app-admin only (mentor alone is not enough).
+      const { data: profile } = await db.from('user_profiles').select('is_admin').eq('id', user.id).single()
+      if (profile?.is_admin !== true) {
+        throw new AppError('PERMISSION_DENIED', 'Only admins can set unlimited members', 403)
+      }
+      updates.max_members = null
+    } else if (typeof body.max_members !== 'number' || !Number.isInteger(body.max_members) || body.max_members < 2 || body.max_members > 50) {
+      throw new AppError('VALIDATION_ERROR', 'max_members must be an integer between 2 and 50 (or null for unlimited)', 400)
+    } else {
+      updates.max_members = body.max_members
     }
-    updates.max_members = body.max_members
+  }
+  if (body.posting_permission !== undefined) {
+    if (body.posting_permission !== 'all_members' && body.posting_permission !== 'mentor_only') {
+      throw new AppError('VALIDATION_ERROR', "posting_permission must be 'all_members' or 'mentor_only'", 400)
+    }
+    updates.posting_permission = body.posting_permission
   }
 
   const hasUpdate = Object.keys(updates).some(k => k !== 'updated_at')
@@ -915,6 +943,7 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
         name: fellowship.name,
         description: fellowship.description,
         max_members: fellowship.max_members,
+        posting_permission: fellowship.posting_permission,
         updated_at: fellowship.updated_at
       }
     }),

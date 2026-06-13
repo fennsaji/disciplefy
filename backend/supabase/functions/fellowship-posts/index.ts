@@ -217,6 +217,27 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   }
   if (!isMember) throw new AppError('PERMISSION_DENIED', 'Must be a fellowship member', 403)
 
+  // Posting permission: when the fellowship is 'mentor_only', only the mentor
+  // (the group admin) may create posts. 'all_members' lets any member post.
+  const { data: fellowshipRow, error: permError } = await db
+    .from('fellowships')
+    .select('posting_permission')
+    .eq('id', body.fellowship_id)
+    .maybeSingle()
+  if (permError) {
+    console.error('[fellowship-posts/create] Permission lookup error:', permError)
+    throw new AppError('DATABASE_ERROR', 'Failed to verify posting permission', 500)
+  }
+  if (fellowshipRow?.posting_permission === 'mentor_only') {
+    const { data: isMentor } = await db.rpc('is_fellowship_mentor', {
+      p_fellowship_id: body.fellowship_id,
+      p_user_id: user.id,
+    })
+    if (!isMentor) {
+      throw new AppError('PERMISSION_DENIED', 'Only the fellowship mentor can post in this group', 403)
+    }
+  }
+
   const { data: post, error } = await db
     .from('fellowship_posts')
     .insert({
