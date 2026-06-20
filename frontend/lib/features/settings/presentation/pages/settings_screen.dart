@@ -996,6 +996,19 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           _buildDivider(),
           _buildSettingsTile(
             context: context,
+            icon: Icons.menu_book_outlined,
+            title: 'Bible Copyright & Attribution',
+            subtitle: 'Scripture provided by API.Bible',
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => context.push(AppRoutes.bibleAttribution),
+          ),
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
             icon: Icons.privacy_tip_outlined,
             title: context.tr(TranslationKeys.settingsPrivacyPolicy),
             subtitle: context.tr(TranslationKeys.settingsPrivacyPolicySubtitle),

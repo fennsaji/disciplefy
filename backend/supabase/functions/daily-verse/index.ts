@@ -13,6 +13,7 @@ import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { DailyVerseService } from './daily-verse-service.ts'
+import { isBibleContentEnabled } from '../_shared/services/bible-availability.ts'
 
 // Lazy singleton — created once per worker lifetime, not at module load
 let _dailyVerseService: DailyVerseService | null = null
@@ -55,6 +56,11 @@ interface DailyVerseApiResponse extends ApiSuccessResponse<DailyVerseData> {}
 async function handleDailyVerse(req: Request, services: ServiceContainer): Promise<Response> {
   // Check maintenance mode FIRST
   await checkMaintenanceMode(req, services)
+
+  // Compliance kill-switch: do not serve API.Bible content at all.
+  if (!(await isBibleContentEnabled())) {
+    throw new AppError('BIBLE_CONTENT_DISABLED', 'Bible content is currently unavailable.', 503)
+  }
 
   // Parse query parameters
   const url = new URL(req.url)

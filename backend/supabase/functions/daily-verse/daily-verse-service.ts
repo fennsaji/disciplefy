@@ -1,5 +1,6 @@
 // Supabase client is now injected via DI container - no need to import createClient
 import { LLMService } from '../_shared/services/llm-service.ts'
+import { isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 
 /**
  * Daily Verse Service
@@ -137,6 +138,14 @@ export class DailyVerseService {
       }
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
+
+      // Operational kill-switch: skip API.Bible calls, use deterministic fallback.
+      if (!(await isBibleApiCallsEnabled())) {
+        console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no API.Bible call')
+        const fallback = this.getFallbackVerse(targetDate)
+        await this.cacheVerse(dateKey, fallback)
+        return { ...fallback, fromCache: false }
+      }
 
       // Generate new verse for the date with language preference
       const newVerse = await this.generateDailyVerse(targetDate, language)
@@ -346,6 +355,9 @@ export class DailyVerseService {
         .select('uuid, verse_data')
         .eq('date_key', dateKey)
         .eq('is_active', true)
+        // API.Bible content-recency: skip entries older than their 30-day TTL
+        // so they are regenerated (and re-fetched) instead of served stale.
+        .gt('expires_at', new Date().toISOString())
         .single()
 
       if (error) {
@@ -447,11 +459,12 @@ export class DailyVerseService {
   }
 
   /**
-   * Get cache expiration date (60 days from now)
+   * Get cache expiration date.
+   * API.Bible Terms require cached content be refreshed at least every 30 days.
    */
   private getExpirationDate(): string {
     const expirationDate = new Date()
-    expirationDate.setDate(expirationDate.getDate() + 60)
+    expirationDate.setDate(expirationDate.getDate() + 30)
     return expirationDate.toISOString()
   }
 

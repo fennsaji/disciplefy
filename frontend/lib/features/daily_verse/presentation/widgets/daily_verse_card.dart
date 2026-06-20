@@ -12,6 +12,7 @@ import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/entities/daily_verse_streak.dart';
 import '../../../memory_verses/presentation/bloc/memory_verse_bloc.dart';
@@ -45,6 +46,11 @@ class DailyVerseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hide the entire card when the bible_content_enabled kill-switch is off.
+    if (!sl<SystemConfigService>().isBibleContentEnabled) {
+      return const SizedBox.shrink();
+    }
+
     return BlocBuilder<DailyVerseBloc, DailyVerseState>(
       builder: (context, state) => Container(
         margin: margin ?? const EdgeInsets.symmetric(horizontal: 20),
@@ -143,14 +149,18 @@ class DailyVerseCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Verse reference
-              Text(
-                state.verse.getReferenceText(state.currentLanguage),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  letterSpacing: 0.5,
+              // Verse reference + translation citation (taps to copyright page)
+              GestureDetector(
+                onTap: () => context.push(AppRoutes.bibleAttribution),
+                child: Text(
+                  '${state.verse.getReferenceText(state.currentLanguage)} '
+                  '(${_translationAbbr(state.currentLanguage)})',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
 
@@ -596,9 +606,23 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
+  /// API.Bible translation abbreviation for in-context citation.
+  /// English = King James Version (KJV); Hindi/Malayalam = Indian Revised Version (IRV).
+  String _translationAbbr(VerseLanguage language) {
+    switch (language) {
+      case VerseLanguage.english:
+        return 'KJV';
+      case VerseLanguage.hindi:
+      case VerseLanguage.malayalam:
+        return 'IRV';
+    }
+  }
+
   void _copyVerseToClipboard(BuildContext context, DailyVerseLoaded state) {
+    final ref = state.verse.getReferenceText(state.currentLanguage);
+    final abbr = _translationAbbr(state.currentLanguage);
     final text =
-        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}';
+        '$ref ($abbr)\n\n${state.currentVerseText}\n\nScripture provided by API.Bible';
     Clipboard.setData(ClipboardData(text: text));
 
     final theme = Theme.of(context);
@@ -624,8 +648,10 @@ class DailyVerseCard extends StatelessWidget {
         : Platform.isAndroid
             ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
             : '🌐 https://app.disciplefy.in/';
+    final ref = state.verse.getReferenceText(state.currentLanguage);
+    final abbr = _translationAbbr(state.currentLanguage);
     final text =
-        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
+        '$ref ($abbr)\n\n${state.currentVerseText}\n\nScripture provided by API.Bible\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
     Share.share(text);
   }
 }
