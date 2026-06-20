@@ -339,6 +339,43 @@ export default function SystemConfigPage() {
           </div>
         </div>
 
+        {/* Purge Cached Bible Content */}
+        <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm dark:border-red-800 dark:bg-gray-800">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                🗑️ Purge Cached Bible Content
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Deletes all cached daily verses and blanks API.Bible-sourced memory-verse text.
+                Use after disabling &quot;Bible API — content&quot;. Irreversible (content re-fetches on re-enable).
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              if (!confirm('Permanently delete cached API.Bible content? This cannot be undone.')) return
+              try {
+                const res = await fetch('/api/admin/system/purge-bible-content', {
+                  method: 'POST',
+                  credentials: 'include',
+                })
+                const json = await res.json()
+                if (json.success) {
+                  toast.success(`Purged ${json.deleted_cache_rows} cache rows, ${json.blanked_memory_verses} memory verses`)
+                } else {
+                  toast.error(json.error ?? 'Purge failed')
+                }
+              } catch {
+                toast.error('Purge failed — network error')
+              }
+            }}
+            className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          >
+            Purge cached Bible content
+          </button>
+        </div>
+
         {/* App Version Control */}
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">

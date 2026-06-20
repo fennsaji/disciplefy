@@ -16,6 +16,7 @@ import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { fetchWithTimeout } from '../_shared/services/bible-api-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { isBibleContentEnabled, isBibleApiCallsEnabled } from '../_shared/services/bible-availability.ts'
 import { HINDI_BOOK_NAMES, MALAYALAM_BOOK_NAMES, LOCALIZED_VARIANTS_TO_ENGLISH } from '../_shared/utils/bible-book-normalizer.ts'
 
 /**
@@ -44,6 +45,7 @@ interface FetchVerseResponse extends ApiSuccessResponse<{
   verses?: VerseItem[]  // Per-verse breakdown for ranges (absent for single verses)
   translation: string
   language: string
+  fumsTokens?: string[]  // API.Bible FUMS v3 tokens to report client-side
 }> {}
 
 // Bible book name mappings to API.Bible book codes
@@ -190,6 +192,7 @@ function buildVerseUrl(bibleId: string, verseId: string): string {
     'include-titles': 'false',        // No section titles/headings
     'include-chapter-numbers': 'false', // No chapter numbers
     'include-verse-numbers': 'false', // No verse numbers
+    'fums-version': '3',              // FUMS v3 token (meta.fumsToken) for usage reporting
   })
   return `${baseUrl}?${params.toString()}`
 }
@@ -203,6 +206,15 @@ async function handleFetchVerse(
 ): Promise<Response> {
   // Check maintenance mode FIRST
   await checkMaintenanceMode(req, services)
+
+  // API.Bible kill switches. Compliance first (content blocked entirely),
+  // then operational (no fallback here, so we cannot serve at all).
+  if (!(await isBibleContentEnabled())) {
+    throw new AppError('BIBLE_CONTENT_DISABLED', 'Bible content is currently unavailable.', 503)
+  }
+  if (!(await isBibleApiCallsEnabled())) {
+    throw new AppError('BIBLE_API_DISABLED', 'Bible lookups are temporarily unavailable.', 503)
+  }
 
   // Parse and validate request body
   const body = await req.json() as FetchVerseRequest
@@ -237,6 +249,8 @@ async function handleFetchVerse(
   let verses: VerseItem[] | undefined
   let reference: string
   let localizedReference: string
+  // FUMS v3 tokens collected from each API.Bible response (reported client-side)
+  const fumsTokens: string[] = []
 
   // Check if this is a chapter-only request (verse_start: 1, verse_end: 999)
   const isChapterOnly = body.verse_start === 1 && body.verse_end === 999
@@ -255,6 +269,7 @@ async function handleFetchVerse(
       'include-titles': 'false',
       'include-chapter-numbers': 'false',
       'include-verse-numbers': 'false',
+      'fums-version': '3',
     })
 
     const response = await fetchWithTimeout(
@@ -271,6 +286,7 @@ async function handleFetchVerse(
 
     const data = await response.json()
     verseText = cleanVerseText(data.data.content)
+    if (data.meta?.fumsToken) fumsTokens.push(data.meta.fumsToken)
   } else if (body.verse_end && body.verse_end > body.verse_start) {
     // Fetch verse range
     reference = `${englishBookName} ${body.chapter}:${body.verse_start}-${body.verse_end}`
@@ -296,6 +312,7 @@ async function handleFetchVerse(
           if (response.ok) {
             const data = await response.json()
             const text = cleanVerseText(data.data.content)
+            if (data.meta?.fumsToken) fumsTokens.push(data.meta.fumsToken)
             if (text) return { number: v, text } as VerseItem
           }
           return null
@@ -339,6 +356,7 @@ async function handleFetchVerse(
 
     const data = await response.json()
     verseText = cleanVerseText(data.data.content)
+    if (data.meta?.fumsToken) fumsTokens.push(data.meta.fumsToken)
   }
 
   const responseData: FetchVerseResponse = {
@@ -350,6 +368,8 @@ async function handleFetchVerse(
       ...(verses ? { verses } : {}),
       translation: getTranslationName(body.language),
       language: body.language,
+      // API.Bible FUMS v3 tokens to be reported client-side (Fair Use Mgmt).
+      ...(fumsTokens.length ? { fumsTokens } : {}),
     }
   }
 

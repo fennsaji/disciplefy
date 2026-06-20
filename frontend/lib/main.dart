@@ -97,9 +97,14 @@ const firebaseMeasurementId = String.fromEnvironment(
 );
 
 void main() async {
+  // Razorpay is the payment provider for web only; mobile (iOS/Android) uses
+  // native IAP (App Store / Google Play) via PlatformPaymentProviderService.
+  // Asserting this unconditionally crashed debug mobile builds run with an env
+  // that omits RAZORPAY_KEY_ID (e.g. .env.production) — the throw happens before
+  // runApp(), leaving the app frozen on the native splash screen.
   assert(
-    PaymentConstants.razorpayKeyId.isNotEmpty,
-    'RAZORPAY_KEY_ID must be set via --dart-define=RAZORPAY_KEY_ID=...',
+    !kIsWeb || PaymentConstants.razorpayKeyId.isNotEmpty,
+    'RAZORPAY_KEY_ID must be set via --dart-define=RAZORPAY_KEY_ID=... for web builds',
   );
 
   WidgetsFlutterBinding.ensureInitialized();

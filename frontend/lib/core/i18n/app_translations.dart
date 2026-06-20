@@ -1215,6 +1215,8 @@ class AppTranslations {
       'upgrade_button': 'Upgrade to Premium',
       'terms_agree':
           'By subscribing, you agree to our Terms of Service and Privacy Policy',
+      'terms_of_use': 'Terms of Use (EULA)',
+      'privacy_policy': 'Privacy Policy',
       'secure_payment': 'Secure payment via Razorpay',
       'subscription_created':
           'Subscription created! Opening payment authorization...',
@@ -1584,7 +1586,7 @@ class AppTranslations {
       'word_bank': 'Word Bank',
       'word_bank_desc': 'Tap words in the correct order to build the verse',
       'audio': 'Audio Practice',
-      'audio_desc': 'Listen and repeat with text-to-speech',
+      'audio_desc': 'Read the verse, then recite it aloud',
       'type_it_out': 'Type It Out',
       'type_it_out_desc': 'Type the entire verse from memory',
     },
@@ -1629,6 +1631,7 @@ class AppTranslations {
       'copied': 'Verse copied to clipboard',
       'could_not_load': 'Could not load verse text',
       'could_not_parse': 'Could not parse reference',
+      'content_unavailable': 'Bible content is temporarily unavailable.',
       'added_to_memory': 'Added to Memory Verses',
       'failed_to_add': 'Failed to add verse',
     },
@@ -1730,6 +1733,7 @@ class AppTranslations {
     // Audio Practice (Short Keys)
     'audio': {
       'listen_carefully': 'Listen carefully to the verse',
+      'read_carefully': 'Read and memorize the verse',
       'played': 'Played',
       'times': 'times',
       'time': 'time',
@@ -3202,6 +3206,8 @@ class AppTranslations {
       'upgrade_button': 'प्रीमियम में अपग्रेड करें',
       'terms_agree':
           'सब्सक्राइब करके, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
+      'terms_of_use': 'उपयोग की शर्तें (EULA)',
+      'privacy_policy': 'गोपनीयता नीति',
       'secure_payment': 'Razorpay द्वारा सुरक्षित भुगतान',
       'subscription_created':
           'सब्सक्रिप्शन बनाया गया! भुगतान प्राधिकरण खोल रहे हैं...',
@@ -3573,7 +3579,7 @@ class AppTranslations {
       'word_bank': 'शब्द भंडार',
       'word_bank_desc': 'वचन बनाने के लिए शब्दों को सही क्रम में टैप करें',
       'audio': 'ऑडियो अभ्यास',
-      'audio_desc': 'टेक्स्ट-टू-स्पीच के साथ सुनें और दोहराएं',
+      'audio_desc': 'वचन पढ़ें, फिर उसे ज़ोर से बोलें',
       'type_it_out': 'टाइप करें',
       'type_it_out_desc': 'याद से पूरा वचन टाइप करें',
     },
@@ -3618,6 +3624,7 @@ class AppTranslations {
       'copied': 'आयत कॉपी हो गई',
       'could_not_load': 'आयत लोड नहीं हो सकी',
       'could_not_parse': 'संदर्भ समझ नहीं आया',
+      'content_unavailable': 'बाइबल सामग्री अस्थायी रूप से अनुपलब्ध है।',
       'added_to_memory': 'स्मृति वचनों में जोड़ा गया',
       'failed_to_add': 'आयत जोड़ने में विफल',
     },
@@ -3708,6 +3715,7 @@ class AppTranslations {
     },
     'audio': {
       'listen_carefully': 'वचन को ध्यान से सुनें',
+      'read_carefully': 'वचन को पढ़ें और याद करें',
       'played': 'चलाया',
       'times': 'बार',
       'time': 'बार',
@@ -5213,6 +5221,8 @@ class AppTranslations {
       'upgrade_button': 'പ്രീമിയത്തിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക',
       'terms_agree':
           'സബ്‌സ്‌ക്രൈബ് ചെയ്യുന്നതിലൂടെ, നിങ്ങൾ ഞങ്ങളുടെ സേവന നിബന്ധനകളും സ്വകാര്യതാ നയവും അംഗീകരിക്കുന്നു',
+      'terms_of_use': 'ഉപയോഗ നിബന്ധനകൾ (EULA)',
+      'privacy_policy': 'സ്വകാര്യതാ നയം',
       'secure_payment': 'Razorpay വഴി സുരക്ഷിത പേയ്‌മെന്റ്',
       'subscription_created': 'സബ്‌സ്‌ക്രിപ്‌ഷൻ സൃഷ്ടിച്ചു',
       'subscription_activated': 'സബ്‌സ്‌ക്രിപ്‌ഷൻ സജീവമാക്കി!',
@@ -5648,8 +5658,7 @@ class AppTranslations {
       'word_bank_desc':
           'വചനം നിർമ്മിക്കാൻ വാക്കുകൾ ശരിയായ ക്രമത്തിൽ ടാപ്പ് ചെയ്യുക',
       'audio': 'ഓഡിയോ പരിശീലനം',
-      'audio_desc':
-          'ടെക്സ്റ്റ്-ടു-സ്പീച്ച് ഉപയോഗിച്ച് കേൾക്കുകയും ആവർത്തിക്കുകയും ചെയ്യുക',
+      'audio_desc': 'വാക്യം വായിക്കുക, പിന്നെ ഉറക്കെ പറയുക',
       'type_it_out': 'ടൈപ്പ് ചെയ്യുക',
       'type_it_out_desc': 'ഓർമ്മയിൽ നിന്ന് മുഴുവൻ വചനവും ടൈപ്പ് ചെയ്യുക',
     },
@@ -5694,6 +5703,7 @@ class AppTranslations {
       'copied': 'വചനം കോപ്പി ചെയ്തു',
       'could_not_load': 'വചനം ലോഡ് ചെയ്യാനായില്ല',
       'could_not_parse': 'റഫറൻസ് മനസ്സിലായില്ല',
+      'content_unavailable': 'ബൈബിൾ ഉള്ളടക്കം താൽക്കാലികമായി ലഭ്യമല്ല.',
       'added_to_memory': 'മെമ്മറി വചനങ്ങളിൽ ചേർത്തു',
       'failed_to_add': 'വചനം ചേർക്കാനായില്ല',
     },
@@ -5785,6 +5795,7 @@ class AppTranslations {
     },
     'audio': {
       'listen_carefully': 'വചനം ശ്രദ്ധയോടെ കേൾക്കുക',
+      'read_carefully': 'വാക്യം വായിച്ച് മനഃപാഠമാക്കുക',
       'played': 'പ്ലേ ചെയ്തു',
       'times': 'തവണ',
       'time': 'തവണ',

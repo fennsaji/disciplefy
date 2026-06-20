@@ -281,7 +281,7 @@ class IAPService {
   /// Extract receipt data for backend validation
   ///
   /// Throws [Exception] if receipt data cannot be extracted.
-  String getReceiptData(PurchaseDetails purchase) {
+  Future<String> getReceiptData(PurchaseDetails purchase) async {
     try {
       if (Platform.isAndroid) {
         final androidPurchase = purchase as GooglePlayPurchaseDetails;
@@ -291,8 +291,12 @@ class IAPService {
         }
         return receipt;
       } else if (Platform.isIOS) {
-        final iosPurchase = purchase as AppStorePurchaseDetails;
-        final receipt = iosPurchase.verificationData.serverVerificationData;
+        // On iOS 15+ the plugin uses StoreKit 2, so PurchaseDetails is an
+        // SK2PurchaseDetails whose serverVerificationData is a JWS — which the
+        // backend's legacy verifyReceipt API does not accept. Use the base64
+        // App Store receipt instead; verifyReceipt validates it under both
+        // StoreKit 1 and StoreKit 2.
+        final receipt = await SKReceiptManager.retrieveReceiptData();
         if (receipt.isEmpty) {
           throw Exception('App Store receipt data is empty');
         }
@@ -316,8 +320,9 @@ class IAPService {
       final androidPurchase = purchase as GooglePlayPurchaseDetails;
       return androidPurchase.billingClientPurchase.orderId;
     } else if (Platform.isIOS) {
-      final iosPurchase = purchase as AppStorePurchaseDetails;
-      return iosPurchase.skPaymentTransaction.transactionIdentifier ?? '';
+      // Base-class purchaseID is the transaction id under both StoreKit 1 and 2
+      // (SK2PurchaseDetails has no skPaymentTransaction).
+      return purchase.purchaseID ?? '';
     }
 
     return '';

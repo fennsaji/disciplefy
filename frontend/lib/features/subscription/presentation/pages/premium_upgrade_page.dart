@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/router/app_routes.dart';
+import '../widgets/subscription_legal_links.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -206,8 +207,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Something went wrong. Please try again.'),
+                content: Text(state.errorMessage),
                 backgroundColor: AppTheme.errorColor,
+                duration: const Duration(seconds: 8),
               ),
             );
           }
@@ -749,6 +751,8 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 10),
+        const SubscriptionLegalLinks(),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

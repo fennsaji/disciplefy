@@ -821,7 +821,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         '✅ [BLOC] IAP Purchase successful, validating receipt with backend');
 
     try {
-      final receiptData = _iapService!.getReceiptData(purchase);
+      final receiptData = await _iapService!.getReceiptData(purchase);
       final provider = PlatformPaymentProviderService.getProvider();
 
       // Call backend to validate receipt and create subscription

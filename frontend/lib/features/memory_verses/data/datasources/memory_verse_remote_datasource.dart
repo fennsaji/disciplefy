@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/api_error_handler.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/services/fums_service.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/memory_verse_model.dart';
 import '../models/review_statistics_model.dart';
@@ -366,6 +367,13 @@ class MemoryVerseRemoteDataSource {
         final data = jsonData['data'] as Map<String, dynamic>;
 
         _errorHandler.logSuccess('Verse text fetched successfully');
+
+        // API.Bible FUMS: report usage tokens for this live verse fetch.
+        if (data['fumsTokens'] is List) {
+          FumsService.instance.trackView(
+            (data['fumsTokens'] as List).map((t) => t.toString()).toList(),
+          );
+        }
 
         return {
           'text': data['text'] as String,

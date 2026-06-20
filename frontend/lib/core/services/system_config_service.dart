@@ -263,6 +263,15 @@ class SystemConfigService extends ChangeNotifier {
     return feature?.enabled ?? true;
   }
 
+  /// Whether API.Bible content surfaces are enabled (admin kill switch).
+  /// Returns true if the flag is missing (safe default — keeps content visible).
+  /// When false: daily-verse card, scripture verse sheet, and daily_verse-sourced
+  /// memory verses must not show API-fetched verse text.
+  bool get isBibleContentEnabled {
+    final feature = _config?.featureFlags['bible_content_enabled'];
+    return feature?.enabled ?? true;
+  }
+
   // Private helper methods
 
   bool _shouldRefresh() {

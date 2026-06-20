@@ -18,7 +18,6 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
-import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../../voice_buddy/data/services/speech_service.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
@@ -28,7 +27,7 @@ import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 /// Audio Practice Page for Memory Verses.
 ///
 /// Two-phase practice mode:
-/// 1. **Listening Phase**: User listens to the verse via TTS
+/// 1. **Reading Phase**: User reads the verse text on screen to memorize it
 /// 2. **Speaking Phase**: User speaks the verse, speech-to-text compares to original
 ///
 /// Scoring based on transcription accuracy compared to original verse text.
@@ -49,16 +48,10 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   MemoryVerseEntity? currentVerse;
 
   // Services
-  final TTSService _ttsService = TTSService();
   final SpeechService _speechService = SpeechService();
 
   // Phase management
-  AudioPhase _currentPhase = AudioPhase.listening;
-
-  // Listening phase state
-  double _playbackSpeed = 1.0;
-  int _timesPlayed = 0;
-  bool _isPlaying = false;
+  AudioPhase _currentPhase = AudioPhase.reading;
 
   // Speaking phase state
   bool _isRecording = false;
@@ -73,7 +66,8 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   // Practice tracking
   Timer? _practiceTimer;
   int _elapsedSeconds = 0;
-  int _hintsUsed = 0;
+  // No hints in reading mode; the verse is shown for memorization.
+  final int _hintsUsed = 0;
 
   // Walkthrough
   BuildContext? _showcaseContext;
@@ -105,8 +99,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   @override
   void dispose() {
     _practiceTimer?.cancel();
-    _ttsService.stop();
-    _ttsService.dispose();
     _speechService.stopListening();
     _speechService.dispose();
     super.dispose();
@@ -135,7 +127,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
   }
 
   Future<void> _initializeServices() async {
-    await _ttsService.initialize();
     await _speechService.initialize();
   }
 
@@ -156,43 +147,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
       return 'ml-IN';
     }
     return 'en-US';
-  }
-
-  Future<void> _playVerse() async {
-    if (currentVerse == null || _isPlaying) return;
-
-    setState(() => _isPlaying = true);
-
-    // First play is free, subsequent plays count as hints
-    if (_timesPlayed > 0) {
-      _hintsUsed++;
-    }
-    _timesPlayed++;
-
-    final languageCode = _getLanguageCode();
-    // Speak verse text first, then reference at the end
-    final textToSpeak =
-        '${currentVerse!.verseText}. ${currentVerse!.verseReference}';
-
-    await _ttsService.speakWithSettings(
-      text: textToSpeak,
-      languageCode: languageCode,
-      speakingRate: _playbackSpeed,
-      onComplete: () {
-        if (mounted) {
-          setState(() => _isPlaying = false);
-        }
-      },
-    );
-  }
-
-  Future<void> _stopPlayback() async {
-    await _ttsService.stop();
-    setState(() => _isPlaying = false);
-  }
-
-  void _changeSpeed(double speed) {
-    setState(() => _playbackSpeed = speed);
   }
 
   void _proceedToSpeaking() {
@@ -586,7 +540,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         // Main Content
         Expanded(
           child: switch (_currentPhase) {
-            AudioPhase.listening => _buildListeningPhase(theme),
+            AudioPhase.reading => _buildReadingPhase(theme),
             AudioPhase.speaking => _buildSpeakingPhase(theme),
             AudioPhase.results => _buildResultsPhase(theme),
           },
@@ -603,9 +557,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         children: [
           _buildPhaseChip(
             theme,
-            'Listen',
-            Icons.headphones,
-            _currentPhase == AudioPhase.listening,
+            'Read',
+            Icons.menu_book,
+            _currentPhase == AudioPhase.reading,
             _currentPhase.index >= 0,
           ),
           Container(
@@ -682,15 +636,15 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     );
   }
 
-  Widget _buildListeningPhase(ThemeData theme) {
-    return Padding(
+  Widget _buildReadingPhase(ThemeData theme) {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Instructions
           Text(
-            context.tr(TranslationKeys.audioListenCarefully),
+            context.tr(TranslationKeys.audioReadCarefully),
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -698,7 +652,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           ),
           const SizedBox(height: 32),
 
-          // Play Button
+          // Verse text to read and memorize
           WalkthroughTooltip(
             showcaseKey: ShowcaseKeys.practiceAudio,
             title: AppLocalizations.of(context)!.walkthroughPracticeAudioTitle,
@@ -708,98 +662,33 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
             stepNumber: 1,
             totalSteps: 1,
             onNext: _onNext,
-            child: GestureDetector(
-              onTap: _isPlaying ? _stopPlayback : _playVerse,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: context.appInteractive,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.appInteractive.withAlpha(60),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  _isPlaying ? Icons.stop : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 64,
-                ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.lightBorder),
+              ),
+              child: Text(
+                currentVerse!.verseText,
+                style: theme.textTheme.titleLarge?.copyWith(height: 1.5),
+                textAlign: TextAlign.center,
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-
-          // Play count
-          Text(
-            _timesPlayed > 0
-                ? '${context.tr(TranslationKeys.audioPlayed)} $_timesPlayed ${_timesPlayed > 1 ? context.tr(TranslationKeys.audioTimes) : context.tr(TranslationKeys.audioTime)}'
-                : context.tr(TranslationKeys.audioTapToPlay),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.lightTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Speed Controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildSpeedButton(theme, 0.75, '0.75x'),
-              const SizedBox(width: 12),
-              _buildSpeedButton(theme, 1.0, '1x'),
-              const SizedBox(width: 12),
-              _buildSpeedButton(theme, 1.25, '1.25x'),
-            ],
           ),
           const SizedBox(height: 48),
 
           // Proceed Button
-          if (_timesPlayed > 0)
-            ElevatedButton.icon(
-              onPressed: _proceedToSpeaking,
-              icon: const Icon(Icons.arrow_forward),
-              label: Text(context.tr(TranslationKeys.audioReadyToSpeak)),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
+          ElevatedButton.icon(
+            onPressed: _proceedToSpeaking,
+            icon: const Icon(Icons.arrow_forward),
+            label: Text(context.tr(TranslationKeys.audioReadyToSpeak)),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSpeedButton(ThemeData theme, double speed, String label) {
-    final isSelected = _playbackSpeed == speed;
-    return InkWell(
-      onTap: () => _changeSpeed(speed),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                isSelected ? theme.colorScheme.primary : AppColors.lightBorder,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : AppColors.lightTextSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
       ),
     );
   }
@@ -1180,7 +1069,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
 /// Phases of audio practice
 enum AudioPhase {
-  listening,
+  reading,
   speaking,
   results,
 }

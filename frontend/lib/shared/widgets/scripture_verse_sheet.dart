@@ -4,10 +4,12 @@ import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/bible_books.dart';
+import '../../core/constants/bible_translation_citation.dart';
 import '../../core/extensions/translation_extension.dart';
 import '../../core/i18n/translation_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/services/language_preference_service.dart';
+import '../../core/services/system_config_service.dart';
 import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/entities/fetched_verse_entity.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
@@ -49,6 +51,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   String? _verseText;
   String? _localizedReference;
   String? _errorMessage;
+  String? _langCode; // language of the fetched verse, for in-context citation
   List<VerseItem>? _verses; // null = single verse, list = range
 
   @override
@@ -58,6 +61,17 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   }
 
   Future<void> _fetchVerseText() async {
+    // Guard: when the bible_content_enabled kill-switch is off, skip fetching
+    // and show an "unavailable" message instead of verse text.
+    if (!GetIt.instance<SystemConfigService>().isBibleContentEnabled) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            context.tr(TranslationKeys.verseSheetContentUnavailable);
+      });
+      return;
+    }
+
     final fetchVerseText = GetIt.instance<FetchVerseText>();
     final languageService = GetIt.instance<LanguagePreferenceService>();
     final verseCache = GetIt.instance<VerseCacheService>();
@@ -77,6 +91,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     // over app language, so verse displays in the same language as the study content
     final appLanguage = await languageService.getStudyContentLanguage();
     final langCode = appLanguage.code;
+    _langCode = langCode;
 
     // Check cache first
     final cached = await verseCache.getCachedVerse(
@@ -178,9 +193,21 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     );
   }
 
+  /// Reference with the API.Bible translation abbreviation appended, e.g.
+  /// "John 3:16 (KJV)". Links to the full copyright page via the citation badge.
+  String _citedReference() {
+    final ref = _localizedReference ?? widget.reference;
+    final abbr = _langCode == null ? '' : bibleTranslationAbbr(_langCode!);
+    return abbr.isEmpty ? ref : '$ref ($abbr)';
+  }
+
   void _copyToClipboard() {
     if (_verseText != null && _localizedReference != null) {
-      final textToCopy = '"$_verseText" - $_localizedReference';
+      final abbr = _langCode == null ? '' : bibleTranslationAbbr(_langCode!);
+      final cited =
+          abbr.isEmpty ? _localizedReference : '$_localizedReference ($abbr)';
+      final textToCopy =
+          '"$_verseText" - $cited\n\nScripture provided by API.Bible';
       Clipboard.setData(ClipboardData(text: textToCopy));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -241,7 +268,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _localizedReference ?? widget.reference,
+                            _citedReference(),
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.primary,

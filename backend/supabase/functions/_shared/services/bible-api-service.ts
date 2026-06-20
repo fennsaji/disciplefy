@@ -62,6 +62,9 @@ export interface BibleVerse {
   text: string;
   translation: string;
   language: string;
+  // API.Bible FUMS v3 token for this request, to be reported client-side
+  // (Fair Use Management System). Absent for cache hits / non-live fetches.
+  fumsToken?: string;
 }
 
 export interface BibleApiError {
@@ -232,6 +235,7 @@ export async function fetchBibleVerse(
     'include-titles': 'false',        // No section titles/headings
     'include-chapter-numbers': 'false', // No chapter numbers
     'include-verse-numbers': 'false', // No verse numbers
+    'fums-version': '3',              // Request FUMS v3 token (meta.fumsToken) for usage reporting
   });
 
   const url = `https://api.scripture.api.bible/v1/bibles/${bibleId}/verses/${verseId}?${params.toString()}`;
@@ -267,6 +271,7 @@ export async function fetchBibleVerse(
         text: verseText,
         translation: getTranslationName(language),
         language,
+        fumsToken: data.meta?.fumsToken,
       };
     } catch (error) {
       console.error(`[Bible API] Error fetching verse ${reference} (${language}):`, error);
@@ -532,9 +537,9 @@ export async function cacheVerses(
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const dateKey = verseDate.toISOString().split('T')[0];
-  // Cache for 6 months (same as daily verse cache)
+  // API.Bible Terms require cached content be refreshed at least every 30 days.
   const expiresAt = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + 6);
+  expiresAt.setDate(expiresAt.getDate() + 30);
 
   const verseData = {
     reference: verses.en.reference,

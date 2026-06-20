@@ -56,9 +56,17 @@ function getConfigFromEnvVars(provider: IAPProvider, environment: IAPEnvironment
       return { provider, environment, serviceAccountEmail: email, serviceAccountKey: key, packageName }
     }
   } else if (provider === 'apple_appstore') {
-    const sharedSecret = Deno.env.get(`APPLE_${envSuffix}_SHARED_SECRET`)
-    const bundleDefault = 'com.disciplefy.bible_study'
-    const bundleId = Deno.env.get(`APPLE_${envSuffix}_BUNDLE_ID`) ?? bundleDefault
+    // Prefer env-suffixed names; fall back to the un-suffixed APPLE_SHARED_SECRET /
+    // APPLE_BUNDLE_ID that the deploy workflow actually sets. The app-specific
+    // shared secret is the same for sandbox and production (the 21007 fallback in
+    // the provider handles sandbox receipts), so the un-suffixed value is valid
+    // for both environments.
+    const sharedSecret = Deno.env.get(`APPLE_${envSuffix}_SHARED_SECRET`) ??
+      Deno.env.get('APPLE_SHARED_SECRET')
+    const bundleDefault = 'com.disciplefy.biblestudy'
+    const bundleId = Deno.env.get(`APPLE_${envSuffix}_BUNDLE_ID`) ??
+      Deno.env.get('APPLE_BUNDLE_ID') ??
+      bundleDefault
 
     if (sharedSecret) {
       console.log(`[IAP_CONFIG] Source: ENV_VARS | Provider: ${provider} | Env: ${environment} | Bundle: ${bundleId}`)

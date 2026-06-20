@@ -591,9 +591,9 @@ class AppLocalizations {
       'walkthrough.practice_word_scramble.submit.title': 'Submit',
       'walkthrough.practice_word_scramble.submit.desc':
           'Submit once all phrases are placed to see your accuracy and record progress.',
-      'walkthrough.practice_audio.title': 'Listen & Speak',
+      'walkthrough.practice_audio.title': 'Read & Speak',
       'walkthrough.practice_audio.desc':
-          'Tap play to hear the verse, then tap the mic to speak it back.',
+          'Read the verse to memorize it, then tap the mic to speak it back.',
       'walkthrough.practice_type_it_out.title': 'Type It from Memory',
       'walkthrough.practice_type_it_out.desc':
           'Type the complete verse from memory — word for word.',
@@ -1162,9 +1162,9 @@ class AppLocalizations {
       'walkthrough.practice_word_scramble.submit.title': 'सबमिट करें',
       'walkthrough.practice_word_scramble.submit.desc':
           'सभी वाक्यांश रखने के बाद सबमिट करें — सटीकता और प्रगति देखें।',
-      'walkthrough.practice_audio.title': 'सुनें और बोलें',
+      'walkthrough.practice_audio.title': 'पढ़ें और बोलें',
       'walkthrough.practice_audio.desc':
-          'वचन सुनने के लिए प्ले दबाएं, फिर माइक से बोलें।',
+          'वचन को याद करने के लिए पढ़ें, फिर माइक से बोलें।',
       'walkthrough.practice_type_it_out.title': 'याद करके टाइप करें',
       'walkthrough.practice_type_it_out.desc':
           'पूरा वचन याद करके शब्द-दर-शब्द टाइप करें।',
@@ -1742,9 +1742,9 @@ class AppLocalizations {
       'walkthrough.practice_word_scramble.submit.title': 'സമർപ്പിക്കുക',
       'walkthrough.practice_word_scramble.submit.desc':
           'എല്ലാ ഫ്രേസുകളും ശരിയായ സ്ഥലത്ത് വെച്ചതിനു ശേഷം സമർപ്പിക്കുക.',
-      'walkthrough.practice_audio.title': 'കേൾക്കുക & പറയുക',
+      'walkthrough.practice_audio.title': 'വായിക്കുക & പറയുക',
       'walkthrough.practice_audio.desc':
-          'വചനം കേൾക്കാൻ പ്ലേ ടാപ്പ് ചെയ്യുക, പിന്നെ മൈക്കിൽ പറയുക.',
+          'വാക്യം മനഃപാഠമാക്കാൻ വായിക്കുക, പിന്നെ മൈക്കിൽ പറയുക.',
       'walkthrough.practice_type_it_out.title': 'ഓർമ്മിച്ച് ടൈപ്പ് ചെയ്യുക',
       'walkthrough.practice_type_it_out.desc':
           'മുഴുവൻ വചനം ഓർമ്മിച്ച് വാക്ക്-വഴി-വാക്ക് ടൈപ്പ് ചെയ്യുക.',

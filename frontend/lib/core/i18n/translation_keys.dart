@@ -717,6 +717,8 @@ class TranslationKeys {
   static const premiumPriority = 'premium.priority';
   static const premiumUpgradeButton = 'premium.upgrade_button';
   static const premiumTermsAgree = 'premium.terms_agree';
+  static const subscriptionTermsOfUse = 'premium.terms_of_use';
+  static const subscriptionPrivacyPolicy = 'premium.privacy_policy';
   static const premiumSecurePayment = 'premium.secure_payment';
   static const premiumSubscriptionCreated = 'premium.subscription_created';
   static const premiumSubscriptionActivated = 'premium.subscription_activated';
@@ -1260,6 +1262,7 @@ class TranslationKeys {
   static const verseSheetCopied = 'verse_sheet.copied';
   static const verseSheetCouldNotLoad = 'verse_sheet.could_not_load';
   static const verseSheetCouldNotParse = 'verse_sheet.could_not_parse';
+  static const verseSheetContentUnavailable = 'verse_sheet.content_unavailable';
   static const verseSheetAddedToMemory = 'verse_sheet.added_to_memory';
   static const verseSheetFailedToAdd = 'verse_sheet.failed_to_add';
 
@@ -1487,6 +1490,7 @@ class TranslationKeys {
   static const audioPracticeSpeechError = 'audio_practice.speech_error';
   // Additional audio keys used in audio_practice_page.dart
   static const audioListenCarefully = 'audio.listen_carefully';
+  static const audioReadCarefully = 'audio.read_carefully';
   static const audioPlayed = 'audio.played';
   static const audioTimes = 'audio.times';
   static const audioTime = 'audio.time';

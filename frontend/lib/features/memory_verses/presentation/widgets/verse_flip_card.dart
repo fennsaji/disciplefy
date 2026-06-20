@@ -2,8 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/bible_translation_citation.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 
 /// Animated flip card widget for memory verse review.
@@ -184,6 +187,18 @@ class _VerseFlipCardState extends State<VerseFlipCard>
     );
   }
 
+  /// API.Bible-sourced verses (daily_verse) show the translation citation, e.g.
+  /// "John 3:16 (KJV)". The user's own (manual / ai_generated) verses do not.
+  String _citedReference() {
+    if (widget.verse.sourceType != 'daily_verse') {
+      return widget.verse.verseReference;
+    }
+    final abbr = bibleTranslationAbbr(widget.verse.language);
+    return abbr.isEmpty
+        ? widget.verse.verseReference
+        : '${widget.verse.verseReference} ($abbr)';
+  }
+
   Widget _buildBack(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -222,7 +237,7 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  widget.verse.verseReference,
+                  _citedReference(),
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.bold,
@@ -236,21 +251,45 @@ class _VerseFlipCardState extends State<VerseFlipCard>
             // Verse text - takes up remaining space
             Expanded(
               child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0, vertical: 16.0),
-                  child: Text(
-                    widget.verse.verseText,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      height: 1.5,
-                      fontWeight: FontWeight.w500,
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                      letterSpacing: 0.3,
+                child: () {
+                  // Hide API.Bible verse text for daily_verse-sourced verses
+                  // when the bible_content_enabled kill-switch is off.
+                  final hideApiContent =
+                      widget.verse.sourceType == 'daily_verse' &&
+                          !sl<SystemConfigService>().isBibleContentEnabled;
+                  if (hideApiContent) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 16.0),
+                      child: Text(
+                        context
+                            .tr(TranslationKeys.verseSheetContentUnavailable),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          height: 1.5,
+                          fontWeight: FontWeight.w400,
+                          color: isDarkMode ? Colors.white54 : Colors.black45,
+                        ),
+                      ),
+                    );
+                  }
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0, vertical: 16.0),
+                    child: Text(
+                      widget.verse.verseText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                        color: isDarkMode ? Colors.white : Colors.black87,
+                        letterSpacing: 0.3,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }(),
               ),
             ),
 
