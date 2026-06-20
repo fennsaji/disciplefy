@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'subscription_legal_links.dart';
 import '../../domain/entities/user_subscription_status.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../../../core/di/injection_container.dart';
@@ -274,6 +275,10 @@ class StandardSubscriptionSheet extends StatelessWidget {
                           ),
                         ),
                 ),
+                const SizedBox(height: 12),
+
+                // Required: functional Terms of Use (EULA) + Privacy Policy links.
+                const SubscriptionLegalLinks(),
                 const SizedBox(height: 12),
 
                 // Trial info or cancel info
