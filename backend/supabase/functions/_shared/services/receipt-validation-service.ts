@@ -116,9 +116,14 @@ export async function validateAndProcessReceipt(
       throw new Error(`Subscription plan '${request.planCode}' not found — cannot create subscription without valid plan`)
     }
 
+    // Upsert (not insert): StoreKit/Google Play re-deliver the same purchase
+    // update multiple times. A plain insert collides on the unique
+    // provider_subscription_id and surfaces a spurious "something went wrong"
+    // even though the first call already activated the subscription. Upserting on
+    // provider_subscription_id makes re-delivery idempotent.
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
-      .insert({
+      .upsert({
         user_id: request.userId,
         plan_id: planRow.id,
         plan_type: request.productId.includes('yearly')
@@ -133,8 +138,9 @@ export async function validateAndProcessReceipt(
         is_iap_subscription: true,
         iap_receipt_id: receiptRecord.id,
         iap_product_id: request.productId,
-        iap_original_transaction_id: originalTransactionId
-      })
+        iap_original_transaction_id: originalTransactionId,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'provider_subscription_id' })
       .select()
       .single()
 
