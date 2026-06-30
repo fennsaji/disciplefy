@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
@@ -43,6 +44,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
+            // Commit the autofill context so the OS (iOS Keychain / Android
+            // Google Password Manager) offers to SAVE the entered credentials.
+            TextInput.finishAutofillContext();
             // Successfully authenticated - navigate to home
             context.navigateAfterAuth();
           } else if (state is auth_states.AuthErrorState) {
@@ -75,53 +79,55 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Form(
                 key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 20),
+                child: AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 20),
 
-                    // Title
-                    _buildTitle(context),
+                      // Title
+                      _buildTitle(context),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                    // Tab toggle (Sign In / Sign Up)
-                    _buildTabToggle(context),
+                      // Tab toggle (Sign In / Sign Up)
+                      _buildTabToggle(context),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                    // Name field (only for sign up)
-                    if (_isSignUp) ...[
-                      _buildNameField(context),
+                      // Name field (only for sign up)
+                      if (_isSignUp) ...[
+                        _buildNameField(context),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Email field
+                      _buildEmailField(context),
+
                       const SizedBox(height: 16),
+
+                      // Password field
+                      _buildPasswordField(context),
+
+                      // Forgot password link (only for sign in)
+                      if (!_isSignUp) ...[
+                        const SizedBox(height: 8),
+                        _buildForgotPasswordLink(context),
+                      ],
+
+                      const SizedBox(height: 32),
+
+                      // Submit button
+                      _buildSubmitButton(context),
+
+                      const SizedBox(height: 24),
+
+                      // Toggle between sign in and sign up
+                      _buildToggleAuthMode(context),
+
+                      const SizedBox(height: 32),
                     ],
-
-                    // Email field
-                    _buildEmailField(context),
-
-                    const SizedBox(height: 16),
-
-                    // Password field
-                    _buildPasswordField(context),
-
-                    // Forgot password link (only for sign in)
-                    if (!_isSignUp) ...[
-                      const SizedBox(height: 8),
-                      _buildForgotPasswordLink(context),
-                    ],
-
-                    const SizedBox(height: 32),
-
-                    // Submit button
-                    _buildSubmitButton(context),
-
-                    const SizedBox(height: 24),
-
-                    // Toggle between sign in and sign up
-                    _buildToggleAuthMode(context),
-
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -221,6 +227,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     return TextFormField(
       controller: _nameController,
       keyboardType: TextInputType.name,
+      textInputAction: TextInputAction.next,
+      autofillHints: const [AutofillHints.name],
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
         labelText: context.tr(TranslationKeys.emailAuthFullName),
@@ -263,6 +271,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     return TextFormField(
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
+      textInputAction: TextInputAction.next,
+      autofillHints: const [AutofillHints.username, AutofillHints.email],
       autocorrect: false,
       decoration: InputDecoration(
         labelText: context.tr(TranslationKeys.emailAuthEmail),
@@ -305,6 +315,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     return TextFormField(
       controller: _passwordController,
       obscureText: _obscurePassword,
+      textInputAction: TextInputAction.done,
+      onFieldSubmitted: (_) => _handleSubmit(context),
+      autofillHints: _isSignUp
+          ? const [AutofillHints.newPassword]
+          : const [AutofillHints.password],
       autocorrect: false,
       decoration: InputDecoration(
         labelText: context.tr(TranslationKeys.emailAuthPassword),
