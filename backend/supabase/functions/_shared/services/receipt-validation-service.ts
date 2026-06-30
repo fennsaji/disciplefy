@@ -116,14 +116,9 @@ export async function validateAndProcessReceipt(
       throw new Error(`Subscription plan '${request.planCode}' not found — cannot create subscription without valid plan`)
     }
 
-    // Upsert (not insert): StoreKit/Google Play re-deliver the same purchase
-    // update multiple times. A plain insert collides on the unique
-    // provider_subscription_id and surfaces a spurious "something went wrong"
-    // even though the first call already activated the subscription. Upserting on
-    // provider_subscription_id makes re-delivery idempotent.
-    const { data: subscription, error: subError } = await supabase
+    const insertResult = await supabase
       .from('subscriptions')
-      .upsert({
+      .insert({
         user_id: request.userId,
         plan_id: planRow.id,
         plan_type: request.productId.includes('yearly')
@@ -138,19 +133,40 @@ export async function validateAndProcessReceipt(
         is_iap_subscription: true,
         iap_receipt_id: receiptRecord.id,
         iap_product_id: request.productId,
-        iap_original_transaction_id: originalTransactionId,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'provider_subscription_id' })
+        iap_original_transaction_id: originalTransactionId
+      })
       .select()
       .single()
 
-    if (subError) {
-      // Throw so the caller returns HTTP 500. The receipt is stored but NOT acknowledged,
-      // so Google Play will re-deliver the purchase event and the user can retry.
-      throw new Error(`[RECEIPT_VALIDATION] Failed to create subscription record: ${subError.message}`)
+    let subscriptionRow = insertResult.data
+
+    if (insertResult.error) {
+      // Idempotency: StoreKit/Google Play re-deliver the same purchase update, so a
+      // second validation collides on the unique provider_subscription_id (code 23505).
+      // The first call already activated the subscription — return that existing row
+      // instead of erroring with a spurious "something went wrong". (Can't use
+      // ON CONFLICT upsert here: provider_subscription_id is a partial unique index,
+      // which Postgres won't accept for conflict inference.)
+      if ((insertResult.error as { code?: string }).code === '23505') {
+        const { data: existing } = await supabase
+          .from('subscriptions')
+          .select()
+          .eq('provider_subscription_id', validationResult.transactionId)
+          .maybeSingle()
+        subscriptionRow = existing
+        if (subscriptionRow) {
+          console.log('[RECEIPT_VALIDATION] Duplicate purchase callback — returning existing subscription')
+        }
+      }
+
+      if (!subscriptionRow) {
+        // Throw so the caller returns HTTP 500. The receipt is stored but NOT acknowledged,
+        // so Google Play will re-deliver the purchase event and the user can retry.
+        throw new Error(`[RECEIPT_VALIDATION] Failed to create subscription record: ${insertResult.error.message}`)
+      }
     }
 
-    subscriptionId = subscription.id
+    subscriptionId = subscriptionRow.id
 
     // Update receipt with subscription ID
     await supabase
