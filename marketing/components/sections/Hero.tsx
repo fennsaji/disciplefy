@@ -61,7 +61,7 @@ export function Hero() {
             {/* Eyebrow chip — animates in from above (not LCP) */}
             <div className="animate-hero-eyebrow inline-flex items-center gap-2 bg-gold-light/60 dark:bg-gold/10 border border-gold/30 text-amber-900 dark:text-amber-300 px-3.5 py-1.5 rounded-full text-sm font-semibold mb-6">
               <span className="text-base">✝</span>
-              <span>Free · English, हिन्दी &amp; മലയാളം</span>
+              <span>From Believer to Disciple · Free</span>
             </div>
 
             {/* ── Headline (LCP element) — transform-only slide-up, opacity stays 1 so LCP is not delayed ── */}
@@ -80,10 +80,10 @@ export function Hero() {
               {locale === "en" && (
                 <div className="space-y-1 mt-3">
                   <p className="font-devanagari text-xl text-[var(--muted)] font-semibold">
-                    बाइबल। समझी गई। <span className="text-gold">आपकी भाषा में।</span>
+                    विश्वासी से <span className="text-gold">शिष्य तक।</span>
                   </p>
                   <p className="font-malayalam text-xl text-[var(--muted)] font-semibold">
-                    ബൈബിൾ. മനസ്സിലായി. <span className="text-gold">നിങ്ങളുടെ ഭാഷയിൽ.</span>
+                    വിശ്വാസിയിൽ നിന്ന് <span className="text-gold">ശിഷ്യനിലേക്ക്.</span>
                   </p>
                 </div>
               )}
