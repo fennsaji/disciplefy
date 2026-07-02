@@ -169,6 +169,14 @@
       }
     ]
   },
+  "values": {
+    "heading": "Rooted in the Word",
+    "mission": "Helping believers become true disciples of Jesus through God's Word.",
+    "biblical": { "title": "Biblical", "desc": "We stay true to God's Word." },
+    "practical": { "title": "Practical", "desc": "We help you live what you learn." },
+    "growth": { "title": "Growth", "desc": "We help you become more like Jesus." },
+    "promise": "Disciplefy helps believers understand God's Word, grow spiritually, and follow Jesus every day."
+  },
   "about": {
     "title": "About Disciplefy",
     "mission": {
