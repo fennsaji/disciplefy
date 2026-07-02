@@ -13,6 +13,14 @@
     "subheadline": "Understand God's Word, apply it to everyday life, and follow Jesus — with Bible study guides in English, हिन्दी & മലയാളം.",
     "webApp": "Open Web App →"
   },
+  "journey": {
+    "eyebrow": "The Journey",
+    "heading": "Knowing Jesus is the beginning. Becoming like Him is the journey.",
+    "body": "Disciplefy exists to help believers grow into true disciples — understanding God's Word, living it out, and following Jesus every day.",
+    "know": { "title": "Know", "desc": "Understand God's Word clearly." },
+    "grow": { "title": "Grow", "desc": "Apply it to everyday life." },
+    "follow": { "title": "Follow", "desc": "Walk with Jesus daily." }
+  },
   "features": {
     "title": "Everything You Need to Study Deeper",
     "aiGuides": { "title": "Study Guides", "desc": "Type any verse or topic — get instant guides with context, interpretation, and prayer points" },
