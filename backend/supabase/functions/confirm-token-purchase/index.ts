@@ -13,6 +13,7 @@ import type { UserContext } from '../_shared/types/index.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { TokenService } from '../_shared/services/token-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import Razorpay from 'npm:razorpay'
 
 interface ConfirmPurchaseRequest {
   order_id: string
@@ -61,37 +62,48 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     
     await verifySignature(requestData)
     console.log(`[Purchase] ✅ Signature verified successfully`)
-    
+
     const pendingPurchase = await loadPendingPurchase(requestData.order_id, userContext.userId!, services.supabaseServiceClient)
     console.log(`[Purchase] ✅ Pending purchase loaded - Status: ${pendingPurchase.status}, Amount: ${pendingPurchase.token_amount}`)
-    
+
+    // C2: Verify the captured payment amount matches what we expected to charge.
+    // Without this, a client could submit a real signature for a ₹1 payment and
+    // receive tokens priced at ₹40 if they manipulated token_amount at order time.
+    await verifyPaymentAmount(requestData.payment_id, pendingPurchase.amount_paise)
+    console.log(`[Purchase] ✅ Payment amount verified`)
+
     // Check if already processed
     const shortCircuitResponse = await shortCircuitIfCompletedOrFailed(pendingPurchase, userContext.userId!, services.tokenService)
     if (shortCircuitResponse) {
       console.log(`[Purchase] ↩️ Short-circuit response - already processed`)
       return shortCircuitResponse
     }
-    
+
     // Atomic claim for processing to prevent double-processing
     console.log(`[Purchase] 🔒 Attempting atomic claim for order: ${pendingPurchase.order_id}`)
     const claimedPurchase = await claimPendingPurchaseForProcessing(pendingPurchase.order_id, userContext.userId!, services.supabaseServiceClient)
     console.log(`[Purchase] ✅ Purchase claimed successfully - Status: processing`)
     
+    // Resolve the user's real plan so the token row isn't clobbered to 'standard'
+    const { data: resolvedPlan } = await services.supabaseServiceClient
+      .rpc('get_user_plan_with_subscription', { p_user_id: userContext.userId! })
+    const userPlan = ((resolvedPlan as string | null) || 'free') as 'free' | 'standard' | 'plus' | 'premium'
+
     // Process the purchase
-    console.log(`[Purchase] 💰 Adding ${claimedPurchase.token_amount} tokens to user`)
-    const addResult = await creditTokens(userContext.userId!, claimedPurchase.token_amount, services.tokenService)
+    console.log(`[Purchase] 💰 Adding ${claimedPurchase.token_amount} tokens to user (plan: ${userPlan})`)
+    const addResult = await creditTokens(userContext.userId!, claimedPurchase.token_amount, userPlan, services.tokenService)
     console.log(`[Purchase] ✅ Tokens credited - New purchased balance: ${addResult.newPurchasedBalance}`)
-    
+
     console.log(`[Purchase] 📝 Recording purchase history`)
     await recordPurchaseHistory(claimedPurchase, requestData.payment_id, userContext.userId!, services.supabaseServiceClient)
     console.log(`[Purchase] ✅ Purchase history recorded`)
-    
+
     console.log(`[Purchase] 🏁 Marking purchase as completed`)
     await markPendingCompleted(claimedPurchase.order_id, requestData.payment_id, services.supabaseServiceClient)
     console.log(`[Purchase] ✅ Purchase marked as completed`)
-    
+
     // Get updated tokens and log success
-    const updatedTokens = await services.tokenService.getUserTokens(userContext.userId!, 'standard')
+    const updatedTokens = await services.tokenService.getUserTokens(userContext.userId!, userPlan)
     console.log(`[Purchase] 📊 Final token balance: ${JSON.stringify(updatedTokens)}`)
     
     await services.analyticsLogger.logEvent('purchase_confirmed_by_user', {
@@ -118,8 +130,10 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
       stack: error instanceof Error ? error.stack : undefined
     })
     
-    // Mark as failed using cached request data to avoid re-parsing request body
-    if (requestData?.order_id) {
+    // Only mark failed for definitive payment errors, not transient/concurrency errors.
+    // PURCHASE_ALREADY_PROCESSING means another handler owns the row — leave it in processing.
+    const isDefinitiveFailure = !(error instanceof AppError && error.code === 'PURCHASE_ALREADY_PROCESSING')
+    if (isDefinitiveFailure && requestData?.order_id) {
       try {
         console.log(`[Purchase] 🚫 Marking order ${requestData.order_id} as failed`)
         await markPendingFailed(requestData.order_id, error, services.supabaseServiceClient)
@@ -127,7 +141,7 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
       } catch (markError) {
         console.error(`[Purchase] ❌ Failed to mark order as failed:`, markError)
       }
-    } else {
+    } else if (!requestData?.order_id) {
       console.error(`[Purchase] ❌ No order_id available to mark as failed`)
     }
     
@@ -194,6 +208,42 @@ async function verifySignature(requestData: ConfirmPurchaseRequest): Promise<voi
 }
 
 /**
+ * C2: Fetch the captured Razorpay payment and assert amount_paid >= stored paise.
+ * Prevents a client from submitting a valid signature for a ₹1 payment to claim
+ * tokens worth ₹40 by comparing against the server-computed amount we stored.
+ */
+async function verifyPaymentAmount(paymentId: string, expectedPaise: number): Promise<void> {
+  const keyId = Deno.env.get('RAZORPAY_KEY_ID')
+  const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
+  if (!keyId || !keySecret) {
+    throw new AppError('CONFIGURATION_ERROR', 'Payment service not configured', 500)
+  }
+
+  const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret })
+  let payment: Record<string, unknown>
+  try {
+    payment = await (razorpay.payments as any).fetch(paymentId)
+  } catch (err) {
+    throw new AppError('PAYMENT_FETCH_ERROR', 'Unable to verify payment with Razorpay', 502)
+  }
+
+  const capturedAmount = Number(payment.amount)
+  const capturedStatus = String(payment.status)
+
+  if (capturedStatus !== 'captured') {
+    throw new AppError('PAYMENT_NOT_CAPTURED', `Payment ${paymentId} is ${capturedStatus}, not captured`, 402)
+  }
+
+  if (!Number.isFinite(capturedAmount) || capturedAmount < expectedPaise) {
+    throw new AppError(
+      'PAYMENT_AMOUNT_MISMATCH',
+      `Payment amount ${capturedAmount} paise is less than expected ${expectedPaise} paise`,
+      402
+    )
+  }
+}
+
+/**
  * Load pending purchase from database
  */
 async function loadPendingPurchase(orderId: string, userId: string, supabaseServiceClient: SupabaseClient): Promise<PendingPurchase> {
@@ -257,8 +307,26 @@ async function claimPendingPurchaseForProcessing(orderId: string, userId: string
       return currentPurchase
     }
 
-    // If currently processing, wait a bit and let the other process finish
+    // If currently processing, check if stale (handler crashed) or live
     if (currentPurchase.status === 'processing') {
+      const updatedAt = currentPurchase.updated_at ? new Date(currentPurchase.updated_at) : null
+      const staleThresholdMs = 5 * 60 * 1000 // 5 minutes
+      const isStale = updatedAt && (Date.now() - updatedAt.getTime()) > staleThresholdMs
+
+      if (isStale) {
+        // F6: Original handler likely crashed — reclaim the row so this request can proceed.
+        console.warn(`[Purchase] ⚠️ Found stale processing purchase (> 5 min), reclaiming: ${orderId}`)
+        const { data: reclaimedPurchase } = await supabaseServiceClient
+          .from('pending_token_purchases')
+          .update({ status: 'processing', updated_at: new Date().toISOString() })
+          .eq('order_id', orderId)
+          .eq('user_id', userId)
+          .eq('status', 'processing')
+          .select('*')
+          .maybeSingle()
+        if (reclaimedPurchase) return reclaimedPurchase
+      }
+
       console.log(`[Purchase] ⏳ Purchase is being processed by another handler: ${orderId}`)
       // Wait 2 seconds and check again
       await new Promise(resolve => setTimeout(resolve, 2000))
@@ -267,7 +335,7 @@ async function claimPendingPurchaseForProcessing(orderId: string, userId: string
         .from('pending_token_purchases')
         .select('*')
         .eq('order_id', orderId)
-        .eq('user_id', userId) // Security: Only check records for this user
+        .eq('user_id', userId)
         .single()
 
       if (finalStatus?.status === 'completed') {
@@ -314,8 +382,8 @@ async function claimPendingPurchaseForProcessing(orderId: string, userId: string
       }
     }
 
-    // Try to claim retryable failed purchases
-    if (currentPurchase.status === 'failed' && currentPurchase.error_message?.includes('Purchase is already being processed or completed')) {
+    // Try to claim retryable failed purchases (where another handler owned the row during a race)
+    if (currentPurchase.status === 'failed' && currentPurchase.error_message?.includes('Cannot claim purchase with status:')) {
       console.log(`[Purchase] ♻️ Found retryable failed purchase, resetting to processing: ${orderId}`)
 
       const { data: retriedPurchase, error: retryError } = await supabaseServiceClient
@@ -382,14 +450,14 @@ async function shortCircuitIfCompletedOrFailed(pendingPurchase: PendingPurchase,
 /**
  * Credit tokens to user account
  */
-async function creditTokens(userId: string, tokenAmount: number, tokenService: TokenService): Promise<AddTokensResult> {
+async function creditTokens(userId: string, tokenAmount: number, userPlan: 'free' | 'standard' | 'plus' | 'premium', tokenService: TokenService): Promise<AddTokensResult> {
   const addResult = await tokenService.addPurchasedTokens(
     userId,
-    'standard',
+    userPlan,
     tokenAmount,
     {
       userId,
-      userPlan: 'standard',
+      userPlan,
       operation: 'purchase',
       timestamp: new Date()
     }
@@ -447,6 +515,7 @@ async function markPendingCompleted(orderId: string, paymentId: string, supabase
  * Mark pending purchase as failed
  */
 async function markPendingFailed(orderId: string, error: unknown, supabaseServiceClient: SupabaseClient): Promise<void> {
+  // Only transition from processing; never overwrite completed rows
   await supabaseServiceClient
     .from('pending_token_purchases')
     .update({
@@ -455,6 +524,7 @@ async function markPendingFailed(orderId: string, error: unknown, supabaseServic
       updated_at: new Date().toISOString()
     })
     .eq('order_id', orderId)
+    .eq('status', 'processing')
 }
 
 /**

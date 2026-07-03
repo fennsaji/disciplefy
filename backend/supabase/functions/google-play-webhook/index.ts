@@ -22,6 +22,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
 import { revalidateReceipt } from '../_shared/services/receipt-validation-service.ts'
+import * as jose from 'npm:jose@5'
 
 interface PubSubMessage {
   message: {
@@ -57,7 +58,28 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
-  // Validate Pub/Sub push token
+  // M1: Verify Pub/Sub OIDC JWT from the Authorization header.
+  // Google signs every push with a short-lived JWT from the push subscription's
+  // service account; verifying it prevents forged RTDNs that could expire/revoke
+  // a victim's subscription (DoS) or flip it to active.
+  const authHeader = req.headers.get('Authorization') || req.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    try {
+      const JWKS = jose.createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'))
+      const expectedAudience = Deno.env.get('GOOGLE_PUBSUB_AUDIENCE') // set to your webhook endpoint URL
+      await jose.jwtVerify(token, JWKS, {
+        issuer: 'https://accounts.google.com',
+        ...(expectedAudience ? { audience: expectedAudience } : {})
+      })
+      console.log('[GOOGLE_PLAY_WEBHOOK] OIDC JWT verified')
+    } catch (jwtError) {
+      console.warn('[GOOGLE_PLAY_WEBHOOK] OIDC JWT verification failed:', jwtError)
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+    }
+  }
+
+  // Defense-in-depth: also validate the ?token= query param
   const url = new URL(req.url)
   const requestToken = url.searchParams.get('token')
   const expectedToken = Deno.env.get('GOOGLE_PLAY_WEBHOOK_TOKEN')
@@ -178,21 +200,16 @@ serve(async (req) => {
           .maybeSingle()
 
         if (!receipt) {
-          console.warn('[GOOGLE_PLAY_WEBHOOK] Receipt not found for token:', subNotification.purchaseToken)
+          console.warn('[GOOGLE_PLAY_WEBHOOK] Receipt not found for token:', subNotification.purchaseToken, '— deleting dedup row and returning 503 for Pub/Sub retry')
 
-          // Mark as pending (not failed) — receipt may not yet exist due to timing race.
-          // A future cron job can retry events where processed_at is null and
-          // error_message starts with 'Receipt not found'.
-          await supabase
-            .from('iap_webhook_events')
-            .update({
-              processing_status: 'pending',
-              error_message: 'Receipt not found - pending retry',
-              processed_at: null
-            })
-            .eq('id', webhookEvent.id)
+          // Delete the dedup row so Pub/Sub can re-deliver without being blocked by
+          // the unique-constraint check. Returning 503 triggers exponential-backoff
+          // redelivery; receipt is typically created within seconds by the client flow.
+          if (dedupRowId) {
+            await supabase.from('iap_webhook_events').delete().eq('id', dedupRowId)
+          }
 
-          return new Response('OK', { status: 200, headers: corsHeaders })
+          return new Response('Receipt not found', { status: 503, headers: corsHeaders })
         }
 
         // Update webhook event with related IDs
@@ -226,15 +243,15 @@ serve(async (req) => {
       } catch (processingError) {
         console.error('[GOOGLE_PLAY_WEBHOOK] Processing error:', processingError)
 
-        // Mark as failed
-        await supabase
-          .from('iap_webhook_events')
-          .update({
-            processing_status: 'failed',
-            error_message: processingError instanceof Error ? processingError.message : 'Unknown error',
-            processed_at: new Date().toISOString()
-          })
-          .eq('id', webhookEvent.id)
+        // F15: Delete the dedup row so Pub/Sub can re-deliver and retry this event.
+        // Returning 200 here would permanently lose the event; returning 500 triggers
+        // exponential-backoff redelivery. The dedup row must be removed first so the
+        // unique constraint doesn't block the next delivery attempt.
+        if (dedupRowId) {
+          await supabase.from('iap_webhook_events').delete().eq('id', dedupRowId)
+        }
+
+        return new Response('Processing error', { status: 500, headers: corsHeaders })
       }
     }
 
@@ -307,6 +324,14 @@ async function processSubscriptionEvent(
     const validationResult = await revalidateReceipt(supabase, receiptId)
 
     if (validationResult.isValid) {
+      // F15: Status guards differ by event type:
+      // - RENEWED: must NOT resurrect cancelled/expired rows (late delivery should not flip-flop).
+      // - RECOVERED: MUST include 'expired' — payment recovered after on_hold means the sub
+      //   is legitimately reinstated even if expire-subscriptions already marked it expired.
+      const renewedStatuses = ['active', 'in_progress', 'pending_cancellation', 'on_hold', 'trial']
+      const recoveredStatuses = [...renewedStatuses, 'expired']
+      const allowedStatuses = eventType === 'SUBSCRIPTION_RECOVERED' ? recoveredStatuses : renewedStatuses
+
       await supabase
         .from('subscriptions')
         .update({
@@ -316,13 +341,16 @@ async function processSubscriptionEvent(
           updated_at: new Date().toISOString()
         })
         .eq('id', subscriptionId)
+        .in('status', allowedStatuses)
     } else {
       // Token may have rotated — mark pending so sync-subscription-status retries on next app open
       console.warn('[GOOGLE_PLAY_WEBHOOK] Re-validation returned invalid — token may have rotated, sync will correct on next app open')
     }
   }
 
-  // Handle cancellation — user cancelled, access continues until period end
+  // Handle cancellation — user cancelled, access continues until period end.
+  // Status guard: do not flip a terminal row (expired/cancelled/completed) back to
+  // pending_cancellation from a late or duplicate CANCELED event.
   if (eventType === 'SUBSCRIPTION_CANCELED') {
     await supabase
       .from('subscriptions')
@@ -333,6 +361,7 @@ async function processSubscriptionEvent(
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
+      .in('status', ['active', 'in_progress', 'trial', 'on_hold'])
   }
 
   // Handle expiration
@@ -382,7 +411,9 @@ async function processSubscriptionEvent(
       .eq('id', subscriptionId)
   }
 
-  // Handle purchase confirmed (idempotent — app flow already creates sub via create-subscription-v2)
+  // Handle purchase confirmed (idempotent — app flow already creates sub via create-subscription-v2).
+  // F15: Guard to non-terminal statuses only — a late PURCHASED event must not resurrect
+  // a sub that was already cancelled or revoked.
   if (eventType === 'SUBSCRIPTION_PURCHASED') {
     await supabase
       .from('subscriptions')
@@ -391,6 +422,7 @@ async function processSubscriptionEvent(
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId)
+      .in('status', ['active', 'in_progress', 'pending_cancellation', 'on_hold', 'trial'])
     console.log('[GOOGLE_PLAY_WEBHOOK] Purchase confirmed active:', subscriptionId)
   }
 
