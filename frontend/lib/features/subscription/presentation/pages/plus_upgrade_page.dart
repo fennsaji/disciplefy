@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +15,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/services/platform_detection_service.dart';
+import '../../../../core/services/platform_payment_provider_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -36,8 +40,12 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   bool _hasOpenedPayment = false;
   bool _isLoadingPlan = true;
   bool _isDowngrade = false; // true when current plan tier > Plus
+  bool _downgradeChecked = false; // true once _isDowngrade has been resolved
   bool _isSubmitting = false; // prevents double-tap on upgrade button
   bool _hasShownSuccess = false; // prevents repeated success snackbar
+  Timer? _checkoutPollTimer;
+  int _pollCount = 0;
+  static const int _maxPollCount = 120; // 10 minutes at 5s intervals
 
   PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _plusPlan;
@@ -59,11 +67,18 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     if (subState is SubscriptionLoaded) {
       final planType = subState.activeSubscription?.planType ?? '';
       _isDowngrade = planType.contains('premium');
+      _downgradeChecked = true;
     } else if (subState is UserSubscriptionStatusLoaded) {
       _isDowngrade = subState.subscriptionStatus.currentPlan == 'premium';
+      _downgradeChecked = true;
+    } else {
+      // Bloc state not yet loaded (cold navigation). Load subscription status so
+      // the BlocConsumer listener below can update _isDowngrade when it arrives,
+      // then trigger the eligibility check with the correct value.
+      context.read<SubscriptionBloc>().add(const LoadSubscriptionStatus());
     }
 
-    if (!_isDowngrade) {
+    if (_downgradeChecked && !_isDowngrade) {
       // Only check eligibility for upgrades — downgrades bypass this check
       context
           .read<SubscriptionBloc>()
@@ -118,12 +133,13 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.isCurrent == true && _hasOpenedPayment) {
-      context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
     }
   }
 
   @override
   void dispose() {
+    _checkoutPollTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -132,8 +148,25 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _hasOpenedPayment) {
-      context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
     }
+  }
+
+  void _startCheckoutPolling() {
+    _checkoutPollTimer?.cancel();
+    _pollCount = 0;
+    _checkoutPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) {
+        _checkoutPollTimer?.cancel();
+        return;
+      }
+      _pollCount++;
+      if (_pollCount > _maxPollCount) {
+        _checkoutPollTimer?.cancel();
+        return;
+      }
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
+    });
   }
 
   String get _displayPrice {
@@ -200,8 +233,23 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 ),
               );
             }
+          } else if (state is SubscriptionInitial) {
+            setState(() => _isSubmitting = false);
+            if (state.isPendingPayment) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Payment is awaiting approval. You\'ll be notified when it\'s ready.'),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+            }
           } else if (state is SubscriptionLoaded) {
-            // Only react if the user actually went through the payment flow on
+            setState(() => _isSubmitting = false);
+            if (state.activeSubscription?.isActive == true) {
+              _checkoutPollTimer?.cancel();
+            }
+            // Only navigate if the user actually went through the payment flow on
             // this page — prevents auto-pop when a background GetActiveSubscription
             // fires and the user already has a trial/other active subscription.
             if (_hasOpenedPayment &&
@@ -221,11 +269,37 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
               });
             }
           } else if (state is UserSubscriptionStatusLoaded &&
+              !_downgradeChecked) {
+            // Cold navigation: subscription status just loaded — resolve downgrade.
+            final isNowDowngrade =
+                state.subscriptionStatus.currentPlan == 'premium';
+            setState(() {
+              _isDowngrade = isNowDowngrade;
+              _downgradeChecked = true;
+            });
+            if (!isNowDowngrade) {
+              context.read<SubscriptionBloc>().add(
+                  const CheckSubscriptionEligibility(targetPlanCode: 'plus'));
+            }
+          } else if (state is UserSubscriptionStatusLoaded &&
               state.authorizationUrl != null &&
               state.authorizationUrl!.isNotEmpty &&
               !_hasOpenedPayment) {
             _hasOpenedPayment = true;
             _openAuthorizationUrl(state.authorizationUrl!);
+          } else if (state is UserSubscriptionStatusLoaded &&
+              state.errorMessage != null &&
+              state.errorMessage!.isNotEmpty) {
+            // F28: Web Razorpay failure emitted as UserSubscriptionStatusLoaded
+            // with errorMessage — reset button and surface the error.
+            setState(() => _isSubmitting = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: AppTheme.errorColor,
+                duration: const Duration(seconds: 5),
+              ),
+            );
           } else if (state is SubscriptionError) {
             setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -270,6 +344,16 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
                 ),
                 const SizedBox(height: 24),
                 _buildActionButton(state),
+                if (PlatformPaymentProviderService
+                    .supportsRestorePurchases()) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => context
+                        .read<SubscriptionBloc>()
+                        .add(const RestorePurchases()),
+                    child: const Text('Restore Purchases'),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 _buildTermsInfo(),
                 const SizedBox(height: 24),
@@ -779,6 +863,9 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (kIsWeb) {
+        _startCheckoutPolling();
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

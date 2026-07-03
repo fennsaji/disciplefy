@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -38,6 +41,9 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
       false; // prevents double-pop when SubscriptionLoaded fires multiple times
   bool _isLoadingPlan = true;
   bool _isSubmitting = false;
+  Timer? _checkoutPollTimer;
+  int _pollCount = 0;
+  static const int _maxPollCount = 120; // 10 minutes at 5s intervals
 
   PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _standardPlan;
@@ -97,12 +103,13 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.isCurrent == true && _hasOpenedPayment) {
-      context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
     }
   }
 
   @override
   void dispose() {
+    _checkoutPollTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -111,8 +118,25 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _hasOpenedPayment) {
-      context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
     }
+  }
+
+  void _startCheckoutPolling() {
+    _checkoutPollTimer?.cancel();
+    _pollCount = 0;
+    _checkoutPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) {
+        _checkoutPollTimer?.cancel();
+        return;
+      }
+      _pollCount++;
+      if (_pollCount > _maxPollCount) {
+        _checkoutPollTimer?.cancel();
+        return;
+      }
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
+    });
   }
 
   String get _displayPrice {
@@ -177,7 +201,22 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
                 ),
               );
             }
+          } else if (state is SubscriptionInitial) {
+            setState(() => _isSubmitting = false);
+            if (state.isPendingPayment) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Payment is awaiting approval. You\'ll be notified when it\'s ready.'),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+            }
           } else if (state is SubscriptionLoaded) {
+            setState(() => _isSubmitting = false);
+            if (state.activeSubscription?.isActive == true) {
+              _checkoutPollTimer?.cancel();
+            }
             if (_hasOpenedPayment &&
                 !_hasShownSuccess &&
                 state.activeSubscription?.isActive == true) {
@@ -200,6 +239,19 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
               !_hasOpenedPayment) {
             _hasOpenedPayment = true;
             _openAuthorizationUrl(state.authorizationUrl!);
+          } else if (state is UserSubscriptionStatusLoaded &&
+              state.errorMessage != null &&
+              state.errorMessage!.isNotEmpty) {
+            // F28: Web Razorpay failure emitted as UserSubscriptionStatusLoaded
+            // with errorMessage — reset button and surface the error.
+            setState(() => _isSubmitting = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: AppTheme.errorColor,
+                duration: const Duration(seconds: 8),
+              ),
+            );
           } else if (state is SubscriptionError) {
             setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -763,6 +815,9 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (kIsWeb) {
+        _startCheckoutPolling();
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

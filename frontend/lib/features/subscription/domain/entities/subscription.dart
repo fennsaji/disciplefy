@@ -4,9 +4,10 @@ import 'package:equatable/equatable.dart';
 enum SubscriptionStatus {
   trial, // free trial period, matches DB status = 'trial'
   created,
-  authenticated,
+  authenticated, // DB 'in_progress' — Razorpay mandate authorized, awaiting activation
   active,
   pending_cancellation, // snake_case to match backend
+  on_hold, // DB 'on_hold' — Google Play payment failure, access suspended
   paused,
   cancelled,
   completed,
@@ -24,6 +25,8 @@ enum SubscriptionStatus {
         return 'Active';
       case SubscriptionStatus.pending_cancellation:
         return 'Pending Cancellation';
+      case SubscriptionStatus.on_hold:
+        return 'On Hold';
       case SubscriptionStatus.paused:
         return 'Paused';
       case SubscriptionStatus.cancelled:
@@ -47,6 +50,8 @@ enum SubscriptionStatus {
         return 'Subscription is active';
       case SubscriptionStatus.pending_cancellation:
         return 'Scheduled to cancel at end of billing period';
+      case SubscriptionStatus.on_hold:
+        return 'Payment failed — update your payment method in Google Play to restore access';
       case SubscriptionStatus.paused:
         return 'Subscription is paused';
       case SubscriptionStatus.cancelled:
@@ -58,12 +63,15 @@ enum SubscriptionStatus {
     }
   }
 
+  // on_hold access is suspended — not considered active
   bool get isActive =>
       this == SubscriptionStatus.trial ||
       this == SubscriptionStatus.active ||
       this == SubscriptionStatus.authenticated ||
       this == SubscriptionStatus.pending_cancellation ||
       this == SubscriptionStatus.paused;
+
+  bool get isOnHold => this == SubscriptionStatus.on_hold;
 
   bool get canCancel =>
       this == SubscriptionStatus.active ||

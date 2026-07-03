@@ -97,7 +97,12 @@ class PaymentServiceMobile {
       );
       _onExternalWallet!(customResponse);
     }
-    _clearCallbacks();
+    // Only clear the external-wallet callback. Keep _onPaymentSuccess and
+    // _onPaymentError alive so Razorpay can still deliver the final
+    // success/failure event when the wallet app returns to our app.
+    // Clearing them here (as _clearCallbacks() would do) means the payment
+    // result is never delivered → _isLoading stays true → stuck button.
+    _onExternalWallet = null;
   }
 
   void _clearCallbacks() {

@@ -123,6 +123,7 @@ abstract class SubscriptionRepository {
   /// Returns [SyncPlayStoreResult] on success (never throws to the caller).
   /// Returns [Failure] on error — caller should handle silently.
   Future<Either<Failure, SyncPlayStoreResult>> syncPlayStoreStatus({
+    required String provider,
     required List<Map<String, dynamic>> purchases,
     required bool deviceHasNoPurchases,
   });

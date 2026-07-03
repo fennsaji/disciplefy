@@ -389,9 +389,22 @@ class AppRouter {
         builder: (context, state) {
           final tokenStatus = state.extra as TokenStatus?;
           if (tokenStatus == null) {
-            return const MaxWidthWrapper(
+            return MaxWidthWrapper(
               child: Scaffold(
-                body: Center(child: Text('Error: Missing token status')),
+                appBar: AppBar(),
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Unable to load token purchase page.'),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Go Back'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             );
           }

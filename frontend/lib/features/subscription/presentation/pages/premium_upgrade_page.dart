@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +15,7 @@ import '../../../../core/i18n/translation_service.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/platform_detection_service.dart';
+import '../../../../core/services/platform_payment_provider_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
@@ -37,6 +41,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       false; // prevents double-pop when SubscriptionLoaded fires multiple times
   bool _isLoadingPlan = true;
   bool _isSubmitting = false;
+  Timer? _checkoutPollTimer;
+  int _pollCount = 0;
+  static const int _maxPollCount = 120; // 10 minutes at 5s intervals
 
   PromotionalCampaignModel? _appliedPromo;
   SubscriptionPlanModel? _premiumPlan;
@@ -97,13 +104,14 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.isCurrent == true && _hasOpenedPayment) {
       Logger.debug(
-          '[PremiumUpgrade] Page became visible after payment - checking subscription status');
-      context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+          '[PremiumUpgrade] Page became visible after payment - refreshing subscription status');
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
     }
   }
 
   @override
   void dispose() {
+    _checkoutPollTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -113,9 +121,26 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _hasOpenedPayment) {
       Logger.debug(
-          '[PremiumUpgrade] App resumed after payment - checking subscription status');
-      context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+          '[PremiumUpgrade] App resumed after payment - refreshing subscription status');
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
     }
+  }
+
+  void _startCheckoutPolling() {
+    _checkoutPollTimer?.cancel();
+    _pollCount = 0;
+    _checkoutPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) {
+        _checkoutPollTimer?.cancel();
+        return;
+      }
+      _pollCount++;
+      if (_pollCount > _maxPollCount) {
+        _checkoutPollTimer?.cancel();
+        return;
+      }
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
+    });
   }
 
   String get _displayPrice {
@@ -184,7 +209,22 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 ),
               );
             }
+          } else if (state is SubscriptionInitial) {
+            setState(() => _isSubmitting = false);
+            if (state.isPendingPayment) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Payment is awaiting approval. You\'ll be notified when it\'s ready.'),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+            }
           } else if (state is SubscriptionLoaded) {
+            setState(() => _isSubmitting = false);
+            if (state.activeSubscription?.isActive == true) {
+              _checkoutPollTimer?.cancel();
+            }
             if (_hasOpenedPayment &&
                 !_hasShownSuccess &&
                 state.activeSubscription?.isActive == true) {
@@ -247,6 +287,16 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 ),
                 const SizedBox(height: 24),
                 _buildActionButton(state),
+                if (PlatformPaymentProviderService
+                    .supportsRestorePurchases()) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => context
+                        .read<SubscriptionBloc>()
+                        .add(const RestorePurchases()),
+                    child: const Text('Restore Purchases'),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 _buildTermsInfo(),
                 const SizedBox(height: 24),
@@ -780,6 +830,10 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // On web, app-resume events are unreliable — poll for status changes
+      if (kIsWeb) {
+        _startCheckoutPolling();
+      }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

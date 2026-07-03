@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
@@ -117,7 +118,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<IAPPurchaseCompleted>(_onIAPPurchaseCompleted);
     on<IAPPurchaseError>(_onIAPPurchaseError);
     on<IAPPurchaseCancelled>(_onIAPPurchaseCancelled);
+    on<IAPPurchasePending>(_onIAPPurchasePending);
     on<SyncPlayStoreSubscription>(_onSyncPlayStoreSubscription);
+    on<RestorePurchases>(_onRestorePurchases);
 
     // Set up IAP callbacks if service is available
     _setupIAPCallbacks();
@@ -300,11 +303,10 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         if (subscription != null &&
             subscription.isIAPSubscription &&
             !_hasAttemptedPlayStoreSync &&
-            !kIsWeb &&
-            Platform.isAndroid) {
+            !kIsWeb) {
           _hasAttemptedPlayStoreSync = true;
           Logger.debug(
-              '🔄 [BLOC] Active IAP subscription found — triggering Play Store sync');
+              '🔄 [BLOC] Active IAP subscription found — triggering store sync (${Platform.isAndroid ? "Android" : "iOS"})');
           _iapService!.restorePurchasesForSync();
         }
       },
@@ -585,7 +587,21 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     } else if (failure is AuthenticationFailure) {
       return 'Please sign in to subscribe.';
     } else if (failure is ServerFailure) {
-      return 'Server error. Please try again later.';
+      // F14: Surface specific backend codes so users get actionable messages.
+      switch (failure.code) {
+        case 'PLAN_NOT_CONFIGURED':
+          return 'This plan is not yet available for purchase. Please try another plan.';
+        case 'UNKNOWN_PRODUCT':
+          return 'Unrecognized product. Please contact support.';
+        case 'IAP_VALIDATION_ERROR':
+          return 'Purchase could not be validated. Please try again or restore purchases.';
+        case 'DOWNGRADE_ALREADY_SCHEDULED':
+          return 'A downgrade is already scheduled for the end of your billing period.';
+        case 'PRODUCT_MISMATCH':
+          return 'Receipt does not match the selected plan. Please contact support.';
+        default:
+          return 'Server error. Please try again later.';
+      }
     } else if (failure is ClientFailure) {
       final clientFailure = failure;
       if (clientFailure.code == 'TRIAL_STILL_ACTIVE') {
@@ -802,6 +818,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     }
     _processingPurchaseTokens.add(purchaseKey);
 
+    // Detect background re-delivery: no pending plan code means the user did not
+    // initiate this purchase in the current session (app restarted, store re-delivery,
+    // or background sync). Used later to show a global snackbar via AppShell instead
+    // of the page-level upgrade confirmation UI.
+    final isBackgroundDelivery = _pendingPurchasePlanCode == null;
+
     if (_pendingPurchasePlanCode == null) {
       // App may have restarted between purchase initiation and delivery.
       // Infer plan code from product ID so restored/re-delivered purchases still work.
@@ -861,6 +883,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
             failure: failure,
             operation: 'creating IAP subscription',
             previousSubscription: _cachedSubscription,
+            isBackgroundDelivery: isBackgroundDelivery,
           ));
         },
         (v2Result) {
@@ -890,6 +913,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           emit(SubscriptionCreated(
             result: createResult,
             createdAt: DateTime.now(),
+            isBackgroundDelivery: isBackgroundDelivery,
           ));
 
           // Clear pending purchase tracking
@@ -963,6 +987,50 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     }
   }
 
+  /// Handle IAP purchase deferred (Android deferred billing / iOS Ask-to-Buy).
+  ///
+  /// Re-enables the UI and signals the upgrade page to show a "payment pending"
+  /// message. The purchase will be delivered when approved.
+  Future<void> _onIAPPurchasePending(
+    IAPPurchasePending event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    Logger.debug('🛒 [BLOC] IAP Purchase pending — re-enabling UI');
+    _pendingPurchasePlanCode = null;
+    _pendingPurchasePromoCode = null;
+
+    // Emit initial with isPendingPayment=true so upgrade pages reset the submit
+    // button and show a "payment pending" message instead of treating it as a cancel.
+    emit(const SubscriptionInitial(isPendingPayment: true));
+  }
+
+  /// Handle user-initiated "Restore Purchases" (F30).
+  ///
+  /// Required by iOS App Store guideline 3.1.1. Calls restorePurchases() on
+  /// the IAP service, which re-delivers prior purchases through the normal
+  /// purchase stream → _onIAPPurchaseCompleted handles them as usual.
+  Future<void> _onRestorePurchases(
+    RestorePurchases event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    Logger.debug('🛒 [BLOC] User requested restore purchases');
+    if (_iapService == null) {
+      Logger.debug('🛒 [BLOC] IAP service unavailable — skipping restore');
+      return;
+    }
+    try {
+      await _iapService.restorePurchases();
+    } catch (e) {
+      Logger.error('🛒 [BLOC] Restore purchases failed: $e');
+      if (isClosed) return;
+      emit(SubscriptionError(
+        failure: ServerFailure(message: 'Failed to restore purchases: $e'),
+        operation: 'restore purchases',
+        previousSubscription: _cachedSubscription,
+      ));
+    }
+  }
+
   /// Handle silent Play Store subscription sync event.
   ///
   /// Never emits an error state — failures are logged and discarded.
@@ -971,31 +1039,64 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     SyncPlayStoreSubscription event,
     Emitter<SubscriptionState> emit,
   ) async {
-    Logger.debug(
-        '🔄 [BLOC] Processing Play Store sync — ${event.purchases.length} purchase(s), deviceHasNoPurchases: ${event.deviceHasNoPurchases}');
+    final isIOS = !kIsWeb && Platform.isIOS;
+    final provider = isIOS ? 'apple_appstore' : 'google_play';
 
-    // Build the purchases payload for the backend (Google Play only)
-    final payload = event.purchases
-        .whereType<GooglePlayPurchaseDetails>()
-        .map((p) => {
-              'product_id': p.productID,
-              'purchase_token': p.billingClientPurchase.purchaseToken,
-              'package_name': p.billingClientPurchase.packageName,
-              'receipt_data': p.billingClientPurchase.originalJson,
-            })
-        .toList();
+    Logger.debug(
+        '🔄 [BLOC] Processing $provider sync — ${event.purchases.length} purchase(s), deviceHasNoPurchases: ${event.deviceHasNoPurchases}');
+
+    List<Map<String, dynamic>> payload;
+    if (isIOS) {
+      // For iOS, receipt is the aggregate App Store receipt (same for all purchases).
+      // Fetch once and attach to each AppStorePurchaseDetails.
+      final iosPurchases =
+          event.purchases.whereType<AppStorePurchaseDetails>().toList();
+      if (iosPurchases.isEmpty && !event.deviceHasNoPurchases) {
+        Logger.debug(
+            '🔄 [BLOC] iOS sync: no AppStorePurchaseDetails found — skipping');
+        return;
+      }
+      if (iosPurchases.isNotEmpty && _iapService != null) {
+        try {
+          final receiptData =
+              await _iapService.getReceiptData(iosPurchases.first);
+          payload = iosPurchases
+              .map((p) => {
+                    'product_id': p.productID,
+                    'receipt_data': receiptData,
+                  })
+              .toList();
+        } catch (e) {
+          Logger.warning('🔄 [BLOC] iOS sync: failed to get receipt data: $e');
+          payload = [];
+        }
+      } else {
+        payload = [];
+      }
+    } else {
+      payload = event.purchases
+          .whereType<GooglePlayPurchaseDetails>()
+          .map((p) => {
+                'product_id': p.productID,
+                'purchase_token': p.billingClientPurchase.purchaseToken,
+                'package_name': p.billingClientPurchase.packageName,
+                'receipt_data': p.billingClientPurchase.originalJson,
+              })
+          .toList();
+    }
 
     final result = await _subscriptionRepository.syncPlayStoreStatus(
+      provider: provider,
       purchases: payload,
       deviceHasNoPurchases: event.deviceHasNoPurchases,
     );
 
     result.fold(
       (failure) =>
-          Logger.debug('⚠️ [BLOC] Play Store sync failed (silent): $failure'),
+          Logger.debug('⚠️ [BLOC] $provider sync failed (silent): $failure'),
       (syncResult) {
         Logger.debug(
-            '✅ [BLOC] Play Store sync action: ${syncResult.actionTaken}');
+            '✅ [BLOC] $provider sync action: ${syncResult.actionTaken}');
         if (syncResult.actionTaken != 'none') {
           _clearCache();
           if (!isClosed) add(const RefreshSubscription());
@@ -1236,6 +1337,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     _iapService.onPurchaseCancelled = () {
       Logger.debug('🛒 [BLOC] IAP Purchase cancelled by user');
       add(const IAPPurchaseCancelled());
+    };
+
+    // Handle deferred purchases (Android deferred billing / iOS Ask-to-Buy)
+    _iapService.onPurchasePending = () {
+      Logger.debug('🛒 [BLOC] IAP Purchase pending approval');
+      add(const IAPPurchasePending());
     };
 
     // Handle sync-mode restore completion (silent background sync)

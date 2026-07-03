@@ -253,6 +253,29 @@ class PaymentService {
       Logger.debug(
           '[PaymentService] ✅ Razorpay instance created successfully: $rzp');
 
+      // Subscribe to hard-decline events (e.g. card declined by bank).
+      // Without this, payment.failed fires ondismiss → reported as "cancelled".
+      rzp.callMethod('on', [
+        'payment.failed',
+        PaymentServiceWeb.allowInterop((dynamic errorResponse) {
+          Logger.debug('[PaymentService] ❌ WEB PAYMENT FAILED EVENT');
+          try {
+            final error = errorResponse['error'];
+            final code = error?['code'] ?? 'PAYMENT_FAILED';
+            final description = error?['description'] ?? 'Payment failed';
+            final paymentFailureResponse = PaymentFailureResponse(
+              1, // non-zero = hard failure, not user cancel
+              '$code: $description',
+            );
+            _handlePaymentError(paymentFailureResponse);
+          } catch (e) {
+            Logger.debug(
+                '[PaymentService] ❌ Error in payment.failed handler: $e');
+            _handlePaymentError(PaymentFailureResponse(1, 'Payment failed'));
+          }
+        }),
+      ]);
+
       Logger.debug('[PaymentService] Step 5: Opening Razorpay checkout...');
       Logger.debug('[PaymentService] Calling rzp.open()...');
 

@@ -1282,11 +1282,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   /// Show Standard subscription bottom sheet
   void _showStandardSubscriptionSheet(BuildContext context) {
-    final subscriptionBloc = sl<SubscriptionBloc>();
-    final state = subscriptionBloc.state;
+    final state = sl<SubscriptionBloc>().state;
 
     if (state is! UserSubscriptionStatusLoaded) {
-      // If status not loaded yet, show a loading snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Loading subscription status...'),
@@ -1299,15 +1297,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     StandardSubscriptionSheet.show(
       context,
       status: state.subscriptionStatus,
-      isLoading: state.isLoading,
-      authorizationUrl: state.authorizationUrl,
-      errorMessage: state.errorMessage,
-      onCreateSubscription: () {
-        subscriptionBloc.add(CreateStandardSubscription());
-      },
-      onClose: () {
-        Navigator.of(context).pop();
-      },
     );
   }
 

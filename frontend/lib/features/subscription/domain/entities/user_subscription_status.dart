@@ -133,18 +133,24 @@ class UserSubscriptionStatus extends Equatable {
   bool get isGracePeriodUrgent =>
       isInGracePeriod && graceDaysRemaining <= 3 && graceDaysRemaining > 0;
 
+  /// Whether the user's subscription is on hold due to a payment failure.
+  /// Access is suspended; user must update their payment method in Google Play.
+  bool get isOnHold => subscriptionStatus == 'on_hold';
+
   /// Whether to show the subscription banner.
   /// Shows when:
   /// - Trial is ending soon (< 7 days remaining)
   /// - In grace period
   /// - Trial has ended and user needs to subscribe
   /// - New user without trial (show promo)
+  /// - Subscription is on hold (payment failed)
   bool get shouldShowSubscriptionBanner =>
       needsSubscription ||
       isTrialEndingSoon ||
       isInGracePeriod ||
       hasTrialExpired ||
-      isNewUserWithoutTrial;
+      isNewUserWithoutTrial ||
+      isOnHold;
 
   /// Whether to show the Premium trial banner
   /// Shows when user can start Premium trial or is in Premium trial
@@ -153,6 +159,9 @@ class UserSubscriptionStatus extends Equatable {
 
   /// Get a user-friendly message about their subscription status
   String get statusMessage {
+    if (isOnHold) {
+      return 'Payment failed — update payment method in Google Play to restore access';
+    }
     if (isPremiumPlan) {
       if (isInPremiumTrial) {
         if (premiumTrialDaysRemaining <= 1) {
