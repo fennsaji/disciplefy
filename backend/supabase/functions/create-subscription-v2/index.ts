@@ -28,6 +28,7 @@ import { PaymentProviderFactory } from '../_shared/services/payment-providers/pr
 import { ProviderType } from '../_shared/services/payment-providers/base-provider.ts'
 import { validateAndProcessReceipt } from '../_shared/services/receipt-validation-service.ts'
 import { cancelGooglePlaySubscription } from '../_shared/services/google-play-validator.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
 
 interface CreateSubscriptionRequest {
   plan_code: string
@@ -815,10 +816,10 @@ serve(async (req) => {
           JSON.stringify({
             success: false,
             error: iapError instanceof Error ? iapError.message : 'Receipt validation failed',
-            code: 'IAP_VALIDATION_ERROR'
+            code: iapError instanceof AppError ? iapError.code : 'IAP_VALIDATION_ERROR'
           }),
           {
-            status: 500,
+            status: iapError instanceof AppError ? iapError.statusCode : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         )
@@ -834,6 +835,7 @@ serve(async (req) => {
         .from('subscriptions')
         .update({
           status: 'pending_cancellation',
+          cancel_at_cycle_end: true,
           cancellation_reason: 'Pending upgrade — will be cancelled on new subscription activation',
           updated_at: new Date().toISOString()
         })
@@ -941,6 +943,7 @@ serve(async (req) => {
           .update({
             status: 'active',
             cancelled_at: null,
+            cancel_at_cycle_end: false,
             cancellation_reason: null,
             updated_at: new Date().toISOString()
           })

@@ -45,6 +45,8 @@ interface SyncRequest {
   device_has_no_purchases: boolean
 }
 
+type StoreValidationResult = Awaited<ReturnType<typeof validateAppleReceipt>> | Awaited<ReturnType<typeof validateGooglePlayReceipt>>
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -194,12 +196,30 @@ serve(async (req) => {
 
       const devicePurchase = purchases[0]
 
-      // For Android: look up by purchase_token. For iOS: look up by transaction_id field.
-      const lookupId = isApple ? devicePurchase.receipt_data : devicePurchase.purchase_token
+      let validationForPurchase: StoreValidationResult | null = null
+      let lookupId = devicePurchase.purchase_token
+
+      if (isApple) {
+        validationForPurchase = await validateAppleReceipt(
+          supabase,
+          { receiptData: devicePurchase.receipt_data },
+          environment
+        )
+        lookupId = validationForPurchase.transactionId
+      }
+
+      if (!lookupId) {
+        console.warn('[sync-subscription-status] Scenario 2: Missing store transaction id for device purchase')
+        return new Response(
+          JSON.stringify({ success: true, action_taken: 'none', reason: 'missing_transaction_id' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
       const { data: existingReceipt } = await supabase
         .from('iap_receipts')
         .select('id, subscription_id')
-        .eq('transaction_id', lookupId ?? '')
+        .eq('transaction_id', lookupId)
         .maybeSingle()
 
       if (existingReceipt?.subscription_id) {
@@ -207,24 +227,37 @@ serve(async (req) => {
         console.log('[sync-subscription-status] Scenario 2: Reactivating existing subscription')
 
         // Re-validate to get current expiry
-        const validation = isApple
-          ? await validateAppleReceipt(supabase, { receiptData: devicePurchase.receipt_data }, environment)
-          : await validateGooglePlayReceipt(supabase, JSON.parse(devicePurchase.receipt_data), environment)
+        const validation = validationForPurchase ??
+          await validateGooglePlayReceipt(supabase, JSON.parse(devicePurchase.receipt_data), environment)
 
         if (validation.isValid) {
           await supabase
             .from('subscriptions')
             .update({
               status: 'active',
+              provider_subscription_id: validation.transactionId,
               current_period_end: validation.expiryDate?.toISOString(),
+              cancel_at_cycle_end: !validation.autoRenewing,
               updated_at: now.toISOString()
             })
             .eq('id', existingReceipt.subscription_id)
 
+          await supabase
+            .from('iap_receipts')
+            .update({
+              receipt_data: devicePurchase.receipt_data,
+              validation_status: 'valid',
+              validation_response: validation.validationResponse,
+              validated_at: now.toISOString(),
+              expiry_date: validation.expiryDate?.toISOString(),
+              updated_at: now.toISOString()
+            })
+            .eq('id', existingReceipt.id)
+
           return new Response(
             JSON.stringify({
               success: true,
-              action_taken: 'created_missing_subscription',
+              action_taken: 'reactivated_existing_subscription',
               new_status: 'active',
               subscription_id: existingReceipt.subscription_id
             }),

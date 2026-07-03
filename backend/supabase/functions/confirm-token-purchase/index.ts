@@ -50,6 +50,7 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
 
   let requestData: ConfirmPurchaseRequest | null = null
   let userContext: UserContext | null = null
+  let purchaseWasClaimed = false
   
   try {
     console.log('[Purchase] 🚀 Starting payment confirmation process')
@@ -82,6 +83,7 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     // Atomic claim for processing to prevent double-processing
     console.log(`[Purchase] 🔒 Attempting atomic claim for order: ${pendingPurchase.order_id}`)
     const claimedPurchase = await claimPendingPurchaseForProcessing(pendingPurchase.order_id, userContext.userId!, services.supabaseServiceClient)
+    purchaseWasClaimed = true
     console.log(`[Purchase] ✅ Purchase claimed successfully - Status: processing`)
     
     // Resolve the user's real plan so the token row isn't clobbered to 'standard'
@@ -131,13 +133,25 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     })
     
     // Only mark failed for definitive payment errors, not transient/concurrency errors.
-    // PURCHASE_ALREADY_PROCESSING means another handler owns the row — leave it in processing.
-    const isDefinitiveFailure = !(error instanceof AppError && error.code === 'PURCHASE_ALREADY_PROCESSING')
+    // Pre-claim amount/capture failures are terminal; other pre-claim failures remain retryable.
+    const isPreClaimPaymentFailure = error instanceof AppError &&
+      error.statusCode === 402 &&
+      (error.code === 'PAYMENT_NOT_CAPTURED' || error.code === 'PAYMENT_AMOUNT_MISMATCH')
+    const isDefinitiveFailure = purchaseWasClaimed || isPreClaimPaymentFailure
     if (isDefinitiveFailure && requestData?.order_id) {
       try {
         console.log(`[Purchase] 🚫 Marking order ${requestData.order_id} as failed`)
-        await markPendingFailed(requestData.order_id, error, services.supabaseServiceClient)
-        console.log(`[Purchase] ✅ Order marked as failed`)
+        const markedFailed = await markPendingFailed(
+          requestData.order_id,
+          error,
+          services.supabaseServiceClient,
+          purchaseWasClaimed ? ['processing'] : ['pending']
+        )
+        if (markedFailed) {
+          console.log(`[Purchase] ✅ Order marked as failed`)
+        } else {
+          console.warn(`[Purchase] ⚠️ Order was not marked failed because status changed or was not eligible`)
+        }
       } catch (markError) {
         console.error(`[Purchase] ❌ Failed to mark order as failed:`, markError)
       }
@@ -514,9 +528,14 @@ async function markPendingCompleted(orderId: string, paymentId: string, supabase
 /**
  * Mark pending purchase as failed
  */
-async function markPendingFailed(orderId: string, error: unknown, supabaseServiceClient: SupabaseClient): Promise<void> {
-  // Only transition from processing; never overwrite completed rows
-  await supabaseServiceClient
+async function markPendingFailed(
+  orderId: string,
+  error: unknown,
+  supabaseServiceClient: SupabaseClient,
+  eligibleStatuses: Array<'pending' | 'processing'> = ['processing']
+): Promise<boolean> {
+  // Only transition from eligible in-flight statuses; never overwrite completed rows.
+  const { data } = await supabaseServiceClient
     .from('pending_token_purchases')
     .update({
       status: 'failed',
@@ -524,7 +543,10 @@ async function markPendingFailed(orderId: string, error: unknown, supabaseServic
       updated_at: new Date().toISOString()
     })
     .eq('order_id', orderId)
-    .eq('status', 'processing')
+    .in('status', eligibleStatuses)
+    .select('id')
+
+  return (data?.length ?? 0) > 0
 }
 
 /**

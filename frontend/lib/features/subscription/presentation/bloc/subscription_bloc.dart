@@ -868,6 +868,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           // queued on purpose so they auto-retry on the next launch.
           const permanentFailureCodes = {
             'INVALID_RECEIPT',
+            'RECEIPT_ALREADY_CLAIMED',
+            'PRODUCT_MISMATCH',
             'ALREADY_SUBSCRIBED',
             'PLAN_NOT_FOUND',
             'INVALID_REQUEST',

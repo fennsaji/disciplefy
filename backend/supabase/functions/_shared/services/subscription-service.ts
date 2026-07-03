@@ -72,6 +72,12 @@ export class SubscriptionService {
     })
   }
 
+  private isIapProvider(provider: string | null): boolean {
+    return provider === 'google_play' ||
+      provider === 'apple_appstore' ||
+      provider === 'apple_iap'
+  }
+
   /**
    * Creates a new premium subscription for a user
    *
@@ -198,7 +204,7 @@ export class SubscriptionService {
     }
 
     try {
-      const isIapProvider = subscription.provider === 'google_play' || subscription.provider === 'apple_iap'
+      const isIapProvider = this.isIapProvider(subscription.provider)
 
       if (options.cancelAtCycleEnd) {
         if (!isIapProvider) {
@@ -403,7 +409,24 @@ export class SubscriptionService {
     }
 
     try {
-      // Log the resume attempt (no Razorpay API call — see resumeRazorpaySubscription)
+      const isIapProvider = this.isIapProvider(subscription.provider)
+
+      if (isIapProvider) {
+        throw new AppError(
+          'IAP_RESUME_MANAGED_BY_STORE',
+          'In-app purchase subscriptions must be resumed from the app store subscription settings',
+          400
+        )
+      }
+
+      if (subscription.provider !== 'razorpay') {
+        throw new AppError(
+          'UNSUPPORTED_SUBSCRIPTION_PROVIDER',
+          'This subscription provider does not support in-app resume',
+          400
+        )
+      }
+
       await this.resumeRazorpaySubscription(subscription.provider_subscription_id)
 
       // Update database - set status back to active and clear cancellation fields
@@ -429,6 +452,7 @@ export class SubscriptionService {
         null,
         {
           resumed_from_pending_cancellation: true,
+          provider: subscription.provider,
           razorpay_cancel_flag_removed: true
         }
       )
@@ -731,16 +755,7 @@ export class SubscriptionService {
   }
 
   /**
-   * Resumes a pending_cancellation subscription at the DB level only.
-   *
-   * NOTE: Razorpay has no "undo cancel_at_cycle_end" API endpoint.
-   * Calling cancel(id, false) would cancel the subscription IMMEDIATELY and
-   * fire subscription.cancelled webhook — the opposite of what we want.
-   *
-   * Strategy: Only update our DB. Razorpay may still cancel at cycle end, in
-   * which case subscription.cancelled webhook will fire and mark it cancelled
-   * again. If Razorpay auto-renews (subscription was still active), it will
-   * fire subscription.charged and the subscription continues normally.
+   * Clears a scheduled Razorpay cancellation before resuming locally.
    */
   private async resumeRazorpaySubscription(
     razorpaySubscriptionId: string
@@ -749,15 +764,26 @@ export class SubscriptionService {
       throw new AppError('PAYMENT_SERVICE_ERROR', 'Payment service not configured', 500)
     }
     try {
-      // M5: Clear cancel_at_cycle_end at Razorpay so the subscription actually renews.
-      // Without this call, the DB resume is a no-op and the sub still cancels at cycle end.
-      await (this.razorpay.subscriptions as any).update(razorpaySubscriptionId, {
+      const updatedSubscription = await (this.razorpay.subscriptions as any).update(razorpaySubscriptionId, {
         cancel_at_cycle_end: 0
-      })
+      }) as Partial<RazorpaySubscriptionResponse>
+
+      if (updatedSubscription.has_scheduled_changes === true) {
+        throw new AppError('PAYMENT_SERVICE_ERROR', 'Payment provider still has scheduled subscription changes', 502)
+      }
+
       console.log('[SubscriptionService] Razorpay cancel_at_cycle_end cleared for:', razorpaySubscriptionId)
     } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error
+      }
+
       console.error('[SubscriptionService] Failed to clear Razorpay cancel_at_cycle_end:', error)
-      throw new AppError('PAYMENT_SERVICE_ERROR', 'Failed to resume subscription with payment provider', 500)
+      throw new AppError(
+        'PAYMENT_SERVICE_ERROR',
+        error?.error?.description || 'Failed to resume subscription with payment provider',
+        error?.statusCode || 502
+      )
     }
   }
 

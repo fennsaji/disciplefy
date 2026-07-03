@@ -29,7 +29,7 @@ class StandardSubscriptionSheet extends StatefulWidget {
     BuildContext context, {
     required UserSubscriptionStatus status,
   }) {
-    final bloc = context.read<SubscriptionBloc>();
+    final bloc = sl<SubscriptionBloc>();
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,

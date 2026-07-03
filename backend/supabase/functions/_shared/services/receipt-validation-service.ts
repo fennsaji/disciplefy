@@ -9,6 +9,7 @@ import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { validateGooglePlayReceipt, acknowledgeGooglePlayPurchase, GooglePlayReceipt } from './google-play-validator.ts'
 import { validateAppleReceipt, AppleReceiptData } from './apple-appstore-validator.ts'
 import { IAPProvider, IAPEnvironment } from './iap-config-service.ts'
+import { AppError } from '../utils/error-handler.ts'
 
 export interface ReceiptValidationRequest {
   provider: IAPProvider
@@ -60,7 +61,11 @@ export async function validateAndProcessReceipt(
     .maybeSingle()
   if (existingReceipt && existingReceipt.user_id !== request.userId) {
     console.error('[RECEIPT_VALIDATION] transaction_id already claimed by another user:', existingReceipt.user_id)
-    throw new Error('RECEIPT_ALREADY_CLAIMED: This purchase is already associated with a different account')
+    throw new AppError(
+      'RECEIPT_ALREADY_CLAIMED',
+      'This purchase is already associated with a different account',
+      400
+    )
   }
 
   // Step 2: Store receipt in database (upsert by transaction_id to handle retries)
@@ -134,7 +139,11 @@ export async function validateAndProcessReceipt(
     const storeProductId = validationResult.validatedProductId
     if (expectedProductId && storeProductId && storeProductId !== expectedProductId) {
       console.error('[RECEIPT_VALIDATION] Product mismatch — store returned:', storeProductId, 'expected for plan', request.planCode, ':', expectedProductId)
-      throw new Error(`PRODUCT_MISMATCH: Receipt is for product '${storeProductId}', not '${expectedProductId}' — cannot grant '${request.planCode}'`)
+      throw new AppError(
+        'PRODUCT_MISMATCH',
+        `Receipt is for product '${storeProductId}', not '${expectedProductId}' — cannot grant '${request.planCode}'`,
+        400
+      )
     }
 
     const insertResult = await supabase
@@ -177,11 +186,36 @@ export async function validateAndProcessReceipt(
         // H1: reject if the existing subscription belongs to a different user
         if (existing && existing.user_id !== request.userId) {
           console.error('[RECEIPT_VALIDATION] Receipt already claimed by another user:', existing.user_id)
-          throw new Error('RECEIPT_ALREADY_CLAIMED: This purchase receipt is already associated with a different account')
+          throw new AppError(
+            'RECEIPT_ALREADY_CLAIMED',
+            'This purchase receipt is already associated with a different account',
+            400
+          )
         }
         subscriptionRow = existing
         if (subscriptionRow) {
-          console.log('[RECEIPT_VALIDATION] Duplicate purchase callback — returning existing subscription')
+          const { data: updatedExisting, error: updateExistingError } = await supabase
+            .from('subscriptions')
+            .update({
+              status: 'active',
+              current_period_start: validationResult.purchaseDate.toISOString(),
+              current_period_end: validationResult.expiryDate?.toISOString(),
+              cancel_at_cycle_end: !validationResult.autoRenewing,
+              iap_receipt_id: receiptRecord.id,
+              iap_product_id: request.productId,
+              iap_original_transaction_id: originalTransactionId,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', subscriptionRow.id)
+            .select()
+            .single()
+
+          if (updateExistingError) {
+            throw new Error(`[RECEIPT_VALIDATION] Failed to update duplicate subscription record: ${updateExistingError.message}`)
+          }
+
+          subscriptionRow = updatedExisting
+          console.log('[RECEIPT_VALIDATION] Duplicate purchase callback — updated existing subscription')
         }
       }
 

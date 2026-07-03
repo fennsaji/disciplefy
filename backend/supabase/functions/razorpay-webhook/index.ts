@@ -542,8 +542,9 @@ async function handleSubscriptionActivated(
   console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}, plan: ${planCode}`)
 
   // M3: Update only when the subscription is in an expected prior state.
-  // activated should come after created/in_progress — not resurrect a cancelled/expired row.
-  const { error } = await supabaseServiceClient
+  // Allow paused/expired recovery for the same Razorpay subscription: payment
+  // failure recovery can arrive after reconciliation has expired the paused row.
+  const { data: activatedRows, error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
@@ -576,10 +577,16 @@ async function handleSubscriptionActivated(
       updated_at: new Date().toISOString()
     })
     .eq('provider_subscription_id', razorpaySubId)
-    .in('status', ['created', 'in_progress', 'pending_cancellation'])  // M3: state precondition
+    .in('status', ['created', 'in_progress', 'pending_cancellation', 'paused', 'expired'])  // M3: state precondition
+    .select('id')
 
   if (error) {
     console.error('[Webhook] Failed to activate subscription:', error)
+    return
+  }
+
+  if (!activatedRows?.length) {
+    console.warn('[Webhook] Activation ignored because subscription is not recoverable:', razorpaySubId)
     return
   }
 
@@ -734,8 +741,9 @@ async function handleSubscriptionCharged(
 
   // Update subscription billing info, reset status to active, and update provider metadata.
   // Resetting status handles the case where the subscription was in pending_cancellation
-  // but the user re-enabled auto-renew and was successfully charged again.
-  await supabaseServiceClient
+  // but the user re-enabled auto-renew and was successfully charged again. Include expired
+  // so successful payment recovery after reconciliation restores access.
+  const { data: chargedRows, error: chargedUpdateError } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
@@ -766,7 +774,18 @@ async function handleSubscriptionCharged(
       updated_at: new Date().toISOString()
     })
     .eq('id', subscription.id)
-    .in('status', ['active', 'pending_cancellation', 'paused'])  // M3: charged can only happen on these statuses
+    .in('status', ['active', 'pending_cancellation', 'paused', 'expired'])  // M3: charged can only happen on these statuses
+    .select('id')
+
+  if (chargedUpdateError) {
+    console.error('[Webhook] Failed to update subscription after charge:', chargedUpdateError)
+    return
+  }
+
+  if (!chargedRows?.length) {
+    console.warn('[Webhook] Charge ignored because subscription is not recoverable:', razorpaySubId)
+    return
+  }
 
   // Check for existing invoice before inserting (idempotency)
   const { data: existingInvoice } = await supabaseServiceClient

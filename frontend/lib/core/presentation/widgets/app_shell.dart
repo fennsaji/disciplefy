@@ -267,6 +267,7 @@ class _AppShellState extends State<AppShell>
     // Note: Achievement unlock dialog is handled globally in main.dart
     // to ensure it works for ALL routes including Memory Verses outside AppShell
     return BlocListener<SubscriptionBloc, SubscriptionState>(
+      bloc: sl<SubscriptionBloc>(),
       listenWhen: (_, current) =>
           (current is SubscriptionCreated && current.isBackgroundDelivery) ||
           (current is SubscriptionError && current.isBackgroundDelivery),
