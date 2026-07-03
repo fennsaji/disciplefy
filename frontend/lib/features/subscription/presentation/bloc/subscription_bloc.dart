@@ -837,6 +837,25 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         (failure) {
           Logger.debug('❌ [BLOC] Receipt validation failed: $failure');
           _processingPurchaseTokens.remove(purchaseKey);
+
+          // Permanent (non-retryable) failures: the receipt/request will never
+          // validate, so finish the transaction to clear it from the StoreKit /
+          // Play Billing queue. Otherwise the store re-delivers it as `restored`
+          // on every launch/purchase, trapping the user in an endless failure
+          // loop. Transient failures (SERVER_ERROR / network / auth) are left
+          // queued on purpose so they auto-retry on the next launch.
+          const permanentFailureCodes = {
+            'INVALID_RECEIPT',
+            'ALREADY_SUBSCRIBED',
+            'PLAN_NOT_FOUND',
+            'INVALID_REQUEST',
+          };
+          if (permanentFailureCodes.contains(failure.code)) {
+            Logger.debug(
+                '🧹 [BLOC] Permanent failure (${failure.code}) — clearing transaction from the queue');
+            _iapService.acknowledgePurchase(purchase);
+          }
+
           if (isClosed) return;
           emit(SubscriptionError(
             failure: failure,
