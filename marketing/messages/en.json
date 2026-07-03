@@ -181,11 +181,25 @@
     "title": "About Disciplefy",
     "mission": {
       "title": "Our Mission",
-      "content": "We believe every believer deserves to understand God's Word in their heart language. Disciplefy exists to make deep, meaningful Bible study accessible to every Indian Christian — in English, Hindi, and Malayalam."
+      "content": "Helping believers become true disciples of Jesus through God's Word."
     },
     "vision": {
       "title": "Our Vision",
-      "content": "To enable every Indian Christian to study Scripture deeply, daily, in the language they think and pray in. We envision a generation of believers who are rooted in God's Word and equipped to live it out in their communities."
+      "content": "To see believers across the world grow into mature disciples who know God deeply and follow Jesus faithfully."
+    },
+    "coreMessage": {
+      "title": "Our Core Message",
+      "content": "Knowing Jesus is the beginning. Becoming like Him is the journey. Disciplefy exists to help believers grow into true disciples."
+    },
+    "values": {
+      "title": "Our Values",
+      "biblical": "Biblical — We stay true to God's Word.",
+      "practical": "Practical — We help you live what you learn.",
+      "growth": "Growth — We help you become more like Jesus."
+    },
+    "audience": {
+      "title": "Who It's For",
+      "content": "Believers who want to grow — young professionals, students, and anyone taking the next step in following Jesus — along with church leaders and small groups who disciple others."
     },
     "theology": {
       "title": "Theological Stance",
@@ -195,6 +209,10 @@
     "technology": {
       "title": "The Technology",
       "content": "Disciplefy uses technology to generate Bible study content — summaries, context, interpretation, prayer points, and discussion questions. All content follows strict theological guidelines and is constrained to align with orthodox Christian teaching. The technology assists study; it does not interpret Scripture with authority. That authority belongs to Scripture alone."
+    },
+    "promise": {
+      "title": "Our Promise",
+      "content": "Disciplefy helps believers understand God's Word, grow spiritually, and follow Jesus every day."
     },
     "contact": {
       "title": "Contact Us",
