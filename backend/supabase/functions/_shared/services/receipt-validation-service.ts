@@ -52,6 +52,17 @@ export async function validateAndProcessReceipt(
     validationResult = await validateAppleReceipt(supabase, appleReceipt, environment)
   }
 
+  // H1: Before upserting, check that no other user already owns this transaction.
+  const { data: existingReceipt } = await supabase
+    .from('iap_receipts')
+    .select('user_id')
+    .eq('transaction_id', validationResult.transactionId)
+    .maybeSingle()
+  if (existingReceipt && existingReceipt.user_id !== request.userId) {
+    console.error('[RECEIPT_VALIDATION] transaction_id already claimed by another user:', existingReceipt.user_id)
+    throw new Error('RECEIPT_ALREADY_CLAIMED: This purchase is already associated with a different account')
+  }
+
   // Step 2: Store receipt in database (upsert by transaction_id to handle retries)
   const { data: receiptRecord, error: receiptError } = await supabase
     .from('iap_receipts')
@@ -104,16 +115,26 @@ export async function validateAndProcessReceipt(
       ? validationResult.originalTransactionId
       : validationResult.transactionId
 
-    // Lookup plan_id for FK linkage to subscription_plans
+    // Lookup plan_id and expected provider_plan_id for FK linkage and product verification (C4)
     const { data: planRow, error: planLookupError } = await supabase
       .from('subscription_plans')
-      .select('id')
+      .select('id, subscription_plan_providers!inner(provider_plan_id)')
       .eq('plan_code', request.planCode)
+      .eq('subscription_plan_providers.provider', request.provider)
       .maybeSingle()
 
     if (planLookupError || !planRow) {
       console.error('[RECEIPT_VALIDATION] Plan not found for planCode:', request.planCode, planLookupError)
       throw new Error(`Subscription plan '${request.planCode}' not found — cannot create subscription without valid plan`)
+    }
+
+    // C4: Assert the store-confirmed product matches the requested plan's product.
+    // Without this check a buyer can purchase the cheapest tier and claim premium.
+    const expectedProductId = (planRow as any).subscription_plan_providers?.[0]?.provider_plan_id
+    const storeProductId = validationResult.validatedProductId
+    if (expectedProductId && storeProductId && storeProductId !== expectedProductId) {
+      console.error('[RECEIPT_VALIDATION] Product mismatch — store returned:', storeProductId, 'expected for plan', request.planCode, ':', expectedProductId)
+      throw new Error(`PRODUCT_MISMATCH: Receipt is for product '${storeProductId}', not '${expectedProductId}' — cannot grant '${request.planCode}'`)
     }
 
     const insertResult = await supabase
@@ -153,6 +174,11 @@ export async function validateAndProcessReceipt(
           .select()
           .eq('provider_subscription_id', validationResult.transactionId)
           .maybeSingle()
+        // H1: reject if the existing subscription belongs to a different user
+        if (existing && existing.user_id !== request.userId) {
+          console.error('[RECEIPT_VALIDATION] Receipt already claimed by another user:', existing.user_id)
+          throw new Error('RECEIPT_ALREADY_CLAIMED: This purchase receipt is already associated with a different account')
+        }
         subscriptionRow = existing
         if (subscriptionRow) {
           console.log('[RECEIPT_VALIDATION] Duplicate purchase callback — returning existing subscription')

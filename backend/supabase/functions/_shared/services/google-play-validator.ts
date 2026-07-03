@@ -24,6 +24,7 @@ export interface GooglePlayValidationResult {
   isIntroOffer: boolean
   autoRenewing: boolean
   validationResponse: any
+  validatedProductId?: string  // store-confirmed product ID from lineItems[0]
   error?: string
 }
 
@@ -37,8 +38,11 @@ export async function validateGooglePlayReceipt(
 ): Promise<GooglePlayValidationResult> {
   console.log('[GOOGLE_PLAY] Validating receipt for product:', receipt.productId)
 
-  // USE_MOCK bypass for local/testing environments without service account credentials
+  // USE_MOCK bypass — only allowed in sandbox/local; reject in production.
   if (Deno.env.get('USE_MOCK') === 'true') {
+    if (Deno.env.get('APP_ENVIRONMENT') !== 'sandbox') {
+      throw new Error('[GOOGLE_PLAY] USE_MOCK=true is not allowed in production (APP_ENVIRONMENT must be "sandbox")')
+    }
     console.log('[GOOGLE_PLAY] USE_MOCK=true — skipping real API call, returning mock valid result')
     return {
       isValid: true,
@@ -48,7 +52,8 @@ export async function validateGooglePlayReceipt(
       isTrial: false,
       isIntroOffer: false,
       autoRenewing: true,
-      validationResponse: { mock: true, productId: receipt.productId }
+      validationResponse: { mock: true, productId: receipt.productId },
+      validatedProductId: receipt.productId
     }
   }
 
@@ -91,16 +96,25 @@ export async function validateGooglePlayReceipt(
       const errorText = await response.text()
       console.error('[GOOGLE_PLAY] API Error:', response.status, errorText)
 
-      return {
-        isValid: false,
-        transactionId: receipt.purchaseToken, // fallback — avoids empty unique constraint
-        purchaseDate: new Date(),
-        isTrial: false,
-        isIntroOffer: false,
-        autoRenewing: false,
-        validationResponse: null,
-        error: `Google Play API error: ${response.status}`
+      // H2: Distinguish transient (5xx / network) from terminal (404 = invalid token).
+      // Transient errors must not return isValid:false — the frontend treats that as
+      // INVALID_RECEIPT and permanently clears the transaction from the store queue.
+      // Throw instead so the caller returns HTTP 503 and the client can retry.
+      if (response.status === 404) {
+        // 404 = purchase token not found = genuinely invalid receipt
+        return {
+          isValid: false,
+          transactionId: receipt.purchaseToken,
+          purchaseDate: new Date(),
+          isTrial: false,
+          isIntroOffer: false,
+          autoRenewing: false,
+          validationResponse: null,
+          error: `Google Play API error: ${response.status}`
+        }
       }
+      // 5xx or other unexpected status = transient error
+      throw new Error(`VALIDATION_UNAVAILABLE: Google Play API returned ${response.status} — retry later`)
     }
 
     const validationData = await response.json()
@@ -110,18 +124,25 @@ export async function validateGooglePlayReceipt(
     const lineItems = validationData.lineItems || []
     const latestOrderId = validationData.latestOrderId
 
-    // Check if subscription is active
-    const isActive = subscriptionState === 'SUBSCRIPTION_STATE_ACTIVE' ||
-                     subscriptionState === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD'
-
-    // Extract dates
-    const startTime = validationData.startTime?.seconds
-      ? new Date(parseInt(validationData.startTime.seconds) * 1000)
+    // Extract dates first — needed for the canceled-but-unexpired check below.
+    // Android Publisher v3 returns RFC3339 strings, not protobuf {seconds} objects.
+    const startTime = validationData.startTime
+      ? new Date(validationData.startTime)
       : new Date()
 
-    const expiryTime = lineItems[0]?.expiryTime?.seconds
-      ? new Date(parseInt(lineItems[0].expiryTime.seconds) * 1000)
+    const expiryTime = lineItems[0]?.expiryTime
+      ? new Date(lineItems[0].expiryTime)
       : undefined
+
+    // Check if subscription is active.
+    // SUBSCRIPTION_STATE_CANCELED means the user canceled but access persists until
+    // expiryTime — entitlement must be granted until then. Without this check,
+    // canceled-but-paid subs return isValid:false, which causes INVALID_RECEIPT and
+    // the purchase is permanently cleared from the queue on the client, losing access.
+    const isActive = subscriptionState === 'SUBSCRIPTION_STATE_ACTIVE' ||
+                     subscriptionState === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD' ||
+                     (subscriptionState === 'SUBSCRIPTION_STATE_CANCELED' &&
+                      expiryTime != null && expiryTime > new Date())
 
     // Check for trial or intro offer
     const offerDetails = lineItems[0]?.offerDetails
@@ -146,21 +167,15 @@ export async function validateGooglePlayReceipt(
       isTrial,
       isIntroOffer,
       autoRenewing,
-      validationResponse: validationData
+      validationResponse: validationData,
+      validatedProductId: lineItems[0]?.productId
     }
   } catch (error) {
+    // H2: Re-throw VALIDATION_UNAVAILABLE (transient) so callers return 503 instead
+    // of treating the error as INVALID_RECEIPT.  All other errors are also re-thrown
+    // because a network failure is not evidence the receipt is invalid.
     console.error('[GOOGLE_PLAY] Validation error:', error)
-
-    return {
-      isValid: false,
-      transactionId: receipt.purchaseToken, // fallback — avoids empty unique constraint
-      purchaseDate: new Date(),
-      isTrial: false,
-      isIntroOffer: false,
-      autoRenewing: false,
-      validationResponse: null,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
+    throw error
   }
 }
 
