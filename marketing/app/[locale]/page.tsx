@@ -8,8 +8,8 @@ import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   return {
-    title: "Disciplefy — Bible Study in English, Hindi & Malayalam",
-    description: "Study the Bible deeper with study guides in your language. Free to download.",
+    title: "Disciplefy — From Believer to Disciple",
+    description: "Understand God's Word, grow spiritually, and follow Jesus every day. Free Bible study guides in English, Hindi & Malayalam.",
     alternates: getAlternates("/", params.locale),
   };
 }
