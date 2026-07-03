@@ -60,7 +60,8 @@ Deno.test('TokenService: calculateTokenCost - returns correct costs for supporte
   const tokenService = createTokenService()
 
   // Test supported languages
-  assertEquals(tokenService.calculateTokenCost('en'), 10, 'English should cost 10 tokens')
+  assertEquals(tokenService.calculateTokenCost('en'), 20, 'English standard should cost 20 tokens')
+  assertEquals(tokenService.calculateTokenCost('en', 'quick'), 10, 'English quick should cost 10 tokens')
   assertEquals(tokenService.calculateTokenCost('hi'), 20, 'Hindi should cost 20 tokens')
   assertEquals(tokenService.calculateTokenCost('ml'), 20, 'Malayalam should cost 20 tokens')
 })

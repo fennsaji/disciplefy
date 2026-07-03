@@ -974,6 +974,37 @@ async function handleStudyGenerateV2(
               note: 'Background generation may still be in progress'
             })
 
+            // Joining user must pay the same token cost as if they had generated it
+            // themselves — otherwise they get the result for free by racing a peer's request.
+            if (!isFreeGeneration && !tokenService.isUnlimitedPlan(userPlan)) {
+              const joinConsumeResult = await tokenService.consumeTokens(
+                identifier,
+                userPlan,
+                tokenCost,
+                {
+                  userId: userContext.userId,
+                  sessionId: userContext.sessionId,
+                  userPlan: userPlan,
+                  operation: 'consume',
+                  language: targetLanguage,
+                  ipAddress: req.headers.get('x-forwarded-for') || undefined,
+                  timestamp: new Date(),
+                  featureName: 'study_generate',
+                  operationType: 'study_generation_poll',
+                  studyMode: study_mode,
+                  inputType: input_type,
+                  contentReference: input_value
+                }
+              )
+              if (!joinConsumeResult.success) {
+                emitError('TOKEN_LIMIT_EXCEEDED', joinConsumeResult.errorMessage || 'Insufficient tokens', false)
+                return
+              }
+              tokensWereConsumed = true
+              dailyTokensUsed = joinConsumeResult.dailyTokensUsed ?? tokenCost
+              purchasedTokensUsed = joinConsumeResult.purchasedTokensUsed ?? 0
+            }
+
             // Another client is already generating this study - poll for completion
             // The generation continues in background even if original client disconnected
             inProgressId = inProgressStudy.id // Set for disconnect handler logging
@@ -1012,7 +1043,12 @@ async function handleStudyGenerateV2(
               operation: 'consume',
               language: targetLanguage,
               ipAddress: req.headers.get('x-forwarded-for') || undefined,
-              timestamp: new Date()
+              timestamp: new Date(),
+              featureName: 'study_generate',
+              operationType: 'study_generation',
+              studyMode: study_mode,
+              inputType: input_type,
+              contentReference: input_value
             }
           )
 
@@ -1565,6 +1601,12 @@ async function handleStudyGenerateV2(
 
           } catch (multiPassError) {
             console.error('[STUDY-V2] ❌ Multi-pass generation failed:', multiPassError)
+            if (tokensWereConsumed) {
+              await tokenService.refundTokens(identifier, dailyTokensUsed, purchasedTokensUsed)
+            }
+            if (inProgressId) {
+              await studyGuideRepository.markInProgressFailed(inProgressId, 'GENERATION_FAILED', 'Multi-pass generation failed')
+            }
             emit(createErrorEvent('LM-E-003', `Multi-pass ${study_mode} generation failed`, true))
             return
           }
@@ -1720,6 +1762,12 @@ async function handleStudyGenerateV2(
             }
             } else {
               console.error('❌ [STUDY-V2] Failed to parse complete study guide')
+              if (tokensWereConsumed) {
+                await tokenService.refundTokens(identifier, dailyTokensUsed, purchasedTokensUsed)
+              }
+              if (inProgressId) {
+                await studyGuideRepository.markInProgressFailed(inProgressId, 'PARSE_FAILED', 'Failed to parse study guide response')
+              }
               emitError('LM-E-002', 'Failed to parse study guide response', true)
               return
             }
@@ -1797,7 +1845,7 @@ async function handleStudyGenerateV2(
               tier: userPlan,
               featureName: 'study_generate',
               operationType: 'create',
-              tokensConsumed: 10, // App tokens
+              tokensConsumed: isFreeGeneration || tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
               llmProvider: streamingUsage.provider,
               llmModel: streamingUsage.model,
               llmInputTokens: streamingUsage.inputTokens,
