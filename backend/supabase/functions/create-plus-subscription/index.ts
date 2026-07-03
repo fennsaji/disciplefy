@@ -81,6 +81,7 @@ async function handleCreatePlusSubscription(
     const { subscription, shortUrl } = await subscriptionService.createSubscription({
       userId,
       planType: 'plus',  // Plus subscription (₹149/month)
+      basePriceMinor: planConfig.pricePaise,
       notes: {
         source: 'mobile_app',
         plan_name: planConfig.name,

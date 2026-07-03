@@ -28,12 +28,14 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
 import { validateGooglePlayReceipt } from '../_shared/services/google-play-validator.ts'
+import { validateAppleReceipt } from '../_shared/services/apple-appstore-validator.ts'
 import { validateAndProcessReceipt } from '../_shared/services/receipt-validation-service.ts'
 
 interface SyncPurchase {
   product_id: string
-  purchase_token: string
-  package_name: string
+  // Android only
+  purchase_token?: string
+  package_name?: string
   receipt_data: string
 }
 
@@ -79,14 +81,16 @@ serve(async (req) => {
     const body: SyncRequest = await req.json()
     const { provider, purchases = [], device_has_no_purchases } = body
 
-    if (provider !== 'google_play') {
+    if (provider !== 'google_play' && provider !== 'apple_appstore') {
       return new Response(
-        JSON.stringify({ success: false, error: 'Only google_play provider is supported' }),
+        JSON.stringify({ success: false, error: 'Only google_play and apple_appstore providers are supported' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`[sync-subscription-status] User ${user.id}, purchases: ${purchases.length}, device_has_no_purchases: ${device_has_no_purchases}`)
+    const isApple = provider === 'apple_appstore'
+
+    console.log(`[sync-subscription-status] User ${user.id}, provider: ${provider}, purchases: ${purchases.length}, device_has_no_purchases: ${device_has_no_purchases}`)
 
     const environment: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
 
@@ -95,7 +99,7 @@ serve(async (req) => {
       .from('subscriptions')
       .select('id, status, provider_subscription_id, current_period_end, iap_receipt_id, plan_type, plan_id')
       .eq('user_id', user.id)
-      .in('provider', ['google_play'])
+      .in('provider', isApple ? ['apple_appstore'] : ['google_play'])
       .in('status', ['active', 'pending_cancellation'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -122,8 +126,12 @@ serve(async (req) => {
 
         if (storedReceipt) {
           try {
-            const receiptData = JSON.parse(storedReceipt.receipt_data)
-            revalidationResult = await validateGooglePlayReceipt(supabase, receiptData, environment)
+            if (isApple) {
+              revalidationResult = await validateAppleReceipt(supabase, { receiptData: storedReceipt.receipt_data }, environment)
+            } else {
+              const receiptData = JSON.parse(storedReceipt.receipt_data)
+              revalidationResult = await validateGooglePlayReceipt(supabase, receiptData, environment)
+            }
           } catch (e) {
             console.error('[sync-subscription-status] Re-validation error:', e)
           }
@@ -131,10 +139,21 @@ serve(async (req) => {
       }
 
       // Also check if purchase token was provided even with device_has_no_purchases
-      // (edge case: device signals no purchases but still sends token for safety)
-      const tokenFromDevicePurchases = purchases[0]?.purchase_token
+      // (edge case: device signals no purchases but still sends token for safety; Android only)
+      const tokenFromDevicePurchases = isApple ? undefined : purchases[0]?.purchase_token
 
-      const isStillActive = revalidationResult?.isValid ?? false
+      // Only act if we received a definitive response from the store.
+      // A null result means the validation call itself failed (API error, network, config) —
+      // expiring the row on a transient error would revoke paid access incorrectly.
+      if (revalidationResult === null) {
+        console.warn('[sync-subscription-status] Scenario 1: Re-validation returned no result (possible transient error) — taking no action')
+        return new Response(
+          JSON.stringify({ success: true, action_taken: 'none', new_status: dbSub.status, subscription_id: dbSub.id, reason: 'validation_unavailable' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const isStillActive = revalidationResult.isValid
 
       if (!isStillActive) {
         console.log('[sync-subscription-status] Scenario 1: Subscription expired/cancelled on Play Store — expiring in DB')
@@ -175,20 +194,22 @@ serve(async (req) => {
 
       const devicePurchase = purchases[0]
 
-      // Check if this purchase token is already in iap_receipts
+      // For Android: look up by purchase_token. For iOS: look up by transaction_id field.
+      const lookupId = isApple ? devicePurchase.receipt_data : devicePurchase.purchase_token
       const { data: existingReceipt } = await supabase
         .from('iap_receipts')
         .select('id, subscription_id')
-        .eq('transaction_id', devicePurchase.purchase_token)
+        .eq('transaction_id', lookupId ?? '')
         .maybeSingle()
 
       if (existingReceipt?.subscription_id) {
         // Receipt exists — just reactivate the linked subscription
         console.log('[sync-subscription-status] Scenario 2: Reactivating existing subscription')
 
-        // Re-validate with Google Play to get current expiry
-        const receiptData = JSON.parse(devicePurchase.receipt_data)
-        const validation = await validateGooglePlayReceipt(supabase, receiptData, environment)
+        // Re-validate to get current expiry
+        const validation = isApple
+          ? await validateAppleReceipt(supabase, { receiptData: devicePurchase.receipt_data }, environment)
+          : await validateGooglePlayReceipt(supabase, JSON.parse(devicePurchase.receipt_data), environment)
 
         if (validation.isValid) {
           await supabase
@@ -217,9 +238,17 @@ serve(async (req) => {
         // Determine plan code from product_id
         const planCode = _inferPlanCode(devicePurchase.product_id)
 
+        if (!planCode) {
+          console.error('[sync-subscription-status] Unknown product_id, cannot infer plan:', devicePurchase.product_id)
+          return new Response(
+            JSON.stringify({ success: false, error: 'UNKNOWN_PRODUCT', message: 'Unknown product ID — cannot create subscription' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+
         try {
           const result = await validateAndProcessReceipt(supabase, {
-            provider: 'google_play',
+            provider: isApple ? 'apple_appstore' : 'google_play',
             receiptData: devicePurchase.receipt_data,
             productId: devicePurchase.product_id,
             userId: user.id,
@@ -254,64 +283,71 @@ serve(async (req) => {
     // =========================================================================
     if (dbSub && purchases.length > 0) {
       const devicePurchase = purchases[0]
-      const dbToken = dbSub.provider_subscription_id
-      const deviceToken = devicePurchase.purchase_token
 
-      // Scenario 3: Different token = renewal — update token and expiry
-      if (dbToken !== deviceToken) {
-        console.log('[sync-subscription-status] Scenario 3: Token mismatch — renewal detected')
+      // For Apple: no purchase_token concept — skip token-mismatch (Scenario 3) and
+      // go straight to receipt re-validation (Scenario 4 equivalent).
+      if (!isApple) {
+        const dbToken = dbSub.provider_subscription_id
+        const deviceToken = devicePurchase.purchase_token
 
-        const receiptData = JSON.parse(devicePurchase.receipt_data)
-        const validation = await validateGooglePlayReceipt(supabase, receiptData, environment)
+        // Scenario 3: Different token = renewal — update token and expiry
+        if (dbToken !== deviceToken) {
+          console.log('[sync-subscription-status] Scenario 3: Token mismatch — renewal detected')
 
-        if (validation.isValid) {
-          // Update subscription with new token + expiry
-          await supabase
-            .from('subscriptions')
-            .update({
-              provider_subscription_id: deviceToken,
-              current_period_end: validation.expiryDate?.toISOString(),
-              status: 'active',
-              updated_at: now.toISOString()
-            })
-            .eq('id', dbSub.id)
+          const receiptData = JSON.parse(devicePurchase.receipt_data)
+          const validation = await validateGooglePlayReceipt(supabase, receiptData, environment)
 
-          // Upsert iap_receipts with new token
-          if (dbSub.iap_receipt_id) {
+          if (validation.isValid) {
+            // Update subscription with new token + expiry
             await supabase
-              .from('iap_receipts')
+              .from('subscriptions')
               .update({
-                transaction_id: deviceToken,
-                receipt_data: devicePurchase.receipt_data,
-                expiry_date: validation.expiryDate?.toISOString(),
-                validated_at: now.toISOString(),
+                provider_subscription_id: deviceToken,
+                current_period_end: validation.expiryDate?.toISOString(),
+                status: 'active',
                 updated_at: now.toISOString()
               })
-              .eq('id', dbSub.iap_receipt_id)
+              .eq('id', dbSub.id)
+
+            // Upsert iap_receipts with new token
+            if (dbSub.iap_receipt_id) {
+              await supabase
+                .from('iap_receipts')
+                .update({
+                  transaction_id: deviceToken,
+                  receipt_data: devicePurchase.receipt_data,
+                  expiry_date: validation.expiryDate?.toISOString(),
+                  validated_at: now.toISOString(),
+                  updated_at: now.toISOString()
+                })
+                .eq('id', dbSub.iap_receipt_id)
+            }
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                action_taken: 'token_updated',
+                new_status: 'active',
+                subscription_id: dbSub.id
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
           }
 
           return new Response(
-            JSON.stringify({
-              success: true,
-              action_taken: 'token_updated',
-              new_status: 'active',
-              subscription_id: dbSub.id
-            }),
+            JSON.stringify({ success: true, action_taken: 'none', subscription_id: dbSub.id }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
-
-        return new Response(
-          JSON.stringify({ success: true, action_taken: 'none', subscription_id: dbSub.id }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
       }
 
-      // Scenario 4: Same token — re-validate and update expiry if stale
-      console.log('[sync-subscription-status] Scenario 4: Same token — checking expiry staleness')
+      // Scenario 4: Re-validate receipt and update expiry if stale (both platforms)
+      // For Apple: receipt_data is the base64 App Store receipt. For Android: JSON string.
+      console.log(`[sync-subscription-status] Scenario 4: Checking expiry staleness (${provider})`)
 
-      const receiptData = JSON.parse(devicePurchase.receipt_data)
-      const validation = await validateGooglePlayReceipt(supabase, receiptData, environment)
+      const validation = isApple
+        ? await validateAppleReceipt(supabase, { receiptData: devicePurchase.receipt_data }, environment)
+        : await validateGooglePlayReceipt(supabase, JSON.parse(devicePurchase.receipt_data), environment)
 
       if (validation.isValid && validation.expiryDate) {
         const dbExpiry = dbSub.current_period_end ? new Date(dbSub.current_period_end) : null
@@ -373,9 +409,9 @@ serve(async (req) => {
  * Infer plan code from Google Play product ID.
  * e.g. "com.disciplefy.premium_monthly" → "premium"
  */
-function _inferPlanCode(productId: string): string {
+function _inferPlanCode(productId: string): string | null {
   if (productId.includes('premium')) return 'premium'
   if (productId.includes('plus')) return 'plus'
   if (productId.includes('standard')) return 'standard'
-  return 'premium' // safe fallback
+  return null // unknown product — fail closed
 }

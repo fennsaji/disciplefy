@@ -90,6 +90,7 @@ async function handleCreateStandardSubscription(
     const { subscription, shortUrl } = await subscriptionService.createSubscription({
       userId,
       planType: 'standard',  // Standard subscription (Rs.50/month)
+      basePriceMinor: planConfig.pricePaise,
       notes: {
         source: 'mobile_app',
         plan_name: planConfig.name,
