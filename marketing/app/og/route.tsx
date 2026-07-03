@@ -17,7 +17,7 @@ function isIndicScript(text: string): boolean {
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const title = searchParams.get("title") ?? "Disciplefy";
-  const subtitle = searchParams.get("subtitle") ?? "Bible Study in Your Language";
+  const subtitle = searchParams.get("subtitle") ?? "From Believer to Disciple";
 
   const indic = isIndicScript(title);
 
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
                   marginBottom: 16,
                 }}
               >
-                Bible Study
+                From Believer
               </div>
               <div
                 style={{
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
                   marginBottom: 24,
                 }}
               >
-                in Your Language
+                to Disciple.
               </div>
               <div
                 style={{

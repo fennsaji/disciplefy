@@ -9,22 +9,14 @@ export function AboutPageContent() {
   const t = useTranslations("about");
 
   const sections = [
-    {
-      title: t("mission.title"),
-      content: [t("mission.content")],
-    },
-    {
-      title: t("vision.title"),
-      content: [t("vision.content")],
-    },
-    {
-      title: t("theology.title"),
-      content: [t("theology.p1"), t("theology.p2")],
-    },
-    {
-      title: t("technology.title"),
-      content: [t("technology.content")],
-    },
+    { title: t("mission.title"), content: [t("mission.content")] },
+    { title: t("vision.title"), content: [t("vision.content")] },
+    { title: t("coreMessage.title"), content: [t("coreMessage.content")] },
+    { title: t("values.title"), content: [t("values.biblical"), t("values.practical"), t("values.growth")] },
+    { title: t("audience.title"), content: [t("audience.content")] },
+    { title: t("theology.title"), content: [t("theology.p1"), t("theology.p2")] },
+    { title: t("technology.title"), content: [t("technology.content")] },
+    { title: t("promise.title"), content: [t("promise.content")] },
   ];
 
   return (

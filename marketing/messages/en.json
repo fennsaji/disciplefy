@@ -8,13 +8,21 @@
     "openApp": "Open App"
   },
   "hero": {
-    "headline": "The Bible. Understood.",
-    "headlineAccent": "In Your Language.",
-    "subheadline": "Bible study guides in English, हिन्दी & മലയാളം",
+    "headline": "From Believer to Disciple.",
+    "headlineAccent": "Grow closer to Jesus, every day.",
+    "subheadline": "Understand God's Word, apply it to everyday life, and follow Jesus — with Bible study guides in English, हिन्दी & മലയാളം.",
     "webApp": "Open Web App →"
   },
+  "journey": {
+    "eyebrow": "The Journey",
+    "heading": "Knowing Jesus is the beginning. Becoming like Him is the journey.",
+    "body": "Disciplefy exists to help believers grow into true disciples — understanding God's Word, living it out, and following Jesus every day.",
+    "know": { "title": "Know", "desc": "Understand God's Word clearly." },
+    "grow": { "title": "Grow", "desc": "Apply it to everyday life." },
+    "follow": { "title": "Follow", "desc": "Walk with Jesus daily." }
+  },
   "features": {
-    "title": "Everything You Need to Study Deeper",
+    "title": "Everything You Need to Grow",
     "aiGuides": { "title": "Study Guides", "desc": "Type any verse or topic — get instant guides with context, interpretation, and prayer points" },
     "dailyVerse": { "title": "Daily Verse", "desc": "Fresh verse every day with devotional content in your language" },
     "voiceBuddy": { "title": "Voice Buddy", "desc": "Speak and listen — have conversations about Scripture" },
@@ -76,7 +84,7 @@
     "webApp": "Or open the web app →"
   },
   "footer": {
-    "tagline": "Your Bible Study Companion",
+    "tagline": "From Believer to Disciple.",
     "product": "Product",
     "company": "Company",
     "legal": "Legal",
@@ -161,15 +169,37 @@
       }
     ]
   },
+  "values": {
+    "heading": "Rooted in the Word",
+    "mission": "Helping believers become true disciples of Jesus through God's Word.",
+    "biblical": { "title": "Biblical", "desc": "We stay true to God's Word." },
+    "practical": { "title": "Practical", "desc": "We help you live what you learn." },
+    "growth": { "title": "Growth", "desc": "We help you become more like Jesus." },
+    "promise": "Disciplefy helps believers understand God's Word, grow spiritually, and follow Jesus every day."
+  },
   "about": {
     "title": "About Disciplefy",
     "mission": {
       "title": "Our Mission",
-      "content": "We believe every believer deserves to understand God's Word in their heart language. Disciplefy exists to make deep, meaningful Bible study accessible to every Indian Christian — in English, Hindi, and Malayalam."
+      "content": "Helping believers become true disciples of Jesus through God's Word."
     },
     "vision": {
       "title": "Our Vision",
-      "content": "To enable every Indian Christian to study Scripture deeply, daily, in the language they think and pray in. We envision a generation of believers who are rooted in God's Word and equipped to live it out in their communities."
+      "content": "To see believers across the world grow into mature disciples who know God deeply and follow Jesus faithfully."
+    },
+    "coreMessage": {
+      "title": "Our Core Message",
+      "content": "Knowing Jesus is the beginning. Becoming like Him is the journey. Disciplefy exists to help believers grow into true disciples."
+    },
+    "values": {
+      "title": "Our Values",
+      "biblical": "Biblical — We stay true to God's Word.",
+      "practical": "Practical — We help you live what you learn.",
+      "growth": "Growth — We help you become more like Jesus."
+    },
+    "audience": {
+      "title": "Who It's For",
+      "content": "Believers who want to grow — young professionals, students, and anyone taking the next step in following Jesus — along with church leaders and small groups who disciple others."
     },
     "theology": {
       "title": "Theological Stance",
@@ -179,6 +209,10 @@
     "technology": {
       "title": "The Technology",
       "content": "Disciplefy uses technology to generate Bible study content — summaries, context, interpretation, prayer points, and discussion questions. All content follows strict theological guidelines and is constrained to align with orthodox Christian teaching. The technology assists study; it does not interpret Scripture with authority. That authority belongs to Scripture alone."
+    },
+    "promise": {
+      "title": "Our Promise",
+      "content": "Disciplefy helps believers understand God's Word, grow spiritually, and follow Jesus every day."
     },
     "contact": {
       "title": "Contact Us",

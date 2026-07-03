@@ -4,8 +4,10 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/sections/Hero";
+import { JourneySection } from "@/components/sections/JourneySection";
 import { SocialProof } from "@/components/sections/SocialProof";
 import { Features } from "@/components/sections/Features";
+import { MissionValues } from "@/components/sections/MissionValues";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { LanguageShowcase } from "@/components/sections/LanguageShowcase";
 import { PricingPreview } from "@/components/sections/PricingPreview";
@@ -20,9 +22,11 @@ export function HomePage({ posts = [] }: { posts?: PostMeta[] }) {
       <Navbar />
       <main>
         <Hero />
+        <JourneySection />
         <SocialProof />
         <DownloadSection />
         <Features />
+        <MissionValues />
         <HowItWorks />
         <LanguageShowcase />
         <PricingPreview />
