@@ -51,7 +51,7 @@ Build trust, establish Disciplefy as the go-to discipleship platform, and drive 
 | Day | Topic | Production |
 |---|---|---|
 | Monday | Bible Explained — The Good Samaritan | 🎬 AI |
-| Tuesday | Bible Tip — Pray Before You Read | Carousel |
+| Tuesday | How To: Memory Verses (Carousel, swapped in — pairs 2 days ahead of Saturday's Ep9 reel) | Carousel |
 | Wednesday | Walking with Jesus — Building a Daily Prayer Habit | 🎬 AI |
 | Thursday | Bible Study — Observe Before You Interpret | Carousel |
 | Friday | Growing in Christ — Waiting on God | 🎬 AI |
@@ -64,7 +64,7 @@ Build trust, establish Disciplefy as the go-to discipleship platform, and drive 
 | Day | Topic | Production |
 |---|---|---|
 | Monday | Bible Explained — Why Did Jesus Curse the Fig Tree? | 🎬 AI |
-| Tuesday | Bible Tip — Ask Better Questions While Reading | Carousel |
+| Tuesday | How To: Discipler (Carousel, swapped in — pairs 2 days ahead of Saturday's Ep13 reel) | Carousel |
 | Wednesday | Walking with Jesus — How to Study the Bible Effectively | 🎬 AI |
 | Thursday | Bible Study — Understand the Original Audience | Carousel |
 | Friday | Growing in Christ — Fear Not, God Is With You | 🎬 AI |
