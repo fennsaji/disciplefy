@@ -133,10 +133,14 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     })
     
     // Only mark failed for definitive payment errors, not transient/concurrency errors.
-    // Pre-claim amount/capture failures are terminal; other pre-claim failures remain retryable.
+    // PAYMENT_AMOUNT_MISMATCH is terminal (a wrong amount never self-corrects).
+    // PAYMENT_NOT_CAPTURED is NOT terminal: with auto-capture the payment sits
+    // 'authorized' briefly before capturing, and the payment.captured webhook can
+    // only claim rows still in 'pending' — marking the row failed here would leave
+    // a captured payment with no path to credit tokens.
     const isPreClaimPaymentFailure = error instanceof AppError &&
       error.statusCode === 402 &&
-      (error.code === 'PAYMENT_NOT_CAPTURED' || error.code === 'PAYMENT_AMOUNT_MISMATCH')
+      error.code === 'PAYMENT_AMOUNT_MISMATCH'
     const isDefinitiveFailure = purchaseWasClaimed || isPreClaimPaymentFailure
     if (isDefinitiveFailure && requestData?.order_id) {
       try {
