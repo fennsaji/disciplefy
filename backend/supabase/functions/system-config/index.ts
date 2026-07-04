@@ -49,9 +49,13 @@ Deno.serve(async (req) => {
     // feature_tester_emails allowlist, report allow_tester_bypass flags as enabled.
     // Endpoint stays public — no JWT means no bypass, same response as before.
     // Tester emails themselves are NEVER included in the response.
+    // Only resolve the caller when at least one flag actually opts into bypass —
+    // otherwise the getUser() round-trip can never change the response, and this
+    // is a public endpoint every client hits on startup.
     let testerBypassActive = false
     const authHeader = req.headers.get('Authorization')
-    if (authHeader?.startsWith('Bearer ')) {
+    const anyFlagAllowsBypass = featureFlags.some(f => f.allowTesterBypass)
+    if (anyFlagAllowsBypass && authHeader?.startsWith('Bearer ')) {
       try {
         const anonClient = createClient(
           Deno.env.get('SUPABASE_URL')!,
