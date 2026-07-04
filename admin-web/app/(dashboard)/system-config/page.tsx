@@ -92,6 +92,9 @@ export default function SystemConfigPage() {
   })
 
   const [testerInput, setTesterInput] = useState('')
+  // Track unsaved edits so a background refetch of the tester list doesn't
+  // clobber what the admin is currently typing.
+  const [testerInputDirty, setTesterInputDirty] = useState(false)
 
   const saveTestersMutation = useMutation({
     mutationFn: async (emails: string[]) => {
@@ -109,14 +112,20 @@ export default function SystemConfigPage() {
     },
     onSuccess: () => {
       toast.success('Feature tester list saved')
+      // Saved value is now authoritative — allow the refetch to re-seed the box.
+      setTesterInputDirty(false)
       queryClient.invalidateQueries({ queryKey: ['feature-testers'] })
     },
     onError: (e: Error) => toast.error(e.message)
   })
 
   useEffect(() => {
-    if (testersData?.emails) setTesterInput(testersData.emails.join('\n'))
-  }, [testersData])
+    // Only seed from server data when the admin has no unsaved edits, so a
+    // background refetch can't overwrite in-progress typing.
+    if (testersData?.emails && !testerInputDirty) {
+      setTesterInput(testersData.emails.join('\n'))
+    }
+  }, [testersData, testerInputDirty])
 
   // Fetch Memory Verse Config
   const { data: memoryVerseData, isLoading: memoryVerseLoading } = useQuery({
@@ -668,7 +677,7 @@ export default function SystemConfigPage() {
           </p>
           <textarea
             value={testerInput}
-            onChange={(e) => setTesterInput(e.target.value)}
+            onChange={(e) => { setTesterInput(e.target.value); setTesterInputDirty(true) }}
             rows={5}
             placeholder={"tester1@example.com\ntester2@example.com"}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-sm"
