@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 2
-Version: 1.5 *(updated — see Changelog)*
+Version: 1.6 *(updated — see Changelog)*
 
 ## Mission of the Week
 This is the first week of the season's regular named-series rhythm (Week 1 was the Launch + How-To set — see `Content_Playbook_Season1_Week1.md`). Each series' topic bank (`Daily Devotion/`) starts at item #1 this week.
@@ -22,8 +22,17 @@ Reusable across all 3 AI-generated Reels this week (Bible Explained, Walking wit
 ## 🖼️ Thumbnail Image Generation — STYLE BLOCK (prepend to each day's thumbnail prompt below)
 > Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (1080×1920), safe-zone aware — keep headline and focal object clear of the top ~250px and bottom ~250px (Instagram UI overlay zones). Soft cream background (`#FAF8F5`) bathed in natural window light. Bold near-black charcoal (`#1E1E1E`) headline, Poppins 700, maximum five words. One clear focal object only. One small gold (`#B8860B`) accent only. Brand frame: small gold Disciplefy logo top-left with thin gold divider; small gold globe + "disciplefy.in" bottom-left. Never: red arrows, shock faces, clickbait expressions, clip-art crosses, busy collages.
 
-## 🎨 Carousel Image Generation — STYLE BLOCK (prepend to each slide prompt, Tue / Thu / Sun)
-> Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Soft cream background (`#FAF8F5`), bright natural window light, warm wooden desk with tasteful props (open Bible, coffee mug, small plant, leather journal). Bold near-black charcoal (`#1E1E1E`) headline, Poppins, left-aligned; warm-gray subline. Gold accents (`#B8860B` / `#C79A3B`) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
+## 🎨 Carousel Image Generation — 3 Layout Variants (canonical, referenced by Weeks 3-4)
+The same repetition problem the Daily Verse Stories solved with 7 rotating variants applied here too — one fixed background used for every Tue/Thu/Sun carousel made the feed feel repetitive. Each weekday's carousel now gets its own recognizable scene (same weekday keeps the same variant every week, mirroring the Daily Verse pattern) — only headline/subline/slide content changes week to week.
+
+**Variant Flat-Lay (Tuesday — Bible Tips / feature carousels):**
+> Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Directly-overhead flat-lay composition on a warm wood surface: open Bible, a fountain pen, 2-3 index cards, a small potted succulent. Soft cream background (`#FAF8F5`), bright natural window light. Bold near-black charcoal (`#1E1E1E`) headline, Poppins, left-aligned; warm-gray subline. Gold accents (`#B8860B` / `#C79A3B`) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
+
+**Variant Desk & Bible (Thursday — Bible Study carousels):**
+> Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Three-quarter angle on a warm wooden desk with tasteful props (open Bible, coffee mug, small plant, leather journal). Soft cream background (`#FAF8F5`), bright natural window light. Bold near-black charcoal (`#1E1E1E`) headline, Poppins, left-aligned; warm-gray subline. Gold accents (`#B8860B` / `#C79A3B`) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
+
+**Variant Journal Macro (Sunday — Reflection/recap carousels):**
+> Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Close, slightly-angled macro shot of an open handwritten journal page with an underlined verse, a fountain pen resting diagonally across it, the soft out-of-focus edge of a Bible in the background. Soft cream tones, bright natural window light. Bold near-black charcoal (`#1E1E1E`) headline, Poppins, left-aligned; warm-gray subline. Gold accents (`#B8860B` / `#C79A3B`) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
 
 ## 📖 Daily Verse — Morning Story Image Generation
 Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday through Variant G Sunday, full detail there — not repeated here) — each weekday keeps its own recognizable sub-style rather than one fixed layout every day. Only Verse/Reference/Background change per day; shared brand rules (palette, typography, logo, safe zones) also defined in Week 1.
@@ -78,7 +87,7 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Slides:** Cover → Why context matters → Read before → Read after → One practical example → Disciplefy CTA
 **Design:** Warm cream, charcoal, gold, minimal *(fixed — "indigo" was a leftover Product/App palette reference; Marketing/Social carousels use no indigo, see Visual Bible)*
 
-**Slide Image Prompts** *(prepend Carousel STYLE BLOCK above)*:
+**Slide Image Prompts** *(prepend Carousel Variant — Flat-Lay above)*:
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -145,7 +154,7 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Slides:** Pray → Read → Observe → Understand → Apply → Pray Again → Disciplefy CTA
 
-**Slide Image Prompts** *(prepend Carousel STYLE BLOCK above)*:
+**Slide Image Prompts** *(prepend Carousel Variant — Desk & Bible above)*:
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -238,7 +247,7 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Slides:** Cover → this week's 5 truths (rest in Jesus, read in context, start your day with Him, a simple study method, God isn't finished with you) → one practical takeaway → invite to church/community → Disciplefy CTA
 
-**Slide Image Prompts** *(prepend Carousel STYLE BLOCK above)*:
+**Slide Image Prompts** *(prepend Carousel Variant — Journal Macro above)*:
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -278,3 +287,4 @@ Track at the end of the week: Reel Reach · Watch Time · Saves · Shares · Pro
 - **v1.3:** Switched to Week 1's 7 rotating layout variants (one per weekday) instead of one fixed daily layout — updated each day's fill to tag its variant.
 - **v1.4:** Added a per-slide Caption to every carousel (Tue/Thu/Sun) — Instagram now supports a distinct caption per carousel image (rolled out June 2026), shown as viewers swipe. Captions add commentary/context beyond the on-image headline text, not a repeat of it.
 - **v1.5:** Added a Follow-CTA to Saturday's Episode 2 caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1: Follow-CTA rotation, trending audio, Stories interactive stickers).
+- **v1.6:** Replaced the single reused Carousel STYLE BLOCK with 3 canonical layout variants (Flat-Lay/Tuesday, Desk & Bible/Thursday, Journal Macro/Sunday) — one fixed background for every carousel was making the feed feel repetitive. Referenced by Weeks 3-4.
