@@ -141,7 +141,7 @@ async function handleAddMemoryVerseManual(
 
   // Validate feature access using middleware
   const userId = userContext.userId!
-  await checkFeatureAccess(userId, userPlan, 'memory_verses')
+  await checkFeatureAccess(userId, userPlan, 'memory_verses', userContext.email)
   console.log(`✅ [AddMemoryVerse] Feature access granted: memory_verses available for plan ${userPlan}`)
 
   // Parse request body

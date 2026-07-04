@@ -130,7 +130,8 @@ export class AuthService {
         type: user.is_anonymous ? 'anonymous' : 'authenticated',
         userId: user.is_anonymous ? undefined : user.id,
         sessionId: user.is_anonymous ? user.id : undefined,
-        userType
+        userType,
+        email: user.is_anonymous ? undefined : (user.email ?? undefined)
       }
       
       return userContext

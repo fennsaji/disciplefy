@@ -87,7 +87,7 @@ async function handleReflections(
 
   // Feature flag validation - Check if reflections is enabled for user's plan
   const userId = userContext.userId!
-  await checkFeatureAccess(userId, userPlan, 'reflections')
+  await checkFeatureAccess(userId, userPlan, 'reflections', userContext.email)
   console.log(`✅ [Reflections] Feature access granted: reflections available for plan ${userPlan}`)
 
   // Route to appropriate handler based on HTTP method

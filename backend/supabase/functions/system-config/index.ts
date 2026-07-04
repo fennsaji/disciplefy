@@ -10,7 +10,7 @@
  */
 
 import { getSystemConfig } from '../_shared/services/system-config-service.ts'
-import { getFeatureFlags } from '../_shared/services/feature-flag-service.ts'
+import { getFeatureFlags, isTesterEmail, applyTesterBypass } from '../_shared/services/feature-flag-service.ts'
 import { MemoryVerseConfigService } from '../_shared/services/memory-verse-config-service.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -45,6 +45,35 @@ Deno.serve(async (req) => {
     // Fetch feature flags (uses 5-min cache)
     const featureFlags = await getFeatureFlags()
 
+    // Tester bypass: if the caller sent a valid JWT and their email is in the
+    // feature_tester_emails allowlist, report allow_tester_bypass flags as enabled.
+    // Endpoint stays public — no JWT means no bypass, same response as before.
+    // Tester emails themselves are NEVER included in the response.
+    // Only resolve the caller when at least one flag actually opts into bypass —
+    // otherwise the getUser() round-trip can never change the response, and this
+    // is a public endpoint every client hits on startup.
+    let testerBypassActive = false
+    const authHeader = req.headers.get('Authorization')
+    const anyFlagAllowsBypass = featureFlags.some(f => f.allowTesterBypass)
+    if (anyFlagAllowsBypass && authHeader?.startsWith('Bearer ')) {
+      try {
+        const anonClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_ANON_KEY')!,
+          { global: { headers: { Authorization: authHeader } }, auth: { autoRefreshToken: false, persistSession: false } }
+        )
+        const { data: { user } } = await anonClient.auth.getUser()
+        if (user && !user.is_anonymous && user.email) {
+          testerBypassActive = await isTesterEmail(user.email)
+        }
+      } catch (authError) {
+        // Invalid/expired token → treat as anonymous, no bypass. Never fail the endpoint.
+        console.warn('[SystemConfig] JWT resolution failed, continuing without bypass:', authError)
+      }
+    }
+
+    const resolvedFlags = applyTesterBypass(featureFlags, testerBypassActive)
+
     // Fetch memory verse config (uses 5-min cache)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -54,7 +83,7 @@ Deno.serve(async (req) => {
 
     // Transform feature flags into simple object
     const flagsObject: Record<string, any> = {}
-    featureFlags.forEach(flag => {
+    resolvedFlags.forEach(flag => {
       flagsObject[flag.featureKey] = {
         enabled: flag.isEnabled,
         displayMode: flag.displayMode, // 'hide' | 'lock'
@@ -65,6 +94,7 @@ Deno.serve(async (req) => {
     console.log('[SystemConfig] Returning config:', {
       maintenanceModeEnabled: systemConfig.maintenanceModeEnabled,
       flagCount: featureFlags.length,
+      testerBypassActive,
       memoryVerseConfigLoaded: !!memoryVerseConfig,
     })
 
@@ -82,6 +112,7 @@ Deno.serve(async (req) => {
             forceUpdate: systemConfig.forceUpdateEnabled,
           },
           featureFlags: flagsObject,
+          testerBypassActive,
           memoryVerseConfig: {
             unlockLimits: memoryVerseConfig.unlockLimits,
             verseLimits: memoryVerseConfig.verseLimits,

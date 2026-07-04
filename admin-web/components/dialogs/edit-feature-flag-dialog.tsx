@@ -23,7 +23,8 @@ export default function EditFeatureFlagDialog({
     is_enabled: true,
     enabled_for_plans: [] as string[],
     display_mode: 'hide' as 'hide' | 'lock',
-    rollout_percentage: 100
+    rollout_percentage: 100,
+    allow_tester_bypass: false
   })
 
   useEffect(() => {
@@ -34,7 +35,8 @@ export default function EditFeatureFlagDialog({
         is_enabled: flag.enabled ?? true,
         enabled_for_plans: flag.enabled_for_plans || [],
         display_mode: (flag.display_mode || 'hide') as 'hide' | 'lock',
-        rollout_percentage: flag.rollout_percentage ?? 100
+        rollout_percentage: flag.rollout_percentage ?? 100,
+        allow_tester_bypass: flag.allow_tester_bypass ?? false
       })
     }
   }, [flag])
@@ -116,6 +118,26 @@ export default function EditFeatureFlagDialog({
                 </span>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   When disabled, feature is hidden from all users regardless of plan
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {/* Tester Bypass */}
+          <div>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={formData.allow_tester_bypass}
+                onChange={(e) => setFormData({ ...formData, allow_tester_bypass: e.target.checked })}
+                className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Allow tester bypass
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Emails in the Feature Testers list (System Config tab) see this feature as enabled even when it is disabled. Plan restrictions still apply.
                 </p>
               </div>
             </label>

@@ -3,10 +3,25 @@
  *
  * Validates that users have access to restricted features before executing operations.
  * Prevents bypass attacks by enforcing server-side feature flag checks.
+ *
+ * Tester bypass: users whose email is in system_config.feature_tester_emails may
+ * use flags that have allow_tester_bypass=true even while globally disabled.
+ * Plan gating still applies to testers.
  */
 
 import { AppError } from '../utils/error-handler.ts'
-import { getFeatureFlags } from '../services/feature-flag-service.ts'
+import { getFeatureFlags, isTesterEmail } from '../services/feature-flag-service.ts'
+import type { FeatureFlag } from '../services/feature-flag-service.ts'
+
+/**
+ * A flag counts as enabled for this user if globally enabled, or if the flag
+ * opts into tester bypass and the user is a tester.
+ */
+async function isEnabledForUser(feature: FeatureFlag, userEmail?: string): Promise<boolean> {
+  if (feature.isEnabled) return true
+  if (!feature.allowTesterBypass || !userEmail) return false
+  return await isTesterEmail(userEmail)
+}
 
 /**
  * Check if user has access to a feature
@@ -14,24 +29,26 @@ import { getFeatureFlags } from '../services/feature-flag-service.ts'
  * @param userId - User ID
  * @param userPlan - User's subscription plan
  * @param featureKey - Feature key to check
+ * @param userEmail - Authenticated user's email (enables tester bypass)
  * @throws AppError if user lacks access
  *
  * @example
  * ```typescript
- * await checkFeatureAccess(userId, userPlan, 'ai_discipler')
+ * await checkFeatureAccess(userId, userPlan, 'ai_discipler', userContext.email)
  * ```
  */
 export async function checkFeatureAccess(
   userId: string,
   userPlan: string,
-  featureKey: string
+  featureKey: string,
+  userEmail?: string
 ): Promise<void> {
   // Fetch feature flags
   const featureFlags = await getFeatureFlags()
   const feature = featureFlags.find(f => f.featureKey === featureKey)
 
-  // Feature not found or disabled globally
-  if (!feature || !feature.isEnabled) {
+  // Feature not found or disabled globally (unless tester bypass applies)
+  if (!feature || !(await isEnabledForUser(feature, userEmail))) {
     console.log(`[FeatureAccess] Feature '${featureKey}' is disabled globally`)
     throw new AppError(
       'FEATURE_DISABLED',
@@ -81,6 +98,7 @@ export async function checkFeatureAccess(
  * @param userId - User ID
  * @param userPlan - User's subscription plan
  * @param featureKeys - Array of feature keys to check
+ * @param userEmail - Authenticated user's email (enables tester bypass)
  * @throws AppError if user lacks access to all features
  *
  * @example
@@ -90,13 +108,14 @@ export async function checkFeatureAccess(
  *   'standard_study_mode',
  *   'deep_dive_mode',
  *   'lectio_divina_mode'
- * ])
+ * ], userContext.email)
  * ```
  */
 export async function checkAnyFeatureAccess(
   userId: string,
   userPlan: string,
-  featureKeys: string[]
+  featureKeys: string[],
+  userEmail?: string
 ): Promise<void> {
   const featureFlags = await getFeatureFlags()
 
@@ -106,7 +125,11 @@ export async function checkAnyFeatureAccess(
   for (const featureKey of featureKeys) {
     const feature = featureFlags.find(f => f.featureKey === featureKey)
 
-    if (feature && feature.isEnabled && feature.enabledForPlans.includes(userPlan)) {
+    if (
+      feature &&
+      (await isEnabledForUser(feature, userEmail)) &&
+      feature.enabledForPlans.includes(userPlan)
+    ) {
       hasAccessToAny = true
       break
     }

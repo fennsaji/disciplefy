@@ -738,7 +738,7 @@ async function handleEnroll(
 
   // Check feature access for WRITE operations (enrollment)
   const userPlan = await services.authService.getUserPlan(req);
-  await checkFeatureAccess(userContext.userId, userPlan, 'learning_paths');
+  await checkFeatureAccess(userContext.userId, userPlan, 'learning_paths', userContext.email);
   console.log(`✅ [LearningPaths] Feature access granted for enrollment: learning_paths available for plan ${userPlan}`);
 
   const { supabaseServiceClient } = services;

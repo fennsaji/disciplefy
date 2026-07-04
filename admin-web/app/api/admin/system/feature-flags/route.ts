@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
       enabled_for_plans: flag.enabled_for_plans || [],
       display_mode: flag.display_mode || 'hide',
       rollout_percentage: flag.rollout_percentage,
+      allow_tester_bypass: flag.allow_tester_bypass === true,
       metadata: flag.metadata
     }))
 
@@ -188,7 +189,8 @@ export async function PATCH(request: NextRequest) {
       is_enabled,
       enabled_for_plans,
       display_mode,
-      rollout_percentage
+      rollout_percentage,
+      allow_tester_bypass
     } = body
 
     if (!flag_id) {
@@ -247,6 +249,7 @@ export async function PATCH(request: NextRequest) {
     if (enabled_for_plans !== undefined) updateData.enabled_for_plans = enabled_for_plans
     if (display_mode !== undefined) updateData.display_mode = display_mode
     if (rollout_percentage !== undefined) updateData.rollout_percentage = rollout_percentage
+    if (allow_tester_bypass !== undefined) updateData.allow_tester_bypass = allow_tester_bypass === true
 
     // Update feature flag in database
     const { error: updateError } = await supabaseAdmin

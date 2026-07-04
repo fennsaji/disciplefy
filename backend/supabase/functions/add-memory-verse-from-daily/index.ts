@@ -90,7 +90,7 @@ async function handleAddMemoryVerseFromDaily(
 
   // Validate feature access for memory verses
   const userPlan = await services.authService.getUserPlan(req)
-  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
+  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses', userContext.email)
   console.log(`✅ [AddMemoryVerseFromDaily] Feature access validated for user ${userContext.userId}`)
 
   // Parse and validate request body

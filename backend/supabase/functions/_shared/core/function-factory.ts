@@ -550,7 +550,8 @@ async function parseUserContext(
   return {
     type: user.is_anonymous ? 'anonymous' : 'authenticated',
     userId: user.is_anonymous ? undefined : user.id,
-    sessionId: user.is_anonymous ? user.id : undefined
+    sessionId: user.is_anonymous ? user.id : undefined,
+    email: user.is_anonymous ? undefined : (user.email ?? undefined)
   }
 }
 

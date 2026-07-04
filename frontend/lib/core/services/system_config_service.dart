@@ -19,6 +19,11 @@ import '../utils/logger.dart';
 class SystemConfigService extends ChangeNotifier {
   static const String _cacheKey = 'system_config_cache';
   static const String _cacheTimestampKey = 'system_config_cache_timestamp';
+  // The cached config is identity-specific (testerBypassActive + bypass-resolved
+  // flags are per-user), so the cache is tagged with the user id that produced
+  // it. A cold start under a different account (initialSession, which the auth
+  // listener does not fire on) must not serve the previous user's resolved flags.
+  static const String _cacheUserKey = 'system_config_cache_user';
   static const Duration _cacheDuration = Duration(minutes: 5);
 
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -28,6 +33,7 @@ class SystemConfigService extends ChangeNotifier {
   SystemConfig? _config;
   DateTime? _lastFetch;
   String? _error;
+  StreamSubscription<AuthState>? _authSubscription;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -37,6 +43,10 @@ class SystemConfigService extends ChangeNotifier {
 
   /// Check if app is in maintenance mode
   bool get isMaintenanceModeActive => _config?.maintenanceMode.enabled ?? false;
+
+  /// Whether the current signed-in user has feature tester bypass active
+  /// (resolved server-side; true only when their email is in the tester list).
+  bool get isTesterBypassActive => _config?.testerBypassActive ?? false;
 
   /// Get maintenance mode message
   String get maintenanceModeMessage =>
@@ -70,6 +80,26 @@ class SystemConfigService extends ChangeNotifier {
       }
 
       _isInitialized = true;
+
+      // Refetch config when the signed-in user changes: tester bypass is
+      // resolved server-side per user, so cached flags are per-identity.
+      _authSubscription ??= _supabase.auth.onAuthStateChange.listen((state) {
+        final event = state.event;
+        if (event == AuthChangeEvent.signedOut) {
+          Logger.debug(
+              '🔄 [SystemConfigService] Auth change ($event) — clearing cache and refreshing config');
+          // Clear persisted + in-memory cache first so a failed refetch after
+          // logout can't leave the previous user's tester-resolved flags visible.
+          clearCache().then((_) => fetchSystemConfig(forceRefresh: true));
+        } else if (event == AuthChangeEvent.signedIn ||
+            event == AuthChangeEvent.userUpdated) {
+          Logger.debug(
+              '🔄 [SystemConfigService] Auth change ($event) — refreshing config');
+          _lastFetch = null; // Invalidate memory cache
+          fetchSystemConfig(forceRefresh: true);
+        }
+      });
+
       Logger.debug('✅ [SystemConfigService] Initialization complete');
     } catch (e) {
       _error = 'Failed to initialize system config: $e';
@@ -272,6 +302,12 @@ class SystemConfigService extends ChangeNotifier {
     return feature?.enabled ?? true;
   }
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   // Private helper methods
 
   bool _shouldRefresh() {
@@ -284,6 +320,17 @@ class SystemConfigService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final cachedJson = prefs.getString(_cacheKey);
       final cachedTimestamp = prefs.getInt(_cacheTimestampKey);
+
+      // Discard a cache produced by a different identity — serving another
+      // user's tester-resolved flags (even briefly) is wrong. Leaving _config
+      // null makes _shouldRefresh() true so initialize() refetches immediately.
+      final cachedUserId = prefs.getString(_cacheUserKey);
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (cachedJson != null && cachedUserId != currentUserId) {
+        Logger.debug(
+            'ℹ️ [SystemConfigService] Cached config belongs to a different user — discarding, will refetch');
+        return;
+      }
 
       if (cachedJson != null && cachedTimestamp != null) {
         final cacheAge =
@@ -316,6 +363,13 @@ class SystemConfigService extends ChangeNotifier {
       await prefs.setString(_cacheKey, jsonEncode(_config!.toJson()));
       await prefs.setInt(
           _cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      // Tag the cache with the identity that produced it (null for anon).
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId != null) {
+        await prefs.setString(_cacheUserKey, currentUserId);
+      } else {
+        await prefs.remove(_cacheUserKey);
+      }
 
       Logger.debug('✅ [SystemConfigService] Saved to cache');
     } catch (e) {
@@ -345,6 +399,7 @@ class SystemConfigService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
       await prefs.remove(_cacheTimestampKey);
+      await prefs.remove(_cacheUserKey);
 
       _config = null;
       _lastFetch = null;
@@ -363,12 +418,14 @@ class SystemConfig {
   final VersionControl versionControl;
   final Map<String, FeatureFlag> featureFlags;
   final MemoryVerseConfig memoryVerseConfig;
+  final bool testerBypassActive;
 
   SystemConfig({
     required this.maintenanceMode,
     required this.versionControl,
     required this.featureFlags,
     required this.memoryVerseConfig,
+    this.testerBypassActive = false,
   });
 
   factory SystemConfig.fromJson(Map<String, dynamic> json) {
@@ -380,6 +437,7 @@ class SystemConfig {
       memoryVerseConfig: json['memoryVerseConfig'] != null
           ? MemoryVerseConfig.fromJson(json['memoryVerseConfig'])
           : MemoryVerseConfig.defaultConfig(),
+      testerBypassActive: json['testerBypassActive'] ?? false,
     );
   }
 
@@ -390,6 +448,7 @@ class SystemConfig {
       'featureFlags':
           featureFlags.map((key, value) => MapEntry(key, value.toJson())),
       'memoryVerseConfig': memoryVerseConfig.toJson(),
+      'testerBypassActive': testerBypassActive,
     };
   }
 }
