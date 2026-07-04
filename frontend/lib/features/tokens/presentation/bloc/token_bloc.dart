@@ -277,45 +277,14 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       return;
     }
 
-    emit(TokenPlanUpgrading(
-      currentTokenStatus: _cachedTokenStatus!,
-      targetPlan: event.targetPlan,
-      step: PurchaseStep.initiating,
+    // UpgradeUserPlan has no payment flow — emit an error so callers know
+    // they should navigate to the appropriate upgrade page instead.
+    emit(TokenError(
+      failure: const failures.ServerFailure(
+          message: 'Use the subscription page to upgrade'),
+      operation: 'upgrade',
+      previousTokenStatus: _cachedTokenStatus,
     ));
-
-    // TODO: Implement actual plan upgrade logic with payment processing
-    // For now, simulate successful upgrade
-    await Future.delayed(const Duration(seconds: 2));
-
-    final upgradedPlan =
-        event.targetPlan == 'premium' ? UserPlan.premium : UserPlan.standard;
-    final newDailyLimit = PlanConstants.getDailyLimit(upgradedPlan);
-
-    final updatedTokenStatus = _cachedTokenStatus!.copyWith(
-      availableTokens: upgradedPlan == UserPlan.premium ? 0 : newDailyLimit,
-      totalTokens: upgradedPlan == UserPlan.premium
-          ? 0
-          : newDailyLimit + _cachedTokenStatus!.purchasedTokens,
-      dailyLimit: newDailyLimit,
-      userPlan: upgradedPlan,
-      isPremium: upgradedPlan == UserPlan.premium,
-      unlimitedUsage: upgradedPlan == UserPlan.premium,
-      canPurchaseTokens: PlanConstants.canPurchaseTokens(upgradedPlan),
-    );
-
-    _updateCache(updatedTokenStatus);
-
-    emit(TokenPlanUpgradeSuccess(
-      updatedTokenStatus: updatedTokenStatus,
-      newPlan: event.targetPlan,
-    ));
-
-    // Transition back to loaded state
-    Timer(const Duration(seconds: 3), () {
-      if (!isClosed && !_shouldPreservePurchaseHistoryState()) {
-        add(const GetTokenStatus());
-      }
-    });
   }
 
   /// Handles clearing error states
@@ -364,13 +333,11 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       operationType: event.operationType,
     ));
 
-    // Return to loaded state
+    // Return to loaded state — use add() rather than emit() since the
+    // Emitter is no longer valid after the handler returns.
     Timer(const Duration(seconds: 2), () {
       if (!isClosed && _cachedTokenStatus != null) {
-        emit(TokenLoaded(
-          tokenStatus: _cachedTokenStatus!,
-          lastUpdated: _lastCacheUpdate ?? DateTime.now(),
-        ));
+        add(const GetTokenStatus());
       }
     });
   }

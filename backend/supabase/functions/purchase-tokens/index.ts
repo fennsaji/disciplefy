@@ -30,13 +30,10 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
 
   try {
     const userContext = await authenticateAndAuthorize(req, services.authService, services.rateLimiter, services.tokenService)
-    const { tokenAmount, paymentId, rupeeAmount } = await parseAndValidateRequestBody(req)
+    const { tokenAmount, paymentId } = await parseAndValidateRequestBody(req)
     await checkForDuplicatePayment(paymentId, services.supabaseServiceClient)
-    // Use rupee_amount from frontend (already reflects package discount) when provided,
-    // otherwise fall back to backend calculation.
-    const { costInRupees, costInPaise } = rupeeAmount !== undefined
-      ? { costInRupees: rupeeAmount, costInPaise: Math.round(rupeeAmount * 100) }
-      : await computeCost(tokenAmount, services.tokenService)
+    // C2: Always compute price server-side — never trust the client's rupee_amount.
+    const { costInRupees, costInPaise } = await computeCost(tokenAmount, services.tokenService)
     const paymentResult = await createOrder({
       amount: costInPaise,
       currency: 'INR',
@@ -105,7 +102,7 @@ async function authenticateAndAuthorize(req: Request, authService: AuthService, 
 /**
  * Parse and validate request body
  */
-async function parseAndValidateRequestBody(req: Request): Promise<{ tokenAmount: number, paymentId?: string, rupeeAmount?: number }> {
+async function parseAndValidateRequestBody(req: Request): Promise<{ tokenAmount: number, paymentId?: string }> {
   if (req.method !== 'POST') {
     throw new AppError(
       'METHOD_NOT_ALLOWED',
@@ -143,10 +140,8 @@ async function parseAndValidateRequestBody(req: Request): Promise<{ tokenAmount:
 
   return {
     tokenAmount: body.token_amount,
-    paymentId: body.payment_id,
-    rupeeAmount: typeof body.rupee_amount === 'number' && body.rupee_amount > 0
-      ? body.rupee_amount
-      : undefined
+    paymentId: body.payment_id
+    // C2: rupee_amount from client intentionally ignored — price always computed server-side
   }
 }
 

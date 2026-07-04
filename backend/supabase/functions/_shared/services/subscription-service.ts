@@ -72,6 +72,12 @@ export class SubscriptionService {
     })
   }
 
+  private isIapProvider(provider: string | null): boolean {
+    return provider === 'google_play' ||
+      provider === 'apple_appstore' ||
+      provider === 'apple_iap'
+  }
+
   /**
    * Creates a new premium subscription for a user
    *
@@ -108,7 +114,8 @@ export class SubscriptionService {
       const subscription = await this.storeSubscription(
         options.userId,
         razorpaySubscription,
-        options.planType
+        options.planType,
+        options.basePriceMinor
       )
 
       // Log creation event
@@ -197,7 +204,7 @@ export class SubscriptionService {
     }
 
     try {
-      const isIapProvider = subscription.provider === 'google_play' || subscription.provider === 'apple_iap'
+      const isIapProvider = this.isIapProvider(subscription.provider)
 
       if (options.cancelAtCycleEnd) {
         if (!isIapProvider) {
@@ -265,23 +272,50 @@ export class SubscriptionService {
             false  // cancel_at_cycle_end = 0
           )
         } else if (subscription.provider === 'google_play') {
-          // Google Play: call cancel API so Play Store reflects the cancellation
+          // Google Play's :cancel API stops auto-renewal only — it does NOT revoke
+          // access immediately. The user keeps access until current_period_end regardless
+          // of the 'immediate' intent. Set DB to pending_cancellation (not cancelled)
+          // so the user retains their paid-for access. True immediate revocation would
+          // require the :revoke endpoint plus a prorated refund, which is out of scope here.
           const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || 'com.disciplefy.bible_study'
           const gpEnv: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
           const gpProductId = subscription.iap_product_id
           const gpPurchaseToken = subscription.provider_subscription_id
           if (gpProductId && gpPurchaseToken) {
-            console.log('[SubscriptionService] Cancelling Google Play subscription via API (immediate):', subscription.id)
+            console.log('[SubscriptionService] Cancelling Google Play subscription via API (stops renewal):', subscription.id)
             await cancelGooglePlaySubscription(this.supabaseClient, gpPackageName, gpProductId, gpPurchaseToken, gpEnv)
           } else {
             console.warn('[SubscriptionService] Cannot cancel Google Play sub — missing product ID or token:', subscription.id)
           }
+
+          // pending_cancellation — user retains access until period end
+          const updatedSubscription = await this.updateSubscriptionStatus(
+            subscription.id,
+            'pending_cancellation',
+            {
+              cancelled_at: new Date().toISOString(),
+              cancel_at_cycle_end: true,
+              cancellation_reason: options.reason || null
+            }
+          )
+
+          await this.logSubscriptionEvent(
+            subscription.id,
+            options.userId,
+            'subscription.cancelled',
+            subscription.status,
+            'pending_cancellation',
+            null, null, null,
+            { cancel_at_cycle_end: true, reason: options.reason, provider: subscription.provider, iap_db_only: true, google_play_cycle_end_forced: true }
+          )
+
+          return updatedSubscription
         } else {
           // Apple IAP: managed by Apple — just update DB (no server-side cancel API)
           console.log('[SubscriptionService] Apple IAP — skipping provider API, updating DB only:', subscription.id)
         }
 
-        // Update database to cancelled (no longer active)
+        // Razorpay immediate: update database to cancelled (no longer active)
         const updatedSubscription = await this.updateSubscriptionStatus(
           subscription.id,
           'cancelled',
@@ -375,7 +409,24 @@ export class SubscriptionService {
     }
 
     try {
-      // Log the resume attempt (no Razorpay API call — see resumeRazorpaySubscription)
+      const isIapProvider = this.isIapProvider(subscription.provider)
+
+      if (isIapProvider) {
+        throw new AppError(
+          'IAP_RESUME_MANAGED_BY_STORE',
+          'In-app purchase subscriptions must be resumed from the app store subscription settings',
+          400
+        )
+      }
+
+      if (subscription.provider !== 'razorpay') {
+        throw new AppError(
+          'UNSUPPORTED_SUBSCRIPTION_PROVIDER',
+          'This subscription provider does not support in-app resume',
+          400
+        )
+      }
+
       await this.resumeRazorpaySubscription(subscription.provider_subscription_id)
 
       // Update database - set status back to active and clear cancellation fields
@@ -401,6 +452,7 @@ export class SubscriptionService {
         null,
         {
           resumed_from_pending_cancellation: true,
+          provider: subscription.provider,
           razorpay_cancel_flag_removed: true
         }
       )
@@ -462,14 +514,17 @@ export class SubscriptionService {
    * @returns Promise resolving to active subscription or null
    */
   async getActiveSubscription(userId: string): Promise<Subscription | null> {
+    // Fetch ALL matching rows — during the upgrade window there are two rows:
+    // the old sub (pending_cancellation) and the new sub (in_progress/active).
+    // maybeSingle() would throw PGRST116 in that case; we sort by priority instead.
     const { data, error } = await this.supabaseClient
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
       .in('status', ['active', 'in_progress', 'pending_cancellation'])
-      .maybeSingle() as { data: Subscription | null, error: PostgrestError | null }
+      .order('created_at', { ascending: false }) as { data: Subscription[] | null, error: PostgrestError | null }
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('[SubscriptionService] Failed to fetch active subscription:', error)
       throw new AppError(
         'DATABASE_ERROR',
@@ -478,7 +533,11 @@ export class SubscriptionService {
       )
     }
 
-    return data
+    if (!data || data.length === 0) return null
+
+    // Priority: active > in_progress > pending_cancellation
+    const priority: Record<string, number> = { active: 0, in_progress: 1, pending_cancellation: 2 }
+    return data.sort((a, b) => (priority[a.status] ?? 3) - (priority[b.status] ?? 3))[0]
   }
 
   /**
@@ -696,23 +755,36 @@ export class SubscriptionService {
   }
 
   /**
-   * Resumes a pending_cancellation subscription at the DB level only.
-   *
-   * NOTE: Razorpay has no "undo cancel_at_cycle_end" API endpoint.
-   * Calling cancel(id, false) would cancel the subscription IMMEDIATELY and
-   * fire subscription.cancelled webhook — the opposite of what we want.
-   *
-   * Strategy: Only update our DB. Razorpay may still cancel at cycle end, in
-   * which case subscription.cancelled webhook will fire and mark it cancelled
-   * again. If Razorpay auto-renews (subscription was still active), it will
-   * fire subscription.charged and the subscription continues normally.
+   * Clears a scheduled Razorpay cancellation before resuming locally.
    */
   private async resumeRazorpaySubscription(
     razorpaySubscriptionId: string
   ): Promise<void> {
-    // No Razorpay API call — cancelling with false causes immediate cancellation.
-    // DB-only resume is handled by the caller (resumeSubscription).
-    console.log('[SubscriptionService] Razorpay subscription resumed (DB-only):', razorpaySubscriptionId)
+    if (!this.razorpay) {
+      throw new AppError('PAYMENT_SERVICE_ERROR', 'Payment service not configured', 500)
+    }
+    try {
+      const updatedSubscription = await (this.razorpay.subscriptions as any).update(razorpaySubscriptionId, {
+        cancel_at_cycle_end: 0
+      }) as Partial<RazorpaySubscriptionResponse>
+
+      if (updatedSubscription.has_scheduled_changes === true) {
+        throw new AppError('PAYMENT_SERVICE_ERROR', 'Payment provider still has scheduled subscription changes', 502)
+      }
+
+      console.log('[SubscriptionService] Razorpay cancel_at_cycle_end cleared for:', razorpaySubscriptionId)
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        throw error
+      }
+
+      console.error('[SubscriptionService] Failed to clear Razorpay cancel_at_cycle_end:', error)
+      throw new AppError(
+        'PAYMENT_SERVICE_ERROR',
+        error?.error?.description || 'Failed to resume subscription with payment provider',
+        error?.statusCode || 502
+      )
+    }
   }
 
   /**
@@ -751,7 +823,8 @@ export class SubscriptionService {
   private async storeSubscription(
     userId: string,
     razorpaySubscription: RazorpaySubscriptionResponse,
-    planType: SubscriptionPlanType = 'premium'
+    planType: SubscriptionPlanType = 'premium',
+    basePriceMinor?: number
   ): Promise<Subscription> {
     const { data, error } = await this.supabaseClient
       .from('subscriptions')
@@ -774,7 +847,8 @@ export class SubscriptionService {
         total_count: razorpaySubscription.total_count,
         paid_count: razorpaySubscription.paid_count,
         remaining_count: razorpaySubscription.remaining_count,
-        amount_paise: this.config.amountPaise,
+        // M6: prefer caller-provided plan price over hardcoded config default (₹100)
+        amount_paise: basePriceMinor ?? this.config.amountPaise,
         currency: this.config.currency
       })
       .select()

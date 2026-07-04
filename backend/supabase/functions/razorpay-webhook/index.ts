@@ -10,6 +10,9 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { generateHmacSha256 } from '../_shared/utils/crypto-utils.ts'
 import type { RazorpaySubscriptionWebhook } from '../_shared/types/subscription-types.ts'
+import { PaymentProviderFactory } from '../_shared/services/payment-providers/provider-factory.ts'
+import { ProviderType } from '../_shared/services/payment-providers/base-provider.ts'
+import { cancelGooglePlaySubscription } from '../_shared/services/google-play-validator.ts'
 
 /**
  * Razorpay payment entity (for token purchases)
@@ -55,6 +58,9 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
     )
   }
 
+  // M3: Read event ID for deduplication
+  const razorpayEventId = req.headers.get('x-razorpay-event-id')
+
   // Get webhook signature
   const signature = req.headers.get('x-razorpay-signature')
   if (!signature) {
@@ -80,6 +86,22 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
   }
 
   console.log('[Webhook] Valid signature verified')
+
+  // M3: Deduplicate by event ID (if provided) to prevent replay attacks.
+  // Razorpay retries on non-2xx; idempotent 200 on replay is the correct response.
+  if (razorpayEventId) {
+    const { data: existingEvent } = await services.supabaseServiceClient
+      .from('razorpay_webhook_events')
+      .select('event_id')
+      .eq('event_id', razorpayEventId)
+      .maybeSingle()
+    if (existingEvent) {
+      console.log('[Webhook] Duplicate event ID — already processed:', razorpayEventId)
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      })
+    }
+  }
 
   // Declare variables outside try block to make them accessible in catch block
   let event: string | undefined
@@ -165,12 +187,22 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       await handleSubscriptionResumed(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.completed') {
       await handleSubscriptionCompleted(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.halted') {
+      // M7: Halted = exhausted payment retries. Revoke access.
+      await handleSubscriptionHalted(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'refund.created') {
       await handleRefundCreated(payload, services)
     } else {
       console.log(`[Webhook] Ignoring event: ${event}`)
     }
     
+    // M3: Record event ID so replays are skipped on retry
+    if (razorpayEventId && event) {
+      await services.supabaseServiceClient
+        .from('razorpay_webhook_events')
+        .upsert({ event_id: razorpayEventId, event_type: event }, { onConflict: 'event_id', ignoreDuplicates: true })
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -293,30 +325,31 @@ async function handlePaymentCaptured(
   // Use the claimed purchase data for the rest of the processing
   const processingPurchase = claimedPurchase
   
-  // Verify both currency and amount match expected values
-  const expectedCurrency = 'INR' // We only support INR currently
-  
-  if (currency !== expectedCurrency) {
-    const errorMsg = `Currency mismatch for order ${orderId}: expected ${expectedCurrency}, got ${currency}`
-    console.error(`[Webhook] ${errorMsg}`)
-    throw new Error(`Payment currency verification failed: ${errorMsg}`)
-  }
-  
-  if (amount !== processingPurchase.amount_paise) {
-    const errorMsg = `Amount mismatch for order ${orderId}: expected ${processingPurchase.amount_paise} paise, got ${amount} paise`
-    console.error(`[Webhook] ${errorMsg}`)
-    throw new Error(`Payment amount verification failed: ${errorMsg}`)
-  }
-  
   try {
+    // F6: Verify currency/amount INSIDE try/catch so a mismatch marks the row failed
+    // instead of leaving it stuck in `processing` forever.
+    const expectedCurrency = 'INR'
+
+    if (currency !== expectedCurrency) {
+      throw new Error(`Currency mismatch for order ${orderId}: expected ${expectedCurrency}, got ${currency}`)
+    }
+
+    if (amount !== processingPurchase.amount_paise) {
+      throw new Error(`Amount mismatch for order ${orderId}: expected ${processingPurchase.amount_paise} paise, got ${amount} paise`)
+    }
+    // Resolve real user plan from DB
+    const { data: resolvedPlan } = await supabaseServiceClient
+      .rpc('get_user_plan_with_subscription', { p_user_id: processingPurchase.user_id })
+    const userPlan = ((resolvedPlan as string | null) || 'free') as 'free' | 'standard' | 'plus' | 'premium'
+
     // Add tokens to user account
     const addResult = await tokenService.addPurchasedTokens(
       processingPurchase.user_id,
-      'standard', // Only standard users can purchase
+      userPlan,
       processingPurchase.token_amount,
       {
         userId: processingPurchase.user_id,
-        userPlan: 'standard',
+        userPlan,
         operation: 'purchase',
         timestamp: new Date()
       }
@@ -405,7 +438,8 @@ async function handlePaymentFailed(
   console.log(`[Webhook] Payment failed: ${paymentId} for order: ${orderId}`)
   console.log(`[Webhook] Error: ${errorDescription}`)
   
-  // Mark pending purchase as failed
+  // Mark pending purchase as failed — only from pending/processing states.
+  // Guard prevents an out-of-order payment.failed event from overwriting a completed row.
   await supabaseServiceClient
     .from('pending_token_purchases')
     .update({
@@ -415,6 +449,7 @@ async function handlePaymentFailed(
       updated_at: new Date().toISOString()
     })
     .eq('order_id', orderId)
+    .in('status', ['pending', 'processing'])
   
   // Log failed payment
   await analyticsLogger.logEvent('webhook_payment_failed', {
@@ -447,7 +482,9 @@ async function handleSubscriptionAuthenticated(
 
   console.log(`[Webhook] Subscription authenticated: ${razorpaySubId}, plan: ${planCode}`)
 
-  // Update subscription status and provider metadata
+  // Update subscription status and provider metadata.
+  // Status guard: only advance to in_progress from 'created'. A late authenticated
+  // event arriving after subscription.activated must not regress active → in_progress.
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
@@ -466,6 +503,7 @@ async function handleSubscriptionAuthenticated(
       updated_at: new Date().toISOString()
     })
     .eq('provider_subscription_id', razorpaySubId)
+    .eq('status', 'created')
 
   if (error) {
     console.error('[Webhook] Failed to update subscription:', error)
@@ -503,8 +541,10 @@ async function handleSubscriptionActivated(
 
   console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}, plan: ${planCode}`)
 
-  // Update subscription status, billing info, and provider metadata
-  const { error } = await supabaseServiceClient
+  // M3: Update only when the subscription is in an expected prior state.
+  // Allow paused/expired recovery for the same Razorpay subscription: payment
+  // failure recovery can arrive after reconciliation has expired the paused row.
+  const { data: activatedRows, error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
@@ -537,14 +577,33 @@ async function handleSubscriptionActivated(
       updated_at: new Date().toISOString()
     })
     .eq('provider_subscription_id', razorpaySubId)
+    .in('status', ['created', 'in_progress', 'pending_cancellation', 'paused', 'expired'])  // M3: state precondition
+    .select('id')
 
   if (error) {
     console.error('[Webhook] Failed to activate subscription:', error)
     return
   }
 
+  if (!activatedRows?.length) {
+    console.warn('[Webhook] Activation ignored because subscription is not recoverable:', razorpaySubId)
+    return
+  }
+
   const planLabel = planCode === 'standard' ? 'Standard' : planCode === 'plus' ? 'Plus' : 'Premium'
   console.log(`[Webhook] ✅ ${planLabel} access granted to user: ${userId}`)
+
+  // Complete deferred upgrade: cancel the old subscription now that payment is confirmed
+  const { data: newSubRow } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
+  const meta = newSubRow?.provider_metadata as Record<string, any> | null
+  if (meta?.upgrading_from_sub_id) {
+    await _completeUpgradeCancellation(supabaseServiceClient, meta)
+  }
 
   // Log event
   await analyticsLogger.logEvent('webhook_subscription_activated', {
@@ -554,6 +613,95 @@ async function handleSubscriptionActivated(
     period_start: subscriptionEntity.current_start,
     period_end: subscriptionEntity.current_end
   })
+}
+
+// deno-lint-ignore no-explicit-any
+async function _completeUpgradeCancellation(
+  supabase: any,
+  meta: Record<string, any>
+): Promise<void> {
+  const now = new Date()
+  const oldSubId: string = meta.upgrading_from_sub_id
+  const oldProvider: string | undefined = meta.upgrading_from_provider
+  const oldProviderSubId: string | undefined = meta.upgrading_from_provider_sub_id
+
+  // Issue prorated refund for Razorpay-billed old subscription
+  if (oldProvider === 'razorpay' && oldProviderSubId && meta.upgrading_from_amount_paise && meta.upgrading_from_period_end) {
+    try {
+      const periodEnd = new Date(meta.upgrading_from_period_end)
+      const periodStart = new Date(meta.upgrading_from_period_start)
+      // Use exact millisecond ratio to avoid double-rounding on day counts (F33 fix).
+      const totalMs = Math.max(1, periodEnd.getTime() - periodStart.getTime())
+      const remainingMs = Math.max(0, periodEnd.getTime() - now.getTime())
+
+      if (remainingMs > 0) {
+        // Fetch the last paid invoice to use the actual charge amount, not the
+        // potentially-discounted first-month amount stored in subscription metadata (F33 fix).
+        const { data: lastInvoice } = await supabase
+          .from('subscription_invoices')
+          .select('razorpay_payment_id, amount_paise')
+          .eq('subscription_id', oldSubId)
+          .eq('status', 'paid')
+          .order('paid_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        const chargeAmountPaise = (lastInvoice as any)?.amount_paise ?? meta.upgrading_from_amount_paise
+        const refundAmountPaise = Math.round(chargeAmountPaise * remainingMs / totalMs)
+
+        if (lastInvoice?.razorpay_payment_id && refundAmountPaise > 0) {
+          const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+          await (razorpayProvider as any).issueRefund(
+            lastInvoice.razorpay_payment_id,
+            refundAmountPaise,
+            { reason: 'Plan upgrade — prorated refund', remaining_ms: String(remainingMs) }
+          )
+          console.log('[Webhook] Upgrade: prorated refund issued:', { refundAmountPaise, remainingMs })
+        }
+      }
+    } catch (refundError) {
+      console.error('[Webhook] Upgrade: prorated refund failed (non-fatal):', refundError)
+    }
+
+    // Cancel old Razorpay subscription via API
+    try {
+      const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+      await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
+      console.log('[Webhook] Upgrade: old Razorpay sub cancelled via API:', oldProviderSubId)
+    } catch (cancelApiError) {
+      console.error('[Webhook] Upgrade: old Razorpay sub API cancel failed (non-fatal):', cancelApiError)
+    }
+  } else if (oldProvider === 'google_play' && oldProviderSubId) {
+    try {
+      const gpProductId: string | undefined = meta.upgrading_from_iap_product_id
+      if (gpProductId) {
+        const gpEnv: 'sandbox' | 'production' = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
+        const gpPackageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || 'com.disciplefy.bible_study'
+        await cancelGooglePlaySubscription(supabase as any, gpPackageName, gpProductId, oldProviderSubId, gpEnv)
+        console.log('[Webhook] Upgrade: old Google Play sub cancelled via API:', gpProductId)
+      }
+    } catch (gpCancelError) {
+      console.error('[Webhook] Upgrade: old Google Play sub API cancel failed (non-fatal):', gpCancelError)
+    }
+  }
+
+  // Mark old sub as cancelled in DB (only if still parked as pending_cancellation)
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: 'cancelled',
+      cancelled_at: now.toISOString(),
+      cancellation_reason: 'Superseded by plan upgrade',
+      updated_at: now.toISOString()
+    })
+    .eq('id', oldSubId)
+    .eq('status', 'pending_cancellation')
+
+  if (error) {
+    console.error('[Webhook] Upgrade: failed to cancel old sub in DB (non-fatal):', { oldSubId, error })
+  } else {
+    console.log('[Webhook] Upgrade: old subscription cancelled in DB:', oldSubId)
+  }
 }
 
 /**
@@ -593,8 +741,9 @@ async function handleSubscriptionCharged(
 
   // Update subscription billing info, reset status to active, and update provider metadata.
   // Resetting status handles the case where the subscription was in pending_cancellation
-  // but the user re-enabled auto-renew and was successfully charged again.
-  await supabaseServiceClient
+  // but the user re-enabled auto-renew and was successfully charged again. Include expired
+  // so successful payment recovery after reconciliation restores access.
+  const { data: chargedRows, error: chargedUpdateError } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
@@ -625,6 +774,18 @@ async function handleSubscriptionCharged(
       updated_at: new Date().toISOString()
     })
     .eq('id', subscription.id)
+    .in('status', ['active', 'pending_cancellation', 'paused', 'expired'])  // M3: charged can only happen on these statuses
+    .select('id')
+
+  if (chargedUpdateError) {
+    console.error('[Webhook] Failed to update subscription after charge:', chargedUpdateError)
+    return
+  }
+
+  if (!chargedRows?.length) {
+    console.warn('[Webhook] Charge ignored because subscription is not recoverable:', razorpaySubId)
+    return
+  }
 
   // Check for existing invoice before inserting (idempotency)
   const { data: existingInvoice } = await supabaseServiceClient
@@ -967,6 +1128,52 @@ async function handleRefundCreated(
     subscription_id: invoice.subscription_id,
     payment_id: paymentId,
     refund_id: refundEntity?.id
+  })
+}
+
+/**
+ * M7: Handle subscription.halted event — exhausted all payment retries.
+ * Revokes access by marking the subscription 'paused' so users can't consume
+ * premium features while they have an outstanding failed payment.
+ */
+async function handleSubscriptionHalted(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+  if (!subscriptionEntity) {
+    console.error('[Webhook] subscription.halted missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  console.log(`[Webhook] Subscription halted (payment exhausted): ${razorpaySubId}`)
+
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'paused',
+      updated_at: new Date().toISOString()
+    })
+    .eq('provider_subscription_id', razorpaySubId)
+    .in('status', ['active', 'pending_cancellation'])
+
+  if (error) {
+    console.error('[Webhook] Failed to pause halted subscription:', error)
+    return
+  }
+
+  const { data: sub } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('user_id, id')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
+  await analyticsLogger.logEvent('webhook_subscription_halted', {
+    user_id: sub?.user_id,
+    subscription_id: sub?.id,
+    razorpay_subscription_id: razorpaySubId
   })
 }
 

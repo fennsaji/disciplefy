@@ -22,6 +22,7 @@ export interface AppleValidationResult {
   isIntroOffer: boolean
   autoRenewing: boolean
   validationResponse: any
+  validatedProductId?: string  // store-confirmed product ID from latest_receipt_info
   error?: string
 }
 
@@ -104,6 +105,28 @@ export async function validateAppleReceipt(
       }
     }
 
+    // H3: Verify bundle ID matches the expected app (reject cross-app receipts)
+    const receiptBundleId = validationData.receipt?.bundle_id
+    if (config.bundleId && receiptBundleId && receiptBundleId !== config.bundleId) {
+      console.error('[APPLE] Bundle ID mismatch — receipt:', receiptBundleId, 'expected:', config.bundleId)
+      return {
+        isValid: false, transactionId: '', originalTransactionId: '', purchaseDate: new Date(),
+        isTrial: false, isIntroOffer: false, autoRenewing: false, validationResponse: validationData,
+        error: `Bundle ID mismatch: receipt is for '${receiptBundleId}', not '${config.bundleId}'`
+      }
+    }
+
+    // H3: Reject sandbox receipts in production (status 21007 already re-routes, but
+    // the 21007 sandbox fallback should only be accepted in sandbox environment).
+    if (environment === 'production' && validationData.environment === 'Sandbox') {
+      console.error('[APPLE] Sandbox receipt accepted by production endpoint — rejecting')
+      return {
+        isValid: false, transactionId: '', originalTransactionId: '', purchaseDate: new Date(),
+        isTrial: false, isIntroOffer: false, autoRenewing: false, validationResponse: validationData,
+        error: 'Sandbox receipt not accepted in production'
+      }
+    }
+
     // Extract latest receipt info
     const latestReceipt = validationData.latest_receipt_info?.[0]
     const pendingRenewal = validationData.pending_renewal_info?.[0]
@@ -155,7 +178,8 @@ export async function validateAppleReceipt(
       isTrial,
       isIntroOffer,
       autoRenewing,
-      validationResponse: validationData
+      validationResponse: validationData,
+      validatedProductId: latestReceipt.product_id
     }
   } catch (error) {
     console.error('[APPLE] Validation error:', error)

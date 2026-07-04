@@ -45,10 +45,11 @@ serve(async (req) => {
 
     console.log('[get-token-pricing] Request:', { region })
 
-    // Initialize Supabase client
+    // L6: Use anon key — this endpoint is public and reads non-sensitive pricing data.
+    // Service role key grants unrestricted DB access; unneeded here.
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Fetch current pricing configuration
     const { data: pricingData, error: pricingError } = await supabase
@@ -63,7 +64,7 @@ serve(async (req) => {
         tokensPerRupee: 2,
         packages: [
           { tokens: 20, rupees: 10, discount: 0, isPopular: false },
-          { tokens: 50, rupees: 22, discount: 10, isPopular: false },
+          { tokens: 50, rupees: 22, discount: 12, isPopular: false },
           { tokens: 100, rupees: 40, discount: 20, isPopular: true },
           { tokens: 200, rupees: 75, discount: 25, isPopular: false },
           { tokens: 400, rupees: 140, discount: 30, isPopular: false },

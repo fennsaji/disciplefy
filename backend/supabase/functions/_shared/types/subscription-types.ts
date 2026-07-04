@@ -274,6 +274,7 @@ export interface CreateSubscriptionOptions {
   readonly planType: SubscriptionPlanType  // 'standard' or 'premium'
   readonly startAt?: number  // Unix timestamp for subscription start
   readonly notes?: Record<string, string>
+  readonly basePriceMinor?: number  // M6: actual plan price in paise; overrides config default
 }
 
 /**

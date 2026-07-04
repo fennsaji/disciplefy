@@ -5,11 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../animations/app_animations.dart';
 import '../../di/injection_container.dart';
 import '../../services/system_config_service.dart';
 import '../../../features/home/presentation/bloc/home_bloc.dart';
 import '../../../features/home/presentation/bloc/home_event.dart';
+import '../../../features/subscription/presentation/bloc/subscription_bloc.dart';
+import '../../../features/subscription/presentation/bloc/subscription_event.dart';
+import '../../../features/subscription/presentation/bloc/subscription_state.dart';
 import '../../../features/tokens/presentation/bloc/token_bloc.dart';
 import '../../../features/tokens/presentation/bloc/token_state.dart';
 import '../../../features/walkthrough/domain/walkthrough_screen.dart';
@@ -261,80 +266,111 @@ class _AppShellState extends State<AppShell>
 
     // Note: Achievement unlock dialog is handled globally in main.dart
     // to ensure it works for ALL routes including Memory Verses outside AppShell
-    return ShowCaseWidget(
-      onFinish: () {
-        // Mark home walkthrough as seen once ALL 5 steps (body + nav tabs) finish.
-        sl<WalkthroughRepository>().markSeen(WalkthroughScreen.home);
+    return BlocListener<SubscriptionBloc, SubscriptionState>(
+      bloc: sl<SubscriptionBloc>(),
+      listenWhen: (_, current) =>
+          (current is SubscriptionCreated && current.isBackgroundDelivery) ||
+          (current is SubscriptionError && current.isBackgroundDelivery),
+      listener: (context, state) {
+        if (state is SubscriptionCreated && state.isBackgroundDelivery) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Subscription activated successfully!'),
+              duration: Duration(seconds: 5),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          // Refresh status so home screen reflects the new plan immediately.
+          sl<SubscriptionBloc>().add(const RefreshSubscription());
+        } else if (state is SubscriptionError && state.isBackgroundDelivery) {
+          // F27: Background delivery failure — user was charged but no upgrade page
+          // is open. Show a global snackbar so they know something went wrong.
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Purchase validation failed: ${state.errorMessage} Please contact support if you were charged.',
+              ),
+              duration: const Duration(seconds: 8),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       },
-      builder: (context) {
-        // Register state so home screen can trigger the nav-tab steps
-        // from its onFinish callback (no BuildContext available there).
-        ShowcaseKeys.registerAppShell(ShowCaseWidget.of(context));
-        return PopScope(
-          canPop: false,
-          onPopInvoked: (didPop) {
-            if (!didPop) {
-              _handleBackNavigation();
-            }
-          },
-          child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: Column(
-              children: [
-                const OfflineBanner(),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      // Main content with animation
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: ScaleTransition(
-                          scale: _scaleAnimation,
-                          child: widget.navigationShell,
+      child: ShowCaseWidget(
+        onFinish: () {
+          // Mark home walkthrough as seen once ALL 5 steps (body + nav tabs) finish.
+          sl<WalkthroughRepository>().markSeen(WalkthroughScreen.home);
+        },
+        builder: (context) {
+          // Register state so home screen can trigger the nav-tab steps
+          // from its onFinish callback (no BuildContext available there).
+          ShowcaseKeys.registerAppShell(ShowCaseWidget.of(context));
+          return PopScope(
+            canPop: false,
+            onPopInvoked: (didPop) {
+              if (!didPop) {
+                _handleBackNavigation();
+              }
+            },
+            child: Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              body: Column(
+                children: [
+                  const OfflineBanner(),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        // Main content with animation
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: ScaleTransition(
+                            scale: _scaleAnimation,
+                            child: widget.navigationShell,
+                          ),
                         ),
-                      ),
-                      // Loading indicator overlay
-                      if (_showLoadingIndicator)
-                        Semantics(
-                          label: 'Loading content',
-                          liveRegion: true,
-                          container: true,
-                          child: Container(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: Theme.of(context).colorScheme.primary,
-                                strokeWidth: 3,
-                                semanticsLabel: 'Loading',
+                        // Loading indicator overlay
+                        if (_showLoadingIndicator)
+                          Semantics(
+                            label: 'Loading content',
+                            liveRegion: true,
+                            container: true,
+                            child: Container(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  strokeWidth: 3,
+                                  semanticsLabel: 'Loading',
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            bottomNavigationBar: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: MaxWidthWrapper.maxWidth,
-                    ),
-                    child: bottom_nav.DisciplefyBottomNav(
-                      currentIndex: _mapBranchIndexToTabIndex(currentIndex),
-                      tabs: _getFilteredTabs(),
-                      onTap: _onTabChange,
+                      ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              bottomNavigationBar: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: MaxWidthWrapper.maxWidth,
+                      ),
+                      child: bottom_nav.DisciplefyBottomNav(
+                        currentIndex: _mapBranchIndexToTabIndex(currentIndex),
+                        tabs: _getFilteredTabs(),
+                        onTap: _onTabChange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

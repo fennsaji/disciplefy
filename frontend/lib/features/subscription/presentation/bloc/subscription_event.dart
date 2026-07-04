@@ -284,6 +284,14 @@ class IAPPurchaseCancelled extends SubscriptionEvent {
   const IAPPurchaseCancelled();
 }
 
+/// Internal event: IAP purchase deferred (Android deferred billing / iOS Ask-to-Buy)
+///
+/// Emitted when the platform returns PurchaseStatus.pending. The purchase is
+/// not yet approved; re-enable the UI and show a "payment pending" message.
+class IAPPurchasePending extends SubscriptionEvent {
+  const IAPPurchasePending();
+}
+
 /// Internal event: Sync Play Store subscription state with backend
 ///
 /// INTERNAL USE ONLY - DO NOT USE DIRECTLY
@@ -301,4 +309,13 @@ class SyncPlayStoreSubscription extends SubscriptionEvent {
 
   @override
   List<Object?> get props => [purchases, deviceHasNoPurchases];
+}
+
+/// User-initiated purchase restore.
+///
+/// Triggered by the "Restore Purchases" button on upgrade pages (required by
+/// iOS App Store guideline 3.1.1). Calls restorePurchases() on the IAP service,
+/// which re-delivers any existing purchases through the normal purchase stream.
+class RestorePurchases extends SubscriptionEvent {
+  const RestorePurchases();
 }

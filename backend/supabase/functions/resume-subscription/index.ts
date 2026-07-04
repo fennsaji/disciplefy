@@ -49,14 +49,19 @@ async function handleResumeSubscription(
     // 2. Create subscription service
     const subscriptionService = new SubscriptionService(services.supabaseServiceClient)
 
-    // 3. Get user's pending_cancellation subscription (scheduled to cancel at period end)
-    const { data: cancelledSubscription, error } = await services.supabaseServiceClient
+    // 3. Get user's pending_cancellation subscription (scheduled to cancel at period end).
+    // F16: Use limit(1) not maybeSingle() — during a downgrade window there can be two
+    // pending_cancellation rows, which makes maybeSingle() throw PGRST116 (→ 500 not 404).
+    // Take the most-recently-created row (the active plan the user wants to resume).
+    const { data: cancelledSubscriptionRows, error } = await services.supabaseServiceClient
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
       .eq('status', 'pending_cancellation')
       .eq('cancel_at_cycle_end', true)
-      .maybeSingle() as { data: Subscription | null, error: PostgrestError | null }
+      .order('created_at', { ascending: false })
+      .limit(1) as { data: Subscription[] | null, error: PostgrestError | null }
+    const cancelledSubscription = cancelledSubscriptionRows?.[0] ?? null
 
     if (error) {
       console.error('[ResumeSubscription] Database error:', error)

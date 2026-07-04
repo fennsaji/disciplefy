@@ -28,6 +28,7 @@ import { PaymentProviderFactory } from '../_shared/services/payment-providers/pr
 import { ProviderType } from '../_shared/services/payment-providers/base-provider.ts'
 import { validateAndProcessReceipt } from '../_shared/services/receipt-validation-service.ts'
 import { cancelGooglePlaySubscription } from '../_shared/services/google-play-validator.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
 
 interface CreateSubscriptionRequest {
   plan_code: string
@@ -137,12 +138,12 @@ serve(async (req) => {
 
     console.log('[create-subscription-v2] User:', user.id)
 
-    // Check for existing active subscription
+    // Check for existing active subscription (including on_hold — Google Play payment failure)
     const { data: existingSubs, error: existingError } = await supabase
       .from('subscriptions')
       .select('id, status, plan_type, provider, plan_id, is_iap_subscription, provider_subscription_id, iap_product_id, current_period_start, current_period_end, amount_paise')
       .eq('user_id', user.id)
-      .in('status', ['active', 'in_progress', 'created', 'pending_cancellation', 'trial', 'paused'])
+      .in('status', ['active', 'in_progress', 'created', 'pending_cancellation', 'trial', 'paused', 'on_hold'])
 
     if (existingError) {
       console.error('[create-subscription-v2] Existing sub check error:', JSON.stringify(existingError))
@@ -165,7 +166,7 @@ serve(async (req) => {
     // This matters during downgrade when both a pending_cancellation old sub and a
     // created new sub exist simultaneously.
     const STATUS_PRIORITY: Record<string, number> = {
-      active: 1, pending_cancellation: 2, in_progress: 3, trial: 4, created: 5, paused: 6
+      active: 1, pending_cancellation: 2, in_progress: 3, trial: 4, created: 5, paused: 6, on_hold: 7
     }
     existingSubs?.sort((a, b) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99))
 
@@ -195,9 +196,14 @@ serve(async (req) => {
         console.log('[create-subscription-v2] Trial subscription detected, cancelling to allow paid upgrade')
         oldSubIdToCancel = existing.id
       } else if (isStaleCreated) {
-        // Stale 'created' record from a previous failed backend call — cancel and allow retry
+        // Stale 'created' record from a previous failed backend call — cancel and allow retry.
+        // M4: Also cancel the live Razorpay subscription so it doesn't keep billing.
         console.log('[create-subscription-v2] Stale created record detected, cancelling and allowing retry')
         oldSubIdToCancel = existing.id
+        if (existing.provider === 'razorpay' && existing.provider_subscription_id) {
+          oldProviderSubId = existing.provider_subscription_id
+          oldSubProvider = 'razorpay'
+        }
       } else if (isIAPProvider && isDifferentPlan) {
         // IAP plan upgrade / downgrade — cancel old after new receipt validates
         console.log('[create-subscription-v2] IAP plan change:', { from: existingPlanCode, to: plan_code })
@@ -258,6 +264,15 @@ serve(async (req) => {
             }
           }
         }
+      } else if (existing.status === 'on_hold') {
+        // on_hold means Google Play suspended the subscription due to payment failure.
+        // Access is already revoked, so allow a fresh subscription. Mark old one for
+        // cancellation; no provider-API cancel needed — Google Play manages the hold.
+        console.log('[create-subscription-v2] Replacing on_hold subscription:', existing.id)
+        oldSubIdToCancel = existing.id
+        oldProviderSubId = existing.provider_subscription_id ?? null
+        oldSubProvider = existing.provider
+        oldIapProductId = (existing as any).iap_product_id ?? null
       } else {
         // Genuinely duplicate: same active subscription on same plan and provider
         return new Response(
@@ -455,6 +470,36 @@ serve(async (req) => {
           promoData.applicable_providers.includes(provider)
 
         if (appliesToPlan && appliesToProvider) {
+          // M2: Enforce global campaign cap at purchase time (not just in validate-promo-code)
+          let promoEligible = true
+          if (promoData.max_total_uses != null) {
+            const { count: totalRedemptions, error: globalCapError } = await supabase
+              .from('promotional_redemptions')
+              .select('id', { count: 'exact', head: true })
+              .eq('campaign_id', promoData.id)
+            if (globalCapError) {
+              console.error('[create-subscription-v2] Failed to check global promo cap:', globalCapError)
+            } else if (totalRedemptions !== null && totalRedemptions >= promoData.max_total_uses) {
+              console.warn('[create-subscription-v2] Promo global cap reached:', { promo_code, totalRedemptions, max: promoData.max_total_uses })
+              promoEligible = false
+            }
+          }
+
+          // M2: Enforce new_users_only at purchase time
+          if (promoEligible && promoData.new_users_only) {
+            const { count: priorSubs, error: newUserCheckError } = await supabase
+              .from('subscriptions')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .neq('status', 'created')
+            if (newUserCheckError) {
+              console.error('[create-subscription-v2] Failed to check new_users_only:', newUserCheckError)
+            } else if (priorSubs !== null && priorSubs > 0) {
+              console.warn('[create-subscription-v2] Promo is new_users_only but user has prior subscriptions:', { promo_code, user_id: user.id })
+              promoEligible = false
+            }
+          }
+
           // Enforce per-user redemption limit (default: 1 use per user)
           const maxUsesPerUser = promoData.max_uses_per_user ?? 1
           const { count: existingRedemptions, error: redemptionCheckError } = await supabase
@@ -465,6 +510,7 @@ serve(async (req) => {
 
           if (redemptionCheckError) {
             console.error('[create-subscription-v2] Failed to check promo redemptions:', redemptionCheckError)
+            promoEligible = false
           } else if (existingRedemptions !== null && existingRedemptions >= maxUsesPerUser) {
             console.warn('[create-subscription-v2] Promo code already used by user:', {
               promo_code,
@@ -472,8 +518,10 @@ serve(async (req) => {
               existingRedemptions,
               maxUsesPerUser
             })
-            // Skip promo — treat as if no promo was provided
-          } else {
+            promoEligible = false
+          }
+
+          if (promoEligible) {
 
           promotionalCampaignId = promoData.id
 
@@ -516,7 +564,7 @@ serve(async (req) => {
             discountedPriceMinor,
             razorpay_offer_id: razorpayOfferId
           })
-          } // end: per-user redemption limit check (else branch)
+          } // end: promoEligible block
         }
       }
     }
@@ -768,106 +816,37 @@ serve(async (req) => {
           JSON.stringify({
             success: false,
             error: iapError instanceof Error ? iapError.message : 'Receipt validation failed',
-            code: 'IAP_VALIDATION_ERROR'
+            code: iapError instanceof AppError ? iapError.code : 'IAP_VALIDATION_ERROR'
           }),
           {
-            status: 500,
+            status: iapError instanceof AppError ? iapError.statusCode : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         )
       }
     }
 
-    // Cancel old subscription before inserting new one.
-    // Must happen before INSERT to satisfy the unique-per-active-user constraint.
+    // For upgrades: park old sub as pending_cancellation (excluded from unique-per-active-user
+    // index) so the user retains access while checkout is pending. The actual provider-side
+    // cancel, prorated refund, and DB cancellation are deferred to the subscription.activated
+    // webhook, which fires only after the user has successfully paid for the new plan.
     if (oldSubIdToCancel) {
-      // Issue prorated refund for Razorpay plan upgrades
-      if (oldSubForRefund && oldProviderSubId && provider === 'razorpay') {
-        try {
-          const now = new Date()
-          const periodStart = new Date(oldSubForRefund.periodStart)
-          const periodEnd = new Date(oldSubForRefund.periodEnd)
-          const totalDays = Math.max(1, Math.round((periodEnd.getTime() - periodStart.getTime()) / 86400000))
-          const remainingDays = Math.max(0, Math.round((periodEnd.getTime() - now.getTime()) / 86400000))
-          const refundAmountPaise = Math.round(oldSubForRefund.amountPaise * remainingDays / totalDays)
-
-          console.log('[create-subscription-v2] Prorated refund calculation:', {
-            totalDays, remainingDays, amountPaise: oldSubForRefund.amountPaise, refundAmountPaise
-          })
-
-          if (refundAmountPaise > 0) {
-            // Fetch last paid invoice to get the Razorpay payment ID
-            const { data: lastInvoice } = await supabase
-              .from('subscription_invoices')
-              .select('razorpay_payment_id')
-              .eq('subscription_id', oldSubIdToCancel)
-              .eq('status', 'paid')
-              .order('paid_at', { ascending: false })
-              .limit(1)
-              .maybeSingle()
-
-            if (lastInvoice?.razorpay_payment_id) {
-              const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
-              const refundId = await (razorpayProvider as any).issueRefund(
-                lastInvoice.razorpay_payment_id,
-                refundAmountPaise,
-                { reason: 'Plan upgrade — prorated refund', remaining_days: String(remainingDays) }
-              )
-              console.log('[create-subscription-v2] Prorated refund issued:', { refundId, refundAmountPaise })
-            } else {
-              console.log('[create-subscription-v2] No paid invoice found for refund — skipping')
-            }
-          } else {
-            console.log('[create-subscription-v2] No remaining days — skipping refund')
-          }
-        } catch (refundError) {
-          // Log but don't block the upgrade — refund failure shouldn't prevent plan change
-          console.error('[create-subscription-v2] Prorated refund failed (non-fatal):', refundError)
-        }
-      }
-
-      // Cancel on the old provider's side (immediate)
-      if (oldProviderSubId && oldSubProvider) {
-        if (oldSubProvider === 'razorpay') {
-          try {
-            const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
-            await (razorpayProvider as any).cancelSubscription(oldProviderSubId, false)
-            console.log('[create-subscription-v2] Old Razorpay subscription cancelled via API:', oldProviderSubId)
-          } catch (cancelApiError) {
-            console.error('[create-subscription-v2] Razorpay API cancellation failed (non-fatal):', cancelApiError)
-          }
-        } else if (oldSubProvider === 'google_play') {
-          // Cancel via Android Publisher API so Google stops billing the user.
-          // providerSubscriptionId format: "{productId}:{purchaseToken}"
-          const [productId, purchaseToken] = oldProviderSubId.split(':')
-          if (productId && purchaseToken) {
-            const gpEnvironment = Deno.env.get('APP_ENVIRONMENT') === 'sandbox' ? 'sandbox' : 'production'
-            const packageName = Deno.env.get('GOOGLE_PLAY_PACKAGE_NAME') || Deno.env.get('GOOGLE_PLAY_SANDBOX_PACKAGE_NAME') || 'com.disciplefy.bible_study'
-            await cancelGooglePlaySubscription(supabase, packageName, productId, purchaseToken, gpEnvironment)
-            console.log('[create-subscription-v2] Old Google Play subscription cancelled via API:', productId)
-          } else {
-            console.warn('[create-subscription-v2] Could not parse Google Play providerSubscriptionId for cancellation:', oldProviderSubId)
-          }
-        }
-        // Note: Apple App Store cancellation is not supported via server API — user must cancel from App Store.
-      }
-
-      const { error: cancelError } = await supabase
+      const { error: parkError } = await supabase
         .from('subscriptions')
         .update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: 'Superseded by new subscription',
+          status: 'pending_cancellation',
+          cancel_at_cycle_end: true,
+          cancellation_reason: 'Pending upgrade — will be cancelled on new subscription activation',
           updated_at: new Date().toISOString()
         })
         .eq('id', oldSubIdToCancel)
 
-      if (cancelError) {
-        console.error('[create-subscription-v2] Failed to cancel old subscription:', cancelError)
-        throw new Error('Failed to cancel existing subscription before upgrade')
+      if (parkError) {
+        console.error('[create-subscription-v2] Failed to park old subscription as pending_cancellation:', parkError)
+        throw new Error('Failed to park existing subscription before upgrade')
       }
 
-      console.log('[create-subscription-v2] Old subscription cancelled in DB:', oldSubIdToCancel)
+      console.log('[create-subscription-v2] Old subscription parked as pending_cancellation:', oldSubIdToCancel)
     }
 
     // For downgrade: cancel old Razorpay sub at cycle end + mark as pending_cancellation in DB.
@@ -915,11 +894,29 @@ serve(async (req) => {
         plan_id: planData.id,
         provider: provider,
         provider_subscription_id: isFreeSubscription ? providerResponse.id : providerResponse.providerSubscriptionId,
-        provider_metadata: providerResponse.metadata || {},
+        provider_metadata: {
+          ...(providerResponse.metadata || {}),
+          ...(oldSubIdToCancel && {
+            upgrading_from_sub_id: oldSubIdToCancel,
+            upgrading_from_provider: oldSubProvider,
+            upgrading_from_provider_sub_id: oldProviderSubId,
+            upgrading_from_iap_product_id: oldIapProductId,
+            upgrading_from_amount_paise: oldSubForRefund?.amountPaise,
+            upgrading_from_period_start: oldSubForRefund?.periodStart,
+            upgrading_from_period_end: oldSubForRefund?.periodEnd,
+          })
+        },
         // subscription_plan removed - plan code is accessed via plan_id → subscription_plans.plan_code
         plan_type: `${plan_code}_monthly`,
         status: subscriptionStatus,
-        amount_paise: finalPriceMinor,
+        // M6: Store the amount Razorpay will actually charge. A promo discount is only
+        // applied at Razorpay if a razorpay_offer_id was attached to the subscription.
+        // Without an offer_id, Razorpay charges the full base price regardless of any
+        // discount recorded in discounted_price_minor. Using basePriceMinor here keeps
+        // prorated-upgrade refund calculations accurate.
+        amount_paise: (provider === 'razorpay' && !razorpayOfferId && discountedPriceMinor !== undefined)
+          ? basePriceMinor
+          : finalPriceMinor,
         currency: planProviderData.currency,
         promotional_campaign_id: promotionalCampaignId,
         discounted_price_minor: discountedPriceMinor,
@@ -946,6 +943,7 @@ serve(async (req) => {
           .update({
             status: 'active',
             cancelled_at: null,
+            cancel_at_cycle_end: false,
             cancellation_reason: null,
             updated_at: new Date().toISOString()
           })
@@ -1001,8 +999,8 @@ serve(async (req) => {
       throw new Error('Failed to store subscription')
     }
 
-    // Record promo redemption if applicable
-    if (promotionalCampaignId && discountedPriceMinor) {
+    // Record promo redemption if applicable (includes zero-price / 100%-off promos — H4)
+    if (promotionalCampaignId && discountedPriceMinor !== undefined) {
       await supabase.from('promotional_redemptions').insert({
         campaign_id: promotionalCampaignId,
         user_id: user.id,
@@ -1052,13 +1050,17 @@ serve(async (req) => {
   } catch (error) {
     console.error('[create-subscription-v2] Error:', error)
 
+    // L1: Never leak internal error messages to clients.
+    const clientCode = (error as any)?.code ?? 'INTERNAL_ERROR'
+    const isKnownCode = typeof clientCode === 'string' && clientCode === clientCode.toUpperCase() && !clientCode.includes(' ')
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: 'Internal server error',
+        code: isKnownCode ? clientCode : 'INTERNAL_ERROR'
       }),
       {
-        status: 500,
+        status: (error as any)?.statusCode ?? 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )

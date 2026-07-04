@@ -28,6 +28,7 @@ class IAPService {
   Function(PurchaseDetails)? onPurchaseUpdate;
   Function(String)? onPurchaseError;
   void Function()? onPurchaseCancelled;
+  void Function()? onPurchasePending;
   void Function(List<PurchaseDetails> purchases)? onSyncRestoreCompleted;
 
   /// Initialize IAP service
@@ -261,8 +262,12 @@ class IAPService {
         if (purchase.pendingCompletePurchase) {
           _iap.completePurchase(purchase);
         }
+      } else if (purchase.status == PurchaseStatus.pending) {
+        Logger.debug(
+            '🛒 [IAP] Purchase pending (Ask-to-Buy / deferred) — notifying UI');
+        onPurchasePending?.call();
       }
-      // Note: PurchaseStatus.pending — no action; wait for a terminal status.
+      // Note: other statuses are no-ops.
     }
   }
 

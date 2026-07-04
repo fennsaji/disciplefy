@@ -11,6 +11,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { SubscriptionService } from '../_shared/services/subscription-service.ts'
 import type { CreateSubscriptionResponse } from '../_shared/types/subscription-types.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { getPlanConfig } from '../_shared/config/subscription-config.ts'
 
 /**
  * Main subscription creation handler
@@ -56,9 +57,12 @@ async function handleCreateSubscription(
     // 5. Create subscription
     console.log(`[CreateSubscription] Creating subscription for user ${userId}`)
 
+    const planConfig = await getPlanConfig('premium')
+
     const { subscription, shortUrl } = await subscriptionService.createSubscription({
       userId,
       planType: 'premium',  // Premium subscription (₹100/month)
+      basePriceMinor: planConfig.pricePaise,
       notes: {
         source: 'mobile_app',
         created_at: new Date().toISOString()

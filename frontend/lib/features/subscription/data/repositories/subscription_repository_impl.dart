@@ -229,12 +229,14 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
 
   @override
   Future<Either<Failure, SyncPlayStoreResult>> syncPlayStoreStatus({
+    required String provider,
     required List<Map<String, dynamic>> purchases,
     required bool deviceHasNoPurchases,
   }) async {
     return _execute<SyncPlayStoreResult>(
       () async {
         final response = await _remoteDataSource.syncPlayStoreStatus(
+          provider: provider,
           purchases: purchases,
           deviceHasNoPurchases: deviceHasNoPurchases,
         );

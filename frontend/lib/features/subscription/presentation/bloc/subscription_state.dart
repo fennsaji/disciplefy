@@ -19,7 +19,11 @@ abstract class SubscriptionState extends Equatable {
 ///
 /// No subscription data has been loaded yet
 class SubscriptionInitial extends SubscriptionState {
-  const SubscriptionInitial();
+  final bool isPendingPayment;
+  const SubscriptionInitial({this.isPendingPayment = false});
+
+  @override
+  List<Object?> get props => [isPendingPayment];
 }
 
 /// State when subscription data is being loaded from the API
@@ -127,13 +131,20 @@ class SubscriptionCreated extends SubscriptionState {
   final CreateSubscriptionResult result;
   final DateTime createdAt;
 
+  /// True when the purchase was re-delivered by the store with no upgrade page
+  /// open (e.g., app restarted after a mid-flight purchase, Google Play
+  /// re-delivery, or background silent sync). Used by AppShell to show a
+  /// global "Subscription activated" snackbar in place of the page-level UI.
+  final bool isBackgroundDelivery;
+
   const SubscriptionCreated({
     required this.result,
     required this.createdAt,
+    this.isBackgroundDelivery = false,
   });
 
   @override
-  List<Object?> get props => [result, createdAt];
+  List<Object?> get props => [result, createdAt, isBackgroundDelivery];
 
   /// Get the authorization URL for opening in browser
   String get authorizationUrl => result.authorizationUrl;
@@ -202,15 +213,20 @@ class SubscriptionError extends SubscriptionState {
   final Failure failure;
   final String? operation; // Which operation failed
   final Subscription? previousSubscription; // Keep previous data if available
+  // F27: true when failure came from a re-delivered / restored purchase
+  // (no upgrade page open). AppShell uses this to show a global snackbar.
+  final bool isBackgroundDelivery;
 
   const SubscriptionError({
     required this.failure,
     this.operation,
     this.previousSubscription,
+    this.isBackgroundDelivery = false,
   });
 
   @override
-  List<Object?> get props => [failure, operation, previousSubscription];
+  List<Object?> get props =>
+      [failure, operation, previousSubscription, isBackgroundDelivery];
 
   /// Get user-friendly error message
   String get errorMessage {

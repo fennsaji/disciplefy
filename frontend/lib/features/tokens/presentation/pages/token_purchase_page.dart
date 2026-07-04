@@ -162,11 +162,11 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text(
-                'Payment received but confirmation failed: ${e.toString()}'),
+                'Payment received but confirmation is pending — tokens will be credited shortly.'),
             backgroundColor: AppColors.warning,
-            duration: const Duration(seconds: 5),
+            duration: Duration(seconds: 8),
           ),
         );
 
@@ -186,10 +186,13 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
       _isLoading = false;
     });
 
+    // Razorpay code 2 = user cancelled — show no error snackbar (user-initiated).
+    if (response.code == 2) return;
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Something went wrong. Please try again.'),
+          content: const Text('Payment failed. Please try again.'),
           backgroundColor: AppColors.error,
         ),
       );

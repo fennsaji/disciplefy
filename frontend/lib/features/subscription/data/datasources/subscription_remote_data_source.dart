@@ -194,6 +194,7 @@ abstract class SubscriptionRemoteDataSource {
   /// Returns [SyncPlayStoreResponseModel] on success.
   /// Throws [ServerException] / [AuthenticationException] on failure.
   Future<SyncPlayStoreResponseModel> syncPlayStoreStatus({
+    required String provider,
     required List<Map<String, dynamic>> purchases,
     required bool deviceHasNoPurchases,
   });
@@ -256,6 +257,41 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   SubscriptionRemoteDataSourceImpl({
     required SupabaseClient supabaseClient,
   }) : _supabaseClient = supabaseClient;
+
+  /// Parses a [FunctionException] into a typed app exception.
+  ///
+  /// The backend function-factory returns `{"success": false, "error": {"code": "...", "message": "..."}}`.
+  /// 4xx → [ClientException] so the message reaches the user verbatim;
+  /// 5xx → [ServerException] for generic "try again" treatment.
+  Never _throwFromFunctionException(FunctionException e) {
+    final details = e.details;
+    String? code;
+    String? message;
+
+    if (details is Map<String, dynamic>) {
+      final errorObj = details['error'];
+      if (errorObj is Map<String, dynamic>) {
+        code = errorObj['code'] as String?;
+        message = errorObj['message'] as String?;
+      } else if (errorObj is String) {
+        message = errorObj;
+      }
+      code ??= details['code'] as String?;
+      message ??= details['message'] as String?;
+    }
+
+    final isClientError = e.status >= 400 && e.status < 500;
+    if (isClientError) {
+      throw ClientException(
+        message: message ?? 'Invalid request. Please try again.',
+        code: code ?? 'CLIENT_ERROR',
+      );
+    }
+    throw ServerException(
+      message: message ?? 'Server error occurred. Please try again later.',
+      code: code ?? 'SERVER_ERROR',
+    );
+  }
 
   @override
   Future<CreateSubscriptionResponseModel> createSubscription() async {
@@ -337,6 +373,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error('🚨 [SUBSCRIPTION_API] Unexpected error: $e');
       throw ClientException(
@@ -422,6 +460,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error('🚨 [SUBSCRIPTION_API] Unexpected cancellation error: $e');
       throw ClientException(
@@ -506,6 +546,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error('🚨 [SUBSCRIPTION_API] Unexpected resume error: $e');
       throw ClientException(
@@ -589,6 +631,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting active subscription: $e');
@@ -639,6 +683,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription history: $e');
@@ -707,6 +753,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting invoices: $e');
@@ -753,11 +801,15 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       rethrow;
     } on AuthenticationException {
       rethrow;
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription status: $e');
-      // Return default status on error instead of throwing
-      return UserSubscriptionStatus.defaultStatus();
+      throw ServerException(
+        message: 'Unable to fetch subscription status. Please try again later.',
+        code: 'GET_STATUS_FAILED',
+      );
     }
   }
 
@@ -831,9 +883,13 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           code: 'UNAUTHORIZED',
         );
       } else if (response.status >= 500) {
-        throw const ServerException(
+        // F14: Extract structured backend code so bloc can surface actionable messages.
+        final serverErrorData = response.data as Map<String, dynamic>?;
+        final serverError = serverErrorData?['error'] as Map<String, dynamic>?;
+        final serverCode = serverError?['code'] as String? ?? 'SERVER_ERROR';
+        throw ServerException(
           message: 'Server error occurred. Please try again later.',
-          code: 'SERVER_ERROR',
+          code: serverCode,
         );
       } else {
         throw const ServerException(
@@ -855,6 +911,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating Standard subscription: $e');
@@ -930,9 +988,12 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           code: 'UNAUTHORIZED',
         );
       } else if (response.status >= 500) {
-        throw const ServerException(
+        final serverErrorData = response.data as Map<String, dynamic>?;
+        final serverError = serverErrorData?['error'] as Map<String, dynamic>?;
+        final serverCode = serverError?['code'] as String? ?? 'SERVER_ERROR';
+        throw ServerException(
           message: 'Server error occurred. Please try again later.',
-          code: 'SERVER_ERROR',
+          code: serverCode,
         );
       } else {
         throw const ServerException(
@@ -954,6 +1015,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating Plus subscription: $e');
@@ -1047,9 +1110,12 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
           code: 'UNAUTHORIZED',
         );
       } else if (response.status >= 500) {
-        throw const ServerException(
+        final serverErrorData = response.data as Map<String, dynamic>?;
+        final serverError = serverErrorData?['error'] as Map<String, dynamic>?;
+        final serverCode = serverError?['code'] as String? ?? 'SERVER_ERROR';
+        throw ServerException(
           message: 'Server error occurred. Please try again later.',
-          code: 'SERVER_ERROR',
+          code: serverCode,
         );
       } else {
         throw const ServerException(
@@ -1070,6 +1136,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error starting Premium trial: $e');
@@ -1219,6 +1287,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error validating promo code: $e');
@@ -1335,22 +1405,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } on FunctionException catch (e) {
-      // Extract user-facing error message from Supabase FunctionException details
-      final details = e.details;
-      if (details is Map<String, dynamic>) {
-        final error = details['error'] as String?;
-        final code = details['code'] as String?;
-        throw ServerException(
-          message: error ?? 'Server error occurred. Please try again later.',
-          code: code ?? 'SERVER_ERROR',
-        );
-      }
-      Logger.error(
-          '🚨 [SUBSCRIPTION_API] Unexpected error creating subscription V2: $e');
-      throw const ServerException(
-        message: 'Server error occurred. Please try again later.',
-        code: 'SERVER_ERROR',
-      );
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error creating subscription V2: $e');
@@ -1364,6 +1419,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
 
   @override
   Future<SyncPlayStoreResponseModel> syncPlayStoreStatus({
+    required String provider,
     required List<Map<String, dynamic>> purchases,
     required bool deviceHasNoPurchases,
   }) async {
@@ -1371,12 +1427,12 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       final headers = await ApiAuthHelper.getAuthHeaders();
 
       Logger.debug(
-          '💎 [SUBSCRIPTION_API] Syncing Play Store status — ${purchases.length} purchase(s), deviceHasNoPurchases: $deviceHasNoPurchases');
+          '💎 [SUBSCRIPTION_API] Syncing $provider status — ${purchases.length} purchase(s), deviceHasNoPurchases: $deviceHasNoPurchases');
 
       final response = await _supabaseClient.functions.invoke(
         'sync-subscription-status',
         body: {
-          'provider': 'google_play',
+          'provider': provider,
           'purchases': purchases,
           'device_has_no_purchases': deviceHasNoPurchases,
         },
@@ -1411,6 +1467,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
+    } on FunctionException catch (e) {
+      _throwFromFunctionException(e);
     } catch (e) {
       Logger.error(
           '🚨 [SUBSCRIPTION_API] Unexpected error syncing Play Store status: $e');

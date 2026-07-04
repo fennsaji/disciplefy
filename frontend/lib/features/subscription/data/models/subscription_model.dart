@@ -34,13 +34,16 @@ class SubscriptionModel extends Subscription {
           '',
       provider: json['provider'] as String? ?? 'razorpay',
       status: SubscriptionStatus.values.firstWhere(
-        // DB stores 'in_progress' for the authenticated state
-        // (set by subscription.authenticated Razorpay webhook)
-        (e) =>
-            e.name ==
-            (json['status'] == 'in_progress'
-                ? 'authenticated'
-                : json['status'] as String),
+        // DB uses 'in_progress' for the Razorpay authenticated state and
+        // 'on_hold' for Google Play payment failure — map both explicitly.
+        (e) {
+          final dbStatus = json['status'] as String;
+          if (dbStatus == 'in_progress') {
+            return e == SubscriptionStatus.authenticated;
+          }
+          if (dbStatus == 'on_hold') return e == SubscriptionStatus.on_hold;
+          return e.name == dbStatus;
+        },
         orElse: () => SubscriptionStatus.created,
       ),
       planType: json['plan_type'] as String? ?? '',
