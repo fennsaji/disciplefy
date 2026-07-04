@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 1 — Launch Week
-Version: 3.9 *(rewritten — see Changelog)*
+Version: 4.0 *(rewritten — see Changelog)*
 
 ## Mission of the Week
 Get the app in front of people and prove it works — before teaching the deeper "reading vs. studying" theme that Weeks 2-4 build on. Week 1 is 4 screen-recording How-To Reels (the Launch post itself already went out Friday before this formal week), not the regular Bible Explained/Bible Tips rhythm — that rhythm starts fresh in Week 2 (see `Content_Playbook_Season1_Week2.md`).
@@ -73,14 +73,14 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | Section | Screen | Voice-over |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Don't know where to start your Bible study?" | "Ever open your Bible and just... freeze?" |
-| 0:03-0:08 | INTRO | B-roll: flipping through a physical Bible, unsure | "Reading is easy. Knowing what it means? Not so much." |
-| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Generate tab (real bottom-nav label is "Generate," screen titled "Generate Study Guide") | "That's where Disciplefy's Study Guide comes in." |
-| 0:12-0:20 | DISCIPLEFY | Type "Romans 8:28" (or "anxiety") into the search field | "Type any verse — or even just what's on your heart, like 'anxiety.'" |
-| 0:20-0:24 | DISCIPLEFY | Open the study-mode picker (real modes: Quick Read, Standard Study, Deep Dive, Lectio Divina, Sermon Outline — not a 2-way toggle; chosen before generating) | "Five minutes, or go deep — your choice." |
-| 0:24-0:28 | DISCIPLEFY | Tap Generate, loading animation | "Tap Generate—" |
-| 0:28-0:36 | DISCIPLEFY | Scroll through the generated Study Guide — summary, key verses, reflection questions | "—and get a full study: context, key verses, questions to reflect on, and how to apply it." |
-| 0:36-0:40 | OUTRO | Gold CTA card, on-screen text: "Try it free — link in bio." | "Any verse. Any topic. A full study, in seconds. Free — link in bio." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Opened to Romans 8. Had no idea where to start." | "Last week I opened to Romans 8 and just... stared at it." |
+| 0:03-0:08 | INTRO | B-roll: flipping through a physical Bible, unsure | "I can read the words fine. Knowing what they actually mean? That's the hard part." |
+| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Generate tab (real bottom-nav label is "Generate," screen titled "Generate Study Guide") | "So I built Disciplefy's Study Guide to do exactly that." |
+| 0:12-0:20 | DISCIPLEFY | Type "Romans 8:28" (or "anxiety") into the search field | "Type in the verse — or skip the reference and just type what you're carrying, like 'anxiety.'" |
+| 0:20-0:24 | DISCIPLEFY | Open the study-mode picker (real modes: Quick Read, Standard Study, Deep Dive, Lectio Divina, Sermon Outline — not a 2-way toggle; chosen before generating) | "Want the five-minute version, or ready to go deep? You pick." |
+| 0:24-0:28 | DISCIPLEFY | Tap Generate, loading animation | "One tap—" |
+| 0:28-0:36 | DISCIPLEFY | Scroll through the generated Study Guide — summary, key verses, reflection questions | "—and you've got the context, the key verses, questions that actually make you think, and how to live it out today." |
+| 0:36-0:40 | OUTRO | Gold CTA card, on-screen text: "Try it free — link in bio." | "Any verse. Any struggle. A real study, in seconds. Free — link's in bio." |
 
 **Caption:** Open the Bible and freeze on where to start? Type any verse or topic — get a full study guide (context, key verses, reflection, application) in seconds. Free on Web & Android — link in bio.
 **Hashtags:** #Disciplefy #BibleStudy #StudyGuide #BibleApp
@@ -107,13 +107,13 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | Section | Screen | Voice-over |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Studying random verses and not really growing?" | "Ever feel like you're studying... but going nowhere?" |
-| 0:03-0:08 | INTRO | B-roll: flipping between unrelated chapters in a physical Bible | "Random verses don't build on each other." |
-| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Topics tab | "Learning Paths fix that." |
-| 0:12-0:20 | DISCIPLEFY | Scroll through path options (Foundations, Prayer, Grace...) | "Pick a guided journey — Foundations, Prayer, Grace, and more." |
-| 0:20-0:28 | DISCIPLEFY | Tap into a path, show its numbered topic list with XP per topic and a milestone badge (real: topic count is dynamic per path, e.g. 16 — not a fixed number, no literal "progress bar" on this screen) | "Each path lays out exactly what's next, so you always know where you are." |
-| 0:28-0:35 | DISCIPLEFY | Open topic 1, scroll content, tap Complete | "Every topic builds on the last — real growth, not just random reading." |
-| 0:35-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Stop wandering. Start a path — free, link in bio." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Psalms one week. Romans the next. Going nowhere." | "I used to bounce between random verses every week — Psalms one day, Romans the next." |
+| 0:03-0:08 | INTRO | B-roll: flipping between unrelated chapters in a physical Bible | "Felt busy. Wasn't actually growing — because none of it connected to what I'd studied before." |
+| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Topics tab | "That's exactly why we built Learning Paths." |
+| 0:12-0:20 | DISCIPLEFY | Scroll through path options (Foundations, Prayer, Grace...) | "Pick a track — Foundations, Prayer, Grace, whatever you need right now." |
+| 0:20-0:28 | DISCIPLEFY | Tap into a path, show its numbered topic list with XP per topic and a milestone badge (real: topic count is dynamic per path, e.g. 16 — not a fixed number, no literal "progress bar" on this screen) | "Every path shows you exactly what's next, so you're never guessing where to go." |
+| 0:28-0:35 | DISCIPLEFY | Open topic 1, scroll content, tap Complete | "Finish one topic, and the next one builds right on it — that's what actual growth looks like." |
+| 0:35-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Stop wandering through verses. Start walking a path. Free — link in bio." |
 
 **Caption:** Growth isn't random verses — it's a path. Learning Paths walk you through Scripture step by step so you always know what's next. Free — link in bio. 🌱
 **Hashtags:** #Disciplefy #Discipleship #SpiritualGrowth #BibleStudy
@@ -140,14 +140,14 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | Section | Screen | Voice-over |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (no app): "Memorize a verse… forget it in a week?" | "Ever memorize a verse... and lose it a week later?" |
-| 0:03-0:08 | INTRO | B-roll: person trying to recall a verse, blank look | "Most of us do — memorizing without a system doesn't stick." |
-| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Memory Verses icon on the Home screen (real: reached from a Home-screen icon, not a bottom-nav tab), tap Add Verse | "Disciplefy's Memory Verse feature is built to make it stick." |
-| 0:12-0:20 | DISCIPLEFY | Search and add a verse | "Add any verse you want to learn." |
-| 0:20-0:28 | DISCIPLEFY | Cycle through a few practice modes — flip cards, word bank, fill-in-the-blank (real: 3 of 8 actual modes, a representative sample, not exhaustive) | "Practice it with flip cards, a word bank, or fill-in-the-blank." |
-| 0:28-0:33 | DISCIPLEFY | Notification popup: review reminder | "It reminds you right before you'd forget — not just once." |
-| 0:33-0:38 | DISCIPLEFY | Show the green streak heat map | "And this streak keeps you consistent." |
-| 0:38-0:42 | OUTRO | On-screen text: "Free — link in bio." | "Hide His Word in your heart. Free — link in bio." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (no app): "Memorized this verse in youth group. Can't finish it now." | "I memorized Philippians 4:13 in youth group. Couldn't tell you the last three words of it now." |
+| 0:03-0:08 | INTRO | B-roll: person trying to recall a verse, blank look | "Turns out cramming a verse once was never going to make it stick." |
+| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Memory Verses icon on the Home screen (real: reached from a Home-screen icon, not a bottom-nav tab), tap Add Verse | "So Memory Verses is built around one idea: repetition, at the right time." |
+| 0:12-0:20 | DISCIPLEFY | Search and add a verse | "Add whatever verse you're working on." |
+| 0:20-0:28 | DISCIPLEFY | Cycle through a few practice modes — flip cards, word bank, fill-in-the-blank (real: 3 of 8 actual modes, a representative sample, not exhaustive) | "Then drill it — flip cards, a word bank, fill-in-the-blank, whatever keeps it fresh." |
+| 0:28-0:33 | DISCIPLEFY | Notification popup: review reminder | "It nudges you right before you'd actually forget it — not on some random schedule." |
+| 0:33-0:38 | DISCIPLEFY | Show the green streak heat map | "And watching that streak grow is what keeps you coming back." |
+| 0:38-0:42 | OUTRO | On-screen text: "Free — link in bio." | "Hide His Word in your heart — for good this time. Free, link in bio." |
 
 **Caption:** Memorize a verse, then lose it in a week? Add a verse, practice with flip cards/word bank/cloze, get reminded right before you'd forget — and watch your streak grow. Free — link in bio. 🙌
 **Hashtags:** #Disciplefy #MemoryVerse #BibleMemory #Scripture
@@ -174,13 +174,13 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | Section | Screen | Voice-over |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (no app): "A faith question at midnight — and no one to ask?" | "Ever have a faith question... and no one to ask?" |
-| 0:03-0:08 | INTRO | B-roll: person alone at night, holding phone | "Some questions can't wait for Sunday." |
-| 0:08-0:12 | DISCIPLEFY | Open a generated Study Guide, tap "Ask Discipler" (real button, bottom of the Study Guide screen next to "Listen" — this is the real entry point, confirmed against actual app screenshots) | "Meet your Discipler." |
-| 0:12-0:20 | DISCIPLEFY | Tap the mic, speak: "How do I forgive someone who hurt me?" | "Tap the mic, and just ask — out loud, like you would a friend." |
-| 0:20-0:30 | DISCIPLEFY | Scroll through the Scripture-grounded response | "It answers — grounded in Scripture, every time." |
-| 0:30-0:36 | DISCIPLEFY | On-screen text: "A companion, not a replacement." | "A companion for your walk — not a replacement for your pastor or church." |
-| 0:36-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Real questions. Biblical answers. Anytime. Free — link in bio. And follow for a new faith question every week." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (no app): "Had a question at 1am. No one to call." | "Had a question at 1am once — 'how do I actually forgive someone who hurt me?' Nobody to call." |
+| 0:03-0:08 | INTRO | B-roll: person alone at night, holding phone | "Some questions really can't wait until Sunday." |
+| 0:08-0:12 | DISCIPLEFY | Open a generated Study Guide, tap "Ask Discipler" (real button, bottom of the Study Guide screen next to "Listen" — this is the real entry point, confirmed against actual app screenshots) | "That's why every Study Guide has a Discipler built right in." |
+| 0:12-0:20 | DISCIPLEFY | Tap the mic, speak: "How do I forgive someone who hurt me?" | "Tap the mic and just ask it out loud — like you would a friend." |
+| 0:20-0:30 | DISCIPLEFY | Scroll through the Scripture-grounded response | "It answers straight from Scripture — every single time." |
+| 0:30-0:36 | DISCIPLEFY | On-screen text: "A companion, not a replacement." | "Think of it as a companion for the walk — never a replacement for your pastor or your church." |
+| 0:36-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Real questions, biblical answers, anytime. Free — link in bio. Follow for a new one every week." |
 
 *This week's Follow-CTA slot (see Growth Additions below) — the added line is a soft ask, not a hard sell; doesn't replace the app CTA, just tacks on at the very end.*
 
@@ -298,3 +298,4 @@ Ignore vanity metrics. Focus on helping more believers take one step closer to b
 - **v3.7:** Corrected screen-recording script assumptions against the real app UI/screenshots: "Study tab" → real label is "Generate"; "Quick/Deep mode toggle" → real UI is a 5-mode picker (Quick Read, Standard Study, Deep Dive, Lectio Divina, Sermon Outline), not a 2-way switch; Learning Paths "lessons 1→8 with progress bar" → real screen shows a dynamic-count numbered topic list with XP and milestone badges (e.g. 16 topics), no fixed count or literal progress bar; Discipler entry point corrected to "Ask Discipler" button on a generated Study Guide (confirmed via screenshot), not a generic "tap into the Discipler"; Memory Verse practice-mode line clarified as a 3-of-8 sample, not exhaustive; Memory Verse entry point clarified as a Home-screen icon, not a nav tab.
 - **v3.8:** Monday's Reel had the mode picker placed *after* tapping Generate and viewing results — backwards, since you pick a mode before generating. Reordered: type verse → pick mode → tap Generate → view results.
 - **v3.9:** Added "Growth Additions (2026)" — canonical section covering 3 tactics not previously in the plan: (1) Follow-CTA rotated once/week on the highest-reach post (this week: Thursday's Discipler Reel), (2) trending audio on Daniel Reels where mood fits, (3) Stories interactive stickers 2-3x/week. Weeks 2-4 and PreWeek1 reference this section rather than repeating it.
+- **v4.0:** Rewrote all 4 Mon-Thu voice-over scripts — the "Ever ___? / Most of us..." formula repeated identically across all four felt generic and read like ad copy, not a person talking. Replaced with specific first-person founder anecdotes (Romans 8 freeze, random verse-hopping, a forgotten youth-group verse, a 1am question) that still hit the same beats (hook → problem → feature → demo → CTA) but sound like someone actually talking, not a script template.

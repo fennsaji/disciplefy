@@ -296,16 +296,16 @@ class IAPService {
         }
         return receipt;
       } else if (Platform.isIOS) {
-        // On iOS 15+ the plugin uses StoreKit 2, so PurchaseDetails is an
-        // SK2PurchaseDetails whose serverVerificationData is a JWS — which the
-        // backend's legacy verifyReceipt API does not accept. Use the base64
-        // App Store receipt instead; verifyReceipt validates it under both
-        // StoreKit 1 and StoreKit 2.
-        final receipt = await SKReceiptManager.retrieveReceiptData();
-        if (receipt.isEmpty) {
-          throw Exception('App Store receipt data is empty');
+        // On iOS 15+ the plugin uses StoreKit 2, where the transaction is a JWS
+        // (JWSTransaction) exposed as verificationData.serverVerificationData.
+        // The legacy StoreKit 1 receipt file (SKReceiptManager.retrieveReceiptData)
+        // is frequently absent under SK2 (file-not-found), so send the JWS and let
+        // the backend verify it against Apple's certificate chain.
+        final jws = purchase.verificationData.serverVerificationData;
+        if (jws.isEmpty) {
+          throw Exception('App Store JWS transaction data is empty');
         }
-        return receipt;
+        return jws;
       }
       throw Exception('Unsupported platform for receipt extraction');
     } catch (e) {
