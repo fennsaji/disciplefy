@@ -1,5 +1,5 @@
 # Disciplefy Visual Bible
-Version: 1.1 *(updated — see Changelog)*
+Version: 1.2 *(updated — see Changelog)*
 
 This document defines the complete visual identity of Disciplefy across the app, website, marketing site, social media, videos, presentations, print, and future products.
 The goal is simple: **every Disciplefy asset should be recognizable without seeing the logo.**
@@ -85,6 +85,14 @@ Every generated scene should communicate: Hope · Grace · Reflection · Peace �
 Preferred locations: Homes · Churches · Coffee shops · Nature · Parks · Libraries · City mornings · Golden-hour streets
 Avoid fantasy-style religious imagery unless the creative concept explicitly calls for it.
 
+## Recurring Characters — Two Video Systems
+This doc's Video Language/Photography Style rules above (photorealistic, live-action, golden-hour) describe one system in active use. A second, separate system also exists and needs documenting here so it isn't rediscovered as "drift" again:
+
+- **Live-Action System — Daniel & Sarah.** Photorealistic Google Flow/Veo generation, following this doc's Video Language/Motion Language/Photography Style sections exactly (slow, intentional, golden-hour, no CGI). Used for the Bible Explained / Walking with Jesus / Growing in Christ Reels in `Content_Playbook_Season1_Week2.md` onward, and the meta-prompt in `Prompts/Daily Devotions.md`.
+- **Stylized 3D Animation System — Grace & Joshua.** "Premium stylized 3D animation," explicitly *not* photorealistic — a different rendering style from the Live-Action system above, with its own character-consistency rule ("never redesign the character") across every asset. Defined in `Prompts/Grace Collection.md` (15 assets) and `Prompts/Joshua Collection.md` (40 assets, including 17 Joshua+Grace duo scenes).
+
+**Open question, not resolved here:** both systems currently cover overlapping content beats (a character alone at a desk with an open Bible, morning light, coffee, journal) without any documented reason to pick one over the other for a given piece of content. Two ways this could be intentional — different formats each fitting a system (e.g. live-action for Reels, animation for a distinct stylized series) — but that mapping isn't written down anywhere yet. Before producing more assets in either system, decide: (a) both stay, with an explicit rule for which system each content type/series uses, or (b) consolidate to one. Whichever is decided, add it as a rule under this section.
+
 ## Social Media Design
 **Reels:** Large captions · Minimal overlays · Elegant scripture · Premium pacing · Warm grade
 **Carousels:** One idea per slide · Minimal text · Consistent margins · Simple illustrations
@@ -123,3 +131,4 @@ If the answer is yes, it belongs in Disciplefy.
 
 ## Changelog
 - **v1.1:** Added "Scope: Two Visual Systems" section clarifying Indigo-primary applies to Product/App (verified against live `app_colors.dart`), while Marketing/Social has since moved to a separate warm-cream-gold system (per the approved Instagram carousel reference). Previously this doc implied one universal palette, which no longer matched what's actually shipping in marketing assets.
+- **v1.2:** Added "Recurring Characters — Two Video Systems" documenting the previously-undocumented Live-Action (Daniel & Sarah) vs Stylized 3D Animation (Grace & Joshua) character tracks found in `Prompts/`. Flagged as an open question which system each content type should use — not resolved here.
