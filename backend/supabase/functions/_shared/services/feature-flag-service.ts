@@ -32,6 +32,7 @@ export interface FeatureFlag {
   rolloutPercentage: number // 0-100 (for future A/B testing)
   displayMode: 'hide' | 'lock' // How feature appears when user lacks access
   metadata: Record<string, any>
+  allowTesterBypass: boolean // Tester-email bypass opt-in (see feature_tester_emails)
 }
 
 interface CacheEntry {
@@ -110,6 +111,7 @@ async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
     rolloutPercentage: row.rollout_percentage || 100,
     displayMode: (row.display_mode || 'hide') as 'hide' | 'lock', // Default to 'hide' for backward compatibility
     metadata: row.metadata || {},
+    allowTesterBypass: row.allow_tester_bypass === true,
   }))
 
   return flags
@@ -255,4 +257,86 @@ export function getCacheStats(): { age: number; valid: boolean; count: number } 
     valid: isCacheValid(flagsCache),
     count: flagsCache?.data.length || 0,
   }
+}
+
+// ============================================================================
+// Tester Bypass (feature_tester_emails)
+// ============================================================================
+//
+// A global list of tester emails stored in system_config under key
+// 'feature_tester_emails' (comma-separated). Users on this list treat any
+// flag with allowTesterBypass=true as enabled, even when is_enabled=false.
+// Plan gating (enabledForPlans) and displayMode behavior are unchanged.
+// The list is server-side only — never include it in any response.
+
+interface TesterEmailsCacheEntry {
+  emails: string[]
+  timestamp: number
+}
+
+let testerEmailsCache: TesterEmailsCacheEntry | null = null
+
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+export function parseTesterEmails(raw: string | null | undefined): string[] {
+  if (!raw) return []
+  return raw
+    .split(',')
+    .map(normalizeEmail)
+    .filter(e => e.length > 0)
+}
+
+async function fetchTesterEmails(): Promise<string[]> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('system_config')
+    .select('value')
+    .eq('key', 'feature_tester_emails')
+    .maybeSingle()
+
+  if (error) {
+    console.error('[FeatureFlags] Error fetching tester emails:', error)
+    return [] // fail-safe: no bypass
+  }
+
+  return parseTesterEmails(data?.value as string | null)
+}
+
+/**
+ * Check whether an email is in the tester allowlist.
+ * Uses the same 5-minute TTL caching pattern as feature flags.
+ * Fail-safe: returns false on any error or for missing/anonymous emails.
+ */
+export async function isTesterEmail(email: string | null | undefined): Promise<boolean> {
+  if (!email) return false
+
+  const now = Date.now()
+  if (!testerEmailsCache || now - testerEmailsCache.timestamp >= CACHE_TTL_MS) {
+    testerEmailsCache = {
+      emails: await fetchTesterEmails(),
+      timestamp: now,
+    }
+  }
+
+  return testerEmailsCache.emails.includes(normalizeEmail(email))
+}
+
+/**
+ * Return a copy of the flags with tester bypass applied.
+ * When isTester is true, flags with allowTesterBypass=true are reported enabled.
+ * Pure transform — never mutates the (cached) input array.
+ */
+export function applyTesterBypass(flags: FeatureFlag[], isTester: boolean): FeatureFlag[] {
+  if (!isTester) return flags
+  return flags.map(flag =>
+    flag.allowTesterBypass && !flag.isEnabled
+      ? { ...flag, isEnabled: true }
+      : flag
+  )
+}
+
+export function clearTesterEmailsCache(): void {
+  testerEmailsCache = null
 }

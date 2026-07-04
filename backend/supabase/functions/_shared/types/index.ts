@@ -19,6 +19,7 @@ export interface UserContext {
   readonly userId?: string
   readonly sessionId?: string
   readonly userType?: 'admin' | 'user' // Admin users get premium access temporarily
+  readonly email?: string // Authenticated user's email (used for feature tester bypass)
 }
 
 /**

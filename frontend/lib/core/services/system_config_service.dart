@@ -28,6 +28,7 @@ class SystemConfigService extends ChangeNotifier {
   SystemConfig? _config;
   DateTime? _lastFetch;
   String? _error;
+  StreamSubscription<AuthState>? _authSubscription;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -37,6 +38,10 @@ class SystemConfigService extends ChangeNotifier {
 
   /// Check if app is in maintenance mode
   bool get isMaintenanceModeActive => _config?.maintenanceMode.enabled ?? false;
+
+  /// Whether the current signed-in user has feature tester bypass active
+  /// (resolved server-side; true only when their email is in the tester list).
+  bool get isTesterBypassActive => _config?.testerBypassActive ?? false;
 
   /// Get maintenance mode message
   String get maintenanceModeMessage =>
@@ -70,6 +75,26 @@ class SystemConfigService extends ChangeNotifier {
       }
 
       _isInitialized = true;
+
+      // Refetch config when the signed-in user changes: tester bypass is
+      // resolved server-side per user, so cached flags are per-identity.
+      _authSubscription ??= _supabase.auth.onAuthStateChange.listen((state) {
+        final event = state.event;
+        if (event == AuthChangeEvent.signedOut) {
+          Logger.debug(
+              '🔄 [SystemConfigService] Auth change ($event) — clearing cache and refreshing config');
+          // Clear persisted + in-memory cache first so a failed refetch after
+          // logout can't leave the previous user's tester-resolved flags visible.
+          clearCache().then((_) => fetchSystemConfig(forceRefresh: true));
+        } else if (event == AuthChangeEvent.signedIn ||
+            event == AuthChangeEvent.userUpdated) {
+          Logger.debug(
+              '🔄 [SystemConfigService] Auth change ($event) — refreshing config');
+          _lastFetch = null; // Invalidate memory cache
+          fetchSystemConfig(forceRefresh: true);
+        }
+      });
+
       Logger.debug('✅ [SystemConfigService] Initialization complete');
     } catch (e) {
       _error = 'Failed to initialize system config: $e';
@@ -272,6 +297,12 @@ class SystemConfigService extends ChangeNotifier {
     return feature?.enabled ?? true;
   }
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   // Private helper methods
 
   bool _shouldRefresh() {
@@ -363,12 +394,14 @@ class SystemConfig {
   final VersionControl versionControl;
   final Map<String, FeatureFlag> featureFlags;
   final MemoryVerseConfig memoryVerseConfig;
+  final bool testerBypassActive;
 
   SystemConfig({
     required this.maintenanceMode,
     required this.versionControl,
     required this.featureFlags,
     required this.memoryVerseConfig,
+    this.testerBypassActive = false,
   });
 
   factory SystemConfig.fromJson(Map<String, dynamic> json) {
@@ -380,6 +413,7 @@ class SystemConfig {
       memoryVerseConfig: json['memoryVerseConfig'] != null
           ? MemoryVerseConfig.fromJson(json['memoryVerseConfig'])
           : MemoryVerseConfig.defaultConfig(),
+      testerBypassActive: json['testerBypassActive'] ?? false,
     );
   }
 
@@ -390,6 +424,7 @@ class SystemConfig {
       'featureFlags':
           featureFlags.map((key, value) => MapEntry(key, value.toJson())),
       'memoryVerseConfig': memoryVerseConfig.toJson(),
+      'testerBypassActive': testerBypassActive,
     };
   }
 }

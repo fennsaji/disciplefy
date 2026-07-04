@@ -271,7 +271,7 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
   // Check if advanced mode requires feature access
   if (requestedMode in studyModeFeatures) {
     const featureKey = studyModeFeatures[requestedMode]
-    await checkFeatureAccess(userId, userPlan, featureKey)
+    await checkFeatureAccess(userId, userPlan, featureKey, userContext.email)
     console.log(`✅ [StudyGenerate] Advanced mode '${requestedMode}' validated for user ${userId}`)
   }
 

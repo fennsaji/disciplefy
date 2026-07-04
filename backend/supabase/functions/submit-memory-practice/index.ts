@@ -573,7 +573,7 @@ async function handleSubmitMemoryPractice(
 
   // Validate feature access for memory verses
   const userPlan = await services.authService.getUserPlan(req)
-  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
+  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses', userContext.email)
 
   // Parse request body
   let body: SubmitPracticeRequest

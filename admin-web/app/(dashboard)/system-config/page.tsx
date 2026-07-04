@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { StatsCard } from '@/components/ui/stats-card'
@@ -79,6 +79,44 @@ export default function SystemConfigPage() {
     },
     enabled: activeTab === 'feature-flags'
   })
+
+  // Fetch Feature Testers
+  const { data: testersData } = useQuery({
+    queryKey: ['feature-testers'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/system/testers', { credentials: 'include' })
+      if (!res.ok) throw new Error('Failed to fetch testers')
+      return res.json() as Promise<{ emails: string[] }>
+    },
+    enabled: activeTab === 'system-config'
+  })
+
+  const [testerInput, setTesterInput] = useState('')
+
+  const saveTestersMutation = useMutation({
+    mutationFn: async (emails: string[]) => {
+      const res = await fetch('/api/admin/system/testers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ emails })
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to save testers')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Feature tester list saved')
+      queryClient.invalidateQueries({ queryKey: ['feature-testers'] })
+    },
+    onError: (e: Error) => toast.error(e.message)
+  })
+
+  useEffect(() => {
+    if (testersData?.emails) setTesterInput(testersData.emails.join('\n'))
+  }, [testersData])
 
   // Fetch Memory Verse Config
   const { data: memoryVerseData, isLoading: memoryVerseLoading } = useQuery({
@@ -618,6 +656,35 @@ export default function SystemConfigPage() {
             <li><strong>Memory Verses:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">system_config</code> table (practice unlock limits, verse quotas, gamification)</li>
           </ul>
         </div>
+
+        {/* Feature Testers */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+            🧪 Feature Testers
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            These emails can use feature flags marked &quot;Allow tester bypass&quot; even while the flag is disabled.
+            One email per line. Emails never leave the server.
+          </p>
+          <textarea
+            value={testerInput}
+            onChange={(e) => setTesterInput(e.target.value)}
+            rows={5}
+            placeholder={"tester1@example.com\ntester2@example.com"}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-sm"
+          />
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={() => saveTestersMutation.mutate(
+                testerInput.split(/[\n,]/).map(e => e.trim()).filter(Boolean)
+              )}
+              disabled={saveTestersMutation.isPending}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+            >
+              {saveTestersMutation.isPending ? 'Saving…' : 'Save Testers'}
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -774,6 +841,11 @@ export default function SystemConfigPage() {
                         }`}>
                           {flag.enabled ? 'Enabled' : 'Disabled'}
                         </span>
+                        {flag.allow_tester_bypass && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                            🧪 Tester bypass
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {flag.description}
