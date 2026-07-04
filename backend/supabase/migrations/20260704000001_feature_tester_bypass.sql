@@ -3,10 +3,12 @@
 -- 1) Per-flag opt-in: allow_tester_bypass — when true, users whose email is in
 --    the feature_tester_emails list see this flag as enabled even if is_enabled=false.
 -- 2) Global tester list: system_config key 'feature_tester_emails'
---    (comma-separated, same server-side-only handling as 'admin_emails').
---    Resolution happens ONLY server-side; this value is never returned by
---    public endpoints (system-config Edge Function builds its own response
---    and the get_system_configs() consumers never expose raw config rows to clients).
+--    (comma-separated). Stored with is_active = false so it is NOT reachable
+--    via the public paths (see the is_active comment on the INSERT below).
+--    NOTE: unlike 'admin_emails' (which is stored is_active = true and IS
+--    therefore anon-readable via get_system_configs()/REST — a separate
+--    pre-existing exposure), this row is deliberately kept off those paths.
+--    Resolution happens ONLY server-side via trusted service-role reads.
 
 ALTER TABLE feature_flags
   ADD COLUMN IF NOT EXISTS allow_tester_bypass BOOLEAN NOT NULL DEFAULT false;
