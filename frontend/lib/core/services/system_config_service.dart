@@ -19,6 +19,11 @@ import '../utils/logger.dart';
 class SystemConfigService extends ChangeNotifier {
   static const String _cacheKey = 'system_config_cache';
   static const String _cacheTimestampKey = 'system_config_cache_timestamp';
+  // The cached config is identity-specific (testerBypassActive + bypass-resolved
+  // flags are per-user), so the cache is tagged with the user id that produced
+  // it. A cold start under a different account (initialSession, which the auth
+  // listener does not fire on) must not serve the previous user's resolved flags.
+  static const String _cacheUserKey = 'system_config_cache_user';
   static const Duration _cacheDuration = Duration(minutes: 5);
 
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -316,6 +321,17 @@ class SystemConfigService extends ChangeNotifier {
       final cachedJson = prefs.getString(_cacheKey);
       final cachedTimestamp = prefs.getInt(_cacheTimestampKey);
 
+      // Discard a cache produced by a different identity — serving another
+      // user's tester-resolved flags (even briefly) is wrong. Leaving _config
+      // null makes _shouldRefresh() true so initialize() refetches immediately.
+      final cachedUserId = prefs.getString(_cacheUserKey);
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (cachedJson != null && cachedUserId != currentUserId) {
+        Logger.debug(
+            'ℹ️ [SystemConfigService] Cached config belongs to a different user — discarding, will refetch');
+        return;
+      }
+
       if (cachedJson != null && cachedTimestamp != null) {
         final cacheAge =
             DateTime.now().millisecondsSinceEpoch - cachedTimestamp;
@@ -347,6 +363,13 @@ class SystemConfigService extends ChangeNotifier {
       await prefs.setString(_cacheKey, jsonEncode(_config!.toJson()));
       await prefs.setInt(
           _cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      // Tag the cache with the identity that produced it (null for anon).
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId != null) {
+        await prefs.setString(_cacheUserKey, currentUserId);
+      } else {
+        await prefs.remove(_cacheUserKey);
+      }
 
       Logger.debug('✅ [SystemConfigService] Saved to cache');
     } catch (e) {
@@ -376,6 +399,7 @@ class SystemConfigService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
       await prefs.remove(_cacheTimestampKey);
+      await prefs.remove(_cacheUserKey);
 
       _config = null;
       _lastFetch = null;
