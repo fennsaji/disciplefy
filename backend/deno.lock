@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@supabase/functions-js@^0.0.0-automated": "0.0.0-jsr-test.1",
     "jsr:@supabase/supabase-js@2": "2.95.3",
+    "npm:@apple/app-store-server-library@1.4.0": "1.4.0",
     "npm:@apple/app-store-server-library@3.1.0": "3.1.0",
     "npm:@supabase/auth-js@2.95.3": "2.95.3",
     "npm:@supabase/postgrest-js@2.95.3": "2.95.3",
@@ -32,6 +33,19 @@
     }
   },
   "npm": {
+    "@apple/app-store-server-library@1.4.0": {
+      "integrity": "sha512-8FRTpAap6LPlY+o1g6nJNnp4oGmdQt6IXzbZn+ck9siXutSuAbn23/psXuhjapgPS1S5uBcA5g/zS3MHJ79eiw==",
+      "dependencies": [
+        "@types/jsonwebtoken",
+        "@types/jsrsasign",
+        "@types/node@20.19.43",
+        "@types/node-fetch",
+        "base64url",
+        "jsonwebtoken",
+        "jsrsasign",
+        "node-fetch"
+      ]
+    },
     "@apple/app-store-server-library@3.1.0": {
       "integrity": "sha512-d26SICRz8BwCV2qPR0BSXBMxmw0NEvJLwsdREcBmCrus8NmyHw2XgOOP0fiFjcctPn/JXtmSDuGVnaHe+dqO+A==",
       "dependencies": [
@@ -153,6 +167,12 @@
       "dependencies": [
         "@types/node@22.15.15",
         "form-data@4.0.6"
+      ]
+    },
+    "@types/node@20.19.43": {
+      "integrity": "sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==",
+      "dependencies": [
+        "undici-types@6.21.0"
       ]
     },
     "@types/node@22.15.15": {
