@@ -1,14 +1,14 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 1 — Launch Week
-Version: 4.0 *(rewritten — see Changelog)*
+Version: 4.3 *(rewritten — see Changelog)*
 
 ## Mission of the Week
-Get the app in front of people and prove it works — before teaching the deeper "reading vs. studying" theme that Weeks 2-4 build on. Week 1 is 4 screen-recording How-To Reels (the Launch post itself already went out Friday before this formal week), not the regular Bible Explained/Bible Tips rhythm — that rhythm starts fresh in Week 2 (see `Content_Playbook_Season1_Week2.md`).
+Get the app in front of people and prove it works — before teaching the deeper "reading vs. studying" theme that Weeks 2-4 build on. Week 1 is 5 screen-recording Reels — Monday's app-intro (Play Store → open → onboarding → login) plus 4 How-To Reels Tue-Fri (the Launch post itself already went out Friday before this formal week) — not the regular Bible Explained/Bible Tips rhythm, which starts fresh in Week 2 (see `Content_Playbook_Season1_Week2.md`).
 
 ## Why Week 1 looks different from the rest of the season
-The 4 core features (Generate Study Guide, Learning Paths, Memory Verses, Discipler) needed to be visible in the channel fast, and screen-recording Reels beat Carousels for that specific job this week: Reels get ~2.35x more reach than static posts and ~1.4x more than Carousels, and showing the app actually working in motion builds more install-driving trust than static screenshots. So Mon-Thu are now How-To Reels (real screen recording + Founder voice-over), not Carousels.
+The 4 core features (Generate Study Guide, Learning Paths, Memory Verses, Discipler) needed to be visible in the channel fast, and screen-recording Reels beat Carousels for that specific job this week: Reels get ~2.35x more reach than static posts and ~1.4x more than Carousels, and showing the app actually working in motion builds more install-driving trust than static screenshots. So Mon-Fri are now Reels (real screen recording + Founder voice-over), not Carousels — Monday introduces the app itself (Play Store install through login), then Tue-Fri are the 4 How-To Reels.
 
-**This also folds in what used to be Friday's separate Saturday-series reel:** Monday's Generate Study Guide Reel already covers that feature in tutorial form, so Episode 1 of the `Daily Devotion/Saturday — Disciplefy Stories.md` arc isn't needed this week — the story arc picks up cleanly at Episode 2 (Learning Paths) in Week 2 as already planned, nothing lost. That leaves Friday and Saturday open this week — acceptable for a one-off launch week (no day is hardcoded off; this is the natural gap from compressing 4 features into 4 days). Fill them with community/reply work, or leave as slack if anything above slips.
+**This also folds in what used to be a separate Saturday-series reel:** Tuesday's Generate Study Guide Reel already covers that feature in tutorial form, so Episode 1 of the `Daily Devotion/Saturday — Disciplefy Stories.md` arc isn't needed this week — the story arc picks up cleanly at Episode 2 (Learning Paths) in Week 2 as already planned, nothing lost. That leaves Saturday open this week — acceptable for a one-off launch week (no day is hardcoded off; this is the natural gap from compressing 5 pieces of content into a Mon-Fri run). Fill it with community/reply work, or leave as slack if anything above slips.
 
 ## Content Funnel
 Instagram Reel / Carousel → Profile Visit → disciplefy.in → App Install → Bible Study → Spiritual Growth
@@ -16,7 +16,7 @@ Instagram Reel / Carousel → Profile Visit → disciplefy.in → App Install �
 ---
 
 ## 🎬 Video Generation Prompts — Intro / Outro (Google Flow / Veo)
-Reusable across all 4 Monday-Thursday Reels — the same two generated clips bookend every video; only the real Disciplefy screen-recording in the middle changes per day. Full detail also kept standalone at `Week1_Reel_Intro_Outro_Google_Flow_Prompts.md` — this section embeds the same prompts directly so this file is self-contained.
+Reusable across all 5 Monday-Friday Reels — the same two generated clips bookend every video; only the real Disciplefy screen-recording in the middle changes per day. Full detail also kept standalone at `Week1_Reel_Intro_Outro_Google_Flow_Prompts.md` — this section embeds the same prompts directly so this file is self-contained.
 
 **STYLE BLOCK (prepend to both prompts below):**
 > Premium, warm, cinematic short video clip for a Christian discipleship app called **Disciplefy**, used as an Instagram Reel intro/outro segment. Portrait **9:16**. Warm, golden-hour or soft window lighting — reverent, peaceful, hopeful, premium. **Slow, intentional pacing**: fade, slow zoom, soft dissolve, gentle light bloom. **No** fast cuts, whip pans, spinning, or aggressive animation. Setting: a quiet home or coffee-shop workspace, warm wood tones, soft natural light, subtle film grain, organic feel — never overly sharp or artificial. **No other apps, phone UI, or on-screen branding besides Disciplefy's own logo where explicitly noted.** Avoid: cheesy stock-photo feel, clip-art crosses, corporate look, garbled text.
@@ -61,7 +61,62 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 ---
 
-## Monday — 💡 How To: Generate a Study Guide
+## Monday — 📲 Meet Disciplefy
+**Format:** Reel — real screen recording + Founder voice-over (app-intro; Tue-Fri are the How-To Reels for the 4 core features)
+**Bible Verse:** Nehemiah 8:8 — "...and they gave the sense, so that the people understood the reading."
+
+**Thumbnail:** "Meet Disciplefy"
+**Thumbnail Image Prompt** *(prepend the Thumbnail STYLE BLOCK above)*:
+> Headline: "Meet Disciplefy." Scene: a smartphone resting face-up on a warm wooden desk showing only a soft warm glow on its screen (no rendered app UI), an open Bible beside it, soft morning light, a small potted plant nearby.
+
+**Script / Timeline (~42s) — Play Store → open app → onboarding walkthrough → login, outro at the end:**
+
+| Time | Section | Screen | Voice-over |
+|---|---|---|---|
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Confused by what you read in the Bible?" | "Confused by what you read in the Bible?" |
+| 0:03-0:07 | INTRO | B-roll: closing the Bible, picking up a phone | "That's exactly why I built Disciplefy." |
+| 0:07-0:11 | STORE | Google Play Store listing for "Disciplefy - Bible Study," tap Install (or Open, if already installed) | "Free, right on the Play Store." |
+| 0:11-0:14 | APP | App splash screen (cream background, logo fades in) | "Opens straight into—" |
+| 0:14-0:16 | APP | Onboarding slide 1 — "Daily Inspiration & Study," tap Continue | "Start your day with a verse—" |
+| 0:16-0:19 | APP | Onboarding slide 2 — "Personalized Study Guides," tap Continue | "—get a personal study guide for whatever you're facing—" |
+| 0:19-0:21 | APP | Onboarding slide 3 — "Voice Discipler," tap Continue | "—talk it through with a voice companion—" |
+| 0:21-0:24 | APP | Onboarding slide 4 — "Memory Verses" (real: 4 slides total, confirmed against app code) | "—and hide verses in your heart so they actually stick." |
+| 0:24-0:27 | APP | Tap "Start Free" on the last onboarding slide | "Tap Start Free—" |
+| 0:27-0:34 | APP | Login screen ("Welcome to Disciplefy," feature list), tap "Continue with Google" (real buttons: Google, Apple on iOS, Email — no guest/anonymous option) | "—sign in with Google, Apple, or email, and you're in." |
+| 0:34-0:38 | APP | Land on the Home screen | "That's it. You're ready to actually study, not just read." |
+| 0:38-0:42 | OUTRO | Gold CTA card, on-screen text: "Free — link in bio." | "Disciplefy. Free — link in bio." |
+
+**Caption:** Confused by what you read in the Bible? Meet Disciplefy — download free from the Play Store, and this week we'll show you everything it can do. Link in bio.
+**Hashtags:** #Disciplefy #BibleApp #BibleStudy #NewApp
+
+**Stories (2x/day):**
+- Morning: 📖 Verse — Nehemiah 8:8 + 💡 Tip — "This week, we're showing you everything Disciplefy can do — one feature a day."
+  - **Daily Verse Image Prompt fill (Variant A — Classic Card):** VERSE: "...and they gave the sense, so that the people understood the reading." · REFERENCE: "Nehemiah 8:8" · BACKGROUND: "Morning desk with open Bible, soft window light."
+- Evening: Share the Reel + 📖 Reflection — Download Disciplefy today, and follow along this week.
+
+**CTA:** Download free → link in bio.
+**KPI:** Reach · Installs · Profile Visits
+
+**Hindi Dub (Stories share only — same screen recording, Hindi voice-over + on-screen text swapped in edit; main feed stays English):**
+
+| Time | On-screen text (Hindi) | Voice-over (Hindi) |
+|---|---|---|
+| 0:00-0:03 | "बाइबल पढ़ते वक़्त कुछ समझ नहीं आता?" | "बाइबल पढ़ते वक़्त कुछ समझ नहीं आता?" |
+| 0:03-0:07 | — | "इसीलिए मैंने Disciplefy बनाया।" |
+| 0:07-0:11 | — | "मुफ़्त, सीधे Play Store पर।" |
+| 0:11-0:14 | — | "खुलते ही दिखता है—" |
+| 0:14-0:16 | — | "अपने दिन की शुरुआत एक वर्स से कीजिए—" |
+| 0:16-0:19 | — | "—जो भी सामना कर रहे हैं, उसके लिए एक पर्सनल स्टडी गाइड पाइए—" |
+| 0:19-0:21 | — | "—एक वॉइस साथी के साथ उस पर बात कीजिए—" |
+| 0:21-0:24 | — | "—और वर्सेज़ को दिल में ऐसे बसाइए कि वो सच में याद रह जाएं।" |
+| 0:24-0:27 | — | "आख़िरी स्लाइड पर Start Free दबाइए—" |
+| 0:27-0:34 | — | "—Google, Apple, या ईमेल से साइन इन करें, बस हो गया।" |
+| 0:34-0:38 | — | "बस इतना ही। अब आप असल में स्टडी करने के लिए तैयार हैं, सिर्फ़ पढ़ने के लिए नहीं।" |
+| 0:38-0:42 | "मुफ़्त — लिंक बायो में।" | "Disciplefy। मुफ़्त — लिंक बायो में।" |
+
+---
+
+## Tuesday — 💡 How To: Generate a Study Guide
 **Format:** Reel — real screen recording + Founder voice-over
 **Bible Verse:** Psalm 119:105 — "Your word is a lamp to my feet and a light to my path."
 
@@ -87,15 +142,28 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Psalm 119:105 + 💡 Tip — "Not sure where to start? Type whatever's on your heart, not just a reference."
-  - **Daily Verse Image Prompt fill (Variant A — Classic Card):** VERSE: "Your word is a lamp to my feet and a light to my path." · REFERENCE: "Psalm 119:105" · BACKGROUND: "Morning desk with Bible, soft lamp glow."
+  - **Daily Verse Image Prompt fill (Variant B — Full-Bleed Photo Overlay):** VERSE: "Your word is a lamp to my feet and a light to my path." · REFERENCE: "Psalm 119:105" · BACKGROUND: "Morning desk with Bible, soft lamp glow."
 - Evening: Share the Reel + 📖 Reflection — Try generating a study guide for one verse today.
 
 **CTA:** Try it free → link in bio.
 **KPI:** Watch Time · Saves · App Installs
 
+**Hindi Dub (Stories share only — same screen recording, Hindi voice-over + on-screen text swapped in edit; main feed stays English):**
+
+| Time | On-screen text (Hindi) | Voice-over (Hindi) |
+|---|---|---|
+| 0:00-0:03 | "रोमियों 8 खोला। समझ नहीं आया कहाँ से शुरू करूं।" | "पिछले हफ़्ते मैंने रोमियों 8 खोला और बस... देखता रह गया।" |
+| 0:03-0:08 | — | "पढ़ना तो आसान है। पर समझना कि इसका मतलब क्या है — वही मुश्किल है।" |
+| 0:08-0:12 | — | "इसलिए मैंने Disciplefy की Study Guide बनाई — बिल्कुल यही करने के लिए।" |
+| 0:12-0:20 | — | "कोई भी वर्स टाइप करें — या रेफरेंस छोड़कर बस वो लिखें जो मन में है, जैसे 'चिंता'।" |
+| 0:20-0:24 | — | "पाँच मिनट वाला चाहिए, या गहराई से समझना है? आप चुनिए।" |
+| 0:24-0:28 | — | "बस एक टैप—" |
+| 0:28-0:36 | — | "—और आपके पास है संदर्भ, मुख्य वर्स, सोचने वाले सवाल, और आज इसे जीने का तरीका।" |
+| 0:36-0:40 | "मुफ़्त — लिंक बायो में।" | "कोई भी वर्स। कोई भी परेशानी। सेकंडों में असली स्टडी। मुफ़्त — लिंक बायो में।" |
+
 ---
 
-## Tuesday — 🚶 How To: Learning Paths
+## Wednesday — 🚶 How To: Learning Paths
 **Format:** Reel — real screen recording + Founder voice-over
 **Bible Verse:** Hebrews 12:1 — "let us run with endurance the race that is set before us."
 
@@ -120,15 +188,27 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 12:1 + 🙏 Prayer — "Lord, keep me from wandering — walk me step by step in Your Word."
-  - **Daily Verse Image Prompt fill (Variant B — Full-Bleed Photo Overlay):** VERSE: "Let us run with endurance the race that is set before us." · REFERENCE: "Hebrews 12:1" · BACKGROUND: "Mountain sunrise, a path winding through."
+  - **Daily Verse Image Prompt fill (Variant C — Split Layout):** VERSE: "Let us run with endurance the race that is set before us." · REFERENCE: "Hebrews 12:1" · BACKGROUND: "Mountain sunrise, a path winding through."
 - Evening: Share the Reel + 📖 Reflection — Which topic would you want a guided path for?
 
 **CTA:** Free → link in bio.
 **KPI:** Watch Time · Saves
 
+**Hindi Dub (Stories share only — same screen recording, Hindi voice-over + on-screen text swapped in edit; main feed stays English):**
+
+| Time | On-screen text (Hindi) | Voice-over (Hindi) |
+|---|---|---|
+| 0:00-0:03 | "भजन संहिता आज, रोमियों कल। फिर भी कहीं नहीं पहुंच रहा।" | "मैं हर हफ़्ते इधर-उधर की वर्सेज़ पढ़ता था — कभी भजन संहिता, कभी रोमियों।" |
+| 0:03-0:08 | — | "व्यस्त तो लगता था, पर असल में आगे नहीं बढ़ रहा था — क्योंकि कुछ भी आपस में जुड़ा नहीं था।" |
+| 0:08-0:12 | — | "इसीलिए हमने Learning Paths बनाया।" |
+| 0:12-0:20 | — | "एक रास्ता चुनिए — Foundations, Prayer, Grace, जो भी अभी आपको चाहिए।" |
+| 0:20-0:28 | — | "हर पाथ आपको बताता है आगे क्या है, तो आपको कभी अंदाज़ा नहीं लगाना पड़ता।" |
+| 0:28-0:35 | — | "एक टॉपिक खत्म करें, अगला उसी पर बनता है — असली growth ऐसी ही दिखती है।" |
+| 0:35-0:40 | "मुफ़्त — लिंक बायो में।" | "वर्सेज़ में भटकना बंद कीजिए। एक रास्ते पर चलना शुरू कीजिए। मुफ़्त — लिंक बायो में।" |
+
 ---
 
-## Wednesday — 📚 How To: Memory Verses
+## Thursday — 📚 How To: Memory Verses
 **Format:** Reel — real screen recording + Founder voice-over
 **Bible Verse:** Psalm 119:11 — "I have stored up your word in my heart, that I might not sin against you."
 
@@ -154,15 +234,28 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Psalm 119:11 + 💡 Tip — "Pick one short verse this week and practice it daily — consistency beats cramming."
-  - **Daily Verse Image Prompt fill (Variant C — Split Layout):** VERSE: "I have stored up your word in my heart, that I might not sin against you." · REFERENCE: "Psalm 119:11" · BACKGROUND: "Coffee and Bible, warm morning light."
+  - **Daily Verse Image Prompt fill (Variant D — Minimalist Typography):** VERSE: "I have stored up your word in my heart, that I might not sin against you." · REFERENCE: "Psalm 119:11" · BACKGROUND: "Coffee and Bible, warm morning light (used for logo/mood only — Variant D has no photo)."
 - Evening: Share the Reel + 📖 Reflection — Which verse are you memorizing first?
 
 **CTA:** Free → link in bio.
 **KPI:** Watch Time · Saves
 
+**Hindi Dub (Stories share only — same screen recording, Hindi voice-over + on-screen text swapped in edit; main feed stays English):**
+
+| Time | On-screen text (Hindi) | Voice-over (Hindi) |
+|---|---|---|
+| 0:00-0:03 | "यूथ ग्रुप में याद किया था। अब आख़िरी शब्द भी याद नहीं।" | "मैंने यूथ ग्रुप में फिलिप्पियों 4:13 याद किया था। अब आख़िरी तीन शब्द भी याद नहीं।" |
+| 0:03-0:08 | — | "पता चला, एक बार रटने से वो कभी याद नहीं रहता।" |
+| 0:08-0:12 | — | "इसलिए Memory Verses एक ही सोच पर बना है: सही समय पर दोहराना।" |
+| 0:12-0:20 | — | "जो भी वर्स याद करना है, उसे जोड़िए।" |
+| 0:20-0:28 | — | "फिर अभ्यास कीजिए — फ्लिप कार्ड्स, वर्ड बैंक, खाली जगह भरना — जो भी याद ताज़ा रखे।" |
+| 0:28-0:33 | — | "ये आपको ठीक उसी वक़्त याद दिलाता है जब आप भूलने वाले होते हैं — किसी बेतरतीब समय पर नहीं।" |
+| 0:33-0:38 | — | "और वो streak बढ़ते देखना ही आपको वापस लाता है।" |
+| 0:38-0:42 | "मुफ़्त — लिंक बायो में।" | "उसके वचन को अपने दिल में बसाइए — इस बार हमेशा के लिए। मुफ़्त, लिंक बायो में।" |
+
 ---
 
-## Thursday — 🎙 How To: Voice Discipler
+## Friday — 🎙 How To: Voice Discipler
 **Format:** Reel — real screen recording + Founder voice-over
 **Bible Verse:** 1 Peter 3:15 — "always being prepared to make a defense to anyone who asks you for a reason for the hope that is in you."
 
@@ -191,19 +284,28 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — 1 Peter 3:15 + 🙏 Prayer — "Lord, give me courage to ask hard questions and to keep seeking You for the answers."
-  - **Daily Verse Image Prompt fill (Variant D — Minimalist Typography):** VERSE: "Always being prepared to make a defense to anyone who asks you for a reason for the hope that is in you." · REFERENCE: "1 Peter 3:15" · BACKGROUND: "Library, quiet study corner (used for logo/mood only — Variant D has no photo)."
+  - **Daily Verse Image Prompt fill (Variant E — Framed Photo):** VERSE: "Always being prepared to make a defense to anyone who asks you for a reason for the hope that is in you." · REFERENCE: "1 Peter 3:15" · BACKGROUND: "Library, quiet study corner."
 - Evening: Share the Reel + 📖 Reflection — What's a faith question you've never asked out loud?
 
 **CTA:** Free → link in bio.
 **KPI:** Watch Time · Saves · Comments
 
+**Hindi Dub (Stories share only — same screen recording, Hindi voice-over + on-screen text swapped in edit; main feed stays English):**
+
+| Time | On-screen text (Hindi) | Voice-over (Hindi) |
+|---|---|---|
+| 0:00-0:03 | "रात 1 बजे एक सवाल था। किसी को फ़ोन नहीं कर सकता था।" | "एक बार रात 1 बजे एक सवाल था — 'मैं किसी को माफ़ कैसे करूं जिसने मुझे तकलीफ़ दी?' किसी को फ़ोन नहीं कर सकता था।" |
+| 0:03-0:08 | — | "कुछ सवाल सच में रविवार तक रुक नहीं सकते।" |
+| 0:08-0:12 | — | "इसीलिए हर Study Guide में एक Discipler पहले से मौजूद है।" |
+| 0:12-0:20 | — | "माइक दबाइए और ज़ोर से पूछिए — जैसे किसी दोस्त से पूछते हैं।" |
+| 0:20-0:30 | — | "ये हर बार सीधे शास्त्र से जवाब देता है।" |
+| 0:30-0:36 | "साथी, विकल्प नहीं।" | "इसे अपने सफ़र का साथी समझिए — कभी अपने पास्टर या चर्च की जगह नहीं।" |
+| 0:36-0:40 | "मुफ़्त — लिंक बायो में।" | "असली सवाल, बाइबिल से जवाब, कभी भी। मुफ़्त — लिंक बायो में। हर हफ़्ते नए सवाल के लिए फॉलो करें।" |
+
 ---
 
-## Friday — (open this week)
-No scheduled post — freed up since Monday's Reel already covers what Episode 1 would have (see note above). Standing rhythm/story-arc resumes normally in Week 2. Use for community/reply work, or slack if anything above slips.
-
 ## Saturday — (open this week)
-Same as Friday — open this week only. Standing Saturday "Study With Disciplefy" slot (Episode 2: Learning Paths) resumes in Week 2.
+No scheduled post — the only open day this week, once Monday's new app-intro Reel filled what used to be Friday's slack. Use for community/reply work, or slack if anything above slips. Standing Saturday "Study With Disciplefy" slot (Episode 2: Learning Paths) resumes in Week 2.
 
 ---
 
@@ -256,27 +358,27 @@ Same as Friday — open this week only. Standing Saturday "Study With Disciplefy
 ---
 
 ## Algorithm Notes (2026)
-- Feed cadence this week is 4 Reels (Mon-Thu) + 1 Carousel (Sun), Fri/Sat open — reel-heavy on purpose, since reach + proof-of-feature was this week's actual goal, not the season's normal 4 Reel/3 Carousel balance. That balance resumes Week 2.
-- Watch time (incl. replays) is the #1 ranking signal for all 4 Reels this week — each hook must land in the first ~3s, and a short loop-worthy ending helps more than a longer runtime.
+- Feed cadence this week is 5 Reels (Mon-Fri) + 1 Carousel (Sun), Sat open — reel-heavy on purpose, since reach + proof-of-feature was this week's actual goal, not the season's normal 4 Reel/3 Carousel balance. That balance resumes Week 2.
+- Watch time (incl. replays) is the #1 ranking signal for all 5 Reels this week — each hook must land in the first ~3s, and a short loop-worthy ending helps more than a longer runtime.
 - Shares (DM sends) are the strongest distribution trigger — every post above already carries a share-worthy CTA or invite line.
 
 ## Growth Additions (2026) — canonical, referenced by Weeks 2-4 and PreWeek1
 Three tactics not yet baked into the plan before this update — reach (discovery) and follows (conversion) are different problems, these split across both:
 
 **1. Follow-CTA (conversion) — once per week, not every post.** Asking to follow on every single post reads as needy and gets tuned out. One rotating slot per week, always the week's highest-reach/highest-engagement post:
-- Week 1: Thursday's Discipler Reel outro (done above — soft-tacked-on line, doesn't replace the app CTA)
+- Week 1: Friday's Discipler Reel outro (done above — soft-tacked-on line, doesn't replace the app CTA)
 - Week 2: Saturday's Episode 2 Reel
 - Week 3: Saturday's Episode 9 ⭐ Hero Reel
 - Week 4: Saturday's Episode 13 ⭐ Hero Reel
 - PreWeek1: Sunday's Learning Paths carousel, CTA slide caption
 
-**2. Trending audio (reach) — Daniel Reels only, when it actually fits.** Check Instagram's trending-audio tab weekly; layer a soft trending instrumental under the narration *only* if the mood matches (warm, reverent, unhurried) — skip the week entirely if nothing fits rather than forcing a mismatched trend for reach. Doesn't apply to Mon-Thu's screen-recording Reels this week (voice-over + real UI audio takes priority there).
+**2. Trending audio (reach) — Daniel Reels only, when it actually fits.** Check Instagram's trending-audio tab weekly; layer a soft trending instrumental under the narration *only* if the mood matches (warm, reverent, unhurried) — skip the week entirely if nothing fits rather than forcing a mismatched trend for reach. Doesn't apply to Mon-Fri's screen-recording Reels this week (voice-over + real UI audio takes priority there).
 
 **3. Stories interactive stickers (reach + engagement) — 2-3x/week, not daily.** Add a poll or question sticker to the Evening Story slot on the days it fits naturally (e.g. "Did you try this today? Yes/No," "What stood out to you?"). Stories has its own discovery mechanic separate from the main feed — currently every Evening slot is pure broadcast (share + reflection prompt), no interactivity. Don't do it daily — it dilutes and starts feeling like a survey, not a devotional.
 - Real screen-recordings count as original content, same as AI-generated Reels — full distribution credit.
 
 ## Production Rhythm
-Same rolling model as the rest of the season (see `Disciplefy Operating System`) — produce next week's content while this week publishes. Main remaining work: record the 4 screen-recordings + Founder voice-overs, edit, and schedule.
+Same rolling model as the rest of the season (see `Disciplefy Operating System`) — produce next week's content while this week publishes. Main remaining work: record the 5 screen-recordings + Founder voice-overs, edit, and schedule.
 
 ## Success Metrics
 Track at the end of the week: Reach · Watch Time · Saves · Shares · Profile Visits · Website Clicks · App Installs.
@@ -299,3 +401,6 @@ Ignore vanity metrics. Focus on helping more believers take one step closer to b
 - **v3.8:** Monday's Reel had the mode picker placed *after* tapping Generate and viewing results — backwards, since you pick a mode before generating. Reordered: type verse → pick mode → tap Generate → view results.
 - **v3.9:** Added "Growth Additions (2026)" — canonical section covering 3 tactics not previously in the plan: (1) Follow-CTA rotated once/week on the highest-reach post (this week: Thursday's Discipler Reel), (2) trending audio on Daniel Reels where mood fits, (3) Stories interactive stickers 2-3x/week. Weeks 2-4 and PreWeek1 reference this section rather than repeating it.
 - **v4.0:** Rewrote all 4 Mon-Thu voice-over scripts — the "Ever ___? / Most of us..." formula repeated identically across all four felt generic and read like ad copy, not a person talking. Replaced with specific first-person founder anecdotes (Romans 8 freeze, random verse-hopping, a forgotten youth-group verse, a 1am question) that still hit the same beats (hook → problem → feature → demo → CTA) but sound like someone actually talking, not a script template.
+- **v4.1:** Added a Hindi Dub to each of the 4 Mon-Thu Reels — same screen recording, Hindi voice-over + on-screen text swapped in edit. Posted to Stories only (not the main feed): keeps this week's carefully-tuned Reel cadence intact and tests Hindi demand before committing feed real estate, consistent with marketing content being English-only on the main feed for now (see Daily Verse Story note).
+- **v4.2:** Added a new Monday Reel — "Meet Disciplefy," a real screen recording of Play Store → open app → the 4-slide onboarding walkthrough → login (Google/Apple/Email, no guest option), grounded in the actual app UI. Everything else shifted one day later: Study Guide Tue, Learning Paths Wed, Memory Verses Thu, Discipler Fri (Follow-CTA slot moved with it). Saturday is now the week's only open day. Week 1 is 5 Reels (Mon-Fri) + 1 Carousel (Sun) instead of 4+1; all cross-references (Mission, Why-Different, Algorithm Notes, Growth Additions, Production Rhythm, Daily Verse variant assignments) updated to match.
+- **v4.3:** Split Monday's single "swipe through all 4 onboarding slides" beat into 4 separate beats, one voice-over line per walkthrough page (matches the actual per-slide swipe instead of one line glossing over all of them) — updated in both the English script and Hindi Dub.
