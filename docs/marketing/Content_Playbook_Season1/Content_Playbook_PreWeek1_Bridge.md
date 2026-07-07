@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Pre-Week 1 — Weekend Bridge
-Version: 2.0 *(updated — see Changelog)*
+Version: 2.1 *(updated — see Changelog)*
 
 ## Mission
 The Launch carousel already posted Friday, and Week 1's 4 how-to Reels don't start until Monday — that left Saturday and Sunday as dead air right after the launch, when interest is highest. This bridges the gap by reusing 2 of the already-built How-To Carousels (from `Instagram_Launch_and_HowTo_Carousels.md` / `Instagram_Carousel_Image_Prompts.md`) that Week 1 no longer needs in carousel form, since it covers those same features as Reels instead.
@@ -38,8 +38,8 @@ Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Satur
 | 5 — Step 4 | Smartphone mockup gently floating, small plant nearby. Screen shows the attached screenshot of the generated Study Guide — topic title, Summary section, with "Listen" and "Ask Discipler" buttons at the bottom (reference image provided). Gold "Step 4" badge. Headline: "Your Study, Ready." | One tap on Generate and you get a full breakdown — summary, context, and a way to keep exploring with Discipler. |
 | 6 — CTA | Warm morning sunlight over a wooden desk, open Bible + mug. Headline: "Any verse. Any topic. A full study." Subline: "Try it free → link in bio." | That's it — no guesswork, no blank page. Try it free today, link in bio. |
 
-**Caption:** Open the Bible and freeze on where to start? Type any verse or topic — get a full study guide (context, key verses, reflection, application) in seconds. Free on Web & Android — link in bio.
-**Hashtags:** #Disciplefy #BibleStudy #StudyGuide #BibleApp
+**Caption:** Open the Bible and freeze on where to start? Disciplefy's Bible study guide generator takes any verse or topic and gives you context, key verses, reflection, and application in seconds. Free on Web & Android — link in bio.
+**Hashtags:** #Disciplefy #BibleStudyGuide #BibleStudyApp #BibleStudy #Scripture
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Psalm 119:105 + 💡 Tip — "Not sure where to start? Type whatever's on your heart, not just a reference."
@@ -65,8 +65,8 @@ Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Satur
 | 4 — Step 3 | Smartphone mockup, open journal nearby. Screen shows the attached screenshot of an individual topic's Study Guide screen — topic title, Summary section, "Listen" and "Ask Discipler" buttons at the bottom (reference image provided). Gold "Step 3" badge. Headline: "Open a Topic." | Tap into any topic and you're studying — same Study Guide experience, no separate app or setup. |
 | 5 — CTA | Warm morning sunlight over a wooden desk, open Bible + mug. Headline: "Stop wandering. Start a path." Subline: "Free → link in bio." | Growth isn't random — it's a path. Start yours free, link in bio. |
 
-**Caption:** Growth isn't random verses — it's a path. Learning Paths walk you through Scripture step by step so you always know what's next. Free — link in bio. Follow for more of these walkthroughs. 🌱
-**Hashtags:** #Disciplefy #Discipleship #SpiritualGrowth #BibleStudy
+**Caption:** Growth isn't random verses — it's a guided Bible study path. Disciplefy's Learning Paths walk you through Scripture step by step so you always know what's next. Free — link in bio. Follow for more of these walkthroughs. 🌱
+**Hashtags:** #Disciplefy #LearningPaths #BibleStudyPlan #Discipleship #BibleStudyApp
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 12:1 + 🙏 Prayer — "Lord, keep me from wandering — walk me step by step in Your Word."
@@ -103,3 +103,4 @@ Track: Saves · Shares · Profile Visits · Website Clicks · App Installs.
 - **v1.8:** Saturday's carousel had the mode picker (Step 4) placed *after* the generated result (Step 3) — backwards, and Step 3's headline ("Tap Generate") didn't match its own screen (the result, not the tap). Reordered: type verse → pick mode → view generated result (with real Listen/Ask Discipler buttons).
 - **v1.9:** Memory Verses and Discipler carousels (POST 4/5) are no longer just "reserved for later" — they're now live in `Content_Playbook_Season1_Week3.md` and `Week4.md`, swapped into that week's Tuesday slot 2 days ahead of the matching Saturday reel. Updated the cross-reference note accordingly.
 - **v2.0:** Added a Follow-CTA to Sunday's Learning Paths caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1).
+- **v2.1:** Reworked both Captions to weave in a real keyword phrase for search/SEO, and trimmed both Hashtags lines to exactly 5 well-chosen tags (brand + feature-keyword + topic) instead of 4.

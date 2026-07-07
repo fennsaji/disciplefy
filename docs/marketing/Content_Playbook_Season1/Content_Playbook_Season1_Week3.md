@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 3
-Version: 1.7 *(updated — see Changelog)*
+Version: 1.8 *(updated — see Changelog)*
 
 ## Mission of the Week
 Continue the regular rhythm (bank item #2 for each series). Saturday's reel is a Hero Episode — the Memory Verse feature, one of the 4 you asked to get in front of people early.
@@ -55,8 +55,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "Who's the neighbor in front of you today?" | Daniel pauses at his own door, reflective. |
 | 8 | Hopeful conclusion | "Go and do likewise." | Slow pull-back of the sunlit desk, Bible still open; negative space top third for end-screen. |
 
-**Caption:** The priest passed by. The Levite passed by. It was the outsider who stopped. Jesus flips the question from "who is my neighbor" to "who acted like one."
-**Hashtags:** #Disciplefy #BibleExplained #GoodSamaritan #Compassion
+**Caption:** The priest passed by. The Levite passed by. It was the outsider who stopped. Jesus flips the question from "who is my neighbor" to "who acted like one." Study the full passage on the Disciplefy Bible study app — link in bio.
+**Hashtags:** #Disciplefy #BibleExplained #GoodSamaritan #Compassion #DailyDevotional
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Luke 10:27 + 🙏 Prayer — "Lord, open my eyes to the neighbor in front of me today."
@@ -84,8 +84,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 5 — Step 4 | Smartphone mockup, open Bible nearby. Screen shows the attached screenshot of the green streak heat map — a GitHub-style contribution calendar (confirmed real feature; reference image provided). Gold "Step 4" badge. Headline: "Watch Your Streak Grow." | This little green calendar is oddly motivating — consistency, visible. |
 | 6 — CTA | Warm morning sunlight over a wooden desk, open Bible + mug. Headline: "Hide His Word in Your Heart." Subline: "Free → link in bio." | No more losing a verse a week after you learned it. Free — link in bio. |
 
-**Caption:** Memorize a verse, then lose it in a week? Add a verse, practice with flip cards/word bank/cloze, get reminded right before you'd forget — and watch your streak grow. Free — link in bio. 🙌
-**Hashtags:** #Disciplefy #MemoryVerse #BibleMemory #Scripture
+**Caption:** Memorize a verse, then lose it in a week? Disciplefy's Bible memory app lets you add a verse, practice with flip cards, word bank, or cloze, get reminded right before you'd forget — and watch your streak grow. Free — link in bio. 🙌
+**Hashtags:** #Disciplefy #MemoryVerse #BibleMemoryApp #Scripture #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Deuteronomy 11:18 + 💡 Tip — "Pick one short verse this week and practice it daily — consistency beats cramming."
@@ -120,8 +120,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "What's one small prayer habit you could start this week?" | Daniel looks up, peaceful, journal open beside him. |
 | 8 | Hopeful conclusion | "Pray without ceasing — one small moment at a time." | Slow pull-back wide shot of the desk at dusk; negative space top third for end-screen. |
 
-**Caption:** Prayer isn't about perfect words — it's about showing up. What's one small prayer habit you could start this week?
-**Hashtags:** #Disciplefy #WalkingWithJesus #PrayerLife #Discipleship
+**Caption:** Prayer isn't about perfect words — it's about showing up. What's one small prayer habit you could start this week to grow your prayer life?
+**Hashtags:** #Disciplefy #WalkingWithJesus #PrayerLife #Discipleship #DailyDevotional
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — 1 Thessalonians 5:17 + 🙏 Prayer — "Lord, help me show up consistently, not perfectly."
@@ -150,8 +150,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 4 — Why this comes first | Headline: "Interpretation Without Observation Misreads the Text." Scene: open Bible beside a journal with a crossed-out then corrected note. | Skip observation, and you risk interpreting the passage through your own assumptions instead of what's really there. |
 | 5 — CTA | Headline: "Try It on Your Next Chapter" with gold arrow →. Warm closing desk scene. | Try this on your next chapter — observe first, interpret second. It changes what you notice. |
 
-**Caption:** Before you ask "what does this mean," ask "what does this say." Observation comes first. Save this study tip.
-**Hashtags:** #Disciplefy #BibleStudyMethod #Observation #Scripture
+**Caption:** Before you ask "what does this mean," ask "what does this say." Observation comes first — a core Bible study method. Save this study tip.
+**Hashtags:** #Disciplefy #BibleStudyMethod #Observation #Scripture #BibleStudyTips
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Acts 17:11 + 💡 Tip — "Read the passage 3 times before you interpret anything."
@@ -186,8 +186,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "What are you waiting on God for right now?" | Daniel looks toward the window, reflective, calm. |
 | 8 | Hopeful conclusion | "Wait on the Lord. He will renew your strength." | Slow pull-back wide shot of the desk in warm evening light; negative space top third for end-screen. |
 
-**Caption:** Waiting doesn't mean God is absent — it means He's working on a timeline of His own. Tag someone in a season of waiting. 💛
-**Hashtags:** #Disciplefy #GrowingInChrist #WaitingOnGod #Encouragement
+**Caption:** Waiting doesn't mean God is absent — it means He's working on a timeline of His own. A reminder for anyone in a season of spiritual growth and waiting. Tag someone who needs this. 💛
+**Hashtags:** #Disciplefy #GrowingInChrist #WaitingOnGod #SpiritualGrowth #Encouragement
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Isaiah 40:31 + 🙏 Prayer — "Lord, renew my strength as I wait on You."
@@ -209,8 +209,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above; this is the only generated asset for Saturday — the Reel itself is a real screen recording, not generated)*:
 > Headline: "I Can Never Remember." Scene: a small handwritten verse card tucked into an open Bible, a single gold paperclip, warm desk light — same visual motif as Week 1's Memory Verse thumbnail for series consistency.
 
-**Caption:** Ever memorize a verse... and lose it a week later? Meet Memory Verse — practice modes and smart reminders that make it stick. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
-**Hashtags:** #Disciplefy #MemoryVerse #BibleMemory #Scripture
+**Caption:** Ever memorize a verse... and lose it a week later? Meet Disciplefy's Bible memory app — practice modes and smart reminders that make Scripture memory stick. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
+**Hashtags:** #Disciplefy #MemoryVerse #BibleMemoryApp #Discipleship #Scripture
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Deuteronomy 11:18 + 💡 Tip — "Review a verse right when you're about to forget it, not just once."
@@ -241,8 +241,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 4 — Invite to community | Headline: "Carry It Into Worship Today." Warm Sunday-morning light through a window, a coat and Bible by the door. | Take whatever stood out to you this week into worship today — that's where it gets lived out, not just learned. |
 | 5 — CTA | Headline: "Missed a Day This Week?" with gold arrow →. Subline: "Catch up — link in bio." | If you missed a day, it's not too late — catch up whenever works. Link in bio. |
 
-**Caption:** This week: love your neighbor, pray before you read, build a prayer habit, observe before you interpret, and trust God's timing. Carry it into worship today. Send this to a friend heading to church. 🙏
-**Hashtags:** #Disciplefy #SundayReflection #Worship #BibleStudy #Discipleship
+**Caption:** This week on Disciplefy: love your neighbor, pray before you read, build a prayer habit, observe before you interpret, and trust God's timing. Carry it into worship today. Send this to a friend heading to church. 🙏
+**Hashtags:** #Disciplefy #SundayReflection #BibleStudy #Worship #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this week's growth. Help me carry it into worship today."
@@ -273,3 +273,4 @@ Track at the end of the week: Reel Reach · Watch Time · Saves · Shares · Pro
 - **v1.5:** Tuesday swapped from Bible Tips to a Memory Verses feature carousel — pairs 2 days ahead of Saturday's Episode 9 reel (reach + reference for the same feature, spaced apart, matching the PreWeek1 bridge pattern). Displaced Bible Tips bank item deferred to Month 2.
 - **v1.6:** Added a Follow-CTA to Saturday's Episode 9 Hero caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1).
 - **v1.7:** Switched carousels to Week 2's 3 canonical layout variants (Flat-Lay/Tuesday, Desk & Bible/Thursday, Journal Macro/Sunday) instead of one shared background.
+- **v1.8:** Reworked every Caption to weave in a real keyword phrase for search/SEO, and trimmed every Hashtags line to exactly 5 well-chosen tags (brand + feature-keyword + topic) instead of 4-5 inconsistently.

@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 2
-Version: 1.6 *(updated — see Changelog)*
+Version: 1.9 *(updated — see Changelog)*
 
 ## Mission of the Week
 This is the first week of the season's regular named-series rhythm (Week 1 was the Launch + How-To set — see `Content_Playbook_Season1_Week1.md`). Each series' topic bank (`Daily Devotion/`) starts at item #1 this week.
@@ -56,7 +56,7 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
-| 1 | Hook | "Ever feel like faith is just... one more thing you have to do?" | Daniel in his apartment kitchen at dawn, tired expression, reaching for his phone as notifications stack up, warm morning light through the window. |
+| 1 | Hook | "I woke up, and my phone was in my hand before I'd even said good morning to God." | Daniel in his apartment kitchen at dawn, tired expression, reaching for his phone as notifications stack up, warm morning light through the window. |
 | 2 | Introduce truth | "Jesus said something different: 'Come to me, and I will give you rest.'" | Daniel sits at his desk, opens his Bible to Matthew 11, morning light falling across the page. |
 | 3 | Explain truth | "He wasn't offering an escape from life — He was offering Himself." | Close-up on the open Bible page, Daniel's finger tracing the verse, soft focus pull to his thoughtful face. |
 | 4 | Deepen understanding | "Rest, in His words, means walking with Him — not walking away from everything." | Daniel closes his eyes briefly in quiet reflection, hands resting on the closed Bible, steam rising from his coffee mug. |
@@ -65,8 +65,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "What would it look like for you to come to Him today, just as you are?" | Daniel pauses at the door, looking back at the open Bible on his desk, soft warm light. |
 | 8 | Hopeful conclusion | "Come to Him. He's not asking for more — He's offering rest." | Slow pull-back wide shot of the sunlit desk with the open Bible, Daniel exiting frame; generous negative space in the upper third for the Disciplefy end-screen (added in edit). |
 
-**Caption:** "Come to me, all who labor and are heavy laden, and I will give you rest." Jesus wasn't offering an escape — He was offering Himself. What does resting in Him actually look like today?
-**Hashtags:** #Disciplefy #BibleExplained #Matthew11 #FaithJourney
+**Caption:** "Come to me, all who labor and are heavy laden, and I will give you rest." Jesus wasn't offering an escape — He was offering Himself. What does resting in Him actually look like today? Study this passage in full on the Disciplefy Bible study app — link in bio.
+**Hashtags:** #Disciplefy #BibleExplained #Matthew11 #DailyDevotional #FaithJourney
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Matthew 11:28 + 🙏 Prayer — "Lord, when I feel weary, remind me that's exactly when You say 'come.'"
@@ -98,8 +98,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 5 — Practical example | Headline: "Try It: Philippians 1:3-8." Scene: the passage visible on an open Bible page with a small handwritten margin note. | Try it with Philippians 1:3-8 — read the whole section, then see how differently verse 6 hits. |
 | 6 — CTA | Headline: "Save This Before Your Next Study" with gold arrow →. Warm closing desk scene matching the season's CTA style. | Save this for your next study — context takes two extra minutes and changes everything. |
 
-**Caption:** Ever read a verse and wonder what it actually means? Context is everything — here's how to find it before your next study. Save this 📌
-**Hashtags:** #Disciplefy #BibleTips #BibleStudy #ContextMatters #Scripture
+**Caption:** Ever read a verse and wonder what it actually means? Context is everything — here's a Bible study tip to find it before your next study. Save this 📌
+**Hashtags:** #Disciplefy #BibleStudyTips #BibleStudy #Scripture #ContextMatters
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — 2 Timothy 2:15 + 💡 Tip — "Always read at least 5 verses before and after your passage."
@@ -134,8 +134,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "What would it look like to give God the first five minutes of your day?" | Daniel looks up from his Bible toward the window light, reflective. |
 | 8 | Hopeful conclusion | "Start with Him. Everything else can wait five minutes." | Wide slow pull-back of Daniel's desk at sunrise; negative space top third for end-screen. |
 
-**Caption:** Jesus made time with the Father a priority before anything else. What would it look like to start your day the same way?
-**Hashtags:** #Disciplefy #WalkingWithJesus #DailyQuietTime #Discipleship
+**Caption:** Jesus made time with the Father a priority before anything else. What would it look like to start your daily devotional time the same way?
+**Hashtags:** #Disciplefy #WalkingWithJesus #DailyDevotional #Discipleship #FaithJourney
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Mark 1:35 + 🙏 Prayer — "Lord, help me seek You before I seek anything else today."
@@ -166,8 +166,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 6 — Pray Again | Headline: "6. Pray Again." Subline: "Ask God to help you live it out." Scene: hands folded again, softer/warmer light than Slide 1 to suggest closure. | Close the same way you opened — in prayer. Ask God to help you actually do what you just studied. |
 | 7 — CTA | Headline: "Study One Chapter Today" with gold arrow →. Warm closing desk scene matching the season's CTA style. | Six simple steps, any chapter, every time. Save this — you'll want it again. |
 
-**Caption:** One method, any chapter: Pray → Read → Observe → Understand → Apply → Pray again. Save this simple framework for your next study.
-**Hashtags:** #Disciplefy #BibleStudyMethod #HowToStudyTheBible #Scripture
+**Caption:** One simple method for how to study the Bible, any chapter: Pray → Read → Observe → Understand → Apply → Pray again. Save this framework for your next study.
+**Hashtags:** #Disciplefy #HowToStudyTheBible #BibleStudyMethod #Scripture #BibleStudy
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — 2 Timothy 3:16 + 💡 Tip — "Write down observations before jumping to interpretation."
@@ -193,7 +193,7 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
-| 1 | Hook | "Ever feel like you're not growing fast enough?" | Daniel closes his journal, frustrated expression, evening lamp light. |
+| 1 | Hook | "Been praying for the same thing since January. Still waiting." | Daniel opens his eyes after praying, hands still folded, tired expression, evening lamp light. |
 | 2 | Introduce truth | "Paul wrote something I needed to hear: 'He who began a good work in you will complete it.'" | Daniel finds Philippians 1:6 in his Bible. |
 | 3 | Explain truth | "God isn't waiting for you to finish yourself — He's already doing the work." | Close-up on the verse, Daniel's shoulders relaxing. |
 | 4 | Deepen understanding | "Growth isn't a deadline. It's a promise being kept." | Daniel leans back, breathes out, soft evening light on his face. |
@@ -202,8 +202,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "Where do you need to trust that God isn't finished with you yet?" | Daniel looks toward the window, thoughtful, peaceful. |
 | 8 | Hopeful conclusion | "He who started this in you will finish it. Trust the process." | Slow pull-back wide shot of the desk in warm lamp light; negative space top third for end-screen. |
 
-**Caption:** Growth isn't instant — and that's okay. "He who began a good work in you will carry it on to completion" (Phil 1:6). Tag someone who needs this today. 💛
-**Hashtags:** #Disciplefy #GrowingInChrist #Philippians1v6 #Encouragement #FaithJourney
+**Caption:** Growth isn't instant — and that's okay. "He who began a good work in you will carry it on to completion" (Phil 1:6). A reminder for anyone on a spiritual growth journey. Tag someone who needs this today. 💛
+**Hashtags:** #Disciplefy #GrowingInChrist #SpiritualGrowth #Philippians #Encouragement
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Philippians 1:6 + 🙏 Prayer — "Lord, thank You for being patient with me."
@@ -225,8 +225,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above; this is the only generated asset for Saturday — the Reel itself is a real screen recording, not generated)*:
 > Headline: "Where Should I Start?" Scene: a stack of Bibles/books of varying sizes on a warm desk suggesting "66 books," with one small gold path/arrow icon pointing toward a single open Bible in front, soft morning light.
 
-**Caption:** 66 books can feel overwhelming — you don't have to figure out where to start alone. Meet Learning Paths, a guided way to grow. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
-**Hashtags:** #Disciplefy #LearningPaths #Discipleship #BibleStudy
+**Caption:** 66 books can feel overwhelming — you don't have to figure out where to start alone. Meet Learning Paths, a guided Bible study path built right into the Disciplefy app. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
+**Hashtags:** #Disciplefy #LearningPaths #GuidedBibleStudy #Discipleship #BibleStudyApp
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Proverbs 3:5-6 + 💡 Tip — "You don't need to know the whole Bible to start — just the next step."
@@ -257,8 +257,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 4 — Invite to community | Headline: "Carry It Into Worship Today." Warm Sunday-morning light through a window, a coat and Bible by the door. | Whatever you carry from this week, bring it into worship today — it's meant to be lived in community, not just alone. |
 | 5 — CTA | Headline: "Missed a Day This Week?" with gold arrow →. Subline: "Catch up — link in bio." | Missed a day somewhere in the mix? No guilt — just catch up whenever you're ready. Link in bio. |
 
-**Caption:** This week: rest in Jesus, read Scripture in context, start your day with Him, use a simple study method, and trust He's not finished with you. Carry it into worship today. Send this to a friend heading to church. 🙏
-**Hashtags:** #Disciplefy #SundayReflection #Worship #BibleStudy #Discipleship
+**Caption:** This week on Disciplefy: rest in Jesus, read Scripture in context, start your day with Him, use a simple Bible study method, and trust He's not finished with you. Carry it into worship today. Send this to a friend heading to church. 🙏
+**Hashtags:** #Disciplefy #SundayReflection #BibleStudy #Worship #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this week's growth. Help me carry it into worship today."
@@ -288,3 +288,6 @@ Track at the end of the week: Reel Reach · Watch Time · Saves · Shares · Pro
 - **v1.4:** Added a per-slide Caption to every carousel (Tue/Thu/Sun) — Instagram now supports a distinct caption per carousel image (rolled out June 2026), shown as viewers swipe. Captions add commentary/context beyond the on-image headline text, not a repeat of it.
 - **v1.5:** Added a Follow-CTA to Saturday's Episode 2 caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1: Follow-CTA rotation, trending audio, Stories interactive stickers).
 - **v1.6:** Replaced the single reused Carousel STYLE BLOCK with 3 canonical layout variants (Flat-Lay/Tuesday, Desk & Bible/Thursday, Journal Macro/Sunday) — one fixed background for every carousel was making the feed feel repetitive. Referenced by Weeks 3-4.
+- **v1.7:** Reworked every Caption to weave in a real keyword phrase for search/SEO, and trimmed every Hashtags line to exactly 5 well-chosen tags (brand + feature-keyword + topic) instead of 4-5 inconsistently.
+- **v1.8:** Rewrote Monday's and Friday's Reel hooks — "Ever feel like faith is just... one more thing you have to do?" and "Ever feel like you're not growing fast enough?" were vague rhetorical questions, weak per 2026 hook research (specific/concrete "pattern interrupt" and "problem" hooks outperform abstract ones). Replaced with concrete, relatable moments matching each clip's visual. Wednesday's hook ("Mornings used to just be alarms and rushing.") was already concrete — left unchanged.
+- **v1.9:** Friday's v1.8 hook (comparing prayer life to a friend's) read as petty/tonally off for a discipleship app. Replaced with "Been praying for the same thing since January. Still waiting." — same concrete/relatable bar, no comparison-to-others, still sets up clip 2's Phil 1:6 answer without spelling out the doubt outright. Adjusted the visual to match (Daniel finishing prayer, not closing a journal).

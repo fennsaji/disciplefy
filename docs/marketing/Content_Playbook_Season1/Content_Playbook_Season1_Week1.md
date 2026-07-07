@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 1 — Launch Week
-Version: 4.3 *(rewritten — see Changelog)*
+Version: 4.8 *(rewritten — see Changelog)*
 
 ## Mission of the Week
 Get the app in front of people and prove it works — before teaching the deeper "reading vs. studying" theme that Weeks 2-4 build on. Week 1 is 5 screen-recording Reels — Monday's app-intro (Play Store → open → onboarding → login) plus 4 How-To Reels Tue-Fri (the Launch post itself already went out Friday before this formal week) — not the regular Bible Explained/Bible Tips rhythm, which starts fresh in Week 2 (see `Content_Playbook_Season1_Week2.md`).
@@ -62,32 +62,30 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 ---
 
 ## Monday — 📲 Meet Disciplefy
-**Format:** Reel — real screen recording + Founder voice-over (app-intro; Tue-Fri are the How-To Reels for the 4 core features)
+**Format:** Reel — real screen recording + Daniel voice-over *(app-intro; Tuesday is also Daniel VO, Wed-Fri are Founder-voice How-To Reels for the remaining 3 core features)*
 **Bible Verse:** Nehemiah 8:8 — "...and they gave the sense, so that the people understood the reading."
 
-**Thumbnail:** "Meet Disciplefy"
+**Thumbnail:** "Confused By The Bible?"
 **Thumbnail Image Prompt** *(prepend the Thumbnail STYLE BLOCK above)*:
-> Headline: "Meet Disciplefy." Scene: a smartphone resting face-up on a warm wooden desk showing only a soft warm glow on its screen (no rendered app UI), an open Bible beside it, soft morning light, a small potted plant nearby.
+> Headline: "Confused By The Bible?" Scene: a smartphone resting face-up on a warm wooden desk showing only a soft warm glow on its screen (no rendered app UI), an open Bible beside it, soft morning light, a small potted plant nearby.
 
-**Script / Timeline (~42s) — Play Store → open app → onboarding walkthrough → login, outro at the end:**
+**Script / Timeline (~40s) — finalized Daniel VO; Play Store → open app → onboarding walkthrough → login, outro at the end:**
 
-| Time | Section | Screen | Voice-over |
+| Time | Section | Screen | Voice-over (Daniel) |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Confused by what you read in the Bible?" | "Confused by what you read in the Bible?" |
-| 0:03-0:07 | INTRO | B-roll: closing the Bible, picking up a phone | "That's exactly why I built Disciplefy." |
-| 0:07-0:11 | STORE | Google Play Store listing for "Disciplefy - Bible Study," tap Install (or Open, if already installed) | "Free, right on the Play Store." |
-| 0:11-0:14 | APP | App splash screen (cream background, logo fades in) | "Opens straight into—" |
-| 0:14-0:16 | APP | Onboarding slide 1 — "Daily Inspiration & Study," tap Continue | "Start your day with a verse—" |
-| 0:16-0:19 | APP | Onboarding slide 2 — "Personalized Study Guides," tap Continue | "—get a personal study guide for whatever you're facing—" |
-| 0:19-0:21 | APP | Onboarding slide 3 — "Voice Discipler," tap Continue | "—talk it through with a voice companion—" |
-| 0:21-0:24 | APP | Onboarding slide 4 — "Memory Verses" (real: 4 slides total, confirmed against app code) | "—and hide verses in your heart so they actually stick." |
-| 0:24-0:27 | APP | Tap "Start Free" on the last onboarding slide | "Tap Start Free—" |
-| 0:27-0:34 | APP | Login screen ("Welcome to Disciplefy," feature list), tap "Continue with Google" (real buttons: Google, Apple on iOS, Email — no guest/anonymous option) | "—sign in with Google, Apple, or email, and you're in." |
-| 0:34-0:38 | APP | Land on the Home screen | "That's it. You're ready to actually study, not just read." |
-| 0:38-0:42 | OUTRO | Gold CTA card, on-screen text: "Free — link in bio." | "Disciplefy. Free — link in bio." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Confused By The Bible?" | "Confused by what you read in the Bible?" |
+| 0:03-0:07 | STORE | Google Play Store listing for "Disciplefy - Bible Study," tap Install (or Open, if already installed) | "Disciplefy explains it — the moment you open it." |
+| 0:07-0:12 | APP | Splash screen, then onboarding slide 1 — "Daily Inspiration & Study," tap Continue | "Every day, a verse — with an instant study guide attached." |
+| 0:12-0:17 | APP | Onboarding slide 2 — "Personalized Study Guides," tap Continue | "Type any verse or topic — get context, meaning, and application." |
+| 0:17-0:22 | APP | Onboarding slide 3 — "Voice Discipler," tap Continue | "Still confused? Just ask. Talk it through, out loud." |
+| 0:22-0:27 | APP | Onboarding slide 4 — "Memory Verses" (real: 4 slides total, confirmed against app code), tap "Start Free" | "And when a verse hits home — hide it in your heart." |
+| 0:27-0:34 | APP | Login screen ("Welcome to Disciplefy," feature list), tap "Continue with Google" (real buttons: Google, Apple on iOS, Email — no guest/anonymous option), land on Home | *(no VO — let the UI speak for itself)* |
+| 0:34-0:40 | OUTRO | Gold CTA card, on-screen text: "Free — link in bio. Follow for more." | "Disciplefy. Completely free. Download it today. We just started. Follow so you don't miss what's next." |
 
-**Caption:** Confused by what you read in the Bible? Meet Disciplefy — download free from the Play Store, and this week we'll show you everything it can do. Link in bio.
-**Hashtags:** #Disciplefy #BibleApp #BibleStudy #NewApp
+*This week's Follow-CTA slot (see Growth Additions below) — the finalized script's own closing line, not an added-on tack; makes sense as the launch reel's ask rather than Friday's.*
+
+**Caption:** Confused by what you read in the Bible? Disciplefy is a free Bible study app that explains it — a daily verse with an instant Bible study guide, ask-out-loud answers, and a way to make Scripture memory stick. We just started — follow along. Link in bio.
+**Hashtags:** #Disciplefy #BibleStudyApp #BibleStudy #ChristianApp #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Nehemiah 8:8 + 💡 Tip — "This week, we're showing you everything Disciplefy can do — one feature a day."
@@ -95,50 +93,46 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 - Evening: Share the Reel + 📖 Reflection — Download Disciplefy today, and follow along this week.
 
 **CTA:** Download free → link in bio.
-**KPI:** Reach · Installs · Profile Visits
+**KPI:** Reach · Installs · Profile Visits · Follows
 
 **Hindi Dub (Stories share only — same screen recording, Hindi voice-over + on-screen text swapped in edit; main feed stays English):**
 
 | Time | On-screen text (Hindi) | Voice-over (Hindi) |
 |---|---|---|
 | 0:00-0:03 | "बाइबल पढ़ते वक़्त कुछ समझ नहीं आता?" | "बाइबल पढ़ते वक़्त कुछ समझ नहीं आता?" |
-| 0:03-0:07 | — | "इसीलिए मैंने Disciplefy बनाया।" |
-| 0:07-0:11 | — | "मुफ़्त, सीधे Play Store पर।" |
-| 0:11-0:14 | — | "खुलते ही दिखता है—" |
-| 0:14-0:16 | — | "अपने दिन की शुरुआत एक वर्स से कीजिए—" |
-| 0:16-0:19 | — | "—जो भी सामना कर रहे हैं, उसके लिए एक पर्सनल स्टडी गाइड पाइए—" |
-| 0:19-0:21 | — | "—एक वॉइस साथी के साथ उस पर बात कीजिए—" |
-| 0:21-0:24 | — | "—और वर्सेज़ को दिल में ऐसे बसाइए कि वो सच में याद रह जाएं।" |
-| 0:24-0:27 | — | "आख़िरी स्लाइड पर Start Free दबाइए—" |
-| 0:27-0:34 | — | "—Google, Apple, या ईमेल से साइन इन करें, बस हो गया।" |
-| 0:34-0:38 | — | "बस इतना ही। अब आप असल में स्टडी करने के लिए तैयार हैं, सिर्फ़ पढ़ने के लिए नहीं।" |
-| 0:38-0:42 | "मुफ़्त — लिंक बायो में।" | "Disciplefy। मुफ़्त — लिंक बायो में।" |
+| 0:03-0:07 | — | "Disciplefy इसे समझाता है — खोलते ही।" |
+| 0:07-0:12 | — | "हर दिन एक वर्स — साथ में तुरंत स्टडी गाइड।" |
+| 0:12-0:17 | — | "कोई भी वर्स या विषय टाइप करें — संदर्भ, अर्थ, और उपयोग पाएं।" |
+| 0:17-0:22 | — | "फिर भी समझ नहीं आया? बस पूछिए। ज़ोर से बात कीजिए।" |
+| 0:22-0:27 | — | "और जब कोई वर्स दिल को छू जाए — उसे दिल में बसा लीजिए।" |
+| 0:27-0:34 | — | *(कोई VO नहीं — UI खुद बोलता है)* |
+| 0:34-0:40 | "मुफ़्त — लिंक बायो में। फॉलो कीजिए।" | "Disciplefy। पूरी तरह मुफ़्त। आज ही डाउनलोड करें। हमने अभी शुरुआत की है। आगे जो आ रहा है, वो मिस न करें — फॉलो कीजिए।" |
 
 ---
 
 ## Tuesday — 💡 How To: Generate a Study Guide
-**Format:** Reel — real screen recording + Founder voice-over
+**Format:** Reel — real screen recording + Daniel voice-over
 **Bible Verse:** Psalm 119:105 — "Your word is a lamp to my feet and a light to my path."
 
 **Thumbnail:** "A Full Study In Seconds" *(trimmed to 5 words from the original 6-word draft to meet the thumbnail rule)*
 **Thumbnail Image Prompt** *(prepend the Thumbnail STYLE BLOCK above)*:
 > Headline: "A Full Study In Seconds." Scene: a single open Bible resting on a warm wooden desk in soft morning light, a smartphone lying face-up beside it with only a soft warm glow on its blank screen (no rendered app UI), a gold ribbon bookmark draped across the Bible's open page, a ceramic coffee mug and small potted plant nearby.
 
-**Script / Timeline (~40s) — intro, then straight into Disciplefy only (no other app shown), outro at the end:**
+**Script / Timeline (~40s) — finalized Daniel VO; intro, then straight into Disciplefy only (no other app shown), outro at the end:**
 
-| Time | Section | Screen | Voice-over |
+| Time | Section | Screen | Voice-over (Daniel) |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Opened to Romans 8. Had no idea where to start." | "Last week I opened to Romans 8 and just... stared at it." |
-| 0:03-0:08 | INTRO | B-roll: flipping through a physical Bible, unsure | "I can read the words fine. Knowing what they actually mean? That's the hard part." |
-| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Generate tab (real bottom-nav label is "Generate," screen titled "Generate Study Guide") | "So I built Disciplefy's Study Guide to do exactly that." |
-| 0:12-0:20 | DISCIPLEFY | Type "Romans 8:28" (or "anxiety") into the search field | "Type in the verse — or skip the reference and just type what you're carrying, like 'anxiety.'" |
-| 0:20-0:24 | DISCIPLEFY | Open the study-mode picker (real modes: Quick Read, Standard Study, Deep Dive, Lectio Divina, Sermon Outline — not a 2-way toggle; chosen before generating) | "Want the five-minute version, or ready to go deep? You pick." |
-| 0:24-0:28 | DISCIPLEFY | Tap Generate, loading animation | "One tap—" |
-| 0:28-0:36 | DISCIPLEFY | Scroll through the generated Study Guide — summary, key verses, reflection questions | "—and you've got the context, the key verses, questions that actually make you think, and how to live it out today." |
-| 0:36-0:40 | OUTRO | Gold CTA card, on-screen text: "Try it free — link in bio." | "Any verse. Any struggle. A real study, in seconds. Free — link's in bio." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "What If Any Verse Explained Itself?" | "What if any verse could explain itself to you?" |
+| 0:03-0:08 | DISCIPLEFY | Open Disciplefy, tap the Generate tab (real bottom-nav label is "Generate"); screen shows the Scripture/Topic/Question toggle at the top (real: a 3-way toggle — Scripture, Topic, Question — separate from the study-mode picker, and the first thing on the screen) | "Choose scripture, topic, or question — right at the top." |
+| 0:08-0:14 | DISCIPLEFY | Type "Romans 8:28" into the text field (placeholder text adapts to the selected mode) | "Type any verse — or just what's on your heart. Or any question you have." |
+| 0:14-0:20 | DISCIPLEFY | Tap Generate — screen streams the Study Guide building live (real: live streaming generation, not a static loading spinner) | "Now watch this — tap Generate, and it builds live." |
+| 0:20-0:26 | DISCIPLEFY | Full generated Study Guide appears — summary, key verses, reflection questions | "That's a full study guide — in under a minute." |
+| 0:26-0:31 | DISCIPLEFY | Tap an inline Scripture reference within the guide to expand and read it in full (real: tappable inline verse references) | "Pro tip: tap any verse to read it in full." |
+| 0:31-0:36 | DISCIPLEFY | Scroll the guide, tap Save | "Read it. Love it. Save it — it's yours now." |
+| 0:36-0:40 | OUTRO | Gold CTA card, on-screen text: "Free — link in bio." | "Disciplefy. Free — link in bio." |
 
-**Caption:** Open the Bible and freeze on where to start? Type any verse or topic — get a full study guide (context, key verses, reflection, application) in seconds. Free on Web & Android — link in bio.
-**Hashtags:** #Disciplefy #BibleStudy #StudyGuide #BibleApp
+**Caption:** Open the Bible and freeze on where to start? Disciplefy's Bible study guide generator takes any verse or topic and gives you context, key verses, reflection, and application in seconds. Free on Web & Android — link in bio.
+**Hashtags:** #Disciplefy #BibleStudyGuide #BibleStudyApp #BibleStudy #Scripture
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Psalm 119:105 + 💡 Tip — "Not sure where to start? Type whatever's on your heart, not just a reference."
@@ -152,14 +146,14 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | On-screen text (Hindi) | Voice-over (Hindi) |
 |---|---|---|
-| 0:00-0:03 | "रोमियों 8 खोला। समझ नहीं आया कहाँ से शुरू करूं।" | "पिछले हफ़्ते मैंने रोमियों 8 खोला और बस... देखता रह गया।" |
-| 0:03-0:08 | — | "पढ़ना तो आसान है। पर समझना कि इसका मतलब क्या है — वही मुश्किल है।" |
-| 0:08-0:12 | — | "इसलिए मैंने Disciplefy की Study Guide बनाई — बिल्कुल यही करने के लिए।" |
-| 0:12-0:20 | — | "कोई भी वर्स टाइप करें — या रेफरेंस छोड़कर बस वो लिखें जो मन में है, जैसे 'चिंता'।" |
-| 0:20-0:24 | — | "पाँच मिनट वाला चाहिए, या गहराई से समझना है? आप चुनिए।" |
-| 0:24-0:28 | — | "बस एक टैप—" |
-| 0:28-0:36 | — | "—और आपके पास है संदर्भ, मुख्य वर्स, सोचने वाले सवाल, और आज इसे जीने का तरीका।" |
-| 0:36-0:40 | "मुफ़्त — लिंक बायो में।" | "कोई भी वर्स। कोई भी परेशानी। सेकंडों में असली स्टडी। मुफ़्त — लिंक बायो में।" |
+| 0:00-0:03 | "क्या कोई वर्स खुद समझा सकता है?" | "क्या हो अगर कोई भी वर्स खुद ही समझा दे?" |
+| 0:03-0:08 | — | "ऊपर ही चुनिए — वर्स, विषय, या सवाल।" |
+| 0:08-0:14 | — | "कोई भी वर्स टाइप करें — या जो मन में है। या कोई भी सवाल।" |
+| 0:14-0:20 | — | "अब देखिए — Generate दबाइए, और ये लाइव बनता है।" |
+| 0:20-0:26 | — | "बस इतना — एक मिनट से भी कम में पूरी स्टडी गाइड।" |
+| 0:26-0:31 | — | "प्रो टिप: किसी भी वर्स पर टैप करें, पूरा पढ़ने के लिए।" |
+| 0:31-0:36 | — | "पढ़िए। पसंद कीजिए। सेव कीजिए — अब ये आपका है।" |
+| 0:36-0:40 | "मुफ़्त — लिंक बायो में।" | "Disciplefy। मुफ़्त — लिंक बायो में।" |
 
 ---
 
@@ -175,16 +169,16 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | Section | Screen | Voice-over |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Psalms one week. Romans the next. Going nowhere." | "I used to bounce between random verses every week — Psalms one day, Romans the next." |
-| 0:03-0:08 | INTRO | B-roll: flipping between unrelated chapters in a physical Bible | "Felt busy. Wasn't actually growing — because none of it connected to what I'd studied before." |
-| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Topics tab | "That's exactly why we built Learning Paths." |
-| 0:12-0:20 | DISCIPLEFY | Scroll through path options (Foundations, Prayer, Grace...) | "Pick a track — Foundations, Prayer, Grace, whatever you need right now." |
-| 0:20-0:28 | DISCIPLEFY | Tap into a path, show its numbered topic list with XP per topic and a milestone badge (real: topic count is dynamic per path, e.g. 16 — not a fixed number, no literal "progress bar" on this screen) | "Every path shows you exactly what's next, so you're never guessing where to go." |
-| 0:28-0:35 | DISCIPLEFY | Open topic 1, scroll content, tap Complete | "Finish one topic, and the next one builds right on it — that's what actual growth looks like." |
-| 0:35-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Stop wandering through verses. Start walking a path. Free — link in bio." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (open physical Bible, no app): "Still Stuck, Even After Studying?" | "Ever study the Bible... and still feel stuck?" |
+| 0:03-0:08 | INTRO | B-roll: flipping between unrelated chapters in a physical Bible | "Random verses don't add up to anything." |
+| 0:08-0:12 | DISCIPLEFY | Open Disciplefy, tap the Topics tab | "This fixes that — Learning Paths." |
+| 0:12-0:20 | DISCIPLEFY | Scroll through path options (Foundations, Prayer, Grace...) | "Pick your journey — Foundations, gospels, epistles, and many more." |
+| 0:20-0:28 | DISCIPLEFY | Tap into a path, show its numbered topic list with XP per topic and a milestone badge (real: topic count is dynamic per path, e.g. 16 — not a fixed number, no literal "progress bar" on this screen) | "Every path shows exactly what's next — you're never lost again." |
+| 0:28-0:35 | DISCIPLEFY | Open topic 1, scroll content, tap Complete | "Each topic builds on the last. This is growth — not just reading." |
+| 0:35-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Stop wandering Scripture. Start walking a path — free, link in bio." |
 
-**Caption:** Growth isn't random verses — it's a path. Learning Paths walk you through Scripture step by step so you always know what's next. Free — link in bio. 🌱
-**Hashtags:** #Disciplefy #Discipleship #SpiritualGrowth #BibleStudy
+**Caption:** Growth isn't random verses — it's a guided Bible study path. Disciplefy's Learning Paths walk you through Scripture step by step so you always know what's next. Free — link in bio. 🌱
+**Hashtags:** #Disciplefy #LearningPaths #BibleStudyPlan #Discipleship #SpiritualGrowth
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 12:1 + 🙏 Prayer — "Lord, keep me from wandering — walk me step by step in Your Word."
@@ -198,13 +192,13 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | On-screen text (Hindi) | Voice-over (Hindi) |
 |---|---|---|
-| 0:00-0:03 | "भजन संहिता आज, रोमियों कल। फिर भी कहीं नहीं पहुंच रहा।" | "मैं हर हफ़्ते इधर-उधर की वर्सेज़ पढ़ता था — कभी भजन संहिता, कभी रोमियों।" |
-| 0:03-0:08 | — | "व्यस्त तो लगता था, पर असल में आगे नहीं बढ़ रहा था — क्योंकि कुछ भी आपस में जुड़ा नहीं था।" |
-| 0:08-0:12 | — | "इसीलिए हमने Learning Paths बनाया।" |
-| 0:12-0:20 | — | "एक रास्ता चुनिए — Foundations, Prayer, Grace, जो भी अभी आपको चाहिए।" |
-| 0:20-0:28 | — | "हर पाथ आपको बताता है आगे क्या है, तो आपको कभी अंदाज़ा नहीं लगाना पड़ता।" |
-| 0:28-0:35 | — | "एक टॉपिक खत्म करें, अगला उसी पर बनता है — असली growth ऐसी ही दिखती है।" |
-| 0:35-0:40 | "मुफ़्त — लिंक बायो में।" | "वर्सेज़ में भटकना बंद कीजिए। एक रास्ते पर चलना शुरू कीजिए। मुफ़्त — लिंक बायो में।" |
+| 0:00-0:03 | "पढ़ते तो हैं, फिर भी अटके हुए?" | "बाइबल पढ़ते हैं... फिर भी अटके रहते हैं?" |
+| 0:03-0:08 | — | "इधर-उधर की वर्सेज़ से कुछ नहीं बनता।" |
+| 0:08-0:12 | — | "इसका हल है — Learning Paths।" |
+| 0:12-0:20 | — | "अपना रास्ता चुनिए — Foundations, सुसमाचार, पत्रियाँ, और भी बहुत कुछ।" |
+| 0:20-0:28 | — | "हर पाथ बताता है आगे क्या है — अब कभी रास्ता नहीं भटकेंगे।" |
+| 0:28-0:35 | — | "हर टॉपिक पिछले पर बनता है। यही असली growth है — सिर्फ़ पढ़ना नहीं।" |
+| 0:35-0:40 | "मुफ़्त — लिंक बायो में।" | "शास्त्र में भटकना बंद कीजिए। एक रास्ते पर चलना शुरू कीजिए — मुफ़्त, लिंक बायो में।" |
 
 ---
 
@@ -229,8 +223,8 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 | 0:33-0:38 | DISCIPLEFY | Show the green streak heat map | "And watching that streak grow is what keeps you coming back." |
 | 0:38-0:42 | OUTRO | On-screen text: "Free — link in bio." | "Hide His Word in your heart — for good this time. Free, link in bio." |
 
-**Caption:** Memorize a verse, then lose it in a week? Add a verse, practice with flip cards/word bank/cloze, get reminded right before you'd forget — and watch your streak grow. Free — link in bio. 🙌
-**Hashtags:** #Disciplefy #MemoryVerse #BibleMemory #Scripture
+**Caption:** Memorize a verse, then lose it in a week? Disciplefy's Bible memory app lets you add a verse, practice with flip cards, word bank, or cloze, get reminded right before you'd forget — and watch your streak grow. Free — link in bio. 🙌
+**Hashtags:** #Disciplefy #MemoryVerse #BibleMemoryApp #Scripture #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Psalm 119:11 + 💡 Tip — "Pick one short verse this week and practice it daily — consistency beats cramming."
@@ -256,29 +250,27 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 ---
 
 ## Friday — 🎙 How To: Voice Discipler
-**Format:** Reel — real screen recording + Founder voice-over
+**Format:** Reel — real screen recording + Daniel voice-over
 **Bible Verse:** 1 Peter 3:15 — "always being prepared to make a defense to anyone who asks you for a reason for the hope that is in you."
 
 **Thumbnail:** "Just Ask Out Loud"
 **Thumbnail Image Prompt** *(prepend the Thumbnail STYLE BLOCK above)*:
 > Headline: "Just Ask Out Loud." Scene: a smartphone resting upright on a warm wooden desk with a soft gold soundwave glow emanating gently from its screen (implying a voice moment, no rendered UI), an open Bible beside it, warm bright lamp-glow lighting — warm and inviting, not dark or moody.
 
-**Script / Timeline (~40s) — intro, then straight into Disciplefy only (no other app shown), outro at the end:**
+**Script / Timeline (~40s) — finalized Daniel VO; intro, then straight into Disciplefy only (no other app shown), outro at the end:**
 
-| Time | Section | Screen | Voice-over |
+| Time | Section | Screen | Voice-over (Daniel) |
 |---|---|---|---|
-| 0:00-0:03 | INTRO | On-screen text over simple b-roll (no app): "Had a question at 1am. No one to call." | "Had a question at 1am once — 'how do I actually forgive someone who hurt me?' Nobody to call." |
-| 0:03-0:08 | INTRO | B-roll: person alone at night, holding phone | "Some questions really can't wait until Sunday." |
-| 0:08-0:12 | DISCIPLEFY | Open a generated Study Guide, tap "Ask Discipler" (real button, bottom of the Study Guide screen next to "Listen" — this is the real entry point, confirmed against actual app screenshots) | "That's why every Study Guide has a Discipler built right in." |
-| 0:12-0:20 | DISCIPLEFY | Tap the mic, speak: "How do I forgive someone who hurt me?" | "Tap the mic and just ask it out loud — like you would a friend." |
-| 0:20-0:30 | DISCIPLEFY | Scroll through the Scripture-grounded response | "It answers straight from Scripture — every single time." |
-| 0:30-0:36 | DISCIPLEFY | On-screen text: "A companion, not a replacement." | "Think of it as a companion for the walk — never a replacement for your pastor or your church." |
-| 0:36-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Real questions, biblical answers, anytime. Free — link in bio. Follow for a new one every week." |
+| 0:00-0:03 | INTRO | On-screen text over simple b-roll (no app): "A Faith Question, No One To Ask?" | "Ever have a faith question... and no one to ask?" |
+| 0:03-0:08 | INTRO | B-roll: person alone at night, holding phone | "Some questions can't wait for Sunday." |
+| 0:08-0:12 | DISCIPLEFY | Open a generated Study Guide, tap "Ask Discipler" (real button, bottom of the Study Guide screen next to "Listen" — this is the real entry point, confirmed against actual app screenshots) | "Meet your Discipler." |
+| 0:12-0:20 | DISCIPLEFY | Tap the mic, speak: "How do I forgive someone who hurt me?" | "Tap the mic, and just ask — out loud, like you would a friend." |
+| 0:20-0:30 | DISCIPLEFY | Scroll through the Scripture-grounded response | "It answers — grounded in Scripture, every time." |
+| 0:30-0:36 | DISCIPLEFY | On-screen text: "A starting point, not a replacement." | "But it's a starting point — not your pastor, not your fellowship. For real guidance, real community still matters most." |
+| 0:36-0:40 | OUTRO | On-screen text: "Free — link in bio." | "Real questions. Biblical answers. Anytime. Free — link in bio." |
 
-*This week's Follow-CTA slot (see Growth Additions below) — the added line is a soft ask, not a hard sell; doesn't replace the app CTA, just tacks on at the very end.*
-
-**Caption:** Faith question, no one to ask right now? Tap the mic, ask out loud — get a Scripture-grounded answer. A companion for your walk, not a replacement for your pastor or church. Free — link in bio. Follow for more real questions, answered. 🙏
-**Hashtags:** #Disciplefy #Discipleship #VoiceDiscipler #FaithQuestions
+**Caption:** Faith question, no one to ask right now? Disciplefy lets you ask Bible questions out loud and get a Scripture-grounded answer. A companion for your walk, not a replacement for your pastor or church. Free — link in bio. 🙏
+**Hashtags:** #Disciplefy #VoiceDiscipler #BibleQuestions #FaithJourney #Discipleship
 
 **Theology-safe note:** Discipler copy must always frame it as a companion that points back to Scripture and community — never a replacement for pastor, church, or the Bible itself.
 
@@ -294,13 +286,13 @@ Adapted from `Prompts/Daily Bible Verse v2.md` (issues resolved: no Material 3/i
 
 | Time | On-screen text (Hindi) | Voice-over (Hindi) |
 |---|---|---|
-| 0:00-0:03 | "रात 1 बजे एक सवाल था। किसी को फ़ोन नहीं कर सकता था।" | "एक बार रात 1 बजे एक सवाल था — 'मैं किसी को माफ़ कैसे करूं जिसने मुझे तकलीफ़ दी?' किसी को फ़ोन नहीं कर सकता था।" |
-| 0:03-0:08 | — | "कुछ सवाल सच में रविवार तक रुक नहीं सकते।" |
-| 0:08-0:12 | — | "इसीलिए हर Study Guide में एक Discipler पहले से मौजूद है।" |
-| 0:12-0:20 | — | "माइक दबाइए और ज़ोर से पूछिए — जैसे किसी दोस्त से पूछते हैं।" |
-| 0:20-0:30 | — | "ये हर बार सीधे शास्त्र से जवाब देता है।" |
-| 0:30-0:36 | "साथी, विकल्प नहीं।" | "इसे अपने सफ़र का साथी समझिए — कभी अपने पास्टर या चर्च की जगह नहीं।" |
-| 0:36-0:40 | "मुफ़्त — लिंक बायो में।" | "असली सवाल, बाइबिल से जवाब, कभी भी। मुफ़्त — लिंक बायो में। हर हफ़्ते नए सवाल के लिए फॉलो करें।" |
+| 0:00-0:03 | "कोई सवाल है, पूछें किससे?" | "कभी कोई फेथ सवाल हो... और पूछने को कोई न हो?" |
+| 0:03-0:08 | — | "कुछ सवाल रविवार तक रुक नहीं सकते।" |
+| 0:08-0:12 | — | "मिलिए अपने Discipler से।" |
+| 0:12-0:20 | — | "माइक दबाइए, और बस पूछिए — ज़ोर से, जैसे किसी दोस्त से पूछते हैं।" |
+| 0:20-0:30 | — | "ये जवाब देता है — हर बार शास्त्र पर आधारित।" |
+| 0:30-0:36 | "शुरुआत, विकल्प नहीं।" | "पर ये एक शुरुआत है — आपके पास्टर या फेलोशिप की जगह नहीं। असली मार्गदर्शन के लिए, असली community सबसे ज़्यादा मायने रखती है।" |
+| 0:36-0:40 | "मुफ़्त — लिंक बायो में।" | "असली सवाल। बाइबिल से जवाब। कभी भी। मुफ़्त — लिंक बायो में।" |
 
 ---
 
@@ -344,8 +336,8 @@ No scheduled post — the only open day this week, once Monday's new app-intro R
 
 **Caption (on-slide text):** If you missed a post this week, no worries — catch up any time. Link in bio.
 
-**Caption:** This week Disciplefy went live — a study guide for any verse, a path to follow, verses that stick, and questions you can finally ask out loud. Today, carry it into worship. Send this to a friend heading to church today. 🙏
-**Hashtags:** #Disciplefy #SundayReflection #Worship #BibleStudy #Discipleship
+**Caption:** This week, the free Bible study app Disciplefy went live — a study guide for any verse, a path to follow, verses that stick, and questions you can finally ask out loud. Today, carry it into worship. Send this to a friend heading to church today. 🙏
+**Hashtags:** #Disciplefy #BibleStudyApp #SundayReflection #Worship #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this week's launch. Help me carry it into worship today."
@@ -366,7 +358,7 @@ No scheduled post — the only open day this week, once Monday's new app-intro R
 Three tactics not yet baked into the plan before this update — reach (discovery) and follows (conversion) are different problems, these split across both:
 
 **1. Follow-CTA (conversion) — once per week, not every post.** Asking to follow on every single post reads as needy and gets tuned out. One rotating slot per week, always the week's highest-reach/highest-engagement post:
-- Week 1: Friday's Discipler Reel outro (done above — soft-tacked-on line, doesn't replace the app CTA)
+- Week 1: Monday's Meet Disciplefy Reel outro (done above — the launch reel's own closing line)
 - Week 2: Saturday's Episode 2 Reel
 - Week 3: Saturday's Episode 9 ⭐ Hero Reel
 - Week 4: Saturday's Episode 13 ⭐ Hero Reel
@@ -404,3 +396,8 @@ Ignore vanity metrics. Focus on helping more believers take one step closer to b
 - **v4.1:** Added a Hindi Dub to each of the 4 Mon-Thu Reels — same screen recording, Hindi voice-over + on-screen text swapped in edit. Posted to Stories only (not the main feed): keeps this week's carefully-tuned Reel cadence intact and tests Hindi demand before committing feed real estate, consistent with marketing content being English-only on the main feed for now (see Daily Verse Story note).
 - **v4.2:** Added a new Monday Reel — "Meet Disciplefy," a real screen recording of Play Store → open app → the 4-slide onboarding walkthrough → login (Google/Apple/Email, no guest option), grounded in the actual app UI. Everything else shifted one day later: Study Guide Tue, Learning Paths Wed, Memory Verses Thu, Discipler Fri (Follow-CTA slot moved with it). Saturday is now the week's only open day. Week 1 is 5 Reels (Mon-Fri) + 1 Carousel (Sun) instead of 4+1; all cross-references (Mission, Why-Different, Algorithm Notes, Growth Additions, Production Rhythm, Daily Verse variant assignments) updated to match.
 - **v4.3:** Split Monday's single "swipe through all 4 onboarding slides" beat into 4 separate beats, one voice-over line per walkthrough page (matches the actual per-slide swipe instead of one line glossing over all of them) — updated in both the English script and Hindi Dub.
+- **v4.4:** Swapped in the finalized Daniel VO for Monday's Reel (7-line script, narrated by Daniel rather than Founder — a deliberate change for this app-intro-only Reel) and updated the thumbnail headline to "Confused By The Bible?" to match its opening line. The finalized script's own closing line ("We just started. Follow...") is a Follow-CTA, so moved this week's Follow-CTA slot from Friday's Discipler Reel to Monday — reverted Friday's outro/caption/Hindi dub back to no follow-ask, since the "once per week, not every post" rule (Growth Additions) doesn't allow two.
+- **v4.5:** Reworked every Caption to weave in a real keyword phrase (e.g. "Bible study app," "Bible study guide," "Bible memory app," "Bible questions") for on-platform search/SEO, and trimmed every Hashtags line to exactly 5 well-chosen tags (mix of brand, feature-keyword, and topic) instead of 4-5 inconsistently — per 2026 guidance that hashtag stuffing hurts reach more than a tight, relevant set.
+- **v4.6:** Finalized a punchier voice-over pass for Wednesday's Learning Paths Reel — same timeline and screen actions, tighter delivery (e.g. "Ever study the Bible... and still feel stuck?" instead of the longer founder-anecdote opener). Fixed a typo in the finalized copy ("epistels" → "epistles"). Updated the on-screen intro text and Hindi Dub to match.
+- **v4.7:** Swapped in the finalized Daniel VO for Tuesday's Generate a Study Guide Reel. Verified against the real app code first: the Generate screen has a 3-way Scripture/Topic/Question toggle — the first thing on screen, separate from the study-mode picker — which the finalized script referenced but wasn't in the doc before. Re-sequenced the beats to match the real screen order (open app → toggle → type → tap Generate → live-streamed result → tappable inline verse references → save), added an outro CTA line the finalized script didn't include, and updated the Hindi Dub to match. Also corrected Monday's Format note, which had said Tue-Fri are all Founder-voice — Tuesday is Daniel VO too now.
+- **v4.8:** Swapped in the finalized Daniel VO for Friday's Voice Discipler Reel — mapped cleanly onto the existing 7-beat timeline with no reordering needed. Softened the "not a replacement" line to "not your pastor, not your fellowship... real community still matters most," matching the Theology-safe note. Updated Hindi Dub to match. Note: Monday, Tuesday, and Friday are now confirmed Daniel VO — Wednesday and Thursday still carry the earlier Founder-voice anecdote style pending finalized copy for those two.
