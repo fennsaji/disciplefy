@@ -1,5 +1,5 @@
 # Disciplefy Brand Bible
-Version: 1.2 *(updated — see Changelog)*
+Version: 1.3 *(updated — see Changelog)*
 
 ## Purpose
 This document defines who Disciplefy is and why it exists. Every decision about the product, content, design, and marketing should align with this document.
@@ -33,6 +33,8 @@ Never: Condemning · Clickbait · Political · Divisive · Fear-based
 Confirmed against the live marketing site (`marketing/messages/en.json`): user-facing copy never uses the word "AI," "artificial intelligence," or similar — not even in feature names. The Technology section states it explicitly: "Disciplefy uses technology to generate Bible study content... The technology assists study; it does not interpret Scripture with authority. That authority belongs to Scripture alone." This is a theological stance, not a style preference — naming the tech "AI" risks implying it has interpretive authority over Scripture, which the brand explicitly rejects.
 
 Use instead: "Study Guides," "Voice Discipler" / "Voice Buddy," "Learning Paths," "Memory Verses," "generate," "technology" — never "AI-powered," "AI-generated," "artificial intelligence." Applies to all marketing copy: Instagram, ads, bios, captions, app-store listings.
+
+**Deliberate exception — blog SEO content:** The blog (`docs/marketing/Blog_SEO/Disciplefy Blog Content Roadmap.md`) may target "AI Bible study" as a real search-intent keyword (e.g. Article 9, "How AI Can Help You Study the Bible") — organic search traffic is a different context from brand-voice copy. This is the one place "AI" is allowed; it does not loosen the rule anywhere else.
 
 ## Core Message
 Knowing Jesus is the beginning. Becoming like Him is the journey. Disciplefy exists to help believers grow into true disciples.
@@ -68,3 +70,4 @@ Before launching anything, ask:
 ## Changelog
 - **v1.1:** Added "Language Rule — Never Say 'AI'" (confirmed against the live marketing site's actual copy — a theological stance, not a style choice). Updated Instagram Bio to an SEO-keyworded version consistent with that rule; kept the original warmer bio for reference.
 - **v1.2:** Trimmed the SEO bio from 153 to 130 characters — original draft exceeded Instagram's 150-char bio limit.
+- **v1.3:** Logged a deliberate exception to the "Never Say AI" rule for blog SEO content only — the new Blog Content Roadmap targets "AI Bible study" as real search intent; Instagram/app copy is unaffected.
