@@ -59,9 +59,9 @@ export const mdxComponents: MDXComponents = {
   // Scripture / quote block — amber accent to feel like a Bible verse callout
   blockquote: (props) => (
     <blockquote
-      className="relative border-l-4 border-amber-400 dark:border-amber-500 pl-5 pr-4 py-3 my-7 rounded-r-lg
-                 bg-amber-50/60 dark:bg-amber-500/8 italic
-                 text-gray-700 dark:text-slate-300 text-[18px] leading-[2.0]"
+      className="relative border-l-4 border-amber-400 pl-5 pr-4 py-3 my-7 rounded-r-lg
+                 bg-amber-50 dark:bg-amber-500/15 italic
+                 text-gray-800 dark:text-amber-50 text-[18px] leading-[2.0]"
       {...props}
     />
   ),
