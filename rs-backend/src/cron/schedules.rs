@@ -6,3 +6,6 @@ pub const BLOG_GENERATION: &str = "0 0 0 * * *";
 
 /// Blog retry — every 4 hours, to regenerate any locales that failed in the main run
 pub const BLOG_RETRY: &str = "0 0 */4 * * *";
+
+/// Publish scheduled posts — every minute, flips due scheduled posts to published.
+pub const BLOG_PUBLISH_SCHEDULED: &str = "0 * * * * *";

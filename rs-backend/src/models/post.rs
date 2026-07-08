@@ -49,6 +49,7 @@ pub struct BlogPost {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub published_at: Option<DateTime<Utc>>,
+    pub scheduled_for: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
@@ -84,6 +85,8 @@ pub struct CreatePostInput {
     pub source_topic_id: Option<Uuid>,
     pub source_learning_path_id: Option<Uuid>,
     pub source_guide_id: Option<Uuid>,
+    #[serde(default)]
+    pub scheduled_for: Option<DateTime<Utc>>,
 }
 
 fn default_status() -> String {
@@ -98,6 +101,7 @@ pub struct UpdatePostInput {
     pub tags: Option<Vec<String>>,
     pub featured: Option<bool>,
     pub status: Option<String>,
+    pub scheduled_for: Option<DateTime<Utc>>,
 }
 
 // ── Pagination ─────────────────────────────────────────────
@@ -487,11 +491,26 @@ fn validate_create_input(input: &CreatePostInput) -> Result<(), AppError> {
             "locale must be one of: en, hi, ml".to_string(),
         ));
     }
-    let valid_statuses = ["draft", "published"];
+    let valid_statuses = ["draft", "published", "scheduled"];
     if !valid_statuses.contains(&input.status.as_str()) {
         return Err(AppError::BadRequest(
-            "status must be 'draft' or 'published'".to_string(),
+            "status must be 'draft', 'published', or 'scheduled'".to_string(),
         ));
+    }
+    if input.status == "scheduled" {
+        match input.scheduled_for {
+            None => {
+                return Err(AppError::BadRequest(
+                    "scheduled_for is required when status is 'scheduled'".to_string(),
+                ))
+            }
+            Some(t) if t <= Utc::now() => {
+                return Err(AppError::BadRequest(
+                    "scheduled_for must be in the future".to_string(),
+                ))
+            }
+            _ => {}
+        }
     }
     if input.tags.len() > 20 {
         return Err(AppError::BadRequest("maximum 20 tags allowed".to_string()));
@@ -510,14 +529,14 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
     let published_at = if input.status == "published" {
         Some(Utc::now())
     } else {
-        None
+        None // draft or scheduled
     };
 
     let post = sqlx::query_as::<_, BlogPost>(
         "INSERT INTO blog_posts (slug, title, excerpt, content, locale, tags, featured, status,
                                  source_type, source_topic_id, source_learning_path_id,
-                                 source_guide_id, published_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                                 source_guide_id, published_at, scheduled_for)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING *",
     )
     .bind(&slug)
@@ -533,6 +552,7 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
     .bind(input.source_learning_path_id)
     .bind(input.source_guide_id)
     .bind(published_at)
+    .bind(input.scheduled_for)
     .fetch_one(pool)
     .await?;
 
@@ -555,14 +575,14 @@ pub async fn create_post_if_not_exists(
     let published_at = if input.status == "published" {
         Some(Utc::now())
     } else {
-        None
+        None // draft or scheduled
     };
 
     let post = sqlx::query_as::<_, BlogPost>(
         "INSERT INTO blog_posts (slug, title, excerpt, content, locale, tags, featured, status,
                                  source_type, source_topic_id, source_learning_path_id,
-                                 source_guide_id, published_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                                 source_guide_id, published_at, scheduled_for)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          ON CONFLICT (slug) DO NOTHING
          RETURNING *",
     )
@@ -579,6 +599,7 @@ pub async fn create_post_if_not_exists(
     .bind(input.source_learning_path_id)
     .bind(input.source_guide_id)
     .bind(published_at)
+    .bind(input.scheduled_for)
     .fetch_optional(pool)
     .await?;
 
@@ -624,6 +645,21 @@ pub async fn update_post(
     id: Uuid,
     input: UpdatePostInput,
 ) -> Result<BlogPost, AppError> {
+    // Mirror create validation: setting status to 'scheduled' requires a future
+    // scheduled_for in the same request (the DB CHECK would otherwise 500, and a
+    // past time would be published on the next cron tick).
+    if input.status.as_deref() == Some("scheduled") {
+        match input.scheduled_for {
+            Some(t) if t > Utc::now() => {}
+            _ => {
+                return Err(AppError::BadRequest(
+                    "scheduled_for must be provided and in the future when status is 'scheduled'"
+                        .to_string(),
+                ))
+            }
+        }
+    }
+
     let post = sqlx::query_as::<_, BlogPost>(
         "UPDATE blog_posts SET
            title = COALESCE($2, title),
@@ -631,7 +667,8 @@ pub async fn update_post(
            excerpt = COALESCE($4, excerpt),
            tags = COALESCE($5, tags),
            featured = COALESCE($6, featured),
-           status = COALESCE($7, status)
+           status = COALESCE($7, status),
+           scheduled_for = COALESCE($8, scheduled_for)
          WHERE id = $1
          RETURNING *",
     )
@@ -642,6 +679,7 @@ pub async fn update_post(
     .bind(input.tags.as_deref())
     .bind(input.featured)
     .bind(input.status)
+    .bind(input.scheduled_for)
     .fetch_optional(pool)
     .await?
     .ok_or_else(|| AppError::NotFound("Post not found".to_string()))?;
@@ -827,4 +865,57 @@ pub async fn check_blog_exists_for_guide(
             .fetch_optional(pool)
             .await?;
     Ok(row)
+}
+
+/// Flip all scheduled posts whose time has arrived to published. Set-based and
+/// idempotent: a re-run selects nothing because rows are no longer 'scheduled'.
+pub async fn publish_due_scheduled(pool: &PgPool) -> Result<Vec<(Uuid, String)>, AppError> {
+    let rows: Vec<(Uuid, String)> = sqlx::query_as(
+        "UPDATE blog_posts
+         SET status = 'published',
+             published_at = COALESCE(published_at, scheduled_for, now())
+         WHERE status = 'scheduled' AND scheduled_for <= now()
+         RETURNING id, slug",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn base_input(status: &str, scheduled_for: Option<DateTime<Utc>>) -> CreatePostInput {
+        CreatePostInput {
+            title: "Title".into(),
+            content: "Body".into(),
+            excerpt: String::new(),
+            locale: "en".into(),
+            tags: vec![],
+            featured: false,
+            status: status.into(),
+            slug: None,
+            source_type: None,
+            source_topic_id: None,
+            source_learning_path_id: None,
+            source_guide_id: None,
+            scheduled_for,
+        }
+    }
+
+    #[test]
+    fn scheduled_requires_future_time() {
+        assert!(validate_create_input(&base_input("scheduled", None)).is_err());
+        let past = Utc::now() - chrono::Duration::hours(1);
+        assert!(validate_create_input(&base_input("scheduled", Some(past))).is_err());
+        let future = Utc::now() + chrono::Duration::hours(1);
+        assert!(validate_create_input(&base_input("scheduled", Some(future))).is_ok());
+    }
+
+    #[test]
+    fn draft_and_published_still_valid() {
+        assert!(validate_create_input(&base_input("draft", None)).is_ok());
+        assert!(validate_create_input(&base_input("published", None)).is_ok());
+    }
 }

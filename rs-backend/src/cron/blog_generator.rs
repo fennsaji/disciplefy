@@ -120,6 +120,7 @@ async fn generate_for_locale(
         source_topic_id: Some(topic.topic_id),
         source_learning_path_id: Some(topic.path_id),
         source_guide_id: None,
+        scheduled_for: None,
     };
 
     match post::create_post_if_not_exists(pool, input).await? {

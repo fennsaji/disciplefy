@@ -17,6 +17,7 @@ use crate::models::cron_config::{self, CronConfig};
 /// Each job has its own lock so they don't block each other.
 pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// Guard that resets its flag to false on drop.
 pub struct CronGuard {
@@ -65,6 +66,13 @@ pub async fn start_scheduler(
                 enabled: true,
                 schedule: schedules::BLOG_RETRY.into(),
                 label: "Every 4 hours".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "blog_publish_scheduled".into(),
+                enabled: true,
+                schedule: schedules::BLOG_PUBLISH_SCHEDULED.into(),
+                label: "Every minute — publish due scheduled posts".into(),
                 updated_at: chrono::Utc::now(),
             },
         ]
@@ -160,6 +168,48 @@ pub async fn start_scheduler(
         .await
         .expect("Failed to add blog retry CRON job");
     job_ids.insert("blog_retry".into(), retry_uuid);
+
+    // Scheduled-post publisher CRON
+    let sched_cfg = configs.iter().find(|c| c.name == "blog_publish_scheduled");
+    let sched_schedule = sched_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::BLOG_PUBLISH_SCHEDULED.into());
+    let sched_pool = pool.clone();
+
+    let publish_job = Job::new_async(sched_schedule.as_str(), move |_uuid, _lock| {
+        let p = sched_pool.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "blog_publish_scheduled").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("blog_publish_scheduled cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&BLOG_PUBLISH_SCHEDULED_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!("Scheduled-publish CRON skipped: previous run still in progress");
+                    return;
+                }
+            };
+            match crate::models::post::publish_due_scheduled(&p).await {
+                Ok(published) if !published.is_empty() => {
+                    tracing::info!(count = published.len(), "Auto-published scheduled posts");
+                }
+                Ok(_) => {}
+                Err(e) => tracing::error!("Scheduled-publish CRON failed: {}", e),
+            }
+        })
+    })
+    .expect("Failed to create scheduled-publish CRON job");
+
+    let publish_uuid = sched
+        .add(publish_job)
+        .await
+        .expect("Failed to add scheduled-publish CRON job");
+    job_ids.insert("blog_publish_scheduled".into(), publish_uuid);
 
     sched.start().await.expect("Failed to start CRON scheduler");
     tracing::info!(

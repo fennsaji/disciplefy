@@ -207,7 +207,6 @@ pub async fn cron_update_schedule(
                     let h = http.clone();
                     let n = job_name.clone();
                     Box::pin(async move {
-                        // Per-run enabled check
                         match cron_config::get(&p, &n).await {
                             Ok(cfg) if !cfg.enabled => {
                                 tracing::info!("{} cron disabled — skipping", n);
@@ -219,22 +218,46 @@ pub async fn cron_update_schedule(
                             ),
                             _ => {}
                         }
-                        let flag = if n == "blog_retry" {
-                            &crate::cron::BLOG_RETRY_RUNNING
-                        } else {
-                            &crate::cron::BLOG_GENERATION_RUNNING
-                        };
-                        let _guard = match crate::cron::CronGuard::try_acquire(flag) {
-                            Some(g) => g,
-                            None => {
-                                tracing::warn!("CRON skipped: previous run still in progress");
-                                return;
+                        match n.as_str() {
+                            "blog_publish_scheduled" => {
+                                let _guard = match crate::cron::CronGuard::try_acquire(
+                                    &crate::cron::BLOG_PUBLISH_SCHEDULED_RUNNING,
+                                ) {
+                                    Some(g) => g,
+                                    None => {
+                                        tracing::warn!("CRON skipped: previous run still in progress");
+                                        return;
+                                    }
+                                };
+                                match crate::models::post::publish_due_scheduled(&p).await {
+                                    Ok(published) if !published.is_empty() => tracing::info!(
+                                        count = published.len(),
+                                        "Auto-published scheduled posts"
+                                    ),
+                                    Ok(_) => {}
+                                    Err(e) => tracing::error!("Scheduled-publish CRON failed: {}", e),
+                                }
                             }
-                        };
-                        if let Err(e) =
-                            crate::cron::blog_generator::run_blog_generation(&p, &c, &h).await
-                        {
-                            tracing::error!("CRON failed: {}", e);
+                            other => {
+                                // blog_generation or blog_retry — both run generation
+                                let flag = if other == "blog_retry" {
+                                    &crate::cron::BLOG_RETRY_RUNNING
+                                } else {
+                                    &crate::cron::BLOG_GENERATION_RUNNING
+                                };
+                                let _guard = match crate::cron::CronGuard::try_acquire(flag) {
+                                    Some(g) => g,
+                                    None => {
+                                        tracing::warn!("CRON skipped: previous run still in progress");
+                                        return;
+                                    }
+                                };
+                                if let Err(e) =
+                                    crate::cron::blog_generator::run_blog_generation(&p, &c, &h).await
+                                {
+                                    tracing::error!("CRON failed: {}", e);
+                                }
+                            }
                         }
                     })
                 })
@@ -338,6 +361,7 @@ pub async fn generate_blog_from_study_guide(
         source_topic_id: guide.topic_id,
         source_learning_path_id: guide.learning_path_id,
         source_guide_id: Some(guide_id),
+        scheduled_for: None,
     };
 
     let p = post::create_post(&state.pool, input).await?;
