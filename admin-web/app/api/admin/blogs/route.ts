@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin
       .from('blog_posts')
-      .select('id, slug, title, excerpt, author, locale, tags, featured, status, source_type, created_at, published_at', { count: 'exact' })
+      .select('id, slug, title, excerpt, author, locale, tags, featured, status, source_type, created_at, published_at, scheduled_for', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 

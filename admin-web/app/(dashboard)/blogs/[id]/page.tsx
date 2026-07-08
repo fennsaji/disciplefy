@@ -3,7 +3,9 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
+import { BlogPreview } from '@/components/blog/BlogPreview'
 import {
   getBlogPost,
   updateBlogPost,
@@ -29,6 +31,8 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
   const [tagsInput, setTagsInput] = useState('')
   const [featured, setFeatured] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [scheduledFor, setScheduledFor] = useState('')
+  const [isScheduling, setIsScheduling] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -40,6 +44,9 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
         setContent(data.post.content)
         setTagsInput(data.post.tags.join(', '))
         setFeatured(data.post.featured)
+        if (data.post.scheduled_for) {
+          setScheduledFor(format(new Date(data.post.scheduled_for), "yyyy-MM-dd'T'HH:mm"))
+        }
       } catch (err) {
         toast.error('Failed to load post')
         router.push('/blogs')
@@ -93,6 +100,31 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
       toast.error(err instanceof Error ? err.message : 'Failed to update status')
     } finally {
       setIsToggling(false)
+    }
+  }
+
+  const handleSchedule = async () => {
+    if (!post) return
+    if (isDirty) {
+      toast.error('Save changes before scheduling')
+      return
+    }
+    if (!scheduledFor) { toast.error('Pick a date & time to schedule'); return }
+    const when = new Date(scheduledFor) // datetime-local is local time
+    if (when.getTime() <= Date.now()) { toast.error('Scheduled time must be in the future'); return }
+
+    setIsScheduling(true)
+    try {
+      const updated = await updateBlogPost(id, {
+        status: 'scheduled',
+        scheduled_for: when.toISOString(), // → UTC
+      })
+      setPost(updated.post)
+      toast.success('Post scheduled')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to schedule post')
+    } finally {
+      setIsScheduling(false)
     }
   }
 
@@ -182,15 +214,27 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
               <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70 mb-1.5">
                 Content (Markdown) <span className="text-red-400">*</span>
               </label>
-              <textarea
-                value={content}
-                onChange={e => { setContent(e.target.value); markDirty() }}
-                rows={24}
-                className="w-full resize-y rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white outline-none focus:border-indigo-500"
-              />
-              <p className="mt-1 text-xs text-indigo-400/50">
-                {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
-              </p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <textarea
+                    value={content}
+                    onChange={e => { setContent(e.target.value); markDirty() }}
+                    rows={24}
+                    className="w-full resize-y rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white outline-none focus:border-indigo-500"
+                  />
+                  <p className="mt-1 text-xs text-indigo-400/50">
+                    {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
+                  </p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white p-6 overflow-auto max-h-[70vh]">
+                  <BlogPreview
+                    content={content}
+                    title={title}
+                    tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
+                    status={post.status}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -218,6 +262,25 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
             >
               {isToggling ? '…' : post.status === 'published' ? '📥 Unpublish' : '🚀 Publish'}
             </button>
+            <div className="space-y-2 pt-1">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70">
+                {post.status === 'scheduled' ? 'Reschedule' : 'Schedule'}
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledFor}
+                onChange={e => setScheduledFor(e.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={handleSchedule}
+                disabled={isScheduling || !scheduledFor}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+              >
+                {isScheduling ? 'Scheduling…' : post.status === 'scheduled' ? '🗓️ Reschedule Post' : '🗓️ Schedule Post'}
+              </button>
+            </div>
           </div>
 
           {/* Post info */}
@@ -229,7 +292,9 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                   post.status === 'published'
                     ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-amber-500/20 text-amber-300'
+                    : post.status === 'scheduled'
+                      ? 'bg-indigo-500/20 text-indigo-300'
+                      : 'bg-amber-500/20 text-amber-300'
                 }`}>{post.status}</span>
               </div>
               <div className="flex justify-between">
@@ -240,6 +305,12 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
                 <span className="text-indigo-400/60">Source</span>
                 <span className="text-white capitalize">{post.source_type ?? 'manual'}</span>
               </div>
+              {post.status === 'scheduled' && post.scheduled_for && (
+                <div className="flex justify-between">
+                  <span className="text-indigo-400/60">Scheduled for</span>
+                  <span className="text-white">{format(new Date(post.scheduled_for), 'MMM d, yyyy HH:mm')}</span>
+                </div>
+              )}
               {post.published_at && (
                 <div className="flex justify-between">
                   <span className="text-indigo-400/60">Published</span>

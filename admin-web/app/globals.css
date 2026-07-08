@@ -118,3 +118,21 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(75, 85, 99, 0.7);
 }
+
+/* Blog live preview — scopes the ported marketing typography so the editor
+   preview matches the published article regardless of admin-web's theme.
+   Note: admin-web's Tailwind `primary` (tailwind.config.ts) is already a
+   STATIC #4F46E5, identical to marketing's indigo — not a CSS var — so
+   `text-primary`/`bg-primary`/`border-primary` utilities in
+   blog-mdx-components.tsx already match marketing out of the box; no color
+   override is needed here. Inter is loaded globally (app/layout.tsx) but not
+   exposed as a `--font-inter` CSS var, and Poppins isn't loaded at all, so
+   `.font-display` falls back to `inherit`, which resolves to the already-
+   active Inter — weights/spacing still match; only the display typeface
+   differs from marketing's Poppins. */
+.blog-preview {
+  font-family: var(--font-inter, inherit);
+}
+.blog-preview .font-display {
+  font-family: var(--font-poppins, var(--font-inter, inherit));
+}
