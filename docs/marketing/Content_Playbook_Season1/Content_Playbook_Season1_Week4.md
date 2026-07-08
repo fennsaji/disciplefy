@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 4
-Version: 1.7 *(updated — see Changelog)*
+Version: 1.8 *(updated — see Changelog)*
 
 ## Mission of the Week
 Close out Month 1 (bank item #3 for each series). Saturday's reel is the second Hero Episode — the Discipler feature, the last of your 4 requested guides, now fully covered across the month. Sunday doubles as the full-month recap, and the Testimony Campaign runs alongside.
@@ -55,8 +55,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "Where might you be showing leaves without fruit?" | Daniel looks up from his journal, reflective. |
 | 8 | Hopeful conclusion | "Let your faith be real — not just something that looks good on the outside." | Slow pull-back wide shot of the sunlit desk; negative space top third for end-screen. |
 
-**Caption:** A tree with no fruit, cursed by Jesus — it sounds harsh until you see what it's really about: authentic faith, not just appearances.
-**Hashtags:** #Disciplefy #BibleExplained #FigTree #Mark11
+**Caption:** A tree with no fruit, cursed by Jesus — it sounds harsh until you see what it's really about: authentic faith, not just appearances. Study the full passage on the Disciplefy Bible study app — link in bio.
+**Hashtags:** #Disciplefy #BibleExplained #FigTree #DailyDevotional #FaithJourney
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Mark 11:13-14 + 🙏 Prayer — "Lord, let my faith be real, not just something that looks good on the outside."
@@ -84,8 +84,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 5 — Step 4 | Smartphone mockup gently floating, open Bible nearby. Screen shows the attached screenshot of the Scripture-grounded response (reference image provided). Gold "Step 4" badge. Headline: "Grounded in Scripture." | It answers — pointing you back to the Word, every time. |
 | 6 — CTA | Warm morning sunlight over a wooden desk, open Bible + mug. Headline: "Real Questions. Biblical Answers. Anytime." Subline: "Free → link in bio." | A companion for your walk — not a replacement for your pastor or church. Free — link in bio. |
 
-**Caption:** Faith question, no one to ask right now? Tap the mic, ask out loud — get a Scripture-grounded answer. A companion for your walk, not a replacement for your pastor or church. Free — link in bio. 🙏
-**Hashtags:** #Disciplefy #Discipler #FaithQuestions #Discipleship
+**Caption:** Faith question, no one to ask right now? Disciplefy lets you ask Bible questions out loud and get a Scripture-grounded answer. A companion for your walk, not a replacement for your pastor or church. Free — link in bio. 🙏
+**Hashtags:** #Disciplefy #VoiceDiscipler #BibleQuestions #FaithJourney #Discipleship
 
 **Theology-safe note:** Discipler copy must always frame it as a companion that points back to Scripture and community — never a replacement for pastor, church, or the Bible itself.
 
@@ -122,8 +122,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "What's one small habit that could help you abide?" | Daniel looks up, peaceful, morning light. |
 | 8 | Hopeful conclusion | "Stay in it daily. That's what abiding looks like." | Slow pull-back wide shot of the desk at sunrise; negative space top third for end-screen. |
 
-**Caption:** Studying the Bible isn't about long sessions — it's about staying in it daily. What's one small habit that could help you abide?
-**Hashtags:** #Disciplefy #WalkingWithJesus #AbideInHim #Discipleship
+**Caption:** Studying the Bible isn't about long sessions — it's about building a daily Bible study habit. What's one small habit that could help you abide?
+**Hashtags:** #Disciplefy #WalkingWithJesus #AbideInHim #DailyDevotional #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — John 8:31 + 🙏 Prayer — "Lord, help me abide in Your word today, even if just for a few minutes."
@@ -152,8 +152,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 4 — A quick way to find out who | Headline: "Check the Book's Opening Lines." Scene: open Bible turned to a book's introduction/opening verses, highlighted. | Quick way to find out who a book was written to: check its opening lines. Most books tell you right away. |
 | 5 — CTA | Headline: "Try It on Your Next Chapter" with gold arrow →. Warm closing desk scene. | Try it on your next chapter — ask who this was for, before you ask what it means for you. |
 
-**Caption:** Every verse was written TO someone, before it was written FOR you. Knowing the original audience changes how you read it. Save this study tip.
-**Hashtags:** #Disciplefy #BibleStudyMethod #OriginalAudience #Scripture
+**Caption:** Every verse was written TO someone, before it was written FOR you. Knowing the original audience is a key Bible study method that changes how you read it. Save this study tip.
+**Hashtags:** #Disciplefy #BibleStudyMethod #OriginalAudience #Scripture #BibleStudyTips
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Nehemiah 8:8 + 💡 Tip — "Ask: who was this originally written to, and what did they need to hear?"
@@ -188,8 +188,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 7 | Invitation to reflect | "What fear can you hand to God today?" | Daniel looks toward the window, calm, at peace. |
 | 8 | Hopeful conclusion | "Fear not. He is with you." | Slow pull-back wide shot of the desk in warm lamp light; negative space top third for end-screen. |
 
-**Caption:** Fear whispers you're alone. God says otherwise: "Fear not, for I am with you." Tag someone who needs this today. 💛
-**Hashtags:** #Disciplefy #GrowingInChrist #FearNot #Encouragement
+**Caption:** Fear whispers you're alone. God says otherwise: "Fear not, for I am with you." A reminder for your spiritual growth journey. Tag someone who needs this today. 💛
+**Hashtags:** #Disciplefy #GrowingInChrist #FearNot #SpiritualGrowth #Encouragement
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Isaiah 41:10 + 🙏 Prayer — "Lord, calm my fear with the truth that You are near."
@@ -211,8 +211,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above; this is the only generated asset for Saturday — the Reel itself is a real screen recording, not generated)*:
 > Headline: "Can I Ask a Question?" Scene: a smartphone resting upright beside an open Bible, a soft gold soundwave glow on the phone screen implying a spoken question, warm evening lamp light — bright and warm, not moody.
 
-**Caption:** Stuck on a hard passage? Discipler doesn't give you a shortcut answer — it guides you back to the passage, its context, and related Scripture. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
-**Hashtags:** #Disciplefy #Discipler #FaithQuestions #Discipleship
+**Caption:** Stuck on a hard passage? Disciplefy's Voice Discipler doesn't give you a shortcut answer — it guides you back to the passage, its context, and related Scripture. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
+**Hashtags:** #Disciplefy #VoiceDiscipler #BibleQuestions #Discipleship #Scripture
 
 **Theology-safe note:** Discipler copy must always frame it as a companion that points back to Scripture and community — never a replacement for pastor, church, or the Bible itself.
 
@@ -248,8 +248,8 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 | 5 — Featured testimonies | Headline: "In Your Words." Scene: a warm card layout with space for 1-2 short testimony quotes (added in edit from real submissions), gold quotation-mark accent. | Real people, real stories — here's what a month of studying with Disciplefy looked like for a few of you. |
 | 6 — CTA | Headline: "Have a Disciplefy Story?" with gold arrow →. Subline: "Send it in — link in bio." | Got your own story? We'd love to feature it — send it in, link in bio. |
 
-**Caption:** One month in. You've studied Scripture, built new habits, and (hopefully) asked Disciplefy a question or two along the way. Thank you for being part of this from the start. Carry it into worship today — and if you have a story, we'd love to feature it. 🙏
-**Hashtags:** #Disciplefy #SundayReflection #Worship #OneMonthIn #Discipleship
+**Caption:** One month in with the Disciplefy Bible study app. You've studied Scripture, built new habits, and (hopefully) asked a faith question or two along the way. Thank you for being part of this from the start. Carry it into worship today — and if you have a story, we'd love to feature it. 🙏
+**Hashtags:** #Disciplefy #OneMonthIn #BibleStudyApp #Worship #Discipleship
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this month. Help me carry all of it into worship today."
@@ -280,3 +280,4 @@ Track at the end of the week — and roll up the full month: Reel Reach · Watch
 - **v1.5:** Tuesday swapped from Bible Tips to a Discipler feature carousel — pairs 2 days ahead of Saturday's Episode 13 reel. Displaced Bible Tips bank item deferred to Month 2.
 - **v1.6:** Added a Follow-CTA to Saturday's Episode 13 Hero caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1). Noted these 3 tactics should carry into Month 2 as standing practice, not a one-off.
 - **v1.7:** Switched carousels to Week 2's 3 canonical layout variants (Flat-Lay/Tuesday, Desk & Bible/Thursday, Journal Macro/Sunday) instead of one shared background.
+- **v1.8:** Reworked every Caption to weave in a real keyword phrase for search/SEO, and trimmed every Hashtags line to exactly 5 well-chosen tags (brand + feature-keyword + topic) instead of 4-5 inconsistently.

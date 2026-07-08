@@ -756,7 +756,7 @@ export interface ListStudyGuidesResponse {
 // Blog Post Types
 // ============================================================================
 
-export type BlogPostStatus = 'draft' | 'published'
+export type BlogPostStatus = 'draft' | 'published' | 'scheduled'
 export type BlogLocale = 'en' | 'hi' | 'ml'
 
 export interface BlogPost {
@@ -774,6 +774,7 @@ export interface BlogPost {
   created_at: string
   updated_at: string
   published_at: string | null
+  scheduled_for?: string | null
 }
 
 export interface BlogPostListItem {
@@ -789,6 +790,7 @@ export interface BlogPostListItem {
   source_type: string | null
   created_at: string
   published_at: string | null
+  scheduled_for?: string | null
 }
 
 export interface ListBlogPostsResponse {
@@ -809,6 +811,7 @@ export interface CreateBlogPostRequest {
   featured?: boolean
   status?: BlogPostStatus
   slug?: string
+  scheduled_for?: string // ISO 8601 UTC; required when status === 'scheduled'
 }
 
 export interface UpdateBlogPostRequest {
@@ -818,6 +821,7 @@ export interface UpdateBlogPostRequest {
   tags?: string[]
   featured?: boolean
   status?: BlogPostStatus
+  scheduled_for?: string // ISO 8601 UTC; required when status === 'scheduled'
 }
 
 export interface BlogPostResponse {

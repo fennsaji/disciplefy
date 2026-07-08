@@ -495,3 +495,6 @@ target/
 secrets/*
 
 docs/marketing/Content_Playbook_Season1/PDF/
+
+# Claude subagent-written memory (local only)
+.claude/agent-memory/

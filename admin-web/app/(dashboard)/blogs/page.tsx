@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
 import {
   listBlogPosts,
@@ -180,6 +181,7 @@ export default function BlogsPage() {
         >
           <option value="all">All Statuses</option>
           <option value="published">Published</option>
+          <option value="scheduled">Scheduled</option>
           <option value="draft">Draft</option>
         </select>
         <span className="text-xs text-indigo-400/60">{filtered.length} posts</span>
@@ -250,7 +252,9 @@ export default function BlogsPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       post.status === 'published'
                         ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'bg-amber-500/20 text-amber-300'
+                        : post.status === 'scheduled'
+                          ? 'bg-indigo-500/20 text-indigo-300'
+                          : 'bg-amber-500/20 text-amber-300'
                     }`}>
                       {post.status}
                     </span>
@@ -260,9 +264,11 @@ export default function BlogsPage() {
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <span className="text-xs text-slate-400">
-                      {post.published_at
-                        ? new Date(post.published_at).toLocaleDateString()
-                        : new Date(post.created_at).toLocaleDateString()}
+                      {post.status === 'scheduled' && post.scheduled_for
+                        ? format(new Date(post.scheduled_for), 'MMM d, HH:mm')
+                        : post.published_at
+                          ? new Date(post.published_at).toLocaleDateString()
+                          : new Date(post.created_at).toLocaleDateString()}
                     </span>
                   </td>
                   <td className="px-4 py-3">

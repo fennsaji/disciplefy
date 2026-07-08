@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { inter, poppins, notoDevanagari, notoMalayalam } from "@/lib/fonts";
 import { getAlternates, homepageJsonLd } from "@/lib/seo";
@@ -67,6 +68,7 @@ export default async function RootLayout({
           <NavigationProgress />
           {children}
           <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
