@@ -1,5 +1,5 @@
 # Disciplefy Blog Content Roadmap
-Version: 1.0
+Version: 1.2 *(updated — see Changelog)*
 
 ## Mission
 Build **topical authority** for Disciplefy's marketing blog rather than publishing unrelated articles. This roadmap lists 50 evergreen articles across 6 content pillars, designed to rank for real search intent, earn backlinks, and naturally convert readers into Disciplefy users.
@@ -228,7 +228,7 @@ Each should include: Biography · Timeline · Major events · Character strength
 
 ## On-Page SEO Checklist
 - Target **one primary keyword** and **5–10 related keywords** naturally throughout.
-- Write **2,000–4,000 words** for pillar content where the topic justifies it.
+- Write **1,600–1,900 words** (~8-minute read at ~220 wpm) — enough for pillar depth without becoming a skim-past wall of text.
 - Descriptive H2/H3 headings that include related keywords.
 - **3–5 internal links** to related Disciplefy articles.
 - Link to reputable external sources when helpful (Bible translations, historical references).
@@ -245,3 +245,4 @@ These 50 articles are the foundation of a much larger content strategy. Expand e
 ## Changelog
 - **v1.0:** Initial roadmap — digitized from the 50-article plan, added a Master Tracking List for daily-writing cadence, noted the distinction from the existing auto-generated Learning-Path blog pipeline, and flagged doctrinal-review requirement for Pillars 2/3/5/6.
 - **v1.1:** Resolved Article 9's "AI" keyword as a deliberate blog-only exception to the Brand Bible's "Never Say AI" rule (that rule governs Instagram/app copy; blog SEO content targets real search intent). Logged the exception in the Brand Bible itself.
+- **v1.2:** Trimmed the target length from 2,000-4,000 words to 1,600-1,900 words (~8-minute read) — the first 10 Pillar 1 drafts ran 2,800-3,300 words, too long for a blog reader. Applies going forward to Pillars 2-6 as well.
