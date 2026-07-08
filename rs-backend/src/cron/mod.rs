@@ -190,7 +190,9 @@ pub async fn start_scheduler(
             let _guard = match CronGuard::try_acquire(&BLOG_PUBLISH_SCHEDULED_RUNNING) {
                 Some(g) => g,
                 None => {
-                    tracing::warn!("Scheduled-publish CRON skipped: previous run still in progress");
+                    tracing::warn!(
+                        "Scheduled-publish CRON skipped: previous run still in progress"
+                    );
                     return;
                 }
             };

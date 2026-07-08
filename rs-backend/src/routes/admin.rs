@@ -225,7 +225,9 @@ pub async fn cron_update_schedule(
                                 ) {
                                     Some(g) => g,
                                     None => {
-                                        tracing::warn!("CRON skipped: previous run still in progress");
+                                        tracing::warn!(
+                                            "CRON skipped: previous run still in progress"
+                                        );
                                         return;
                                     }
                                 };
@@ -235,7 +237,9 @@ pub async fn cron_update_schedule(
                                         "Auto-published scheduled posts"
                                     ),
                                     Ok(_) => {}
-                                    Err(e) => tracing::error!("Scheduled-publish CRON failed: {}", e),
+                                    Err(e) => {
+                                        tracing::error!("Scheduled-publish CRON failed: {}", e)
+                                    }
                                 }
                             }
                             other => {
@@ -248,12 +252,15 @@ pub async fn cron_update_schedule(
                                 let _guard = match crate::cron::CronGuard::try_acquire(flag) {
                                     Some(g) => g,
                                     None => {
-                                        tracing::warn!("CRON skipped: previous run still in progress");
+                                        tracing::warn!(
+                                            "CRON skipped: previous run still in progress"
+                                        );
                                         return;
                                     }
                                 };
                                 if let Err(e) =
-                                    crate::cron::blog_generator::run_blog_generation(&p, &c, &h).await
+                                    crate::cron::blog_generator::run_blog_generation(&p, &c, &h)
+                                        .await
                                 {
                                     tracing::error!("CRON failed: {}", e);
                                 }
