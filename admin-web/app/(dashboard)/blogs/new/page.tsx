@@ -142,33 +142,6 @@ export default function NewBlogPostPage() {
                 className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70 mb-1.5">
-                Content (Markdown) <span className="text-red-400">*</span>
-              </label>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <textarea
-                    value={content}
-                    onChange={e => setContent(e.target.value)}
-                    rows={20}
-                    placeholder="Write your post in Markdown…"
-                    className="w-full resize-y rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
-                  />
-                  <p className="mt-1 text-xs text-indigo-400/50">
-                    {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
-                  </p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white p-6 overflow-auto max-h-[70vh]">
-                  <BlogPreview
-                    content={content}
-                    title={title}
-                    tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
-                    status={showSchedule ? 'scheduled' : status}
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -274,6 +247,35 @@ export default function NewBlogPostPage() {
                 }`} />
               </button>
             </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Content editor + live preview — full page width, 50/50 */}
+      <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
+        <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70 mb-1.5">
+          Content (Markdown) <span className="text-red-400">*</span>
+        </label>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <textarea
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              rows={28}
+              placeholder="Write your post in Markdown…"
+              className="w-full resize-y rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
+            />
+            <p className="mt-1 text-xs text-indigo-400/50">
+              {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
+            </p>
+          </div>
+          <div className="dark rounded-lg border border-white/10 bg-[#0F172A] p-6 overflow-auto max-h-[80vh]">
+            <BlogPreview
+              content={content}
+              title={title}
+              tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
+              status={showSchedule ? 'scheduled' : status}
+            />
           </div>
         </div>
       </div>
