@@ -34,6 +34,7 @@ export default function NewBlogPostPage() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [scheduledFor, setScheduledFor] = useState('')
   const [showSchedule, setShowSchedule] = useState(false)
+  const [showPanel, setShowPanel] = useState(true)
 
   const handleTitleChange = (v: string) => {
     setTitle(v)
@@ -93,18 +94,26 @@ export default function NewBlogPostPage() {
         title="New Blog Post"
         description="Create a new blog post"
         actions={
-          <button
-            onClick={() => router.push('/blogs')}
-            className="text-sm text-indigo-400/70 hover:text-white transition-colors"
-          >
-            ← Back to Posts
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPanel(p => !p)}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white hover:bg-white/10 transition-colors"
+            >
+              {showPanel ? 'Hide panel ›' : '‹ Options'}
+            </button>
+            <button
+              onClick={() => router.push('/blogs')}
+              className="text-sm text-indigo-400/70 hover:text-white transition-colors"
+            >
+              ← Back to Posts
+            </button>
+          </div>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Main content */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="flex-1 min-w-0 space-y-4">
           <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70 mb-1.5">
@@ -143,10 +152,40 @@ export default function NewBlogPostPage() {
               />
             </div>
           </div>
+
+          {/* Content editor + live preview */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70 mb-1.5">
+              Content (Markdown) <span className="text-red-400">*</span>
+            </label>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div>
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  rows={28}
+                  placeholder="Write your post in Markdown…"
+                  className="w-full resize-y rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
+                />
+                <p className="mt-1 text-xs text-indigo-400/50">
+                  {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
+                </p>
+              </div>
+              <div className="dark rounded-lg border border-white/10 bg-[#0F172A] p-6 overflow-auto max-h-[80vh]">
+                <BlogPreview
+                  content={content}
+                  title={title}
+                  tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
+                  status={showSchedule ? 'scheduled' : status}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Sidebar options */}
-        <div className="space-y-4">
+        {/* Sidebar options (collapsible) */}
+        {showPanel && (
+        <aside className="w-full lg:w-80 shrink-0 space-y-4">
           {/* Publish actions */}
           <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-400/70">Publish</p>
@@ -248,36 +287,8 @@ export default function NewBlogPostPage() {
               </button>
             </label>
           </div>
-        </div>
-      </div>
-
-      {/* Content editor + live preview — full page width, 50/50 */}
-      <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
-        <label className="block text-xs font-semibold uppercase tracking-wide text-indigo-400/70 mb-1.5">
-          Content (Markdown) <span className="text-red-400">*</span>
-        </label>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <textarea
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              rows={28}
-              placeholder="Write your post in Markdown…"
-              className="w-full resize-y rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white placeholder-indigo-400/50 outline-none focus:border-indigo-500"
-            />
-            <p className="mt-1 text-xs text-indigo-400/50">
-              {content.split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} min read
-            </p>
-          </div>
-          <div className="dark rounded-lg border border-white/10 bg-[#0F172A] p-6 overflow-auto max-h-[80vh]">
-            <BlogPreview
-              content={content}
-              title={title}
-              tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
-              status={showSchedule ? 'scheduled' : status}
-            />
-          </div>
-        </div>
+        </aside>
+        )}
       </div>
     </div>
   )
