@@ -1,5 +1,5 @@
 # Disciplefy Blog Content Roadmap
-Version: 1.2 *(updated — see Changelog)*
+Version: 1.3 *(updated — see Changelog)*
 
 ## Mission
 Build **topical authority** for Disciplefy's marketing blog rather than publishing unrelated articles. This roadmap lists 50 evergreen articles across 6 content pillars, designed to rank for real search intent, earn backlinks, and naturally convert readers into Disciplefy users.
@@ -237,6 +237,21 @@ Each should include: Biography · Timeline · Major events · Character strength
 - Optimize images and page speed.
 - End with links to related articles and a clear next step.
 
+## Publishing Pipeline
+Once an article is drafted per the SEO Template above, save it to `docs/marketing/Blog_SEO/articles/NN-slug.md` with YAML frontmatter (`title`, `slug`, `excerpt`, `tags`, `locale`, `featured`, `status`) followed by the article body — same shape as the existing 10 Pillar 1 files. `slug` and `title` are required; `slug` is used as the filename for the generated content file, so it must be unique.
+
+Local-only publishing scripts live in `scripts/blog-publisher/` (never committed with a live token):
+
+1. **`node convert-md-to-json.js`** — reads every `docs/marketing/Blog_SEO/articles/*.md`, strips frontmatter/H1/the "Table of Contents" section (the site auto-generates its own "On this page" nav from headings), and writes:
+   - `scripts/blog-publisher/content/<slug>.md` — plain content only, no frontmatter.
+   - `scripts/blog-publisher/articles.json` — one metadata entry per article, pointing at its `content_file`.
+
+   New/unposted articles are auto-scheduled one per day at **8:30 AM IST** (`status: "scheduled"`), starting from the next 8:30 IST slot after the script runs. Articles already sent to the API (`posted: true`) are left completely untouched — never rescheduled, reworded, or double-booked onto an already-used day.
+
+2. **`node publish-blogs.js`** — POSTs each unposted `articles.json` entry to the blog API (`rs-backend`, `POST /api/v1/admin/posts`). On success it stamps the entry `posted: true` with the remote id/status, so **re-running the script is safe** — an already-scheduled/published article is never resent. Use `--dry-run` to validate without calling the API, `--force` to intentionally resend a posted entry.
+
+See `scripts/blog-publisher/README.md` for env setup (`BLOG_API_URL`, `BLOG_ADMIN_TOKEN`).
+
 ## Long-Term Goal
 These 50 articles are the foundation of a much larger content strategy. Expand each Bible book into chapter-by-chapter guides (e.g. **Matthew 1 Explained** through **Matthew 28 Explained**, then Mark, Luke, John, Acts, Romans, etc.). Over time this can grow into 1,000+ interconnected articles, establishing Disciplefy as a comprehensive Bible study resource with strong organic search visibility.
 
@@ -246,3 +261,4 @@ These 50 articles are the foundation of a much larger content strategy. Expand e
 - **v1.0:** Initial roadmap — digitized from the 50-article plan, added a Master Tracking List for daily-writing cadence, noted the distinction from the existing auto-generated Learning-Path blog pipeline, and flagged doctrinal-review requirement for Pillars 2/3/5/6.
 - **v1.1:** Resolved Article 9's "AI" keyword as a deliberate blog-only exception to the Brand Bible's "Never Say AI" rule (that rule governs Instagram/app copy; blog SEO content targets real search intent). Logged the exception in the Brand Bible itself.
 - **v1.2:** Trimmed the target length from 2,000-4,000 words to 1,600-1,900 words (~8-minute read) — the first 10 Pillar 1 drafts ran 2,800-3,300 words, too long for a blog reader. Applies going forward to Pillars 2-6 as well.
+- **v1.3:** Added the Publishing Pipeline section documenting `scripts/blog-publisher/` — converts `docs/marketing/Blog_SEO/articles/*.md` into per-article content files + `articles.json`, auto-schedules new articles one per day at 8:30 AM IST, and tracks posted state so re-running the publish script never double-schedules an article.
