@@ -17,6 +17,7 @@ export interface IAPConfig {
   serviceAccountKey?: string    // Google Play (encrypted)
   sharedSecret?: string         // Apple App Store (encrypted)
   bundleId?: string            // Apple App Store
+  appAppleId?: number          // Apple App Store — numeric App Store Connect app id, required for Production JWS verification
   packageName?: string         // Google Play
 }
 
@@ -67,10 +68,13 @@ function getConfigFromEnvVars(provider: IAPProvider, environment: IAPEnvironment
     const bundleId = Deno.env.get(`APPLE_${envSuffix}_BUNDLE_ID`) ??
       Deno.env.get('APPLE_BUNDLE_ID') ??
       bundleDefault
+    const appAppleIdRaw = Deno.env.get(`APPLE_${envSuffix}_APP_APPLE_ID`) ??
+      Deno.env.get('APPLE_APP_APPLE_ID')
+    const appAppleId = appAppleIdRaw ? Number(appAppleIdRaw) : undefined
 
     if (sharedSecret) {
       console.log(`[IAP_CONFIG] Source: ENV_VARS | Provider: ${provider} | Env: ${environment} | Bundle: ${bundleId}`)
-      return { provider, environment, sharedSecret, bundleId }
+      return { provider, environment, sharedSecret, bundleId, appAppleId }
     }
   }
 
@@ -146,6 +150,9 @@ export async function getIAPConfig(
         break
       case 'bundle_id':
         config.bundleId = row.config_value
+        break
+      case 'app_apple_id':
+        config.appAppleId = Number(row.config_value)
         break
       case 'package_name':
         config.packageName = row.config_value

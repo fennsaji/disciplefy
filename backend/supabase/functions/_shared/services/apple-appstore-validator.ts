@@ -97,6 +97,15 @@ export async function validateAppleReceipt(
       return failure('Apple bundle ID not configured — cannot verify transaction')
     }
 
+    // appAppleId (the numeric App Store Connect app identifier, e.g. from
+    // apps.apple.com/app/id<appAppleId>) is required by SignedDataVerifier when
+    // verifying against the Production environment — omitting it throws
+    // "appAppleId is required when the environment is Production" and every
+    // production purchase fails closed. It's not required for Sandbox.
+    if (!config.appAppleId) {
+      return failure('Apple app Apple ID not configured — cannot verify Production transactions')
+    }
+
     const appleRootCerts = await getAppleRootCerts()
 
     // The signature + cert chain are environment-independent, but SignedDataVerifier
@@ -109,7 +118,10 @@ export async function validateAppleReceipt(
 
     const tryVerify = async (env: Environment) => {
       // enableOnlineChecks=false → offline signature + cert-chain verification only.
-      const verifier = new SignedDataVerifier(appleRootCerts, false, env, config.bundleId!)
+      // appAppleId is omitted for Sandbox (the library doesn't require it there).
+      const verifier = env === Environment.PRODUCTION
+        ? new SignedDataVerifier(appleRootCerts, false, env, config.bundleId!, config.appAppleId)
+        : new SignedDataVerifier(appleRootCerts, false, env, config.bundleId!)
       return await verifier.verifyAndDecodeTransaction(signedTransaction)
     }
 
