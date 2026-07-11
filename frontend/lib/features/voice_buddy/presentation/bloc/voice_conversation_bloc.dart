@@ -465,6 +465,12 @@ class VoiceConversationBloc
     _silenceAfterSpeechTimer = null;
     _hasStartedSpeaking = false;
 
+    // Grace period: give the STT engine time to flush a final result
+    // containing the last word before tearing down the audio session.
+    // Without this, releasing the mic button right as the user finishes
+    // speaking can cut the trailing word before it's ever recognized.
+    await Future.delayed(const Duration(milliseconds: 400));
+
     await _speechService.stopListening();
     _speechSubscription?.cancel();
 
