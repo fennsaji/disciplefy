@@ -134,8 +134,10 @@ export async function validateAppleReceipt(
         console.log('[APPLE] Verified against fallback environment:', fallbackEnv)
       } catch (fallbackError) {
         console.error('[APPLE] JWS verification failed (both environments):', primaryError, fallbackError)
+        const describe = (e: unknown) =>
+          e instanceof Error ? `${e.name}: ${e.message || '(empty message)'}` : String(e)
         return failure(
-          `Apple transaction verification failed: ${primaryError instanceof Error ? primaryError.message : 'invalid signature'}`
+          `Apple transaction verification failed — ${primaryEnv}: ${describe(primaryError)} | ${fallbackEnv}: ${describe(fallbackError)}`
         )
       }
     }
