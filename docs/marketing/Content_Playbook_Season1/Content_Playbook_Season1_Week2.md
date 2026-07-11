@@ -1,12 +1,21 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 2
-Version: 1.12 *(updated — see Changelog)*
+Version: 1.15 *(updated — see Changelog)*
 
 ## Mission of the Week
 This is the first week of the season's regular named-series rhythm (Week 1 was the Launch + How-To set — see `Content_Playbook_Season1_Week1.md`). Each series' topic bank (`Daily Devotion/`) starts at item #1 this week.
 
 ## Content Funnel
 Instagram Reel / Carousel → Profile Visit → disciplefy.in → App Install → Bible Study → Spiritual Growth
+
+## Daniel's Voice — ElevenLabs Setup
+**Action needed once, then reused every week:** pick and lock a Voice ID in ElevenLabs matching Daniel's bio (young Indian professional, 26-30, calm/thoughtful/gentle narrator tone). Go to the Voice Library, filter for male + Indian English accent + narration use-case, audition 3-5 candidates reading one of this week's actual Voice-over lines, and pick the best fit. **Voice ID: _[TBD — fill in once chosen]_.** Once locked, use that exact same Voice ID for every Daniel clip, every week — same principle as keeping his physical description identical every clip.
+
+**Settings:** Stability ~60-75% (steady, non-erratic delivery — low stability makes the tone wobble), Style Exaggeration low-medium (Daniel is calm, not theatrical), latest expressive/multilingual model for natural pacing. Punctuation like "..." already in the scripts naturally slows delivery — ElevenLabs respects it, no special handling needed.
+
+**Workflow per Reel:** generate one audio file per clip, not one long block — paste each clip's Voice-over line into Text-to-Speech separately, matching the fixed 5s-per-clip Google Flow/Veo cadence. Daniel never speaks to camera, so no lip-sync is needed — just layer each line under its clip and nudge timing until the pacing feels natural. Do this in the same edit pass as adding captions and the intro/outro/logo.
+
+**Rights:** the free tier is too limited for weekly production — use at least the Creator tier for character quota + commercial usage rights. Confirm ElevenLabs' license covers branded/monetized content before publishing.
 
 ---
 
@@ -33,21 +42,23 @@ Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic 
 
 Character — Daniel (keep identical every clip): Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
 
-Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit — no text/logo in the generated clip itself).
+Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
+
+On-screen captions (format experiment this week): every clip needs its voice-over line burned in as on-screen text (added in edit, not in the generated clip) — bold sans-serif, white text on a subtle dark gradient scrim for legibility, bottom third of frame, clear of the ~250px bottom safe zone. Keep each on-screen line short (trim to the punchiest 5-8 words of that clip's VO if the full line runs long) — the full sentence still plays in audio, the on-screen text is a compressed version for muted viewers, not a verbatim subtitle. Testing whether full captioning lifts saves/completion vs. audio-only, per 2026 data showing captioned Reels average ~40% more saves.
 ```
 
 **Google Flow / Veo Prompt (8 clips × 5s):**
 
-| Clip | Purpose | Voice-over | Visual Prompt |
-|---|---|---|---|
-| 1 | Hook | "I woke up, and my phone was in my hand before I'd even said good morning to God." | Daniel in his apartment kitchen at dawn, tired expression, reaching for his phone as notifications stack up, warm morning light through the window. |
-| 2 | Introduce truth | "Jesus said something different: 'Come to me, and I will give you rest.'" | Daniel sits at his desk, opens his Bible to Matthew 11, morning light falling across the page. |
-| 3 | Explain truth | "He wasn't offering an escape from life — He was offering Himself." | Close-up on the open Bible page, Daniel's finger tracing the verse, soft focus pull to his thoughtful face. |
-| 4 | Deepen understanding | "Rest, in His words, means walking with Him — not walking away from everything." | Daniel closes his eyes briefly in quiet reflection, hands resting on the closed Bible, steam rising from his coffee mug. |
-| 5 | Real-life application | "So today, before the emails and the to-do list, I just... came to Him first." | Daniel writes a short note in his journal, stands, picks up his bag with a small, calm smile. |
-| 6 | Encouragement | "And that made the rest of my day feel lighter." | Cut to a window view of a quiet golden-hour street below, curtains gently moving in the breeze. |
-| 7 | Invitation to reflect | "What would it look like for you to come to Him today, just as you are?" | Daniel pauses at the door, looking back at the open Bible on his desk, soft warm light. |
-| 8 | Hopeful conclusion | "Come to Him. He's not asking for more — He's offering rest." | Slow pull-back wide shot of the sunlit desk with the open Bible, Daniel exiting frame; generous negative space in the upper third for the Disciplefy end-screen (added in edit). |
+| Clip | Purpose | Voice-over | Visual Prompt | On-Screen Caption |
+|---|---|---|---|---|
+| 1 | Hook | "I woke up, and my phone was in my hand before I'd even said good morning to God." | Daniel in his apartment kitchen at dawn, tired expression, reaching for his phone as notifications stack up, warm morning light through the window. | "Phone in hand before I said good morning to God." |
+| 2 | Introduce truth | "Jesus said something different: 'Come to me, and I will give you rest.'" | Daniel sits at his desk, opens his Bible to Matthew 11, morning light falling across the page. | "Come to me... and I will give you rest." |
+| 3 | Explain truth | "He wasn't offering an escape from life — He was offering Himself." | Close-up on the open Bible page, Daniel's finger tracing the verse, soft focus pull to his thoughtful face. | "Not an escape. Himself." |
+| 4 | Deepen understanding | "Rest, in His words, means walking with Him — not walking away from everything." | Daniel closes his eyes briefly in quiet reflection, hands resting on the closed Bible, steam rising from his coffee mug. | "Rest means walking with Him." |
+| 5 | Real-life application | "So today, before the to-do list, I wrote down one thing I was actually thankful for." | Daniel writes a short note in his journal, stands, picks up his bag with a small, calm smile. | "One thing I was thankful for. Before the list." |
+| 6 | Encouragement | "Didn't fix my whole day. Just made the first hour lighter." | Cut to a window view of a quiet golden-hour street below, curtains gently moving in the breeze. | "Didn't fix the day. Just the first hour." |
+| 7 | Invitation to reflect | "What would it look like for you to come to Him today, just as you are?" | Daniel pauses at the door, looking back at the open Bible on his desk, soft warm light. | "What would it look like — today?" |
+| 8 | Hopeful conclusion | "Come to Him. He's not asking for more — He's offering rest." | Slow pull-back wide shot of the sunlit desk with the open Bible, Daniel exiting frame; generous negative space in the upper third for the Disciplefy end-screen (added in edit). | "Come to Him. He's offering rest." |
 
 **Caption:** "Come to me, all who labor and are heavy laden, and I will give you rest." Jesus wasn't offering an escape — He was offering Himself. What does resting in Him actually look like today? Study this passage in full on the Disciplefy Bible study app — link in bio.
 **Hashtags:** #Disciplefy #BibleExplained #Matthew11 #DailyDevotional #FaithJourney
@@ -138,19 +149,21 @@ Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic 
 
 Character — Daniel (keep identical every clip): Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
 
-Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit — no text/logo in the generated clip itself).
+Story Structure (all 8 clips follow this purpose order): 1 POV hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Twist (temptation + resolution) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
+
+Format experiment this week: reframed as POV with a twist beat at clip 6 — clip 1 needs bold on-screen text reading "POV: you let God have the first 5 minutes — not your phone." (white text, dark scrim, bottom third, safe-zone aware) burned in during edit. No other clip needs on-screen text. Testing whether POV framing + a small tension/resolution moment lifts shares/saves vs. straight narrative, per 2026 data showing POV+twist as one of the highest-performing Reel formats.
 ```
 
 **Google Flow / Veo Prompt (8 clips × 5s):**
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
-| 1 | Hook | "Mornings used to just be alarms and rushing." | Daniel jolts awake to his alarm, reaches for his phone first, soft dawn light in the bedroom. |
+| 1 | POV hook | "Mornings used to just be alarms and rushing." | Daniel jolts awake to his alarm, reaches for his phone first, soft dawn light in the bedroom. On-screen text: "POV: you let God have the first 5 minutes — not your phone." |
 | 2 | Introduce truth | "Then I noticed something Jesus did before anything else." | Daniel opens his Bible to Mark 1, pausing on "very early in the morning." |
 | 3 | Explain truth | "Before the crowds, before the miracles — Jesus went to a quiet place to pray." | Close-up of the verse, Daniel's face softening in recognition. |
 | 4 | Deepen understanding | "If He needed that quiet time, so do I." | Daniel sets his phone face-down on the desk, picks up his Bible instead. |
 | 5 | Real-life application | "So now mornings start with five quiet minutes before anything else." | Daniel sits with eyes closed, hands folded, soft golden light, coffee steam beside him. |
-| 6 | Encouragement | "It's not long. It's just first." | Window view of a quiet sunrise over rooftops, birds, gentle stillness. |
+| 6 | Twist | "My phone buzzed halfway through. Old me would've grabbed it." | Daniel's phone lights up and vibrates on the desk beside him — he glances at it, then deliberately looks back down at his Bible, a small, resolved exhale. |
 | 7 | Invitation to reflect | "What would it look like to give God the first five minutes of your day?" | Daniel looks up from his Bible toward the window light, reflective. |
 | 8 | Hopeful conclusion | "Start with Him. Everything else can wait five minutes." | Wide slow pull-back of Daniel's desk at sunrise; negative space top third for end-screen. |
 
@@ -242,14 +255,16 @@ Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic 
 
 Character — Daniel (keep identical every clip): Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
 
-Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit — no text/logo in the generated clip itself).
+Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
+
+Format experiment this week: clip 1 needs bold on-screen text reading "Still waiting. Still growing." (large, bold, white text with a soft dark scrim, centered in the safe zone) burned in during edit — the rest of the 8 clips stay audio-only. This is already the week's strongest share-bait post (caption asks readers to tag someone); testing whether a visible first-frame hook compounds that vs. audio landing the emotional beat alone.
 ```
 
 **Google Flow / Veo Prompt (8 clips × 5s):**
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
-| 1 | Hook | "Been praying for the same thing since January. Still waiting." | Daniel opens his eyes after praying, hands still folded, tired expression, evening lamp light. |
+| 1 | Hook | "Been praying for the same thing since January. Still waiting." | Daniel opens his eyes after praying, hands still folded, tired expression, evening lamp light. On-screen text: "Still waiting. Still growing." |
 | 2 | Introduce truth | "Paul wrote something I needed to hear: 'He who began a good work in you will complete it.'" | Daniel finds Philippians 1:6 in his Bible. |
 | 3 | Explain truth | "God isn't waiting for you to finish yourself — He's already doing the work." | Close-up on the verse, Daniel's shoulders relaxing. |
 | 4 | Deepen understanding | "Growth isn't a deadline. It's a promise being kept." | Daniel leans back, breathes out, soft evening light on his face. |
@@ -284,7 +299,6 @@ Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce b
 **Episode 2: "Where Should I Start?"** (real screen recording + Founder voice-over)
 **Key Scripture:** Proverbs 3:5-6 — "Trust in the Lord with all your heart... he will make straight your paths."
 
-**Story beat:** A new believer feels overwhelmed by 66 books. A friend introduces Disciplefy's Learning Paths as a simple, guided starting point.
 **Feature shown:** Learning Paths
 **Thumbnail:** "Where Should I Start?"
 **Thumbnail Image Prompt** *(this is the only generated asset for Saturday — the Reel itself is a real screen recording, not generated)*:
@@ -293,6 +307,20 @@ Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (10
 
 Headline: "Where Should I Start?" Scene: a stack of Bibles/books of varying sizes on a warm desk suggesting "66 books," with one small gold path/arrow icon pointing toward a single open Bible in front, soft morning light.
 ```
+
+**Format experiment this week:** opens as a POV hook instead of a third-person story beat, testing relatable-POV framing on the week's highest-stakes post (real screen recording, Follow-CTA slot, feature reveal).
+
+**Script / Timeline (~40s) — POV opening, then straight into Disciplefy only (no other app shown), outro at the end:**
+
+| Time | Section | Screen | Voice-over |
+|---|---|---|---|
+| 0:00-0:04 | INTRO | On-screen text over simple b-roll (a phone showing the Disciplefy app icon on a fresh home screen, no other app shown): "POV: you just downloaded a Bible app and have no idea where to start." | "POV: you just downloaded a Bible app... and have absolutely no idea where to start." |
+| 0:04-0:08 | INTRO | B-roll: scrolling past a long list of Bible books, slightly overwhelmed pacing | "66 books. Where do you even begin?" |
+| 0:08-0:14 | DISCIPLEFY | Open Disciplefy, tap the Topics tab | "That's exactly what Learning Paths is for." |
+| 0:14-0:22 | DISCIPLEFY | Scroll through path options (Foundations, Prayer, Grace...) | "Pick a guided track — Foundations, Prayer, Grace, whatever fits where you are." |
+| 0:22-0:30 | DISCIPLEFY | Tap into a path, show its numbered topic list with XP per topic and a milestone badge | "Every path shows you exactly what's next — no more guessing." |
+| 0:30-0:36 | DISCIPLEFY | Open topic 1, scroll content, tap Complete | "One topic at a time. Real growth, not random reading." |
+| 0:36-0:40 | OUTRO | On-screen text: "Free — link in bio. Follow for more." | "Free — link in bio. Follow along, a new feature walkthrough every Saturday." |
 
 **Caption:** 66 books can feel overwhelming — you don't have to figure out where to start alone. Meet Learning Paths, a guided Bible study path built right into the Disciplefy app. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
 **Hashtags:** #Disciplefy #LearningPaths #GuidedBibleStudy #Discipleship #BibleStudyApp
@@ -377,6 +405,8 @@ Same rolling model as the rest of the season — produce Week 3's content while 
 ## Success Metrics
 Track at the end of the week: Reel Reach · Watch Time · Saves · Shares · Profile Visits · Website Clicks · App Installs.
 
+**Format experiment note:** Monday (full on-screen captioning), Wednesday (POV + twist beat), Friday (first-frame text hook), and Saturday (POV opening) each test one change against Week 1's baseline reels (no captions, straight narrative, no on-screen hook text). After this week publishes, compare each reel's saves/shares/completion rate against Week 1's equivalent-slot reel — decide by saves + shares first, completion rate second, watch time third, and ignore raw view count. Whichever elements win become the new house standard for Week 3 onward; drop whichever don't move the numbers.
+
 ---
 
 ## Changelog
@@ -392,3 +422,6 @@ Track at the end of the week: Reel Reach · Watch Time · Saves · Shares · Pro
 - **v1.10:** Made every day fully self-contained — inlined the Daniel Reel STYLE BLOCK, Thumbnail STYLE BLOCK, Carousel Variant, and Daily Verse prompts directly under each day instead of referencing shared top sections or other week files, and converted standalone generation prompts from blockquotes to fenced code blocks for easy copying. This file no longer needs Week 1 or any other file open alongside it.
 - **v1.11:** Replaced every Daily Verse Image Prompt's thin background phrase with a rich, multi-sensory, day-specific scene — kept each day's Variant layout, palette (gold/cream/charcoal, no indigo), and verse/reference unchanged.
 - **v1.12:** Generated test images revealed 2 problems: (1) the model was inventing extra decorative elements not in the prompt (icon badges, subtitle taglines, heart-cross icons) — added an explicit "render ONLY the named elements" lock to every Daily Verse prompt's shared brand-rules paragraph; (2) the scripture card looked flat/opaque. Changed Variant A (Classic Card) and Variant G (Vertical Bookmark) — the two variants where the card floats over a photo — to a semi-transparent frosted-glass card (55-65% opacity) so the background scene stays visible through it.
+- **v1.13:** Rolled in 4 format experiments as the real posts this week (not a parallel A/B test — Instagram's Trial Reel feature turned out not to be what was wanted): Monday now burns in on-screen captions for every clip (testing full captioning vs. audio-only), Wednesday is reframed as POV with a twist beat at clip 6 (testing POV+twist vs. straight narrative), Friday adds a bold first-frame text hook ("Still waiting. Still growing.") to its one existing audio-only hook, and Saturday gets its first full shot-by-shot script, opening as a POV hook instead of a third-person story beat. Added a Success Metrics note to compare each against Week 1's equivalent reel afterward and keep whichever elements move saves/shares.
+- **v1.14:** Monday's v1.13 pass only added captions, didn't touch the actual script — caught 2 weak lines on a closer read: clip 5's VO said "came to Him first" but didn't match what Daniel's shown doing (writing in his journal), and clip 6's "made the rest of my day feel lighter" was a soft, generic ending. Rewrote both to be concrete and match the visual ("wrote down one thing I was actually thankful for") and less cliché ("didn't fix my whole day, just made the first hour lighter").
+- **v1.15:** Added a "Daniel's Voice — ElevenLabs Setup" section — how to pick and lock a consistent Voice ID, recommended Stability/Style settings, per-clip generation workflow (no lip-sync needed since Daniel never speaks to camera), and a licensing note. Voice ID left as a TBD placeholder until the team actually picks one in ElevenLabs.

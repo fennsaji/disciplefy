@@ -1,12 +1,21 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 4
-Version: 1.11 *(updated — see Changelog)*
+Version: 1.12 *(updated — see Changelog)*
 
 ## Mission of the Week
 Close out Month 1 (bank item #3 for each series). Saturday's reel is the second Hero Episode — the Discipler feature, the last of your 4 requested guides, now fully covered across the month. Sunday doubles as the full-month recap, and the Testimony Campaign runs alongside.
 
 ## Content Funnel
 Instagram Reel / Carousel → Profile Visit → disciplefy.in → App Install → Bible Study → Spiritual Growth
+
+## Daniel's Voice — ElevenLabs Setup
+**Action needed once, then reused every week:** pick and lock a Voice ID in ElevenLabs matching Daniel's bio (young Indian professional, 26-30, calm/thoughtful/gentle narrator tone). Go to the Voice Library, filter for male + Indian English accent + narration use-case, audition 3-5 candidates reading one of this week's actual Voice-over lines, and pick the best fit. **Voice ID: _[TBD — fill in once chosen]_.** Once locked, use that exact same Voice ID for every Daniel clip, every week — same principle as keeping his physical description identical every clip.
+
+**Settings:** Stability ~60-75% (steady, non-erratic delivery — low stability makes the tone wobble), Style Exaggeration low-medium (Daniel is calm, not theatrical), latest expressive/multilingual model for natural pacing. Punctuation like "..." already in the scripts naturally slows delivery — ElevenLabs respects it, no special handling needed.
+
+**Workflow per Reel:** generate one audio file per clip, not one long block — paste each clip's Voice-over line into Text-to-Speech separately, matching the fixed 5s-per-clip Google Flow/Veo cadence. Daniel never speaks to camera, so no lip-sync is needed — just layer each line under its clip and nudge timing until the pacing feels natural. Do this in the same edit pass as adding captions and the intro/outro/logo.
+
+**Rights:** the free tier is too limited for weekly production — use at least the Creator tier for character quota + commercial usage rights. Confirm ElevenLabs' license covers branded/monetized content before publishing.
 
 ---
 
@@ -383,3 +392,4 @@ Track at the end of the week — and roll up the full month: Reel Reach · Watch
 - **v1.9:** Made every day fully self-contained — inlined the Daniel Reel STYLE BLOCK, Thumbnail STYLE BLOCK, Carousel Variant, and Daily Verse prompts directly under each day instead of referencing shared top sections or other week files — and converted standalone generation prompts from blockquotes to fenced code blocks for easy copying. This file no longer needs Week 1, Week 2, or any other file open alongside it.
 - **v1.10:** Replaced every Daily Verse Image Prompt's thin background phrase with a rich, multi-sensory, day-specific scene — kept each day's Variant layout, palette (gold/cream/charcoal, no indigo), and verse/reference unchanged.
 - **v1.11:** Generated test images revealed 2 problems: (1) the model was inventing extra decorative elements not in the prompt (icon badges, subtitle taglines, heart-cross icons) — added an explicit "render ONLY the named elements" lock to every Daily Verse prompt's shared brand-rules paragraph; (2) the scripture card looked flat/opaque. Changed Variant A (Classic Card) and Variant G (Vertical Bookmark) — the two variants where the card floats over a photo — to a semi-transparent frosted-glass card (55-65% opacity) so the background scene stays visible through it.
+- **v1.12:** Added a "Daniel's Voice — ElevenLabs Setup" section — how to pick and lock a consistent Voice ID, recommended Stability/Style settings, per-clip generation workflow (no lip-sync needed since Daniel never speaks to camera), and a licensing note. Voice ID left as a TBD placeholder until the team actually picks one in ElevenLabs.
