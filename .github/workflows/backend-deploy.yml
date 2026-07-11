@@ -231,6 +231,12 @@ jobs:
         # Apple App Store Server Notifications V2 — bundle id allow-list + numeric app id
         APPLE_BUNDLE_ID=${{ secrets.APPLE_BUNDLE_ID }}
         APPLE_APP_APPLE_ID=${{ secrets.APPLE_APP_APPLE_ID }}
+        # Apple App Store Server API (In-App Purchase key) — used to confirm transactions
+        # server-to-server instead of local JWS cert-chain verification (Deno's Node compat
+        # layer doesn't implement crypto.X509Certificate.prototype.verify, which the local
+        # verification path requires).
+        APPLE_ISSUER_ID=${{ secrets.APPLE_ISSUER_ID }}
+        APPLE_IAP_KEY_ID=${{ secrets.APPLE_IAP_KEY_ID }}
 
         # SMS Configuration (${{ env.DEPLOY_ENV }})
         TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
@@ -256,6 +262,10 @@ jobs:
         ESCAPED_PK=$(printf '%s' "$FIREBASE_PRIVATE_KEY" | awk 'NR>1{printf "\\n"} {printf "%s", $0}')
         echo "FIREBASE_PRIVATE_KEY=${ESCAPED_PK}" >> .env.${{ env.DEPLOY_ENV }}
 
+        # APPLE_IAP_PRIVATE_KEY: same PEM-newline issue as FIREBASE_PRIVATE_KEY above.
+        ESCAPED_APPLE_PK=$(printf '%s' "$APPLE_IAP_PRIVATE_KEY" | awk 'NR>1{printf "\\n"} {printf "%s", $0}')
+        echo "APPLE_IAP_PRIVATE_KEY=${ESCAPED_APPLE_PK}" >> .env.${{ env.DEPLOY_ENV }}
+
         # GOOGLE_SERVICE_ACCOUNT_JSON: multi-line JSON breaks dotenv parsing.
         # Compact to a single-line JSON string before writing.
         python3 -c "import sys,json; print('GOOGLE_SERVICE_ACCOUNT_JSON=' + json.dumps(json.loads(sys.stdin.read())))" <<< "$GOOGLE_SERVICE_ACCOUNT_JSON" >> .env.${{ env.DEPLOY_ENV }}
@@ -264,6 +274,7 @@ jobs:
       env:
         FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        APPLE_IAP_PRIVATE_KEY: ${{ secrets.APPLE_IAP_PRIVATE_KEY }}
 
     - name: 📦 Run DB Migrations
       working-directory: ./backend
