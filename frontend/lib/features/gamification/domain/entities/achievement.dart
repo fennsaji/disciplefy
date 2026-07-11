@@ -20,6 +20,7 @@ class Achievement extends Equatable {
   final int? threshold;
   final DateTime? unlockedAt;
   final bool isUnlocked;
+  final int? currentProgress;
 
   const Achievement({
     required this.id,
@@ -31,6 +32,7 @@ class Achievement extends Equatable {
     this.threshold,
     this.unlockedAt,
     this.isUnlocked = false,
+    this.currentProgress,
   });
 
   /// Get progress percentage (0.0 to 1.0) based on current count
@@ -50,6 +52,7 @@ class Achievement extends Equatable {
     int? threshold,
     DateTime? unlockedAt,
     bool? isUnlocked,
+    int? currentProgress,
   }) {
     return Achievement(
       id: id ?? this.id,
@@ -61,6 +64,7 @@ class Achievement extends Equatable {
       threshold: threshold ?? this.threshold,
       unlockedAt: unlockedAt ?? this.unlockedAt,
       isUnlocked: isUnlocked ?? this.isUnlocked,
+      currentProgress: currentProgress ?? this.currentProgress,
     );
   }
 
@@ -75,6 +79,7 @@ class Achievement extends Equatable {
         threshold,
         unlockedAt,
         isUnlocked,
+        currentProgress,
       ];
 }
 

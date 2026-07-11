@@ -73,6 +73,7 @@ interface SM2Result {
  * New achievements unlocked
  */
 interface NewAchievement {
+  readonly achievement_id: string
   readonly achievement_name: string
   readonly xp_reward: number
 }
@@ -945,6 +946,7 @@ async function handleSubmitMemoryPractice(
   const newAchievements: NewAchievement[] = (achievementResults || [])
     .filter((a: any) => a.is_new === true)
     .map((a: any) => ({
+      achievement_id: a.achievement_id,
       achievement_name: a.achievement_name,
       xp_reward: a.xp_reward
     }))

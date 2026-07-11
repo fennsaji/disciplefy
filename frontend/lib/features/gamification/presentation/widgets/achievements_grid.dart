@@ -116,7 +116,8 @@ class AchievementsGrid extends StatelessWidget {
       children: sortedAchievements.map((achievement) {
         return AchievementBadge(
           achievement: achievement,
-          currentProgress: _getProgressForCategory(achievement.category),
+          currentProgress: achievement.currentProgress ??
+              _getProgressForCategory(achievement.category),
           onTap: onAchievementTap != null
               ? () => onAchievementTap!(achievement)
               : null,
@@ -166,7 +167,8 @@ class AchievementsGrid extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: AchievementBadge(
               achievement: achievement,
-              currentProgress: _getProgressForCategory(category),
+              currentProgress: achievement.currentProgress ??
+                  _getProgressForCategory(category),
               showDetails: true,
               onTap: onAchievementTap != null
                   ? () => onAchievementTap!(achievement)

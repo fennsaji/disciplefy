@@ -25,6 +25,7 @@ class GamificationBloc extends Bloc<GamificationEvent, GamificationState> {
     on<UpdateStudyStreak>(_onUpdateStudyStreak);
     on<CheckStudyAchievements>(_onCheckStudyAchievements);
     on<CheckMemoryAchievements>(_onCheckMemoryAchievements);
+    on<QueueAchievementNotifications>(_onQueueAchievementNotifications);
     on<CheckVoiceAchievements>(_onCheckVoiceAchievements);
     on<CheckSavedAchievements>(_onCheckSavedAchievements);
     on<DismissAchievementNotification>(_onDismissNotification);
@@ -193,6 +194,21 @@ class GamificationBloc extends Bloc<GamificationEvent, GamificationState> {
         }
       },
     );
+  }
+
+  void _onQueueAchievementNotifications(
+    QueueAchievementNotifications event,
+    Emitter<GamificationState> emit,
+  ) {
+    if (event.achievements.isEmpty) return;
+
+    emit(state.copyWith(pendingNotifications: [
+      ...state.pendingNotifications,
+      ...event.achievements,
+    ]));
+
+    // Refresh stats/achievement list to reflect the newly-awarded XP.
+    add(const RefreshGamificationStats());
   }
 
   Future<void> _onCheckVoiceAchievements(

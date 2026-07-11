@@ -120,9 +120,14 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
 
     return BlocListener<MemoryVerseBloc, MemoryVerseState>(
       listener: (context, state) {
-        // Check memory achievements after a successful practice session
-        if (state is PracticeSessionSubmitted) {
-          sl<GamificationBloc>().add(const CheckMemoryAchievements());
+        // submit-memory-practice already runs the achievement check
+        // server-side; queue its result directly instead of re-checking
+        // (a second RPC call races the same idempotent insert and always
+        // reports is_new=false, silently dropping the unlock popup).
+        if (state is PracticeSessionSubmitted &&
+            state.newAchievements.isNotEmpty) {
+          sl<GamificationBloc>()
+              .add(QueueAchievementNotifications(state.newAchievements));
         }
 
         // Handle tier-locked error
