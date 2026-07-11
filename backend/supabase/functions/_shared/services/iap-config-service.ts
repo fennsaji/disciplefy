@@ -18,6 +18,9 @@ export interface IAPConfig {
   sharedSecret?: string         // Apple App Store (encrypted)
   bundleId?: string            // Apple App Store
   appAppleId?: number          // Apple App Store — numeric App Store Connect app id, required for Production JWS verification
+  issuerId?: string            // Apple App Store Server API — issuer ID (App Store Connect > Integrations > In-App Purchase key)
+  iapKeyId?: string            // Apple App Store Server API — key ID for the In-App Purchase key
+  iapPrivateKey?: string       // Apple App Store Server API — the .p8 private key contents (encrypted)
   packageName?: string         // Google Play
 }
 
@@ -71,10 +74,16 @@ function getConfigFromEnvVars(provider: IAPProvider, environment: IAPEnvironment
     const appAppleIdRaw = Deno.env.get(`APPLE_${envSuffix}_APP_APPLE_ID`) ??
       Deno.env.get('APPLE_APP_APPLE_ID')
     const appAppleId = appAppleIdRaw ? Number(appAppleIdRaw) : undefined
+    // App Store Server API credentials — same In-App Purchase key works against both the
+    // Sandbox and Production APIs (the environment is selected per-request, not per-key),
+    // so these are intentionally not env-suffixed.
+    const issuerId = Deno.env.get('APPLE_ISSUER_ID')
+    const iapKeyId = Deno.env.get('APPLE_IAP_KEY_ID')
+    const iapPrivateKey = Deno.env.get('APPLE_IAP_PRIVATE_KEY')
 
     if (sharedSecret) {
       console.log(`[IAP_CONFIG] Source: ENV_VARS | Provider: ${provider} | Env: ${environment} | Bundle: ${bundleId}`)
-      return { provider, environment, sharedSecret, bundleId, appAppleId }
+      return { provider, environment, sharedSecret, bundleId, appAppleId, issuerId, iapKeyId, iapPrivateKey }
     }
   }
 
@@ -153,6 +162,15 @@ export async function getIAPConfig(
         break
       case 'app_apple_id':
         config.appAppleId = Number(row.config_value)
+        break
+      case 'issuer_id':
+        config.issuerId = row.config_value
+        break
+      case 'iap_key_id':
+        config.iapKeyId = row.config_value
+        break
+      case 'iap_private_key':
+        config.iapPrivateKey = row.config_value
         break
       case 'package_name':
         config.packageName = row.config_value
