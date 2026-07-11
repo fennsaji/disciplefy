@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../gamification/domain/entities/achievement.dart';
 import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/review_statistics_entity.dart';
@@ -406,7 +407,7 @@ class PracticeSessionSubmitted extends MemoryVerseState {
   final MemoryVerseEntity? verse;
   final String message;
   final int xpEarned;
-  final List<String> newAchievements;
+  final List<AchievementUnlockResult> newAchievements;
   final Map<String, dynamic>? dailyGoalProgress;
   final bool streakUpdated;
   final bool masteryLevelUp;

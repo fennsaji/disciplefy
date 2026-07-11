@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../gamification/domain/entities/achievement.dart';
 import '../entities/practice_mode_entity.dart';
 import '../entities/memory_verse_entity.dart';
 import '../repositories/memory_verse_repository.dart';
@@ -43,7 +44,7 @@ class SubmitPracticeSessionParams {
 class SubmitPracticeSessionResponse {
   /// Updated verse entity (optional - backend may not return full verse data)
   final MemoryVerseEntity? updatedVerse;
-  final List<String> newAchievements; // IDs of newly unlocked achievements
+  final List<AchievementUnlockResult> newAchievements;
   final int xpEarned;
   final Map<String, dynamic>? dailyGoalProgress;
   final Map<String, dynamic>? challengeProgress;

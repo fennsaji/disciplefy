@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Week 4
-Version: 1.8 *(updated — see Changelog)*
+Version: 1.12 *(updated — see Changelog)*
 
 ## Mission of the Week
 Close out Month 1 (bank item #3 for each series). Saturday's reel is the second Hero Episode — the Discipler feature, the last of your 4 requested guides, now fully covered across the month. Sunday doubles as the full-month recap, and the Testimony Campaign runs alongside.
@@ -8,25 +8,14 @@ Close out Month 1 (bank item #3 for each series). Saturday's reel is the second 
 ## Content Funnel
 Instagram Reel / Carousel → Profile Visit → disciplefy.in → App Install → Bible Study → Spiritual Growth
 
----
+## Daniel's Voice — ElevenLabs Setup
+**Action needed once, then reused every week:** pick and lock a Voice ID in ElevenLabs matching Daniel's bio (young Indian professional, 26-30, calm/thoughtful/gentle narrator tone). Go to the Voice Library, filter for male + Indian English accent + narration use-case, audition 3-5 candidates reading one of this week's actual Voice-over lines, and pick the best fit. **Voice ID: _[TBD — fill in once chosen]_.** Once locked, use that exact same Voice ID for every Daniel clip, every week — same principle as keeping his physical description identical every clip.
 
-## 🎬 Video Generation — Daniel Reel STYLE BLOCK (Mon / Wed / Fri)
-Reusable across all 3 AI-generated Reels this week — full Google Flow/Veo generations, not screen recordings. Per `Prompts/Daily Devotions.md`'s meta-prompt: 8 clips × 5 seconds = 40s, one Google Flow/Veo prompt + one voice-over line per clip.
+**Settings:** Stability ~60-75% (steady, non-erratic delivery — low stability makes the tone wobble), Style Exaggeration low-medium (Daniel is calm, not theatrical), latest expressive/multilingual model for natural pacing. Punctuation like "..." already in the scripts naturally slows delivery — ElevenLabs respects it, no special handling needed.
 
-**Visual Style (every clip):** Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic live action, authentic Indian environment, warm golden-hour grading, soft natural lighting, natural performances, vertical 9:16, 4K, 24fps. No CGI, no fantasy, no AI artifacts, no fast cuts/whip pans/spinning.
+**Workflow per Reel:** generate one audio file per clip, not one long block — paste each clip's Voice-over line into Text-to-Speech separately, matching the fixed 5s-per-clip Google Flow/Veo cadence. Daniel never speaks to camera, so no lip-sync is needed — just layer each line under its clip and nudge timing until the pacing feels natural. Do this in the same edit pass as adding captions and the intro/outro/logo.
 
-**Character — Daniel** *(canonical bio, per `Prompts/Daily Devotions.md` — keep identical every clip)*: Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
-
-**Story Structure (all 8 clips follow this purpose order):** 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
-
-## 🖼️ Thumbnail Image Generation — STYLE BLOCK (prepend to each day's thumbnail prompt below)
-> Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (1080×1920), safe-zone aware — keep headline and focal object clear of the top ~250px and bottom ~250px (Instagram UI overlay zones). Soft cream background (`#FAF8F5`) bathed in natural window light. Bold near-black charcoal (`#1E1E1E`) headline, Poppins 700, maximum five words. One clear focal object only. One small gold (`#B8860B`) accent only. Brand frame: small gold Disciplefy logo top-left with thin gold divider; small gold globe + "disciplefy.in" bottom-left. Never: red arrows, shock faces, clickbait expressions, clip-art crosses, busy collages.
-
-## 🎨 Carousel Image Generation — 3 Layout Variants (canonical set in `Content_Playbook_Season1_Week2.md` — not repeated here)
-Same weekday-to-variant mapping as Week 2: **Flat-Lay** for Tuesday, **Desk & Bible** for Thursday, **Journal Macro** for Sunday — keeps each week's 3 carousels visually distinct instead of all sharing one background.
-
-## 📖 Daily Verse — Morning Story Image Generation
-Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday through Variant G Sunday, full detail there — not repeated here) — each weekday keeps its own recognizable sub-style rather than one fixed layout every day. Only Verse/Reference/Background change per day; shared brand rules (palette, typography, logo, safe zones) also defined in Week 1.
+**Rights:** the free tier is too limited for weekly production — use at least the Creator tier for character quota + commercial usage rights. Confirm ElevenLabs' license covers branded/monetized content before publishing.
 
 ---
 
@@ -39,10 +28,23 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Production:** Google Flow / Veo AI, 40s
 **Visual style:** Modern Indian apartment, morning sunlight, open Bible, coffee, notebook, Daniel as recurring character
 **Thumbnail:** "Why The Fig Tree?"
-**Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above)*:
-> Headline: "Why The Fig Tree?" Scene: an open Bible turned to Mark 11, morning light, a small bare twig or leaf resting on the page as a subtle visual nod (not a literal tree illustration).
+**Thumbnail Image Prompt:**
+```
+Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (1080×1920), safe-zone aware — keep headline and focal object clear of the top ~250px and bottom ~250px (Instagram UI overlay zones). Soft cream background (#FAF8F5) bathed in natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins 700, maximum five words. One clear focal object only. One small gold (#B8860B) accent only. Brand frame: small gold Disciplefy logo top-left with thin gold divider; small gold globe + "disciplefy.in" bottom-left. Never: red arrows, shock faces, clickbait expressions, clip-art crosses, busy collages.
 
-**Google Flow / Veo Prompt (8 clips × 5s, prepend Daniel STYLE BLOCK above):**
+Headline: "Why The Fig Tree?" Scene: an open Bible turned to Mark 11, morning light, a small bare twig or leaf resting on the page as a subtle visual nod (not a literal tree illustration).
+```
+
+**Daniel Reel STYLE BLOCK (prepend to every clip prompt below):**
+```
+Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic live action, authentic Indian environment, warm golden-hour grading, soft natural lighting, natural performances, vertical 9:16, 4K, 24fps. No CGI, no fantasy, no AI artifacts, no fast cuts/whip pans/spinning.
+
+Character — Daniel (keep identical every clip): Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
+
+Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
+```
+
+**Google Flow / Veo Prompt (8 clips × 5s):**
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
@@ -60,7 +62,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Mark 11:13-14 + 🙏 Prayer — "Lord, let my faith be real, not just something that looks good on the outside."
-  - **Daily Verse Image Prompt fill (Variant A — Classic Card):** VERSE: "And seeing in the distance a fig tree in leaf, he went to see if he could find anything on it." · REFERENCE: "Mark 11:13" · BACKGROUND: "Garden bench, budding plant."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant A — Classic Card. Realistic background scene: a sunlit garden bench beside a young fig tree, its broad leaves catching the early light while a few bare, fruitless branches show among the greenery. A worn gardening journal lies open on the bench, a pair of pruning shears resting nearby, dew still clinging to the grass. The quiet morning air carries a sense of quiet self-examination — appearances giving way to what's real underneath. Centered scripture card (~55% of frame), rounded 12px, semi-transparent frosted-glass gold-tinted background (55-65% opacity with a soft blur behind it, like frosted glass) so the background scene stays gently visible through the card itself, soft shadow, large quotation-mark icon, reference at top, verse centered in high-contrast charcoal text for readability against the translucent card, generous padding. Top: logo + gold divider + "Today's Verse" heading. Bottom: "disciplefy.in" + small gold divider.
+
+    Verse: "And seeing in the distance a fig tree in leaf, he went to see if he could find anything on it."
+    Reference: Mark 11:13
+    ```
 - Evening: Share the Reel + 📖 Reflection — Where might you be showing leaves without fruit?
 
 **CTA:** Study Mark 11 with Disciplefy.
@@ -70,10 +80,14 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 ## Tuesday — 🎙 How To: Discipler (Carousel)
 *Swapped in this week only — pairs 2 days ahead of Saturday's Episode 13 Discipler reel, same pattern as the PreWeek1 bridge. Displaces this week's Bible Tips bank item ("Ask Better Questions While Reading") — deferred to Month 2, not lost; see `Daily Devotion/2. Tuesday — Bible Tips Carousel.md`.*
-**Format:** Carousel, 6 slides (reused from `Instagram_Carousel_Image_Prompts.md` POST 5, UI details corrected against real app screenshots)
+**Format:** Carousel, 6 slides (UI details corrected against real app screenshots)
 **Bible Verse:** Matthew 7:7 — "Ask, and it will be given to you; seek, and you will find." *(same verse as Saturday's reel — intentional reinforcement, same week, same feature)*
 
-**Slide Image Prompts** *(prepend Week 2's Carousel Variant — Flat-Lay)*:
+**Slide Image Prompts:**
+```
+Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Directly-overhead flat-lay composition on a warm wood surface: open Bible, a fountain pen, 2-3 index cards, a small potted succulent. Soft cream background (#FAF8F5), bright natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins, left-aligned; warm-gray subline. Gold accents (#B8860B / #C79A3B) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
+```
+*(prepend the Variant Flat-Lay block above to every slide's Prompt in the table below)*
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -91,7 +105,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Matthew 7:7 + 💡 Tip — "No question is too basic to ask Discipler — that's what it's there for."
-  - **Daily Verse Image Prompt fill (Variant B — Full-Bleed Photo Overlay):** VERSE: "Ask, and it will be given to you; seek, and you will find." · REFERENCE: "Matthew 7:7" · BACKGROUND: "Morning desk with Bible, window light."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant B — Full-Bleed Photo Overlay. Full-bleed photorealistic scene, filling the entire frame — no separate card: a smartphone rests screen-up beside an open Bible on a nightstand, its soft glow mixing with the last blue light of near-dawn through a window. A cooling mug of chai sits half-finished, and a journal pen lies capped beside a page filled with hurried handwriting from a late-night question. The room feels hushed, caught in that in-between hour of searching and waiting for an answer. Verse and reference overlaid directly on the photo in the bottom third, sitting on a soft gold-tinted gradient scrim (dark-to-transparent) for readability. Small logo top-left, no heading text needed.
+
+    Verse: "Ask, and it will be given to you; seek, and you will find."
+    Reference: Matthew 7:7
+    ```
 - Evening: Share the Carousel + 📖 Reflection — Ask Discipler your first question today.
 
 **CTA:** Ask your first question today.
@@ -106,10 +128,23 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Production:** Google Flow / Veo AI
 **Story beat:** Daniel struggles to stay consistent with long study sessions — switches to a small daily habit instead, and it finally sticks.
 **Thumbnail:** "Abide In The Word"
-**Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above)*:
-> Headline: "Abide In The Word." Scene: an open Bible on a warm desk with a small daily-habit tracker/checklist visible in a journal beside it, soft morning light.
+**Thumbnail Image Prompt:**
+```
+Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (1080×1920), safe-zone aware — keep headline and focal object clear of the top ~250px and bottom ~250px (Instagram UI overlay zones). Soft cream background (#FAF8F5) bathed in natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins 700, maximum five words. One clear focal object only. One small gold (#B8860B) accent only. Brand frame: small gold Disciplefy logo top-left with thin gold divider; small gold globe + "disciplefy.in" bottom-left. Never: red arrows, shock faces, clickbait expressions, clip-art crosses, busy collages.
 
-**Google Flow / Veo Prompt (8 clips × 5s, prepend Daniel STYLE BLOCK above):**
+Headline: "Abide In The Word." Scene: an open Bible on a warm desk with a small daily-habit tracker/checklist visible in a journal beside it, soft morning light.
+```
+
+**Daniel Reel STYLE BLOCK (prepend to every clip prompt below):**
+```
+Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic live action, authentic Indian environment, warm golden-hour grading, soft natural lighting, natural performances, vertical 9:16, 4K, 24fps. No CGI, no fantasy, no AI artifacts, no fast cuts/whip pans/spinning.
+
+Character — Daniel (keep identical every clip): Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
+
+Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
+```
+
+**Google Flow / Veo Prompt (8 clips × 5s):**
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
@@ -127,7 +162,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — John 8:31 + 🙏 Prayer — "Lord, help me abide in Your word today, even if just for a few minutes."
-  - **Daily Verse Image Prompt fill (Variant C — Split Layout):** VERSE: "if you abide in my word... you will know the truth." · REFERENCE: "John 8:31-32" · BACKGROUND: "Morning desk with Bible, window light."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant C — Split Layout. Frame split horizontally: top 60% is the photorealistic scene: a modest wooden desk holding an open Bible worn soft at the edges, a checklist-style daily journal with several small boxes already ticked in ink, and a steaming cup set within easy reach; early morning light slants low through a nearby window, catching dust motes above the page — the quiet, repeated rhythm of showing up again today; bottom 40% is a solid warm-cream panel holding the verse + reference in charcoal text, with a thin gold divider marking the split. Logo small, top-left, sitting over the photo section.
+
+    Verse: "if you abide in my word... you will know the truth."
+    Reference: John 8:31-32
+    ```
 - Evening: Share Reel + 📖 Reflection — What's one small habit you'll try this week?
 
 **CTA:** What's one small habit you'll try?
@@ -142,7 +185,11 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Slides:** Cover → Every verse was written TO someone first → Why that matters for you → A quick way to find out who → Disciplefy CTA
 
-**Slide Image Prompts** *(prepend Week 2's Carousel Variant — Desk & Bible)*:
+**Slide Image Prompts:**
+```
+Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Three-quarter angle on a warm wooden desk with tasteful props (open Bible, coffee mug, small plant, leather journal). Soft cream background (#FAF8F5), bright natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins, left-aligned; warm-gray subline. Gold accents (#B8860B / #C79A3B) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
+```
+*(prepend the Variant Desk & Bible block above to every slide's Prompt in the table below)*
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -157,7 +204,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Nehemiah 8:8 + 💡 Tip — "Ask: who was this originally written to, and what did they need to hear?"
-  - **Daily Verse Image Prompt fill (Variant D — Minimalist Typography):** VERSE: "they read from the book... and gave the sense, so that the people understood the reading." · REFERENCE: "Nehemiah 8:8" · BACKGROUND: "Morning desk with Bible, open journal (mood reference only — Variant D has no photo)."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant D — Minimalist Typography. No photo — solid warm cream background or a very soft cream-to-gold gradient. Large gold quotation mark, verse in big centered Inter Medium type, reference in gold Poppins Bold beneath, generous whitespace all around. Logo small, top-center. (Mood reference only, no photo used: an open Bible resting beside a hand-drawn timeline sketched across a journal page, connecting ancient names and places to a date circled in ink. A magnifying glass rests over a footnote, and warm midday light suggests careful, unhurried study of who these words were first written for.)
+
+    Verse: "they read from the book... and gave the sense, so that the people understood the reading."
+    Reference: Nehemiah 8:8
+    ```
 - Evening: Share Carousel + 📖 Reflection — Try it on your next chapter.
 
 **CTA:** Try it on your next chapter.
@@ -172,10 +227,23 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Production:** Google Flow / Veo AI
 **Story beat:** A believer facing an uncertain situation is reminded, step by step, that God's presence doesn't depend on the outcome.
 **Thumbnail:** "Fear Not"
-**Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above)*:
-> Headline: "Fear Not." Scene: an open Bible turned to Isaiah 41, warm evening lamp light, a steady hand resting gently on the page (calm, not dramatic).
+**Thumbnail Image Prompt:**
+```
+Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (1080×1920), safe-zone aware — keep headline and focal object clear of the top ~250px and bottom ~250px (Instagram UI overlay zones). Soft cream background (#FAF8F5) bathed in natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins 700, maximum five words. One clear focal object only. One small gold (#B8860B) accent only. Brand frame: small gold Disciplefy logo top-left with thin gold divider; small gold globe + "disciplefy.in" bottom-left. Never: red arrows, shock faces, clickbait expressions, clip-art crosses, busy collages.
 
-**Google Flow / Veo Prompt (8 clips × 5s, prepend Daniel STYLE BLOCK above):**
+Headline: "Fear Not." Scene: an open Bible turned to Isaiah 41, warm evening lamp light, a steady hand resting gently on the page (calm, not dramatic).
+```
+
+**Daniel Reel STYLE BLOCK (prepend to every clip prompt below):**
+```
+Premium cinematic Christian lifestyle. Apple-commercial quality, photorealistic live action, authentic Indian environment, warm golden-hour grading, soft natural lighting, natural performances, vertical 9:16, 4K, 24fps. No CGI, no fantasy, no AI artifacts, no fast cuts/whip pans/spinning.
+
+Character — Daniel (keep identical every clip): Young Indian professional (26-30), neatly styled short black hair, clean shaven, warm medium-brown skin, navy Oxford shirt, dark chinos, brown leather watch, calm/thoughtful/gentle, usually reading Scripture before work. Never looks into camera, never acknowledges camera, never speaks to audience.
+
+Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce biblical truth · 3 Explain truth · 4 Deepen understanding · 5 Real-life application · 6 Encouragement (prayer/Scripture/nature) · 7 Invitation to reflect · 8 Hopeful conclusion (leave negative space top-third for the Disciplefy end-screen logo, added in edit).
+```
+
+**Google Flow / Veo Prompt (8 clips × 5s):**
 
 | Clip | Purpose | Voice-over | Visual Prompt |
 |---|---|---|---|
@@ -193,7 +261,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Isaiah 41:10 + 🙏 Prayer — "Lord, calm my fear with the truth that You are near."
-  - **Daily Verse Image Prompt fill (Variant E — Framed Photo):** VERSE: "fear not, for I am with you... I will strengthen you, I will help you." · REFERENCE: "Isaiah 41:10" · BACKGROUND: "Rainy window, warm candlelight inside."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant E — Framed Photo. A single photorealistic scene: rain streaks down a dark windowpane while a lit candle flickers steady on the sill inside, its warm glow pushing back the shadows of the storm outside. An open Bible lies nearby, its pages softly illuminated, and a folded blanket rests on a chair as if someone has settled in to wait out the night unafraid. The contrast between the restless weather outside and the calm, steady light within becomes the whole story — styled as a framed photograph or polaroid-style card, very slightly tilted, soft drop shadow, resting on a warm cream background. Verse + reference sit beneath the framed photo like a caption. Small gold pin or clip accent at the photo's top edge.
+
+    Verse: "fear not, for I am with you... I will strengthen you, I will help you."
+    Reference: Isaiah 41:10
+    ```
 - Evening: Share Reel + 📖 Reflection — What fear can you hand to God today?
 
 **CTA:** Share this with someone who needs it today.
@@ -208,8 +284,12 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 **Story beat:** While studying a difficult passage, someone asks Discipler a question. Instead of giving a shortcut answer, it guides them back to the passage, its context, and related Scriptures.
 **Feature shown:** Discipler
 **Thumbnail:** "Can I Ask a Question?"
-**Thumbnail Image Prompt** *(prepend Thumbnail STYLE BLOCK above; this is the only generated asset for Saturday — the Reel itself is a real screen recording, not generated)*:
-> Headline: "Can I Ask a Question?" Scene: a smartphone resting upright beside an open Bible, a soft gold soundwave glow on the phone screen implying a spoken question, warm evening lamp light — bright and warm, not moody.
+**Thumbnail Image Prompt** *(this is the only generated asset for Saturday — the Reel itself is a real screen recording, not generated)*:
+```
+Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (1080×1920), safe-zone aware — keep headline and focal object clear of the top ~250px and bottom ~250px (Instagram UI overlay zones). Soft cream background (#FAF8F5) bathed in natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins 700, maximum five words. One clear focal object only. One small gold (#B8860B) accent only. Brand frame: small gold Disciplefy logo top-left with thin gold divider; small gold globe + "disciplefy.in" bottom-left. Never: red arrows, shock faces, clickbait expressions, clip-art crosses, busy collages.
+
+Headline: "Can I Ask a Question?" Scene: a smartphone resting upright beside an open Bible, a soft gold soundwave glow on the phone screen implying a spoken question, warm evening lamp light — bright and warm, not moody.
+```
 
 **Caption:** Stuck on a hard passage? Disciplefy's Voice Discipler doesn't give you a shortcut answer — it guides you back to the passage, its context, and related Scripture. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
 **Hashtags:** #Disciplefy #VoiceDiscipler #BibleQuestions #Discipleship #Scripture
@@ -218,7 +298,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Matthew 7:7 + 💡 Tip — "No question is too basic to ask Discipler — that's what it's there for."
-  - **Daily Verse Image Prompt fill (Variant F — Side-by-Side):** VERSE: "Ask, and it will be given to you; seek, and you will find." · REFERENCE: "Matthew 7:7" · BACKGROUND: "Morning desk with Bible, window light."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant F — Side-by-Side. Frame split vertically down the middle: left half is a soft off-white verse card (reference top, verse centered, quotation icon) on cream; right half is the photorealistic scene: a smartphone stands propped against a stack of well-worn books on a sunlit desk, its screen showing a faint gold soundwave mid-question, an open Bible beside it catching bright late-morning light, with a half-finished glass of water and a single sticky note bearing a scribbled question nearby — the alert, curious posture of someone who just spoke a question aloud and is now leaning in to listen. Thin vertical gold divider between the two halves.
+
+    Verse: "Ask, and it will be given to you; seek, and you will find."
+    Reference: Matthew 7:7
+    ```
 - Evening: Share Reel + 📖 Reflection — Ask Discipler your first question today.
 
 **CTA:** Ask your first question today.
@@ -237,12 +325,16 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Slides:** Cover ("One month in — here's everything you've learned") → Week 1: Launch + 4 features → Week 2: rest, context, quiet time, study method, God isn't finished → Week 3: love your neighbor, pray first, prayer habit, observe, wait on God → Week 4: uncomfortable passages, better questions, abide daily, original audience, fear not → featured testimonies → Disciplefy CTA
 
-**Slide Image Prompts** *(prepend Week 2's Carousel Variant — Journal Macro)*:
+**Slide Image Prompts:**
+```
+Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram carousel for Disciplefy. Portrait 4:5 (1080×1350). Close, slightly-angled macro shot of an open handwritten journal page with an underlined verse, a fountain pen resting diagonally across it, the soft out-of-focus edge of a Bible in the background. Soft cream tones, bright natural window light. Bold near-black charcoal (#1E1E1E) headline, Poppins, left-aligned; warm-gray subline. Gold accents (#B8860B / #C79A3B) — no indigo. Brand frame: gold logo + divider top-left, gold globe + "disciplefy.in" bottom-left. No dark/moody look, clutter, distorted text, or clip-art crosses.
+```
+*(prepend the Variant Journal Macro block above to every slide's Prompt in the table below)*
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
 | 1 — Cover | Headline: "One Month In." Subline: "Here's everything you've learned." Bright cream desk scene, open Bible + journal, warm golden light. | One month in. You've studied Scripture, built new habits, and (hopefully) asked Disciplefy a question or two. Here's everything, swipe through → |
-| 2 — Week 1 recap | Headline: "Week 1: Launch + 4 Core Features." 2×2 gold icon grid (Study Guide, Learning Paths, Memory Verses, Discipler) — same icon set as Week 1's Sunday slide, for series consistency. | It all started with launch week — 4 core features (Study Guide, Learning Paths, Memory Verses, Discipler), and an app finally live. |
+| 2 — Week 1 recap | Headline: "Week 1: Launch + 4 Core Features." 2×2 gold icon grid (Study Guide, Learning Paths, Memory Verses, Discipler), consistent gold-icon style. | It all started with launch week — 4 core features (Study Guide, Learning Paths, Memory Verses, Discipler), and an app finally live. |
 | 3 — Weeks 2-3 recap | Headline: "Rest · Context · Neighbor · Prayer · Waiting." Small gold-icon chip row on a clean cream card. | Weeks 2-3 covered rest, context, loving your neighbor, prayer, and waiting on God's timing. |
 | 4 — Week 4 recap | Headline: "Hard Passages · Better Questions · Abide · Fear Not." Small gold-icon chip row, matching Slide 3's layout. | Week 4 pushed further — sitting with hard passages, asking better questions, abiding daily, and trusting "fear not." |
 | 5 — Featured testimonies | Headline: "In Your Words." Scene: a warm card layout with space for 1-2 short testimony quotes (added in edit from real submissions), gold quotation-mark accent. | Real people, real stories — here's what a month of studying with Disciplefy looked like for a few of you. |
@@ -253,7 +345,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this month. Help me carry all of it into worship today."
-  - **Daily Verse Image Prompt fill (Variant G — Vertical Bookmark):** VERSE: "...not neglecting to meet together, as is the habit of some, but encouraging one another..." · REFERENCE: "Hebrews 10:25" · BACKGROUND: "Church pew, soft morning light through a window."
+  - **Daily Verse Image Prompt:**
+    ```
+    Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+    Variant G — Vertical Bookmark. A tall, narrow "bookmark"-shaped card (rounded top, tapered bottom point), semi-transparent frosted-glass gold-tinted (55-65% opacity with a soft blur behind it, like frosted glass) so the background scene stays gently visible through it, centered on a softly blurred, warm photorealistic background: a wooden church pew catches warm morning light streaming through a tall stained-glass window, scattering small patches of gold and amber across the polished wood. A well-loved Bible rests open on the seat beside a simple bouquet of white flowers, as if placed there in quiet celebration. The scene carries a gentle, grateful hush — the feeling of a full month's journey folding into a single unhurried morning of worship. Verse + reference run down the bookmark in elegant vertical-feeling spacing. Small gold tassel or ribbon detail at the bookmark's top.
+
+    Verse: "...not neglecting to meet together, as is the habit of some, but encouraging one another..."
+    Reference: Hebrews 10:25
+    ```
 - Evening: Share Carousel + 📖 Reflection — What's one thing from this month you'll keep practicing into Month 2?
 
 **CTA:** Have a Disciplefy story? Send it in — link in bio.
@@ -262,7 +362,15 @@ Same 7 layout variants as `Content_Playbook_Season1_Week1.md` (Variant A Monday 
 ---
 
 ## Growth Additions (2026)
-Full detail in `Content_Playbook_Season1_Week1.md` → "Growth Additions" — three tactics: (1) Follow-CTA, one rotating slot/week (this week: Saturday's Ep13 Hero caption, done above), (2) trending audio on the Daniel Reels where mood fits, skip if nothing matches, (3) Stories interactive stickers 2-3x/week, not daily. Carry these into Month 2 planning as a standing practice, not just a Month 1 experiment.
+Three tactics for reach (discovery) and follows (conversion) — different problems, addressed separately:
+
+1. Follow-CTA (conversion) — once per week, not every post. Asking to follow on every single post reads as needy and gets tuned out. One rotating slot per week, always the week's highest-reach/highest-engagement post. This week: Saturday's Episode 13 Hero Reel caption (done above).
+
+2. Trending audio (reach) — Daniel Reels only, when it actually fits. Check Instagram's trending-audio tab weekly; layer a soft trending instrumental under the narration only if the mood matches (warm, reverent, unhurried) — skip the week entirely if nothing fits rather than forcing a mismatched trend for reach.
+
+3. Stories interactive stickers (reach + engagement) — 2-3x/week, not daily. Add a poll or question sticker to the Evening Story slot on the days it fits naturally. Don't do it daily — it dilutes and starts feeling like a survey, not a devotional.
+
+Carry all 3 into Month 2 planning as a standing practice, not just a Month 1 experiment.
 
 ## Production Rhythm
 Same rolling model — produce Month 2 Week 1's content while this week publishes. Use Month 1's KPIs (see Success Metrics below) to inform Month 2 planning per the Operating System's Monthly Review Questions.
@@ -281,3 +389,7 @@ Track at the end of the week — and roll up the full month: Reel Reach · Watch
 - **v1.6:** Added a Follow-CTA to Saturday's Episode 13 Hero caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1). Noted these 3 tactics should carry into Month 2 as standing practice, not a one-off.
 - **v1.7:** Switched carousels to Week 2's 3 canonical layout variants (Flat-Lay/Tuesday, Desk & Bible/Thursday, Journal Macro/Sunday) instead of one shared background.
 - **v1.8:** Reworked every Caption to weave in a real keyword phrase for search/SEO, and trimmed every Hashtags line to exactly 5 well-chosen tags (brand + feature-keyword + topic) instead of 4-5 inconsistently.
+- **v1.9:** Made every day fully self-contained — inlined the Daniel Reel STYLE BLOCK, Thumbnail STYLE BLOCK, Carousel Variant, and Daily Verse prompts directly under each day instead of referencing shared top sections or other week files — and converted standalone generation prompts from blockquotes to fenced code blocks for easy copying. This file no longer needs Week 1, Week 2, or any other file open alongside it.
+- **v1.10:** Replaced every Daily Verse Image Prompt's thin background phrase with a rich, multi-sensory, day-specific scene — kept each day's Variant layout, palette (gold/cream/charcoal, no indigo), and verse/reference unchanged.
+- **v1.11:** Generated test images revealed 2 problems: (1) the model was inventing extra decorative elements not in the prompt (icon badges, subtitle taglines, heart-cross icons) — added an explicit "render ONLY the named elements" lock to every Daily Verse prompt's shared brand-rules paragraph; (2) the scripture card looked flat/opaque. Changed Variant A (Classic Card) and Variant G (Vertical Bookmark) — the two variants where the card floats over a photo — to a semi-transparent frosted-glass card (55-65% opacity) so the background scene stays visible through it.
+- **v1.12:** Added a "Daniel's Voice — ElevenLabs Setup" section — how to pick and lock a consistent Voice ID, recommended Stability/Style settings, per-clip generation workflow (no lip-sync needed since Daniel never speaks to camera), and a licensing note. Voice ID left as a TBD placeholder until the team actually picks one in ElevenLabs.

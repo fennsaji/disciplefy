@@ -12,6 +12,7 @@ class AchievementModel extends Achievement {
     super.threshold,
     super.unlockedAt,
     super.isUnlocked,
+    super.currentProgress,
   });
 
   /// Create from Supabase RPC response
@@ -28,6 +29,7 @@ class AchievementModel extends Achievement {
           ? DateTime.tryParse(json['unlocked_at'].toString())
           : null,
       isUnlocked: json['is_unlocked'] as bool? ?? false,
+      currentProgress: (json['current_progress'] as num?)?.toInt(),
     );
   }
 
@@ -60,6 +62,7 @@ class AchievementModel extends Achievement {
       'threshold': threshold,
       'unlocked_at': unlockedAt?.toIso8601String(),
       'is_unlocked': isUnlocked,
+      'current_progress': currentProgress,
     };
   }
 
@@ -75,6 +78,7 @@ class AchievementModel extends Achievement {
       threshold: threshold,
       unlockedAt: unlockedAt,
       isUnlocked: isUnlocked,
+      currentProgress: currentProgress,
     );
   }
 }

@@ -1,6 +1,6 @@
 # Disciplefy Content Playbook — Season 1: Foundations of Faith
 ## Pre-Week 1 — Weekend Bridge
-Version: 2.1 *(updated — see Changelog)*
+Version: 2.4 *(updated — see Changelog)*
 
 ## Mission
 The Launch carousel already posted Friday, and Week 1's 4 how-to Reels don't start until Monday — that left Saturday and Sunday as dead air right after the launch, when interest is highest. This bridges the gap by reusing 2 of the already-built How-To Carousels (from `Instagram_Launch_and_HowTo_Carousels.md` / `Instagram_Carousel_Image_Prompts.md`) that Week 1 no longer needs in carousel form, since it covers those same features as Reels instead.
@@ -13,21 +13,19 @@ Instagram Reel / Carousel → Profile Visit → disciplefy.in → App Install �
 
 ---
 
-## 🎨 Carousel Image Generation — STYLE BLOCK (prepend to every slide prompt below)
-> Premium, warm, bright slide designed as one frame in a multi-slide, swipeable Instagram carousel for a Christian discipleship app called Disciplefy. Portrait 4:5 (1080×1350). Soft cream/off-white background (`#FAF8F5`) bathed in bright natural window light — airy, cozy, inviting. Warm wooden desk with tasteful props (open Bible, ceramic coffee mug, small potted plant, leather journal with pen), softly sunlit. Bold near-black charcoal (`#1E1E1E`) headline in Poppins, left-aligned; short subline in warm gray. Gold accents (`#B8860B` / `#C79A3B`) for logo, icons, dividers, and key words. Brand frame: gold Disciplefy logo + thin gold divider top-left; gold globe icon + "disciplefy.in" bottom-left. No dark/moody look, clutter, cheesy stock, distorted text, or clip-art crosses. Only the cover slide (Slide 1) gets the gold "Swipe →" cue.
-
-**Step slides:** attach the actual Disciplefy app screenshot as a reference image for each Step slide and instruct the model to use it exactly, not redesign or regenerate the UI — same approach as the Outro logo prompts in `Week1_Reel_Intro_Outro_Google_Flow_Prompts.md`. Don't leave the screen blank for later compositing; let the generation place the real screenshot into the mockup directly.
-
-## 📖 Daily Verse — Morning Story Image Generation
-Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Saturday uses **Variant F (Side-by-Side)**, Sunday uses **Variant G (Vertical Bookmark)**. Full variant specs and shared brand rules live there, not repeated here.
-
----
-
 ## Saturday — 💡 How To: Generate a Study Guide (Carousel)
 **Format:** Carousel, 6 slides (reused from `Instagram_Carousel_Image_Prompts.md` POST 2 — not regenerated, already built)
 **Bible Verse:** Psalm 119:105 — "Your word is a lamp to my feet and a light to my path."
 
-**Slide Image Prompts** *(prepend Carousel STYLE BLOCK above)*:
+**Slide Image Prompts:**
+
+Prepend this block to every individual slide prompt in the table below:
+
+```
+Premium, warm, bright slide designed as one frame in a multi-slide, swipeable Instagram carousel for a Christian discipleship app called Disciplefy. Portrait 4:5 (1080×1350). Soft cream/off-white background (#FAF8F5) bathed in bright natural window light — airy, cozy, inviting. Warm wooden desk with tasteful props (open Bible, ceramic coffee mug, small potted plant, leather journal with pen), softly sunlit. Bold near-black charcoal (#1E1E1E) headline in Poppins, left-aligned; short subline in warm gray. Gold accents (#B8860B / #C79A3B) for logo, icons, dividers, and key words. Brand frame: gold Disciplefy logo + thin gold divider top-left; gold globe icon + "disciplefy.in" bottom-left. No dark/moody look, clutter, cheesy stock, distorted text, or clip-art crosses. Only the cover slide (Slide 1) gets the gold "Swipe →" cue.
+
+Step slides: attach the actual Disciplefy app screenshot as a reference image for each Step slide and instruct the model to use it exactly, not redesign or regenerate the UI. Don't leave the screen blank for later compositing; let the generation place the real screenshot into the mockup directly.
+```
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -43,7 +41,16 @@ Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Satur
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Psalm 119:105 + 💡 Tip — "Not sure where to start? Type whatever's on your heart, not just a reference."
-  - **Daily Verse Image Prompt fill (Variant F — Side-by-Side):** VERSE: "Your word is a lamp to my feet and a light to my path." · REFERENCE: "Psalm 119:105" · BACKGROUND: "Morning desk with Bible, soft lamp glow."
+
+  Daily Verse Image Prompt (Variant F — Side-by-Side):
+  ```
+  Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+  Variant F — Side-by-Side: Frame split vertically down the middle: left half is a soft off-white verse card (reference top, verse centered, quotation icon) on cream; right half is the photorealistic scene of a weathered oak desk beside a rain-flecked window, the glass catching the soft grey-gold light of early morning. An open leather-bound Bible rests at its center, pages gently curled with a passage faintly underlined in pencil, while a brass reading lamp pools warm light across the wood beside a steaming ceramic mug and a scatter of dried autumn leaves tucked in as a bookmark. Outside the window, the blurred silhouette of bare branches sways against a pale dawn sky, lending a hushed, unhurried stillness to the scene. Thin vertical gold divider between the two halves. Logo small, top-left over the card half.
+
+  VERSE: "Your word is a lamp to my feet and a light to my path."
+  REFERENCE: Psalm 119:105
+  ```
 - Evening: Share the Carousel + 📖 Reflection — Try generating a study guide for one verse today.
 
 **CTA:** Try it free → link in bio.
@@ -55,7 +62,15 @@ Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Satur
 **Format:** Carousel, 5 slides *(trimmed from 6 — the old Step 2 + Step 3 described the same single screenshot, just "scrolled"; collapsed into one real step)*
 **Bible Verse:** Hebrews 12:1 — "let us run with endurance the race that is set before us."
 
-**Slide Image Prompts** *(prepend Carousel STYLE BLOCK above)*:
+**Slide Image Prompts:**
+
+Prepend this block to every individual slide prompt in the table below:
+
+```
+Premium, warm, bright slide designed as one frame in a multi-slide, swipeable Instagram carousel for a Christian discipleship app called Disciplefy. Portrait 4:5 (1080×1350). Soft cream/off-white background (#FAF8F5) bathed in bright natural window light — airy, cozy, inviting. Warm wooden desk with tasteful props (open Bible, ceramic coffee mug, small potted plant, leather journal with pen), softly sunlit. Bold near-black charcoal (#1E1E1E) headline in Poppins, left-aligned; short subline in warm gray. Gold accents (#B8860B / #C79A3B) for logo, icons, dividers, and key words. Brand frame: gold Disciplefy logo + thin gold divider top-left; gold globe icon + "disciplefy.in" bottom-left. No dark/moody look, clutter, cheesy stock, distorted text, or clip-art crosses. Only the cover slide (Slide 1) gets the gold "Swipe →" cue.
+
+Step slides: attach the actual Disciplefy app screenshot as a reference image for each Step slide and instruct the model to use it exactly, not redesign or regenerate the UI. Don't leave the screen blank for later compositing; let the generation place the real screenshot into the mockup directly.
+```
 
 | Slide | Prompt | Caption (on-slide text) |
 |---|---|---|
@@ -70,7 +85,16 @@ Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Satur
 
 **Stories (2x/day):**
 - Morning: 📖 Verse — Hebrews 12:1 + 🙏 Prayer — "Lord, keep me from wandering — walk me step by step in Your Word."
-  - **Daily Verse Image Prompt fill (Variant G — Vertical Bookmark):** VERSE: "Let us run with endurance the race that is set before us." · REFERENCE: "Hebrews 12:1" · BACKGROUND: "Mountain sunrise, a path winding through."
+
+  Daily Verse Image Prompt (Variant G — Vertical Bookmark):
+  ```
+  Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
+
+  Variant G — Vertical Bookmark: A tall, narrow "bookmark"-shaped card (rounded top, tapered bottom point), semi-transparent frosted-glass gold-tinted (55-65% opacity with a soft blur behind it, like frosted glass) so the background scene stays gently visible through it, centered on a softly blurred, warm photorealistic background of a winding mountain trail at first light — sunrise breaking over distant ridgelines in soft amber and rose-gold hues, thin mist still clinging to the valley below. A dirt path curves upward through wild grass and scattered stones before disappearing around a far bend, as if inviting the eye onward. A weathered wooden trail marker leans at the path's edge, and long early-morning shadows stretch across the ground, evoking quiet endurance and the promise of the climb ahead. Verse + reference run down the bookmark in elegant vertical-feeling spacing. Small gold tassel or ribbon detail at the bookmark's top. Logo small, top-left of the whole frame. Reflective, quieter mood fitting Sunday.
+
+  VERSE: "Let us run with endurance the race that is set before us."
+  REFERENCE: Hebrews 12:1
+  ```
 - Evening: Share the Carousel + 📖 Reflection — Which topic would you want a guided path for?
 
 **CTA:** Free → link in bio.
@@ -82,7 +106,13 @@ Same 7 rotating layout variants as `Content_Playbook_Season1_Week1.md` — Satur
 Monday and Tuesday of `Content_Playbook_Season1_Week1.md` cover these same two features again — as Reels, not Carousels. That's intentional (see "Why Carousel + Reel" above), not a duplicate mistake. Memory Verses and Discipler carousels (POST 4 and POST 5) are used the same way in `Content_Playbook_Season1_Week3.md` (Tuesday) and `Content_Playbook_Season1_Week4.md` (Tuesday) — swapped in for that week's Bible Tips slot, 2 days ahead of that week's matching Saturday reel.
 
 ## Growth Additions (2026)
-Full detail in `Content_Playbook_Season1_Week1.md` → "Growth Additions" — this bridge's Follow-CTA slot is Sunday's carousel caption (done above). Trending-audio note doesn't apply (no Daniel Reels this bridge). Stories sticker guidance still applies — add one to either day's Evening slot, not both.
+Three tactics for reach (discovery) and follows (conversion) — different problems, addressed separately:
+
+1. Follow-CTA (conversion) — once per week, not every post. Asking to follow on every single post reads as needy and gets tuned out. One rotating slot, always the highest-reach/highest-engagement post. This bridge's slot: Sunday's Learning Paths carousel caption (done above).
+
+2. Trending audio (reach) — Daniel Reels only, when it actually fits. Doesn't apply to this bridge (no Daniel Reels here — both days are carousels reusing existing screenshots).
+
+3. Stories interactive stickers (reach + engagement) — add one to either day's Evening slot, not both, so it doesn't feel like a survey.
 
 ## Production Rhythm
 Both carousels are already fully built (`Instagram_Carousel_Image_Prompts.md`) — no new generation needed beyond compositing real screenshots into the Step slides, same as they were always going to need.
@@ -104,3 +134,6 @@ Track: Saves · Shares · Profile Visits · Website Clicks · App Installs.
 - **v1.9:** Memory Verses and Discipler carousels (POST 4/5) are no longer just "reserved for later" — they're now live in `Content_Playbook_Season1_Week3.md` and `Week4.md`, swapped into that week's Tuesday slot 2 days ahead of the matching Saturday reel. Updated the cross-reference note accordingly.
 - **v2.0:** Added a Follow-CTA to Sunday's Learning Paths caption and a "Growth Additions (2026)" pointer section (full detail lives in Week 1).
 - **v2.1:** Reworked both Captions to weave in a real keyword phrase for search/SEO, and trimmed both Hashtags lines to exactly 5 well-chosen tags (brand + feature-keyword + topic) instead of 4.
+- **v2.2:** Made both Saturday and Sunday fully self-contained — inlined the Carousel STYLE BLOCK and the Daily Verse image prompts directly under each day instead of referencing a shared top section or Week 1's file, and converted standalone generation prompts from blockquotes to fenced code blocks for easy copying. This file no longer needs Week 1 or any other file open alongside it.
+- **v2.3:** Replaced both Daily Verse Image Prompts' thin background phrases with a rich, multi-sensory, day-specific scene each — kept each day's Variant layout, palette (gold/cream/charcoal, no indigo), and verse/reference unchanged.
+- **v2.4:** Generated test images revealed 2 problems: (1) the model was inventing extra decorative elements not in the prompt (icon badges, subtitle taglines, heart-cross icons) — added an explicit "render ONLY the named elements" lock to both Daily Verse prompts' shared brand-rules paragraph; (2) the scripture card looked flat/opaque. Changed Sunday's Variant G (Vertical Bookmark, the one card here that floats over a photo) to a semi-transparent frosted-glass card (55-65% opacity) so the background scene stays visible through it; Saturday's Variant F keeps its solid card since its two halves don't overlap.

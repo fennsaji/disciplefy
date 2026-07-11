@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/achievement.dart';
+
 abstract class GamificationEvent extends Equatable {
   const GamificationEvent();
 
@@ -36,6 +38,20 @@ class CheckStudyAchievements extends GamificationEvent {
 /// Check achievements after memory verse added
 class CheckMemoryAchievements extends GamificationEvent {
   const CheckMemoryAchievements();
+}
+
+/// Queue notifications for achievements already confirmed unlocked by the
+/// backend (e.g. returned inline from submit-memory-practice). Skips the
+/// checkMemoryAchievements RPC round-trip, avoiding a race where a client
+/// re-check runs after the server already inserted the unlock row and so
+/// reports it as not-new, silently dropping the popup.
+class QueueAchievementNotifications extends GamificationEvent {
+  final List<AchievementUnlockResult> achievements;
+
+  const QueueAchievementNotifications(this.achievements);
+
+  @override
+  List<Object?> get props => [achievements];
 }
 
 /// Check achievements after voice session completed

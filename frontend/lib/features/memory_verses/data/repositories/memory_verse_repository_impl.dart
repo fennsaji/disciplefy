@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../gamification/domain/entities/achievement.dart';
 import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/review_session_entity.dart';
@@ -466,15 +467,22 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
         hintsUsed: params.hintsUsed,
       );
 
-      // Parse response - backend returns stats, not the full verse
-      // Extract achievement names from the response
+      // Parse response - backend returns stats, not the full verse.
+      // The edge function already ran check_memory_achievements server-side
+      // and filtered to newly-unlocked ones, so these are authoritative -
+      // don't re-check client-side (that races against the same idempotent
+      // insert and always reports is_new=false the second time).
       final rawAchievements =
           response['new_achievements'] as List<dynamic>? ?? [];
       final newAchievements = rawAchievements
-          .map((a) => a is Map
-              ? (a['achievement_name'] as String? ?? '')
-              : a.toString())
-          .where((name) => name.isNotEmpty)
+          .whereType<Map>()
+          .where((a) => (a['achievement_id'] as String?)?.isNotEmpty ?? false)
+          .map((a) => AchievementUnlockResult(
+                achievementId: a['achievement_id'] as String,
+                achievementName: a['achievement_name'] as String? ?? '',
+                xpReward: (a['xp_reward'] as num?)?.toInt() ?? 0,
+                isNew: true,
+              ))
           .toList();
 
       final xpEarned = response['xp_earned'] as int? ?? 0;
