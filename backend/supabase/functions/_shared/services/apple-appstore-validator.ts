@@ -12,6 +12,12 @@
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SignedDataVerifier, Environment } from 'npm:@apple/app-store-server-library@1.4.0'
+// VerificationException/VerificationStatus aren't re-exported from the package root
+// (only SignedDataVerifier is) — import directly from the submodule that declares them.
+import {
+  VerificationException,
+  VerificationStatus,
+} from 'npm:@apple/app-store-server-library@1.4.0/dist/jws_verification'
 import { Buffer } from 'node:buffer'
 import { getIAPConfig } from './iap-config-service.ts'
 
@@ -134,8 +140,16 @@ export async function validateAppleReceipt(
         console.log('[APPLE] Verified against fallback environment:', fallbackEnv)
       } catch (fallbackError) {
         console.error('[APPLE] JWS verification failed (both environments):', primaryError, fallbackError)
-        const describe = (e: unknown) =>
-          e instanceof Error ? `${e.name}: ${e.message || '(empty message)'}` : String(e)
+        // VerificationException (thrown by SignedDataVerifier) carries no message —
+        // just a numeric `status` (+ optional `cause`) — so decode it explicitly.
+        const describe = (e: unknown) => {
+          if (e instanceof VerificationException) {
+            const statusName = VerificationStatus[e.status] ?? e.status
+            const causeMsg = e.cause instanceof Error ? ` (cause: ${e.cause.message})` : ''
+            return `VerificationException[${statusName}]${causeMsg}`
+          }
+          return e instanceof Error ? `${e.name}: ${e.message || '(empty message)'}` : String(e)
+        }
         return failure(
           `Apple transaction verification failed — ${primaryEnv}: ${describe(primaryError)} | ${fallbackEnv}: ${describe(fallbackError)}`
         )
