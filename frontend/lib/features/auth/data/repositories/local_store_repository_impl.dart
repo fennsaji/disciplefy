@@ -22,6 +22,14 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
   @override
   Future<void> clearAll() async {
     try {
+      // Snapshot the device-level language setting before wiping the box so
+      // logout doesn't reset the Settings screen back to English.
+      Object? preservedSettingsLanguage;
+      if (Hive.isBoxOpen('app_settings')) {
+        preservedSettingsLanguage =
+            Hive.box('app_settings').get('settings_language');
+      }
+
       // Close all open Hive boxes
       await Hive.close();
 
@@ -40,6 +48,8 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       await appSettingsBox.putAll({
         'onboarding_completed': true,
         'app_version': '1.0.0',
+        if (preservedSettingsLanguage != null)
+          'settings_language': preservedSettingsLanguage,
       });
 
       // Clear SharedPreferences
@@ -88,12 +98,33 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
     await Future.wait(clearTasks);
   }
 
+  /// SharedPreferences keys that are device-level preferences, not user data,
+  /// and must survive logout (losing them resets the app UI to English).
+  static const List<String> _preservedPrefsKeys = [
+    'user_language_preference',
+    'has_completed_language_selection',
+    'study_content_language',
+  ];
+
   @override
   Future<void> clearSharedPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final preserved = <String, Object>{
+        for (final key in _preservedPrefsKeys)
+          if (prefs.get(key) != null) key: prefs.get(key)!,
+      };
       await prefs.clear();
-      Logger.debug('🗄️ [LOCAL STORE] ✅ SharedPreferences cleared');
+      for (final entry in preserved.entries) {
+        final value = entry.value;
+        if (value is String) {
+          await prefs.setString(entry.key, value);
+        } else if (value is bool) {
+          await prefs.setBool(entry.key, value);
+        }
+      }
+      Logger.debug(
+          '🗄️ [LOCAL STORE] ✅ SharedPreferences cleared (${preserved.length} language keys preserved)');
     } catch (e) {
       Logger.debug('🗄️ [LOCAL STORE] ❌ Failed to clear SharedPreferences: $e');
       rethrow;

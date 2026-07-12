@@ -93,12 +93,33 @@ class StorageRepositoryImpl implements StorageRepository {
     }
   }
 
+  /// SharedPreferences keys that are device-level preferences, not user data,
+  /// and must survive logout (losing them resets the app UI to English).
+  static const List<String> _preservedPrefsKeys = [
+    'user_language_preference',
+    'has_completed_language_selection',
+    'study_content_language',
+  ];
+
   @override
   Future<void> clearSharedPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final preserved = <String, Object>{
+        for (final key in _preservedPrefsKeys)
+          if (prefs.get(key) != null) key: prefs.get(key)!,
+      };
       await prefs.clear();
-      Logger.debug('🗄️ [STORAGE REPO] ✅ SharedPreferences cleared');
+      for (final entry in preserved.entries) {
+        final value = entry.value;
+        if (value is String) {
+          await prefs.setString(entry.key, value);
+        } else if (value is bool) {
+          await prefs.setBool(entry.key, value);
+        }
+      }
+      Logger.debug(
+          '🗄️ [STORAGE REPO] ✅ SharedPreferences cleared (${preserved.length} language keys preserved)');
     } catch (e) {
       Logger.debug(
           '🗄️ [STORAGE REPO] ❌ Failed to clear SharedPreferences: $e');

@@ -81,22 +81,39 @@ class LanguagePreferenceService {
         final dbLanguageResult =
             await _userProfileService.getLanguagePreference();
 
-        final dbLanguage = dbLanguageResult.fold(
+        var dbHasNoPreference = false;
+        final dbLanguage = dbLanguageResult.fold<AppLanguage?>(
           (failure) {
             Logger.warning(
                 '⚠️ [LANGUAGE_SERVICE] Database call failed: ${failure.message}');
             return null; // Failed to get from DB, fall back to local/cache
           },
-          (language) => language,
+          (language) {
+            // Profile exists but no language chosen yet (DB null) —
+            // keep the local choice instead of overwriting it.
+            if (language == null) dbHasNoPreference = true;
+            return language;
+          },
         );
 
         if (dbLanguage != null) {
           // Sync local storage with database value and cache it
+          final previousCode = _prefs.getString(_languagePreferenceKey);
           await _prefs.setString(_languagePreferenceKey, dbLanguage.code);
           _cachedLanguage = dbLanguage;
+          if (previousCode != dbLanguage.code) {
+            // Converge every listener (LocaleService, TranslationService,
+            // content BLoCs) that may have resolved an older local value
+            // before the DB was reachable.
+            _languageChangeController.add(dbLanguage);
+          }
           Logger.debug(
               '✅ [LANGUAGE_SERVICE] Retrieved from DB and cached: ${dbLanguage.displayName}');
           return dbLanguage;
+        }
+
+        if (dbHasNoPreference) {
+          _pushLocalLanguageToDatabase();
         }
       }
 
@@ -134,6 +151,37 @@ class LanguagePreferenceService {
 
       return AppLanguage.english;
     }
+  }
+
+  // Guards the one-shot local→DB sync when the profile has no language yet,
+  // so repeated getSelectedLanguage() calls don't spam the API.
+  bool _localToDbSyncAttempted = false;
+
+  /// When the DB profile exists but language_preference is null (e.g. the
+  /// earlier best-effort sync failed), push the locally chosen language up
+  /// so the DB never stays null and later logins restore the right language.
+  void _pushLocalLanguageToDatabase() {
+    if (_localToDbSyncAttempted) return;
+    final localCode = _prefs.getString(_languagePreferenceKey);
+    if (localCode == null) return;
+    _localToDbSyncAttempted = true;
+
+    final localLanguage = AppLanguage.fromCode(localCode);
+    unawaited(_userProfileService
+        .updateLanguagePreference(localLanguage)
+        .then((result) => result.fold(
+              (failure) {
+                // Allow a retry on a later call if this attempt failed.
+                _localToDbSyncAttempted = false;
+                Logger.warning(
+                    '⚠️ [LANGUAGE_SERVICE] Failed to push local language to DB: ${failure.message}');
+              },
+              (_) {
+                _authStateProvider.invalidateProfileCache();
+                Logger.debug(
+                    '✅ [LANGUAGE_SERVICE] Pushed local language to DB: ${localLanguage.displayName}');
+              },
+            )));
   }
 
   /// Save language preference to both local storage and database
@@ -379,10 +427,11 @@ class LanguagePreferenceService {
         // No cached data or language preference, fallback to API call
         final dbLanguageResult =
             await _userProfileService.getLanguagePreference();
-        dbLanguageResult.fold(
-          (failure) =>
+        await dbLanguageResult.fold(
+          (failure) async =>
               Logger.warning('No language preference found in database'),
           (language) async {
+            if (language == null) return;
             await _prefs.setString(_languagePreferenceKey, language.code);
             Logger.debug(
                 'Synced database language preference to local: ${language.displayName}');

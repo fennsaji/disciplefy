@@ -769,7 +769,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               size: 16,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
-            onTap: () => _launchContactEmail(),
+            onTap: () => _showContactSheet(context),
           ),
           _buildDivider(),
           // Replay App Walkthrough tile
@@ -819,12 +819,131 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     }
   }
 
+  /// Show contact options (email, Instagram, Facebook) in a bottom sheet
+  void _showContactSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              context.tr(TranslationKeys.settingsContactUs),
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(builderContext).colorScheme.onBackground,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildContactOption(
+              builderContext,
+              icon: Icons.email_outlined,
+              title: context.tr(TranslationKeys.settingsContactEmail),
+              subtitle: 'contact@disciplefy.in',
+              // Use the page context: the sheet context is deactivated after pop.
+              onTap: () => _launchContactEmail(context),
+            ),
+            _buildContactOption(
+              builderContext,
+              icon: Icons.camera_alt_outlined,
+              title: 'Instagram',
+              subtitle: '@disciplefy.in',
+              onTap: () => _launchContactUrl(
+                  context, 'https://www.instagram.com/disciplefy.in'),
+            ),
+            _buildContactOption(
+              builderContext,
+              icon: Icons.facebook,
+              title: 'Facebook',
+              subtitle: 'facebook.com/disciplefy',
+              onTap: () => _launchContactUrl(
+                  context, 'https://www.facebook.com/disciplefy'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactOption(
+    BuildContext sheetContext, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) =>
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 22),
+        ),
+        title: Text(
+          title,
+          style: AppFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(sheetContext).colorScheme.onBackground,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: AppFonts.inter(
+            fontSize: 13,
+            color:
+                Theme.of(sheetContext).colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+        onTap: () {
+          Navigator.of(sheetContext).pop();
+          onTap();
+        },
+      );
+
   /// Launch contact email
-  Future<void> _launchContactEmail() async {
+  Future<void> _launchContactEmail(BuildContext context) async {
     final uri = Uri.parse(
         'mailto:contact@disciplefy.in?subject=Disciplefy Support Request');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    } else if (context.mounted) {
+      _showSnackBar(context, context.tr(TranslationKeys.settingsContactError),
+          Colors.red);
+    }
+  }
+
+  /// Launch a social/contact URL in the external app or browser
+  Future<void> _launchContactUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (context.mounted) {
+      _showSnackBar(context, context.tr(TranslationKeys.settingsContactError),
+          Colors.red);
     }
   }
 
