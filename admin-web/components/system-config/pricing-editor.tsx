@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import SubscriptionPriceUpdateModal from '../modals/subscription-price-update-modal'
 
@@ -35,6 +35,11 @@ export default function PricingEditor({
 }: PricingEditorProps) {
   const [pricing, setPricing] = useState<PricingData[]>(initialPricing)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Keep local state in sync when fresh pricing data arrives (e.g. after a successful price update)
+  useEffect(() => {
+    setPricing(initialPricing)
+  }, [initialPricing])
   const [selectedPricing, setSelectedPricing] = useState<PricingData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 

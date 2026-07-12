@@ -43,19 +43,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Create payment record in purchase_history table
+    // Note: purchase_history has no subscription_id/currency/notes columns;
+    // amounts map to cost_rupees/cost_paise and payment_date to purchased_at.
+    const orderId = `admin_manual_${Date.now()}`
     const { data: paymentRecord, error: insertError } = await supabaseAdmin
       .from('purchase_history')
       .insert({
         user_id: body.user_id,
-        subscription_id: body.subscription_id,
-        amount_paid: body.amount,
-        currency: body.currency || 'INR',
+        token_amount: 1, // Schema requires token_amount > 0; manual subscription payments carry no tokens
+        cost_rupees: body.amount,
+        cost_paise: Math.round(body.amount * 100),
+        payment_id: body.reference_number || orderId,
+        order_id: orderId,
         payment_method: body.payment_method,
-        payment_date: body.payment_date,
-        transaction_id: body.reference_number || null,
-        notes: body.notes || null,
+        payment_provider: 'admin_manual',
         status: 'completed',
-        created_by_admin: user.id,
+        purchased_at: body.payment_date,
       })
       .select()
       .single()

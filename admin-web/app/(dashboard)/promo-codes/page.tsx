@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatsCard } from '@/components/ui/stats-card'
@@ -35,6 +37,10 @@ export default function PromoCodesPage() {
       togglePromoCode({ campaign_id: campaignId, is_active: isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promo-codes'] })
+      toast.success('Promo code status updated!')
+    },
+    onError: (error) => {
+      toast.error(`Failed to update promo code status: ${error instanceof Error ? error.message : 'Unknown error'}`)
     },
   })
 
@@ -182,10 +188,121 @@ export default function PromoCodesPage() {
         </div>
       )}
 
-      {/* Toggle Success Message */}
-      {toggleMutation.isSuccess && (
-        <div className="fixed bottom-4 right-4 rounded-lg bg-green-50 p-4 text-green-800 shadow-lg dark:bg-green-900/20 dark:text-green-300">
-          <p className="font-medium">✅ Promo code status updated!</p>
+      {/* Campaign Details Modal */}
+      {selectedCampaign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Campaign Details</h2>
+              <button
+                onClick={() => setSelectedCampaign(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Promo Code</p>
+                <p className="mt-1 font-mono font-semibold text-gray-900 dark:text-gray-100">{selectedCampaign.code}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Campaign Name</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">{selectedCampaign.campaign_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Discount</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                  {selectedCampaign.discount_type === 'percentage'
+                    ? `${selectedCampaign.discount_value}%`
+                    : `₹${selectedCampaign.discount_value}`}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                <p className="mt-1">
+                  <span
+                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                      selectedCampaign.is_expired
+                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        : selectedCampaign.is_active
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                    }`}
+                  >
+                    {selectedCampaign.is_expired ? 'Expired' : selectedCampaign.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Usage</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                  {selectedCampaign.current_uses} / {selectedCampaign.max_total_uses ?? 'Unlimited'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Max Uses Per User</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">{selectedCampaign.max_uses_per_user}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Campaign Period</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                  {format(new Date(selectedCampaign.start_date), 'MMM dd, yyyy')} –{' '}
+                  {format(new Date(selectedCampaign.end_date), 'MMM dd, yyyy')}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Applies to Plans</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                  {selectedCampaign.applies_to_plan?.length ? selectedCampaign.applies_to_plan.join(', ') : '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Eligibility</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">{selectedCampaign.eligible_for}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
+                <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                  {format(new Date(selectedCampaign.created_at), 'MMM dd, yyyy')}
+                </p>
+              </div>
+              {selectedCampaign.eligible_for === 'specific_tiers' && (
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Eligible Tiers</p>
+                  <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                    {selectedCampaign.eligible_tiers?.length ? selectedCampaign.eligible_tiers.join(', ') : '-'}
+                  </p>
+                </div>
+              )}
+              {selectedCampaign.eligible_for === 'specific_users' && (
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Eligible User IDs</p>
+                  <p className="mt-1 break-all font-mono text-sm text-gray-900 dark:text-gray-100">
+                    {selectedCampaign.eligible_user_ids?.length ? selectedCampaign.eligible_user_ids.join(', ') : '-'}
+                  </p>
+                </div>
+              )}
+              {selectedCampaign.description && (
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
+                  <p className="mt-1 text-gray-900 dark:text-gray-100">{selectedCampaign.description}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedCampaign(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 /**
  * GET - Fetch LLM security events with optional filtering
@@ -101,17 +102,13 @@ export async function GET(request: NextRequest) {
     // Extract unique user IDs
     const userIds = [...new Set(events.map(e => e.user_id).filter(Boolean))]
 
-    // Fetch emails from auth.users
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
-    if (authError) {
+    // Fetch emails from auth.users (paginated past the admin API's page limit)
+    let emailsMap: Record<string, string> = {}
+    try {
+      emailsMap = await getAuthEmailMap(supabaseAdmin, userIds)
+    } catch (authError) {
       console.error('Failed to fetch auth users:', authError)
     }
-
-    const emailsMap = Object.fromEntries(
-      (authData?.users || [])
-        .filter(u => userIds.includes(u.id))
-        .map(u => [u.id, u.email || ''])
-    )
 
     // Format response
     const formattedEvents = events.map(event => ({

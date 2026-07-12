@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         new_start_date: body.new_start_date,
         // Support both field names: new_end_date (type) and current_period_end (form sends this)
         new_end_date: body.new_end_date || body.current_period_end,
+        next_billing_at: body.next_billing_at,
         plan_name: body.plan_name,
         billing_cycle: body.billing_cycle,
       },

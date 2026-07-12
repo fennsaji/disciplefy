@@ -66,33 +66,51 @@ export default function ImportLearningPathsPage() {
       errors: [],
     }
 
+    // Detect duplicates by slug (ids differ across environments)
+    let existingBySlug = new Map<string, LearningPath>()
+    try {
+      const listResponse = await fetch('/api/admin/learning-paths')
+      if (listResponse.ok) {
+        const listData = await listResponse.json()
+        existingBySlug = new Map(
+          (listData.learning_paths || []).map((p: LearningPath) => [p.slug, p])
+        )
+      }
+    } catch (err) {
+      console.error('Failed to load existing learning paths:', err)
+    }
+
     for (const path of parsedData.data) {
       try {
-        // Check if path already exists
-        const existingResponse = await fetch(`/api/admin/learning-paths/${path.id}`)
-        const exists = existingResponse.ok
+        // Check if a path with the same slug already exists
+        const existing = path.slug ? existingBySlug.get(path.slug) : undefined
 
-        if (exists) {
+        if (existing) {
           if (conflictResolution === 'skip') {
             result.skipped++
             continue
           } else if (conflictResolution === 'overwrite') {
-            // Update existing path
-            const response = await fetch(`/api/admin/learning-paths/${path.id}`, {
+            // Update the existing path (matched by slug)
+            const { id, ...pathWithoutId } = path
+            const response = await fetch(`/api/admin/learning-paths/${existing.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(path),
+              body: JSON.stringify(pathWithoutId),
             })
 
             if (!response.ok) throw new Error('Failed to update path')
             result.success++
           } else {
-            // Create with new ID (backend will generate new ID)
+            // Create as new: drop the id and regenerate the slug to avoid
+            // the unique-constraint failure on the existing slug
             const { id, ...pathWithoutId } = path
             const response = await fetch('/api/admin/learning-paths', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(pathWithoutId),
+              body: JSON.stringify({
+                ...pathWithoutId,
+                slug: `${path.slug}-copy-${Date.now()}`,
+              }),
             })
 
             if (!response.ok) throw new Error('Failed to create path')

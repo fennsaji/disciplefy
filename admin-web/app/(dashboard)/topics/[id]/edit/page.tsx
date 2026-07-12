@@ -125,11 +125,10 @@ export default function EditTopicPage({ params }: PageProps) {
       })
       setLearningPaths(topicData.learning_paths || [])
 
-      // Set linked path IDs (we'll need to fetch full details to match)
-      if (topicData.learning_path_ids) {
-        setLinkedPathIds(new Set(topicData.learning_path_ids))
-        setSelectedPaths(new Set(topicData.learning_path_ids))
-      }
+      // Set linked path IDs from the paths this topic is used in
+      const linkedIds = (topicData.used_in_paths || []).map((p) => p.learning_path_id)
+      setLinkedPathIds(new Set(linkedIds))
+      setSelectedPaths(new Set(linkedIds))
     } catch (err) {
       console.error('Failed to load topic:', err)
       setErrors({ submit: 'Failed to load topic. Please try again.' })
@@ -168,9 +167,11 @@ export default function EditTopicPage({ params }: PageProps) {
       // Find paths to remove (in linkedPathIds but not in selectedPaths)
       const pathsToRemove = Array.from(linkedPathIds).filter(id => !selectedPaths.has(id))
 
+      let failedCount = 0
+
       // Add new links
       for (const pathId of pathsToAdd) {
-        await fetch('/api/admin/path-topics', {
+        const res = await fetch('/api/admin/path-topics', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -178,22 +179,25 @@ export default function EditTopicPage({ params }: PageProps) {
             topic_id: id,
           }),
         })
+        if (!res.ok) failedCount++
       }
 
       // Remove old links
       for (const pathId of pathsToRemove) {
-        await fetch(`/api/admin/path-topics?learning_path_id=${pathId}&topic_id=${id}`, {
+        const res = await fetch(`/api/admin/path-topics?learning_path_id=${pathId}&topic_id=${id}`, {
           method: 'DELETE',
         })
+        if (!res.ok) failedCount++
       }
 
-      // Update linked paths
-      setLinkedPathIds(new Set(selectedPaths))
-
-      // Reload topic to get updated learning paths list
+      // Reload topic to get updated learning paths list (also resets linked/selected state)
       await loadTopic()
 
-      toast.success('Learning path links updated successfully!')
+      if (failedCount > 0) {
+        toast.error(`Failed to update ${failedCount} learning path link(s). Please review and try again.`)
+      } else {
+        toast.success('Learning path links updated successfully!')
+      }
     } catch (error) {
       console.error('Failed to update learning path links:', error)
       toast.error('Failed to update learning path links. Please try again.')
@@ -210,6 +214,20 @@ export default function EditTopicPage({ params }: PageProps) {
       newErrors.xp_value = 'XP value must be at least 1'
 
     setErrors(newErrors)
+
+    // Switch to the tab containing the first validation error
+    const firstErrorField = Object.keys(newErrors)[0]
+    if (firstErrorField) {
+      const fieldTabs: Record<string, TabType> = {
+        title: 'basic',
+        description: 'basic',
+        input_value: 'type-xp',
+        xp_value: 'type-xp',
+      }
+      const errorTab = fieldTabs[firstErrorField]
+      if (errorTab) setActiveTab(errorTab)
+    }
+
     return Object.keys(newErrors).length === 0
   }
 

@@ -31,9 +31,23 @@ export default function DailyVersesTable({
 }: DailyVersesTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  // Today's LOCAL date as 'YYYY-MM-DD' for date-only comparison against date_key
+  const getTodayKey = () => {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  }
+
+  // Parse a 'YYYY-MM-DD' date_key as a LOCAL date (new Date(dateKey) parses as UTC)
+  const parseLocalDate = (dateKey: string) => {
+    const [year, month, day] = dateKey.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
   const getStatusColor = (isActive: boolean, dateKey: string) => {
-    const isPast = new Date(dateKey) < new Date()
-    const isFuture = new Date(dateKey) > new Date()
+    const todayKey = getTodayKey()
+    const isPast = dateKey < todayKey
+    const isFuture = dateKey > todayKey
 
     if (!isActive) {
       return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
@@ -49,10 +63,9 @@ export default function DailyVersesTable({
 
   const getStatusLabel = (isActive: boolean, dateKey: string) => {
     if (!isActive) return 'Inactive'
-    const isPast = new Date(dateKey) < new Date()
-    const isFuture = new Date(dateKey) > new Date()
-    if (isPast) return 'Past'
-    if (isFuture) return 'Upcoming'
+    const todayKey = getTodayKey()
+    if (dateKey < todayKey) return 'Past'
+    if (dateKey > todayKey) return 'Upcoming'
     return 'Current'
   }
 
@@ -132,7 +145,7 @@ export default function DailyVersesTable({
             <Fragment key={verse.id}>
               <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
-                  {new Date(verse.date_key).toLocaleDateString('en-US', {
+                  {parseLocalDate(verse.date_key).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'

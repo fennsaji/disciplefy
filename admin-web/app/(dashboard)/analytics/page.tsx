@@ -56,7 +56,7 @@ function AnalyticsEventsTab() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['analytics-events', rangeFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -136,6 +136,16 @@ function AnalyticsEventsTab() {
         <div className="flex h-96 items-center justify-center">
           <div className="text-gray-500 dark:text-gray-400">Loading analytics...</div>
         </div>
+      ) : error ? (
+        <div className="flex h-96 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-red-600 dark:text-red-400">Failed to load analytics events. Please try again.</p>
+          <button
+            onClick={() => refetch()}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Retry
+          </button>
+        </div>
       ) : data ? (
         <div className="grid gap-6 md:grid-cols-2">
           {/* Timeline Chart */}
@@ -182,7 +192,7 @@ function UserEngagementTab() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['analytics-engagement', rangeFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -259,6 +269,16 @@ function UserEngagementTab() {
       {isLoading ? (
         <div className="flex h-96 items-center justify-center">
           <div className="text-gray-500 dark:text-gray-400">Loading engagement data...</div>
+        </div>
+      ) : error ? (
+        <div className="flex h-96 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-red-600 dark:text-red-400">Failed to load engagement metrics. Please try again.</p>
+          <button
+            onClick={() => refetch()}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Retry
+          </button>
         </div>
       ) : data ? (
         <div className="grid gap-6 md:grid-cols-2">
@@ -341,7 +361,7 @@ function FeatureAdoptionTab() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['analytics-features', rangeFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -383,6 +403,16 @@ function FeatureAdoptionTab() {
       {isLoading ? (
         <div className="flex h-96 items-center justify-center">
           <div className="text-gray-500 dark:text-gray-400">Loading feature adoption...</div>
+        </div>
+      ) : error ? (
+        <div className="flex h-96 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-red-600 dark:text-red-400">Failed to load feature adoption. Please try again.</p>
+          <button
+            onClick={() => refetch()}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Retry
+          </button>
         </div>
       ) : data ? (
         <div className="space-y-6">

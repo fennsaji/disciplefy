@@ -42,6 +42,7 @@ interface LearningPathsTableProps {
   onToggle: (pathId: string, isActive: boolean) => void
   onReorder: (paths: LearningPath[]) => void
   disabled?: boolean
+  reorderDisabled?: boolean
 }
 
 function SortableRow({
@@ -51,6 +52,7 @@ function SortableRow({
   onToggle,
   router,
   disabled,
+  reorderDisabled,
 }: {
   path: LearningPath
   onEdit: (path: LearningPath) => void
@@ -58,6 +60,7 @@ function SortableRow({
   onToggle: (pathId: string, isActive: boolean) => void
   router: any
   disabled?: boolean
+  reorderDisabled?: boolean
 }) {
   const {
     attributes,
@@ -83,7 +86,7 @@ function SortableRow({
       >
       {/* Drag Handle */}
       <td className="px-4 py-3 sticky left-0 z-10 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-700">
-        {!disabled && (
+        {!disabled && !reorderDisabled && (
           <button
             type="button"
             className={actionButtonStyles.dragHandle}
@@ -213,6 +216,7 @@ export function LearningPathsTable({
   onToggle,
   onReorder,
   disabled = false,
+  reorderDisabled = false,
 }: LearningPathsTableProps) {
   const router = useRouter()
 
@@ -224,6 +228,8 @@ export function LearningPathsTable({
   )
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (reorderDisabled) return
+
     const { active, over } = event
 
     if (over && active.id !== over.id) {
@@ -321,6 +327,7 @@ export function LearningPathsTable({
                   onToggle={onToggle}
                   router={router}
                   disabled={disabled}
+                  reorderDisabled={reorderDisabled}
                 />
               ))}
             </SortableContext>
@@ -332,8 +339,18 @@ export function LearningPathsTable({
       {!disabled && paths.length > 1 && (
         <div className="border-t border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            💡 <strong>Tip:</strong> Drag rows to reorder learning paths. The
-            order determines how they appear to users.
+            {reorderDisabled ? (
+              <>
+                💡 <strong>Tip:</strong> Reordering is disabled while a filter
+                or search is active. Clear filters to drag rows and reorder
+                learning paths.
+              </>
+            ) : (
+              <>
+                💡 <strong>Tip:</strong> Drag rows to reorder learning paths.
+                The order determines how they appear to users.
+              </>
+            )}
           </p>
         </div>
       )}

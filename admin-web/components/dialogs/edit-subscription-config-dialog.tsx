@@ -1,12 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 
 interface EditSubscriptionConfigDialogProps {
   isOpen: boolean
   onClose: () => void
   onSave: (config: any) => void
   config: any
+}
+
+const STUDY_MODES = ['standard', 'deep', 'lectio', 'sermon', 'recommended']
+
+// Expand the 'all' shorthand into the concrete mode list so individual
+// modes can be toggled and the array never mixes 'all' with individual modes
+const expandStudyModes = (modes: string[] | undefined): string[] => {
+  if (!modes) return []
+  return modes.includes('all') ? [...STUDY_MODES] : modes.filter(m => m !== 'all')
 }
 
 export default function EditSubscriptionConfigDialog({
@@ -20,7 +30,13 @@ export default function EditSubscriptionConfigDialog({
   // Update formData whenever config changes or dialog opens
   useEffect(() => {
     if (isOpen && config) {
-      setFormData(config)
+      setFormData({
+        ...config,
+        features: {
+          ...config.features,
+          study_modes: expandStudyModes(config.features?.study_modes)
+        }
+      })
     }
   }, [isOpen, config])
 
@@ -28,6 +44,21 @@ export default function EditSubscriptionConfigDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate numeric fields: cleared/invalid inputs must not be serialized as NaN
+    const numericFields = [
+      { label: 'Price (INR)', value: formData.price_inr },
+      { label: 'Daily Tokens', value: formData.features?.daily_tokens },
+      { label: 'Voice Conversations/Month', value: formData.features?.voice_conversations_monthly },
+      { label: 'Available Practice Modes', value: formData.features?.practice_modes },
+    ]
+    const invalidField = numericFields.find(
+      f => f.value === '' || (typeof f.value === 'number' && Number.isNaN(f.value))
+    )
+    if (invalidField) {
+      toast.error(`${invalidField.label} must be a valid number`)
+      return
+    }
 
     // Ensure proper data structure with features object
     const updatedConfig = {
@@ -37,12 +68,14 @@ export default function EditSubscriptionConfigDialog({
       razorpay_plan_id: formData.razorpay_plan_id,
       price_inr: formData.price_inr,
       billing_period: formData.billing_period,
-      daily_tokens: formData.features?.daily_tokens || 0, // Top-level for backward compatibility
+      daily_tokens: formData.features?.daily_tokens ?? 0, // Top-level for backward compatibility
       features: {
-        daily_tokens: formData.features?.daily_tokens || 0,
+        daily_tokens: formData.features?.daily_tokens ?? 0,
         voice_conversations_monthly: formData.features?.voice_conversations_monthly ?? 0,
         practice_modes: formData.features?.practice_modes ?? 0,
-        study_modes: formData.features?.study_modes || ['standard']
+        study_modes: formData.features?.study_modes?.length
+          ? formData.features.study_modes
+          : ['standard']
       }
     }
 
@@ -50,10 +83,10 @@ export default function EditSubscriptionConfigDialog({
     onClose()
   }
 
-  const studyModes = ['standard', 'deep', 'lectio', 'sermon', 'recommended']
+  const studyModes = STUDY_MODES
 
   const toggleStudyMode = (mode: string) => {
-    const currentModes = formData.features?.study_modes || []
+    const currentModes = expandStudyModes(formData.features?.study_modes)
     const newModes = currentModes.includes(mode)
       ? currentModes.filter((m: string) => m !== mode)
       : [...currentModes, mode]
@@ -100,8 +133,11 @@ export default function EditSubscriptionConfigDialog({
                 </label>
                 <input
                   type="number"
-                  value={formData.price_inr || 0}
-                  onChange={(e) => setFormData({ ...formData, price_inr: parseInt(e.target.value) })}
+                  value={formData.price_inr ?? ''}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10)
+                    setFormData({ ...formData, price_inr: Number.isNaN(parsed) ? '' : parsed })
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   min="0"
                 />
@@ -134,14 +170,17 @@ export default function EditSubscriptionConfigDialog({
               </label>
               <input
                 type="number"
-                value={formData.features?.daily_tokens || 0}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  features: {
-                    ...formData.features,
-                    daily_tokens: parseInt(e.target.value)
-                  }
-                })}
+                value={formData.features?.daily_tokens ?? ''}
+                onChange={(e) => {
+                  const parsed = parseInt(e.target.value, 10)
+                  setFormData({
+                    ...formData,
+                    features: {
+                      ...formData.features,
+                      daily_tokens: Number.isNaN(parsed) ? '' : parsed
+                    }
+                  })
+                }}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 min="0"
               />
@@ -160,14 +199,17 @@ export default function EditSubscriptionConfigDialog({
                 </label>
                 <input
                   type="number"
-                  value={formData.features?.voice_conversations_monthly ?? 0}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    features: {
-                      ...formData.features,
-                      voice_conversations_monthly: parseInt(e.target.value)
-                    }
-                  })}
+                  value={formData.features?.voice_conversations_monthly ?? ''}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10)
+                    setFormData({
+                      ...formData,
+                      features: {
+                        ...formData.features,
+                        voice_conversations_monthly: Number.isNaN(parsed) ? '' : parsed
+                      }
+                    })
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   min="-1"
                 />
@@ -182,8 +224,8 @@ export default function EditSubscriptionConfigDialog({
             </h3>
             <div className="flex flex-wrap gap-3">
               {studyModes.map(mode => {
-                const currentModes = formData.features?.study_modes || []
-                const isSelected = currentModes.includes(mode) || currentModes.includes('all')
+                const currentModes = expandStudyModes(formData.features?.study_modes)
+                const isSelected = currentModes.includes(mode)
                 return (
                   <button
                     key={mode}
@@ -207,7 +249,7 @@ export default function EditSubscriptionConfigDialog({
                   ...formData,
                   features: {
                     ...formData.features,
-                    study_modes: ['all']
+                    study_modes: [...STUDY_MODES]
                   }
                 })}
                 className="text-sm text-primary hover:underline"
@@ -229,14 +271,17 @@ export default function EditSubscriptionConfigDialog({
                 </label>
                 <input
                   type="number"
-                  value={formData.features?.practice_modes ?? 0}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    features: {
-                      ...formData.features,
-                      practice_modes: parseInt(e.target.value)
-                    }
-                  })}
+                  value={formData.features?.practice_modes ?? ''}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10)
+                    setFormData({
+                      ...formData,
+                      features: {
+                        ...formData.features,
+                        practice_modes: Number.isNaN(parsed) ? '' : parsed
+                      }
+                    })
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   min="0"
                   max="8"

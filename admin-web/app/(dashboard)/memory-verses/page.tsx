@@ -53,12 +53,13 @@ export default function MemoryVersesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingVerse, setEditingVerse] = useState<SuggestedVerse | null>(null)
 
-  const fetchVerses = useCallback(async (category?: string) => {
+  const fetchVerses = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
+      // Always fetch unfiltered so stats/category chips reflect the full
+      // dataset; the category filter is applied client-side for the table.
       const params = new URLSearchParams({ limit: '200' })
-      if (category && category !== 'all') params.set('category', category)
 
       const res = await fetch(`/api/admin/content/suggested-verses?${params}`)
       if (!res.ok) {
@@ -76,8 +77,8 @@ export default function MemoryVersesPage() {
   }, [])
 
   useEffect(() => {
-    fetchVerses(categoryFilter)
-  }, [fetchVerses, categoryFilter])
+    fetchVerses()
+  }, [fetchVerses])
 
   const handleAdd = () => {
     setEditingVerse(null)
@@ -99,7 +100,7 @@ export default function MemoryVersesPage() {
         throw new Error(data.error || 'Failed to delete verse')
       }
       toast.success('Suggested verse deleted')
-      fetchVerses(categoryFilter)
+      fetchVerses()
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete verse')
     }
@@ -126,8 +127,13 @@ export default function MemoryVersesPage() {
 
     toast.success(isEdit ? 'Verse updated successfully' : 'Verse added successfully')
     setDialogOpen(false)
-    fetchVerses(categoryFilter)
+    fetchVerses()
   }
+
+  // Table shows the filtered subset; stats/chips above stay unfiltered
+  const filteredVerses = categoryFilter === 'all'
+    ? verses
+    : verses.filter((v) => v.category === categoryFilter)
 
   const totalVerses = stats?.total ?? 0
   const enCoverage = stats ? stats.translation_coverage.en : 0
@@ -251,7 +257,7 @@ export default function MemoryVersesPage() {
           <LoadingState label="Loading verses..." />
         ) : (
           <SuggestedVersesTable
-            verses={verses}
+            verses={filteredVerses}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

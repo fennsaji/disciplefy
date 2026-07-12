@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { format } from 'date-fns'
+import { endOfDay, format } from 'date-fns'
 import type { DateRange, DateRangePreset } from '@/lib/utils/date'
 import { getDateRangePreset } from '@/lib/utils/date'
 
@@ -34,11 +34,15 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   }
 
   const handleCustomDateChange = (type: 'from' | 'to', dateString: string) => {
-    const date = new Date(dateString)
+    // Parse as a LOCAL date (new Date('YYYY-MM-DD') would parse as UTC midnight)
+    const [year, month, day] = dateString.split('-').map(Number)
+    if (!year || !month || !day) return
+    const date = new Date(year, month - 1, day)
     if (type === 'from') {
       onChange({ from: date, to: value.to })
     } else {
-      onChange({ from: value.from, to: date })
+      // End of day so the To date is inclusive, matching preset semantics
+      onChange({ from: value.from, to: endOfDay(date) })
     }
   }
 

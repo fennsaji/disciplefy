@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { AddTopicToPathRequest, AddTopicToPathResponse, RemoveTopicFromPathRequest, RemoveTopicFromPathResponse } from '@/types/admin'
 
 /**
@@ -8,33 +8,38 @@ import type { AddTopicToPathRequest, AddTopicToPathResponse, RemoveTopicFromPath
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const cookieStore = await cookies()
-    const authToken = cookieStore.get('sb-access-token')?.value
+    // Verify user authentication
+    const supabaseUser = await createClient()
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
 
-    if (!authToken) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    // Verify admin status
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.is_admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
     // Parse request body
     const body: AddTopicToPathRequest = await request.json()
 
-    // Create Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          persistSession: false,
-        },
-      }
-    )
-
     // Call the admin-learning-path-topics Edge Function
-    const { data, error } = await supabase.functions.invoke('admin-learning-path-topics', {
+    // (forwards the user's JWT — the Edge Function verifies admin identity itself)
+    const { data, error } = await supabaseUser.functions.invoke('admin-learning-path-topics', {
       method: 'POST',
       body,
     })
@@ -62,33 +67,38 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const cookieStore = await cookies()
-    const authToken = cookieStore.get('sb-access-token')?.value
+    // Verify user authentication
+    const supabaseUser = await createClient()
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
 
-    if (!authToken) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    // Verify admin status
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.is_admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
     // Parse request body
     const body: RemoveTopicFromPathRequest = await request.json()
 
-    // Create Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          persistSession: false,
-        },
-      }
-    )
-
     // Call the admin-learning-path-topics Edge Function
-    const { data, error } = await supabase.functions.invoke('admin-learning-path-topics', {
+    // (forwards the user's JWT — the Edge Function verifies admin identity itself)
+    const { data, error } = await supabaseUser.functions.invoke('admin-learning-path-topics', {
       method: 'DELETE',
       body,
     })

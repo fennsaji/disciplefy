@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TranslationEditor } from '@/components/ui/translation-editor'
 
 interface AddStudyGuideDialogProps {
@@ -42,6 +42,20 @@ const CATEGORIES = [
   'Leadership',
 ]
 
+const createInitialFormData = (): StudyGuideFormData => ({
+  title: '',
+  description: '',
+  category: 'Faith Foundations',
+  input_type: 'topic',
+  xp_value: 10,
+  tags: [],
+  translations: {
+    en: { title: '', description: '' },
+    hi: { title: '', description: '' },
+    ml: { title: '', description: '' },
+  },
+})
+
 export function AddStudyGuideDialog({
   isOpen,
   pathId,
@@ -50,22 +64,23 @@ export function AddStudyGuideDialog({
 }: AddStudyGuideDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Topic created in step 1; kept so a retry after a step-2 failure
+  // does not create a duplicate topic
+  const [createdTopicId, setCreatedTopicId] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState<StudyGuideFormData>({
-    title: '',
-    description: '',
-    category: 'Faith Foundations',
-    input_type: 'topic',
-    xp_value: 10,
-    tags: [],
-    translations: {
-      en: { title: '', description: '' },
-      hi: { title: '', description: '' },
-      ml: { title: '', description: '' },
-    },
-  })
+  const [formData, setFormData] = useState<StudyGuideFormData>(createInitialFormData())
 
   const [tagInput, setTagInput] = useState('')
+
+  // Reset error and form state whenever the dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setError(null)
+      setCreatedTopicId(null)
+      setFormData(createInitialFormData())
+      setTagInput('')
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -75,32 +90,36 @@ export function AddStudyGuideDialog({
     setError(null)
 
     try {
-      // Create the topic
-      const createResponse = await fetch('/api/admin/topics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          input_type: formData.input_type,
-          xp_value: formData.xp_value,
-          tags: formData.tags,
-          translations: formData.translations,
-        }),
-      })
+      // Step 1: Create the topic (skipped on retry if it already succeeded)
+      let topicId = createdTopicId
+      if (!topicId) {
+        const createResponse = await fetch('/api/admin/topics', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+            input_type: formData.input_type,
+            xp_value: formData.xp_value,
+            tags: formData.tags,
+            translations: formData.translations,
+          }),
+        })
 
-      if (!createResponse.ok) {
-        const errorData = await createResponse.json()
-        throw new Error(errorData.error || 'Failed to create study guide')
+        if (!createResponse.ok) {
+          const errorData = await createResponse.json().catch(() => null)
+          throw new Error(errorData?.error || 'Failed to create study guide')
+        }
+
+        const createData = await createResponse.json()
+        topicId = createData.topic.id as string
+        setCreatedTopicId(topicId)
       }
 
-      const createData = await createResponse.json()
-      const newTopicId = createData.topic.id
-
-      // Add topic to path
+      // Step 2: Add topic to path
       const addResponse = await fetch('/api/admin/path-topics', {
         method: 'POST',
         headers: {
@@ -108,31 +127,24 @@ export function AddStudyGuideDialog({
         },
         body: JSON.stringify({
           learning_path_id: pathId,
-          topic_id: newTopicId,
+          topic_id: topicId,
           position: 999, // Will be reordered by user if needed
         }),
       })
 
       if (!addResponse.ok) {
-        const errorData = await addResponse.json()
-        throw new Error(errorData.error || 'Failed to add topic to path')
+        const errorData = await addResponse.json().catch(() => null)
+        const detail = errorData?.error ? ` (${errorData.error})` : ''
+        throw new Error(
+          `Study guide was created but could not be added to the path${detail}. ` +
+          'Click "Create Study Guide" again to retry adding it — the topic will not be duplicated.'
+        )
       }
 
       // Success! Reset form and close
-      setFormData({
-        title: '',
-        description: '',
-        category: 'Faith Foundations',
-        input_type: 'topic',
-        xp_value: 10,
-        tags: [],
-        translations: {
-          en: { title: '', description: '' },
-          hi: { title: '', description: '' },
-          ml: { title: '', description: '' },
-        },
-      })
+      setFormData(createInitialFormData())
       setTagInput('')
+      setCreatedTopicId(null)
       onSuccess()
       onClose()
     } catch (err) {

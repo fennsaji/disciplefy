@@ -10,6 +10,7 @@ interface UpdateSubscriptionRequest {
   new_status?: string
   new_start_date?: string
   new_end_date?: string
+  next_billing_at?: string
   plan_name?: string
   billing_cycle?: 'monthly' | 'yearly'
 }
@@ -145,6 +146,11 @@ Deno.serve(async (req) => {
       ? new Date(body.new_end_date)
       : (() => { const d = new Date(effectiveDate); d.setFullYear(d.getFullYear() + 1); return d })()
 
+    // Resolve next billing date — honour admin override if provided, else next renewal
+    const nextBillingAt = body.next_billing_at
+      ? new Date(body.next_billing_at).toISOString()
+      : periodEnd.toISOString()
+
     // Billing cycle (monthly = 12 cycles, yearly = 1)
     const isYearly = (body.billing_cycle || 'monthly') === 'yearly'
     const totalCycles = isYearly ? 1 : 12
@@ -174,7 +180,7 @@ Deno.serve(async (req) => {
           status: newStatus,
           current_period_start: effectiveDate,
           current_period_end: periodEnd.toISOString(),
-          next_billing_at: periodEnd.toISOString(), // Next renewal date
+          next_billing_at: nextBillingAt,
           total_count: totalCycles,
           remaining_count: remainingCycles,
           amount_paise: basePriceMinor,
@@ -203,7 +209,7 @@ Deno.serve(async (req) => {
           status: newStatus,
           current_period_start: effectiveDate,
           current_period_end: periodEnd.toISOString(),
-          next_billing_at: periodEnd.toISOString(), // Next renewal date
+          next_billing_at: nextBillingAt,
           total_count: totalCycles,
           paid_count: 0, // Admin created, not paid yet
           remaining_count: remainingCycles,

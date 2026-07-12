@@ -20,29 +20,35 @@ import { LoadingState } from '@/components/ui/loading-spinner'
 import { EmptyState, ErrorState } from '@/components/ui/empty-state'
 
 export default function LLMCostsPage() {
-  const [dateRange, setDateRange] = useState<DateRange>(
-    getDateRangePreset('7days')
-  )
+  // null = default 7-day window, recomputed at every (re)fetch so a dashboard
+  // left open past midnight doesn't keep serving a stale date window.
+  const [dateRange, setDateRange] = useState<DateRange | null>(null)
+
+  const effectiveRange = dateRange ?? getDateRangePreset('7days')
 
   // Fetch usage analytics with React Query
   const { data, isLoading, error } = useQuery({
     queryKey: ['usage-analytics', dateRange],
-    queryFn: () =>
-      fetchUsageAnalytics({
-        start_date: formatDateForAPI(dateRange.from),
-        end_date: formatDateForAPI(dateRange.to),
-      }),
+    queryFn: () => {
+      const range = dateRange ?? getDateRangePreset('7days')
+      return fetchUsageAnalytics({
+        start_date: formatDateForAPI(range.from),
+        end_date: formatDateForAPI(range.to),
+      })
+    },
     refetchInterval: 60000, // Refetch every minute
   })
 
   // P&L analytics query — runs in parallel with the above
   const { data: plData, isLoading: plLoading } = useQuery({
     queryKey: ['pl-analytics', dateRange],
-    queryFn: () =>
-      fetchPlAnalytics({
-        start_date: formatDateForAPI(dateRange.from),
-        end_date: formatDateForAPI(dateRange.to),
-      }),
+    queryFn: () => {
+      const range = dateRange ?? getDateRangePreset('7days')
+      return fetchPlAnalytics({
+        start_date: formatDateForAPI(range.from),
+        end_date: formatDateForAPI(range.to),
+      })
+    },
     refetchInterval: 60000,
   })
 
@@ -62,7 +68,7 @@ export default function LLMCostsPage() {
       />
 
       {/* Date Range Picker */}
-      <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <DateRangePicker value={effectiveRange} onChange={setDateRange} />
 
       {/* Error State */}
       {error && (
@@ -140,7 +146,7 @@ export default function LLMCostsPage() {
           </div>
 
           {/* Detailed Generation Logs */}
-          <DetailedLogsTable dateRange={dateRange} />
+          <DetailedLogsTable dateRange={effectiveRange} />
         </>
       )}
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { SecurityEventsTable } from '@/components/tables/security-events-table'
 import { AdminLogsTable } from '@/components/tables/admin-logs-table'
 import { UsageAlertsTable } from '@/components/tables/usage-alerts-table'
@@ -47,7 +48,7 @@ function SecurityEventsTab() {
   const [riskScoreFilter, setRiskScoreFilter] = useState('all')
   const [rangeFilter, setRangeFilter] = useState('week')
 
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, error, refetch } = useQuery({
     queryKey: ['security-events', eventTypeFilter, riskScoreFilter, rangeFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -156,6 +157,16 @@ function SecurityEventsTab() {
           <div className="flex h-64 items-center justify-center">
             <div className="text-gray-500 dark:text-gray-400">Loading security events...</div>
           </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <p className="text-sm text-red-600 dark:text-red-400">Failed to load security events. Please try again.</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <SecurityEventsTable events={events || []} />
         )}
@@ -168,7 +179,7 @@ function AdminLogsTab() {
   const [actionFilter, setActionFilter] = useState('')
   const [rangeFilter, setRangeFilter] = useState('week')
 
-  const { data: logs, isLoading } = useQuery({
+  const { data: logs, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-logs', actionFilter, rangeFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -188,9 +199,10 @@ function AdminLogsTab() {
         total: logs.length,
         unique_admins: new Set(logs.map((l: any) => l.admin_user_id)).size,
         today: logs.filter((l: any) => {
-          const logDate = new Date(l.created_at)
-          const today = new Date()
-          return logDate.toDateString() === today.toDateString()
+          // Use the same UTC day boundary as the server's "today" range filter
+          const utcDayStart = new Date()
+          utcDayStart.setUTCHours(0, 0, 0, 0)
+          return new Date(l.created_at) >= utcDayStart
         }).length,
       }
     : null
@@ -241,6 +253,16 @@ function AdminLogsTab() {
           <div className="flex h-64 items-center justify-center">
             <div className="text-gray-500 dark:text-gray-400">Loading admin logs...</div>
           </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <p className="text-sm text-red-600 dark:text-red-400">Failed to load admin logs. Please try again.</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <AdminLogsTable logs={logs || []} />
         )}
@@ -259,7 +281,7 @@ function UsageAlertsTab() {
   })
   const queryClient = useQueryClient()
 
-  const { data: alerts, isLoading } = useQuery({
+  const { data: alerts, isLoading, error, refetch } = useQuery({
     queryKey: ['usage-alerts'],
     queryFn: async () => {
       const response = await fetch('/api/admin/usage-alerts', {
@@ -283,6 +305,11 @@ function UsageAlertsTab() {
       return response.json()
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usage-alerts'] })
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to update alert')
+      // Refetch so the toggle reflects the server state again
       queryClient.invalidateQueries({ queryKey: ['usage-alerts'] })
     },
   })
@@ -310,6 +337,10 @@ function UsageAlertsTab() {
         notification_channel: 'database',
         is_active: true,
       })
+    },
+    onError: (err) => {
+      // Keep the modal open so the admin can retry; error also shown inline
+      toast.error(err instanceof Error ? err.message : 'Failed to save alert')
     },
   })
 
@@ -346,6 +377,16 @@ function UsageAlertsTab() {
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-gray-500 dark:text-gray-400">Loading usage alerts...</div>
+          </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <p className="text-sm text-red-600 dark:text-red-400">Failed to load usage alerts. Please try again.</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <UsageAlertsTable
@@ -423,6 +464,14 @@ function UsageAlertsTab() {
                 </label>
               </div>
             </div>
+
+            {saveAlertMutation.isError && (
+              <p className="mt-4 text-sm text-red-600 dark:text-red-400">
+                {saveAlertMutation.error instanceof Error
+                  ? saveAlertMutation.error.message
+                  : 'Failed to save alert'}
+              </p>
+            )}
 
             <div className="mt-6 flex justify-end gap-3">
               <button

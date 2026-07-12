@@ -20,7 +20,7 @@ interface Achievement {
 
 interface AchievementsTableProps {
   achievements: Achievement[]
-  onEdit: (achievement: Achievement) => void
+  onEdit?: (achievement: Achievement) => void
   onDelete: (id: string) => void
 }
 
@@ -118,14 +118,16 @@ export default function AchievementsTable({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(achievement)}
-                    className={actionButtonStyles.edit}
-                    title="Edit"
-                  >
-                    <EditIcon />
-                  </button>
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(achievement)}
+                      className={actionButtonStyles.edit}
+                      title="Edit"
+                    >
+                      <EditIcon />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

@@ -208,9 +208,6 @@ export default function GamificationPage() {
           ) : (
             <AchievementsTable
               achievements={achievementsData?.achievements || []}
-              onEdit={(achievement) => {
-                toast.info('Edit functionality to be implemented')
-              }}
               onDelete={(id) => deleteAchievement.mutate(id)}
             />
           )}

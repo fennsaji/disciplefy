@@ -42,7 +42,7 @@ export default function SystemConfigPage() {
   const queryClient = useQueryClient()
 
   // Fetch System Config
-  const { data: systemConfigData, isLoading: systemConfigLoading } = useQuery({
+  const { data: systemConfigData, isLoading: systemConfigLoading, error: systemConfigError, refetch: refetchSystemConfig } = useQuery({
     queryKey: ['system-config'],
     queryFn: async () => {
       const res = await fetch('/api/admin/system/config', {
@@ -246,7 +246,25 @@ export default function SystemConfigPage() {
   const renderSystemConfigTab = () => {
     const config = systemConfigData?.config
 
-    if (!config) return null
+    if (systemConfigError || !config) {
+      return (
+        <div className="space-y-4">
+          <ErrorState
+            message={
+              systemConfigError instanceof Error
+                ? systemConfigError.message
+                : 'Failed to load system configuration'
+            }
+          />
+          <button
+            onClick={() => refetchSystemConfig()}
+            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
+      )
+    }
 
     return (
       <div className="space-y-6">
@@ -621,19 +639,45 @@ export default function SystemConfigPage() {
               />
 
               {/* Practice Mode Availability */}
-              <PracticeModesEditor
-                initialModes={{
-                  free: memoryVerseData.data.practiceModes['free_available_practice_modes']?.value
-                    ? JSON.parse(memoryVerseData.data.practiceModes['free_available_practice_modes'].value)
-                    : ['flip_card', 'type_it_out'],
-                  paid: memoryVerseData.data.practiceModes['paid_available_practice_modes']?.value
-                    ? JSON.parse(memoryVerseData.data.practiceModes['paid_available_practice_modes'].value)
-                    : ['flip_card', 'type_it_out', 'cloze_practice', 'first_letter', 'progressive_reveal', 'word_scramble', 'word_bank', 'audio_practice'],
-                }}
-                onSave={async (modes) => {
-                  queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
-                }}
-              />
+              {(() => {
+                // Guard against malformed JSON stored in system_config crashing the tab
+                const parseModes = (raw: string | undefined, fallback: string[]) => {
+                  if (!raw) return { modes: fallback, invalid: false }
+                  try {
+                    const parsed = JSON.parse(raw)
+                    return Array.isArray(parsed)
+                      ? { modes: parsed, invalid: false }
+                      : { modes: fallback, invalid: true }
+                  } catch {
+                    return { modes: fallback, invalid: true }
+                  }
+                }
+                const free = parseModes(
+                  memoryVerseData.data.practiceModes['free_available_practice_modes']?.value,
+                  ['flip_card', 'type_it_out']
+                )
+                const paid = parseModes(
+                  memoryVerseData.data.practiceModes['paid_available_practice_modes']?.value,
+                  ['flip_card', 'type_it_out', 'cloze_practice', 'first_letter', 'progressive_reveal', 'word_scramble', 'word_bank', 'audio_practice']
+                )
+                return (
+                  <>
+                    {(free.invalid || paid.invalid) && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                        ⚠️ Invalid practice modes config stored for{' '}
+                        {[free.invalid && 'free', paid.invalid && 'paid'].filter(Boolean).join(' and ')}{' '}
+                        plan(s) — showing defaults below. Re-save to repair the stored value.
+                      </div>
+                    )}
+                    <PracticeModesEditor
+                      initialModes={{ free: free.modes, paid: paid.modes }}
+                      onSave={async (modes) => {
+                        queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
+                      }}
+                    />
+                  </>
+                )
+              })()}
 
               {/* Spaced Repetition Settings */}
               <SpacedRepetitionEditor
@@ -880,8 +924,13 @@ export default function SystemConfigPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => toggleFeatureFlag.mutate({ flag_id: flag.id, enabled: !flag.enabled })}
-                        className={flag.enabled ? actionButtonStyles.toggleActive : actionButtonStyles.toggleInactive}
+                        onClick={() => {
+                          const action = flag.enabled ? 'Disable' : 'Enable'
+                          if (!confirm(`${action} "${flag.name}"? This takes effect immediately in production.`)) return
+                          toggleFeatureFlag.mutate({ flag_id: flag.id, enabled: !flag.enabled })
+                        }}
+                        disabled={toggleFeatureFlag.isPending && toggleFeatureFlag.variables?.flag_id === flag.id}
+                        className={`${flag.enabled ? actionButtonStyles.toggleActive : actionButtonStyles.toggleInactive} disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={flag.enabled ? 'Disable' : 'Enable'}
                       >
                         <ToggleIcon />

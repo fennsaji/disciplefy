@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { TranslationEditor } from '@/components/ui/translation-editor'
 import { TagsInput } from '@/components/ui/tags-input'
 import { createTopic, listLearningPaths } from '@/lib/api/admin'
@@ -102,6 +103,20 @@ export default function CreateTopicPage() {
       newErrors.xp_value = 'XP value must be at least 1'
 
     setErrors(newErrors)
+
+    // Switch to the tab containing the first validation error
+    const firstErrorField = Object.keys(newErrors)[0]
+    if (firstErrorField) {
+      const fieldTabs: Record<string, TabType> = {
+        title: 'basic',
+        description: 'basic',
+        input_value: 'type-xp',
+        xp_value: 'type-xp',
+      }
+      const errorTab = fieldTabs[firstErrorField]
+      if (errorTab) setActiveTab(errorTab)
+    }
+
     return Object.keys(newErrors).length === 0
   }
 
@@ -121,7 +136,7 @@ export default function CreateTopicPage() {
         const topicId = createdTopic.topic.id
         const linkPromises = Array.from(selectedPaths).map(async (pathId) => {
           try {
-            await fetch('/api/admin/path-topics', {
+            const res = await fetch('/api/admin/path-topics', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -129,12 +144,20 @@ export default function CreateTopicPage() {
                 topic_id: topicId,
               }),
             })
+            return res.ok
           } catch (err) {
             console.error(`Failed to link topic to path ${pathId}:`, err)
+            return false
           }
         })
 
-        await Promise.all(linkPromises)
+        const linkResults = await Promise.all(linkPromises)
+        const failedLinks = linkResults.filter((ok) => !ok).length
+        if (failedLinks > 0) {
+          toast.error(
+            `Topic created, but linking failed for ${failedLinks} of ${linkResults.length} learning path(s).`
+          )
+        }
       }
 
       router.push('/topics')

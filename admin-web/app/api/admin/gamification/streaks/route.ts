@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 // Valid columns for ordering user_study_streaks — prevents invalid sort param from reaching DB
 const VALID_SORT_COLUMNS = ['current_streak', 'longest_streak', 'last_study_date', 'total_study_days']
@@ -111,13 +112,8 @@ export async function GET(request: NextRequest) {
     const xpUserIds = Object.keys(xpByUser)
     const allUserIds = [...new Set([...studyUserIds, ...verseUserIds, ...xpUserIds])]
 
-    // Fetch emails — auth admin API required (service role bypasses RLS)
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers()
-    const emailsMap = Object.fromEntries(
-      authData.users
-        .filter(u => allUserIds.includes(u.id))
-        .map(u => [u.id, u.email || ''])
-    )
+    // Fetch emails — auth admin API required (service role bypasses RLS); paginated past page limit
+    const emailsMap = await getAuthEmailMap(supabaseAdmin, allUserIds)
 
     const getUserName = (userId: string) => {
       const p = profilesMap[userId]

@@ -25,9 +25,10 @@ export default function FeedbackDetailPage() {
   const feedbackId = params.feedbackId as string
 
   const { data: allFeedback, isLoading } = useQuery<Feedback[]>({
-    queryKey: ['feedback'],
+    queryKey: ['feedback', feedbackId],
     queryFn: async () => {
-      const response = await fetch('/api/admin/feedback', {
+      // Fetch this row directly by id so old items beyond the list cap still resolve
+      const response = await fetch(`/api/admin/feedback?id=${encodeURIComponent(feedbackId)}`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch feedback')

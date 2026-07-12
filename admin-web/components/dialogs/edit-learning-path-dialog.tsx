@@ -22,6 +22,14 @@ interface EditLearningPathDialogProps {
 
 type TabType = 'basic' | 'visual' | 'settings' | 'translations' | 'topics'
 
+// Which tab each validated field lives on, so validation failures on a
+// hidden tab can bring the offending field into view
+const FIELD_TABS: Record<string, TabType> = {
+  title: 'basic',
+  description: 'basic',
+  estimated_days: 'settings',
+}
+
 export function EditLearningPathDialog({
   isOpen,
   path,
@@ -74,7 +82,7 @@ export function EditLearningPathDialog({
     }
   }, [path])
 
-  const validateForm = (): boolean => {
+  const validateForm = (): Record<string, string> => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.title) newErrors.title = 'Title is required'
@@ -83,13 +91,19 @@ export function EditLearningPathDialog({
       newErrors.estimated_days = 'Must be at least 1 day'
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return newErrors
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!path || !validateForm()) {
+    if (!path) return
+
+    const newErrors = validateForm()
+    if (Object.keys(newErrors).length > 0) {
+      // Switch to the tab containing the first error so it is visible
+      const firstErrorField = Object.keys(newErrors)[0]
+      setActiveTab(FIELD_TABS[firstErrorField] ?? 'basic')
       return
     }
 

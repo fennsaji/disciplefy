@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch analytics events with aggregation and filtering
@@ -71,18 +72,21 @@ export async function GET(request: NextRequest) {
         dateFilter.setDate(now.getDate() - 7)
     }
 
-    // Fetch analytics events
-    let query = supabaseAdmin
-      .from('analytics_events')
-      .select('*')
-      .gte('created_at', dateFilter.toISOString())
+    // Fetch analytics events (paginated past PostgREST's 1000-row cap)
+    const { data: events, error: eventsError } = await fetchAllRows((from, to) => {
+      let query = supabaseAdmin
+        .from('analytics_events')
+        .select('*')
+        .gte('created_at', dateFilter.toISOString())
 
-    if (eventType) {
-      query = query.eq('event_type', eventType)
-    }
+      if (eventType) {
+        query = query.eq('event_type', eventType)
+      }
 
-    const { data: events, error: eventsError } = await query
-      .order('created_at', { ascending: true })
+      return query
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    })
 
     if (eventsError) {
       console.error('Failed to fetch analytics events:', eventsError)

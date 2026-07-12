@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { subMonths } from 'date-fns'
+import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 /**
  * GET - Fetch token usage history with filtering options
@@ -12,6 +14,7 @@ export async function GET(request: NextRequest) {
     const range = searchParams.get('range') || 'today'
     const feature = searchParams.get('feature') || ''
     const search = searchParams.get('search') || ''
+    const userIdFilter = searchParams.get('user_id') || ''
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -57,8 +60,7 @@ export async function GET(request: NextRequest) {
         dateFilter.setHours(0, 0, 0, 0)
         break
       case 'month':
-        dateFilter = new Date()
-        dateFilter.setMonth(now.getMonth() - 1)
+        dateFilter = subMonths(now, 1)
         dateFilter.setHours(0, 0, 0, 0)
         break
       case 'all':
@@ -76,6 +78,11 @@ export async function GET(request: NextRequest) {
     // Apply feature filter
     if (feature) {
       query = query.eq('feature_name', feature)
+    }
+
+    // Apply user_id filter (exact match, works for anonymous users without email)
+    if (userIdFilter) {
+      query = query.eq('user_id', userIdFilter)
     }
 
     // Execute query with ordering and limit
@@ -105,20 +112,16 @@ export async function GET(request: NextRequest) {
     const userIds = [...new Set(usageHistory.map(h => h.user_id))]
 
     // Fetch emails from auth.users
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
-    if (authError) {
+    let emailsMap: Record<string, string>
+    try {
+      emailsMap = await getAuthEmailMap(supabaseAdmin, userIds as string[])
+    } catch (authError) {
       console.error('Failed to fetch auth users:', authError)
       return NextResponse.json(
         { error: 'Failed to fetch user emails' },
         { status: 500 }
       )
     }
-
-    const emailsMap = Object.fromEntries(
-      authData.users
-        .filter(u => userIds.includes(u.id))
-        .map(u => [u.id, u.email || ''])
-    )
 
     // Fetch user profiles for names
     const { data: userProfiles, error: profilesError } = await supabaseAdmin

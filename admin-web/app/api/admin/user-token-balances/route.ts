@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
+import { listAllAuthUsers, getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 /**
  * GET - Fetch user token balances with optional search and filtering
@@ -42,7 +44,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch all user tokens
+    // If searching, resolve matching user IDs by email first so the filter
+    // is applied BEFORE the row limit (not after fetching the latest 100 rows)
+    let allAuthUsers: User[] | null = null
+    let emailMatchedIds: string[] = []
+    if (search) {
+      try {
+        allAuthUsers = await listAllAuthUsers(supabaseAdmin)
+        emailMatchedIds = allAuthUsers
+          .filter(u => u.email?.toLowerCase().includes(search.toLowerCase()))
+          .map(u => u.id)
+      } catch (error) {
+        console.error('Email query error:', error)
+      }
+    }
+
+    // Fetch user tokens
     let query = supabaseAdmin
       .from('user_tokens')
       .select('*')
@@ -52,10 +69,21 @@ export async function GET(request: NextRequest) {
       query = query.eq('user_plan', plan)
     }
 
-    // Execute query with ordering and limit
+    // Apply search filter in the query (email-matched user IDs or identifier substring)
+    if (search) {
+      const searchConditions = [`identifier.ilike.%${search}%`]
+      if (emailMatchedIds.length > 0) {
+        searchConditions.push(`identifier.in.(${emailMatchedIds.join(',')})`)
+      }
+      query = query.or(searchConditions.join(','))
+    }
+
+    // Execute query with ordering; limit only applies to the unfiltered browse case
+    query = query.order('updated_at', { ascending: false })
+    if (!search) {
+      query = query.limit(100)
+    }
     const { data: tokenBalances, error: balancesError } = await query
-      .order('updated_at', { ascending: false })
-      .limit(100)
 
     if (balancesError) {
       console.error('Failed to fetch token balances:', balancesError)
@@ -75,12 +103,13 @@ export async function GET(request: NextRequest) {
     // Fetch emails from auth.users using admin API (same pattern as search-users)
     let emailsMap: Record<string, string> = {}
     try {
-      const { data: authData } = await supabaseAdmin.auth.admin.listUsers()
-      emailsMap = Object.fromEntries(
-        authData.users
-          .filter(u => userIds.includes(u.id))
-          .map(u => [u.id, u.email || ''])
-      )
+      emailsMap = allAuthUsers
+        ? Object.fromEntries(
+            allAuthUsers
+              .filter(u => userIds.includes(u.id))
+              .map(u => [u.id, u.email || ''])
+          )
+        : await getAuthEmailMap(supabaseAdmin, userIds)
     } catch (error) {
       console.error('Email query error:', error)
     }
@@ -106,15 +135,6 @@ export async function GET(request: NextRequest) {
         const fullName = profile
           ? [profile.first_name, profile.last_name].filter(Boolean).join(' ')
           : null
-
-        // Apply search filter
-        if (search) {
-          const matchesEmail = userEmail?.toLowerCase().includes(search.toLowerCase())
-          const matchesIdentifier = balance.identifier.toLowerCase().includes(search.toLowerCase())
-          if (!matchesEmail && !matchesIdentifier) {
-            return null
-          }
-        }
 
         const { data: todayUsage } = await supabaseAdmin
           .from('token_usage_history')

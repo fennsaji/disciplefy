@@ -22,7 +22,7 @@ export default function UserTokenDetailsPage() {
   const { data: balance, isLoading: balanceLoading, error: balanceError } = useQuery({
     queryKey: ['user-token-balance', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/user-token-balances?search=${userId}`, {
+      const response = await fetch(`/api/admin/user-token-balances?search=${encodeURIComponent(userId)}`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch balance')
@@ -35,7 +35,7 @@ export default function UserTokenDetailsPage() {
   const { data: usageData } = useQuery({
     queryKey: ['token-usage-history', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/token-usage-history?range=all&search=${balance?.user_email || userId}`, {
+      const response = await fetch(`/api/admin/token-usage-history?range=all&user_id=${encodeURIComponent(userId)}`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch usage history')
@@ -48,7 +48,7 @@ export default function UserTokenDetailsPage() {
   const { data: purchaseData } = useQuery({
     queryKey: ['token-purchases', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/token-purchases?range=all&search=${balance?.user_email || userId}`, {
+      const response = await fetch(`/api/admin/token-purchases?range=all&user_id=${encodeURIComponent(userId)}`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch purchases')

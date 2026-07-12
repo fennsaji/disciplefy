@@ -20,13 +20,20 @@ interface CostTrendChartProps {
   data: DailyCost[]
 }
 
+// Parse a 'YYYY-MM-DD' date string as a LOCAL date (new Date(str) parses as
+// UTC midnight, which shifts the day in western timezones)
+const parseLocalDate = (dateStr: string) => {
+  const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 export function CostTrendChart({ data }: CostTrendChartProps) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
   // Format data for chart
   const chartData = data.map((item) => ({
-    date: format(new Date(item.date), 'MMM dd'),
+    date: format(parseLocalDate(item.date), 'MMM dd'),
     cost: item.total_cost_usd,
     operations: item.operations,
   }))

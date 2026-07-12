@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -19,10 +20,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('is_admin')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile?.is_admin) {
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch IAP configuration
-    const { data: configs, error } = await supabase
+    const { data: configs, error } = await supabaseAdmin
       .from('iap_config')
       .select('*')
       .eq('provider', provider)
@@ -82,10 +84,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('is_admin')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile?.is_admin) {
@@ -105,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     // Update each configuration key
     const updates = Object.entries(configs).map(([config_key, config_value]) =>
-      supabase
+      supabaseAdmin
         .from('iap_config')
         .upsert(
           {
@@ -121,7 +124,23 @@ export async function POST(req: NextRequest) {
         )
     )
 
-    await Promise.all(updates)
+    const results = await Promise.all(updates)
+
+    // Surface any upsert failures instead of silently reporting success
+    const failures = results.filter((result) => result.error)
+    if (failures.length > 0) {
+      console.error(
+        '[IAP Config POST] Upsert failures:',
+        failures.map((f) => f.error)
+      )
+      return NextResponse.json(
+        {
+          error: 'Failed to update IAP configuration',
+          details: failures.map((f) => f.error?.message).filter(Boolean),
+        },
+        { status: 500 }
+      )
+    }
 
     // Clear IAP config cache on backend
     await fetch(

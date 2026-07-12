@@ -42,7 +42,7 @@ export default function IssuesPage() {
 function PurchaseIssuesTab() {
   const [statusFilter, setStatusFilter] = useState('all')
 
-  const { data: issues, isLoading } = useQuery({
+  const { data: issues, isLoading, error, refetch } = useQuery({
     queryKey: ['purchase-issues', statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -81,6 +81,16 @@ function PurchaseIssuesTab() {
           <div className="flex h-64 items-center justify-center">
             <div className="text-gray-500 dark:text-gray-400">Loading issues...</div>
           </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <p className="text-sm text-red-600 dark:text-red-400">Failed to load purchase issues. Please try again.</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <PurchaseIssuesTable issues={issues || []} />
         )}
@@ -93,7 +103,7 @@ function FeedbackTab() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [helpfulFilter, setHelpfulFilter] = useState('all')
 
-  const { data: feedback, isLoading } = useQuery({
+  const { data: feedback, isLoading, error, refetch } = useQuery({
     queryKey: ['feedback', categoryFilter, helpfulFilter],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -188,6 +198,16 @@ function FeedbackTab() {
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-gray-500 dark:text-gray-400">Loading feedback...</div>
+          </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <p className="text-sm text-red-600 dark:text-red-400">Failed to load feedback. Please try again.</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <FeedbackTable feedback={feedback || []} />

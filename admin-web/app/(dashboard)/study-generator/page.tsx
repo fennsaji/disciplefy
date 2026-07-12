@@ -19,6 +19,7 @@ export default function StudyGeneratorPage() {
   const [generationId, setGenerationId] = useState<string | null>(null)
   const [currentGuide, setCurrentGuide] = useState<StudyGuide | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isStartingGeneration, setIsStartingGeneration] = useState(false)
 
   // Get initial values from URL parameters
   const initialTopicId = searchParams.get('topic')
@@ -29,6 +30,8 @@ export default function StudyGeneratorPage() {
   const initialLanguage = searchParams.get('language') as 'en' | 'hi' | 'ml' | null
 
   const handleGenerate = async (config: GenerationConfig) => {
+    if (isStartingGeneration) return
+    setIsStartingGeneration(true)
     setError(null)
     try {
       // Start generation
@@ -55,6 +58,8 @@ export default function StudyGeneratorPage() {
     } catch (err) {
       console.error('Generation failed:', err)
       setError('Failed to start generation. Please try again.')
+    } finally {
+      setIsStartingGeneration(false)
     }
   }
 
@@ -237,6 +242,7 @@ export default function StudyGeneratorPage() {
         <div className="mx-auto max-w-3xl">
           <SourceSelector
             onGenerate={handleGenerate}
+            disabled={isStartingGeneration}
             initialTopicId={initialTopicId || undefined}
             initialPathId={initialPathId || undefined}
             initialInputType={initialInputType || undefined}
