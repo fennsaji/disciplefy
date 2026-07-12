@@ -76,7 +76,7 @@ jobs:
             --dart-define=FLUTTER_ENV=development \
             --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }} \
             --build-name=1.0.${{ github.run_number }} \
-            --build-number=$(( $(date +%s) / 60 ))
+            --build-number=$(( 20000 + ($(date +%s) - 1783814400) / 60 ))
 
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1

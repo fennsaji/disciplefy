@@ -32,9 +32,9 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          # Minutes since epoch: one monotonic build-number source shared with
+          # 20000 + minutes since 2026-07-11 UTC: one monotonic build-number source shared with
           # ios-deploy-testflight.yml (see comment there).
-          BUILD_NUMBER=$(( $(date +%s) / 60 ))
+          BUILD_NUMBER=$(( 20000 + ($(date +%s) - 1783814400) / 60 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "✅ Version: $VERSION+$BUILD_NUMBER"
