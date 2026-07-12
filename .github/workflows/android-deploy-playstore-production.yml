@@ -41,8 +41,9 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          # Offset by 10000 to ensure production build numbers always exceed beta
-          BUILD_NUMBER=$(( ${{ github.run_number }} + 10000 ))
+          # 10000 + minutes since 2026-07-11 UTC: one monotonic versionCode source shared by every
+          # Android workflow (see android-deploy-playstore-beta.yml).
+          BUILD_NUMBER=$(( 10000 + ($(date +%s) - 1783814400) / 60 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "✅ Version: $VERSION+$BUILD_NUMBER"
