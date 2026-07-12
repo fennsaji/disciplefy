@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../../core/utils/error_handler.dart';
@@ -21,6 +23,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final LanguagePreferenceService languagePreferenceService;
 
   bool _hasInitialized = false;
+  StreamSubscription<AppLanguage>? _languageSubscription;
 
   SettingsBloc({
     required this.getSettings,
@@ -36,12 +39,26 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<ToggleNotifications>(_onToggleNotifications);
     on<LoadAppVersion>(_onLoadAppVersion);
     on<ClearAllSettings>(_onClearAllSettings);
+    on<LanguageChangedExternally>(_onLanguageChangedExternally);
+
+    // Keep settings in sync when the language changes outside this bloc
+    // (e.g. DB-driven convergence at startup or onboarding selection).
+    _languageSubscription =
+        languagePreferenceService.languageChanges.listen((language) {
+      add(LanguageChangedExternally(language.code));
+    });
 
     // Auto-initialize settings once when bloc is created
     if (!_hasInitialized) {
       _hasInitialized = true;
       add(LoadSettings());
     }
+  }
+
+  @override
+  Future<void> close() {
+    _languageSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> _onLoadSettings(
@@ -162,6 +179,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         emit(SettingsError(message: 'Failed to update language: $e'));
       }
     }
+  }
+
+  Future<void> _onLanguageChangedExternally(
+    LanguageChangedExternally event,
+    Emitter<SettingsState> emit,
+  ) async {
+    if (state is! SettingsLoaded) return;
+    final currentState = state as SettingsLoaded;
+    if (currentState.settings.language == event.language) return;
+
+    // Update the Hive copy so the settings screen shows the right language
+    // next time, and refresh the current state for an open settings screen.
+    await settingsRepository.updateLanguage(event.language);
+    emit(SettingsLoaded(
+      settings: currentState.settings.copyWith(language: event.language),
+    ));
   }
 
   Future<void> _onToggleNotifications(

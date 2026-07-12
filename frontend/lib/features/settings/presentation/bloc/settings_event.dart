@@ -37,6 +37,17 @@ class ToggleNotifications extends SettingsEvent {
   List<Object?> get props => [enabled];
 }
 
+/// Fired when the app language changed outside the settings screen
+/// (e.g. DB-driven sync at startup) so the settings state stays consistent.
+class LanguageChangedExternally extends SettingsEvent {
+  final String language;
+
+  const LanguageChangedExternally(this.language);
+
+  @override
+  List<Object?> get props => [language];
+}
+
 class LoadAppVersion extends SettingsEvent {}
 
 class ClearAllSettings extends SettingsEvent {}

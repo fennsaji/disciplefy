@@ -72,14 +72,31 @@ class UserProfileService {
     return await _apiService.updateProfile(updates);
   }
 
-  /// Get user's language preference as AppLanguage
-  Future<Either<Failure, AppLanguage>> getLanguagePreference() async {
-    final profileResult = await getUserProfile();
+  /// Get user's language preference as AppLanguage.
+  /// Returns Right(null) when the profile exists but no language has been
+  /// chosen yet (DB value is null). Uses the raw profile map because the
+  /// typed UserProfileModel coerces a null language_preference to 'en',
+  /// which would make a new profile silently overwrite a local choice.
+  Future<Either<Failure, AppLanguage?>> getLanguagePreference() async {
+    final currentUser = _authService.currentUser;
+    if (!_authService.isAuthenticated || currentUser == null) {
+      return const Left(AuthenticationFailure(
+        message: 'User must be authenticated to access profile',
+      ));
+    }
 
-    return profileResult.fold(
-      (failure) => Left(failure),
-      (profile) => Right(AppLanguage.fromCode(profile.languagePreference)),
-    );
+    final rawProfile = await _apiService.getUserProfileRawMap();
+    if (rawProfile == null) {
+      return const Left(ServerFailure(
+        message: 'Failed to fetch user profile',
+      ));
+    }
+
+    final code = rawProfile['language_preference'] as String?;
+    if (code == null || code.isEmpty) {
+      return const Right(null);
+    }
+    return Right(AppLanguage.fromCode(code));
   }
 
   /// Check if user profile exists
