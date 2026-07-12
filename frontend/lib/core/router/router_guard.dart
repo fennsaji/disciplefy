@@ -148,8 +148,27 @@ class RouterGuard {
       // SECURITY FIX: Validate session expiration for all auth types
       final isExpired = _isSessionExpired();
       if (isExpired) {
+        // The stored expiry tracks the ACCESS token (1h), not the session.
+        // With default Supabase settings sessions never expire, so an
+        // expired access token after long idle is normal — refresh it
+        // instead of forcing the user back to login.
+        final refreshed = await _tryRefreshExpiredSession();
+        if (refreshed) {
+          Logger.info(
+            'Access token expired but session refreshed successfully',
+            tag: 'AUTH_SECURITY',
+            context: {'user_id': user.id, 'user_type': 'supabase'},
+          );
+          return AuthenticationState(
+            isAuthenticated: true,
+            userType: 'supabase',
+            userId: user.id,
+            userEmail: user.email,
+          );
+        }
+
         Logger.info(
-          'User session expired',
+          'User session expired and refresh failed',
           tag: 'AUTH_SECURITY',
           context: {
             'user_id': user.id,
@@ -1261,6 +1280,54 @@ class RouterGuard {
         error: e,
       );
     }
+  }
+
+  // Serializes refresh attempts so concurrent guard evaluations don't fire
+  // parallel refreshSession() calls (refresh tokens are single-use).
+  static Future<bool>? _refreshInFlight;
+
+  /// Attempt to refresh an expired access token using the refresh token.
+  /// Returns true when a valid session was obtained. On success the new
+  /// expiry is written to Hive immediately (the tokenRefreshed event from
+  /// AuthNotifier also syncs it, but may arrive after the guard re-runs).
+  static Future<bool> _tryRefreshExpiredSession() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+
+    final attempt = () async {
+      try {
+        final response = await Supabase.instance.client.auth.refreshSession();
+        final session = response.session;
+        if (session == null) return false;
+
+        final expiresAt = session.expiresAt;
+        if (expiresAt != null) {
+          final expiryTime =
+              DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+          if (DateTime.now().isAfter(expiryTime)) {
+            // Refresh "succeeded" but returned an expired session —
+            // the refresh token itself is no longer valid.
+            return false;
+          }
+          if (Hive.isBoxOpen(_hiveBboxName)) {
+            await Hive.box(_hiveBboxName).put(
+                _sessionExpiresAtKey, expiryTime.toUtc().toIso8601String());
+          }
+        }
+        return true;
+      } catch (e) {
+        Logger.warning(
+          'Session refresh attempt failed',
+          tag: 'AUTH_SECURITY',
+          context: {'error': e.toString()},
+        );
+        return false;
+      }
+    }();
+
+    _refreshInFlight = attempt;
+    attempt.whenComplete(() => _refreshInFlight = null);
+    return attempt;
   }
 
   /// SECURITY FIX: Check if the session has expired
