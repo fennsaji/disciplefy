@@ -28,10 +28,10 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          # 20000 + minutes since 2026-07-11 UTC: one monotonic build-number source shared with
+          # 10000 + minutes since 2026-07-11 UTC: one monotonic build-number source shared with
           # ios-deploy-appstore.yml, so App Store builds always exceed TestFlight
           # builds regardless of each workflow's independent run counter.
-          BUILD_NUMBER=$(( 20000 + ($(date +%s) - 1783814400) / 60 ))
+          BUILD_NUMBER=$(( 10000 + ($(date +%s) - 1783814400) / 60 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "✅ Version: $VERSION+$BUILD_NUMBER"

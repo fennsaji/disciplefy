@@ -37,11 +37,11 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          # 20000 + minutes since 2026-07-11 UTC: one monotonic versionCode source shared by every
+          # 10000 + minutes since 2026-07-11 UTC: one monotonic versionCode source shared by every
           # Android workflow, so any track can always upgrade over any older build.
           # (Per-workflow run numbers are independent counters and Play rejected a
           # beta bundle whose versionCode was below production's run_number+10000.)
-          BUILD_NUMBER=$(( 20000 + ($(date +%s) - 1783814400) / 60 ))
+          BUILD_NUMBER=$(( 10000 + ($(date +%s) - 1783814400) / 60 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "✅ Version: $VERSION+$BUILD_NUMBER"
