@@ -389,6 +389,8 @@ class TranslationKeys {
       'settings.report_purchase_issue_subtitle';
   static const settingsContactUs = 'settings.contact_us';
   static const settingsContactUsSubtitle = 'settings.contact_us_subtitle';
+  static const settingsContactEmail = 'settings.contact_email';
+  static const settingsContactError = 'settings.contact_error';
   static const settingsReplayWalkthrough = 'settings.replay_walkthrough';
   static const settingsReplayWalkthroughSubtitle =
       'settings.replay_walkthrough_subtitle';
