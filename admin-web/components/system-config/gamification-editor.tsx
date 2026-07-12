@@ -22,12 +22,27 @@ interface GamificationEditorProps {
 export default function GamificationEditor({
   initialSettings = { masteryThreshold: 5, xpPerReview: 10, xpMasteryBonus: 50 },
   onSave,
-  isEditing = false,
+  isEditing,
   onEditStart,
   onCancel,
 }: GamificationEditorProps) {
   const [settings, setSettings] = useState(initialSettings)
+  const [internalEditing, setInternalEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Editor manages its own edit mode when isEditing is not provided
+  const editing = isEditing ?? internalEditing
+
+  const handleEditStart = () => {
+    setSettings(initialSettings)
+    setInternalEditing(true)
+    if (onEditStart) onEditStart()
+  }
+
+  const exitEditMode = () => {
+    setInternalEditing(false)
+    if (onCancel) onCancel()
+  }
 
   const handleSave = async () => {
     try {
@@ -49,27 +64,26 @@ export default function GamificationEditor({
         return
       }
 
-      if (onSave) {
-        await onSave(settings)
-      } else {
-        // Default save to API
-        const res = await fetch('/api/admin/system-config/memory-verses/gamification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
-          credentials: 'include',
-        })
+      // Save to API
+      const res = await fetch('/api/admin/system-config/memory-verses/gamification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+        credentials: 'include',
+      })
 
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Failed to update gamification settings')
-        }
-
-        toast.success('Gamification settings updated successfully')
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || 'Failed to update gamification settings')
       }
 
+      toast.success('Gamification settings updated successfully')
+
+      // Notify parent after successful save (e.g. to invalidate queries)
+      if (onSave) await onSave(settings)
+
       // Exit edit mode after successful save
-      if (onCancel) onCancel()
+      exitEditMode()
     } catch (error) {
       console.error('Error saving gamification settings:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update gamification settings')
@@ -80,7 +94,7 @@ export default function GamificationEditor({
 
   const handleCancel = () => {
     setSettings(initialSettings)
-    if (onCancel) onCancel()
+    exitEditMode()
   }
 
   const handlePreset = (preset: 'low' | 'balanced' | 'high') => {
@@ -97,7 +111,7 @@ export default function GamificationEditor({
   }
 
   // Read-only view
-  if (!isEditing) {
+  if (!editing) {
     const totalXP = (initialSettings.masteryThreshold * initialSettings.xpPerReview) + initialSettings.xpMasteryBonus
 
     return (
@@ -112,7 +126,7 @@ export default function GamificationEditor({
             </p>
           </div>
           <button
-            onClick={onEditStart}
+            onClick={handleEditStart}
             className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
             Edit

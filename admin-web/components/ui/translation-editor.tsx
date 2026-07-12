@@ -38,16 +38,22 @@ export function TranslationEditor({
     field: 'title' | 'description',
     value: string
   ) => {
+    // Always build a complete Translation so textareas stay controlled
+    const existing = translations[lang] ?? { title: '', description: '' }
     onChange({
       ...translations,
       [lang]: {
-        ...translations[lang],
+        title: existing.title ?? '',
+        description: existing.description ?? '',
         [field]: value,
       },
     })
   }
 
-  const currentTranslation = translations[activeTab] || { title: '', description: '' }
+  const currentTranslation = {
+    title: translations[activeTab]?.title ?? '',
+    description: translations[activeTab]?.description ?? '',
+  }
 
   return (
     <div className="space-y-4">

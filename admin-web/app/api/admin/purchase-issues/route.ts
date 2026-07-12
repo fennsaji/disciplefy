@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 /**
  * GET - Fetch purchase issue reports with optional status filtering
@@ -70,20 +71,16 @@ export async function GET(request: NextRequest) {
     const userIds = [...new Set(issues.map(issue => issue.user_id))]
 
     // Fetch emails from auth.users (same pattern as search-users API)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
-    if (authError) {
+    let emailsMap: Record<string, string>
+    try {
+      emailsMap = await getAuthEmailMap(supabaseAdmin, userIds)
+    } catch (authError) {
       console.error('Failed to fetch auth users:', authError)
       return NextResponse.json(
         { error: 'Failed to fetch user emails' },
         { status: 500 }
       )
     }
-
-    const emailsMap = Object.fromEntries(
-      authData.users
-        .filter(u => userIds.includes(u.id))
-        .map(u => [u.id, u.email || ''])
-    )
 
     // Fetch user profiles for names and phone
     const { data: userProfiles, error: profilesError } = await supabaseAdmin

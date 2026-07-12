@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { listTopics } from '@/lib/api/admin'
+import { listTopicsWithGuides } from '@/lib/api/admin'
 import type { RecommendedTopic } from '@/types/admin'
 
 export default function ExportTopicsPage() {
@@ -22,7 +22,7 @@ export default function ExportTopicsPage() {
   const loadTopics = async () => {
     setIsLoading(true)
     try {
-      const response = await listTopics()
+      const response = await listTopicsWithGuides()
       setTopics(response.topics || [])
     } catch (err) {
       console.error('Failed to load topics:', err)
@@ -59,13 +59,21 @@ export default function ExportTopicsPage() {
     setIsExporting(true)
     try {
       // Fetch full details for each selected topic
-      const topicsToExport = await Promise.all(
+      const results = await Promise.all(
         Array.from(selectedTopics).map(async (topicId) => {
           const response = await fetch(`/api/admin/topics/${topicId}`)
+          if (!response.ok) return null
           const data = await response.json()
-          return data.topic
+          return data.topic || null
         })
       )
+      const topicsToExport = results.filter((t) => t !== null)
+      const failedCount = results.length - topicsToExport.length
+
+      if (topicsToExport.length === 0) {
+        toast.error('Failed to fetch the selected topics. Please try again.')
+        return
+      }
 
       // Create export object
       const exportData = {
@@ -90,6 +98,9 @@ export default function ExportTopicsPage() {
       URL.revokeObjectURL(url)
 
       toast.success(`Successfully exported ${topicsToExport.length} topic(s)`)
+      if (failedCount > 0) {
+        toast.error(`${failedCount} topic(s) could not be fetched and were excluded from the export`)
+      }
     } catch (err) {
       console.error('Export failed:', err)
       toast.error('Failed to export topics. Please try again.')

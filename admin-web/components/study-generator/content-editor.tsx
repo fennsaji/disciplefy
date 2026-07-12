@@ -83,7 +83,11 @@ export function ContentEditor({
   useEffect(() => {
     // Convert related verses to string array for comparison
     const currentVersesRefs = relatedVerses.map(v => v.reference).filter(ref => ref.trim() !== '')
-    const originalVersesRefs = guide.related_verses || guide.content?.relatedVerses || guide.content?.related_verses || []
+    // Normalize originals to reference strings (guide may store objects or strings)
+    const originalVerses = guide.related_verses || guide.content?.relatedVerses || guide.content?.related_verses || []
+    const originalVersesRefs = originalVerses.map((v: any) =>
+      typeof v === 'string' ? v : v?.reference || ''
+    )
 
     const changed =
       passage !== (guide.passage || guide.content?.passage || '') ||
@@ -561,21 +565,19 @@ export function ContentEditor({
         </div>
 
         {/* 7. Passage Section */}
-        {passage && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-              <span>📜</span>
-              <span>Passage</span>
-            </h3>
-            <MarkdownEditor
-              value={passage}
-              onChange={setPassage}
-              placeholder="Enter the Bible passage text..."
-              rows={6}
-              showPreview={false}
-            />
-          </div>
-        )}
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <span>📜</span>
+            <span>Passage</span>
+          </h3>
+          <MarkdownEditor
+            value={passage}
+            onChange={setPassage}
+            placeholder="Enter the Bible passage text..."
+            rows={6}
+            showPreview={false}
+          />
+        </div>
 
         {/* 8. Interpretation Insights (Key Insights) Section */}
         <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
@@ -661,8 +663,7 @@ export function ContentEditor({
         </div>
 
         {/* 9. Summary Insights Section */}
-        {summaryInsights.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                 <span>💭</span>
@@ -722,13 +723,16 @@ export function ContentEditor({
                   </button>
                 </div>
               ))}
+              {summaryInsights.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No summary insights added yet
+                </p>
+              )}
             </div>
-          </div>
-        )}
+        </div>
 
         {/* 10. Reflection Answers Section */}
-        {reflectionAnswers.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                 <span>💬</span>
@@ -790,13 +794,16 @@ export function ContentEditor({
                   </button>
                 </div>
               ))}
+              {reflectionAnswers.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No reflection answers added yet
+                </p>
+              )}
             </div>
-          </div>
-        )}
+        </div>
 
         {/* 11. Summary Question Section */}
-        {summaryQuestion && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Summary Question</span>
@@ -808,12 +815,10 @@ export function ContentEditor({
               placeholder="Enter summary question..."
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
-          </div>
-        )}
+        </div>
 
         {/* 12. Related Verses Question Section */}
-        {relatedVersesQuestion && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Related Verses Question</span>
@@ -825,12 +830,10 @@ export function ContentEditor({
               placeholder="Enter related verses question..."
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
-          </div>
-        )}
+        </div>
 
         {/* 13. Reflection Question Section */}
-        {reflectionQuestion && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Reflection Question</span>
@@ -842,12 +845,10 @@ export function ContentEditor({
               placeholder="Enter reflection question..."
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
-          </div>
-        )}
+        </div>
 
         {/* 14. Prayer Question Section */}
-        {prayerQuestion && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span>❔</span>
               <span>Prayer Question</span>
@@ -859,8 +860,7 @@ export function ContentEditor({
               placeholder="Enter prayer question..."
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Actions */}

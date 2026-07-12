@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -34,10 +35,14 @@ export async function GET() {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const { data: llmCosts } = await supabase
-      .from('llm_api_costs')
-      .select('total_cost')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+    const { data: llmCosts } = await fetchAllRows((from, to) =>
+      supabase
+        .from('llm_api_costs')
+        .select('total_cost')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const totalLLMCost = llmCosts?.reduce((sum, record) => sum + (record.total_cost || 0), 0) || 0
 
@@ -45,11 +50,15 @@ export async function GET() {
     const sixtyDaysAgo = new Date()
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
 
-    const { data: previousLLMCosts } = await supabase
-      .from('llm_api_costs')
-      .select('total_cost')
-      .gte('created_at', sixtyDaysAgo.toISOString())
-      .lt('created_at', thirtyDaysAgo.toISOString())
+    const { data: previousLLMCosts } = await fetchAllRows((from, to) =>
+      supabase
+        .from('llm_api_costs')
+        .select('total_cost')
+        .gte('created_at', sixtyDaysAgo.toISOString())
+        .lt('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const previousTotalLLMCost = previousLLMCosts?.reduce((sum, record) => sum + (record.total_cost || 0), 0) || 0
     const llmCostChange = previousTotalLLMCost > 0
@@ -91,19 +100,27 @@ export async function GET() {
       .lte('valid_until', sevenDaysLater.toISOString())
 
     // Get total tokens consumed in last 30 days
-    const { data: tokenUsage } = await supabase
-      .from('token_usage_history')
-      .select('token_cost')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+    const { data: tokenUsage } = await fetchAllRows((from, to) =>
+      supabase
+        .from('token_usage_history')
+        .select('token_cost')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const totalTokens = tokenUsage?.reduce((sum, record) => sum + (record.token_cost || 0), 0) || 0
 
     // Get tokens for previous 30 days
-    const { data: previousTokenUsage } = await supabase
-      .from('token_usage_history')
-      .select('token_cost')
-      .gte('created_at', sixtyDaysAgo.toISOString())
-      .lt('created_at', thirtyDaysAgo.toISOString())
+    const { data: previousTokenUsage } = await fetchAllRows((from, to) =>
+      supabase
+        .from('token_usage_history')
+        .select('token_cost')
+        .gte('created_at', sixtyDaysAgo.toISOString())
+        .lt('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const previousTotalTokens = previousTokenUsage?.reduce((sum, record) => sum + (record.token_cost || 0), 0) || 0
     const tokenChange = previousTotalTokens > 0

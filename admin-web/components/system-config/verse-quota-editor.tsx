@@ -24,48 +24,62 @@ interface VerseQuotaEditorProps {
 export default function VerseQuotaEditor({
   initialQuotas = { free: 3, standard: 5, plus: 10, premium: -1 },
   onSave,
-  isEditing = false,
+  isEditing,
   onEditStart,
   onCancel,
 }: VerseQuotaEditorProps) {
   const [quotas, setQuotas] = useState(initialQuotas)
+  const [internalEditing, setInternalEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Editor manages its own edit mode when isEditing is not provided
+  const editing = isEditing ?? internalEditing
+
+  const handleEditStart = () => {
+    setQuotas(initialQuotas)
+    setInternalEditing(true)
+    if (onEditStart) onEditStart()
+  }
+
+  const exitEditMode = () => {
+    setInternalEditing(false)
+    if (onCancel) onCancel()
+  }
 
   const handleSave = async () => {
     try {
       setIsSaving(true)
 
       // Validation
-      if (quotas.premium !== -1 && (
+      if (
         quotas.standard < quotas.free ||
         quotas.plus < quotas.standard ||
-        quotas.premium < quotas.plus
-      )) {
+        (quotas.premium !== -1 && quotas.premium < quotas.plus)
+      ) {
         toast.error('Quotas should increase with tier (Standard ≥ Free, Plus ≥ Standard, Premium ≥ Plus)')
         return
       }
 
-      if (onSave) {
-        await onSave(quotas)
-      } else {
-        // Default save to API
-        const res = await fetch('/api/admin/system-config/memory-verses/verse-quotas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(quotas),
-          credentials: 'include',
-        })
+      // Save to API
+      const res = await fetch('/api/admin/system-config/memory-verses/verse-quotas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quotas),
+        credentials: 'include',
+      })
 
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Failed to update verse quotas')
-        }
-
-        toast.success('Verse quotas updated successfully')
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || 'Failed to update verse quotas')
       }
 
+      toast.success('Verse quotas updated successfully')
+
+      // Notify parent after successful save (e.g. to invalidate queries)
+      if (onSave) await onSave(quotas)
+
       // Exit edit mode after successful save
-      if (onCancel) onCancel()
+      exitEditMode()
     } catch (error) {
       console.error('Error saving verse quotas:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update verse quotas')
@@ -76,7 +90,7 @@ export default function VerseQuotaEditor({
 
   const handleCancel = () => {
     setQuotas(initialQuotas)
-    if (onCancel) onCancel()
+    exitEditMode()
   }
 
   const handlePreset = (preset: 'strict' | 'moderate' | 'generous') => {
@@ -89,7 +103,7 @@ export default function VerseQuotaEditor({
   }
 
   // Read-only view
-  if (!isEditing) {
+  if (!editing) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
@@ -102,7 +116,7 @@ export default function VerseQuotaEditor({
             </p>
           </div>
           <button
-            onClick={onEditStart}
+            onClick={handleEditStart}
             className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
             Edit
@@ -231,7 +245,10 @@ export default function VerseQuotaEditor({
               type="number"
               min={-1}
               value={quotas.premium}
-              onChange={(e) => setQuotas({ ...quotas, premium: parseInt(e.target.value) || -1 })}
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10)
+                setQuotas({ ...quotas, premium: Number.isNaN(parsed) ? -1 : parsed })
+              }}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">

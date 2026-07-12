@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 /**
  * GET - Fetch user feedback with optional filtering
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams
+    const id = searchParams.get('id') || ''
     const category = searchParams.get('category') || ''
     const helpful = searchParams.get('helpful') || ''
 
@@ -46,6 +48,11 @@ export async function GET(request: NextRequest) {
       .from('feedback')
       .select('*')
 
+    // Fetch a single row by id (used by the detail page)
+    if (id) {
+      query = query.eq('id', id)
+    }
+
     // Apply category filter
     if (category) {
       query = query.eq('category', category)
@@ -78,21 +85,17 @@ export async function GET(request: NextRequest) {
     // Extract unique user IDs
     const userIds = [...new Set(feedbackList.map(f => f.user_id).filter(Boolean))]
 
-    // Fetch emails from auth.users
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
-    if (authError) {
+    // Fetch emails from auth.users (paginated past the admin API's page limit)
+    let emailsMap: Record<string, string>
+    try {
+      emailsMap = await getAuthEmailMap(supabaseAdmin, userIds)
+    } catch (authError) {
       console.error('Failed to fetch auth users:', authError)
       return NextResponse.json(
         { error: 'Failed to fetch user emails' },
         { status: 500 }
       )
     }
-
-    const emailsMap = Object.fromEntries(
-      authData.users
-        .filter(u => userIds.includes(u.id))
-        .map(u => [u.id, u.email || ''])
-    )
 
     // Fetch user profiles for names
     const { data: userProfiles, error: profilesError } = await supabaseAdmin

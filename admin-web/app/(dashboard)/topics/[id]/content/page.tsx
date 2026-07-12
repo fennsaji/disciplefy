@@ -51,7 +51,7 @@ export default function TopicContentPage({ params }: PageProps) {
   }
 
   const handleViewGuide = (guideId: string) => {
-    router.push(`/study-guides/${guideId}`)
+    router.push(`/topics/guide/${guideId}`)
   }
 
   const handleGenerateNew = () => {

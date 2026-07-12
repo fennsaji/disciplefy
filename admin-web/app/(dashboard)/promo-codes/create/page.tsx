@@ -16,6 +16,7 @@ export default function CreatePromoCodePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [eligibleUserIdsText, setEligibleUserIdsText] = useState('')
 
   const [formData, setFormData] = useState<CreatePromoCodeRequest>({
     code: '',
@@ -51,6 +52,16 @@ export default function CreatePromoCodePage() {
 
     if (formData.discount_type === 'fixed_amount' && formData.discount_value <= 0) {
       setError('Fixed amount discount must be greater than 0')
+      return
+    }
+
+    if (formData.eligible_for === 'specific_tiers' && !formData.eligible_tiers?.length) {
+      setError('Please select at least one eligible tier')
+      return
+    }
+
+    if (formData.eligible_for === 'specific_users' && !formData.eligible_user_ids?.length) {
+      setError('Please enter at least one eligible user ID')
       return
     }
 
@@ -298,6 +309,64 @@ export default function CreatePromoCodePage() {
                     <option value="specific_users">Specific Users</option>
                   </select>
                 </div>
+
+                {formData.eligible_for === 'specific_tiers' && (
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Eligible Tiers *
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {TIER_OPTIONS.map((tier) => (
+                        <label key={tier.value} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.eligible_tiers?.includes(tier.value) || false}
+                            onChange={(e) => {
+                              const current = formData.eligible_tiers || []
+                              setFormData({
+                                ...formData,
+                                eligible_tiers: e.target.checked
+                                  ? [...current, tier.value]
+                                  : current.filter((t) => t !== tier.value),
+                              })
+                            }}
+                            className="h-4 w-4 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-600"
+                            disabled={isLoading}
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{tier.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.eligible_for === 'specific_users' && (
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Eligible User IDs *
+                    </label>
+                    <textarea
+                      value={eligibleUserIdsText}
+                      onChange={(e) => {
+                        setEligibleUserIdsText(e.target.value)
+                        setFormData({
+                          ...formData,
+                          eligible_user_ids: e.target.value
+                            .split(',')
+                            .map((id) => id.trim())
+                            .filter(Boolean),
+                        })
+                      }}
+                      placeholder="Comma-separated user IDs, e.g., 123e4567-e89b-..., 987f6543-..."
+                      rows={3}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                      disabled={isLoading}
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Enter user IDs separated by commas
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Dates */}

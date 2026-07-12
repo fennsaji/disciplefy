@@ -39,6 +39,7 @@ export function CreatePromoCodeDialog({
     end_date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
     is_active: true,
   })
+  const [eligibleUserIdsText, setEligibleUserIdsText] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,6 +57,16 @@ export function CreatePromoCodeDialog({
 
     if (formData.discount_type === 'fixed_amount' && formData.discount_value <= 0) {
       toast.error('Fixed amount discount must be greater than 0')
+      return
+    }
+
+    if (formData.eligible_for === 'specific_tiers' && !formData.eligible_tiers?.length) {
+      toast.error('Please select at least one eligible tier')
+      return
+    }
+
+    if (formData.eligible_for === 'specific_users' && !formData.eligible_user_ids?.length) {
+      toast.error('Please enter at least one eligible user ID')
       return
     }
 
@@ -263,6 +274,64 @@ export function CreatePromoCodeDialog({
                 <option value="specific_users">Specific Users</option>
               </select>
             </div>
+
+            {formData.eligible_for === 'specific_tiers' && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Eligible Tiers *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {TIER_OPTIONS.map((tier) => (
+                    <label key={tier.value} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.eligible_tiers?.includes(tier.value) || false}
+                        onChange={(e) => {
+                          const current = formData.eligible_tiers || []
+                          setFormData({
+                            ...formData,
+                            eligible_tiers: e.target.checked
+                              ? [...current, tier.value]
+                              : current.filter((t) => t !== tier.value),
+                          })
+                        }}
+                        className="h-4 w-4 text-primary focus:ring-primary"
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm text-gray-700">{tier.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {formData.eligible_for === 'specific_users' && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Eligible User IDs *
+                </label>
+                <textarea
+                  value={eligibleUserIdsText}
+                  onChange={(e) => {
+                    setEligibleUserIdsText(e.target.value)
+                    setFormData({
+                      ...formData,
+                      eligible_user_ids: e.target.value
+                        .split(',')
+                        .map((id) => id.trim())
+                        .filter(Boolean),
+                    })
+                  }}
+                  placeholder="Comma-separated user IDs, e.g., 123e4567-e89b-..., 987f6543-..."
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isLoading}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Enter user IDs separated by commas
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Dates */}

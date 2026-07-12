@@ -31,12 +31,27 @@ const DEFAULT_SETTINGS = {
 export default function SpacedRepetitionEditor({
   initialSettings = DEFAULT_SETTINGS,
   onSave,
-  isEditing = false,
+  isEditing,
   onEditStart,
   onCancel,
 }: SpacedRepetitionEditorProps) {
   const [settings, setSettings] = useState(initialSettings)
+  const [internalEditing, setInternalEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Editor manages its own edit mode when isEditing is not provided
+  const editing = isEditing ?? internalEditing
+
+  const handleEditStart = () => {
+    setSettings(initialSettings)
+    setInternalEditing(true)
+    if (onEditStart) onEditStart()
+  }
+
+  const exitEditMode = () => {
+    setInternalEditing(false)
+    if (onCancel) onCancel()
+  }
 
   const handleSave = async () => {
     try {
@@ -63,27 +78,26 @@ export default function SpacedRepetitionEditor({
         return
       }
 
-      if (onSave) {
-        await onSave(settings)
-      } else {
-        // Default save to API
-        const res = await fetch('/api/admin/system-config/memory-verses/spaced-repetition', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
-          credentials: 'include',
-        })
+      // Save to API
+      const res = await fetch('/api/admin/system-config/memory-verses/spaced-repetition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+        credentials: 'include',
+      })
 
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Failed to update spaced repetition settings')
-        }
-
-        toast.success('Spaced repetition settings updated successfully')
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || 'Failed to update spaced repetition settings')
       }
 
+      toast.success('Spaced repetition settings updated successfully')
+
+      // Notify parent after successful save (e.g. to invalidate queries)
+      if (onSave) await onSave(settings)
+
       // Exit edit mode after successful save
-      if (onCancel) onCancel()
+      exitEditMode()
     } catch (error) {
       console.error('Error saving spaced repetition settings:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update spaced repetition settings')
@@ -94,7 +108,7 @@ export default function SpacedRepetitionEditor({
 
   const handleCancel = () => {
     setSettings(initialSettings)
-    if (onCancel) onCancel()
+    exitEditMode()
   }
 
   const handleReset = () => {
@@ -126,7 +140,7 @@ export default function SpacedRepetitionEditor({
   const sampleSchedule = calculateSampleSchedule()
 
   // Read-only view
-  if (!isEditing) {
+  if (!editing) {
     const readOnlySchedule = calculateSampleSchedule(initialSettings)
 
     return (
@@ -141,7 +155,7 @@ export default function SpacedRepetitionEditor({
             </p>
           </div>
           <button
-            onClick={onEditStart}
+            onClick={handleEditStart}
             className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
             Edit

@@ -12,10 +12,13 @@ import type { SubscriptionTier } from '@/types/admin'
 import { LoadingState } from '@/components/ui/loading-spinner'
 import { ErrorState } from '@/components/ui/empty-state'
 
+const PAGE_SIZE = 50
+
 export default function SubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterTier, setFilterTier] = useState<SubscriptionTier | 'all'>('all')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'cancelled' | 'expired'>('all')
+  const [page, setPage] = useState(0)
 
   // Search users query - always enabled to load all users initially
   const {
@@ -23,26 +26,33 @@ export default function SubscriptionsPage() {
     isLoading: isSearching,
     error: searchError,
   } = useQuery({
-    queryKey: ['users-search', searchQuery],
-    queryFn: () => searchUsers({ query: searchQuery || '' }),
+    queryKey: ['users-search', searchQuery, page],
+    queryFn: () => searchUsers({ query: searchQuery || '', limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
     enabled: true, // Always enabled to show users on page load
   })
+
+  const totalResults = searchResults?.total || 0
+  const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE))
 
   // Filter results based on tier and status
   const filteredUsers = useMemo(() => {
     if (!searchResults?.users) return []
 
     return searchResults.users.filter(user => {
-      const activeSub = user.subscriptions.find(s => s.status === 'active')
+      // Match the table's "subscribed" logic (subscription-table.tsx)
+      const activeSub = user.subscriptions.find(s =>
+        ['active', 'trial', 'in_progress', 'pending_cancellation'].includes(s.status)
+      )
 
-      // Filter by tier
+      // Filter by tier (against the subscription shown in the table)
       if (filterTier !== 'all') {
         if (!activeSub || activeSub.tier !== filterTier) return false
       }
 
-      // Filter by status
+      // Filter by status (against any of the user's subscriptions, so
+      // Cancelled/Expired filters can actually match)
       if (filterStatus !== 'all') {
-        if (!activeSub || activeSub.status !== filterStatus) return false
+        if (!user.subscriptions.some(s => s.status === filterStatus)) return false
       }
 
       return true
@@ -108,7 +118,10 @@ export default function SubscriptionsPage() {
       <div className="space-y-4">
         <UserSearchInput
           value={searchQuery}
-          onChange={setSearchQuery}
+          onChange={(value) => {
+            setSearchQuery(value)
+            setPage(0)
+          }}
           onSearch={handleSearch}
           isLoading={isSearching}
         />
@@ -172,8 +185,8 @@ export default function SubscriptionsPage() {
         <div className="grid gap-6 md:grid-cols-4">
           <StatsCard
             title="Total Results"
-            value={formatCompactNumber(stats.total)}
-            subtitle={`${searchResults?.users.length || 0} shown`}
+            value={formatCompactNumber(totalResults)}
+            subtitle={`${stats.total} shown`}
             icon="👥"
           />
           <StatsCard
@@ -226,6 +239,29 @@ export default function SubscriptionsPage() {
                 </p>
               </div>
             )}
+
+            {/* Pagination */}
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page + 1} of {totalPages} ({totalResults} results)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0 || isSearching}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page + 1 >= totalPages || isSearching}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>

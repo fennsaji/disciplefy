@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -19,10 +20,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('is_admin')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile?.is_admin) {
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch product mappings from subscription_plan_providers
-    const { data: products, error } = await supabase
+    const { data: products, error } = await supabaseAdmin
       .from('subscription_plan_providers')
       .select(
         `
@@ -90,10 +92,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('is_admin')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile?.is_admin) {
@@ -112,7 +115,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Update product ID
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscription_plan_providers')
       .update({ product_id })
       .eq('plan_id', plan_id)

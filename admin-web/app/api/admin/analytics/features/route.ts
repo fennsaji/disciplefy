@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch feature adoption statistics
@@ -69,28 +70,41 @@ export async function GET(request: NextRequest) {
     const countDistinctUsers = (rows: { user_id: string }[] | null) =>
       new Set((rows || []).map(r => r.user_id).filter(Boolean)).size
 
-    // Study Guides Feature
-    const { data: studyGuideData } = await supabaseAdmin
-      .from('user_study_guides')
-      .select('user_id')
-      .gte('created_at', dateFilter.toISOString())
+    // Study Guides Feature (paginated past PostgREST's 1000-row cap)
+    const { data: studyGuideData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_study_guides')
+        .select('user_id')
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const studyGuideUsers = countDistinctUsers(studyGuideData)
     const totalStudyGuides = studyGuideData?.length || 0
 
-    // Memory Verses Feature
-    const { data: memoryVerseData } = await supabaseAdmin
-      .from('memory_verses')
-      .select('user_id')
-      .gte('created_at', dateFilter.toISOString())
+    // Memory Verses Feature (paginated past PostgREST's 1000-row cap)
+    const { data: memoryVerseData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('memory_verses')
+        .select('user_id')
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const memoryVerseUsers = countDistinctUsers(memoryVerseData)
     const totalMemoryVerses = memoryVerseData?.length || 0
 
     // Learning Paths Feature (all enrollments, not just recent - users enrolled earlier are still active)
-    const { data: learningPathData } = await supabaseAdmin
-      .from('user_learning_path_progress')
-      .select('user_id, progress_percentage')
+    // Paginated past PostgREST's 1000-row cap
+    const { data: learningPathData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_learning_path_progress')
+        .select('user_id, progress_percentage')
+        .order('user_id', { ascending: true })
+        .range(from, to)
+    )
 
     const learningPathUsers = countDistinctUsers(learningPathData as { user_id: string }[] | null)
     const pathCompletions = learningPathData
@@ -99,38 +113,54 @@ export async function GET(request: NextRequest) {
       ? Math.round(pathCompletions.reduce((sum, p) => sum + (p.progress_percentage || 0), 0) / pathCompletions.length)
       : 0
 
-    // Voice Buddy Feature
-    const { data: voiceBuddyData } = await supabaseAdmin
-      .from('voice_conversations')
-      .select('user_id')
-      .gte('created_at', dateFilter.toISOString())
+    // Voice Buddy Feature (paginated past PostgREST's 1000-row cap)
+    const { data: voiceBuddyData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('voice_conversations')
+        .select('user_id')
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const voiceBuddyUsers = countDistinctUsers(voiceBuddyData)
     const totalVoiceConversations = voiceBuddyData?.length || 0
 
-    // Daily Verse Feature
-    const { data: dailyVerseEvents } = await supabaseAdmin
-      .from('analytics_events')
-      .select('user_id')
-      .eq('event_type', 'daily_verse_accessed')
-      .gte('created_at', dateFilter.toISOString())
+    // Daily Verse Feature (paginated past PostgREST's 1000-row cap)
+    const { data: dailyVerseEvents } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('analytics_events')
+        .select('user_id')
+        .eq('event_type', 'daily_verse_accessed')
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const dailyVerseUsers = countDistinctUsers(dailyVerseEvents)
 
-    // Achievements Feature
-    const { data: achievementData } = await supabaseAdmin
-      .from('user_achievements')
-      .select('user_id')
-      .gte('unlocked_at', dateFilter.toISOString())
+    // Achievements Feature (paginated past PostgREST's 1000-row cap)
+    const { data: achievementData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_achievements')
+        .select('user_id')
+        .gte('unlocked_at', dateFilter.toISOString())
+        .order('unlocked_at', { ascending: true })
+        .range(from, to)
+    )
 
     const achievementUsers = countDistinctUsers(achievementData)
     const totalAchievements = achievementData?.length || 0
 
-    // Study Modes Usage
-    const { data: studyModesData } = await supabaseAdmin
-      .from('user_study_guides')
-      .select('study_mode')
-      .gte('created_at', dateFilter.toISOString())
+    // Study Modes Usage (paginated past PostgREST's 1000-row cap)
+    const { data: studyModesData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_study_guides')
+        .select('study_mode')
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const studyModeBreakdown: Record<string, number> = {}
     ;(studyModesData || []).forEach(item => {

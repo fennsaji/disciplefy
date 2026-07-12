@@ -226,22 +226,26 @@ export async function GET(request: Request) {
       const response = NextResponse.redirect(`${origin}/`)
 
       // Manually copy session cookies to response
+      // (includes chunked cookies like `-auth-token.0`, `-auth-token.1`, ...)
       const cookiePrefix = `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL?.split('://')[1]?.split('.')[0]}`
       console.log('🟢 [CALLBACK] Cookie prefix:', cookiePrefix)
-      const sessionCookie = cookieStore.get(`${cookiePrefix}-auth-token`)
+      const sessionCookies = cookieStore
+        .getAll()
+        .filter((cookie) => cookie.name.startsWith(cookiePrefix))
 
-      console.log('🟢 [CALLBACK] Session cookie found:', !!sessionCookie)
-      if (sessionCookie) {
-        console.log('🍪 [CALLBACK] Copying session cookie to response:', sessionCookie.name)
-        response.cookies.set(sessionCookie.name, sessionCookie.value, {
-          ...sessionCookie,
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-        })
+      console.log('🟢 [CALLBACK] Session cookies found:', sessionCookies.length)
+      if (sessionCookies.length > 0) {
+        for (const sessionCookie of sessionCookies) {
+          console.log('🍪 [CALLBACK] Copying session cookie to response:', sessionCookie.name)
+          response.cookies.set(sessionCookie.name, sessionCookie.value, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+          })
+        }
       } else {
-        console.warn('⚠️ [CALLBACK] No session cookie found to copy')
+        console.warn('⚠️ [CALLBACK] No session cookies found to copy')
       }
 
       console.log('🎉 [CALLBACK] Redirecting to dashboard:', `${origin}/`)

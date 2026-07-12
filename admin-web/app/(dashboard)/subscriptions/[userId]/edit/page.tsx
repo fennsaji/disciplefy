@@ -28,14 +28,6 @@ const STATUS_OPTIONS: { value: SubscriptionStatus | 'trial' | 'in_progress'; lab
   { value: 'expired', label: 'Expired', color: 'bg-gray-100 text-gray-800', description: 'Subscription expired without renewal' },
 ]
 
-const PROVIDER_OPTIONS = [
-  { value: 'trial', label: 'Trial' },
-  { value: 'system', label: 'System' },
-  { value: 'razorpay', label: 'Razorpay' },
-  { value: 'google_play', label: 'Google Play' },
-  { value: 'apple_appstore', label: 'Apple App Store' },
-]
-
 const BILLING_CYCLE_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
   { value: 'yearly', label: 'Yearly' },
@@ -59,10 +51,8 @@ export default function EditSubscriptionPage() {
   const [selectedStatus, setSelectedStatus] = useState<SubscriptionStatus | 'trial'>('active')
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string>('')
   const [nextPaymentDate, setNextPaymentDate] = useState<string>('')
-  const [provider, setProvider] = useState<string>('razorpay')
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [planName, setPlanName] = useState<string>('')
-  const [amount, setAmount] = useState<string>('')
   const [currency, setCurrency] = useState<string>('INR')
   const [reason, setReason] = useState('')
   const [subscriptionId, setSubscriptionId] = useState<string>('')
@@ -105,10 +95,8 @@ export default function EditSubscriptionPage() {
 
         setCurrentPeriodEnd(activeSub.current_period_end?.split('T')[0] || '')
         setNextPaymentDate(activeSub.next_billing_at?.split('T')[0] || '')
-        setProvider(activeSub.provider || 'razorpay')
         setBillingCycle(activeSub.subscription_plans?.billing_cycle || 'monthly')
         setPlanName(activeSub.subscription_plans?.plan_name || '')
-        setAmount(activeSub.subscription_plans?.price_inr?.toString() || '')
         setCurrency(activeSub.currency || 'INR')
       }
     }
@@ -121,10 +109,8 @@ export default function EditSubscriptionPage() {
       newStatus?: SubscriptionStatus
       currentPeriodEnd?: string
       nextBillingAt?: string
-      provider?: string
       billingCycle?: 'monthly' | 'yearly'
       planName?: string
-      amount?: number
       reason?: string
     }) => {
       return updateSubscription({
@@ -141,6 +127,9 @@ export default function EditSubscriptionPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-details', userId] })
       router.push(`/subscriptions/${userId}`)
+    },
+    onError: (error) => {
+      toast.error(`Failed to update subscription: ${error instanceof Error ? error.message : 'Unknown error'}`)
     },
   })
 
@@ -179,10 +168,8 @@ export default function EditSubscriptionPage() {
       newStatus: selectedStatus,
       currentPeriodEnd: currentPeriodEnd || undefined,
       nextBillingAt: nextPaymentDate || undefined,
-      provider: provider || undefined,
       billingCycle: billingCycle,
       planName: planName || undefined,
-      amount: amount ? parseFloat(amount) : undefined,
       reason: reason || undefined,
     })
   }
@@ -289,23 +276,6 @@ export default function EditSubscriptionPage() {
             </div>
           </div>
 
-          {/* Provider Selection */}
-          <div className="mb-6">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Payment Provider
-            </label>
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            >
-              {PROVIDER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* Billing Details Section */}
@@ -343,22 +313,6 @@ export default function EditSubscriptionPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Amount */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Subscription Amount (₹)
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g., 499"
-                min="0"
-                step="0.01"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              />
             </div>
 
             {/* Currency */}

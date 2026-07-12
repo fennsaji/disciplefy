@@ -58,13 +58,21 @@ export default function ExportLearningPathsPage() {
     setIsExporting(true)
     try {
       // Fetch full details for each selected path
-      const pathsToExport = await Promise.all(
+      const results = await Promise.all(
         Array.from(selectedPaths).map(async (pathId) => {
           const response = await fetch(`/api/admin/learning-paths/${pathId}`)
+          if (!response.ok) return null
           const data = await response.json()
-          return data.learning_path
+          return data.learning_path || null
         })
       )
+      const pathsToExport = results.filter((p) => p !== null)
+      const failedCount = results.length - pathsToExport.length
+
+      if (pathsToExport.length === 0) {
+        toast.error('Failed to fetch the selected learning paths. Please try again.')
+        return
+      }
 
       // Create export object
       const exportData = {
@@ -89,6 +97,9 @@ export default function ExportLearningPathsPage() {
       URL.revokeObjectURL(url)
 
       toast.success(`Successfully exported ${pathsToExport.length} learning path(s)`)
+      if (failedCount > 0) {
+        toast.error(`${failedCount} learning path(s) could not be fetched and were excluded from the export`)
+      }
     } catch (err) {
       console.error('Export failed:', err)
       toast.error('Failed to export learning paths. Please try again.')

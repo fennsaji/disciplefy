@@ -10,6 +10,20 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
+// Map icon names to emojis (matches learning-paths-table)
+const iconMap: Record<string, string> = {
+  auto_stories: '📖',
+  trending_up: '📈',
+  volunteer_activism: '🤝',
+  shield: '🛡️',
+  family_restroom: '👨‍👩‍👧‍👦',
+  psychology: '🧠',
+  spa: '🕊️',
+  favorite: '❤️',
+  lightbulb: '💡',
+  school: '🎓',
+}
+
 export default function LearningPathDetailPage({ params }: PageProps) {
   const { id } = use(params)
   const router = useRouter()
@@ -108,9 +122,7 @@ export default function LearningPathDetailPage({ params }: PageProps) {
                 className="flex h-12 w-12 items-center justify-center rounded-lg text-2xl"
                 style={{ backgroundColor: `${path.color}20` }}
               >
-                {path.icon_name && (
-                  <span>{['📖', '📈', '🤝', '🛡️', '👨‍👩‍👧‍👦', '🧠', '🕊️', '❤️', '💡', '🎓'].find(() => true) || '📚'}</span>
-                )}
+                <span>{iconMap[path.icon_name] || '📚'}</span>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{path.title}</h1>

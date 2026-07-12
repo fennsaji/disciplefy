@@ -3,12 +3,14 @@
 import { useState, use } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{ issueId: string }> }) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [newStatus, setNewStatus] = useState('')
-  const [adminNotes, setAdminNotes] = useState('')
+  // null = not edited yet (falls back to the issue's saved notes); '' = explicitly cleared
+  const [adminNotes, setAdminNotes] = useState<string | null>(null)
 
   // Unwrap params Promise
   const { issueId } = use(params)
@@ -41,14 +43,24 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-issue-details', issueId] })
       queryClient.invalidateQueries({ queryKey: ['purchase-issues'] })
+      toast.success('Issue updated successfully')
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to update issue')
     },
   })
 
+  const issue = data?.issue
+
+  const notesChanged =
+    adminNotes !== null && adminNotes !== (issue?.admin_notes ?? '')
+
   const handleUpdateIssue = () => {
-    if (!newStatus) return
+    if (!issue || (!newStatus && !notesChanged)) return
     updateIssueMutation.mutate({
-      status: newStatus,
-      admin_notes: adminNotes,
+      // Notes can be saved without a status change — keep the current status
+      status: newStatus || issue.status,
+      admin_notes: adminNotes ?? issue.admin_notes ?? '',
     })
   }
 
@@ -68,7 +80,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
     )
   }
 
-  const { issue, dbPayment, razorpayPayment, razorpayOrder, purchaseHistory } = data
+  const { dbPayment, razorpayPayment, razorpayOrder, purchaseHistory } = data
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -241,7 +253,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
                 Admin Notes
               </label>
               <textarea
-                value={adminNotes || issue.admin_notes || ''}
+                value={adminNotes ?? issue.admin_notes ?? ''}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 rows={4}
                 className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
@@ -251,7 +263,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
 
             <button
               onClick={handleUpdateIssue}
-              disabled={!newStatus || updateIssueMutation.isPending}
+              disabled={(!newStatus && !notesChanged) || updateIssueMutation.isPending}
               className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
             >
               {updateIssueMutation.isPending ? 'Updating...' : 'Update Issue'}

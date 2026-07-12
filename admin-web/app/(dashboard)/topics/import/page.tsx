@@ -50,10 +50,15 @@ export default function BulkImportPage() {
       errors.push('XP value must be a positive number')
     }
 
+    // Default to active when the column is absent or empty (see CSV format docs)
     const isActive =
-      topic.is_active === 'true' ||
-      topic.is_active === '1' ||
-      topic.is_active === true
+      topic.is_active === undefined ||
+      topic.is_active === null ||
+      topic.is_active === ''
+        ? true
+        : topic.is_active === 'true' ||
+          topic.is_active === '1' ||
+          topic.is_active === true
     const tags = topic.tags
       ? topic.tags.split(',').map((t: string) => t.trim())
       : []
@@ -67,6 +72,10 @@ export default function BulkImportPage() {
       xp_value: xpValue,
       tags,
       is_active: isActive,
+      title_hi: topic.title_hi?.trim() || undefined,
+      description_hi: topic.description_hi?.trim() || undefined,
+      title_ml: topic.title_ml?.trim() || undefined,
+      description_ml: topic.description_ml?.trim() || undefined,
       errors,
     }
   }
@@ -118,17 +127,19 @@ export default function BulkImportPage() {
     }))
 
     try {
-      await bulkImportTopics({ topics: csvTopics })
+      const result = await bulkImportTopics({ topics: csvTopics })
+      const clientErrors = parsedTopics
+        .map((t, i) =>
+          t.errors.length > 0
+            ? { row: i + 2, error: t.errors.join(', ') }
+            : null
+        )
+        .filter((e): e is { row: number; error: string } => e !== null)
+
       setImportResults({
-        success: validTopics.length,
-        failed: parsedTopics.length - validTopics.length,
-        errors: parsedTopics
-          .map((t, i) =>
-            t.errors.length > 0
-              ? { row: i + 2, error: t.errors.join(', ') }
-              : null
-          )
-          .filter((e): e is { row: number; error: string } => e !== null),
+        success: result.success_count,
+        failed: result.error_count + clientErrors.length,
+        errors: [...clientErrors, ...(result.errors || [])],
       })
       setStage('complete')
     } catch (error) {

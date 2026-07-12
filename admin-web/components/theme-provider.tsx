@@ -18,8 +18,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme | null
-    if (savedTheme) {
+    const savedTheme = localStorage.getItem('theme')
+    // Validate against allowed values; fall back to system for anything else
+    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
       setThemeState(savedTheme)
     } else {
       setThemeState('system')

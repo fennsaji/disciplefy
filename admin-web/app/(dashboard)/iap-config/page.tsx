@@ -38,16 +38,22 @@ export default function IAPConfigPage() {
   const [activeEnvironment, setActiveEnvironment] = useState<Environment>('production')
   const queryClient = useQueryClient()
 
-  // Fetch IAP Configuration
+  // Fetch IAP Configuration (the API requires a provider param, so fetch both)
   const { data: iapConfigData, isLoading: configLoading } = useQuery({
     queryKey: ['iap-config', activeEnvironment],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/admin/iap/config?environment=${activeEnvironment}`,
-        { credentials: 'include' }
+      const providers: Provider[] = ['google_play', 'apple_appstore']
+      const results = await Promise.all(
+        providers.map(async (provider) => {
+          const res = await fetch(
+            `/api/admin/iap/config?provider=${provider}&environment=${activeEnvironment}`,
+            { credentials: 'include' }
+          )
+          if (!res.ok) throw new Error('Failed to fetch IAP config')
+          return res.json()
+        })
       )
-      if (!res.ok) throw new Error('Failed to fetch IAP config')
-      return res.json()
+      return { configs: results.flatMap((r) => r.configs || []) }
     },
   })
 
@@ -180,7 +186,7 @@ export default function IAPConfigPage() {
         <ProductIDManagement
           products={products}
           isLoading={productsLoading}
-          onUpdate={(data) => updateProductId.mutate(data)}
+          onUpdate={(data) => updateProductId.mutateAsync(data)}
           isUpdating={updateProductId.isPending}
         />
       )}
@@ -229,9 +235,16 @@ function IAPCredentialsCard({
 }) {
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [isActive, setIsActive] = useState(false)
+  // Track which provider/environment the form was initialized for, so parent
+  // re-renders (which pass a fresh filtered array) don't wipe typed values
+  const [initializedFor, setInitializedFor] = useState<string | null>(null)
 
-  // Initialize form data from configs whenever configs changes
+  // Initialize form data once per provider/environment (after configs have loaded)
   useEffect(() => {
+    if (isLoading) return
+    const initKey = `${provider}:${environment}`
+    if (initializedFor === initKey) return
+
     const data: Record<string, string> = {}
     let active = false
     configs.forEach((config) => {
@@ -240,7 +253,8 @@ function IAPCredentialsCard({
     })
     setFormData(data)
     setIsActive(active)
-  }, [configs])
+    setInitializedFor(initKey)
+  }, [configs, isLoading, provider, environment, initializedFor])
 
   const handleSave = () => {
     onUpdate({ configs: formData, is_active: isActive })
@@ -496,7 +510,7 @@ function ProductIDManagement({
     plan_id: string
     provider: Provider
     product_id: string
-  }) => void
+  }) => Promise<unknown>
   isUpdating: boolean
 }) {
   const [editingProduct, setEditingProduct] = useState<string | null>(null)
@@ -507,10 +521,15 @@ function ProductIDManagement({
     setEditValue(currentValue || '')
   }
 
-  const handleSave = (plan_id: string, provider: Provider, product_id: string) => {
-    onUpdate({ plan_id, provider, product_id })
-    setEditingProduct(null)
-    setEditValue('')
+  const handleSave = async (plan_id: string, provider: Provider, product_id: string) => {
+    try {
+      await onUpdate({ plan_id, provider, product_id })
+      // Only exit edit mode after a successful update
+      setEditingProduct(null)
+      setEditValue('')
+    } catch {
+      // Keep edit mode and the typed value; the mutation's onError shows a toast
+    }
   }
 
   return (
@@ -669,6 +688,8 @@ function ProductIDManagement({
 // Receipt Verification Tool Component
 function ReceiptVerificationTool() {
   const [provider, setProvider] = useState<Provider>('google_play')
+  const [environment, setEnvironment] = useState<Environment>('sandbox')
+  const [productId, setProductId] = useState('')
   const [receiptData, setReceiptData] = useState('')
   const [verificationResult, setVerificationResult] = useState<any>(null)
   const [isVerifying, setIsVerifying] = useState(false)
@@ -685,6 +706,8 @@ function ReceiptVerificationTool() {
         body: JSON.stringify({
           provider,
           receipt_data: receiptData,
+          environment,
+          product_id: productId,
         }),
       })
 
@@ -739,6 +762,41 @@ function ReceiptVerificationTool() {
 
         <div className="space-y-1">
           <label
+            htmlFor="verify-environment"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Environment
+          </label>
+          <select
+            id="verify-environment"
+            value={environment}
+            onChange={(e) => setEnvironment(e.target.value as Environment)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          >
+            <option value="sandbox">Sandbox</option>
+            <option value="production">Production</option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="verify-product-id"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Product ID
+          </label>
+          <input
+            id="verify-product-id"
+            type="text"
+            placeholder="com.disciplefy.standard_monthly"
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 font-mono"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
             htmlFor="receipt-data"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
@@ -761,7 +819,7 @@ function ReceiptVerificationTool() {
         <button
           type="button"
           onClick={handleVerify}
-          disabled={isVerifying || !receiptData}
+          disabled={isVerifying || !receiptData || !productId}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isVerifying && (

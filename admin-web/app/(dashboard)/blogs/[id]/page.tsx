@@ -60,6 +60,22 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
 
   const markDirty = () => setIsDirty(true)
 
+  // Warn before losing unsaved changes on tab close / hard navigation
+  useEffect(() => {
+    if (!isDirty) return
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
+  const handleBack = () => {
+    if (isDirty && !confirm('You have unsaved changes. Leave without saving?')) return
+    router.push('/blogs')
+  }
+
   const handleSave = async () => {
     if (!title.trim()) { toast.error('Title is required'); return }
     if (!content.trim()) { toast.error('Content is required'); return }
@@ -171,7 +187,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
               {showPanel ? 'Hide panel ›' : '‹ Options'}
             </button>
             <button
-              onClick={() => router.push('/blogs')}
+              onClick={handleBack}
               className="text-sm text-indigo-400/70 hover:text-white transition-colors"
             >
               ← Back to Posts

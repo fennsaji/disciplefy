@@ -413,9 +413,9 @@ export default function EditLearningPathPage({ params }: PageProps) {
                     className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="seeker">Seeker</option>
-                    <option value="new_believer">New Believer</option>
-                    <option value="growing">Growing</option>
-                    <option value="mature">Mature</option>
+                    <option value="follower">Follower</option>
+                    <option value="disciple">Disciple</option>
+                    <option value="leader">Leader</option>
                   </select>
                 </div>
 

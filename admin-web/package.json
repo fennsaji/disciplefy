@@ -42,6 +42,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
     "autoprefixer": "^10.4.24",

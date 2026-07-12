@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     }
 
-    // Add admin notes if provided
-    if (admin_notes) {
+    // Add admin notes if provided — an explicit empty string clears the notes
+    if (admin_notes !== undefined && admin_notes !== null) {
       updateData.admin_notes = admin_notes
     }
 

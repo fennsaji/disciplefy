@@ -12,6 +12,22 @@ export const metadata: Metadata = {
   description: 'Admin dashboard for managing LLM costs, subscriptions, and promo codes',
 }
 
+// Applies the stored theme class before hydration to avoid a light-mode flash.
+// Must stay in sync with the 'theme' localStorage key used by ThemeProvider.
+const themeInitScript = `
+(function() {
+  try {
+    var theme = localStorage.getItem('theme');
+    if (theme !== 'light' && theme !== 'dark' && theme !== 'system') theme = 'system';
+    var resolved = theme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme;
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(resolved);
+  } catch (e) {}
+})();
+`
+
 export default function RootLayout({
   children,
 }: {
@@ -19,6 +35,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={`${inter.className} overflow-hidden`}>
         <ThemeProvider>
           <QueryProvider>{children}</QueryProvider>

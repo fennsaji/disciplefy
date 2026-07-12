@@ -53,6 +53,7 @@ function isValidExpr(expr: string): boolean {
 export default function CronsPage() {
   const [status, setStatus] = useState<CronStatus | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string | null>(null)
   const [presetValue, setPresetValue] = useState('')
   const [customExpr, setCustomExpr] = useState('')
@@ -62,17 +63,28 @@ export default function CronsPage() {
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchStatus = useCallback(async () => {
+    // Clear any pending poll so overlapping calls don't multiply timer chains
+    if (pollRef.current) {
+      clearTimeout(pollRef.current)
+      pollRef.current = null
+    }
     try {
       const res = await fetch('/api/admin/cron/status')
-      if (!res.ok) return
+      if (!res.ok) {
+        setError(`Failed to load cron status (${res.status})`)
+        setLoading(false)
+        return
+      }
       const data: CronStatus = await res.json()
       setStatus(data)
+      setError(null)
       setLoading(false)
       // Poll every 10s while a job is running
       if (data.is_running) {
         pollRef.current = setTimeout(fetchStatus, 10_000)
       }
     } catch {
+      setError('Failed to load cron status')
       setLoading(false)
     }
   }, [])
@@ -97,7 +109,10 @@ export default function CronsPage() {
     }
   }
 
-  const handleTrigger = async (_name: string) => {
+  const handleTrigger = async (name: string) => {
+    // Only blog_generation supports manual trigger (via /api/admin/blogs/cron)
+    if (name !== 'blog_generation') return
+    if (!confirm('Trigger blog generation now?')) return
     try {
       const res = await fetch('/api/admin/blogs/cron', { method: 'POST' })
       if (!res.ok) throw new Error(await res.text())
@@ -167,6 +182,16 @@ export default function CronsPage() {
 
       {loading ? (
         <div className="py-12 text-center text-sm text-indigo-400/60">Loading…</div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <p className="text-sm text-red-400">{error}</p>
+          <button
+            onClick={() => { setLoading(true); fetchStatus() }}
+            className="mt-3 rounded-lg border border-white/10 px-4 py-2 text-xs text-indigo-300 hover:bg-white/5 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-white/10">
           <table className="w-full text-sm">
@@ -217,12 +242,14 @@ export default function CronsPage() {
                         >
                           {toggling === cron.name ? '…' : cron.enabled ? 'Disable' : 'Enable'}
                         </button>
-                        <button
-                          onClick={() => handleTrigger(cron.name)}
-                          className="rounded px-2 py-1 text-xs text-indigo-300 hover:bg-indigo-500/10 transition-colors"
-                        >
-                          ▶ Trigger
-                        </button>
+                        {cron.name === 'blog_generation' && (
+                          <button
+                            onClick={() => handleTrigger(cron.name)}
+                            className="rounded px-2 py-1 text-xs text-indigo-300 hover:bg-indigo-500/10 transition-colors"
+                          >
+                            ▶ Trigger
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

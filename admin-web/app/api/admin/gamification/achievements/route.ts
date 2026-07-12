@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch achievements catalog
@@ -61,10 +62,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get unlock statistics for each achievement
-    const { data: userAchievements } = await supabaseAdmin
-      .from('user_achievements')
-      .select('achievement_id, user_id')
+    // Get unlock statistics for each achievement (paginated past PostgREST's 1000-row cap)
+    const { data: userAchievements } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_achievements')
+        .select('achievement_id, user_id')
+        .order('id', { ascending: true })
+        .range(from, to)
+    )
 
     // Derive a tier label from xp_reward since the DB has no tier column
     const getTierFromXP = (xp: number): string => {

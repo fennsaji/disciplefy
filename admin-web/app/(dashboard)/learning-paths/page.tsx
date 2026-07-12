@@ -27,6 +27,9 @@ export default function LearningPathsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Reordering a filtered subset would scramble the global display order
+  const isFiltered = statusFilter !== 'all' || searchQuery.trim() !== ''
+
   // Stats
   const [stats, setStats] = useState({
     total: 0,
@@ -403,6 +406,7 @@ export default function LearningPathsPage() {
           onDelete={handleDelete}
           onToggle={handleToggle}
           onReorder={handleReorder}
+          reorderDisabled={isFiltered}
         />
       )}
     </div>

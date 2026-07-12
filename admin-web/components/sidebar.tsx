@@ -100,7 +100,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </p>
               <div className="space-y-0.5">
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href
+                  const isActive =
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + '/')
                   return (
                     <Link
                       key={item.name}

@@ -34,13 +34,29 @@ export default function PracticeModesEditor({
     paid: ALL_PRACTICE_MODES.map(m => m.value)
   },
   onSave,
-  isEditing = false,
+  isEditing,
   onEditStart,
   onCancel,
 }: PracticeModesEditorProps) {
   const [freeModes, setFreeModes] = useState<string[]>(initialModes.free)
   const [paidModes, setPaidModes] = useState<string[]>(initialModes.paid)
+  const [internalEditing, setInternalEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Editor manages its own edit mode when isEditing is not provided
+  const editing = isEditing ?? internalEditing
+
+  const handleEditStart = () => {
+    setFreeModes(initialModes.free)
+    setPaidModes(initialModes.paid)
+    setInternalEditing(true)
+    if (onEditStart) onEditStart()
+  }
+
+  const exitEditMode = () => {
+    setInternalEditing(false)
+    if (onCancel) onCancel()
+  }
 
   const handleSave = async () => {
     try {
@@ -59,27 +75,26 @@ export default function PracticeModesEditor({
         return
       }
 
-      if (onSave) {
-        await onSave({ free: freeModes, paid: paidModes })
-      } else {
-        // Default save to API
-        const res = await fetch('/api/admin/system-config/memory-verses/practice-modes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ free: freeModes, paid: paidModes }),
-          credentials: 'include',
-        })
+      // Save to API
+      const res = await fetch('/api/admin/system-config/memory-verses/practice-modes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ free: freeModes, paid: paidModes }),
+        credentials: 'include',
+      })
 
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Failed to update practice modes')
-        }
-
-        toast.success('Practice modes updated successfully')
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || 'Failed to update practice modes')
       }
 
+      toast.success('Practice modes updated successfully')
+
+      // Notify parent after successful save (e.g. to invalidate queries)
+      if (onSave) await onSave({ free: freeModes, paid: paidModes })
+
       // Exit edit mode after successful save
-      if (onCancel) onCancel()
+      exitEditMode()
     } catch (error) {
       console.error('Error saving practice modes:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update practice modes')
@@ -91,7 +106,7 @@ export default function PracticeModesEditor({
   const handleCancel = () => {
     setFreeModes(initialModes.free)
     setPaidModes(initialModes.paid)
-    if (onCancel) onCancel()
+    exitEditMode()
   }
 
   const handlePreset = (preset: 'minimal' | 'balanced' | 'all') => {
@@ -134,7 +149,7 @@ export default function PracticeModesEditor({
   }
 
   // Read-only view
-  if (!isEditing) {
+  if (!editing) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
@@ -147,7 +162,7 @@ export default function PracticeModesEditor({
             </p>
           </div>
           <button
-            onClick={onEditStart}
+            onClick={handleEditStart}
             className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
             Edit

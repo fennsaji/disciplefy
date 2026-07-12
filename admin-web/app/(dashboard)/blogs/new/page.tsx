@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
@@ -35,6 +35,25 @@ export default function NewBlogPostPage() {
   const [scheduledFor, setScheduledFor] = useState('')
   const [showSchedule, setShowSchedule] = useState(false)
   const [showPanel, setShowPanel] = useState(true)
+
+  // Dirty when the user has entered any content that would be lost
+  const isDirty = Boolean(title.trim() || excerpt.trim() || content.trim() || tagsInput.trim())
+
+  // Warn before losing unsaved changes on tab close / hard navigation
+  useEffect(() => {
+    if (!isDirty || isSaving) return
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty, isSaving])
+
+  const handleBack = () => {
+    if (isDirty && !confirm('You have unsaved changes. Leave without saving?')) return
+    router.push('/blogs')
+  }
 
   const handleTitleChange = (v: string) => {
     setTitle(v)
@@ -102,7 +121,7 @@ export default function NewBlogPostPage() {
               {showPanel ? 'Hide panel ›' : '‹ Options'}
             </button>
             <button
-              onClick={() => router.push('/blogs')}
+              onClick={handleBack}
               className="text-sm text-indigo-400/70 hover:text-white transition-colors"
             >
               ← Back to Posts

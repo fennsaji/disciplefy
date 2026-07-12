@@ -10,6 +10,22 @@ interface EditSystemConfigDialogProps {
   section: 'token_system' | 'voice_features' | 'maintenance_mode' | 'app_version' | 'trial_config' | 'memory_verses'
 }
 
+// Convert an ISO timestamp to the local "YYYY-MM-DDTHH:mm" format expected by
+// datetime-local inputs (toISOString().slice would shift by the UTC offset)
+const isoToLocalInput = (iso: string): string => {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+// Convert a datetime-local input value (interpreted as local time) to an ISO timestamp
+const localInputToIso = (local: string): string => {
+  if (!local) return ''
+  const date = new Date(local)
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString()
+}
+
 export default function EditSystemConfigDialog({
   isOpen,
   onClose,
@@ -42,8 +58,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.daily_free_tokens || 8}
-          onChange={(e) => setFormData({ ...formData, daily_free_tokens: parseInt(e.target.value) })}
+          value={formData.daily_free_tokens ?? 8}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, daily_free_tokens: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />
@@ -54,8 +73,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.standard_daily_tokens || 20}
-          onChange={(e) => setFormData({ ...formData, standard_daily_tokens: parseInt(e.target.value) })}
+          value={formData.standard_daily_tokens ?? 20}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, standard_daily_tokens: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />
@@ -66,8 +88,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.plus_daily_tokens || 50}
-          onChange={(e) => setFormData({ ...formData, plus_daily_tokens: parseInt(e.target.value) })}
+          value={formData.plus_daily_tokens ?? 50}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, plus_daily_tokens: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />
@@ -78,8 +103,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.premium_daily_tokens || 999999999}
-          onChange={(e) => setFormData({ ...formData, premium_daily_tokens: parseInt(e.target.value) })}
+          value={formData.premium_daily_tokens ?? 999999999}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, premium_daily_tokens: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
           placeholder="999999999 for unlimited"
@@ -99,8 +127,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.free_monthly_conversations || 0}
-          onChange={(e) => setFormData({ ...formData, free_monthly_conversations: parseInt(e.target.value) })}
+          value={formData.free_monthly_conversations ?? 0}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, free_monthly_conversations: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />
@@ -111,8 +142,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.standard_monthly_conversations || 0}
-          onChange={(e) => setFormData({ ...formData, standard_monthly_conversations: parseInt(e.target.value) })}
+          value={formData.standard_monthly_conversations ?? 0}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, standard_monthly_conversations: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />
@@ -123,8 +157,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.plus_monthly_conversations || 0}
-          onChange={(e) => setFormData({ ...formData, plus_monthly_conversations: parseInt(e.target.value) })}
+          value={formData.plus_monthly_conversations ?? 0}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, plus_monthly_conversations: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />
@@ -135,8 +172,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.premium_monthly_conversations || -1}
-          onChange={(e) => setFormData({ ...formData, premium_monthly_conversations: parseInt(e.target.value) })}
+          value={formData.premium_monthly_conversations ?? -1}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, premium_monthly_conversations: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="-1"
           placeholder="-1 for unlimited"
@@ -266,8 +306,8 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="datetime-local"
-          value={formData.standard_trial_end_date ? new Date(formData.standard_trial_end_date).toISOString().slice(0, 16) : ''}
-          onChange={(e) => setFormData({ ...formData, standard_trial_end_date: e.target.value })}
+          value={formData.standard_trial_end_date ? isoToLocalInput(formData.standard_trial_end_date) : ''}
+          onChange={(e) => setFormData({ ...formData, standard_trial_end_date: localInputToIso(e.target.value) })}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         />
       </div>
@@ -277,8 +317,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.premium_trial_days || 7}
-          onChange={(e) => setFormData({ ...formData, premium_trial_days: parseInt(e.target.value) })}
+          value={formData.premium_trial_days ?? 7}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, premium_trial_days: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="1"
         />
@@ -289,8 +332,8 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="datetime-local"
-          value={formData.premium_trial_start_date ? new Date(formData.premium_trial_start_date).toISOString().slice(0, 16) : ''}
-          onChange={(e) => setFormData({ ...formData, premium_trial_start_date: e.target.value })}
+          value={formData.premium_trial_start_date ? isoToLocalInput(formData.premium_trial_start_date) : ''}
+          onChange={(e) => setFormData({ ...formData, premium_trial_start_date: localInputToIso(e.target.value) })}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         />
       </div>
@@ -300,8 +343,11 @@ export default function EditSystemConfigDialog({
         </label>
         <input
           type="number"
-          value={formData.grace_period_days || 7}
-          onChange={(e) => setFormData({ ...formData, grace_period_days: parseInt(e.target.value) })}
+          value={formData.grace_period_days ?? 7}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10)
+            setFormData({ ...formData, grace_period_days: Number.isNaN(parsed) ? '' : parsed })
+          }}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           min="0"
         />

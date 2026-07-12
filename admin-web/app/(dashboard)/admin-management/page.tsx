@@ -34,6 +34,7 @@ export default function AdminManagementPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{
     userId: string
     userName: string
@@ -85,6 +86,7 @@ export default function AdminManagementPage() {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
     setIsSearching(true)
+    setSearchError(null)
     try {
       const res = await fetch('/api/admin/search-users', {
         method: 'POST',
@@ -92,7 +94,10 @@ export default function AdminManagementPage() {
         credentials: 'include',
         body: JSON.stringify({ query: searchQuery }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || `Search failed (${res.status})`)
+      }
       setSearchResults(
         (data.users || []).map((u: any) => ({
           id: u.id,
@@ -101,8 +106,11 @@ export default function AdminManagementPage() {
           is_admin: u.is_admin ?? false,
         }))
       )
-    } catch {
-      toast.error('Search failed')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Search failed'
+      setSearchResults([])
+      setSearchError(message)
+      toast.error(message)
     } finally {
       setIsSearching(false)
     }
@@ -306,7 +314,13 @@ export default function AdminManagementPage() {
             </div>
           )}
 
-          {searchResults.length === 0 && searchQuery && !isSearching && (
+          {searchError && !isSearching && (
+            <p className="mt-4 text-sm text-red-600 dark:text-red-400">
+              {searchError}
+            </p>
+          )}
+
+          {!searchError && searchResults.length === 0 && searchQuery && !isSearching && (
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
               No users found. Try a different search term.
             </p>

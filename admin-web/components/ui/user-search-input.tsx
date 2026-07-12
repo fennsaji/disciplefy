@@ -21,15 +21,18 @@ export function UserSearchInput({
     setLocalValue(value)
   }, [value])
 
+  // Empty queries are allowed (they clear the search); non-empty queries need 2+ chars
+  const canSubmit = localValue.length === 0 || localValue.length >= 2
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && localValue.length >= 2) {
+    if (e.key === 'Enter' && canSubmit) {
       onChange(localValue)
       onSearch()
     }
   }
 
   const handleSearch = () => {
-    if (localValue.length >= 2) {
+    if (canSubmit) {
       onChange(localValue)
       onSearch()
     }
@@ -56,7 +59,7 @@ export function UserSearchInput({
         </div>
         <button
           onClick={handleSearch}
-          disabled={isLoading || localValue.length < 2}
+          disabled={isLoading || !canSubmit}
           className="rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary-600 disabled:opacity-50"
         >
           {isLoading ? (

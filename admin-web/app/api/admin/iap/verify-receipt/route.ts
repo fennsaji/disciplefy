@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -19,10 +20,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    const supabaseAdmin = await createAdminClient()
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('is_admin')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile?.is_admin) {
@@ -31,11 +33,11 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body = await req.json()
-    const { provider, receipt_data } = body
+    const { provider, receipt_data, environment, product_id } = body
 
-    if (!provider || !receipt_data) {
+    if (!provider || !receipt_data || !product_id) {
       return NextResponse.json(
-        { error: 'Provider and receipt_data are required' },
+        { error: 'Provider, receipt_data and product_id are required' },
         { status: 400 }
       )
     }
@@ -53,8 +55,8 @@ export async function POST(req: NextRequest) {
           provider,
           receipt_data,
           user_id: user.id, // Use admin user ID for testing
-          product_id: 'test_product', // Placeholder for validation test
-          environment: 'sandbox', // Default to sandbox for testing
+          product_id,
+          environment: environment === 'production' ? 'production' : 'sandbox',
         }),
       }
     )

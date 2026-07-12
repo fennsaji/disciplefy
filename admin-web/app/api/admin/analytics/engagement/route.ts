@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch user engagement metrics
@@ -66,20 +67,29 @@ export async function GET(request: NextRequest) {
       .from('user_profiles')
       .select('*', { count: 'exact', head: true })
 
-    // Fetch active users (users who generated events in the time range)
-    const { data: activeUsersData } = await supabaseAdmin
-      .from('analytics_events')
-      .select('user_id')
-      .gte('created_at', dateFilter.toISOString())
+    // Fetch all events in range once (paginated past PostgREST's 1000-row cap);
+    // reused below for active users, DAU timeline, and retention
+    const { data: dailyEvents } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('analytics_events')
+        .select('user_id, created_at')
+        .gte('created_at', dateFilter.toISOString())
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    )
 
     const activeUsers = new Set(
-      (activeUsersData || []).map(e => e.user_id).filter(Boolean)
+      (dailyEvents || []).map(e => e.user_id).filter(Boolean)
     ).size
 
-    // Fetch study streaks data
-    const { data: streaksData } = await supabaseAdmin
-      .from('user_study_streaks')
-      .select('current_streak, longest_streak, last_study_date')
+    // Fetch study streaks data (paginated past PostgREST's 1000-row cap)
+    const { data: streaksData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_study_streaks')
+        .select('current_streak, longest_streak, last_study_date')
+        .order('user_id', { ascending: true })
+        .range(from, to)
+    )
 
     const avgCurrentStreak = streaksData && streaksData.length > 0
       ? Math.round(streaksData.reduce((sum, s) => sum + (s.current_streak || 0), 0) / streaksData.length)
@@ -89,32 +99,31 @@ export async function GET(request: NextRequest) {
       ? Math.round(streaksData.reduce((sum, s) => sum + (s.longest_streak || 0), 0) / streaksData.length)
       : 0
 
-    // Fetch completed topics
-    const { data: topicsData } = await supabaseAdmin
+    // Fetch completed topics (count only — avoids the 1000-row cap)
+    const { count: completedTopicsCount } = await supabaseAdmin
       .from('user_topic_progress')
-      .select('status, completed_at')
+      .select('*', { count: 'exact', head: true })
       .eq('status', 'completed')
       .gte('completed_at', dateFilter.toISOString())
 
-    const completedTopics = topicsData?.length || 0
+    const completedTopics = completedTopicsCount || 0
 
-    // Fetch learning path enrollments
-    const { data: enrollmentsData } = await supabaseAdmin
-      .from('user_learning_path_progress')
-      .select('progress_percentage, enrolled_at')
-      .gte('enrolled_at', dateFilter.toISOString())
+    // Fetch learning path enrollments (paginated past PostgREST's 1000-row cap)
+    const { data: enrollmentsData } = await fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('user_learning_path_progress')
+        .select('progress_percentage, enrolled_at')
+        .gte('enrolled_at', dateFilter.toISOString())
+        .order('enrolled_at', { ascending: true })
+        .range(from, to)
+    )
 
     const newEnrollments = enrollmentsData?.length || 0
     const avgPathProgress = enrollmentsData && enrollmentsData.length > 0
       ? Math.round(enrollmentsData.reduce((sum, e) => sum + (e.progress_percentage || 0), 0) / enrollmentsData.length)
       : 0
 
-    // Fetch daily active users over time
-    const { data: dailyEvents } = await supabaseAdmin
-      .from('analytics_events')
-      .select('user_id, created_at')
-      .gte('created_at', dateFilter.toISOString())
-
+    // Daily active users over time (from the events fetched above)
     const dailyActiveUsers: Record<string, Set<string>> = {}
     ;(dailyEvents || []).forEach(event => {
       if (!event.user_id) return

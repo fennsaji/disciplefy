@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
 /**
  * GET - Fetch user achievements with user details
@@ -69,13 +70,8 @@ export async function GET(request: NextRequest) {
     const userIds = [...new Set((userAchievements || []).map(ua => ua.user_id))]
     const achievementIds = [...new Set((userAchievements || []).map(ua => ua.achievement_id))]
 
-    // Fetch user details using auth.admin.listUsers() pattern
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers()
-    const emailsMap = Object.fromEntries(
-      authData.users
-        .filter(u => userIds.includes(u.id))
-        .map(u => [u.id, u.email || ''])
-    )
+    // Fetch user emails (paginated past the admin API's page limit)
+    const emailsMap = await getAuthEmailMap(supabaseAdmin, userIds)
 
     // Fetch user profiles for names
     const { data: userProfiles } = await supabaseAdmin

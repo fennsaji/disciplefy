@@ -32,6 +32,7 @@ export default function StudyGuidesPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [expandedData, setExpandedData] = useState<Record<string, { summary?: string; interpretation?: string; loading: boolean }>>({})
   const [blogGenerating, setBlogGenerating] = useState<Record<string, boolean>>({})
+  const [deletingIds, setDeletingIds] = useState<Record<string, boolean>>({})
 
   const handleToggleExpand = async (guideId: string) => {
     if (expandedId === guideId) {
@@ -43,6 +44,9 @@ export default function StudyGuidesPage() {
     setExpandedData((prev) => ({ ...prev, [guideId]: { loading: true } }))
     try {
       const res = await fetch(`/api/admin/study-guide/${guideId}`, { credentials: 'include' })
+      if (!res.ok) {
+        throw new Error('Failed to load preview')
+      }
       const data = await res.json()
       const g = data.study_guide
       setExpandedData((prev) => ({
@@ -54,7 +58,13 @@ export default function StudyGuidesPage() {
         },
       }))
     } catch {
-      setExpandedData((prev) => ({ ...prev, [guideId]: { loading: false } }))
+      // Clear the cache entry so expanding again retries the fetch
+      setExpandedData((prev) => {
+        const next = { ...prev }
+        delete next[guideId]
+        return next
+      })
+      toast.error('Failed to load preview. Please try again.')
     }
   }
 
@@ -166,6 +176,7 @@ export default function StudyGuidesPage() {
 
     if (!confirm(confirmMessage)) return
 
+    setDeletingIds((prev) => ({ ...prev, [guideId]: true }))
     try {
       const response = await fetch(`/api/admin/study-guide/${guideId}`, {
         method: 'DELETE',
@@ -180,6 +191,12 @@ export default function StudyGuidesPage() {
     } catch (err: any) {
       console.error('Failed to delete study guide:', err)
       toast.error(err.message || 'Failed to delete study guide. Please try again.')
+    } finally {
+      setDeletingIds((prev) => {
+        const next = { ...prev }
+        delete next[guideId]
+        return next
+      })
     }
   }
 
@@ -709,7 +726,8 @@ export default function StudyGuidesPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(guide.id)}
-                            className="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                            disabled={deletingIds[guide.id]}
+                            className="rounded p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-40 disabled:cursor-not-allowed"
                             title="Delete"
                           >
                             <svg

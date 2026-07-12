@@ -19,6 +19,13 @@ interface StreaksTableProps {
 }
 
 export default function StreaksTable({ streaks }: StreaksTableProps) {
+  // Parse a 'YYYY-MM-DD' date string as a LOCAL date (new Date(str) parses as
+  // UTC midnight, which shifts the displayed day in western timezones)
+  const parseLocalDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
   const getStudyStatus = (lastStudyDate: string | null) => {
     if (!lastStudyDate) {
       return { label: 'Never Started', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' }
@@ -142,7 +149,7 @@ export default function StreaksTable({ streaks }: StreaksTableProps) {
                 {/* Last study date */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {streak.last_study_date
-                    ? new Date(streak.last_study_date).toLocaleDateString('en-US', {
+                    ? parseLocalDate(streak.last_study_date).toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric',
                       })
                     : <span className="text-gray-300 dark:text-gray-600">Never</span>

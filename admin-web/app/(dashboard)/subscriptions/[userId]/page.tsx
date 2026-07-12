@@ -47,10 +47,10 @@ export default function UserDetailsPage() {
     return format(new Date(dateString), 'MMM dd, yyyy HH:mm')
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currency: string = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR',
+      currency,
     }).format(amount)
   }
 
@@ -408,7 +408,7 @@ export default function UserDetailsPage() {
                       {invoice.invoice_number || 'N/A'}
                     </td>
                     <td className="py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency((invoice.amount_minor || 0) / 100)} {invoice.currency || 'INR'}
+                      {formatCurrency((invoice.amount_minor || 0) / 100, invoice.currency || 'INR')}
                     </td>
                     <td className="py-3 text-sm text-gray-900 dark:text-gray-100">
                       {invoice.due_date ? formatDateTime(invoice.due_date) : 'N/A'}

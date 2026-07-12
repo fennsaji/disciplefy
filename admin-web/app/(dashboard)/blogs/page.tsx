@@ -35,27 +35,51 @@ export default function BlogsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [triggeringCron, setTriggeringCron] = useState(false)
   const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0 })
 
   const loadPosts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await listBlogPosts({ limit: 100 })
+      const data = await listBlogPosts({
+        page,
+        limit: PAGE_SIZE,
+        locale: localeFilter !== 'all' ? localeFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+      })
       setPosts(data.posts)
+      setTotal(data.total)
     } catch (err) {
       console.error(err)
       setError('Failed to load blog posts.')
     } finally {
       setIsLoading(false)
     }
+  }, [page, localeFilter, statusFilter])
+
+  const loadStats = useCallback(async () => {
+    try {
+      const [all, published, drafts] = await Promise.all([
+        listBlogPosts({ limit: 1 }),
+        listBlogPosts({ status: 'published', limit: 1 }),
+        listBlogPosts({ status: 'draft', limit: 1 }),
+      ])
+      setStats({ total: all.total, published: published.total, drafts: drafts.total })
+    } catch (err) {
+      console.error('Failed to load blog stats:', err)
+    }
   }, [])
 
   useEffect(() => { loadPosts() }, [loadPosts])
+  useEffect(() => { loadStats() }, [loadStats])
 
+  // Reset to first page when filters change
+  useEffect(() => { setPage(1) }, [localeFilter, statusFilter])
+
+  // Search filters the currently loaded page client-side
   useEffect(() => {
     let result = posts
-    if (localeFilter !== 'all') result = result.filter(p => p.locale === localeFilter)
-    if (statusFilter !== 'all') result = result.filter(p => p.status === statusFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
       result = result.filter(p =>
@@ -65,8 +89,7 @@ export default function BlogsPage() {
       )
     }
     setFiltered(result)
-    setPage(1)
-  }, [posts, localeFilter, statusFilter, search])
+  }, [posts, search])
 
   const handleToggleStatus = async (post: BlogPostListItem) => {
     setTogglingId(post.id)
@@ -79,6 +102,7 @@ export default function BlogsPage() {
         toast.success(`"${post.title}" published`)
       }
       await loadPosts()
+      loadStats()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update status')
     } finally {
@@ -93,6 +117,7 @@ export default function BlogsPage() {
       await deleteBlogPost(post.id)
       toast.success('Post deleted')
       await loadPosts()
+      loadStats()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete post')
     } finally {
@@ -112,10 +137,7 @@ export default function BlogsPage() {
     }
   }
 
-  const published = posts.filter(p => p.status === 'published').length
-  const drafts = posts.filter(p => p.status === 'draft').length
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="space-y-6">
@@ -144,9 +166,9 @@ export default function BlogsPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Posts', value: posts.length, color: 'text-indigo-300' },
-          { label: 'Published', value: published, color: 'text-emerald-300' },
-          { label: 'Drafts', value: drafts, color: 'text-amber-300' },
+          { label: 'Total Posts', value: stats.total, color: 'text-indigo-300' },
+          { label: 'Published', value: stats.published, color: 'text-emerald-300' },
+          { label: 'Drafts', value: stats.drafts, color: 'text-amber-300' },
         ].map(stat => (
           <div key={stat.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-xs text-indigo-400/70">{stat.label}</p>
@@ -184,7 +206,7 @@ export default function BlogsPage() {
           <option value="scheduled">Scheduled</option>
           <option value="draft">Draft</option>
         </select>
-        <span className="text-xs text-indigo-400/60">{filtered.length} posts</span>
+        <span className="text-xs text-indigo-400/60">{total} posts</span>
       </div>
 
       {/* Table */}
@@ -213,7 +235,7 @@ export default function BlogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {paginatedFiltered.map(post => (
+              {filtered.map(post => (
                 <tr key={post.id} className="group transition-colors hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="flex items-start gap-2">
@@ -309,7 +331,7 @@ export default function BlogsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-indigo-400/60">
-            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
           </span>
           <div className="flex gap-2">
             <button

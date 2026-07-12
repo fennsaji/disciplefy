@@ -69,7 +69,7 @@ export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
                 </td>
                 <td className="px-4 py-3 text-center">
                   <Link
-                    href={`/dashboard/subscriptions/${user.user_id}`}
+                    href={`/subscriptions/${user.user_id}`}
                     className="text-xs text-blue-600 hover:underline dark:text-blue-400"
                   >
                     View

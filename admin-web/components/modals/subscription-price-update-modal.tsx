@@ -85,7 +85,12 @@ export default function SubscriptionPriceUpdateModal({
     }
 
     if (newPriceMinor < 100 || newPriceMinor > 10000000) {
-      toast.error('Price must be between ₹1 and ₹100,000')
+      const symbol = getCurrencySymbol(planProvider.currency)
+      toast.error(
+        planProvider.currency === 'INR'
+          ? 'Price must be between ₹1 and ₹100,000'
+          : `Price must be between ${symbol}1 and ${symbol}100,000 (${planProvider.currency})`
+      )
       return
     }
 

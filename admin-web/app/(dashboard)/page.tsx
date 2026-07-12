@@ -216,6 +216,8 @@ export default function DashboardPage() {
 function TokenManagementOverview() {
   const [tokenStats, setTokenStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     async function fetchTokenStats() {
@@ -224,15 +226,17 @@ function TokenManagementOverview() {
         if (!response.ok) throw new Error('Failed to fetch token stats')
         const data = await response.json()
         setTokenStats(data)
+        setError(null)
       } catch (err) {
         console.error('Failed to load token stats:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load token stats')
       } finally {
         setLoading(false)
       }
     }
 
     fetchTokenStats()
-  }, [])
+  }, [retryKey])
 
   if (loading) {
     return (
@@ -250,7 +254,24 @@ function TokenManagementOverview() {
     )
   }
 
-  if (!tokenStats) return null
+  if (error || !tokenStats) {
+    return (
+      <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">🪙 Token Management Overview</h2>
+        <div className="mt-4 flex flex-col items-start gap-3">
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {error || 'Failed to load token stats'}
+          </p>
+          <button
+            onClick={() => { setLoading(true); setRetryKey((k) => k + 1) }}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const formatNumber = (value: number) => {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`

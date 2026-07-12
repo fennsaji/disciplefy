@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
+import { listAllAuthUsers } from '@/lib/supabase/list-all-users'
 import type { SearchUsersRequest, SearchUsersResponse } from '@/types/admin'
 
 export async function POST(request: NextRequest) {
@@ -64,13 +66,14 @@ export async function POST(request: NextRequest) {
       .range(offset, offset + limit - 1)
 
     let authUserIds: string[] = []
+    let allAuthUsers: User[] | null = null
 
     // If query is provided, add search filters
     if (query.length > 0) {
       // Search auth.users for email matches - need to use auth admin API
       try {
-        const { data: authData } = await supabaseAdmin.auth.admin.listUsers()
-        const matchingUsers = authData.users.filter(u =>
+        allAuthUsers = await listAllAuthUsers(supabaseAdmin)
+        const matchingUsers = allAuthUsers.filter(u =>
           u.email?.toLowerCase().includes(query.toLowerCase())
         )
         authUserIds = matchingUsers.map(u => u.id).slice(0, 100)
@@ -127,9 +130,9 @@ export async function POST(request: NextRequest) {
     // Fetch emails from auth.users using admin API
     let emailsMap: Record<string, string> = {}
     try {
-      const { data: authData } = await supabaseAdmin.auth.admin.listUsers()
+      const authUsers = allAuthUsers ?? await listAllAuthUsers(supabaseAdmin)
       emailsMap = Object.fromEntries(
-        authData.users
+        authUsers
           .filter(u => userIds.includes(u.id))
           .map(u => [u.id, u.email || ''])
       )
@@ -147,6 +150,11 @@ export async function POST(request: NextRequest) {
         status,
         current_period_start,
         current_period_end,
+        next_billing_at,
+        cancelled_at,
+        provider,
+        amount_paise,
+        currency,
         plan_id,
         subscription_plans!inner (
           id,
@@ -197,12 +205,17 @@ export async function POST(request: NextRequest) {
             end_date: sub.current_period_end, // Map current_period_end to end_date
             current_period_start: sub.current_period_start,
             current_period_end: sub.current_period_end,
+            next_billing_at: sub.next_billing_at,
+            cancelled_at: sub.cancelled_at,
+            provider: sub.provider,
+            amount_paise: sub.amount_paise,
+            currency: sub.currency,
             subscription_plans: plan ? {
               plan_name: plan.plan_name,
               plan_code: plan.plan_code,
               tier: plan.tier,
-              price_inr: 0, // Not available in new schema
-              billing_cycle: 'monthly' // Default value
+              price_inr: sub.amount_paise ? sub.amount_paise / 100 : 0,
+              billing_cycle: sub.plan_type?.endsWith('_yearly') ? 'yearly' : 'monthly'
             } : null
           }
         }) || []
@@ -220,6 +233,11 @@ export async function POST(request: NextRequest) {
           end_date: null, // Admins have unlimited access
           current_period_start: user.created_at,
           current_period_end: null,
+          next_billing_at: null,
+          cancelled_at: null,
+          provider: 'system',
+          amount_paise: null,
+          currency: 'INR',
           subscription_plans: {
             plan_name: 'Premium (Admin)',
             plan_code: 'premium',

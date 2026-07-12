@@ -24,48 +24,62 @@ interface UnlockLimitsEditorProps {
 export default function UnlockLimitsEditor({
   initialLimits = { free: 1, standard: 2, plus: 3, premium: -1 },
   onSave,
-  isEditing = false,
+  isEditing,
   onEditStart,
   onCancel,
 }: UnlockLimitsEditorProps) {
   const [limits, setLimits] = useState(initialLimits)
+  const [internalEditing, setInternalEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Editor manages its own edit mode when isEditing is not provided
+  const editing = isEditing ?? internalEditing
+
+  const handleEditStart = () => {
+    setLimits(initialLimits)
+    setInternalEditing(true)
+    if (onEditStart) onEditStart()
+  }
+
+  const exitEditMode = () => {
+    setInternalEditing(false)
+    if (onCancel) onCancel()
+  }
 
   const handleSave = async () => {
     try {
       setIsSaving(true)
 
       // Validation
-      if (limits.premium !== -1 && (
+      if (
         limits.standard < limits.free ||
         limits.plus < limits.standard ||
-        limits.premium < limits.plus
-      )) {
+        (limits.premium !== -1 && limits.premium < limits.plus)
+      ) {
         toast.error('Limits should increase with tier (Standard ≥ Free, Plus ≥ Standard, Premium ≥ Plus)')
         return
       }
 
-      if (onSave) {
-        await onSave(limits)
-      } else {
-        // Default save to API
-        const res = await fetch('/api/admin/system-config/memory-verses/unlock-limits', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(limits),
-          credentials: 'include',
-        })
+      // Save to API
+      const res = await fetch('/api/admin/system-config/memory-verses/unlock-limits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(limits),
+        credentials: 'include',
+      })
 
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Failed to update unlock limits')
-        }
-
-        toast.success('Unlock limits updated successfully')
+      if (!res.ok) {
+        const error = await res.json().catch(() => null)
+        throw new Error(error?.error || 'Failed to update unlock limits')
       }
 
+      toast.success('Unlock limits updated successfully')
+
+      // Notify parent after successful save (e.g. to invalidate queries)
+      if (onSave) await onSave(limits)
+
       // Exit edit mode after successful save
-      if (onCancel) onCancel()
+      exitEditMode()
     } catch (error) {
       console.error('Error saving unlock limits:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update unlock limits')
@@ -76,7 +90,7 @@ export default function UnlockLimitsEditor({
 
   const handleCancel = () => {
     setLimits(initialLimits)
-    if (onCancel) onCancel()
+    exitEditMode()
   }
 
   const handlePreset = (preset: 'conservative' | 'balanced' | 'generous') => {
@@ -89,7 +103,7 @@ export default function UnlockLimitsEditor({
   }
 
   // Read-only view
-  if (!isEditing) {
+  if (!editing) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 flex items-center justify-between">
@@ -102,7 +116,7 @@ export default function UnlockLimitsEditor({
             </p>
           </div>
           <button
-            onClick={onEditStart}
+            onClick={handleEditStart}
             className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-600"
           >
             Edit
@@ -231,7 +245,10 @@ export default function UnlockLimitsEditor({
               type="number"
               min={-1}
               value={limits.premium}
-              onChange={(e) => setLimits({ ...limits, premium: parseInt(e.target.value) || -1 })}
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10)
+                setLimits({ ...limits, premium: Number.isNaN(parsed) ? -1 : parsed })
+              }}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">

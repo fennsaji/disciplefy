@@ -19,6 +19,15 @@ interface CreateLearningPathDialogProps {
 
 type TabType = 'basic' | 'visual' | 'settings' | 'translations'
 
+// Which tab each validated field lives on, so validation failures on a
+// hidden tab can bring the offending field into view
+const FIELD_TABS: Record<string, TabType> = {
+  slug: 'basic',
+  title: 'basic',
+  description: 'basic',
+  estimated_days: 'settings',
+}
+
 export function CreateLearningPathDialog({
   isOpen,
   onClose,
@@ -47,7 +56,7 @@ export function CreateLearningPathDialog({
     },
   })
 
-  const validateForm = (): boolean => {
+  const validateForm = (): Record<string, string> => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.slug) newErrors.slug = 'Slug is required'
@@ -62,13 +71,17 @@ export function CreateLearningPathDialog({
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return newErrors
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) {
+    const newErrors = validateForm()
+    if (Object.keys(newErrors).length > 0) {
+      // Switch to the tab containing the first error so it is visible
+      const firstErrorField = Object.keys(newErrors)[0]
+      setActiveTab(FIELD_TABS[firstErrorField] ?? 'basic')
       return
     }
 

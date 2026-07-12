@@ -55,6 +55,17 @@ import type {
   PlAnalyticsResponse
 } from '@/types/admin'
 
+// Safely parse an error response body: non-JSON (HTML/empty) error bodies fall
+// back to a generic message with the HTTP status instead of throwing SyntaxError.
+async function parseErrorResponse(response: Response, fallback: string): Promise<string> {
+  try {
+    const error = await response.json()
+    return error?.error || `${fallback} (HTTP ${response.status})`
+  } catch {
+    return `${fallback} (HTTP ${response.status})`
+  }
+}
+
 export async function fetchUsageAnalytics(
   params: UsageAnalyticsRequest
 ): Promise<UsageAnalyticsResponse> {
@@ -68,8 +79,7 @@ export async function fetchUsageAnalytics(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to fetch usage analytics')
+    throw new Error(await parseErrorResponse(response, 'Failed to fetch usage analytics'))
   }
 
   return response.json()
@@ -88,8 +98,7 @@ export async function searchUsers(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to search users')
+    throw new Error(await parseErrorResponse(response, 'Failed to search users'))
   }
 
   return response.json()
@@ -108,8 +117,7 @@ export async function updateSubscription(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to update subscription')
+    throw new Error(await parseErrorResponse(response, 'Failed to update subscription'))
   }
 
   return response.json()
@@ -128,8 +136,7 @@ export async function createPaymentRecord(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to create payment record')
+    throw new Error(await parseErrorResponse(response, 'Failed to create payment record'))
   }
 
   return response.json()
@@ -148,8 +155,7 @@ export async function listPromoCodes(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to list promo codes')
+    throw new Error(await parseErrorResponse(response, 'Failed to list promo codes'))
   }
 
   return response.json()
@@ -168,8 +174,7 @@ export async function createPromoCode(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to create promo code')
+    throw new Error(await parseErrorResponse(response, 'Failed to create promo code'))
   }
 
   return response.json()
@@ -188,8 +193,7 @@ export async function togglePromoCode(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to toggle promo code')
+    throw new Error(await parseErrorResponse(response, 'Failed to toggle promo code'))
   }
 
   return response.json()
@@ -209,8 +213,7 @@ export async function listLearningPaths(): Promise<ListLearningPathsResponse> {
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to list learning paths')
+    throw new Error(await parseErrorResponse(response, 'Failed to list learning paths'))
   }
 
   return response.json()
@@ -226,8 +229,7 @@ export async function getLearningPath(id: string): Promise<GetLearningPathRespon
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to get learning path')
+    throw new Error(await parseErrorResponse(response, 'Failed to get learning path'))
   }
 
   return response.json()
@@ -246,8 +248,7 @@ export async function createLearningPath(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to create learning path')
+    throw new Error(await parseErrorResponse(response, 'Failed to create learning path'))
   }
 
   return response.json()
@@ -267,8 +268,7 @@ export async function updateLearningPath(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to update learning path')
+    throw new Error(await parseErrorResponse(response, 'Failed to update learning path'))
   }
 
   return response.json()
@@ -284,8 +284,7 @@ export async function deleteLearningPath(id: string): Promise<DeleteLearningPath
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to delete learning path')
+    throw new Error(await parseErrorResponse(response, 'Failed to delete learning path'))
   }
 
   return response.json()
@@ -305,8 +304,7 @@ export async function reorderLearningPath(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to reorder learning path')
+    throw new Error(await parseErrorResponse(response, 'Failed to reorder learning path'))
   }
 
   return response.json()
@@ -326,8 +324,7 @@ export async function toggleLearningPath(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to toggle learning path')
+    throw new Error(await parseErrorResponse(response, 'Failed to toggle learning path'))
   }
 
   return response.json()
@@ -354,8 +351,7 @@ export async function listTopics(params?: ListTopicsRequest): Promise<ListTopics
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to list topics')
+    throw new Error(await parseErrorResponse(response, 'Failed to list topics'))
   }
 
   return response.json()
@@ -378,8 +374,7 @@ export async function listTopicsWithGuides(params?: ListTopicsRequest): Promise<
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to list topics with guides')
+    throw new Error(await parseErrorResponse(response, 'Failed to list topics with guides'))
   }
 
   return response.json()
@@ -395,8 +390,7 @@ export async function getTopic(id: string): Promise<GetTopicResponse> {
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to get topic')
+    throw new Error(await parseErrorResponse(response, 'Failed to get topic'))
   }
 
   return response.json()
@@ -413,8 +407,7 @@ export async function createTopic(data: CreateTopicRequest): Promise<CreateTopic
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to create topic')
+    throw new Error(await parseErrorResponse(response, 'Failed to create topic'))
   }
 
   return response.json()
@@ -434,8 +427,7 @@ export async function updateTopic(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to update topic')
+    throw new Error(await parseErrorResponse(response, 'Failed to update topic'))
   }
 
   return response.json()
@@ -451,8 +443,7 @@ export async function deleteTopic(id: string): Promise<DeleteTopicResponse> {
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to delete topic')
+    throw new Error(await parseErrorResponse(response, 'Failed to delete topic'))
   }
 
   return response.json()
@@ -469,8 +460,7 @@ export async function bulkImportTopics(data: BulkImportRequest): Promise<BulkImp
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to bulk import topics')
+    throw new Error(await parseErrorResponse(response, 'Failed to bulk import topics'))
   }
 
   return response.json()
@@ -491,8 +481,7 @@ export async function addTopicToPath(data: AddTopicToPathRequest): Promise<AddTo
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to add topic to path')
+    throw new Error(await parseErrorResponse(response, 'Failed to add topic to path'))
   }
 
   return response.json()
@@ -511,8 +500,7 @@ export async function removeTopicFromPath(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to remove topic from path')
+    throw new Error(await parseErrorResponse(response, 'Failed to remove topic from path'))
   }
 
   return response.json()
@@ -529,8 +517,7 @@ export async function reorderPathTopics(data: ReorderTopicsRequest): Promise<Reo
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to reorder topics')
+    throw new Error(await parseErrorResponse(response, 'Failed to reorder topics'))
   }
 
   return response.json()
@@ -551,8 +538,7 @@ export async function toggleTopicMilestone(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to toggle milestone')
+    throw new Error(await parseErrorResponse(response, 'Failed to toggle milestone'))
   }
 
   return response.json()
@@ -572,8 +558,7 @@ export async function loadStudyGuide(id: string): Promise<LoadStudyGuideResponse
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to load study guide')
+    throw new Error(await parseErrorResponse(response, 'Failed to load study guide'))
   }
 
   return response.json()
@@ -593,8 +578,7 @@ export async function updateStudyGuide(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to update study guide')
+    throw new Error(await parseErrorResponse(response, 'Failed to update study guide'))
   }
 
   return response.json()
@@ -620,8 +604,7 @@ export async function listBlogPosts(params?: {
     credentials: 'include',
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to list blog posts')
+    throw new Error(await parseErrorResponse(response, 'Failed to list blog posts'))
   }
   return response.json()
 }
@@ -631,8 +614,7 @@ export async function getBlogPost(id: string): Promise<GetBlogPostResponse> {
     credentials: 'include',
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to get blog post')
+    throw new Error(await parseErrorResponse(response, 'Failed to get blog post'))
   }
   return response.json()
 }
@@ -645,8 +627,7 @@ export async function createBlogPost(data: CreateBlogPostRequest): Promise<BlogP
     body: JSON.stringify(data),
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to create blog post')
+    throw new Error(await parseErrorResponse(response, 'Failed to create blog post'))
   }
   return response.json()
 }
@@ -659,8 +640,7 @@ export async function updateBlogPost(id: string, data: UpdateBlogPostRequest): P
     body: JSON.stringify(data),
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to update blog post')
+    throw new Error(await parseErrorResponse(response, 'Failed to update blog post'))
   }
   return response.json()
 }
@@ -671,8 +651,7 @@ export async function deleteBlogPost(id: string): Promise<DeleteBlogPostResponse
     credentials: 'include',
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to delete blog post')
+    throw new Error(await parseErrorResponse(response, 'Failed to delete blog post'))
   }
   return response.json()
 }
@@ -683,8 +662,7 @@ export async function publishBlogPost(id: string): Promise<BlogPostResponse> {
     credentials: 'include',
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to publish blog post')
+    throw new Error(await parseErrorResponse(response, 'Failed to publish blog post'))
   }
   return response.json()
 }
@@ -695,8 +673,7 @@ export async function unpublishBlogPost(id: string): Promise<BlogPostResponse> {
     credentials: 'include',
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to unpublish blog post')
+    throw new Error(await parseErrorResponse(response, 'Failed to unpublish blog post'))
   }
   return response.json()
 }
@@ -707,8 +684,7 @@ export async function triggerBlogCron(): Promise<TriggerCronResponse> {
     credentials: 'include',
   })
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to trigger blog generation')
+    throw new Error(await parseErrorResponse(response, 'Failed to trigger blog generation'))
   }
   return response.json()
 }
@@ -726,8 +702,7 @@ export async function fetchUsageLogs(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to fetch usage logs')
+    throw new Error(await parseErrorResponse(response, 'Failed to fetch usage logs'))
   }
 
   return response.json()
@@ -739,8 +714,6 @@ export async function fetchPlAnalytics(params: {
   start_date: string
   end_date: string
 }): Promise<PlAnalyticsResponse> {
-  // Note: credentials: 'include' is a top-level option, NOT inside headers.
-  // Several existing functions in this file have this incorrectly nested — do not replicate.
   const response = await fetch('/api/admin/pl-analytics', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -748,8 +721,7 @@ export async function fetchPlAnalytics(params: {
     body: JSON.stringify(params),
   })
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error((error as { error?: string })?.error || 'Failed to fetch P&L analytics')
+    throw new Error(await parseErrorResponse(response, 'Failed to fetch P&L analytics'))
   }
   return response.json()
 }
