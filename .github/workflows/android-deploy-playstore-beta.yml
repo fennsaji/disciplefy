@@ -37,9 +37,14 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          # Minutes since epoch: one monotonic versionCode source shared by every
+          # Android workflow, so any track can always upgrade over any older build.
+          # (Per-workflow run numbers are independent counters and Play rejected a
+          # beta bundle whose versionCode was below production's run_number+10000.)
+          BUILD_NUMBER=$(( $(date +%s) / 60 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=${{ github.run_number }}" >> $GITHUB_OUTPUT
-          echo "✅ Version: $VERSION+${{ github.run_number }}"
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Version: $VERSION+$BUILD_NUMBER"
 
       - name: ✅ Validate release notes
         env:

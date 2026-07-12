@@ -28,12 +28,13 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' frontend/pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          # TestFlight betas use the plain run number (small: 1, 2, 3…).
-          # Production builds offset by 10000 (see ios-deploy-appstore.yml) so the
-          # two tracks stay numerically distinct; groups differentiate them in TestFlight.
+          # Minutes since epoch: one monotonic build-number source shared with
+          # ios-deploy-appstore.yml, so App Store builds always exceed TestFlight
+          # builds regardless of each workflow's independent run counter.
+          BUILD_NUMBER=$(( $(date +%s) / 60 ))
           echo "version_name=$VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=${{ github.run_number }}" >> $GITHUB_OUTPUT
-          echo "✅ Version: $VERSION+${{ github.run_number }}"
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Version: $VERSION+$BUILD_NUMBER"
 
       # Apple requires the iOS 26 SDK (Xcode 26+) for App Store uploads.
       - name: 🛠️ Select Xcode 26
