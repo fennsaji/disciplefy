@@ -36,6 +36,7 @@ import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 
 /// Settings Screen with proper AuthBloc integration
@@ -1097,21 +1098,25 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             trailing: null,
             onTap: null,
           ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.favorite_outline,
-            title: context.tr(TranslationKeys.settingsSupportDeveloper),
-            subtitle:
-                context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          // Hidden on iOS: the support sheet links to an external donation
+          // page, which App Store guideline 3.1.1 requires to go through IAP.
+          if (!PlatformUtils.isIOS) ...[
+            _buildDivider(),
+            _buildSettingsTile(
+              context: context,
+              icon: Icons.favorite_outline,
+              title: context.tr(TranslationKeys.settingsSupportDeveloper),
+              subtitle:
+                  context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              onTap: () => _showSupportBottomSheet(context),
+              iconColor: AppTheme.accentColor,
             ),
-            onTap: () => _showSupportBottomSheet(context),
-            iconColor: AppTheme.accentColor,
-          ),
+          ],
           _buildDivider(),
           _buildSettingsTile(
             context: context,

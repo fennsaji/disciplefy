@@ -8,6 +8,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../../../core/router/app_routes.dart';
 import '../widgets/subscription_legal_links.dart';
 import '../../../../core/di/injection_container.dart';
@@ -278,14 +279,18 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   _buildComparison(),
                   const SizedBox(height: 32),
                 ],
-                PromoCodeInput(
-                  planCode: 'premium',
-                  initialPromo: _appliedPromo,
-                  onValidate: _validatePromoCode,
-                  onPromoApplied: _handlePromoApplied,
-                  onPromoRemoved: _handlePromoRemoved,
-                ),
-                const SizedBox(height: 24),
+                // Promo codes are hidden on iOS: App Store guideline 3.1.1
+                // forbids unlocking paid content outside In-App Purchase.
+                if (!PlatformUtils.isIOS) ...[
+                  PromoCodeInput(
+                    planCode: 'premium',
+                    initialPromo: _appliedPromo,
+                    onValidate: _validatePromoCode,
+                    onPromoApplied: _handlePromoApplied,
+                    onPromoRemoved: _handlePromoRemoved,
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 _buildActionButton(state),
                 if (PlatformPaymentProviderService
                     .supportsRestorePurchases()) ...[

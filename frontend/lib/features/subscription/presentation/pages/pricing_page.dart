@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../../../core/di/injection_container.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_state.dart';
@@ -385,14 +386,17 @@ class _PricingPageState extends State<PricingPage> {
           ),
         ],
 
-        // Promo Code Input
-        PromoCodeInput(
-          onPromoApplied: _handlePromoApplied,
-          onPromoRemoved: _handlePromoRemoved,
-          onValidate: _validatePromoCode,
-          initialPromo: _appliedPromo,
-        ),
-        const SizedBox(height: 32),
+        // Promo codes are hidden on iOS: App Store guideline 3.1.1
+        // forbids unlocking paid content outside In-App Purchase.
+        if (!PlatformUtils.isIOS) ...[
+          PromoCodeInput(
+            onPromoApplied: _handlePromoApplied,
+            onPromoRemoved: _handlePromoRemoved,
+            onValidate: _validatePromoCode,
+            initialPromo: _appliedPromo,
+          ),
+          const SizedBox(height: 32),
+        ],
 
         // Pricing Cards — disable button for the current active plan.
         // _activePlanCode is populated from SubscriptionBloc via a stream
