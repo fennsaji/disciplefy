@@ -48,22 +48,43 @@ function base64UrlEncode(bytes: Uint8Array): string {
 }
 
 /** Import a PKCS8 PEM (Apple's downloaded .p8 file contents) as a Web Crypto P-256
- * signing key. */
+ * signing key. Tolerates common paste/storage mangling: surrounding quotes,
+ * literal "\n" escape sequences instead of real newlines, and stray whitespace. */
 async function importApplePrivateKey(pem: string): Promise<CryptoKey> {
-  const der = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
+  const normalized = pem
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .replace(/\\r/g, '')
+    .replace(/\\n/g, '\n')
+  const der = normalized
+    .replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----/, '')
+    .replace(/-----END [A-Z ]*PRIVATE KEY-----/, '')
     .replace(/\s+/g, '')
-  const binary = atob(der)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return await crypto.subtle.importKey(
-    'pkcs8',
-    bytes,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  )
+  let bytes: Uint8Array
+  try {
+    const binary = atob(der)
+    bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  } catch {
+    throw new Error(
+      'Apple IAP private key is not valid base64/PEM — re-save the full .p8 file contents in admin IAP Config'
+    )
+  }
+  try {
+    return await crypto.subtle.importKey(
+      'pkcs8',
+      bytes,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    )
+  } catch (e) {
+    throw new Error(
+      `Apple IAP private key could not be imported (not a valid PKCS8 P-256 key) — re-save the .p8 in admin IAP Config: ${
+        e instanceof Error ? e.message : String(e)
+      }`
+    )
+  }
 }
 
 /** Build and sign the ES256 bearer JWT the App Store Server API requires, per
