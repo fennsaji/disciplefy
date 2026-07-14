@@ -123,6 +123,7 @@ import '../services/system_config_service.dart';
 import '../services/pricing_service.dart';
 import '../services/bible_books_service.dart';
 import '../services/iap_service.dart';
+import '../services/apple_consumable_purchase_service.dart';
 import '../services/platform_payment_provider_service.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
@@ -288,6 +289,12 @@ Future<void> initializeDependencies() async {
 
   // Register IAPService (for in-app purchases on mobile)
   sl.registerLazySingleton(() => IAPService());
+
+  // Register AppleConsumablePurchaseService (iOS token packs + developer tips)
+  sl.registerLazySingleton(() => AppleConsumablePurchaseService(
+        iapService: sl(),
+        supabaseClient: Supabase.instance.client,
+      ));
 
   // Register LocaleService (requires LanguagePreferenceService - registered later)
   // Note: LocaleService is registered after LanguagePreferenceService below

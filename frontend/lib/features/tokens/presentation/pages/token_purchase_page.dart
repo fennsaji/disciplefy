@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../../core/models/payment_responses.dart';
+import '../../../../core/services/apple_consumable_purchase_service.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/token_pricing.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -59,6 +62,13 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   int _tokensPerRupee = 2; // Default
   List<TokenPackage> _packages = const [];
 
+  // iOS: App Store consumable products keyed by token count. Purchases on iOS
+  // must go through In-App Purchase (App Store guideline 3.1.1) — Razorpay and
+  // custom amounts are Android/web only.
+  final bool _useAppleIAP = PlatformUtils.isIOS;
+  Map<int, ProductDetails> _iosProducts = {};
+  AppleConsumablePurchaseService? _consumableService;
+
   @override
   void initState() {
     super.initState();
@@ -66,11 +76,66 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
     _customAmountController =
         TextEditingController(text: _customTokens.toString());
 
-    // Initialize PaymentService
-    PaymentService().initialize();
+    if (_useAppleIAP) {
+      _setupAppleIAP();
+    } else {
+      // Initialize PaymentService (Razorpay)
+      PaymentService().initialize();
+    }
 
     // Fetch pricing from backend (no fallback - show error if fails)
     _fetchTokenPricing();
+  }
+
+  void _setupAppleIAP() {
+    final service = sl<AppleConsumablePurchaseService>();
+    service.bind();
+    service.onSuccess = (result) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      if (result.kind != ConsumableKind.tokens) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.tokenPurchaseIapSuccess,
+              {'tokens': result.tokensCredited.toString()})),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      context.read<TokenBloc>().add(const RefreshTokenStatus());
+      Navigator.of(context).pop(true);
+    };
+    service.onError = (message) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    };
+    service.onCancelled = () {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    };
+    _consumableService = service;
+  }
+
+  Future<void> _loadAppleProducts() async {
+    try {
+      final products = await _consumableService!
+          .loadTokenPackProducts(_packages.map((p) => p.tokens).toList());
+      if (mounted) setState(() => _iosProducts = products);
+    } catch (e) {
+      Logger.debug(
+          '❌ [TokenPurchasePage] Failed to load App Store products: $e');
+      if (mounted) {
+        setState(() => _pricingError =
+            'Token packs are unavailable right now. Please try again later.');
+      }
+    }
   }
 
   /// Fetches token pricing configuration from backend API
@@ -93,6 +158,11 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
 
       Logger.debug(
           '💰 [TokenPurchasePage] Pricing loaded: $_tokensPerRupee tokens/₹, ${_packages.length} packages');
+
+      // iOS: resolve packages to App Store products for compliant purchasing
+      if (_useAppleIAP) {
+        await _loadAppleProducts();
+      }
     } catch (e) {
       Logger.debug('❌ [TokenPurchasePage] Failed to fetch pricing: $e');
       setState(() {
@@ -107,7 +177,12 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   void dispose() {
     _tabController.dispose();
     _customAmountController.dispose();
-    PaymentService().dispose();
+    if (!_useAppleIAP) {
+      PaymentService().dispose();
+    }
+    _consumableService?.onSuccess = null;
+    _consumableService?.onError = null;
+    _consumableService?.onCancelled = null;
     super.dispose();
   }
 
@@ -227,6 +302,20 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         SnackBar(
             content: Text('Please select a package or enter a valid amount')),
       );
+      return;
+    }
+
+    // iOS: purchase through the App Store (guideline 3.1.1) — packages only.
+    if (_useAppleIAP) {
+      final product = _iosProducts[_selectedPackageTokens];
+      if (product == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a package')),
+        );
+        return;
+      }
+      setState(() => _isLoading = true);
+      _consumableService!.purchase(product);
       return;
     }
 
@@ -437,6 +526,18 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   }
 
   Widget _buildPurchaseContent(ThemeData theme) {
+    // iOS: App Store consumables only — no custom amounts (IAP products are
+    // fixed), so no tabs.
+    if (_useAppleIAP) {
+      return Column(
+        children: [
+          _buildBalanceCard(theme),
+          Expanded(child: _buildPackagesTab(theme)),
+          _buildPurchaseButton(theme),
+        ],
+      );
+    }
+
     return Column(
       children: [
         // Current balance card
@@ -501,16 +602,22 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   }
 
   Widget _buildPackagesTab(ThemeData theme) {
-    if (_packages.isEmpty) {
+    // iOS: only packs that exist as App Store products are purchasable.
+    final visiblePackages = _useAppleIAP
+        ? _packages.where((p) => _iosProducts.containsKey(p.tokens)).toList()
+        : _packages;
+
+    if (visiblePackages.isEmpty) {
       return Center(child: Text('No packages available'));
     }
 
     return ListView.builder(
       padding: EdgeInsets.all(16),
-      itemCount: _packages.length,
+      itemCount: visiblePackages.length,
       itemBuilder: (context, index) {
-        final package = _packages[index];
+        final package = visiblePackages[index];
         final isSelected = _selectedPackageTokens == package.tokens;
+        final iosProduct = _useAppleIAP ? _iosProducts[package.tokens] : null;
 
         return GestureDetector(
           onTap: () => _onPackageSelected(package),
@@ -583,14 +690,16 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                       Row(
                         children: [
                           Text(
-                            '₹${package.rupees}',
+                            // iOS: App Store sets the charged price — show its
+                            // localized value, not the Razorpay rupee price.
+                            iosProduct?.price ?? '₹${package.rupees}',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.primary,
                             ),
                           ),
-                          if (package.discount > 0) ...[
+                          if (iosProduct == null && package.discount > 0) ...[
                             SizedBox(width: 8),
                             Text(
                               '${package.discount}% OFF',
@@ -602,13 +711,14 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                           ],
                         ],
                       ),
-                      Text(
-                        '${(package.rupees * 100 / package.tokens).toStringAsFixed(1)} paise/token',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.textTheme.bodySmall?.color,
+                      if (iosProduct == null)
+                        Text(
+                          '${(package.rupees * 100 / package.tokens).toStringAsFixed(1)} paise/token',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

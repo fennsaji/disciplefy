@@ -35,6 +35,9 @@ import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+
+import '../../../../core/services/apple_consumable_purchase_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
@@ -1098,25 +1101,25 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             trailing: null,
             onTap: null,
           ),
-          // Hidden on iOS: the support sheet links to an external donation
-          // page, which App Store guideline 3.1.1 requires to go through IAP.
-          if (!PlatformUtils.isIOS) ...[
-            _buildDivider(),
-            _buildSettingsTile(
-              context: context,
-              icon: Icons.favorite_outline,
-              title: context.tr(TranslationKeys.settingsSupportDeveloper),
-              subtitle:
-                  context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-              onTap: () => _showSupportBottomSheet(context),
-              iconColor: AppTheme.accentColor,
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.favorite_outline,
+            title: context.tr(TranslationKeys.settingsSupportDeveloper),
+            subtitle:
+                context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
-          ],
+            // iOS: tips must go through In-App Purchase (guideline 3.1.1);
+            // Android/web keep the external Buy Me a Coffee link.
+            onTap: () => PlatformUtils.isIOS
+                ? _showTipSheet(context)
+                : _showSupportBottomSheet(context),
+            iconColor: AppTheme.accentColor,
+          ),
           _buildDivider(),
           _buildSettingsTile(
             context: context,
@@ -2698,6 +2701,134 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// iOS tip jar: one-time consumable In-App Purchases (guideline 3.1.1).
+  void _showTipSheet(BuildContext context) {
+    final service = sl<AppleConsumablePurchaseService>();
+    service.bind();
+    service.onSuccess = (result) {
+      if (result.kind != ConsumableKind.tip || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.settingsTipThanks)),
+          backgroundColor: AppTheme.primaryColor,
+        ),
+      );
+    };
+    service.onError = (message) {
+      if (!context.mounted) return;
+      _showSnackBar(context, message, Colors.red);
+    };
+    service.onCancelled = () {};
+
+    const tipEmojis = {49: '☕', 199: '🙌', 499: '💛', 999: '🌟'};
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: FutureBuilder<Map<int, ProductDetails>>(
+          future: service.loadTipProducts(),
+          builder: (sheetContext, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final products = snapshot.data ?? {};
+            final amounts = products.keys.toList()..sort();
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  context.tr(TranslationKeys.settingsSupportTitle),
+                  style: AppFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(builderContext).colorScheme.onBackground,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr(TranslationKeys.settingsSupportMessage),
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    color: Theme.of(builderContext)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (amounts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      context.tr(TranslationKeys.settingsTipUnavailable),
+                      style: AppFonts.inter(fontSize: 14, color: Colors.grey),
+                    ),
+                  )
+                else
+                  ...amounts.map((amount) {
+                    final product = products[amount]!;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Text(
+                        tipEmojis[amount] ?? '💝',
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                      title: Text(
+                        product.title.isNotEmpty
+                            ? product.title
+                            : context.tr(TranslationKeys.settingsSupport),
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              Theme.of(builderContext).colorScheme.onBackground,
+                        ),
+                      ),
+                      trailing: Text(
+                        product.price,
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.of(builderContext).pop();
+                        service.purchase(product);
+                      },
+                    );
+                  }),
+                const SizedBox(height: 8),
+              ],
+            );
+          },
         ),
       ),
     );

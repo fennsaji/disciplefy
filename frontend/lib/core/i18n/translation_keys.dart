@@ -362,6 +362,8 @@ class TranslationKeys {
   static const settingsSupportMessage = 'settings.support_message';
   static const settingsClose = 'settings.close';
   static const settingsSupport = 'settings.support';
+  static const settingsTipThanks = 'settings.tip_thanks';
+  static const settingsTipUnavailable = 'settings.tip_unavailable';
   static const settingsNoEmail = 'settings.no_email';
 
   // Settings - Personalization
@@ -611,6 +613,7 @@ class TranslationKeys {
 
   // Token Purchase
   static const tokenPurchaseTitle = 'tokens.purchase.title';
+  static const tokenPurchaseIapSuccess = 'tokens.purchase.iap_success';
   static const tokenPurchaseChoosePackage = 'tokens.purchase.choose_package';
   static const tokenPurchaseChooseAmount = 'tokens.purchase.choose_amount';
   static const tokenPurchaseCustom = 'tokens.purchase.custom';
