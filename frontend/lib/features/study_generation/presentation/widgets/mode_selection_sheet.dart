@@ -93,11 +93,9 @@ class ModeSelectionSheet extends StatefulWidget {
 
     switch (inputType.toLowerCase()) {
       case 'scripture':
-        return StudyMode.deep; // Scripture benefits from deep word studies
       case 'topic':
       case 'question':
-        return StudyMode
-            .standard; // Topics and questions work well with standard
+        return StudyMode.standard; // Standard is the default for all inputs
       default:
         return null;
     }

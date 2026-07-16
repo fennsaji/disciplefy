@@ -379,10 +379,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
 
       if (StudyModePreferences.isRecommended(savedModeRaw)) {
-        // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
-        Logger.debug(
-            '✅ [HOME] Using recommended mode for scripture: Deep Dive');
-        await _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
+        // "Use Recommended" - automatically select Standard for scripture without showing sheet
+        Logger.debug('✅ [HOME] Using recommended mode for scripture: Standard');
+        await _navigateToDailyVerseStudy(
+            currentState, StudyMode.standard, false);
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
         final savedMode = studyModeFromString(savedModeRaw);
@@ -393,7 +393,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           // Invalid mode string - fallback to mode selection sheet
           Logger.debug(
               '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
-          const recommendedMode = StudyMode.deep;
+          const recommendedMode = StudyMode.standard;
           final String languageCode;
           if (currentState is DailyVerseLoaded) {
             languageCode = currentState.currentLanguage.code;
@@ -417,10 +417,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           }
         }
       } else {
-        // No saved preference (null) - show mode selection sheet with Deep Dive as recommended for scripture
+        // No saved preference (null) - show mode selection sheet with Standard as recommended for scripture
         Logger.debug(
-            '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
-        const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
+            '🔍 [HOME] No saved preference - showing mode selection sheet with Standard recommended');
+        const recommendedMode = StudyMode.standard; // Scripture → Standard
 
         // Type-safe extraction of languageCode from state
         final String languageCode;
