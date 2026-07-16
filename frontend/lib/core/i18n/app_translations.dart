@@ -124,6 +124,7 @@ class AppTranslations {
     },
     'common': {
       'retry': 'Retry',
+      'purchase_cancelled': 'Purchase cancelled',
       'actions': {
         'cancel': 'Cancel',
         'share': 'Share',
@@ -2125,6 +2126,7 @@ class AppTranslations {
     },
     'common': {
       'retry': 'फिर कोशिश करें',
+      'purchase_cancelled': 'खरीदारी रद्द की गई',
       'actions': {
         'cancel': 'कैंसल करें',
         'share': 'शेयर करें',
@@ -4131,6 +4133,7 @@ class AppTranslations {
     },
     'common': {
       'retry': 'വീണ്ടും ശ്രമിക്കൂ',
+      'purchase_cancelled': 'വാങ്ങൽ റദ്ദാക്കി',
       'actions': {
         'cancel': 'കാൻസൽ ചെയ്യൂ',
         'share': 'ഷെയർ ചെയ്യൂ',

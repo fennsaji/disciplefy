@@ -90,8 +90,12 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
   void _setupAppleIAP() {
     final service = sl<AppleConsumablePurchaseService>();
     service.bind();
+    // These callbacks fire for EVERY confirmed consumable — including background
+    // sandbox replays and double-deliveries. Only react to the purchase this
+    // page initiated (which set _isLoading); otherwise a stray success would
+    // pop the page again → popped past the root → black screen.
     service.onSuccess = (result) {
-      if (!mounted) return;
+      if (!mounted || !_isLoading) return;
       setState(() => _isLoading = false);
       if (result.kind != ConsumableKind.tokens) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,10 +107,10 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         ),
       );
       context.read<TokenBloc>().add(const RefreshTokenStatus());
-      Navigator.of(context).pop(true);
+      if (Navigator.of(context).canPop()) Navigator.of(context).pop(true);
     };
     service.onError = (message) {
-      if (!mounted) return;
+      if (!mounted || !_isLoading) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -117,8 +121,14 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
       );
     };
     service.onCancelled = () {
-      if (!mounted) return;
+      if (!mounted || !_isLoading) return;
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.commonPurchaseCancelled)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     };
     _consumableService = service;
   }

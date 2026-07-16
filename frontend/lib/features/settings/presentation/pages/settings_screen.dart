@@ -2710,8 +2710,41 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   void _showTipSheet(BuildContext context) {
     final service = sl<AppleConsumablePurchaseService>();
     service.bind();
+
+    // Load products once — creating the future inside the FutureBuilder's build
+    // would re-query the store on every rebuild (e.g. when the sheet scrolls).
+    final tipProductsFuture = service.loadTipProducts();
+
+    // Full-screen loader shown between tapping a tip and the StoreKit payment
+    // sheet appearing / backend confirmation completing.
+    bool loaderOpen = false;
+    void showLoader() {
+      if (loaderOpen || !context.mounted) return;
+      loaderOpen = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    void dismissLoader() {
+      if (!loaderOpen || !context.mounted) return;
+      loaderOpen = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    // Only react to the tip the user actively bought (loader was open). These
+    // callbacks also fire for background sandbox replays — ignore those so we
+    // don't show a stray "thanks"/error or pop an unrelated route.
     service.onSuccess = (result) {
-      if (result.kind != ConsumableKind.tip || !context.mounted) return;
+      final wasInFlight = loaderOpen;
+      dismissLoader();
+      if (!wasInFlight ||
+          result.kind != ConsumableKind.tip ||
+          !context.mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr(TranslationKeys.settingsTipThanks)),
@@ -2720,10 +2753,22 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
       );
     };
     service.onError = (message) {
-      if (!context.mounted) return;
+      final wasInFlight = loaderOpen;
+      dismissLoader();
+      if (!wasInFlight || !context.mounted) return;
       _showSnackBar(context, message, Colors.red);
     };
-    service.onCancelled = () {};
+    service.onCancelled = () {
+      final wasInFlight = loaderOpen;
+      dismissLoader();
+      if (!wasInFlight || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.commonPurchaseCancelled)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    };
 
     const tipEmojis = {49: '☕', 199: '🙌', 499: '💛', 999: '🌟'};
 
@@ -2737,7 +2782,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         ),
         padding: const EdgeInsets.all(24),
         child: FutureBuilder<Map<int, ProductDetails>>(
-          future: service.loadTipProducts(),
+          future: tipProductsFuture,
           builder: (sheetContext, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const SizedBox(
@@ -2821,6 +2866,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       ),
                       onTap: () {
                         Navigator.of(builderContext).pop();
+                        showLoader();
                         service.purchase(product);
                       },
                     );

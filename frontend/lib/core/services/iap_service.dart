@@ -250,20 +250,24 @@ class IAPService {
       Logger.debug(
           '🛒 [IAP] Purchase update: ${purchase.productID}, status: ${purchase.status}');
 
-      // In sync-mode, collect purchases silently without notifying the BLoC.
-      // This prevents the normal flow from creating duplicate subscriptions.
+      // Consumables (token packs, tips) have their own flow — route them away
+      // from the subscription callbacks entirely, INCLUDING during a sync
+      // restore. Otherwise the subscription sync-restore would collect stuck
+      // consumable transactions into _syncPurchases and skip them, so they'd
+      // never get confirmed/finished and would redeliver forever.
+      if (isConsumableProduct(purchase.productID)) {
+        _handleConsumableUpdate(purchase);
+        continue;
+      }
+
+      // In sync-mode, collect (subscription) purchases silently without
+      // notifying the BLoC. This prevents the normal flow from creating
+      // duplicate subscriptions.
       if (_isSyncRestore) {
         if (purchase.status == PurchaseStatus.purchased ||
             purchase.status == PurchaseStatus.restored) {
           _syncPurchases.add(purchase);
         }
-        continue;
-      }
-
-      // Consumables (token packs, tips) have their own flow — route them away
-      // from the subscription callbacks entirely.
-      if (isConsumableProduct(purchase.productID)) {
-        _handleConsumableUpdate(purchase);
         continue;
       }
 
@@ -303,6 +307,16 @@ class IAPService {
       // backend confirms — unacknowledged purchases are redelivered on launch.
       onConsumablePurchaseUpdate?.call(purchase);
     } else if (purchase.status == PurchaseStatus.error) {
+      // iOS/StoreKit often reports a user cancellation as an error rather than
+      // PurchaseStatus.canceled — treat those as a clean cancel, not a failure.
+      if (_isCancellationError(purchase.error)) {
+        Logger.debug('🛒 [IAP] Consumable purchase cancelled by user (error)');
+        onConsumablePurchaseCancelled?.call();
+        if (purchase.pendingCompletePurchase) {
+          _iap.completePurchase(purchase);
+        }
+        return;
+      }
       Logger.debug('🛒 [IAP] Consumable purchase error: ${purchase.error}');
       onConsumablePurchaseError
           ?.call(purchase.error?.message ?? 'Purchase failed');
@@ -315,6 +329,20 @@ class IAPService {
         _iap.completePurchase(purchase);
       }
     }
+  }
+
+  /// Heuristic: does this purchase error represent a user-initiated cancel?
+  /// StoreKit surfaces cancellation inconsistently — sometimes as
+  /// PurchaseStatus.canceled, sometimes as an error carrying
+  /// SKError paymentCancelled (code 2) or "cancel" text.
+  static bool _isCancellationError(IAPError? error) {
+    if (error == null) return false;
+    final haystack = [
+      error.code,
+      error.message,
+      error.details?.toString() ?? '',
+    ].join(' ').toLowerCase();
+    return haystack.contains('cancel') || error.code == '2';
   }
 
   /// Purchase a consumable product (token pack or developer tip).
@@ -330,6 +358,22 @@ class IAPService {
     } catch (e) {
       Logger.debug('🛒 [IAP] Consumable purchase error: $e');
       onConsumablePurchaseError?.call(e.toString());
+    }
+  }
+
+  /// Force-finish a transaction regardless of [PurchaseDetails.pendingCompletePurchase].
+  ///
+  /// Required for consumables: a restored/unfinished consumable can report
+  /// pendingCompletePurchase=false while still sitting in StoreKit's queue, so
+  /// the gated [acknowledgePurchase] would skip it and StoreKit would redeliver
+  /// it forever (and block re-buying the same product). Best-effort — a throw
+  /// (e.g. already finished) is swallowed.
+  Future<void> finishTransaction(PurchaseDetails purchase) async {
+    try {
+      await _iap.completePurchase(purchase);
+      Logger.debug('✅ [IAP] Transaction finished: ${purchase.productID}');
+    } catch (e) {
+      Logger.debug('🛒 [IAP] finishTransaction error (non-fatal): $e');
     }
   }
 

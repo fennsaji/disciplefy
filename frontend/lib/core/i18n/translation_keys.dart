@@ -52,6 +52,7 @@ class TranslationKeys {
 
   // Common Actions
   static const commonRetry = 'common.retry';
+  static const commonPurchaseCancelled = 'common.purchase_cancelled';
   static const commonCancel = 'common.actions.cancel';
   static const commonShare = 'common.actions.share';
   static const commonCopy = 'common.actions.copy';

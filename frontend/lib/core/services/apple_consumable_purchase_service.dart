@@ -32,6 +32,7 @@ class AppleConsumablePurchaseService {
   static const tipProductPrefix = 'com.disciplefy.tip_';
 
   /// Fixed tip tiers (rupee amounts). Product IDs: `com.disciplefy.tip_{amount}`
+  /// Must match the consumable products created in App Store Connect.
   static const tipAmounts = [49, 199, 499, 999];
 
   final IAPService _iapService;
@@ -43,6 +44,12 @@ class AppleConsumablePurchaseService {
   void Function()? onCancelled;
 
   bool _bound = false;
+
+  // Transaction IDs confirmed+finished this session. StoreKit sandbox replays
+  // historical consumables on every restorePurchases(), so without this guard
+  // the same transaction would re-hit the backend on every restore. Cleared
+  // only on app restart (a genuinely new purchase always has a new id).
+  final Set<String> _processedTxnIds = {};
 
   AppleConsumablePurchaseService({
     required IAPService iapService,
@@ -96,6 +103,14 @@ class AppleConsumablePurchaseService {
     final kind = purchase.productID.startsWith(tipProductPrefix)
         ? ConsumableKind.tip
         : ConsumableKind.tokens;
+    // Skip transactions already handled this session (sandbox replay). Still
+    // finish them so StoreKit stops redelivering, but don't re-hit the backend.
+    final txnId = purchase.purchaseID;
+    if (txnId != null && _processedTxnIds.contains(txnId)) {
+      await _iapService.finishTransaction(purchase);
+      return;
+    }
+
     try {
       Logger.debug(
           '🪙 [CONSUMABLE] Confirming ${purchase.productID} with backend');
@@ -114,8 +129,13 @@ class AppleConsumablePurchaseService {
 
       final data = response.data as Map<String, dynamic>?;
       if (response.status == 200 && data?['success'] == true) {
-        // Acknowledge ONLY after the backend has fulfilled the purchase.
-        await _iapService.acknowledgePurchase(purchase);
+        // Finish ONLY after the backend has fulfilled the purchase. Consumables
+        // must be force-finished (not gated on pendingCompletePurchase): a
+        // restored/unfinished consumable reports pendingCompletePurchase=false
+        // yet still sits in StoreKit's queue, so it redelivers on every launch
+        // and blocks re-buying the same product until finished.
+        await _iapService.finishTransaction(purchase);
+        if (txnId != null) _processedTxnIds.add(txnId);
         Logger.info(
             '🪙 [CONSUMABLE] ✅ ${kind.name} purchase fulfilled: ${purchase.productID}');
         onSuccess?.call(ConsumablePurchaseResult(
