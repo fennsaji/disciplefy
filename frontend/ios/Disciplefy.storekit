@@ -1,7 +1,143 @@
 {
   "identifier" : "DISCIPLEFY_STOREKIT_CONFIG",
   "nonRenewingSubscriptions" : [],
-  "products" : [],
+  "products" : [
+    {
+      "displayPrice" : "29",
+      "familyShareable" : false,
+      "internalID" : "22000001",
+      "localizations" : [
+        {
+          "description" : "50 study credits",
+          "displayName" : "50 Tokens",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tokens_50",
+      "referenceName" : "50 Tokens",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "49",
+      "familyShareable" : false,
+      "internalID" : "22000002",
+      "localizations" : [
+        {
+          "description" : "100 study credits",
+          "displayName" : "100 Tokens",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tokens_100",
+      "referenceName" : "100 Tokens",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "99",
+      "familyShareable" : false,
+      "internalID" : "22000003",
+      "localizations" : [
+        {
+          "description" : "200 study credits",
+          "displayName" : "200 Tokens",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tokens_200",
+      "referenceName" : "200 Tokens",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "149",
+      "familyShareable" : false,
+      "internalID" : "22000004",
+      "localizations" : [
+        {
+          "description" : "400 study credits",
+          "displayName" : "400 Tokens",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tokens_400",
+      "referenceName" : "400 Tokens",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "299",
+      "familyShareable" : false,
+      "internalID" : "22000005",
+      "localizations" : [
+        {
+          "description" : "1000 study credits",
+          "displayName" : "1000 Tokens",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tokens_1000",
+      "referenceName" : "1000 Tokens",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "49",
+      "familyShareable" : false,
+      "internalID" : "22000006",
+      "localizations" : [
+        {
+          "description" : "Buy me a South Indian filter coffee",
+          "displayName" : "Filter Kaapi ☕",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tip_49",
+      "referenceName" : "Filter Kaapi Tip",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "199",
+      "familyShareable" : false,
+      "internalID" : "22000007",
+      "localizations" : [
+        {
+          "description" : "Treat me to a café cappuccino",
+          "displayName" : "Cappuccino ☕",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tip_199",
+      "referenceName" : "Cappuccino Tip",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "499",
+      "familyShareable" : false,
+      "internalID" : "22000008",
+      "localizations" : [
+        {
+          "description" : "Support with a specialty cold brew",
+          "displayName" : "Cold Brew ❄️☕",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tip_499",
+      "referenceName" : "Cold Brew Tip",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "999",
+      "familyShareable" : false,
+      "internalID" : "22000009",
+      "localizations" : [
+        {
+          "description" : "Gift a bag of Coorg estate beans",
+          "displayName" : "Coffee Estate 🌱☕",
+          "locale" : "en_IN"
+        }
+      ],
+      "productID" : "com.disciplefy.tip_999",
+      "referenceName" : "Coffee Estate Tip",
+      "type" : "Consumable"
+    }
+  ],
   "settings" : {
     "_applicationInternalID" : "6778309947",
     "_developerTeamID" : "4V6VA2U9MW",

@@ -124,6 +124,7 @@ class AppTranslations {
     },
     'common': {
       'retry': 'Retry',
+      'purchase_cancelled': 'Purchase cancelled',
       'actions': {
         'cancel': 'Cancel',
         'share': 'Share',
@@ -446,6 +447,9 @@ class AppTranslations {
           'Thank you for using Disciplefy! Your support helps us continue improving the app. If this app has blessed you or helped you in any way, and you\'d like to encourage the work behind it, you can support it here by buying me a coffee.',
       'close': 'Close',
       'support': 'Support',
+      'tip_thanks': 'Thank you for supporting Disciplefy! 🙏',
+      'tip_unavailable':
+          'Tips are unavailable right now. Please try again later.',
       'no_email': 'No email',
       'personalization': 'Personalization',
       'retake_questionnaire': 'Retake Questionnaire',
@@ -942,6 +946,8 @@ class AppTranslations {
       },
       'purchase': {
         'title': 'Get Credits',
+        'iap_success':
+            'Purchase successful! {tokens} tokens added to your account.',
         'choose_package': 'Choose a Package',
         'choose_amount': 'Choose Amount',
         'custom': 'Custom',
@@ -2120,6 +2126,7 @@ class AppTranslations {
     },
     'common': {
       'retry': 'फिर कोशिश करें',
+      'purchase_cancelled': 'खरीदारी रद्द की गई',
       'actions': {
         'cancel': 'कैंसल करें',
         'share': 'शेयर करें',
@@ -2432,6 +2439,9 @@ class AppTranslations {
           'Disciplefy का उपयोग करने के लिए धन्यवाद! आपकी मदद से हम ऐप बेहतर बना सकते हैं। अगर इस ऐप ने आपकी मदद की है, तो आप हमें एक कॉफी खरीदकर सपोर्ट कर सकते हैं।',
       'close': 'बंद करें',
       'support': 'सपोर्ट करें',
+      'tip_thanks': 'Disciplefy को सपोर्ट करने के लिए धन्यवाद! 🙏',
+      'tip_unavailable':
+          'टिप्स अभी उपलब्ध नहीं हैं। कृपया बाद में प्रयास करें।',
       'no_email': 'कोई ईमेल नहीं',
       'personalization': 'वैयक्तिकरण',
       'retake_questionnaire': 'प्रश्नावली फिर से लें',
@@ -2937,6 +2947,7 @@ class AppTranslations {
       },
       'purchase': {
         'title': 'क्रेडिट लें',
+        'iap_success': 'खरीदारी सफल! {tokens} टोकन आपके खाते में जोड़े गए।',
         'choose_package': 'एक पैकेज चुनें',
         'choose_amount': 'राशि चुनें',
         'custom': 'कस्टम',
@@ -4122,6 +4133,7 @@ class AppTranslations {
     },
     'common': {
       'retry': 'വീണ്ടും ശ്രമിക്കൂ',
+      'purchase_cancelled': 'വാങ്ങൽ റദ്ദാക്കി',
       'actions': {
         'cancel': 'കാൻസൽ ചെയ്യൂ',
         'share': 'ഷെയർ ചെയ്യൂ',
@@ -4443,6 +4455,9 @@ class AppTranslations {
           'Disciplefy ഉപയോഗിച്ചതിന് നന്ദി! നിങ്ങളുടെ പിന്തുണ ആപ്പ് മേല്‍പ്പെടുത്തുന്നതിന് ഞങ്ങളെ സഹായിക്കുന്നു. ഈ ആപ്പ് നിങ്ങളെ അനുഗ്രഹിച്ചിട്ടുണ്ടെങ്കിലോ ഏതെങ്കിലും സഹായിച്ചിട്ടുണ്ടെങ്കിലോ, അതിന് പിന്നിലെ പണി പ്രോത്സാഹിപ്പിക്കാൻ നിങ്ങൾ ആഗ്രഹിക്കുന്നുവെങ്കിൽ, എനിക്ക് ഒരു കോഫി വാങ്ങി ഇവിടെ പിന്തുണയ്ക്കാം.',
       'close': 'അടയ്ക്കുക',
       'support': 'പിന്തുണയ്ക്കുക',
+      'tip_thanks': 'Disciplefy-യെ പിന്തുണച്ചതിന് നന്ദി! 🙏',
+      'tip_unavailable':
+          'ടിപ്പുകൾ ഇപ്പോൾ ലഭ്യമല്ല. ദയവായി പിന്നീട് ശ്രമിക്കുക.',
       'no_email': 'ഇമെയിൽ ഇല്ല',
       'personalization': 'വ്യക്തിഗതമാക്കൽ',
       'retake_questionnaire': 'ചോദ്യാവലി വീണ്ടും ചെയ്യുക',
@@ -4956,6 +4971,8 @@ class AppTranslations {
       },
       'purchase': {
         'title': 'ക്രെഡിറ്റുകൾ നേടുക',
+        'iap_success':
+            'വാങ്ങൽ വിജയകരം! {tokens} ടോക്കണുകൾ നിങ്ങളുടെ അക്കൗണ്ടിൽ ചേർത്തു.',
         'choose_package': 'ഒരു പാക്കേജ് തിരഞ്ഞെടുക്കുക',
         'choose_amount': 'തുക തിരഞ്ഞെടുക്കുക',
         'custom': 'കസ്റ്റം',

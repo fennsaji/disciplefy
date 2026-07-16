@@ -56,6 +56,7 @@ import 'core/utils/keyboard_performance_monitor.dart';
 import 'core/services/android_download_notification_service.dart';
 import 'core/services/android_hybrid_storage.dart';
 import 'core/services/iap_service.dart';
+import 'core/services/apple_consumable_purchase_service.dart';
 import 'core/utils/logger.dart';
 import 'core/connectivity/connectivity_bloc.dart';
 import 'core/services/connectivity_sync_service.dart';
@@ -266,6 +267,12 @@ void main() async {
     if (!kIsWeb) {
       if (kDebugMode) Logger.debug('🛒 [MAIN] Initializing IAP service...');
       await sl<IAPService>().initialize();
+      // Bind the consumable purchase handler at startup so restored/unfinished
+      // token & tip transactions are confirmed and finished even before the
+      // user opens the purchase screens (otherwise they redeliver forever).
+      if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS)) {
+        sl<AppleConsumablePurchaseService>().bind();
+      }
       if (kDebugMode) Logger.debug('✅ [MAIN] IAP service completed');
     }
 
