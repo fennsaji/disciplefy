@@ -711,32 +711,31 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final showMemoryVerses =
         !systemConfigService.shouldHideFeature('memory_verses', userPlan);
 
+    // The logo is Expanded so it fills all slack on the left, pushing the Memory
+    // Verses pill + Settings to the right edge. The pill keeps its intrinsic
+    // width (full label, capped at 140 inside the button); the logo image is
+    // left-aligned and shrinks only when the header is genuinely tight.
     return Row(
       children: [
-        _buildLogoWidget(),
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (showMemoryVerses)
-                WalkthroughTooltip(
-                  showcaseKey: ShowcaseKeys.homeMemoryVerses,
-                  title:
-                      AppLocalizations.of(context)!.walkthroughHomeMemoryTitle,
-                  description:
-                      AppLocalizations.of(context)!.walkthroughHomeMemoryDesc,
-                  screen: WalkthroughScreen.home,
-                  stepNumber: 2,
-                  totalSteps: 5,
-                  onNext: _onNext,
-                  // Header element — not enough space above; show tooltip below
-                  tooltipPosition: TooltipPosition.bottom,
-                  child: _buildMemoryVersesIconButton(),
-                ),
-              _buildSettingsButton(),
-            ],
+        Expanded(child: _buildLogoWidget()),
+        const SizedBox(width: 8),
+        if (showMemoryVerses) ...[
+          WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.homeMemoryVerses,
+            title: AppLocalizations.of(context)!.walkthroughHomeMemoryTitle,
+            description:
+                AppLocalizations.of(context)!.walkthroughHomeMemoryDesc,
+            screen: WalkthroughScreen.home,
+            stepNumber: 2,
+            totalSteps: 5,
+            onNext: _onNext,
+            // Header element — not enough space above; show below
+            tooltipPosition: TooltipPosition.bottom,
+            child: _buildMemoryVersesIconButton(),
           ),
-        ),
+          const SizedBox(width: 4),
+        ],
+        _buildSettingsButton(),
       ],
     );
   }
@@ -754,14 +753,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              OutlinedButton.icon(
+              // Plain OutlinedButton (not .icon) with a Flexible label so the
+              // text ellipsizes when the header is tight — .icon leaves the
+              // label unconstrained and it overflows instead.
+              OutlinedButton(
                 onPressed: _handleMemoryVersesTap,
-                icon: const Icon(Icons.psychology_outlined, size: 18),
-                label: Text(
-                  context.tr(TranslationKeys.homeMemoryVerses),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: pillColor,
                   side: BorderSide(
@@ -774,6 +770,20 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.psychology_outlined, size: 18),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        context.tr(TranslationKeys.homeMemoryVerses),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (dueCount > 0)
@@ -870,12 +880,20 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ? 'assets/images/app_logo_dark.png'
         : 'assets/images/app_logo.png';
 
-    return Image.asset(
-      logoAsset,
-      width: 180,
-      height: 40,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) => _buildLogoFallback(),
+    // No fixed width — BoxFit.contain scales within the Flexible parent so the
+    // logo shrinks on narrow screens; maxWidth caps it on wide screens. Left-
+    // aligned so it hugs the leading edge as it scales.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180, maxHeight: 40),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Image.asset(
+          logoAsset,
+          height: 40,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => _buildLogoFallback(),
+        ),
+      ),
     );
   }
 
