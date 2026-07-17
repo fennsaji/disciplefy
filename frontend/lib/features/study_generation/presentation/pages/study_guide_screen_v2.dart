@@ -2817,70 +2817,83 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
   /// Builds the Read Mode content (traditional scrollable view)
   Widget _buildReadModeContent(bool isLargeScreen) {
+    // Horizontal padding is applied per-section (not on the scroll view) so the
+    // Follow-up Chat panel can break out and span the full screen width.
+    const sidePadding = EdgeInsets.symmetric(horizontal: 24);
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: isLargeScreen ? 24 : 20),
+          // Padded content above the chat
+          Padding(
+            padding: sidePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: isLargeScreen ? 24 : 20),
 
-          // Topic Title
-          _buildTopicTitle(),
+                // Topic Title
+                _buildTopicTitle(),
 
-          SizedBox(height: isLargeScreen ? 24 : 20),
+                SizedBox(height: isLargeScreen ? 24 : 20),
 
-          // Study Guide Content
-          _buildStudyContent(),
+                // Study Guide Content
+                _buildStudyContent(),
 
-          SizedBox(height: isLargeScreen ? 32 : 24),
+                SizedBox(height: isLargeScreen ? 32 : 24),
 
-          // Reading Completion Card (dismissible) - respect reflections feature access
-          if (_showCompletionCard && _shouldShowReflections())
-            LockedFeatureWrapper(
-              featureKey: 'reflections',
-              showLockOverlay: _isReflectionsLocked(),
-              child: ReadingCompletionCard(
-                onReflect: () {
-                  // Only proceed if not locked
-                  if (!_isReflectionsLocked()) {
-                    setState(() => _viewMode = StudyViewMode.reflect);
-                  }
-                },
-                onMaybeLater: () {
-                  // Simply dismiss the card
-                  setState(() {
-                    _showCompletionCard = false;
-                  });
-                },
-              ),
+                // Reading Completion Card (dismissible) - respect reflections feature access
+                if (_showCompletionCard && _shouldShowReflections())
+                  LockedFeatureWrapper(
+                    featureKey: 'reflections',
+                    showLockOverlay: _isReflectionsLocked(),
+                    child: ReadingCompletionCard(
+                      onReflect: () {
+                        // Only proceed if not locked
+                        if (!_isReflectionsLocked()) {
+                          setState(() => _viewMode = StudyViewMode.reflect);
+                        }
+                      },
+                      onMaybeLater: () {
+                        // Simply dismiss the card
+                        setState(() {
+                          _showCompletionCard = false;
+                        });
+                      },
+                    ),
+                  ),
+
+                SizedBox(height: isLargeScreen ? 16 : 12),
+
+                // Share with fellowship section — write a reflection, question, or insight
+                if (_userFellowships?.isNotEmpty == true) ...[
+                  WalkthroughTooltip(
+                    showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
+                    title: context
+                        .tr(TranslationKeys.studyGuideFellowshipShareTitle),
+                    description: context.tr(
+                        TranslationKeys.studyGuideFellowshipWalkthroughDesc),
+                    screen: WalkthroughScreen.studyGuideCompletion,
+                    stepNumber: 1,
+                    totalSteps: 3,
+                    onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                    child: _FellowshipShareSection(
+                      studyGuideId: _currentStudyGuide!.id,
+                      guideTitle: _getDisplayTitle(),
+                      guideInputType: _currentStudyGuide!.inputType,
+                      guideLanguage: _currentStudyGuide!.language,
+                      userFellowships: _userFellowships!,
+                    ),
+                  ),
+                  SizedBox(height: isLargeScreen ? 32 : 24),
+                ],
+              ],
             ),
+          ),
 
-          SizedBox(height: isLargeScreen ? 16 : 12),
-
-          // Share with fellowship section — write a reflection, question, or insight
-          if (_userFellowships?.isNotEmpty == true) ...[
-            WalkthroughTooltip(
-              showcaseKey: ShowcaseKeys.studyGuideFellowshipShare,
-              title: context.tr(TranslationKeys.studyGuideFellowshipShareTitle),
-              description: context
-                  .tr(TranslationKeys.studyGuideFellowshipWalkthroughDesc),
-              screen: WalkthroughScreen.studyGuideCompletion,
-              stepNumber: 1,
-              totalSteps: 3,
-              onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-              child: _FellowshipShareSection(
-                studyGuideId: _currentStudyGuide!.id,
-                guideTitle: _getDisplayTitle(),
-                guideInputType: _currentStudyGuide!.inputType,
-                guideLanguage: _currentStudyGuide!.language,
-                userFellowships: _userFellowships!,
-              ),
-            ),
-            SizedBox(height: isLargeScreen ? 32 : 24),
-          ],
-
-          // Follow-up Chat Section - with lock support for study_chat feature
+          // Follow-up Chat Section — full width (no horizontal padding), with
+          // lock support for study_chat feature.
           LockedFeatureWrapper(
             featureKey: 'study_chat',
             child: Column(
@@ -2925,20 +2938,30 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             ),
           ),
 
-          // Notes Section
-          WalkthroughTooltip(
-            showcaseKey: ShowcaseKeys.studyGuideNotes,
-            title: context.tr(TranslationKeys.studyGuideWalkthroughNotesTitle),
-            description:
-                context.tr(TranslationKeys.studyGuideWalkthroughNotesDesc),
-            screen: WalkthroughScreen.studyGuideCompletion,
-            stepNumber: 3,
-            totalSteps: 3,
-            onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
-            child: _buildNotesSection(),
-          ),
+          // Padded content below the chat
+          Padding(
+            padding: sidePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Notes Section
+                WalkthroughTooltip(
+                  showcaseKey: ShowcaseKeys.studyGuideNotes,
+                  title: context
+                      .tr(TranslationKeys.studyGuideWalkthroughNotesTitle),
+                  description: context
+                      .tr(TranslationKeys.studyGuideWalkthroughNotesDesc),
+                  screen: WalkthroughScreen.studyGuideCompletion,
+                  stepNumber: 3,
+                  totalSteps: 3,
+                  onNext: () => ShowCaseWidget.of(_showcaseContext!).next(),
+                  child: _buildNotesSection(),
+                ),
 
-          SizedBox(height: isLargeScreen ? 32 : 24),
+                SizedBox(height: isLargeScreen ? 32 : 24),
+              ],
+            ),
+          ),
         ],
       ),
     );

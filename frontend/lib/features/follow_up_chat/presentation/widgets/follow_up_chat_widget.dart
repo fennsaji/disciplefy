@@ -167,9 +167,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
-        ),
+        borderRadius: BorderRadius.zero,
         boxShadow: [
           BoxShadow(
             color: theme.shadowColor.withOpacity(0.1),
@@ -194,9 +192,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   Widget _buildHeader(ThemeData theme) {
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
-      ),
+      borderRadius: BorderRadius.zero,
       child: Semantics(
         button: true,
         label:
@@ -204,9 +200,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
         onTap: widget.onToggleExpanded,
         child: InkWell(
           onTap: widget.onToggleExpanded,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
-          ),
+          borderRadius: BorderRadius.zero,
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppConstants.DEFAULT_PADDING,

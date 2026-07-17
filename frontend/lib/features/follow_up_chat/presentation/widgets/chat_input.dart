@@ -240,7 +240,9 @@ class _ChatInputState extends State<ChatInput>
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      // Tighter horizontal padding so the text field gets more width (the mic +
+      // send buttons already eat ~112px of the row).
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
@@ -433,17 +435,19 @@ class _ChatInputState extends State<ChatInput>
 
   /// Builds the main input row
   Widget _buildInputRow(ThemeData theme) {
+    // Text field takes the full width; the mic + send buttons are grouped
+    // together on the trailing side and vertically centred against the
+    // (multi-line) field for a balanced look.
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (widget.enableVoiceInput) ...[
-          _buildVoiceButton(theme),
-          const SizedBox(width: AppConstants.SMALL_PADDING),
-        ],
         Expanded(
           child: _buildTextField(theme),
         ),
         const SizedBox(width: AppConstants.SMALL_PADDING),
+        if (widget.enableVoiceInput) ...[
+          _buildVoiceButton(theme),
+          const SizedBox(width: 8),
+        ],
         _buildSendButton(theme),
       ],
     );
@@ -513,57 +517,15 @@ class _ChatInputState extends State<ChatInput>
 
   /// Builds the text input field
   Widget _buildTextField(ThemeData theme) {
-    if (widget.onNext == null) {
-      return Container(
-        constraints: const BoxConstraints(
-          minHeight: 48,
-          maxHeight: 120,
-        ),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.LARGE_BORDER_RADIUS),
-          border: Border.all(
-            color: _isFocused
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline.withOpacity(0.3),
-            width: _isFocused ? 2 : 1,
-          ),
-        ),
-        child: TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          enabled: widget.isEnabled && !widget.isProcessing && !_isListening,
-          maxLines: null,
-          keyboardType: TextInputType.multiline,
-          textInputAction: TextInputAction.send,
-          onSubmitted: (_) => _sendMessage(),
-          decoration: InputDecoration(
-            hintText: _isListening
-                ? context.tr(TranslationKeys.followUpChatListening)
-                : context.tr(TranslationKeys.followUpChatInputHint),
-            hintStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.DEFAULT_PADDING,
-              vertical: AppConstants.SMALL_PADDING,
-            ),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            disabledBorder: InputBorder.none,
-          ),
-          style: theme.textTheme.bodyMedium,
-        ),
-      );
-    }
     return Container(
       constraints: const BoxConstraints(
-        minHeight: 48,
-        maxHeight: 120,
+        minHeight: 68,
+        maxHeight: 160,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        // Transparent fill so the field blends with the input bar instead of
+        // reading as a distinct grey box; the border defines it.
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppConstants.LARGE_BORDER_RADIUS),
         border: Border.all(
           color: _isFocused
@@ -576,11 +538,16 @@ class _ChatInputState extends State<ChatInput>
         controller: _controller,
         focusNode: _focusNode,
         enabled: widget.isEnabled && !widget.isProcessing && !_isListening,
-        maxLines: null,
+        minLines: 2,
+        maxLines: 6,
+        textAlignVertical: TextAlignVertical.center,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.send,
         onSubmitted: (_) => _sendMessage(),
         decoration: InputDecoration(
+          // Override the global inputDecorationTheme (filled: true) so the field
+          // has no grey fill of its own — it blends with the panel.
+          filled: false,
           hintText: _isListening
               ? context.tr(TranslationKeys.followUpChatListening)
               : context.tr(TranslationKeys.followUpChatInputHint),
