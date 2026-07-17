@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 // GoogleFonts import removed - using bundled fonts via AppFonts helper
 import 'core/config/app_config.dart';
@@ -163,6 +164,20 @@ void main() async {
         FirebaseMessaging.onBackgroundMessage(
           firebaseMessagingBackgroundHandler,
         );
+
+        // Route uncaught errors to Crashlytics in release/profile builds
+        // (TestFlight / internal testing have no console attached). Debug keeps
+        // the local console; collection is disabled there to avoid dev noise.
+        await FirebaseCrashlytics.instance
+            .setCrashlyticsCollectionEnabled(!kDebugMode);
+        if (!kDebugMode) {
+          FlutterError.onError =
+              FirebaseCrashlytics.instance.recordFlutterFatalError;
+          PlatformDispatcher.instance.onError = (error, stack) {
+            FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+            return true;
+          };
+        }
       }
 
       if (kDebugMode) {

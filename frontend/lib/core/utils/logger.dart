@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
 /// Log levels for categorizing log messages
@@ -180,10 +181,15 @@ class Logger {
       }
     }
 
-    // In production, you might want to send critical/error logs to a service
-    if (kReleaseMode && level.priority >= LogLevel.error.priority) {
+    // In release/profile builds (no console attached) forward error+ logs to
+    // Crashlytics as non-fatals. Debug uses the console above; web has no
+    // Crashlytics support.
+    if (!kDebugMode && !kIsWeb && level.priority >= LogLevel.error.priority) {
       _sendToLoggingService(level, message,
-          tag: moduleTag, context: context, error: error);
+          tag: moduleTag,
+          context: context,
+          error: error,
+          stackTrace: stackTrace);
     }
   }
 
@@ -191,19 +197,29 @@ class Logger {
   static String _formatContext(Map<String, dynamic> context) =>
       context.entries.map((entry) => '${entry.key}=${entry.value}').join(', ');
 
-  /// Send logs to external logging service (placeholder for production)
+  /// Forward an error/critical log to Firebase Crashlytics as a non-fatal
+  /// record. Best-effort: never let logging crash the app.
   static void _sendToLoggingService(
     LogLevel level,
     String message, {
     String? tag,
     Map<String, dynamic>? context,
     Object? error,
+    StackTrace? stackTrace,
   }) {
-    // TODO: Implement actual logging service integration
-    // Examples: Firebase Crashlytics, Sentry, Datadog, etc.
-    // This would typically be an async operation
-    if (kDebugMode) {
-      debugPrint('🚀 [LOGGING_SERVICE] Would send: ${level.label} - $message');
+    try {
+      final crashlytics = FirebaseCrashlytics.instance;
+      if (context != null) {
+        context.forEach((k, v) => crashlytics.setCustomKey(k, v.toString()));
+      }
+      crashlytics.recordError(
+        error ?? message,
+        stackTrace,
+        reason: '[${level.label}] ${tag ?? 'GENERAL'}: $message',
+      );
+    } catch (_) {
+      // Crashlytics unavailable (not initialised / unsupported platform) —
+      // swallow so logging never throws.
     }
   }
 
