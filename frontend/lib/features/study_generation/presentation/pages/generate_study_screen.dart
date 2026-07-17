@@ -473,10 +473,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
     // If "recommended", determine recommended mode based on input type
     if (StudyModePreferences.isRecommended(_savedStudyModePreference)) {
-      final recommendedMode = _selectedMode == StudyInputMode.scripture
-          ? StudyMode.deep
-          : StudyMode.standard;
-      modeForCost = recommendedMode.value;
+      // Standard is the recommended default for all input types.
+      modeForCost = StudyMode.standard.value;
     } else {
       // Use the specific saved mode
       modeForCost = _savedStudyModePreference!;
@@ -3107,18 +3105,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         await _languagePreferenceService.getStudyModePreferenceRaw();
 
     if (StudyModePreferences.isRecommended(savedModeString)) {
-      // User wants recommended mode - determine based on input type
-      StudyMode recommendedMode;
-      switch (inputType) {
-        case 'scripture':
-          recommendedMode = StudyMode.deep; // Scripture → Deep Dive
-          break;
-        case 'topic':
-        case 'question':
-        default:
-          recommendedMode = StudyMode.standard; // Topic/Question → Standard
-          break;
-      }
+      // User wants recommended mode - Standard is the default for all inputs.
+      const recommendedMode = StudyMode.standard;
 
       Logger.info(
           '✅ [GENERATE_STUDY] Using recommended mode for $inputType: ${recommendedMode.displayName}');
@@ -3150,8 +3138,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       final isOffline =
           context.read<ConnectivityBloc>().state is ConnectivityOffline;
       if (isOffline) {
-        final offlineMode =
-            inputType == 'scripture' ? StudyMode.deep : StudyMode.standard;
+        const offlineMode = StudyMode.standard;
         Logger.debug(
             '🔍 [GENERATE_STUDY] Offline – skipping mode sheet, using ${offlineMode.name}');
         await _navigateToStudyGuide(offlineMode, false, true);
@@ -3170,9 +3157,8 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
         final selectedMode = result['mode'] as StudyMode;
         final rememberChoice = result['rememberChoice'] as bool;
 
-        // Determine recommended mode for this input type
-        final recommendedMode =
-            inputType == 'scripture' ? StudyMode.deep : StudyMode.standard;
+        // Standard is the recommended mode for all input types.
+        const recommendedMode = StudyMode.standard;
 
         await _navigateToStudyGuide(
           selectedMode,

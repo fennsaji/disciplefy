@@ -877,7 +877,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           if (permanentFailureCodes.contains(failure.code)) {
             Logger.debug(
                 '🧹 [BLOC] Permanent failure (${failure.code}) — clearing transaction from the queue');
-            _iapService.acknowledgePurchase(purchase);
+            // Force-finish (not acknowledgePurchase, which is gated on
+            // pendingCompletePurchase): a restored/background-redelivered
+            // transaction — e.g. an expired sandbox subscription replaying —
+            // reports pendingCompletePurchase=false, so the gated path is a
+            // no-op and StoreKit keeps redelivering it (surfacing the failure)
+            // on every launch. finishTransaction clears it unconditionally.
+            _iapService.finishTransaction(purchase);
           }
 
           if (isClosed) return;
@@ -1388,20 +1394,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       Logger.debug('🛒 [BLOC] Fetching product from store: $productId');
 
-      // Fetch products from store
-      final products = await _iapService.getProducts({productId});
-
-      if (products.isEmpty) {
-        throw Exception('Product not found in store: $productId');
-      }
-
-      final product = products.first;
-      Logger.debug(
-          '🛒 [BLOC] Product found: ${product.title} - ${product.price}');
-
-      // For Google Play upgrades/downgrades, pass the old purchase so Google
-      // Play replaces the existing subscription instead of creating a new one.
-      GooglePlayPurchaseDetails? oldPurchaseDetails;
+      // For Google Play upgrades/downgrades, resolve the old product id first.
+      // Its ProductDetails must be fetched via queryProductDetails BEFORE
+      // launchBillingFlow — Google Play Billing needs it cached to build the
+      // subscription replacement, otherwise it throws
+      // IN_APP_PURCHASE_INVALID_OLD_PRODUCT ("products were not fetched prior
+      // to the call").
+      String? oldProductId;
       if (!kIsWeb &&
           Platform.isAndroid &&
           _cachedSubscription != null &&
@@ -1410,16 +1409,41 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         final oldPlanCode = _cachedSubscription!.planType
             .replaceAll('_monthly', '')
             .replaceAll('_yearly', '');
-        final oldProductId = _pricingService.getProductId(
+        oldProductId = _pricingService.getProductId(
           oldPlanCode,
           provider: 'google_play',
         );
-        if (oldProductId != null && oldProductId.isNotEmpty) {
-          Logger.debug(
-              '🛒 [BLOC] Upgrade detected — looking up old purchase for $oldProductId');
-          oldPurchaseDetails =
-              await _iapService.findExistingGooglePlayPurchase(oldProductId);
-        }
+      }
+
+      // Fetch products from store — include the old product so its
+      // ProductDetails is cached for the subscription-replacement flow.
+      final productIdsToFetch = <String>{productId};
+      if (oldProductId != null && oldProductId.isNotEmpty) {
+        productIdsToFetch.add(oldProductId);
+      }
+      final products = await _iapService.getProducts(productIdsToFetch);
+
+      if (products.isEmpty) {
+        throw Exception('Product not found in store: $productId');
+      }
+
+      // Select the target product by id — with the old product also fetched,
+      // products.first is no longer guaranteed to be the new one.
+      final product = products.firstWhere(
+        (p) => p.id == productId,
+        orElse: () => throw Exception('Product not found in store: $productId'),
+      );
+      Logger.debug(
+          '🛒 [BLOC] Product found: ${product.title} - ${product.price}');
+
+      // For Google Play upgrades/downgrades, pass the old purchase so Google
+      // Play replaces the existing subscription instead of creating a new one.
+      GooglePlayPurchaseDetails? oldPurchaseDetails;
+      if (oldProductId != null && oldProductId.isNotEmpty) {
+        Logger.debug(
+            '🛒 [BLOC] Plan change detected — looking up old purchase for $oldProductId');
+        oldPurchaseDetails =
+            await _iapService.findExistingGooglePlayPurchase(oldProductId);
       }
 
       // Initiate purchase

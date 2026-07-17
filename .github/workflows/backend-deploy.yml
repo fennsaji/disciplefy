@@ -238,6 +238,13 @@ jobs:
         APPLE_ISSUER_ID=${{ secrets.APPLE_ISSUER_ID }}
         APPLE_IAP_KEY_ID=${{ secrets.APPLE_IAP_KEY_ID }}
 
+        # Google Play IAP — production service account (Play Developer API).
+        # _KEY_B64 is base64 of the full service-account JSON (single line, no dotenv
+        # newline issues); iap-config-service decodes it via atob().
+        GOOGLE_PLAY_PRODUCTION_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_PLAY_PRODUCTION_SERVICE_ACCOUNT_EMAIL }}
+        GOOGLE_PLAY_PRODUCTION_SERVICE_ACCOUNT_KEY_B64=${{ secrets.GOOGLE_PLAY_PRODUCTION_SERVICE_ACCOUNT_KEY_B64 }}
+        GOOGLE_PLAY_PRODUCTION_PACKAGE_NAME=${{ secrets.GOOGLE_PLAY_PRODUCTION_PACKAGE_NAME }}
+
         # SMS Configuration (${{ env.DEPLOY_ENV }})
         TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
         TWILIO_MESSAGE_SERVICE_SID=${{ secrets.TWILIO_MESSAGE_SERVICE_SID }}
