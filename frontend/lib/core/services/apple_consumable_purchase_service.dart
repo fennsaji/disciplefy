@@ -144,13 +144,48 @@ class AppleConsumablePurchaseService {
           alreadyFulfilled: data?['already_fulfilled'] == true,
         ));
       } else {
+        final status = response.status;
+        final errorCode = (data?['error'] is Map)
+            ? (data?['error']?['code'] as String?)
+            : null;
         final message = (data?['error'] is Map)
             ? ((data?['error']?['message'] as String?) ?? 'Verification failed')
             : ((data?['error'] as String?) ?? 'Verification failed');
         Logger.error(
-            '🪙 [CONSUMABLE] Backend rejected purchase: $message (status ${response.status})');
-        // Leave unacknowledged — StoreKit redelivers, backend is idempotent.
-        onError?.call(message);
+            '🪙 [CONSUMABLE] Backend rejected purchase: $message (code=$errorCode status=$status)');
+
+        // A terminal client error means this transaction can NEVER be fulfilled
+        // for the current user (e.g. RECEIPT_ALREADY_CLAIMED — belongs to another
+        // account, product mismatch, unknown product). Leaving it unacknowledged
+        // makes StoreKit redeliver it on every launch forever and spam the error.
+        // Finish it so it stops. Auth (401), timeout (408), rate-limit (429) and
+        // 5xx/network are transient — leave unacknowledged so the next launch
+        // retries (backend is idempotent).
+        const terminalCodes = {
+          'RECEIPT_ALREADY_CLAIMED',
+          'PRODUCT_MISMATCH',
+          'UNKNOWN_PRODUCT',
+        };
+        final isCrossAccount = errorCode == 'RECEIPT_ALREADY_CLAIMED';
+        final isTerminal = terminalCodes.contains(errorCode) ||
+            (status >= 400 &&
+                status < 500 &&
+                status != 401 &&
+                status != 408 &&
+                status != 429);
+
+        if (isTerminal) {
+          await _iapService.finishTransaction(purchase);
+          if (txnId != null) _processedTxnIds.add(txnId);
+          Logger.info(
+              '🪙 [CONSUMABLE] Finished terminal-error transaction (code=$errorCode) — will not retry');
+        }
+
+        // A cross-account redelivery isn't the current user's purchase — nothing
+        // they can act on, so stay silent. Surface all other errors.
+        if (!isCrossAccount) {
+          onError?.call(message);
+        }
       }
     } catch (e) {
       Logger.error('🪙 [CONSUMABLE] Confirmation failed', error: e);
