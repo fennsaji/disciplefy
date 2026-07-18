@@ -370,7 +370,10 @@ deno_version = 1
 [edge_runtime.secrets]
 OPENAI_API_KEY = "env(OPENAI_API_KEY)"
 ANTHROPIC_API_KEY = "env(ANTHROPIC_API_KEY)"
-USE_MOCK = "env(USE_MOCK)"
+# USE_MOCK is intentionally NOT declared here. Declaring it made `supabase config
+# push` leak the dev machine's USE_MOCK=true to production (env() resolves from the
+# local shell), flipping the prod IAP validator into mock mode. Local dev still gets
+# USE_MOCK via `supabase functions serve --env-file` (scripts/run_local_server.sh).
 # Firebase Admin SDK credentials for FCM
 FIREBASE_PROJECT_ID = "env(FIREBASE_PROJECT_ID)"
 FIREBASE_PRIVATE_KEY = "env(FIREBASE_PRIVATE_KEY)"
