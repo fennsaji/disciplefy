@@ -26,6 +26,7 @@ platform :ios do
     api_key = asc_api_key
     install_signing(api_key)
     build_ios
+    upload_crashlytics_symbols
     upload_to_testflight(
       api_key: api_key,
       skip_waiting_for_build_processing: true,
@@ -38,6 +39,7 @@ platform :ios do
     api_key = asc_api_key
     install_signing(api_key)
     build_ios
+    upload_crashlytics_symbols
     upload_to_app_store(
       api_key: api_key,
       submit_for_review: false,
@@ -47,6 +49,28 @@ platform :ios do
       skip_screenshots: true,
       precheck_include_in_app_purchases: false
     )
+  end
+
+  desc "Backfill Crashlytics dSYMs for already-shipped builds (fixes 'Missing dSYM')"
+  desc "Usage: fastlane refresh_dsyms version:1.0.1 build:18472  (omit both for all)"
+  lane :refresh_dsyms do |options|
+    api_key = asc_api_key
+    download_dsyms(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      version: options[:version] || "latest",
+      build_number: options[:build]
+    )
+    paths = lane_context[SharedValues::DSYM_PATHS] || []
+    UI.user_error!("Apple has no dSYMs for this build (bitcode disabled — nothing to backfill)") if paths.empty?
+    paths.each do |dsym|
+      upload_symbols_to_crashlytics(
+        dsym_path: dsym,
+        gsp_path: "Runner/GoogleService-Info.plist",
+        binary_path: "./Pods/FirebaseCrashlytics/upload-symbols"
+      )
+    end
+    clean_build_artifacts
   end
 
   # --- helpers -------------------------------------------------------------
@@ -100,6 +124,25 @@ platform :ios do
         signingStyle: "manual",
         provisioningProfiles: { APP_IDENTIFIER => MATCH_PROFILE }
       }
+    )
+  end
+
+  # Upload the archive's dSYMs to Firebase Crashlytics so iOS crashes get
+  # symbolicated. Neither upload_to_testflight nor upload_to_app_store does this
+  # — without it Crashlytics reports "Missing dSYM". Bitcode is disabled, so the
+  # archive dSYM UUID matches the shipped binary and is the authoritative source.
+  # The upload-symbols binary ships inside the FirebaseCrashlytics pod, which
+  # `flutter build ios` (pod install) restores before this lane runs.
+  def upload_crashlytics_symbols
+    dsym = lane_context[SharedValues::DSYM_OUTPUT_PATH]
+    unless dsym && File.exist?(dsym)
+      UI.important("No dSYM produced by gym — skipping Crashlytics upload")
+      return
+    end
+    upload_symbols_to_crashlytics(
+      dsym_path: dsym,
+      gsp_path: "Runner/GoogleService-Info.plist",
+      binary_path: "./Pods/FirebaseCrashlytics/upload-symbols"
     )
   end
 end

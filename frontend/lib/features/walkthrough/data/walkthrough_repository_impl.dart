@@ -13,8 +13,14 @@ class WalkthroughRepositoryImpl implements WalkthroughRepository {
   WalkthroughRepositoryImpl({required SupabaseClient supabase})
       : _supabase = supabase;
 
-  Future<Box>? _boxFuture;
-  Future<Box> get _box => _boxFuture ??= Hive.openBox(_boxName);
+  // Never cache the Box (or its open-future): a global Hive.close() during
+  // logout (LocalStoreRepositoryImpl.clearAll) closes every box, and a cached
+  // reference would then throw "Box has already been closed". Re-resolve each
+  // access, reopening if needed — matches the codebase-wide resilient pattern.
+  Future<Box> get _box async {
+    if (Hive.isBoxOpen(_boxName)) return Hive.box(_boxName);
+    return Hive.openBox(_boxName);
+  }
 
   // ── Anonymous user detection ─────────────────────────────────────────────
 
