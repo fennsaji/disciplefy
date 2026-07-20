@@ -181,7 +181,7 @@ Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce b
 ## Thursday — 📚 Bible Study
 **Topic:** Understand the Original Audience *(bank item 3)*
 **Format:** Carousel
-**Key Scripture:** Nehemiah 8:8 — "they read from the book... and gave the sense, so that the people understood the reading."
+**Key Scripture:** Psalm 119:18 — "Open my eyes, that I may behold wondrous things out of your law."
 
 **Slides:** Cover → Every verse was written TO someone first → Why that matters for you → A quick way to find out who → Disciplefy CTA
 
@@ -203,15 +203,15 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 **Hashtags:** #Disciplefy #BibleStudyMethod #OriginalAudience #Scripture #BibleStudyTips
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Nehemiah 8:8 + 💡 Tip — "Ask: who was this originally written to, and what did they need to hear?"
+- Morning: 📖 Verse — Psalm 119:18 + 💡 Tip — "Ask: who was this originally written to, and what did they need to hear?"
   - **Daily Verse Image Prompt:**
     ```
     Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
 
     Variant D — Minimalist Typography. No photo — solid warm cream background or a very soft cream-to-gold gradient. Large gold quotation mark, verse in big centered Inter Medium type, reference in gold Poppins Bold beneath, generous whitespace all around. Logo small, top-center. (Mood reference only, no photo used: an open Bible resting beside a hand-drawn timeline sketched across a journal page, connecting ancient names and places to a date circled in ink. A magnifying glass rests over a footnote, and warm midday light suggests careful, unhurried study of who these words were first written for.)
 
-    Verse: "they read from the book... and gave the sense, so that the people understood the reading."
-    Reference: Nehemiah 8:8
+    Verse: "Open my eyes, that I may behold wondrous things out of your law."
+    Reference: Psalm 119:18
     ```
 - Evening: Share Carousel + 📖 Reflection — Try it on your next chapter.
 
@@ -321,7 +321,7 @@ Headline: "Can I Ask a Question?" Scene: a smartphone resting upright beside an 
 ## Sunday — 🙏 Sunday Reflection
 **Topic:** Carry This Month's Truth Into Worship — Full Month Recap
 **Format:** Carousel (recap, pre-built)
-**Key Scripture:** Hebrews 10:24-25
+**Key Scripture:** Hebrews 13:15
 
 **Slides:** Cover ("One month in — here's everything you've learned") → Week 1: Launch + 4 features → Week 2: rest, context, quiet time, study method, God isn't finished → Week 3: love your neighbor, pray first, prayer habit, observe, wait on God → Week 4: uncomfortable passages, better questions, abide daily, original audience, fear not → featured testimonies → Disciplefy CTA
 
@@ -344,15 +344,15 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 **Hashtags:** #Disciplefy #OneMonthIn #BibleStudyApp #Worship #Discipleship
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this month. Help me carry all of it into worship today."
+- Morning: 📖 Verse — Hebrews 13:15 + 🙏 Prayer — "Lord, thank You for this month. Help me carry all of it into worship today."
   - **Daily Verse Image Prompt:**
     ```
     Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added.
 
     Variant G — Vertical Bookmark. A tall, narrow "bookmark"-shaped card (rounded top, tapered bottom point), semi-transparent frosted-glass gold-tinted (55-65% opacity with a soft blur behind it, like frosted glass) so the background scene stays gently visible through it, centered on a softly blurred, warm photorealistic background: a wooden church pew catches warm morning light streaming through a tall stained-glass window, scattering small patches of gold and amber across the polished wood. A well-loved Bible rests open on the seat beside a simple bouquet of white flowers, as if placed there in quiet celebration. The scene carries a gentle, grateful hush — the feeling of a full month's journey folding into a single unhurried morning of worship. Verse + reference run down the bookmark in elegant vertical-feeling spacing. Small gold tassel or ribbon detail at the bookmark's top.
 
-    Verse: "...not neglecting to meet together, as is the habit of some, but encouraging one another..."
-    Reference: Hebrews 10:25
+    Verse: "Through him then let us continually offer up a sacrifice of praise to God, that is, the fruit of lips that acknowledge his name."
+    Reference: Hebrews 13:15
     ```
 - Evening: Share Carousel + 📖 Reflection — What's one thing from this month you'll keep practicing into Month 2?
 
