@@ -1,0 +1,19 @@
+/* Disciplefy Content Playbook — dark theme.
+   Inherits the full light theme and only swaps the palette, so layout changes
+   made in theme-light.css apply to both variants automatically. */
+
+@import "theme-light.css";
+
+:root {
+  --cream: #14120F;
+  --gold: #D4A537;
+  --gold-soft: #C79A3B;
+  --charcoal: #F5F1EA;
+  --body: #C9C3B8;
+  --rule: #33302A;
+  --code-bg: #1E1B16;
+}
+
+/* Gold table headers take near-black text in dark mode — white on #D4A537
+   reads muddy at 8.5pt. */
+th { color: #14120F; }

@@ -1,0 +1,129 @@
+/* Disciplefy Content Playbook — light theme.
+   Palette matches the marketing kit: cream #FAF8F5, gold #B8860B/#C79A3B,
+   charcoal #1E1E1E, body gray #4B5563. */
+
+@page {
+  size: A4;
+  margin: 18mm 14mm;
+}
+
+:root {
+  --cream: #FAF8F5;
+  --gold: #B8860B;
+  --gold-soft: #C79A3B;
+  --charcoal: #1E1E1E;
+  --body: #4B5563;
+  --rule: #E5E0D8;
+  --code-bg: #F3EFE8;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  background: var(--cream);
+}
+
+body {
+  background: var(--cream);
+  color: var(--body);
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.55;
+  margin: 0;
+  max-width: none;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Poppins", "Avenir Next", "Helvetica Neue", sans-serif;
+  color: var(--charcoal);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 22pt;
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 6px;
+  margin: 0 0 18px;
+}
+
+h2 {
+  font-size: 15pt;
+  margin: 26px 0 10px;
+  padding-left: 10px;
+  border-left: 4px solid var(--gold);
+  break-after: avoid;
+}
+
+h3 { font-size: 11.5pt; margin: 18px 0 6px; break-after: avoid; }
+h4 { font-size: 10.5pt; margin: 14px 0 4px; break-after: avoid; }
+
+p { margin: 0 0 9px; }
+strong { color: var(--charcoal); }
+em { color: var(--gold); font-style: italic; }
+
+a { color: var(--gold); text-decoration: none; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 20px 0;
+}
+
+ul, ol { margin: 0 0 10px; padding-left: 20px; }
+li { margin-bottom: 4px; }
+
+/* Script/slide tables carry most of the content — keep rows intact across pages. */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0 16px;
+  font-size: 8.5pt;
+  break-inside: auto;
+}
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th {
+  background: var(--gold);
+  color: #FFF;
+  font-family: "Poppins", "Avenir Next", sans-serif;
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 8px;
+}
+td {
+  border-bottom: 1px solid var(--rule);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+tbody tr:nth-child(even) { background: rgba(199, 154, 59, 0.06); }
+
+/* Generation prompts live in fenced blocks and must stay copy-pasteable. */
+pre {
+  background: var(--code-bg);
+  border-left: 3px solid var(--gold-soft);
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-size: 8pt;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  break-inside: avoid;
+}
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8.5pt;
+  color: var(--charcoal);
+}
+p code, li code, td code {
+  background: var(--code-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+blockquote {
+  border-left: 3px solid var(--gold-soft);
+  margin: 10px 0;
+  padding: 2px 0 2px 12px;
+  color: var(--body);
+}
