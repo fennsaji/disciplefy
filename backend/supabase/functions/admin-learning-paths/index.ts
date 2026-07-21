@@ -299,7 +299,7 @@ async function handleGetById(client: any, pathId: string): Promise<Response> {
   // Fetch topics in this path
   const { data: pathTopics, error: pathTopicsError } = await client
     .from('learning_path_topics')
-    .select('position, is_milestone, recommended_topics(*)')
+    .select('position, is_milestone, is_active, recommended_topics(*)')
     .eq('learning_path_id', pathId)
     .order('position', { ascending: true })
 

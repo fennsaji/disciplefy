@@ -441,6 +441,7 @@ class _StudyNoteLink extends StatelessWidget {
             .from('learning_path_topics')
             .select('learning_path_id')
             .eq('topic_id', post.topicId!)
+            .eq('is_active', true)
             .maybeSingle();
         if (joinRow != null) {
           final pathId = joinRow['learning_path_id'] as String;

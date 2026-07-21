@@ -155,6 +155,7 @@ async function handleAdvanceStudy(req: Request, services: ServiceContainer): Pro
     .from('learning_path_topics')
     .select('id', { count: 'exact', head: true })
     .eq('learning_path_id', study.learning_path_id)
+    .eq('is_active', true)
 
   if (countError) {
     console.error('[fellowship-study/advance] Topic count error:', countError)

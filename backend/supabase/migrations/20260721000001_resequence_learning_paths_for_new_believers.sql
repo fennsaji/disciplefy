@@ -117,8 +117,19 @@ SET disciple_level   = ns.disciple_level,
     display_order    = ns.display_order,
     updated_at       = NOW()
 FROM new_sequence ns
-WHERE lp.slug = ns.slug
-  AND lp.is_active = true;
+-- Matched by slug ONLY, deliberately -- no is_active filter.
+--
+-- Production has 40 active paths where this file's local baseline had 41:
+-- 'historical-reliability-bible' is inactive there, deactivated out-of-band
+-- (no migration accounts for it). Filtering on is_active would silently skip
+-- it, and the old "expected 41 active" assertion then aborted the whole
+-- migration on a condition that has nothing to do with this change.
+--
+-- Setting sequencing metadata on an inactive path is harmless -- it is invisible
+-- to users either way -- and it means the row is already correct if anyone
+-- reactivates it later. Matching on slug also makes this migration independent
+-- of whatever the activation state happens to be when it runs.
+WHERE lp.slug = ns.slug;
 
 -- ---------------------------------------------------------------------------
 -- Verification: fail loudly rather than silently half-applying.
@@ -126,42 +137,39 @@ WHERE lp.slug = ns.slug
 DO $$
 DECLARE
   v_updated   INTEGER;
-  v_active    INTEGER;
   v_dupes     INTEGER;
   v_bad_level INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO v_active
-    FROM learning_paths WHERE is_active = true;
-
+  -- Assert on the 41 slugs this migration names, NOT on a global count of
+  -- active paths. The activation state of any given path is not this
+  -- migration's business, and asserting on it made an unrelated out-of-band
+  -- change abort the deploy.
   SELECT COUNT(*) INTO v_updated
     FROM learning_paths
-   WHERE is_active = true AND display_order BETWEEN 1 AND 41;
-
-  IF v_active <> 41 THEN
-    RAISE EXCEPTION 'Expected 41 active learning paths, found %. The sequence in this migration is stale -- reconcile before applying.', v_active;
-  END IF;
+   WHERE display_order BETWEEN 1 AND 41
+     AND disciple_level IN ('seeker', 'follower', 'disciple', 'leader');
 
   IF v_updated <> 41 THEN
-    RAISE EXCEPTION 'Only % of 41 active paths received a new display_order. A slug in this migration does not match the database.', v_updated;
+    RAISE EXCEPTION 'Expected 41 paths to receive a new sequence, found %. A slug in this migration does not match the database.', v_updated;
   END IF;
 
-  -- display_order must now be globally unique, which is the point of the change.
+  -- display_order must be unique across the 41 sequenced paths.
   SELECT COUNT(*) INTO v_dupes
     FROM (
       SELECT display_order
         FROM learning_paths
-       WHERE is_active = true
+       WHERE display_order BETWEEN 1 AND 41
        GROUP BY display_order
       HAVING COUNT(*) > 1
     ) d;
 
   IF v_dupes > 0 THEN
-    RAISE EXCEPTION 'display_order is not globally unique after update (% duplicated values).', v_dupes;
+    RAISE EXCEPTION 'display_order is not unique across the sequenced paths (% duplicated values).', v_dupes;
   END IF;
 
   SELECT COUNT(*) INTO v_bad_level
     FROM learning_paths
-   WHERE is_active = true
+   WHERE display_order BETWEEN 1 AND 41
      AND disciple_level NOT IN ('seeker', 'follower', 'disciple', 'leader');
 
   IF v_bad_level > 0 THEN

@@ -154,7 +154,8 @@ async function getTopicsCount(
   const { data } = await supabaseClient
     .from('learning_path_topics')
     .select('id', { count: 'exact' })
-    .eq('learning_path_id', learningPathId);
+    .eq('learning_path_id', learningPathId)
+    .eq('is_active', true);
   return data?.length || 0;
 }
 
@@ -172,6 +173,7 @@ async function getActualTopicsCompleted(
     .from('learning_path_topics')
     .select('topic_id, user_topic_progress!inner(completed_at)')
     .eq('learning_path_id', learningPathId)
+    .eq('is_active', true)
     .eq('user_topic_progress.user_id', userId)
     .not('user_topic_progress.completed_at', 'is', null);
   return data?.length || 0;
