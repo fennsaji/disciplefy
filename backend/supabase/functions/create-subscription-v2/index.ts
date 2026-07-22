@@ -141,7 +141,7 @@ serve(async (req) => {
     // Check for existing active subscription (including on_hold — Google Play payment failure)
     const { data: existingSubs, error: existingError } = await supabase
       .from('subscriptions')
-      .select('id, status, plan_type, provider, plan_id, is_iap_subscription, provider_subscription_id, iap_product_id, current_period_start, current_period_end, amount_paise')
+      .select('id, status, plan_type, provider, plan_id, is_iap_subscription, provider_subscription_id, iap_product_id, current_period_start, current_period_end, amount_paise, provider_metadata, created_at')
       .eq('user_id', user.id)
       .in('status', ['active', 'in_progress', 'created', 'pending_cancellation', 'trial', 'paused', 'on_hold'])
 
@@ -149,6 +149,58 @@ serve(async (req) => {
       console.error('[create-subscription-v2] Existing sub check error:', JSON.stringify(existingError))
       throw new Error('Failed to check existing subscriptions')
     }
+
+    // Purge abandoned-checkout rows before anything else.
+    //
+    // A 'created' row is written when a Razorpay checkout is opened but not yet paid.
+    // If the user walks away, the row lingers — and because the one-active-per-user
+    // unique index does NOT exclude 'created', it permanently blocks every future
+    // subscription insert for that user (23505). The old status-priority sort hid
+    // these rows behind a parked 'pending_cancellation' sub, so the stale-created
+    // branch below never saw them.
+    //
+    // The user is starting a new checkout right now, so any prior unpaid attempt is
+    // superseded by definition — purge regardless of age so retries work immediately.
+    // Scheduled downgrades are also 'created' but legitimately stay that way until
+    // their start date, so they are explicitly exempt.
+    const abandonedCheckouts = (existingSubs ?? []).filter((s: any) =>
+      s.status === 'created' && !(s.provider_metadata?.scheduled_downgrade === true)
+    )
+
+    for (const abandoned of abandonedCheckouts) {
+      // Cancel the dangling provider-side subscription so it can never bill.
+      if (abandoned.provider === 'razorpay' && abandoned.provider_subscription_id) {
+        try {
+          const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+          await razorpayProvider.cancelSubscription(abandoned.provider_subscription_id, false)
+          console.log('[create-subscription-v2] Purge: cancelled abandoned Razorpay sub:', abandoned.provider_subscription_id)
+        } catch (purgeCancelErr) {
+          // Non-fatal: it may already be cancelled or expired provider-side.
+          console.error('[create-subscription-v2] Purge: provider cancel failed (non-fatal):', purgeCancelErr)
+        }
+      }
+
+      const { error: purgeError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: 'Abandoned checkout superseded by a new subscription attempt',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', abandoned.id)
+
+      if (purgeError) {
+        console.error('[create-subscription-v2] Purge: failed to cancel abandoned row:', { id: abandoned.id, purgeError })
+        throw new Error('Failed to clear a previous incomplete subscription attempt')
+      }
+
+      console.log('[create-subscription-v2] Purge: cleared abandoned checkout row:', abandoned.id)
+    }
+
+    // Drop the purged rows so the branch logic below only sees live subscriptions.
+    const purgedIds = new Set(abandonedCheckouts.map((s: any) => s.id))
+    const liveSubs = (existingSubs ?? []).filter((s: any) => !purgedIds.has(s.id))
 
     // Track old subscription to cancel before creating new one
     let oldSubIdToCancel: string | null = null
@@ -168,10 +220,10 @@ serve(async (req) => {
     const STATUS_PRIORITY: Record<string, number> = {
       active: 1, pending_cancellation: 2, in_progress: 3, trial: 4, created: 5, paused: 6, on_hold: 7
     }
-    existingSubs?.sort((a, b) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99))
+    liveSubs.sort((a: any, b: any) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99))
 
-    if (existingSubs && existingSubs.length > 0) {
-      const existing = existingSubs[0]
+    if (liveSubs.length > 0) {
+      const existing = liveSubs[0]
       const isIAPProvider = provider === 'google_play' || provider === 'apple_appstore'
       const existingIsIAP = existing.provider === 'google_play' || existing.provider === 'apple_appstore'
       const existingPlanCode = existing.plan_type
@@ -831,12 +883,32 @@ serve(async (req) => {
     // cancel, prorated refund, and DB cancellation are deferred to the subscription.activated
     // webhook, which fires only after the user has successfully paid for the new plan.
     if (oldSubIdToCancel) {
+      // Record what the row was before parking. Without this, anything restoring
+      // it later (the rollback below, or the abandoned-checkout sweep) has to
+      // guess — and guessing 'active' would silently promote a 'trial' row to a
+      // paid-looking state. Merged into existing metadata so nothing is lost.
+      const parkedSub = liveSubs.find((s: any) => s.id === oldSubIdToCancel) as any
+      // On a repeat attempt the row is ALREADY parked, so its current status is
+      // 'pending_cancellation'. Recording that would overwrite the real original
+      // status with a value that restores to itself — the sub could then never be
+      // un-parked. Keep any existing marker, and never record the parked state.
+      const existingMarker = parkedSub?.provider_metadata?.parked_from_status
+      const currentStatus = parkedSub?.status
+      const parkedFromStatus =
+        existingMarker ??
+        (currentStatus === 'pending_cancellation' ? null : currentStatus ?? null)
+      const parkedMetadata = {
+        ...(parkedSub?.provider_metadata ?? {}),
+        ...(parkedFromStatus && { parked_from_status: parkedFromStatus })
+      }
+
       const { error: parkError } = await supabase
         .from('subscriptions')
         .update({
           status: 'pending_cancellation',
           cancel_at_cycle_end: true,
           cancellation_reason: 'Pending upgrade — will be cancelled on new subscription activation',
+          provider_metadata: parkedMetadata,
           updated_at: new Date().toISOString()
         })
         .eq('id', oldSubIdToCancel)
@@ -896,6 +968,9 @@ serve(async (req) => {
         provider_subscription_id: isFreeSubscription ? providerResponse.id : providerResponse.providerSubscriptionId,
         provider_metadata: {
           ...(providerResponse.metadata || {}),
+          // Marks a downgrade row that legitimately stays 'created' until its start
+          // date, so the abandoned-checkout purge never mistakes it for a dead one.
+          ...(isDowngradeCase && { scheduled_downgrade: true }),
           ...(oldSubIdToCancel && {
             upgrading_from_sub_id: oldSubIdToCancel,
             upgrading_from_provider: oldSubProvider,
@@ -938,13 +1013,40 @@ serve(async (req) => {
       // is not left without an active plan. This is a best-effort rollback — if it also fails
       // the user will need manual recovery, but this covers the common single-failure case.
       if (oldSubIdToCancel) {
+        // Cancel the newly created provider subscription first. Without this the
+        // Razorpay sub is left live and billable with no DB row referencing it —
+        // one orphan per failed attempt. (The downgrade path below already did this.)
+        try {
+          const orphanProviderSubId = isFreeSubscription
+            ? (providerResponse as any)?.id
+            : (providerResponse as any)?.providerSubscriptionId
+          if (orphanProviderSubId && provider === 'razorpay') {
+            const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
+            await razorpayProvider.cancelSubscription(orphanProviderSubId, false)
+            console.log('[create-subscription-v2] Rollback: cancelled orphaned Razorpay sub:', orphanProviderSubId)
+          }
+        } catch (orphanCancelErr) {
+          console.error('[create-subscription-v2] Rollback: failed to cancel orphaned Razorpay sub (manual cleanup needed):', orphanCancelErr)
+        }
+
+        // Restore the status the sub actually had, not a hardcoded 'active' — a
+        // parked 'trial' row restored as 'active' would silently grant a paid state.
+        const priorStatus =
+          (liveSubs.find((s: any) => s.id === oldSubIdToCancel) as any)?.status ?? 'active'
+        // Clear the park marker so a later sweep doesn't try to restore it again.
+        const restoredMetadata: Record<string, unknown> = {
+          ...(((liveSubs.find((s: any) => s.id === oldSubIdToCancel) as any)?.provider_metadata) ?? {})
+        }
+        delete restoredMetadata.parked_from_status
+
         const { error: restoreError } = await supabase
           .from('subscriptions')
           .update({
-            status: 'active',
+            status: priorStatus,
             cancelled_at: null,
             cancel_at_cycle_end: false,
             cancellation_reason: null,
+            provider_metadata: restoredMetadata,
             updated_at: new Date().toISOString()
           })
           .eq('id', oldSubIdToCancel)
