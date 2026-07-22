@@ -314,6 +314,12 @@ export function createPostFunction(
  * Creates a service role function for background jobs and scheduled tasks
  * Validates service role authentication and returns JSON responses
  *
+ * Starts the HTTP server itself, matching `createFunction`. Previously this only
+ * *returned* a handler, and every call site simply discarded it — so no server
+ * was ever started and each background job failed to boot with
+ * "worker did not respond in time" (BOOT_ERROR). The handler is still returned
+ * for callers that want to compose it.
+ *
  * @param handler - Handler function that receives Supabase service client
  * @param config - Configuration options
  */
@@ -321,7 +327,7 @@ export function createServiceRoleFunction(
   handler: ServiceRoleFunctionHandler,
   config: FunctionConfig = {}
 ): (req: Request) => Promise<Response> {
-  return async (req: Request): Promise<Response> => {
+  const requestHandler = async (req: Request): Promise<Response> => {
     const corsHeaders = handleCors(req)
 
     try {
@@ -436,6 +442,9 @@ export function createServiceRoleFunction(
       )
     }
   }
+
+  serve(requestHandler)
+  return requestHandler
 }
 
 /**
