@@ -76,6 +76,11 @@
   <link rel="preload" href="flutter_bootstrap.js" as="script">
   <link rel="preload" href="splash_screen.png" as="image">
 
+  <!-- Store fallback for shared deep links. Runs before Flutter boots so a
+       mobile visitor without the app is redirected without a flash of the web
+       UI. No-ops on desktop and on non-deep-link routes. -->
+  <script src="deep_link_fallback.js"></script>
+
   <!-- Add fetch-event-source library for EventSource with headers support -->
   <script type="module">
     import { fetchEventSource } from 'https://esm.sh/@microsoft/fetch-event-source@2.0.1';
