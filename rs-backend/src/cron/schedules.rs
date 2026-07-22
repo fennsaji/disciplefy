@@ -9,3 +9,8 @@ pub const BLOG_RETRY: &str = "0 0 */4 * * *";
 
 /// Publish scheduled posts — every minute, flips due scheduled posts to published.
 pub const BLOG_PUBLISH_SCHEDULED: &str = "0 * * * * *";
+
+/// Subscription reconciliation — hourly on the hour.
+/// Expires ended subscriptions, activates paid ones whose webhook was missed,
+/// and clears abandoned checkouts.
+pub const SUBSCRIPTION_RECONCILE: &str = "0 0 * * * *";
