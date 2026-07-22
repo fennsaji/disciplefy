@@ -205,7 +205,7 @@ class SubscriptionInvoiceModel extends SubscriptionInvoice {
       // fallback. Reading only the legacy name yielded null and threw on the
       // non-nullable cast, so Payment History failed to load entirely.
       razorpayPaymentId: (json['provider_payment_id'] ??
-          json['razorpay_payment_id']) as String? ??
+              json['razorpay_payment_id']) as String? ??
           '',
       invoiceNumber: json['invoice_number'] as String?,
       amountPaise: json['amount_paise'] as int,

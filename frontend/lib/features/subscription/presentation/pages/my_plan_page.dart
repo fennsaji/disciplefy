@@ -229,7 +229,8 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                     _invoices = state.invoices ?? [];
                   });
                 } else if (state is UserSubscriptionStatusLoaded) {
-                  setState(() => _subscriptionStatus = state.subscriptionStatus);
+                  setState(
+                      () => _subscriptionStatus = state.subscriptionStatus);
                 } else if (state is SubscriptionError &&
                     state.previousSubscription != null) {
                   setState(() => _subscription = state.previousSubscription);
@@ -318,8 +319,8 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                 // told us when it ends. The previous hardcoded 2027 fallback
                 // meant an unloaded status silently read as "trial active".
                 final trialEndDate = subscriptionStatus?.trialEndDate;
-                final isTrialActive =
-                    trialEndDate != null && DateTime.now().isBefore(trialEndDate);
+                final isTrialActive = trialEndDate != null &&
+                    DateTime.now().isBefore(trialEndDate);
 
                 return RefreshIndicator(
                   onRefresh: () async {
