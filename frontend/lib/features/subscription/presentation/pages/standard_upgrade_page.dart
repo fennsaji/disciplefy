@@ -177,8 +177,13 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
         listener: (context, state) {
           if (state is SubscriptionCreated) {
             setState(() => _isSubmitting = false);
-            if (state.authorizationUrl.isNotEmpty) {
-              // Razorpay flow — redirect user to payment page in browser
+            if (state.authorizationUrl.isNotEmpty &&
+                !_hasOpenedPayment &&
+                ModalRoute.of(context)?.isCurrent == true) {
+              // Razorpay flow — redirect user to payment page in browser.
+              // Guarded: the UserSubscriptionStatusLoaded branch below can also
+              // carry an authorizationUrl, and without this check both fire and
+              // the user gets two identical Razorpay tabs.
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text(
@@ -215,12 +220,16 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
             }
           } else if (state is SubscriptionLoaded) {
             setState(() => _isSubmitting = false);
-            if (state.activeSubscription?.isActive == true) {
+            if (state.activeSubscription?.isActivatedPlan('standard') == true) {
               _checkoutPollTimer?.cancel();
             }
+            // Must be the newly purchased plan in a genuinely activated state.
+            // isActive() would also match the old plan parked as
+            // pending_cancellation during checkout, announcing a success for a
+            // payment the user never completed.
             if (_hasOpenedPayment &&
                 !_hasShownSuccess &&
-                state.activeSubscription?.isActive == true) {
+                state.activeSubscription?.isActivatedPlan('standard') == true) {
               _hasShownSuccess = true;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

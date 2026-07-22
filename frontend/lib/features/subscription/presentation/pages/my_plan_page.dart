@@ -12,6 +12,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/i18n/translation_service.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
 import '../utils/plan_features_extractor.dart';
+import '../utils/plan_actions_policy.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -37,7 +38,7 @@ class MyPlanPage extends StatefulWidget {
   State<MyPlanPage> createState() => _MyPlanPageState();
 }
 
-class _MyPlanPageState extends State<MyPlanPage> {
+class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
   List<String> _planFeatures = [];
   bool _featuresLoading = true;
   // Plan display price fetched from the pricing API (provider-aware).
@@ -45,17 +46,58 @@ class _MyPlanPageState extends State<MyPlanPage> {
   // True while the pricing API call is in flight (shows spinner in amount row).
   bool _isPriceLoading = true;
 
+  // Last-known values from each of the three requests this page fires.
+  //
+  // The bloc exposes one state at a time, but the page needs data from several
+  // independent loads (active subscription, invoices, subscription status).
+  // Reading them straight off the current state means whichever request settles
+  // last wins and the others read as null — which made the Premium-trial banner
+  // and the billing card appear or vanish depending purely on response order.
+  // Caching each as it arrives keeps the screen stable.
+  // Guards against opening the Razorpay tab more than once. Both the
+  // UserSubscriptionStatusLoaded and SubscriptionCreated branches can carry an
+  // authorizationUrl, and the state is re-emitted on every refresh/resume — so
+  // without this the user gets a duplicate checkout tab each time.
+  bool _hasOpenedPayment = false;
+
+  Subscription? _subscription;
+  List<SubscriptionInvoice> _invoices = [];
+  UserSubscriptionStatus? _subscriptionStatus;
+
   @override
   void initState() {
     super.initState();
-    // Load subscription and invoices when page opens
+    WidgetsBinding.instance.addObserver(this);
+    _refreshSubscriptionState();
+    _loadPlanFeatures();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Checkout opens in an external tab/browser, so the app is never told how it
+    // ended — Razorpay fires no event when the user simply closes the window.
+    // Re-fetching on resume is what makes an abandoned, failed, or just-completed
+    // payment show up without the user having to pull-to-refresh.
+    if (state == AppLifecycleState.resumed) {
+      _refreshSubscriptionState();
+    }
+  }
+
+  /// Pull subscription, invoices and token status fresh from the backend.
+  void _refreshSubscriptionState() {
     context.read<SubscriptionBloc>().add(const GetActiveSubscription());
     context.read<SubscriptionBloc>().add(const GetSubscriptionInvoices());
     context.read<SubscriptionBloc>().add(const LoadSubscriptionStatus());
     // Force-refresh token status to avoid showing stale plan data from cache
     // (race condition can occur during subscription switches)
     context.read<TokenBloc>().add(const RefreshTokenStatus());
-    _loadPlanFeatures();
   }
 
   // The plan code used for the most recent _loadPlanFeatures call — used to
@@ -179,6 +221,20 @@ class _MyPlanPageState extends State<MyPlanPage> {
 
             return BlocConsumer<SubscriptionBloc, SubscriptionState>(
               listener: (context, state) {
+                // Latch each load as it arrives so one settling doesn't blank
+                // out the others (see the field declarations above).
+                if (state is SubscriptionLoaded) {
+                  setState(() {
+                    _subscription = state.activeSubscription;
+                    _invoices = state.invoices ?? [];
+                  });
+                } else if (state is UserSubscriptionStatusLoaded) {
+                  setState(() => _subscriptionStatus = state.subscriptionStatus);
+                } else if (state is SubscriptionError &&
+                    state.previousSubscription != null) {
+                  setState(() => _subscription = state.previousSubscription);
+                }
+
                 if (state is SubscriptionLoaded &&
                     state.activeSubscription != null) {
                   // Re-fetch plan price if the loaded plan differs from what
@@ -224,12 +280,23 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     ),
                   );
                 } else if (state is UserSubscriptionStatusLoaded &&
-                    state.authorizationUrl != null) {
+                    state.authorizationUrl != null &&
+                    !_hasOpenedPayment &&
+                    ModalRoute.of(context)?.isCurrent == true) {
                   // Open Razorpay payment URL
+                  _hasOpenedPayment = true;
                   _openPaymentUrl(state.authorizationUrl!);
                 } else if (state is SubscriptionCreated) {
-                  // Open Razorpay payment URL from create result (skip for IAP where URL is empty)
-                  if (state.authorizationUrl.isNotEmpty) {
+                  // Open Razorpay payment URL from create result (skip for IAP where URL is empty).
+                  //
+                  // SubscriptionBloc is an app-wide singleton, so this page keeps
+                  // listening while an upgrade page is pushed on top of it. Both
+                  // listeners would then open the same checkout URL — one tab each.
+                  // Only the visible route may open the browser.
+                  if (state.authorizationUrl.isNotEmpty &&
+                      !_hasOpenedPayment &&
+                      ModalRoute.of(context)?.isCurrent == true) {
+                    _hasOpenedPayment = true;
                     _openPaymentUrl(state.authorizationUrl);
                   }
                 }
@@ -240,26 +307,19 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                Subscription? subscription;
-                List<SubscriptionInvoice> invoices = [];
+                // Read the latched values, not the current state — see the field
+                // declarations. Using the state directly made these flip to null
+                // whenever a different request happened to settle last.
+                final subscription = _subscription;
+                final invoices = _invoices;
+                final subscriptionStatus = _subscriptionStatus;
 
-                // Get subscription status for trial/grace period info
-                final subscriptionStatus = state is UserSubscriptionStatusLoaded
-                    ? state.subscriptionStatus
-                    : null;
-
-                // Use backend trial end date when available (populated by LoadSubscriptionStatus)
-                final trialEndDate =
-                    subscriptionStatus?.trialEndDate ?? DateTime(2027, 3, 31);
-                final isTrialActive = DateTime.now().isBefore(trialEndDate);
-
-                if (state is SubscriptionLoaded) {
-                  subscription = state.activeSubscription;
-                  invoices = state.invoices ?? [];
-                } else if (state is SubscriptionError &&
-                    state.previousSubscription != null) {
-                  subscription = state.previousSubscription;
-                }
+                // Only treat the trial as active once the backend has actually
+                // told us when it ends. The previous hardcoded 2027 fallback
+                // meant an unloaded status silently read as "trial active".
+                final trialEndDate = subscriptionStatus?.trialEndDate;
+                final isTrialActive =
+                    trialEndDate != null && DateTime.now().isBefore(trialEndDate);
 
                 return RefreshIndicator(
                   onRefresh: () async {
@@ -328,7 +388,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
     TokenStatus? tokenStatus,
     Subscription? subscription,
     bool isTrialActive,
-    DateTime trialEndDate,
+    DateTime? trialEndDate,
     UserSubscriptionStatus? subscriptionStatus,
   ) {
     final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
@@ -356,7 +416,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
         statusIcon = Icons.workspace_premium;
       }
     } else if (subscription != null && subscription.isActive) {
-      if (subscription.status == SubscriptionStatus.pending_cancellation) {
+      if (subscription.isPendingUserCancellation) {
         statusText = context.tr(TranslationKeys.myPlanCancellationPending);
         statusColor = AppTheme.warningColor;
         statusIcon = Icons.warning_rounded;
@@ -486,6 +546,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
             // Trial countdown or new user promo
             else if (userPlan == UserPlan.standard &&
                 isTrialActive &&
+                trialEndDate != null &&
                 subscription == null) ...[
               const SizedBox(height: 20),
               _buildTrialInfoBanner(trialEndDate, isDark),
@@ -500,8 +561,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
               const SizedBox(height: 20),
               _buildNewUserPromoBanner(isDark),
             ],
-            if (subscription?.status ==
-                SubscriptionStatus.pending_cancellation) ...[
+            if (subscription?.isPendingUserCancellation == true) ...[
               const SizedBox(height: 20),
               _buildCancellationNoticeBanner(subscription!, isDark),
             ],
@@ -1059,7 +1119,12 @@ class _MyPlanPageState extends State<MyPlanPage> {
             _buildBillingDateRow(subscription),
             _buildDetailRow(
               context.tr(TranslationKeys.myPlanStatus),
-              subscription.status.displayName,
+              // A sub parked for an in-flight upgrade is still the user's live
+              // plan — showing the raw 'Pending Cancellation' here contradicts
+              // the "Active Subscription" header and alarms the user.
+              subscription.isParkedForUpgrade
+                  ? SubscriptionStatus.active.displayName
+                  : subscription.status.displayName,
               valueColor: subscription.isActive
                   ? AppTheme.successColor
                   : AppTheme.warningColor,
@@ -1319,7 +1384,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
     }
 
     // Pending cancellation: resume button + upgrade (downgrade blocked until cycle ends)
-    if (subscription?.status == SubscriptionStatus.pending_cancellation) {
+    if (subscription?.isPendingUserCancellation == true) {
+      final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
+      // Premium is the top tier — there is nothing to upgrade to.
+      final canUpgrade = PlanActionsPolicy.canUpgrade(userPlan);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1333,37 +1401,50 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 .read<SubscriptionBloc>()
                 .add(const ResumeSubscription()),
           ),
-          const SizedBox(height: 12),
-          _buildViewPlansButton(label: 'Upgrade Plan'),
+          if (canUpgrade) ...[
+            const SizedBox(height: 12),
+            _buildViewPlansButton(label: 'Upgrade Plan'),
+          ],
         ],
       );
     }
 
-    // Active subscription: contextual plan-change button + cancel
+    // Active subscription: contextual plan-change buttons + cancel.
+    // Tiers rank by enum order: free < standard < plus < premium.
     if (subscription != null && subscription.isActive) {
       final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
+
+      // Kill switch is folded in here so a hidden upgrade button doesn't
+      // leave a stray gap in the column.
+      final canUpgrade = PlanActionsPolicy.canUpgrade(
+        userPlan,
+        newSubscriptionsEnabled:
+            sl<SystemConfigService>().isNewSubscriptionsEnabled,
+      );
+      final canDowngrade = PlanActionsPolicy.canDowngrade(userPlan);
+      final canCancel = PlanActionsPolicy.canCancel(userPlan);
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (userPlan == UserPlan.standard) ...[
-            // Standard: can upgrade to Plus or Premium
-            _buildViewPlansButton(),
+          if (canUpgrade) ...[
+            _buildViewPlansButton(label: 'Upgrade Plan'),
             const SizedBox(height: 12),
-          ] else if (userPlan == UserPlan.plus ||
-              userPlan == UserPlan.premium) ...[
-            // Plus/Premium: can only downgrade (no higher tier exists)
+          ],
+          if (canDowngrade) ...[
             _buildDowngradeButton(),
             const SizedBox(height: 12),
           ],
-          _buildActionButton(
-            label: context.tr(TranslationKeys.myPlanCancelSubscription),
-            sublabel: context.tr(TranslationKeys.myPlanCancelAtPeriodEnd),
-            icon: Icons.cancel_outlined,
-            color: AppTheme.errorColor,
-            isOutlined: true,
-            isLoading: isLoading,
-            onPressed: () => _showCancelConfirmationDialog(subscription),
-          ),
+          if (canCancel)
+            _buildActionButton(
+              label: context.tr(TranslationKeys.myPlanCancelSubscription),
+              sublabel: context.tr(TranslationKeys.myPlanCancelAtPeriodEnd),
+              icon: Icons.cancel_outlined,
+              color: AppTheme.errorColor,
+              isOutlined: true,
+              isLoading: isLoading,
+              onPressed: () => _showCancelConfirmationDialog(subscription),
+            ),
         ],
       );
     }

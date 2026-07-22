@@ -132,6 +132,39 @@ class Subscription extends Equatable {
   /// Check if subscription is active
   bool get isActive => status.isActive;
 
+  /// True when this subscription was parked as `pending_cancellation` purely to
+  /// free the one-active-per-user slot while an upgrade checkout is in flight.
+  ///
+  /// This is an internal bookkeeping state, not a user-initiated cancellation:
+  /// the user still has their existing plan, and the parking is reverted if the
+  /// upgrade is never paid for. Surfacing it as "cancelled" alarms users who
+  /// merely opened a checkout and closed it. Matches the marker written by
+  /// `create-subscription-v2`.
+  bool get isParkedForUpgrade =>
+      status == SubscriptionStatus.pending_cancellation &&
+      (cancellationReason?.startsWith('Pending upgrade') ?? false);
+
+  /// True for a cancellation the user actually asked for.
+  bool get isPendingUserCancellation =>
+      status == SubscriptionStatus.pending_cancellation && !isParkedForUpgrade;
+
+  /// True only once a purchase of [planCode] has genuinely gone through.
+  ///
+  /// Use this — never [isActive] — to decide whether to tell the user their
+  /// upgrade succeeded. [isActive] counts `pending_cancellation`, so while an
+  /// upgrade checkout is pending it reports true for the *old parked* plan, and
+  /// a caller that trusts it announces success for a payment never made.
+  bool isActivatedPlan(String planCode) {
+    final activated = status == SubscriptionStatus.active ||
+        status == SubscriptionStatus.authenticated;
+    if (!activated) return false;
+    // planType is stored as '<code>_monthly' (e.g. 'standard_monthly').
+    final normalized = planType.endsWith('_monthly')
+        ? planType.substring(0, planType.length - '_monthly'.length)
+        : planType;
+    return normalized == planCode;
+  }
+
   /// Check if subscription can be cancelled
   bool get canCancel => status.canCancel;
 
