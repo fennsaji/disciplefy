@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_fonts.dart';
@@ -16,6 +17,7 @@ import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/category_utils.dart';
+import '../../../../core/utils/share_links.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../../subscription/presentation/widgets/insufficient_tokens_dialog.dart';
@@ -628,6 +630,31 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     );
   }
 
+  Widget _buildShareButton(LearningPathDetail path) {
+    return IconButton(
+      icon: const Icon(Icons.ios_share),
+      tooltip: 'Share this path',
+      onPressed: () => _sharePath(path),
+    );
+  }
+
+  /// Shares a public link to this learning path.
+  ///
+  /// The link points at the public web app rather than the local origin, so it
+  /// works for whoever receives it. Recipients who are not signed in are routed
+  /// to login and returned here afterwards by the router guard.
+  Future<void> _sharePath(LearningPathDetail path) async {
+    final message = ShareLinks.learningPathMessage(path.title, path.id);
+    try {
+      await Share.share(message, subject: path.title);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the share sheet.')),
+      );
+    }
+  }
+
   Widget _buildDownloadButton(LearningPathDetail path) {
     final model = _downloadModel;
 
@@ -819,6 +846,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       ),
       actions: path is LearningPathDetail
           ? [
+              _buildShareButton(path),
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: _buildDownloadButton(path),
