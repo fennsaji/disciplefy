@@ -460,6 +460,27 @@ async function handlePaymentFailed(
 }
 
 /**
+ * Read a subscription's current provider_metadata.
+ *
+ * Every handler below writes provider_metadata as a whole object. Without
+ * merging the existing value first, each write erases keys set earlier —
+ * notably `upgrading_from_sub_id`, recorded at creation time to identify the
+ * plan an upgrade replaces. Losing it means the old subscription is never
+ * cancelled and the customer is billed for BOTH plans.
+ */
+async function readProviderMetadata(
+  client: any,
+  razorpaySubId: string
+): Promise<Record<string, any>> {
+  const { data } = await client
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+  return (data?.provider_metadata ?? {}) as Record<string, any>
+}
+
+/**
  * Handle subscription.authenticated event
  * User has authorized recurring payments
  */
@@ -494,6 +515,7 @@ async function handleSubscriptionAuthenticated(
       provider_customer_id: subscriptionEntity.customer_id,
       // subscription_plan removed - plan code is accessed via plan_id → subscription_plans.plan_code
       provider_metadata: {
+        ...(await readProviderMetadata(supabaseServiceClient, razorpaySubId)),
         customer_id: subscriptionEntity.customer_id,
         plan_id: subscriptionEntity.plan_id,
         status: subscriptionEntity.status,
@@ -541,6 +563,20 @@ async function handleSubscriptionActivated(
 
   console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}, plan: ${planCode}`)
 
+  // Read the row's existing metadata BEFORE the update below.
+  // The update writes a fresh provider_metadata object; anything set at creation
+  // time — notably `upgrading_from_sub_id`, which tells us the old plan to cancel
+  // — is lost unless captured here and merged back in. Reading it afterwards
+  // returns the already-overwritten value, so the old subscription would never be
+  // cancelled and the user would be billed for BOTH plans.
+  const { data: preUpdateRow } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('provider_metadata')
+    .eq('provider_subscription_id', razorpaySubId)
+    .maybeSingle()
+
+  const priorMeta = (preUpdateRow?.provider_metadata ?? {}) as Record<string, any>
+
   // M3: Update only when the subscription is in an expected prior state.
   // Allow paused/expired recovery for the same Razorpay subscription: payment
   // failure recovery can arrive after reconciliation has expired the paused row.
@@ -563,6 +599,7 @@ async function handleSubscriptionActivated(
       paid_count: subscriptionEntity.paid_count,
       remaining_count: subscriptionEntity.remaining_count,
       provider_metadata: {
+        ...priorMeta,
         customer_id: subscriptionEntity.customer_id,
         plan_id: subscriptionEntity.plan_id,
         status: subscriptionEntity.status,
@@ -593,16 +630,10 @@ async function handleSubscriptionActivated(
   const planLabel = planCode === 'standard' ? 'Standard' : planCode === 'plus' ? 'Plus' : 'Premium'
   console.log(`[Webhook] ✅ ${planLabel} access granted to user: ${userId}`)
 
-  // Complete deferred upgrade: cancel the old subscription now that payment is confirmed
-  const { data: newSubRow } = await supabaseServiceClient
-    .from('subscriptions')
-    .select('provider_metadata')
-    .eq('provider_subscription_id', razorpaySubId)
-    .maybeSingle()
-
-  const meta = newSubRow?.provider_metadata as Record<string, any> | null
-  if (meta?.upgrading_from_sub_id) {
-    await _completeUpgradeCancellation(supabaseServiceClient, meta)
+  // Complete deferred upgrade: cancel the old subscription now that payment is
+  // confirmed. Uses the metadata captured before the update above.
+  if (priorMeta.upgrading_from_sub_id) {
+    await _completeUpgradeCancellation(supabaseServiceClient, priorMeta)
   }
 
   // Log event
@@ -616,6 +647,35 @@ async function handleSubscriptionActivated(
 }
 
 // deno-lint-ignore no-explicit-any
+/**
+ * Fetch the most recent paid invoice for a Razorpay subscription.
+ *
+ * Razorpay is the source of truth for what was actually charged, so the prorated
+ * upgrade refund resolves the payment id from here rather than depending solely
+ * on the local `subscription_invoices` table — which is only populated by the
+ * subscription.charged webhook and will be empty for a first-cycle upgrade.
+ */
+async function fetchLastPaidInvoiceFromRazorpay(
+  providerSubId: string
+): Promise<{ paymentId: string; amountPaise: number } | null> {
+  const keyId = Deno.env.get('RAZORPAY_KEY_ID')
+  const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
+  if (!keyId || !keySecret) return null
+
+  const res = await fetch(
+    `https://api.razorpay.com/v1/invoices?subscription_id=${providerSubId}`,
+    { headers: { Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}` } }
+  )
+  if (!res.ok) return null
+
+  const body = await res.json()
+  const paid = (body.items ?? [])
+    .filter((i: any) => i.status === 'paid' && i.payment_id)
+    .sort((a: any, b: any) => (b.paid_at ?? 0) - (a.paid_at ?? 0))[0]
+
+  return paid ? { paymentId: paid.payment_id, amountPaise: paid.amount } : null
+}
+
 async function _completeUpgradeCancellation(
   supabase: any,
   meta: Record<string, any>
@@ -639,20 +699,25 @@ async function _completeUpgradeCancellation(
         // potentially-discounted first-month amount stored in subscription metadata (F33 fix).
         const { data: lastInvoice } = await supabase
           .from('subscription_invoices')
-          .select('razorpay_payment_id, amount_paise')
+          .select('provider_payment_id, amount_paise')
           .eq('subscription_id', oldSubId)
           .eq('status', 'paid')
           .order('paid_at', { ascending: false })
           .limit(1)
           .maybeSingle()
 
-        const chargeAmountPaise = (lastInvoice as any)?.amount_paise ?? meta.upgrading_from_amount_paise
+        // Prefer Razorpay's own record of the charge; fall back to the local row.
+        const remoteInvoice = await fetchLastPaidInvoiceFromRazorpay(oldProviderSubId)
+        const paymentId = remoteInvoice?.paymentId ?? (lastInvoice as any)?.provider_payment_id
+        const chargeAmountPaise = remoteInvoice?.amountPaise
+          ?? (lastInvoice as any)?.amount_paise
+          ?? meta.upgrading_from_amount_paise
         const refundAmountPaise = Math.round(chargeAmountPaise * remainingMs / totalMs)
 
-        if (lastInvoice?.razorpay_payment_id && refundAmountPaise > 0) {
+        if (paymentId && refundAmountPaise > 0) {
           const razorpayProvider = PaymentProviderFactory.getProvider('razorpay' as ProviderType)
           await (razorpayProvider as any).issueRefund(
-            lastInvoice.razorpay_payment_id,
+            paymentId,
             refundAmountPaise,
             { reason: 'Plan upgrade — prorated refund', remaining_ms: String(remainingMs) }
           )
@@ -761,6 +826,7 @@ async function handleSubscriptionCharged(
       paid_count: subscriptionEntity.paid_count,
       remaining_count: subscriptionEntity.remaining_count,
       provider_metadata: {
+        ...(await readProviderMetadata(supabaseServiceClient, razorpaySubId)),
         customer_id: subscriptionEntity.customer_id,
         plan_id: subscriptionEntity.plan_id,
         status: subscriptionEntity.status,
@@ -783,15 +849,25 @@ async function handleSubscriptionCharged(
   }
 
   if (!chargedRows?.length) {
-    console.warn('[Webhook] Charge ignored because subscription is not recoverable:', razorpaySubId)
-    return
+    // Razorpay can deliver subscription.charged BEFORE subscription.activated on
+    // the first payment, when the row is still 'created'. That is not an error and
+    // must not stop the invoice being recorded — the money genuinely moved.
+    //
+    // The status precondition is deliberately NOT widened to include 'created':
+    // doing so would set the row active here, and subscription.activated (whose
+    // own precondition excludes 'active') would then be skipped — losing the
+    // upgrade's old-plan cancellation and prorated refund.
+    console.warn(
+      '[Webhook] Charge status update skipped (subscription not in a chargeable state yet) — recording invoice anyway:',
+      razorpaySubId
+    )
   }
 
   // Check for existing invoice before inserting (idempotency)
   const { data: existingInvoice } = await supabaseServiceClient
     .from('subscription_invoices')
     .select('id')
-    .eq('razorpay_payment_id', paymentId)
+    .eq('provider_payment_id', paymentId)
     .maybeSingle()
 
   if (existingInvoice) {
@@ -799,14 +875,21 @@ async function handleSubscriptionCharged(
     return
   }
 
-  // Create invoice record
-  await supabaseServiceClient
+  // Create invoice record.
+  // Column names must match the schema: the table uses provider_* naming, and
+  // invoice_number / provider are NOT NULL without defaults. Getting any of
+  // these wrong made every insert fail silently, leaving the table empty — which
+  // in turn made the prorated upgrade refund impossible, since it looks up the
+  // payment id from here.
+  const { error: invoiceError } = await supabaseServiceClient
     .from('subscription_invoices')
     .insert({
       subscription_id: subscription.id,
       user_id: subscription.user_id,
-      razorpay_payment_id: paymentId,
-      razorpay_invoice_id: paymentEntity.invoice_id || null,
+      invoice_number: `INV-${paymentId}`,
+      provider: 'razorpay',
+      provider_payment_id: paymentId,
+      provider_invoice_id: paymentEntity.invoice_id || null,
       amount_paise: paymentEntity.amount,
       currency: paymentEntity.currency,
       billing_period_start: subscriptionEntity.current_start
@@ -820,7 +903,11 @@ async function handleSubscriptionCharged(
       paid_at: new Date(paymentEntity.created_at * 1000).toISOString()
     })
 
-  console.log(`[Webhook] ✅ Invoice created for payment: ${paymentId}`)
+  if (invoiceError) {
+    console.error('[Webhook] Failed to create invoice:', { paymentId, invoiceError })
+  } else {
+    console.log(`[Webhook] ✅ Invoice created for payment: ${paymentId}`)
+  }
 
   // Log event
   await analyticsLogger.logEvent('webhook_subscription_charged', {
@@ -876,6 +963,7 @@ async function handleSubscriptionCancelled(
       cancelled_at: new Date().toISOString(),
       cancel_at_cycle_end: false,  // Clear flag as it's now actually cancelled
       provider_metadata: {
+        ...(await readProviderMetadata(supabaseServiceClient, razorpaySubId)),
         ...(existingSubC?.provider_metadata ?? {}),
         cancelled_at: new Date().toISOString(),
         cancellation_source: 'razorpay_webhook'
@@ -934,6 +1022,7 @@ async function handleSubscriptionPaused(
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
+        ...(await readProviderMetadata(supabaseServiceClient, razorpaySubId)),
         ...(existingSubP?.provider_metadata ?? {}),
         paused_at: new Date().toISOString(),
         pause_reason: 'payment_failure'
@@ -991,6 +1080,7 @@ async function handleSubscriptionResumed(
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
+        ...(await readProviderMetadata(supabaseServiceClient, razorpaySubId)),
         ...(existingSubR?.provider_metadata ?? {}),
         resumed_at: new Date().toISOString(),
         previous_status: 'paused'
@@ -1049,6 +1139,7 @@ async function handleSubscriptionCompleted(
       provider: 'razorpay',
       provider_subscription_id: razorpaySubId,
       provider_metadata: {
+        ...(await readProviderMetadata(supabaseServiceClient, razorpaySubId)),
         ...(existingSubCo?.provider_metadata ?? {}),
         completed_at: new Date().toISOString(),
         total_cycles_completed: subscriptionEntity.paid_count || 0
@@ -1095,8 +1186,8 @@ async function handleRefundCreated(
   // Find subscription via invoice linked to this payment
   const { data: invoice } = await supabaseServiceClient
     .from('subscription_invoices')
-    .select('subscription_id, user_id')
-    .eq('razorpay_payment_id', paymentId)
+    .select('subscription_id, user_id, amount_paise')
+    .eq('provider_payment_id', paymentId)
     .maybeSingle()
 
   if (!invoice?.subscription_id) {
@@ -1104,7 +1195,44 @@ async function handleRefundCreated(
     return
   }
 
-  // Revoke subscription access immediately
+  // Only a FULL refund revokes access.
+  //
+  // Partial refunds are routine and must not cancel the plan: a prorated
+  // upgrade refund refunds most of the old cycle, and support may issue a
+  // goodwill refund against a live subscription. Cancelling on any refund
+  // would revoke a paying customer's access outright.
+  const refundedPaise: number = refundEntity?.amount ?? 0
+  const invoicePaise: number = invoice.amount_paise ?? 0
+  const isFullRefund = invoicePaise > 0 && refundedPaise >= invoicePaise
+
+  // Only mark the invoice refunded on a full refund. The status column has a
+  // CHECK constraint (pending|paid|failed|refunded|cancelled), so a
+  // 'partially_refunded' value would be rejected; a partially refunded invoice
+  // stays 'paid' and the detail is captured in analytics instead.
+  if (isFullRefund) {
+    await supabaseServiceClient
+      .from('subscription_invoices')
+      .update({ status: 'refunded' })
+      .eq('provider_payment_id', paymentId)
+  }
+
+  if (!isFullRefund) {
+    console.log(
+      `[Webhook] Partial refund (${refundedPaise}/${invoicePaise} paise) for payment ${paymentId} — subscription ${invoice.subscription_id} left active`
+    )
+    await analyticsLogger.logEvent('webhook_refund_created', {
+      user_id: invoice.user_id,
+      subscription_id: invoice.subscription_id,
+      payment_id: paymentId,
+      refund_id: refundEntity?.id,
+      refunded_paise: refundedPaise,
+      invoice_paise: invoicePaise,
+      full_refund: false
+    })
+    return
+  }
+
+  // Full refund — revoke access.
   await supabaseServiceClient
     .from('subscriptions')
     .update({
@@ -1115,19 +1243,16 @@ async function handleRefundCreated(
     })
     .eq('id', invoice.subscription_id)
 
-  // Mark invoice as refunded
-  await supabaseServiceClient
-    .from('subscription_invoices')
-    .update({ status: 'refunded' })
-    .eq('razorpay_payment_id', paymentId)
-
-  console.log(`[Webhook] ✅ Subscription ${invoice.subscription_id} cancelled due to refund of payment ${paymentId}`)
+  console.log(`[Webhook] ✅ Subscription ${invoice.subscription_id} cancelled due to full refund of payment ${paymentId}`)
 
   await analyticsLogger.logEvent('webhook_refund_created', {
     user_id: invoice.user_id,
     subscription_id: invoice.subscription_id,
     payment_id: paymentId,
-    refund_id: refundEntity?.id
+    refund_id: refundEntity?.id,
+    refunded_paise: refundedPaise,
+    invoice_paise: invoicePaise,
+    full_refund: true
   })
 }
 

@@ -1,5 +1,6 @@
 pub mod blog_generator;
 pub mod schedules;
+pub mod subscription_reconciler;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -18,6 +19,7 @@ use crate::models::cron_config::{self, CronConfig};
 pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// Guard that resets its flag to false on drop.
 pub struct CronGuard {
@@ -73,6 +75,13 @@ pub async fn start_scheduler(
                 enabled: true,
                 schedule: schedules::BLOG_PUBLISH_SCHEDULED.into(),
                 label: "Every minute — publish due scheduled posts".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "subscription_reconcile".into(),
+                enabled: true,
+                schedule: schedules::SUBSCRIPTION_RECONCILE.into(),
+                label: "Hourly — reconcile subscriptions with Razorpay".into(),
                 updated_at: chrono::Utc::now(),
             },
         ]
@@ -212,6 +221,50 @@ pub async fn start_scheduler(
         .await
         .expect("Failed to add scheduled-publish CRON job");
     job_ids.insert("blog_publish_scheduled".into(), publish_uuid);
+
+    // Subscription reconciliation CRON
+    let recon_cfg = configs.iter().find(|c| c.name == "subscription_reconcile");
+    let recon_schedule = recon_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::SUBSCRIPTION_RECONCILE.into());
+    let recon_config = Arc::new(config.clone());
+    let recon_http = http.clone();
+    let recon_pool = pool.clone();
+
+    let recon_job = Job::new_async(recon_schedule.as_str(), move |_uuid, _lock| {
+        let p = recon_pool.clone();
+        let c = recon_config.clone();
+        let h = recon_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "subscription_reconcile").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("subscription_reconcile cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&SUBSCRIPTION_RECONCILE_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Subscription reconcile CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            if let Err(e) = subscription_reconciler::run_subscription_reconcile(&c, &h).await {
+                tracing::error!("Subscription reconcile CRON failed: {}", e);
+            }
+        })
+    })
+    .expect("Failed to create subscription reconcile CRON job");
+
+    let recon_uuid = sched
+        .add(recon_job)
+        .await
+        .expect("Failed to add subscription reconcile CRON job");
+    job_ids.insert("subscription_reconcile".into(), recon_uuid);
 
     sched.start().await.expect("Failed to start CRON scheduler");
     tracing::info!(

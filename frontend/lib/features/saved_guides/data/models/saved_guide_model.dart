@@ -1,112 +1,85 @@
-import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import '../../../study_generation/domain/entities/study_guide.dart';
 
 part 'saved_guide_model.g.dart';
 
-@HiveType(typeId: 1)
 @JsonSerializable()
 class SavedGuideModel extends SavedGuideEntity {
-  @HiveField(0)
   @override
   final String id;
 
-  @HiveField(1)
   @override
   final String title;
 
-  @HiveField(2)
   @override
   final String content;
 
   // New structured content fields
   @override
-  @HiveField(9)
   final String? summary;
 
   @override
-  @HiveField(10)
   final String? interpretation;
 
   @override
-  @HiveField(11)
   final String? context;
 
   @override
-  @HiveField(12)
   final List<String>? relatedVerses;
 
   @override
-  @HiveField(13)
   final List<String>? reflectionQuestions;
 
   @override
-  @HiveField(14)
   final List<String>? prayerPoints;
 
   // Reflection enhancement fields
   @override
-  @HiveField(15)
   final List<String>? interpretationInsights;
 
   @override
-  @HiveField(16)
   final String? contextQuestion;
 
   @override
-  @HiveField(17)
   final String? summaryQuestion;
 
   @override
-  @HiveField(18)
   final String? relatedVersesQuestion;
 
   @override
-  @HiveField(19)
   final String? reflectionQuestion;
 
   @override
-  @HiveField(20)
   final String? prayerQuestion;
 
   @override
-  @HiveField(21)
   final List<String>? summaryInsights;
 
   @override
-  @HiveField(22)
   final List<String>? reflectionAnswers;
 
-  @HiveField(23)
   @override
   final String? studyMode;
 
-  @HiveField(24)
   @override
   final String? passage;
 
-  @HiveField(3)
   @JsonKey(name: 'type')
   final String typeString;
 
-  @HiveField(4)
   @override
   final DateTime createdAt;
 
-  @HiveField(5)
   @override
   final DateTime lastAccessedAt;
 
-  @HiveField(6)
   @override
   final bool isSaved;
 
-  @HiveField(7)
   @override
   final String? verseReference;
 
-  @HiveField(8)
   @override
   final String? topicName;
 

@@ -20,6 +20,7 @@ import 'core/theme/app_colors.dart';
 import 'core/localization/app_localizations.dart';
 import 'features/study_generation/presentation/bloc/study_bloc.dart';
 import 'features/saved_guides/data/models/saved_guide_model.dart';
+import 'features/saved_guides/data/models/saved_guide_model_adapter.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/phone_auth_bloc.dart';

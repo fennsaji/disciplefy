@@ -182,107 +182,43 @@ class PaymentService {
       Logger.debug(
           '[PaymentService] Step 1: ✅ Razorpay script loaded successfully');
 
-      // Add web-specific handlers
-      Logger.debug('[PaymentService] Step 2: Setting up payment handlers...');
-      options['handler'] = PaymentServiceWeb.allowInterop((response) {
-        Logger.debug(
-            '[PaymentService] ✅ WEB PAYMENT SUCCESS CALLBACK TRIGGERED!');
-        Logger.debug('[PaymentService] Success response: $response');
-        try {
-          // Convert JsObject to Map for proper access
-          final responseMap = {
-            'razorpay_payment_id': response['razorpay_payment_id'],
-            'razorpay_order_id': response['razorpay_order_id'],
-            'razorpay_signature': response['razorpay_signature'],
-          };
-          Logger.debug('[PaymentService] Converted response map: $responseMap');
+      // Create and open Razorpay checkout. All JS interop (option conversion,
+      // callback wrapping, constructing and opening the checkout) lives in
+      // PaymentServiceWeb so this file stays free of web-only types.
+      Logger.debug('[PaymentService] Step 2: Opening Razorpay checkout...');
+      Logger.debug(
+          '[PaymentService] Checking if Razorpay exists: ${PaymentServiceWeb.hasProperty('Razorpay')}');
 
-          // Create PaymentSuccessResponse with extracted values
+      await PaymentServiceWeb.openCheckout(
+        options: options,
+        onSuccess: (response) {
+          Logger.debug('[PaymentService] Success response: $response');
           final paymentSuccessResponse = PaymentSuccessResponse(
-            responseMap['razorpay_payment_id'],
-            responseMap['razorpay_order_id'],
-            responseMap['razorpay_signature'],
-            responseMap, // Pass the converted map
+            response['razorpay_payment_id'] as String?,
+            response['razorpay_order_id'] as String?,
+            response['razorpay_signature'] as String?,
+            response,
           );
           Logger.debug('[PaymentService] Calling _handlePaymentSuccess...');
           _handlePaymentSuccess(paymentSuccessResponse);
-        } catch (handlerError) {
-          Logger.debug(
-              '[PaymentService] ❌ Error in success handler: $handlerError');
-        }
-      });
-
-      options['modal'] = {
-        // Razorpay calls ondismiss with 1 argument (null or error object).
-        // The Dart callback must accept that argument or JS interop throws
-        // "NoSuchMethodError: too many positional arguments".
-        'ondismiss': PaymentServiceWeb.allowInterop(([dynamic _]) {
-          Logger.debug('[PaymentService] ❌ WEB PAYMENT DISMISSED BY USER');
+        },
+        onDismiss: () {
           final paymentFailureResponse = PaymentFailureResponse(
             0, // User cancelled
             'Payment was cancelled by user',
           );
           _handlePaymentError(paymentFailureResponse);
-        })
-      };
-      Logger.debug('[PaymentService] Step 2: ✅ Payment handlers configured');
+        },
+        onFailed: (error) {
+          final code = error['code'] ?? 'PAYMENT_FAILED';
+          final description = error['description'] ?? 'Payment failed';
+          _handlePaymentError(PaymentFailureResponse(
+            1, // non-zero = hard failure, not user cancel
+            '$code: $description',
+          ));
+        },
+      );
 
-      // Create and open Razorpay checkout
-      Logger.debug('[PaymentService] Step 3: Creating Razorpay checkout...');
-      Logger.debug('[PaymentService] Converting options to JS object...');
-      final jsOptions = PaymentServiceWeb.jsify(options);
-      Logger.debug(
-          '[PaymentService] ✅ Options converted to JS object successfully');
-
-      Logger.debug('[PaymentService] Step 4: Creating Razorpay instance...');
-      Logger.debug(
-          '[PaymentService] Checking if Razorpay exists: ${PaymentServiceWeb.hasProperty('Razorpay')}');
-
-      if (!PaymentServiceWeb.hasProperty('Razorpay')) {
-        throw Exception('Razorpay object not available in window context');
-      }
-
-      final razorpayConstructor = PaymentServiceWeb.getRazorpayConstructor();
-      Logger.debug(
-          '[PaymentService] Razorpay constructor type: ${razorpayConstructor.runtimeType}');
-      Logger.debug(
-          '[PaymentService] Creating Razorpay instance with jsOptions...');
-
-      final rzp = PaymentServiceWeb.createRazorpayInstance(
-          razorpayConstructor, jsOptions);
-      Logger.debug(
-          '[PaymentService] ✅ Razorpay instance created successfully: $rzp');
-
-      // Subscribe to hard-decline events (e.g. card declined by bank).
-      // Without this, payment.failed fires ondismiss → reported as "cancelled".
-      rzp.callMethod('on', [
-        'payment.failed',
-        PaymentServiceWeb.allowInterop((dynamic errorResponse) {
-          Logger.debug('[PaymentService] ❌ WEB PAYMENT FAILED EVENT');
-          try {
-            final error = errorResponse['error'];
-            final code = error?['code'] ?? 'PAYMENT_FAILED';
-            final description = error?['description'] ?? 'Payment failed';
-            final paymentFailureResponse = PaymentFailureResponse(
-              1, // non-zero = hard failure, not user cancel
-              '$code: $description',
-            );
-            _handlePaymentError(paymentFailureResponse);
-          } catch (e) {
-            Logger.debug(
-                '[PaymentService] ❌ Error in payment.failed handler: $e');
-            _handlePaymentError(PaymentFailureResponse(1, 'Payment failed'));
-          }
-        }),
-      ]);
-
-      Logger.debug('[PaymentService] Step 5: Opening Razorpay checkout...');
-      Logger.debug('[PaymentService] Calling rzp.open()...');
-
-      // Add a delay to ensure DOM is ready
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      rzp.callMethod('open');
       Logger.debug('[PaymentService] ✅ rzp.open() method called successfully');
       Logger.debug(
           '[PaymentService] ===========================================');

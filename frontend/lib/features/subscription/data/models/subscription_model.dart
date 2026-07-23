@@ -201,7 +201,12 @@ class SubscriptionInvoiceModel extends SubscriptionInvoice {
       id: json['id'] as String,
       subscriptionId: json['subscription_id'] as String,
       userId: json['user_id'] as String,
-      razorpayPaymentId: json['razorpay_payment_id'] as String,
+      // DB column is provider_payment_id; the old razorpay_* name is kept as a
+      // fallback. Reading only the legacy name yielded null and threw on the
+      // non-nullable cast, so Payment History failed to load entirely.
+      razorpayPaymentId: (json['provider_payment_id'] ??
+              json['razorpay_payment_id']) as String? ??
+          '',
       invoiceNumber: json['invoice_number'] as String?,
       amountPaise: json['amount_paise'] as int,
       status: json['status'] as String,
@@ -221,7 +226,7 @@ class SubscriptionInvoiceModel extends SubscriptionInvoice {
       'id': id,
       'subscription_id': subscriptionId,
       'user_id': userId,
-      'razorpay_payment_id': razorpayPaymentId,
+      'provider_payment_id': razorpayPaymentId,
       'invoice_number': invoiceNumber,
       'amount_paise': amountPaise,
       'status': status,

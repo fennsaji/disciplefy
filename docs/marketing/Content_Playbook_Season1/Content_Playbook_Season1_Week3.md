@@ -82,7 +82,7 @@ Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce b
 ## Tuesday — 📖 How To: Memory Verses (Carousel)
 *Swapped in this week only — pairs 2 days ahead of Saturday's Episode 9 Memory Verse reel, same pattern as the PreWeek1 bridge (carousel = depth/reference, reel = reach, a few days apart). Displaces this week's Bible Tips bank item ("Pray Before You Read") — deferred to Month 2, not lost; see `Daily Devotion/2. Tuesday — Bible Tips Carousel.md`.*
 **Format:** Carousel, 6 slides (reused from `Instagram_Carousel_Image_Prompts.md` POST 4, UI details corrected against real app screenshots)
-**Bible Verse:** Deuteronomy 11:18 — "You shall therefore lay up these words of mine in your heart and in your soul." *(same verse as Saturday's reel — intentional reinforcement, same week, same feature)*
+**Bible Verse:** Deuteronomy 11:18 — "You shall therefore lay up these words of mine in your heart and in your soul."
 
 **Slide Image Prompts** *(prepend the Carousel Variant — Flat-Lay style block below to each slide's Prompt in the table)*:
 
@@ -98,7 +98,7 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 | 3 — Step 2 | Smartphone mockup, ceramic mug nearby. Screen shows the attached screenshot of a practice mode — flip cards, word bank, or fill-in-the-blank (real: 3 of 8 actual modes, a representative sample, not exhaustive; reference image provided). Gold "Step 2" badge. Headline: "Practice, Your Way." | Practice it with flip cards, a word bank, or fill-in-the-blank — whatever sticks best for you. |
 | 4 — Step 3 | Smartphone mockup, small plant nearby. Screen shows the attached screenshot of a review reminder notification (reference image provided). Gold "Step 3" badge. Headline: "Reminded Right on Time." | It reminds you right before you'd forget — not just once and done. |
 | 5 — Step 4 | Smartphone mockup, open Bible nearby. Screen shows the attached screenshot of the green streak heat map — a GitHub-style contribution calendar (confirmed real feature; reference image provided). Gold "Step 4" badge. Headline: "Watch Your Streak Grow." | This little green calendar is oddly motivating — consistency, visible. |
-| 6 — CTA | Warm morning sunlight over a wooden desk, open Bible + mug. Headline: "Hide His Word in Your Heart." Subline: "Free → link in bio." | No more losing a verse a week after you learned it. Free — link in bio. |
+| 6 — CTA / Outro | Warm morning sunlight over a wooden desk, open Bible + mug. Headline: "Hide His Word in Your Heart." Subline: "Free on Android & Web." Small gold divider beneath, then a second, smaller line in warm gray: "iPhone — coming soon." Leave clean empty space in the lower third for a badge to be composited in edit. Do not render an Apple logo, App Store badge, or any device brand mark. | No more losing a verse a week after you learned it. Free on Android & Web — iPhone coming soon. Link in bio. |
 
 **Caption:** Memorize a verse, then lose it in a week? Disciplefy's Bible memory app lets you add a verse, practice with flip cards, word bank, or cloze, get reminded right before you'd forget — and watch your streak grow. Free — link in bio. 🙌
 **Hashtags:** #Disciplefy #MemoryVerse #BibleMemoryApp #Scripture #Discipleship
@@ -200,7 +200,7 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 | 2 — What "observe" means | Headline: "What Does the Text Actually Say?" Scene: a magnifying-glass-style close focus on a single underlined verse (subtle, not literal prop). | Observation just means slowing down enough to notice what the text actually says, before deciding what it means. |
 | 3 — 3 questions to ask first | Headline: "Who? What? When?" Scene: journal with 3 short numbered questions handwritten. | Three simple questions to start: who is this about, what is actually happening, and when does it take place? |
 | 4 — Why this comes first | Headline: "Interpretation Without Observation Misreads the Text." Scene: open Bible beside a journal with a crossed-out then corrected note. | Skip observation, and you risk interpreting the passage through your own assumptions instead of what's really there. |
-| 5 — CTA | Headline: "Try It on Your Next Chapter" with gold arrow →. Warm closing desk scene. | Try this on your next chapter — observe first, interpret second. It changes what you notice. |
+| 5 — CTA / Outro | Headline: "Try It on Your Next Chapter" with gold arrow →. Warm closing desk scene. Subline: "Free on Android & Web." Small gold divider beneath, then a second, smaller line in warm gray: "iPhone — coming soon." Do not render an Apple logo, App Store badge, or any device brand mark. | Try this on your next chapter — observe first, interpret second. It changes what you notice. Free on Android & Web, iPhone coming soon. |
 
 **Caption:** Before you ask "what does this mean," ask "what does this say." Observation comes first — a core Bible study method. Save this study tip.
 **Hashtags:** #Disciplefy #BibleStudyMethod #Observation #Scripture #BibleStudyTips
@@ -284,7 +284,7 @@ Story Structure (all 8 clips follow this purpose order): 1 Hook · 2 Introduce b
 
 ## Saturday — 📱 Study With Disciplefy
 **Episode 9 ⭐ Hero: "I Can Never Remember Bible Verses"** (real screen recording + Founder voice-over)
-**Key Scripture:** Deuteronomy 11:18 — "You shall therefore lay up these words of mine in your heart and in your soul."
+**Key Scripture:** Job 22:22 — "Receive instruction from his mouth, and lay up his words in your heart."
 
 **Story beat:** Someone memorizes verses but forgets them after a few days. A friend introduces Disciplefy's Memory Verse feature and daily review.
 **Feature shown:** Memory Verse
@@ -300,7 +300,7 @@ Headline: "I Can Never Remember." Scene: a small handwritten verse card tucked i
 **Hashtags:** #Disciplefy #MemoryVerse #BibleMemoryApp #Discipleship #Scripture
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Deuteronomy 11:18 + 💡 Tip — "Review a verse right when you're about to forget it, not just once."
+- Morning: 📖 Verse — Job 22:22 + 💡 Tip — "Review a verse right when you're about to forget it, not just once."
 
   **Daily Verse Image Prompt (Variant F — Side-by-Side):**
   ```
@@ -308,8 +308,8 @@ Headline: "I Can Never Remember." Scene: a small handwritten verse card tucked i
 
   Frame split vertically down the middle: left half is a soft off-white verse card (reference top, verse centered, quotation icon) on cream; right half is the photorealistic scene of a quiet evening review ritual — a small stack of hand-lettered verse cards fanned across a wooden desk beside a warm brass desk lamp, a half-empty cup of tea gone lukewarm, a soft-focus houseplant in the corner, the last blue light of dusk fading outside the window as the lamp's glow takes over the room. Thin vertical gold divider between the two halves.
 
-  Verse: "You shall therefore lay up these words of mine in your heart and in your soul."
-  Reference: Deuteronomy 11:18
+  Verse: "Receive instruction from his mouth, and lay up his words in your heart."
+  Reference: Job 22:22
   ```
 - Evening: Share Reel + 📖 Reflection — Add your first verse to Memory Verse today.
 
@@ -323,7 +323,7 @@ Headline: "I Can Never Remember." Scene: a small handwritten verse card tucked i
 ## Sunday — 🙏 Sunday Reflection
 **Topic:** Carry This Week's Truth Into Worship
 **Format:** Carousel (recap, pre-built)
-**Key Scripture:** Hebrews 10:24-25
+**Key Scripture:** Psalm 95:6
 
 **Slides:** Cover → this week's 5 truths (love your neighbor, pray before you read, build a prayer habit, observe before you interpret, wait on God) → one practical takeaway → invite to church/community → Disciplefy CTA
 
@@ -340,13 +340,13 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 | 2 — 5 truths recap | Headline: "Neighbor · Pray First · Prayer Habit · Observe · Wait on Him." Five small gold-icon chips in a row on a clean cream card. | Loving your neighbor. Praying before you read. Building a daily prayer habit. Observing before interpreting. And learning to wait on God's timing. |
 | 3 — Practical takeaway | Headline: "Pick Just One to Practice." Scene: a single verse card propped against a coffee mug. | Five truths is a lot to hold onto — just pick the one you need most right now and practice it this week. |
 | 4 — Invite to community | Headline: "Carry It Into Worship Today." Warm Sunday-morning light through a window, a coat and Bible by the door. | Take whatever stood out to you this week into worship today — that's where it gets lived out, not just learned. |
-| 5 — CTA | Headline: "Missed a Day This Week?" with gold arrow →. Subline: "Catch up — link in bio." | If you missed a day, it's not too late — catch up whenever works. Link in bio. |
+| 5 — CTA / Outro | Headline: "Missed a Day This Week?" with gold arrow →. Subline: "Catch up — free on Android & Web." Small gold divider beneath, then a second, smaller line in warm gray: "iPhone — coming soon." Do not render an Apple logo, App Store badge, or any device brand mark. | If you missed a day, it's not too late — catch up whenever works. Free on Android & Web, iPhone coming soon. Link in bio. |
 
 **Caption:** This week on Disciplefy: love your neighbor, pray before you read, build a prayer habit, observe before you interpret, and trust God's timing. Carry it into worship today. Send this to a friend heading to church. 🙏
 **Hashtags:** #Disciplefy #SundayReflection #BibleStudy #Worship #Discipleship
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this week's growth. Help me carry it into worship today."
+- Morning: 📖 Verse — Psalm 95:6 + 🙏 Prayer — "Lord, thank You for this week's growth. Help me carry it into worship today."
 
   **Daily Verse Image Prompt (Variant G — Vertical Bookmark):**
   ```
@@ -354,8 +354,8 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 
   A tall, narrow "bookmark"-shaped card (rounded top, tapered bottom point), semi-transparent frosted-glass gold-tinted (55-65% opacity with a soft blur behind it, like frosted glass) so the background scene stays gently visible through it, centered on a softly blurred, warm photorealistic background: rows of polished wooden church pews catching soft Sunday-morning light through tall stained-glass-adjacent windows, dust motes drifting in the sunbeams, a single hymnal left open on a pew seat, the sanctuary quiet and still before the congregation gathers. Verse + reference run down the bookmark in elegant vertical-feeling spacing. Small gold tassel or ribbon detail at the bookmark's top.
 
-  Verse: "...not neglecting to meet together, as is the habit of some, but encouraging one another..."
-  Reference: Hebrews 10:25
+  Verse: "Oh come, let us worship and bow down; let us kneel before the LORD, our Maker!"
+  Reference: Psalm 95:6
   ```
 - Evening: Share Carousel + 📖 Reflection — Which of this week's truths will you keep practicing?
 
@@ -394,3 +394,4 @@ Track at the end of the week: Reel Reach · Watch Time · Saves · Shares · Pro
 - **v1.10:** Replaced every Daily Verse Image Prompt's thin background phrase with a rich, multi-sensory, day-specific scene — kept each day's Variant layout, palette (gold/cream/charcoal, no indigo), and verse/reference unchanged.
 - **v1.11:** Generated test images revealed 2 problems: (1) the model was inventing extra decorative elements not in the prompt (icon badges, subtitle taglines, heart-cross icons) — added an explicit "render ONLY the named elements" lock to every Daily Verse prompt's shared brand-rules paragraph; (2) the scripture card looked flat/opaque. Changed Variant A (Classic Card) and Variant G (Vertical Bookmark) — the two variants where the card floats over a photo — to a semi-transparent frosted-glass card (55-65% opacity) so the background scene stays visible through it.
 - **v1.12:** Added a "Daniel's Voice — ElevenLabs Setup" section — how to pick and lock a consistent Voice ID, recommended Stability/Style settings, per-clip generation workflow (no lip-sync needed since Daniel never speaks to camera), and a licensing note. Voice ID left as a TBD placeholder until the team actually picks one in ElevenLabs.
+- **v1.13:** Reworked the final CTA slide of all 3 carousels (Tue slide 6, Thu slide 5, Sun slide 5) into CTA / Outro cards carrying the iOS pre-launch line — "Free on Android & Web" with a smaller "iPhone — coming soon" beneath a gold divider. No new slides added; slide counts unchanged. Every reworked prompt explicitly forbids rendering an Apple logo or App Store badge (AI-drawn marks are unreliable and Apple's guidelines require their unmodified asset — composite the official badge in edit, or use plain text pre-launch).

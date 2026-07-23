@@ -10,7 +10,7 @@ on:
   workflow_dispatch: # Allow manual triggering
 
 env:
-  FLUTTER_VERSION: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
+  FLUTTER_VERSION: '3.44.6'  # Dart SDK 3.12 - required by retrofit_generator >=10.2.8
   JAVA_VERSION: '17'
 
 jobs:

@@ -497,4 +497,7 @@ secrets/*
 docs/marketing/Content_Playbook_Season1/PDF/
 
 # Claude subagent-written memory (local only)
-.claude/agent-memory/
+# Needs the **/ prefix: a pattern with a mid-path slash is anchored to the repo
+# root, so plain `.claude/agent-memory/` missed subagents that wrote from a
+# subdirectory (e.g. backend/supabase/migrations/.claude/agent-memory/).
+**/.claude/agent-memory/

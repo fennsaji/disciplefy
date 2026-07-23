@@ -92,6 +92,7 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
       .from('learning_path_topics')
       .select('topic_id')
       .eq('learning_path_id', activeLearningPathId)
+      .eq('is_active', true)
 
     const topicIds = (pathTopics ?? []).map((r: { topic_id: string }) => r.topic_id)
 

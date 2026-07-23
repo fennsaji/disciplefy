@@ -15,7 +15,7 @@ on:
         required: true
 
 env:
-  FLUTTER_VERSION: '3.32.8'
+  FLUTTER_VERSION: '3.44.6'
   JAVA_VERSION: '17'
 
 permissions:

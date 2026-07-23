@@ -379,6 +379,7 @@ async function maybeTriggerFellowshipAutoAdvance(
         .select('id')
         .eq('learning_path_id', study.learning_path_id)
         .eq('position', study.current_guide_index)
+        .eq('is_active', true)
         .maybeSingle()
 
       if (!topicRow || topicRow.id !== topicId) continue
@@ -408,6 +409,7 @@ async function maybeTriggerFellowshipAutoAdvance(
         .from('learning_path_topics')
         .select('id', { count: 'exact', head: true })
         .eq('learning_path_id', study.learning_path_id)
+        .eq('is_active', true)
 
       if (!totalTopics) continue
 

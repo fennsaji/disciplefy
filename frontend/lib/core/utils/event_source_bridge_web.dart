@@ -1,7 +1,27 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 import 'dart:async';
-import 'dart:js' as js;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'logger.dart';
+
+/// The `EventSourceBridge` object defined in `web/index.html`.
+///
+/// Declared as an extension type so calls go through the object itself —
+/// its `connect`/`close` implementations use `this.connections`, which would
+/// break if the functions were detached from the object.
+extension type _EventSourceBridgeJs._(JSObject _) implements JSObject {
+  external JSAny? connect(
+    String url,
+    JSAny? headers,
+    JSFunction onMessage,
+    JSFunction onError,
+    JSFunction onOpen,
+  );
+  external void close(int connectionId);
+}
+
+@JS('EventSourceBridge')
+external _EventSourceBridgeJs? get _bridge;
 
 final Map<int, StreamController<String>> _controllers = {};
 final Map<int, int> _connectionIds = {};
@@ -19,38 +39,38 @@ Stream<String> connect({
   // Connection established
 
   // Convert Dart map to JavaScript object
-  final jsHeaders = headers != null ? js.JsObject.jsify(headers) : null;
+  final jsHeaders = headers?.jsify();
 
   // Define callback functions
-  final onMessage = js.allowInterop((String data) {
+  final onMessage = ((String data) {
     if (!controller.isClosed) {
       controller.add(data);
     }
-  });
+  }).toJS;
 
-  final onError = js.allowInterop((String error) {
+  final onError = ((String error) {
     if (!controller.isClosed) {
       controller.addError(Exception('EventSource error: $error'));
     }
-  });
+  }).toJS;
 
-  final onOpen = js.allowInterop(() {
+  final onOpen = (() {
     // Connection opened
-  });
+  })
+      .toJS;
 
   try {
     // Call the JavaScript bridge
-    final jsConnectionId =
-        js.context['EventSourceBridge'].callMethod('connect', [
+    final jsConnectionId = _bridge?.connect(
       url,
       jsHeaders,
       onMessage,
       onError,
       onOpen,
-    ]);
+    );
 
     if (jsConnectionId != null) {
-      _connectionIds[dartId] = jsConnectionId as int;
+      _connectionIds[dartId] = (jsConnectionId as JSNumber).toDartInt;
     } else {
       throw Exception('Failed to create JavaScript connection');
     }
@@ -75,7 +95,7 @@ void _closeConnection(int dartId) {
   final jsConnectionId = _connectionIds[dartId];
   if (jsConnectionId != null) {
     try {
-      js.context['EventSourceBridge'].callMethod('close', [jsConnectionId]);
+      _bridge?.close(jsConnectionId);
     } catch (e) {
       // Error closing connection
     }
@@ -100,8 +120,8 @@ void closeAll() {
 /// Checks if the EventSource bridge is available
 bool get isAvailable {
   try {
-    return js.context.hasProperty('EventSourceBridge') &&
-        js.context.hasProperty('fetchEventSource');
+    return globalContext.has('EventSourceBridge') &&
+        globalContext.has('fetchEventSource');
   } catch (e) {
     return false;
   }

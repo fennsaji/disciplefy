@@ -24,7 +24,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
+        flutter-version: '3.44.6'  # Dart SDK 3.12 - required by retrofit_generator >=10.2.8
         channel: 'stable'
         cache: true
         
@@ -110,7 +110,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
+        flutter-version: '3.44.6'  # Dart SDK 3.12 - required by retrofit_generator >=10.2.8
         channel: 'stable'
         cache: true
         

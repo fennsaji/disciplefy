@@ -163,7 +163,8 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         : Promise.resolve({ data: [] }),
       db.from('learning_path_topics')
         .select('learning_path_id')
-        .in('learning_path_id', pathIds),
+        .in('learning_path_id', pathIds)
+        .eq('is_active', true),
     ])
 
     const translationMap = new Map<string, string>()
@@ -253,6 +254,7 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
           .from('learning_path_topics')
           .select('*', { count: 'exact', head: true })
           .eq('learning_path_id', learningPathId)
+          .eq('is_active', true)
         totalGuides = count ?? null
       }
     })(),

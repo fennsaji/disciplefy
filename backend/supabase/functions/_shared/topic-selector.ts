@@ -972,7 +972,8 @@ async function getNextTopicsFromLearningPath(
   const { data: totalCount, error: countError } = await supabase
     .from('learning_path_topics')
     .select('id', { count: 'exact' })
-    .eq('learning_path_id', learningPathId);
+    .eq('learning_path_id', learningPathId)
+    .eq('is_active', true);
 
   if (countError) {
     console.error('[TOPICS_FOR_YOU] Error counting topics:', countError);
@@ -998,6 +999,7 @@ async function getNextTopicsFromLearningPath(
       )
     `)
     .eq('learning_path_id', learningPathId)
+    .eq('is_active', true)
     .order('position', { ascending: true });
 
   if (pathError || !pathTopics) {

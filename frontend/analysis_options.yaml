@@ -1,6 +1,11 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  # Build outputs are not source. Swift Package Manager checks FlutterFire's
+  # own sources out under build/ios/SourcePackages, which analyze would
+  # otherwise walk and report thousands of errors from.
+  exclude:
+    - build/**
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false
@@ -24,6 +29,10 @@ analyzer:
     use_build_context_synchronously: ignore
     prefer_initializing_formals: ignore
     overridden_fields: ignore
+    # supabase_flutter marks signInWithIdToken experimental; we depend on it
+    # deliberately and the pre-commit hook fails on any warning.
+    experimental_member_use: ignore
+    avoid_types_as_parameter_names: ignore
 
 linter:
   rules:

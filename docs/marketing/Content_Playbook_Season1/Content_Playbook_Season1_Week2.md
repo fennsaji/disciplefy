@@ -349,7 +349,7 @@ Headline: "Where Should I Start?" Scene: a stack of Bibles/books of varying size
 ## Sunday — 🙏 Sunday Reflection
 **Topic:** Carry This Week's Truth Into Worship
 **Format:** Carousel (recap, pre-built)
-**Key Scripture:** Hebrews 10:24-25
+**Key Scripture:** Colossians 3:16
 
 **Slides:** Cover → this week's 5 truths (rest in Jesus, read in context, start your day with Him, a simple study method, God isn't finished with you) → one practical takeaway → invite to church/community → Disciplefy CTA
 
@@ -372,7 +372,7 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 **Hashtags:** #Disciplefy #SundayReflection #BibleStudy #Worship #Discipleship
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Hebrews 10:25 + 🙏 Prayer — "Lord, thank You for this week's growth. Help me carry it into worship today."
+- Morning: 📖 Verse — Colossians 3:16 + 🙏 Prayer — "Lord, thank You for this week's growth. Help me carry it into worship today."
   - **Daily Verse Image Prompt (Variant G — Vertical Bookmark):**
 
     ```
@@ -380,8 +380,8 @@ Premium, warm, bright slide, one frame in a multi-slide swipeable Instagram caro
 
     A tall, narrow "bookmark"-shaped card (rounded top, tapered bottom point), semi-transparent frosted-glass gold-tinted (55-65% opacity with a soft blur behind it, like frosted glass) so the background scene stays gently visible through it, centered on a softly blurred, warm photorealistic background: a row of old wooden church pews bathed in soft morning light streaming through tall stained-glass windows, faint washes of color cast across the polished floor, a single open hymnal resting on the pew's edge beside a small unlit prayer candle in a brass holder, and dust motes hanging gently in the light beams as the far end of the pew fades into reverent shadow toward the front of the sanctuary — a hushed, gathered stillness before worship begins. Verse + reference run down the bookmark in elegant vertical-feeling spacing. Small gold tassel or ribbon detail at the bookmark's top.
 
-    VERSE: "...not neglecting to meet together, as is the habit of some, but encouraging one another..."
-    REFERENCE: Hebrews 10:25
+    VERSE: "Let the word of Christ dwell in you richly... singing psalms and hymns and spiritual songs, with thankfulness in your hearts to God."
+    REFERENCE: Colossians 3:16
     ```
 - Evening: Share Carousel + 📖 Reflection — Which of this week's 5 truths will you keep practicing?
 

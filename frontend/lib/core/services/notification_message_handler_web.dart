@@ -7,8 +7,6 @@
 import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -64,20 +62,19 @@ class NotificationMessageHandlerWeb {
         });
       }
 
-      // Listen for the custom event in Dart
-      js.context['addEventListener'].apply([
-        'notificationClick',
-        js.allowInterop((event) {
-          try {
-            final detail = js.JsObject.fromBrowserObject(event)['detail'];
-            final path = detail['path'] as String;
-            Logger.debug('[FCM] 👆 Navigating to: $path');
-            _router.go(path);
-          } catch (e) {
-            Logger.error('[FCM] ❌ Error handling notification click: $e');
-          }
-        })
-      ]);
+      // Listen for the custom event in Dart. The event is dispatched above via
+      // html.CustomEvent, so its detail comes back as a plain Dart Map — no JS
+      // interop needed to read it.
+      html.window.on['notificationClick'].listen((html.Event event) {
+        try {
+          final detail = (event as html.CustomEvent).detail;
+          final path = (detail as Map)['path'] as String;
+          Logger.debug('[FCM] 👆 Navigating to: $path');
+          _router.go(path);
+        } catch (e) {
+          Logger.error('[FCM] ❌ Error handling notification click: $e');
+        }
+      });
 
       Logger.debug('[FCM] ✅ Service worker message listener set up');
     } catch (e, stackTrace) {

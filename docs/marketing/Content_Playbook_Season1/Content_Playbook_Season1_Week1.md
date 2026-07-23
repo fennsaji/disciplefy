@@ -94,7 +94,7 @@ Variant A — Classic Card: Realistic background scene: a well-worn wooden desk 
 
 ## Tuesday — 💡 How To: Generate a Study Guide
 **Format:** Reel — real screen recording + Daniel voice-over
-**Bible Verse:** Psalm 119:105 — "Your word is a lamp to my feet and a light to my path."
+**Bible Verse:** Psalm 119:130 — "The unfolding of your words gives light; it imparts understanding to the simple."
 
 **Thumbnail:** "A Full Study In Seconds" *(trimmed to 5 words from the original 6-word draft to meet the thumbnail rule)*
 **Thumbnail Image Prompt:**
@@ -137,14 +137,14 @@ Warm, premium closing card for Disciplefy. Soft cream/warm-gold gradient backgro
 **Hashtags:** #Disciplefy #BibleStudyGuide #BibleStudyApp #BibleStudy #Scripture
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Psalm 119:105 + 💡 Tip — "Not sure where to start? Type whatever's on your heart, not just a reference."
+- Morning: 📖 Verse — Psalm 119:130 + 💡 Tip — "Not sure where to start? Type whatever's on your heart, not just a reference."
 - Evening: Share the Reel + 📖 Reflection — Try generating a study guide for one verse today.
 
 **Morning Story — Daily Verse Image Prompt (Variant B — Full-Bleed Photo Overlay):**
 ```
 Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added. (English-only for now — Hindi/Malayalam need a separate font pairing, not yet defined.)
 
-VERSE: "Your word is a lamp to my feet and a light to my path." — REFERENCE: "Psalm 119:105"
+VERSE: "The unfolding of your words gives light; it imparts understanding to the simple." — REFERENCE: "Psalm 119:130"
 
 Variant B — Full-Bleed Photo Overlay: Full-bleed photorealistic scene: a warm brass desk lamp casts a steady pool of golden light across an open Bible on dark wood, its glow tracing the edge of the page like a small path forward in an otherwise dim room. Beyond the lamp's reach the desk fades into soft shadow — a single lit circle in a quiet, still house. A worn leather journal lies open at the light's edge, pen resting mid-page, as though someone paused mid-thought to keep reading — filling the entire frame — no separate card. Verse and reference overlaid directly on the photo in the bottom third, sitting on a soft gold-tinted gradient scrim (dark-to-transparent) for readability. Small logo top-left, no heading text needed. More editorial/cinematic than Monday's card style.
 ```
@@ -169,7 +169,7 @@ Variant B — Full-Bleed Photo Overlay: Full-bleed photorealistic scene: a warm 
 
 ## Wednesday — 🚶 How To: Learning Paths
 **Format:** Reel — real screen recording + Founder voice-over
-**Bible Verse:** Hebrews 12:1 — "let us run with endurance the race that is set before us."
+**Bible Verse:** Psalm 25:4 — "Make me to know your ways, O LORD; teach me your paths."
 
 **Thumbnail:** "Stop Wandering. Start A Path."
 **Thumbnail Image Prompt:**
@@ -211,14 +211,14 @@ Warm, premium closing card for Disciplefy. Soft cream/warm-gold gradient backgro
 **Hashtags:** #Disciplefy #LearningPaths #BibleStudyPlan #Discipleship #SpiritualGrowth
 
 **Stories (2x/day):**
-- Morning: 📖 Verse — Hebrews 12:1 + 🙏 Prayer — "Lord, keep me from wandering — walk me step by step in Your Word."
+- Morning: 📖 Verse — Psalm 25:4 + 🙏 Prayer — "Lord, keep me from wandering — walk me step by step in Your Word."
 - Evening: Share the Reel + 📖 Reflection — Which topic would you want a guided path for?
 
 **Morning Story — Daily Verse Image Prompt (Variant C — Split Layout):**
 ```
 Christian discipleship app Disciplefy, Instagram Story, 1080×1920 (9:16). Warm, peaceful, premium, minimal, cinematic, Scripture-first. Photorealistic — must not look AI-generated, illustrated, or fantasy-styled. Color palette: cream #FAF8F5 · gold accent #B8860B/#C79A3B · heading charcoal #1E1E1E · body #4B5563. Poppins Bold (heading/reference, 600-700 weight) · Inter Medium (verse text) — never shrink text for a long verse, grow the card/space instead. Disciplefy logo used exactly as uploaded, never regenerated. Keep logo, heading, and footer clear of the top ~250px / bottom ~250px IG Story safe zones. No people, no hands, no distracting objects — Scripture stays the visual hero. Render ONLY the elements explicitly named in this prompt (logo, heading, scripture card, footer, and whatever accent is named in the Variant layout below) — do not invent extra decorative icons, badges, subtitle taglines, or ornaments that aren't specified; keep the card exactly as described, nothing added. (English-only for now — Hindi/Malayalam need a separate font pairing, not yet defined.)
 
-VERSE: "Let us run with endurance the race that is set before us." — REFERENCE: "Hebrews 12:1"
+VERSE: "Make me to know your ways, O LORD; teach me your paths." — REFERENCE: "Psalm 25:4"
 
 Variant C — Split Layout: Frame split horizontally: top 60% is the photorealistic scene: a narrow dirt trail winds up a mountain ridge as the first light of sunrise breaks over distant peaks, painting the sky in soft amber and rose while mist still clings low in the valley below. The path ahead disappears around a bend, visible only a little at a time, and a pair of worn hiking boots rest at the trail's edge, suggesting a traveler paused only briefly before continuing on — the air crisp and early, full of quiet, forward-moving determination; bottom 40% is a solid warm-cream panel holding the verse + reference in charcoal text, with a thin gold divider marking the split. Logo small, top-left, sitting over the photo section.
 ```
