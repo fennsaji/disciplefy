@@ -63,11 +63,13 @@ platform :ios do
     )
     paths = lane_context[SharedValues::DSYM_PATHS] || []
     UI.user_error!("Apple has no dSYMs for this build (bitcode disabled — nothing to backfill)") if paths.empty?
+    binary = crashlytics_upload_symbols_binary
+    UI.user_error!("upload-symbols not found — run `flutter build ios` first so Swift Package Manager resolves Firebase") unless binary
     paths.each do |dsym|
       upload_symbols_to_crashlytics(
         dsym_path: dsym,
         gsp_path: "Runner/GoogleService-Info.plist",
-        binary_path: "./Pods/FirebaseCrashlytics/upload-symbols"
+        binary_path: binary
       )
     end
     clean_build_artifacts
@@ -131,18 +133,49 @@ platform :ios do
   # symbolicated. Neither upload_to_testflight nor upload_to_app_store does this
   # — without it Crashlytics reports "Missing dSYM". Bitcode is disabled, so the
   # archive dSYM UUID matches the shipped binary and is the authoritative source.
-  # The upload-symbols binary ships inside the FirebaseCrashlytics pod, which
-  # `flutter build ios` (pod install) restores before this lane runs.
+  #
+  # `upload-symbols` location depends on how Firebase is integrated. Since the
+  # Flutter 3.44 project migration Firebase resolves via Swift Package Manager,
+  # so the CocoaPods path no longer exists — hence the candidate list below.
+  # Symbol upload is best-effort: a missing binary or a failed upload must never
+  # fail a release that has already produced a valid IPA.
+  def crashlytics_upload_symbols_binary
+    candidates = [
+      # Swift Package Manager (current): flutter build ios resolves packages here.
+      "../build/ios/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols",
+      # CocoaPods (pre-3.44 projects, and any future revert).
+      "./Pods/FirebaseCrashlytics/upload-symbols"
+    ]
+    found = candidates.find { |path| File.exist?(path) }
+    return found if found
+
+    # Fall back to a search of the SPM checkouts, in case the layout shifts again.
+    Dir.glob("../build/ios/SourcePackages/**/Crashlytics/upload-symbols").first
+  end
+
   def upload_crashlytics_symbols
     dsym = lane_context[SharedValues::DSYM_OUTPUT_PATH]
     unless dsym && File.exist?(dsym)
       UI.important("No dSYM produced by gym — skipping Crashlytics upload")
       return
     end
-    upload_symbols_to_crashlytics(
-      dsym_path: dsym,
-      gsp_path: "Runner/GoogleService-Info.plist",
-      binary_path: "./Pods/FirebaseCrashlytics/upload-symbols"
-    )
+
+    binary = crashlytics_upload_symbols_binary
+    unless binary
+      UI.important("upload-symbols not found (checked SPM and Pods) — skipping Crashlytics upload")
+      return
+    end
+
+    UI.message("Using Crashlytics upload-symbols at #{binary}")
+    begin
+      upload_symbols_to_crashlytics(
+        dsym_path: dsym,
+        gsp_path: "Runner/GoogleService-Info.plist",
+        binary_path: binary
+      )
+    rescue StandardError => e
+      # Crash symbolication is valuable but not worth failing a shippable build.
+      UI.important("Crashlytics symbol upload failed (continuing): #{e.message}")
+    end
   end
 end
