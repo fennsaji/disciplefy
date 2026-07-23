@@ -523,7 +523,7 @@ pub async fn create_post(pool: &PgPool, input: CreatePostInput) -> Result<BlogPo
 
     let slug = input.slug.unwrap_or_else(|| {
         let base = slug::slugify(&input.title);
-        format!("{}-{}", base, &input.locale)
+        format!("{}-{}", base, input.locale)
     });
 
     let published_at = if input.status == "published" {
@@ -569,7 +569,7 @@ pub async fn create_post_if_not_exists(
 
     let slug = input.slug.unwrap_or_else(|| {
         let base = slug::slugify(&input.title);
-        format!("{}-{}", base, &input.locale)
+        format!("{}-{}", base, input.locale)
     });
 
     let published_at = if input.status == "published" {

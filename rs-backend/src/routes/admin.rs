@@ -352,7 +352,7 @@ pub async fn generate_blog_from_study_guide(
     );
 
     // 5. Build slug from title + locale
-    let slug = format!("{}-{}", slug::slugify(&guide.input_value), &guide.language);
+    let slug = format!("{}-{}", slug::slugify(&guide.input_value), guide.language);
 
     // 6. Persist
     let input = post::CreatePostInput {
