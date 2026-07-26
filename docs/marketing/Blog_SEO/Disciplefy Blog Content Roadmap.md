@@ -37,16 +37,16 @@ Status starts **Not Started** for all 50. Update as each is drafted/reviewed/pub
 ### Pillar 2 — Bible Questions (11–20)
 | # | Title | Status |
 |---|---|---|
-| 11 | What Does John 3:16 Really Mean? | Not Started |
-| 12 | What Does Romans 8:28 Mean? | Not Started |
-| 13 | What Is Faith According to the Bible? | Not Started |
-| 14 | What Is Grace? | Not Started |
-| 15 | What Is Salvation? | Not Started |
-| 16 | What Is Repentance? | Not Started |
-| 17 | Why Did Jesus Speak in Parables? | Not Started |
-| 18 | Why Did Jesus Have to Die? | Not Started |
-| 19 | What Happens After Death According to the Bible? | Not Started |
-| 20 | What Is the Kingdom of God? | Not Started |
+| 11 | What Does John 3:16 Really Mean? | Draft — needs doctrinal review |
+| 12 | What Does Romans 8:28 Mean? | Draft — needs doctrinal review |
+| 13 | What Is Faith According to the Bible? | Draft — needs doctrinal review |
+| 14 | What Is Grace? | Draft — needs doctrinal review |
+| 15 | What Is Salvation? | Draft — needs doctrinal review |
+| 16 | What Is Repentance? | Draft — needs doctrinal review |
+| 17 | Why Did Jesus Speak in Parables? | Draft — needs doctrinal review |
+| 18 | Why Did Jesus Have to Die? | Draft — needs doctrinal review |
+| 19 | What Happens After Death According to the Bible? | Draft — needs doctrinal review |
+| 20 | What Is the Kingdom of God? | Draft — needs doctrinal review |
 
 ### Pillar 3 — Prayer (21–25)
 | # | Title | Status |
@@ -140,18 +140,36 @@ Status starts **Not Started** for all 50. Update as each is drafted/reviewed/pub
 Each follows the same shape unless noted: historical context, original-language insight, cross references, practical application.
 
 ### 11. What Does John 3:16 Really Mean?
-**Should include:** Historical context · Greek insights · Cross references · Applications
+**Should include:** Historical context (Nicodemus) · Greek insights (*houtōs*, *monogenēs*, *pisteuōn*, *apollymi*) · Cross references · Applications
 
 ### 12. What Does Romans 8:28 Mean?
+**Should include:** Suffering context of Romans 8 · *synergei* (work together, not "are good") · v. 29 defines the "good" as Christlikeness · Misuse in grief
+
 ### 13. What Is Faith According to the Bible?
+**Should include:** *emunah* / *pistis* · Hebrews 11:1 (*hypostasis*, *elenchos*) · Object of faith over size of faith · Paul vs. James resolved
+
 ### 14. What Is Grace?
+**Should include:** *charis* vs. Greco-Roman patronage · *chen* / *chesed* · Grace saves, justifies, teaches (Titus 2), sustains · Cheap grace and grace-then-effort errors
+
 ### 15. What Is Salvation?
+**Should include:** Exodus pattern · Saved from penalty/power/presence of sin · Three tenses: justification, sanctification, glorification · Assurance (1 John 5:13)
+
 ### 16. What Is Repentance?
+**Should include:** *shuv* / *metanoia* · Godly vs. worldly sorrow (2 Cor 7:10; Peter vs. Judas) · Confession + turning + fruit · Repentance as ongoing rhythm
+
 ### 17. Why Did Jesus Speak in Parables?
+**Should include:** *parabolē* / *mashal* · Five reasons incl. the hard saying of Mark 4:11-12 (judicial concealment) · Nathan/David pattern · How to interpret parables without over-allegorizing
+
 ### 18. Why Did Jesus Have to Die?
+**Should include:** Sacrificial background · Justice + mercy (Rom 3:26) · Substitution, propitiation, redemption, reconciliation, victory · *tetelestai* · Resurrection as essential · Answer the "divine child abuse" objection
+
 ### 19. What Happens After Death According to the Bible?
+**Should include:** *Sheol* / *Hadēs* / *Gehenna* · Intermediate state · Bodily resurrection (1 Cor 15) · Judgment · New heaven and new earth · Hell handled soberly · Grief-sensitive note
+
 ### 20. What Is the Kingdom of God?
-*(12–20 outlines not yet specified — follow the SEO Template below and the same shape as #11)*
+**Should include:** *basileia* as reign not realm · Already/not yet · Kingdom parables · Entry by new birth, repentance, childlike faith · Not the church, not politics
+
+*Drafts for 11–20 are written and live in `articles/11-*.md` … `articles/20-*.md` — all pending `paul-the-apostle` doctrinal review before publishing.*
 
 ---
 
@@ -261,4 +279,5 @@ These 50 articles are the foundation of a much larger content strategy. Expand e
 - **v1.0:** Initial roadmap — digitized from the 50-article plan, added a Master Tracking List for daily-writing cadence, noted the distinction from the existing auto-generated Learning-Path blog pipeline, and flagged doctrinal-review requirement for Pillars 2/3/5/6.
 - **v1.1:** Resolved Article 9's "AI" keyword as a deliberate blog-only exception to the Brand Bible's "Never Say AI" rule (that rule governs Instagram/app copy; blog SEO content targets real search intent). Logged the exception in the Brand Bible itself.
 - **v1.2:** Trimmed the target length from 2,000-4,000 words to 1,600-1,900 words (~8-minute read) — the first 10 Pillar 1 drafts ran 2,800-3,300 words, too long for a blog reader. Applies going forward to Pillars 2-6 as well.
+- **v1.4:** Drafted all ten Pillar 2 articles (11-20) into `articles/`, filled in the previously-unspecified 12-20 outlines from what was actually written, and marked 11-20 as Draft pending `paul-the-apostle` doctrinal review. Note: Pillar 1 rows (1-10) still read "Not Started" even though drafts exist in `articles/` — that status column is stale and should be corrected.
 - **v1.3:** Added the Publishing Pipeline section documenting `scripts/blog-publisher/` — converts `docs/marketing/Blog_SEO/articles/*.md` into per-article content files + `articles.json`, auto-schedules new articles one per day at 8:30 AM IST, and tracks posted state so re-running the publish script never double-schedules an article.
