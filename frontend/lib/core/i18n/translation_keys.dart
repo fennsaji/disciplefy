@@ -572,6 +572,14 @@ class TranslationKeys {
   static const studyTopicsContentLanguageDefaultDescription =
       'study_topics.content_language_default_description';
   static const moreOptionsTooltip = 'study_topics.more_options_tooltip';
+  static const studyTopicsResetProgress = 'study_topics.reset_progress';
+  static const studyTopicsResetProgressTitle =
+      'study_topics.reset_progress_title';
+  static const studyTopicsResetItemPaths = 'study_topics.reset_item_paths';
+  static const studyTopicsResetItemTopics = 'study_topics.reset_item_topics';
+  static const studyTopicsResetItemXp = 'study_topics.reset_item_xp';
+  static const studyTopicsResetItemBadges = 'study_topics.reset_item_badges';
+  static const studyTopicsResetSuccess = 'study_topics.reset_success';
 
   // Token Management - Main
   static const tokenManagementTitle = 'tokens.management.title';
@@ -986,6 +994,15 @@ class TranslationKeys {
   static const optionsMenuChampionsTitle = 'memory.optionsMenu.championsTitle';
   static const optionsMenuChampionsSubtitle =
       'memory.optionsMenu.championsSubtitle';
+  static const optionsMenuResetTitle = 'memory.optionsMenu.resetTitle';
+  static const optionsMenuResetSubtitle = 'memory.optionsMenu.resetSubtitle';
+  static const memoryResetTitle = 'memory.reset.title';
+  static const memoryResetItemVerses = 'memory.reset.itemVerses';
+  static const memoryResetItemProgress = 'memory.reset.itemProgress';
+  static const memoryResetItemStreak = 'memory.reset.itemStreak';
+  static const memoryResetItemBadges = 'memory.reset.itemBadges';
+  static const memoryResetConfirm = 'memory.reset.confirm';
+  static const memoryResetSuccess = 'memory.reset.success';
 
   // Statistics Dialog
   static const statsDialogTitle = 'memory.statsDialog.title';
@@ -2279,4 +2296,22 @@ class TranslationKeys {
   static const planFeatureDailyReviews = 'plan_features.daily_reviews';
   static const planComparisonDailyReviews =
       'plan_features.comparison_daily_reviews';
+
+  // ==========================================================================
+  // Reset Progress (shared by learning paths and memory verses)
+  // ==========================================================================
+
+  /// Word the user must type to confirm a destructive reset.
+  static const resetProgressConfirmWord = 'reset_progress.confirm_word';
+  static const resetProgressTypeToConfirm = 'reset_progress.type_to_confirm';
+  static const resetProgressCancel = 'reset_progress.cancel';
+  static const resetProgressIrreversible = 'reset_progress.irreversible';
+
+  /// Localized failure messages, keyed off the reset failure's `code` /
+  /// `isNetworkError`. See `core/utils/reset_progress_error_localizer.dart`.
+  static const resetProgressErrorRateLimited =
+      'reset_progress.error_rate_limited';
+  static const resetProgressErrorAuth = 'reset_progress.error_auth';
+  static const resetProgressErrorNetwork = 'reset_progress.error_network';
+  static const resetProgressErrorGeneric = 'reset_progress.error_generic';
 }
