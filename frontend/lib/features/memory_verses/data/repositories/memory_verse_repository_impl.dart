@@ -2,7 +2,9 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/exception_failure_mapper.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/models/reset_progress_result.dart';
 import '../../../gamification/domain/entities/achievement.dart';
 import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
@@ -334,6 +336,35 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
       return Left(ServerFailure(
           message: 'Failed to delete verse: ${e.toString()}',
           code: 'DELETE_FAILED'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ResetProgressResult>> resetMemoryProgress() async {
+    try {
+      _helper.logDebug('Resetting all memory verse progress');
+
+      final result = await _remoteDataSource.resetMemoryProgress();
+
+      // Only clear local state after the server confirms — a failed reset
+      // must leave the cached deck intact. The remote reset is already
+      // irreversible at this point, so a cache-clear failure must not
+      // downgrade this into a reported failure — log it and continue.
+      try {
+        await _helper.clearCache();
+      } catch (e) {
+        _helper.logError('Failed to clear local cache after reset: $e');
+      }
+
+      _helper.logSuccess('Memory progress reset');
+      return Right(result);
+    } catch (e) {
+      _helper.logError('Failed to reset memory progress: $e');
+      return Left(mapExceptionToFailure(
+        e,
+        fallbackMessage: 'Failed to reset memory progress',
+        fallbackCode: 'RESET_PROGRESS_ERROR',
+      ));
     }
   }
 

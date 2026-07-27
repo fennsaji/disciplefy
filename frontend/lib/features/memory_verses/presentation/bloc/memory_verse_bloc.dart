@@ -22,6 +22,7 @@ import '../../domain/usecases/get_statistics.dart';
 import '../../domain/usecases/get_memory_statistics.dart';
 import '../../domain/usecases/get_suggested_verses.dart';
 import '../../domain/entities/suggested_verse_entity.dart';
+import '../../domain/usecases/reset_memory_progress.dart';
 import '../../domain/usecases/select_practice_mode.dart';
 import '../../domain/usecases/set_daily_goal_targets.dart';
 import '../../domain/usecases/submit_practice_session.dart';
@@ -65,6 +66,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final GetStatistics getStatistics;
   final FetchVerseText fetchVerseText;
   final delete_verse_uc.DeleteVerse deleteVerse;
+  final ResetMemoryProgress resetMemoryProgress;
 
   // Gamification use cases
   final SelectPracticeMode selectPracticeMode;
@@ -104,6 +106,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     required this.getStatistics,
     required this.fetchVerseText,
     required this.deleteVerse,
+    required this.resetMemoryProgress,
     // Gamification use cases
     required this.selectPracticeMode,
     required this.submitPracticeSession,
@@ -138,6 +141,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<SyncWithRemote>(_onSyncWithRemote);
     on<FetchVerseTextRequested>(_onFetchVerseTextRequested);
     on<DeleteVerse>(_onDeleteVerse);
+    on<ResetMemoryProgressRequested>(_onResetMemoryProgress);
 
     // Gamification event handlers
     on<SelectPracticeModeEvent>(_onSelectPracticeMode);
@@ -694,6 +698,31 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         code: 'UNEXPECTED_ERROR',
       ));
     }
+  }
+
+  /// Handles ResetMemoryProgressRequested event.
+  ///
+  /// Deletes the user's entire memory verse deck and all derived progress.
+  /// Irreversible — the UI must confirm with the user before dispatching.
+  Future<void> _onResetMemoryProgress(
+    ResetMemoryProgressRequested event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    emit(const MemoryProgressResetting());
+
+    final result = await resetMemoryProgress();
+
+    result.fold(
+      (failure) {
+        Logger.error('Memory progress reset failed: ${failure.code}');
+        emit(MemoryProgressResetError(
+          message: failure.message,
+          code: failure.code,
+          isNetworkError: failure is NetworkFailure,
+        ));
+      },
+      (resetResult) => emit(MemoryProgressResetSuccess(result: resetResult)),
+    );
   }
 
   // ===========================================================================

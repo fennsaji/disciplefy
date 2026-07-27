@@ -604,3 +604,10 @@ class AddSuggestedVerseEvent extends MemoryVerseEvent {
   @override
   List<Object?> get props => [verseReference, verseText, language];
 }
+
+/// Delete the user's entire memory verse deck and all derived progress.
+///
+/// Irreversible. The UI must confirm with the user before dispatching this.
+class ResetMemoryProgressRequested extends MemoryVerseEvent {
+  const ResetMemoryProgressRequested();
+}

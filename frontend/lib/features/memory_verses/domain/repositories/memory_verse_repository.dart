@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/models/reset_progress_result.dart';
 import '../entities/fetched_verse_entity.dart';
 import '../entities/memory_verse_entity.dart';
 import '../entities/review_session_entity.dart';
@@ -96,6 +97,13 @@ abstract class MemoryVerseRepository {
   ///
   /// Returns Unit (success) or Failure on error.
   Future<Either<Failure, Unit>> deleteVerse(String id);
+
+  /// Deletes the user's entire memory verse deck and all derived progress.
+  ///
+  /// Irreversible. Clears collections, daily goals, unlocked modes, memory
+  /// challenge progress, memory badges, and the memory streak, then empties
+  /// the local cache.
+  Future<Either<Failure, ResetProgressResult>> resetMemoryProgress();
 
   /// Fetches review history for a specific verse
   ///

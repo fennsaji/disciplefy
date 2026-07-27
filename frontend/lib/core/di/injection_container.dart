@@ -199,6 +199,7 @@ import '../../features/memory_verses/domain/usecases/submit_review.dart';
 import '../../features/memory_verses/domain/usecases/get_statistics.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/delete_verse.dart';
+import '../../features/memory_verses/domain/usecases/reset_memory_progress.dart';
 import '../../features/memory_verses/domain/usecases/select_practice_mode.dart';
 import '../../features/memory_verses/domain/usecases/submit_practice_session.dart';
 import '../../features/memory_verses/domain/usecases/get_practice_mode_statistics.dart';
@@ -577,6 +578,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetStatistics(sl()));
   sl.registerLazySingleton(() => FetchVerseText(sl()));
   sl.registerLazySingleton(() => DeleteVerse(sl()));
+  sl.registerLazySingleton(() => ResetMemoryProgress(sl()));
 
   // Memory Verses Enhancement - Practice Mode Use Cases
   sl.registerLazySingleton(() => SelectPracticeMode(sl()));
@@ -618,6 +620,7 @@ Future<void> initializeDependencies() async {
         getStatistics: sl(),
         fetchVerseText: sl(),
         deleteVerse: sl(),
+        resetMemoryProgress: sl(),
         selectPracticeMode: sl(),
         submitPracticeSession: sl(),
         getPracticeModeStatistics: sl(),

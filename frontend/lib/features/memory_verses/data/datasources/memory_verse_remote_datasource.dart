@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/api_error_handler.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/models/reset_progress_result.dart';
 import '../../../../core/services/fums_service.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/memory_verse_model.dart';
@@ -57,6 +58,9 @@ class MemoryVerseRemoteDataSource {
   // Suggested Verses endpoint
   static const String _getSuggestedVersesEndpoint =
       '/functions/v1/get-suggested-verses';
+
+  // Progress reset endpoint
+  static const String _resetProgressEndpoint = '/functions/v1/reset-progress';
 
   final HttpService _httpService;
   final ApiErrorHandler _errorHandler;
@@ -319,6 +323,66 @@ class MemoryVerseRemoteDataSource {
       _errorHandler.logSuccess('Verse deleted successfully');
     } catch (e) {
       _errorHandler.handleException(e, 'deleting verse');
+    }
+  }
+
+  /// Deletes the user's entire memory verse deck and all derived progress.
+  ///
+  /// Irreversible. Also clears collections, daily goals, unlocked modes,
+  /// memory challenge progress, memory badges, and the memory streak.
+  Future<ResetProgressResult> resetMemoryProgress() async {
+    try {
+      _errorHandler.logDebug('Resetting all memory verse progress');
+
+      final url = '$_baseUrl$_resetProgressEndpoint';
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.post(
+        url,
+        headers: headers,
+        body: jsonEncode({'scope': 'memory_verses'}),
+        timeout: const Duration(seconds: 30),
+      );
+
+      // Preserve the exception type for these two cases — handleErrorResponse
+      // always throws a generic ServerException regardless of status code, and
+      // handleException below only preserves ServerException/NetworkException,
+      // so a RateLimitException/AuthenticationException must be thrown here to
+      // survive as a distinguishable failure downstream.
+      if (response.statusCode == 429) {
+        throw const RateLimitException(
+          message: 'You have reached the reset limit. Please try again later.',
+          code: 'RATE_LIMIT_EXCEEDED',
+        );
+      }
+      if (response.statusCode == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      }
+      // The contract specifies exactly 200 on success (matching
+      // `learning_paths_remote_datasource.dart`'s equivalent check) — using
+      // `!= 200` rather than `>= 400` avoids silently falling through to
+      // `jsonDecode` on an unexpected 3xx.
+      if (response.statusCode != 200) {
+        _errorHandler.handleErrorResponse(response);
+      }
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw const ServerException(
+          message: 'Malformed reset response',
+          code: 'RESET_PROGRESS_PARSE_ERROR',
+        );
+      }
+
+      _errorHandler.logSuccess('Memory progress reset');
+      return ResetProgressResult.fromJson(data);
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      _errorHandler.handleException(e, 'resetting memory progress');
     }
   }
 
