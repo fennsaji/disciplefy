@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/models/reset_progress_result.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/learning_path_model.dart';
 import '../services/learning_paths_cache_service.dart';
@@ -51,6 +52,12 @@ abstract class LearningPathsRemoteDataSource {
     required String pathId,
   });
 
+  /// Reset all of the user's learning path progress.
+  ///
+  /// Irreversible. Clears enrollments, topic progress, study streak, and
+  /// study/streak achievements, which also zeroes leaderboard XP.
+  Future<ResetProgressResult> resetLearningProgress();
+
   /// Get the recommended learning path for the current user.
   ///
   /// Returns based on priority: active > personalized > featured
@@ -73,6 +80,7 @@ class LearningPathsRemoteDataSourceImpl
     implements LearningPathsRemoteDataSource {
   static String get _baseUrl => AppConfig.supabaseUrl;
   static const String _endpoint = '/functions/v1/learning-paths';
+  static const String _resetProgressEndpoint = '/functions/v1/reset-progress';
 
   final HttpService _httpService;
   final LearningPathsCacheService _cache;
@@ -370,6 +378,81 @@ class LearningPathsRemoteDataSourceImpl
       throw NetworkException(
         message: 'Failed to enroll in learning path',
         code: 'ENROLLMENT_NETWORK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<ResetProgressResult> resetLearningProgress() async {
+    try {
+      _logDebug('Resetting all learning path progress');
+
+      final headers = await _httpService.createHeaders();
+      final body = jsonEncode({'scope': 'learning_paths'});
+
+      final response = await _httpService.post(
+        '$_baseUrl$_resetProgressEndpoint',
+        headers: headers,
+        body: body,
+        timeout: const Duration(seconds: 30),
+      );
+
+      if (response.statusCode != 200) {
+        _logDebug('Reset API error: ${response.statusCode}');
+        if (response.statusCode == 429) {
+          throw const RateLimitException(
+            message:
+                'You have reached the reset limit. Please try again later.',
+            code: 'RATE_LIMIT_EXCEEDED',
+          );
+        }
+        if (response.statusCode == 401) {
+          throw const AuthenticationException(
+            message: 'Authentication required. Please sign in to continue.',
+            code: 'UNAUTHORIZED',
+          );
+        }
+        throw ServerException(
+          message: 'Failed to reset learning progress: ${response.statusCode}',
+          code: 'RESET_PROGRESS_API_ERROR',
+        );
+      }
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw ServerException(
+          message: 'Malformed reset response',
+          code: 'RESET_PROGRESS_PARSE_ERROR',
+        );
+      }
+
+      final result = ResetProgressResult.fromJson(data);
+
+      // Progress is gone server-side — drop the cached path list so
+      // enrollment state is refetched on the next load. Only clear once the
+      // whole operation (status, decode, and parse) has succeeded. The
+      // remote reset is already irreversible at this point, so a cache
+      // failure must not downgrade this into a reported failure — log it
+      // and continue. (LearningPathsCacheService.clearCache() currently
+      // swallows its own errors and never throws, but guard here too so the
+      // property doesn't depend on that distant implementation detail.)
+      try {
+        await _cache.clearCache();
+      } catch (e) {
+        Logger.warning(
+            '[LEARNING_PATHS] Failed to clear cache after reset: $e');
+      }
+
+      _logDebug('Learning progress reset');
+      return result;
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      _logDebug('Exception in resetLearningProgress: $e');
+      throw ServerException(
+        message: 'Failed to reset learning progress',
+        code: 'RESET_PROGRESS_ERROR',
       );
     }
   }

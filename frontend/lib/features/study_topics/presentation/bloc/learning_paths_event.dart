@@ -149,3 +149,10 @@ class LoadPersonalizedPaths extends LearningPathsEvent {
   @override
   List<Object?> get props => [language, limit];
 }
+
+/// Reset all of the user's learning path progress.
+///
+/// Irreversible. The UI must confirm with the user before dispatching this.
+class ResetLearningProgressRequested extends LearningPathsEvent {
+  const ResetLearningProgressRequested();
+}

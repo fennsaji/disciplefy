@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/models/reset_progress_result.dart';
 import '../../domain/entities/learning_path.dart';
 
 /// States for LearningPathsBloc
@@ -193,4 +194,50 @@ class LearningPathsError extends LearningPathsState {
 /// Empty state when no paths are available.
 class LearningPathsEmpty extends LearningPathsState {
   const LearningPathsEmpty();
+}
+
+/// The reset request is in flight.
+class LearningPathsResetting extends LearningPathsState {
+  const LearningPathsResetting();
+}
+
+/// The reset completed. [result] holds the row counts that were removed.
+class LearningPathsResetSuccess extends LearningPathsState {
+  /// Counts of what was deleted.
+  final ResetProgressResult result;
+
+  const LearningPathsResetSuccess({required this.result});
+
+  @override
+  List<Object?> get props => [result];
+}
+
+/// The reset request failed.
+///
+/// Deliberately distinct from [LearningPathsError] — that state is also
+/// emitted by every other load/refresh operation on this bloc, so the
+/// section widgets that render [LearningPathsError] as a full-width error
+/// panel (or hide themselves entirely) would otherwise do the same for a
+/// failed *reset*, even though nothing changed server-side. It also lets
+/// code awaiting the reset's specific outcome (e.g. `bloc.stream.firstWhere`)
+/// ignore unrelated errors from other in-flight operations instead of
+/// resolving on the wrong one.
+///
+/// **Parameters:**
+/// - [message] - User-friendly error message
+/// - [code] - Technical error code for debugging
+/// - [isNetworkError] - True if error is network-related (for offline indicator)
+class LearningPathsResetError extends LearningPathsState {
+  final String message;
+  final String code;
+  final bool isNetworkError;
+
+  const LearningPathsResetError({
+    required this.message,
+    required this.code,
+    this.isNetworkError = false,
+  });
+
+  @override
+  List<Object?> get props => [message, code, isNetworkError];
 }

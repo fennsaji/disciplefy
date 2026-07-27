@@ -4,8 +4,10 @@ import 'package:dartz/dartz.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/error/exception_failure_mapper.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/models/reset_progress_result.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
 import '../datasources/learning_paths_remote_datasource.dart';
@@ -345,6 +347,20 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
       return Left(ClientFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ResetProgressResult>> resetLearningProgress() async {
+    try {
+      final result = await _remoteDataSource.resetLearningProgress();
+      return Right(result);
+    } catch (e) {
+      return Left(mapExceptionToFailure(
+        e,
+        fallbackMessage: 'Failed to reset learning progress',
+        fallbackCode: 'RESET_PROGRESS_ERROR',
+      ));
     }
   }
 

@@ -1,7 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
+import '../../domain/usecases/reset_learning_progress.dart';
 import 'learning_paths_event.dart';
 import 'learning_paths_state.dart';
 
@@ -11,13 +13,16 @@ import 'learning_paths_state.dart';
 /// which are curated collections of topics for structured learning.
 class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
   final LearningPathsRepository _repository;
+  final ResetLearningProgress _resetLearningProgress;
 
   static const _categoryPageSize = 4;
   static const _pathsPerCategory = 3;
 
   LearningPathsBloc({
     required LearningPathsRepository repository,
+    required ResetLearningProgress resetLearningProgress,
   })  : _repository = repository,
+        _resetLearningProgress = resetLearningProgress,
         super(const LearningPathsInitial()) {
     on<LoadLearningPaths>(_onLoadLearningPaths);
     on<LoadLearningPathDetails>(_onLoadLearningPathDetails);
@@ -29,6 +34,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<SearchLearningPaths>(_onSearchLearningPaths);
     on<LoadFlatLearningPaths>(_onLoadFlatLearningPaths);
     on<LoadPersonalizedPaths>(_onLoadPersonalizedPaths);
+    on<ResetLearningProgressRequested>(_onResetLearningProgress);
   }
 
   Future<void> _onLoadLearningPaths(
@@ -381,5 +387,23 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
         searchResults: paths,
       ));
     }
+  }
+
+  Future<void> _onResetLearningProgress(
+    ResetLearningProgressRequested event,
+    Emitter<LearningPathsState> emit,
+  ) async {
+    emit(const LearningPathsResetting());
+
+    final result = await _resetLearningProgress();
+
+    result.fold(
+      (failure) => emit(LearningPathsResetError(
+        message: failure.message,
+        code: failure.code,
+        isNetworkError: failure is NetworkFailure,
+      )),
+      (resetResult) => emit(LearningPathsResetSuccess(result: resetResult)),
+    );
   }
 }

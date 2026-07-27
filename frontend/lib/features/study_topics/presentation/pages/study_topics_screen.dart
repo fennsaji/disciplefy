@@ -20,9 +20,13 @@ import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/utils/reset_progress_error_localizer.dart';
+import '../../../../core/widgets/destructive_confirm_dialog.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
@@ -429,6 +433,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     return StudyTopicsAppBar(
       onLanguageChange: _handleStudyLanguageChange,
       showLeaderboard: widget.isLeaderboardFeatureEnabled,
+      language: widget.currentLanguage,
     );
   }
 
@@ -604,10 +609,18 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLanguageChange;
   final bool showLeaderboard;
 
+  /// The user's current study-content language code (e.g. 'en', 'hi', 'ml').
+  ///
+  /// Threaded in from `_StudyTopicsScreenState.currentLanguage` so the reset
+  /// flow can reload the list in the language the user is actually viewing,
+  /// instead of `LoadLearningPaths`'s 'en' default.
+  final String language;
+
   const StudyTopicsAppBar({
     super.key,
     this.onLanguageChange,
     this.showLeaderboard = true,
+    this.language = 'en',
   });
 
   @override
@@ -651,9 +664,11 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 _showLanguageSelector(context, onLanguageChange);
               } else if (value == 'study_mode') {
                 _showStudyModeSelector(context);
+              } else if (value == 'reset_progress') {
+                _handleResetProgress(context);
               }
             },
-            itemBuilder: (BuildContext context) => [
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               PopupMenuItem<String>(
                 value: 'language',
                 child: Row(
@@ -675,12 +690,115 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'reset_progress',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.restart_alt,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      context.tr(TranslationKeys.studyTopicsResetProgress),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(width: 8),
         ],
       ),
     );
+  }
+
+  /// Confirms and then dispatches a full learning-progress reset.
+  ///
+  /// `LeaderboardBloc` and `ContinueLearningBloc` are intentionally not
+  /// refreshed here: neither is provided above this widget in the tree
+  /// (`LeaderboardBloc` is only provided on the dedicated /leaderboard
+  /// route, and `ContinueLearningBloc` has no `BlocProvider` anywhere),
+  /// so `context.read` for either would throw `ProviderNotFoundException`.
+  /// `GamificationBloc` is a registered `LazySingleton`, so it is reached
+  /// directly via `sl<GamificationBloc>()` rather than `context.read`,
+  /// which also sidesteps any `BuildContext`-across-an-`await` concern.
+  Future<void> _handleResetProgress(BuildContext context) async {
+    final bloc = context.read<LearningPathsBloc>();
+    final messenger = ScaffoldMessenger.of(context);
+    final successMessage = context.tr(TranslationKeys.studyTopicsResetSuccess);
+
+    final confirmed = await DestructiveConfirmDialog.show(
+      context,
+      title: context.tr(TranslationKeys.studyTopicsResetProgressTitle),
+      consequences: [
+        context.tr(TranslationKeys.studyTopicsResetItemPaths),
+        context.tr(TranslationKeys.studyTopicsResetItemTopics),
+        context.tr(TranslationKeys.studyTopicsResetItemXp),
+        context.tr(TranslationKeys.studyTopicsResetItemBadges),
+      ],
+      confirmWord: context.tr(TranslationKeys.resetProgressConfirmWord),
+      confirmLabel: context.tr(TranslationKeys.studyTopicsResetProgress),
+    );
+
+    if (!confirmed) return;
+
+    // Wait for the bloc to settle so the snackbar reflects the real outcome.
+    //
+    // If the user navigates away while the reset round-trip is outstanding,
+    // `_StudyTopicsScreenState.dispose()` closes the bloc, ending its stream
+    // with no matching state. `orElse` supplies a sentinel so this await
+    // completes cleanly instead of throwing an uncaught `StateError`; the
+    // `context.mounted` check below then skips the snackbar since there is
+    // no widget left to report to (the reset still completes server-side).
+    //
+    // Narrowed to the reset-specific states (not the shared LearningPathsError,
+    // which every other load/refresh on this bloc also emits): this bloc also
+    // drives the app bar, both path sections, pull-to-refresh, and the
+    // language-change listener, all of which can fail independently while this
+    // up-to-30s round-trip is outstanding. Resolving on their unrelated
+    // LearningPathsError would report the wrong outcome to this snackbar and
+    // leave the real reset result unobserved.
+    final completion = bloc.stream.firstWhere(
+      (state) =>
+          state is LearningPathsResetSuccess ||
+          state is LearningPathsResetError,
+      orElse: () => const LearningPathsInitial(),
+    );
+
+    bloc.add(const ResetLearningProgressRequested());
+
+    final outcome = await completion;
+
+    if (!context.mounted) return;
+
+    if (outcome is LearningPathsResetSuccess) {
+      messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+
+      // Everything derived from the deleted rows must be refetched: the
+      // path list (in the user's actual study-content language — passing
+      // none here would silently reload in LoadLearningPaths' 'en' default),
+      // the personalized "For You" paths (dropped from state on this reload
+      // since the prior state is LearningPathsResetSuccess, not
+      // LearningPathsLoaded — see `_onLoadLearningPaths`), and XP/rank/badges
+      // (via GamificationBloc, a singleton reached directly through the
+      // service locator).
+      bloc.add(LoadLearningPaths(forceRefresh: true, language: language));
+      bloc.add(LoadPersonalizedPaths(language: language));
+      sl<GamificationBloc>().add(const RefreshGamificationStats());
+    } else if (outcome is LearningPathsResetError) {
+      final errorMessage = localizeResetProgressError(
+        context,
+        code: outcome.code,
+        isNetworkError: outcome.isNetworkError,
+        fallbackMessage: outcome.message,
+      );
+      messenger.showSnackBar(SnackBar(content: Text(errorMessage)));
+    }
   }
 
   /// Show language selection bottom sheet for study content only
