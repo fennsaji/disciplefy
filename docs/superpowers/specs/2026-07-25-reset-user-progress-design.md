@@ -36,7 +36,15 @@ Two `SECURITY DEFINER` Postgres functions, each running all of its deletes in on
 | `user_study_streaks` | DELETE row for user |
 | `user_achievements` | DELETE rows whose `achievement_id` is in `SELECT id FROM achievements WHERE category IN ('study','streak')` |
 
-XP needs no explicit handling. The leaderboard is derived — `get_memory_champions_leaderboard` and the XP views compute `COALESCE(SUM(utp.xp_earned), 0)` over `user_topic_progress`. Deleting those rows zeroes the user's XP and drops them below the 200-XP leaderboard threshold automatically. There is no stored XP ledger to decrement, so no risk of a negative balance.
+XP needs no explicit handling, but it does not fully zero. The leaderboard is derived, not stored — there is no XP ledger to decrement, so no risk of a negative balance. `get_leaderboard` (see `20260415000001_fix_leaderboard_include_achievement_xp.sql:29-36`) computes:
+
+```
+COALESCE(SUM(utp.xp_earned), 0) + COALESCE(SUM(a.xp_reward) over ALL user_achievements, 0)
+```
+
+The achievement half is **not** filtered by category. So deleting `user_topic_progress` plus the `study`/`streak` achievements removes the topic XP and those badges' XP, but a user who also holds `voice` or `saved` badges keeps that portion of their XP and may stay on the leaderboard.
+
+This is a consequence of the category split: `voice` and `saved` badges are not re-earnable through learning paths, so neither reset may delete them. User-facing copy must therefore say XP and rank will *drop*, never that they reset to zero.
 
 `user_study_streaks` is deleted rather than zeroed; the existing streak logic re-creates the row lazily on the next study activity.
 
