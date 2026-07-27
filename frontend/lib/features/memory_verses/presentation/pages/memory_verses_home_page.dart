@@ -1263,6 +1263,12 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
     if (outcome is MemoryProgressResetSuccess) {
       messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+      // Clear the stale-while-revalidate snapshot so the builder cannot
+      // re-render the just-deleted deck while the reload below is in
+      // flight.
+      setState(() {
+        _lastLoadedState = null;
+      });
       // Deck is empty now — reload using the same helper the rest of the
       // page uses, so the language filter and gamification widgets
       // (streak, daily goal) are refreshed consistently rather than by

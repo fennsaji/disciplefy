@@ -5,8 +5,10 @@
  * feature area:
  *
  * - `learning_paths` — enrollments, topic progress, study streak, and
- *   study/streak achievements. Zeroes leaderboard XP as a side effect,
- *   because XP is derived from user_topic_progress.
+ *   study/streak achievements. Leaderboard XP (topic XP plus all-category
+ *   achievement XP) drops sharply as a side effect, but does not
+ *   necessarily reach zero — voice/saved badge XP survives since only
+ *   study/streak achievements are deleted.
  * - `memory_verses` — the whole memory verse deck plus collections, daily
  *   goals, unlocked modes, memory challenge progress, memory achievements,
  *   and the memory streak.

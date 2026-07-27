@@ -14,6 +14,9 @@ class OptionsMenuSheet extends StatelessWidget {
   final VoidCallback onSync;
   final VoidCallback onViewStatistics;
   final VoidCallback? onViewChampions;
+
+  /// Invoked after the sheet closes when the destructive "reset" option is
+  /// selected.
   final VoidCallback onReset;
 
   const OptionsMenuSheet({

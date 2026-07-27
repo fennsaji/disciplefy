@@ -354,6 +354,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
   Future<Either<Failure, ResetProgressResult>> resetLearningProgress() async {
     try {
       final result = await _remoteDataSource.resetLearningProgress();
+
+      // Invalidate caches after reset
+      clearCache();
+
       return Right(result);
     } catch (e) {
       return Left(mapExceptionToFailure(

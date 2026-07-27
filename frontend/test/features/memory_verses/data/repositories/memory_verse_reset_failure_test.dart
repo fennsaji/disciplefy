@@ -128,7 +128,7 @@ void main() {
         'returns Left(ServerFailure) when an unrecognised non-AppException error is thrown',
         () async {
       when(remoteDataSource.resetMemoryProgress())
-          .thenThrow(FormatException('unexpected'));
+          .thenThrow(const FormatException('unexpected'));
 
       final actual = await repository.resetMemoryProgress();
 

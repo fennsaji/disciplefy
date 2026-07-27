@@ -3,6 +3,7 @@ import 'package:disciplefy_bible_study/core/error/exceptions.dart';
 import 'package:disciplefy_bible_study/core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/models/reset_progress_result.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/datasources/learning_paths_remote_datasource.dart';
+import 'package:disciplefy_bible_study/features/study_topics/data/models/learning_path_model.dart';
 import 'package:disciplefy_bible_study/features/study_topics/data/repositories/learning_paths_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -103,6 +104,91 @@ void main() {
         (failure) => expect(failure, isA<ServerFailure>()),
         (_) => fail('expected a Left(ServerFailure)'),
       );
+    });
+  });
+
+  group('resetLearningProgress cache invalidation', () {
+    const emptyPathsResponse = LearningPathsResponseModel(
+      paths: [],
+      total: 0,
+    );
+
+    void stubGetLearningPaths() {
+      when(remoteDataSource.getLearningPaths(
+        language: anyNamed('language'),
+        includeEnrolled: anyNamed('includeEnrolled'),
+        limit: anyNamed('limit'),
+        offset: anyNamed('offset'),
+        search: anyNamed('search'),
+        fellowshipId: anyNamed('fellowshipId'),
+      )).thenAnswer((_) async => emptyPathsResponse);
+    }
+
+    void verifyGetLearningPathsCalled(int times) {
+      verify(remoteDataSource.getLearningPaths(
+        language: anyNamed('language'),
+        includeEnrolled: anyNamed('includeEnrolled'),
+        limit: anyNamed('limit'),
+        offset: anyNamed('offset'),
+        search: anyNamed('search'),
+        fellowshipId: anyNamed('fellowshipId'),
+      )).called(times);
+    }
+
+    test('invalidates the in-memory cache when reset succeeds', () async {
+      stubGetLearningPaths();
+      when(remoteDataSource.clearCache()).thenAnswer((_) async {});
+
+      // Prime the in-memory cache.
+      await repository.getLearningPaths();
+      verifyGetLearningPathsCalled(1);
+
+      const result = ResetProgressResult(
+        scope: 'learning_paths',
+        counts: {'paths_reset': 1, 'topics_reset': 1},
+      );
+      when(remoteDataSource.resetLearningProgress())
+          .thenAnswer((_) async => result);
+
+      final resetResult = await repository.resetLearningProgress();
+      expect(resetResult.isRight(), isTrue);
+      verify(remoteDataSource.clearCache()).called(1);
+
+      // A subsequent read must hit the datasource again instead of serving
+      // the stale pre-reset cache.
+      await repository.getLearningPaths();
+      verifyGetLearningPathsCalled(1);
+    });
+
+    test('does NOT invalidate the in-memory cache when reset fails', () async {
+      stubGetLearningPaths();
+
+      // Prime the in-memory cache.
+      await repository.getLearningPaths();
+      verifyGetLearningPathsCalled(1);
+
+      when(remoteDataSource.resetLearningProgress()).thenThrow(
+        const NetworkException(
+          message: 'Offline.',
+          code: 'NETWORK_ERROR',
+        ),
+      );
+
+      final resetResult = await repository.resetLearningProgress();
+      expect(resetResult.isLeft(), isTrue);
+      verifyNever(remoteDataSource.clearCache());
+
+      // The cache is still valid, so this must be served from memory
+      // without another datasource call.
+      await repository.getLearningPaths();
+      verifyNever(remoteDataSource.getLearningPaths(
+        language: anyNamed('language'),
+        includeEnrolled: anyNamed('includeEnrolled'),
+        limit: anyNamed('limit'),
+        offset: anyNamed('offset'),
+        search: anyNamed('search'),
+        fellowshipId: anyNamed('fellowshipId'),
+      ));
     });
   });
 }
