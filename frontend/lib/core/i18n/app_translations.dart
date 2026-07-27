@@ -684,6 +684,17 @@ class AppTranslations {
         'statsSubtitle': 'See your progress details',
         'championsTitle': 'Champions',
         'championsSubtitle': 'View top memorizers',
+        'resetTitle': 'Reset All Verses',
+        'resetSubtitle': 'Delete every verse and all progress',
+      },
+      'reset': {
+        'title': 'Delete all memory verses?',
+        'itemVerses': 'Every verse in your deck will be deleted',
+        'itemProgress': 'All practice history and mastery will be deleted',
+        'itemStreak': 'Your memory streak will reset to zero',
+        'itemBadges': 'Memory badges and challenge progress will be removed',
+        'confirm': 'Delete All',
+        'success': 'All memory verses deleted',
       },
       'heatMap': {
         'title': 'Practice Activity',
@@ -763,6 +774,18 @@ class AppTranslations {
         'faith': 'Faith',
         'love': 'Love',
       },
+    },
+    'reset_progress': {
+      'confirm_word': 'RESET',
+      'type_to_confirm': 'Type {word} to confirm',
+      'cancel': 'Cancel',
+      'irreversible': 'This cannot be undone.',
+      'error_rate_limited':
+          'You have reached the reset limit. Please try again later.',
+      'error_auth': 'Please sign in again to continue.',
+      'error_network':
+          'No connection. Please check your network and try again.',
+      'error_generic': 'Something went wrong. Please try again.',
     },
     'bible_books': {
       'Genesis': 'Genesis',
@@ -854,6 +877,13 @@ class AppTranslations {
       'content_language_default_description':
           'Use the same language as your app',
       'more_options_tooltip': 'More options',
+      'reset_progress': 'Reset Progress',
+      'reset_progress_title': 'Reset learning progress?',
+      'reset_item_paths': 'All learning path enrollments will be removed',
+      'reset_item_topics': 'All completed topics will be marked incomplete',
+      'reset_item_xp': 'Your XP and leaderboard rank will drop sharply',
+      'reset_item_badges': 'Study and streak badges will be removed',
+      'reset_success': 'Learning progress reset',
     },
     'category_filter': {
       'title': 'Filter by Category',
@@ -2687,6 +2717,17 @@ class AppTranslations {
         'statsSubtitle': 'अपनी प्रगति का विवरण देखें',
         'championsTitle': 'चैंपियन',
         'championsSubtitle': 'शीर्ष स्मरण करने वालों को देखें',
+        'resetTitle': 'सभी वचन रीसेट करें',
+        'resetSubtitle': 'हर वचन और सारी प्रगति हटाएं',
+      },
+      'reset': {
+        'title': 'सभी स्मृति वचन हटाएं?',
+        'itemVerses': 'आपके डेक का हर वचन हटा दिया जाएगा',
+        'itemProgress': 'सारा अभ्यास इतिहास और महारत हटा दी जाएगी',
+        'itemStreak': 'आपकी स्मृति स्ट्रीक शून्य हो जाएगी',
+        'itemBadges': 'स्मृति बैज और चैलेंज प्रगति हटा दी जाएगी',
+        'confirm': 'सभी हटाएं',
+        'success': 'सभी स्मृति वचन हटा दिए गए',
       },
       'heatMap': {
         'title': 'अभ्यास गतिविधि',
@@ -2766,6 +2807,18 @@ class AppTranslations {
         'faith': 'विश्वास',
         'love': 'प्रेम',
       },
+    },
+    'reset_progress': {
+      'confirm_word': 'रीसेट',
+      'type_to_confirm': 'पुष्टि के लिए {word} लिखें',
+      'cancel': 'रद्द करें',
+      'irreversible': 'इसे पूर्ववत नहीं किया जा सकता।',
+      'error_rate_limited':
+          'आपने रीसेट की सीमा पार कर ली है। कृपया बाद में फिर कोशिश करें।',
+      'error_auth': 'जारी रखने के लिए कृपया दोबारा साइन इन करें।',
+      'error_network':
+          'कोई कनेक्शन नहीं है। कृपया अपना नेटवर्क जांचें और फिर कोशिश करें।',
+      'error_generic': 'कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।',
     },
     'bible_books': {
       'Genesis': 'उत्पत्ति',
@@ -2856,6 +2909,13 @@ class AppTranslations {
       'content_language_default_description':
           'अपने ऐप की समान भाषा का उपयोग करें',
       'more_options_tooltip': 'अधिक विकल्प',
+      'reset_progress': 'प्रगति रीसेट करें',
+      'reset_progress_title': 'लर्निंग प्रगति रीसेट करें?',
+      'reset_item_paths': 'सभी लर्निंग पाथ नामांकन हटा दिए जाएंगे',
+      'reset_item_topics': 'सभी पूर्ण किए गए विषय अपूर्ण चिह्नित होंगे',
+      'reset_item_xp': 'आपका XP और लीडरबोर्ड रैंक बहुत घट जाएगा',
+      'reset_item_badges': 'स्टडी और स्ट्रीक बैज हटा दिए जाएंगे',
+      'reset_success': 'लर्निंग प्रगति रीसेट हो गई',
     },
     'category_filter': {
       'title': 'श्रेणी के अनुसार फ़िल्टर करें',
@@ -4708,6 +4768,17 @@ class AppTranslations {
         'statsSubtitle': 'നിങ്ങളുടെ പുരോഗതി വിശദാംശങ്ങൾ കാണുക',
         'championsTitle': 'ചാമ്പ്യന്മാർ',
         'championsSubtitle': 'മികച്ച മനഃപാഠക്കാരെ കാണുക',
+        'resetTitle': 'എല്ലാ വചനങ്ങളും റീസെറ്റ് ചെയ്യുക',
+        'resetSubtitle': 'എല്ലാ വചനങ്ങളും പ്രോഗ്രസും ഇല്ലാതാക്കുക',
+      },
+      'reset': {
+        'title': 'എല്ലാ മെമ്മറി വചനങ്ങളും ഇല്ലാതാക്കണോ?',
+        'itemVerses': 'നിങ്ങളുടെ ഡെക്കിലെ എല്ലാ വചനങ്ങളും ഇല്ലാതാക്കും',
+        'itemProgress': 'എല്ലാ പ്രാക്ടീസ് ചരിത്രവും മാസ്റ്ററിയും ഇല്ലാതാക്കും',
+        'itemStreak': 'നിങ്ങളുടെ മെമ്മറി സ്ട്രീക്ക് പൂജ്യമാകും',
+        'itemBadges': 'മെമ്മറി ബാഡ്ജുകളും ചലഞ്ച് പ്രോഗ്രസും നീക്കംചെയ്യും',
+        'confirm': 'എല്ലാം ഇല്ലാതാക്കുക',
+        'success': 'എല്ലാ മെമ്മറി വചനങ്ങളും ഇല്ലാതാക്കി',
       },
       'heatMap': {
         'title': 'പരിശീലന പ്രവർത്തനം',
@@ -4788,6 +4859,18 @@ class AppTranslations {
         'faith': 'വിശ്വാസം',
         'love': 'സ്നേഹം',
       },
+    },
+    'reset_progress': {
+      'confirm_word': 'റീസെറ്റ്',
+      'type_to_confirm': 'സ്ഥിരീകരിക്കാൻ {word} എന്ന് ടൈപ്പ് ചെയ്യുക',
+      'cancel': 'റദ്ദാക്കുക',
+      'irreversible': 'ഇത് പഴയപടിയാക്കാൻ കഴിയില്ല.',
+      'error_rate_limited':
+          'നിങ്ങൾ റീസെറ്റ് പരിധി കവിഞ്ഞു. ദയവായി പിന്നീട് ശ്രമിക്കുക.',
+      'error_auth': 'തുടരാൻ ദയവായി വീണ്ടും സൈൻ ഇൻ ചെയ്യുക.',
+      'error_network':
+          'കണക്ഷൻ ഇല്ല. ദയവായി നിങ്ങളുടെ നെറ്റ്‌വർക്ക് പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.',
+      'error_generic': 'എന്തോ പിശക് സംഭവിച്ചു. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
     },
     'bible_books': {
       'Genesis': 'ഉൽപത്തി',
@@ -4880,6 +4963,14 @@ class AppTranslations {
       'content_language_default_description':
           'നിങ്ങളുടെ ആപ്പിന്റെ അതേ ഭാഷ ഉപയോഗിക്കുക',
       'more_options_tooltip': 'കൂടുതൽ ഓപ്ഷനുകൾ',
+      'reset_progress': 'പ്രോഗ്രസ് റീസെറ്റ് ചെയ്യുക',
+      'reset_progress_title': 'ലേണിംഗ് പ്രോഗ്രസ് റീസെറ്റ് ചെയ്യണോ?',
+      'reset_item_paths': 'എല്ലാ ലേണിംഗ് പാത്ത് എൻറോൾമെന്റുകളും നീക്കംചെയ്യും',
+      'reset_item_topics':
+          'പൂർത്തിയാക്കിയ എല്ലാ വിഷയങ്ങളും അപൂർണ്ണമായി അടയാളപ്പെടുത്തും',
+      'reset_item_xp': 'നിങ്ങളുടെ XP-യും ലീഡർബോർഡ് റാങ്കും വളരെ കുറയും',
+      'reset_item_badges': 'സ്റ്റഡി, സ്ട്രീക്ക് ബാഡ്ജുകൾ നീക്കംചെയ്യും',
+      'reset_success': 'ലേണിംഗ് പ്രോഗ്രസ് റീസെറ്റ് ചെയ്തു',
     },
     'category_filter': {
       'title': 'വിഭാഗം അനുസരിച്ച് ഫിൽട്ടർ ചെയ്യുക',

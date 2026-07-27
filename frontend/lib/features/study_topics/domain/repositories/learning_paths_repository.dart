@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/models/reset_progress_result.dart';
 import '../entities/learning_path.dart';
 
 /// Repository interface for learning paths operations.
@@ -70,6 +71,12 @@ abstract class LearningPathsRepository {
   Future<Either<Failure, EnrollmentResult>> enrollInPath({
     required String pathId,
   });
+
+  /// Reset all of the user's learning path progress.
+  ///
+  /// Irreversible. Clears enrollments, topic progress, study streak, and
+  /// study/streak achievements, which also zeroes leaderboard XP.
+  Future<Either<Failure, ResetProgressResult>> resetLearningProgress();
 
   /// Get user's enrolled learning paths with progress.
   ///

@@ -12,7 +12,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/utils/reset_progress_error_localizer.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/widgets/destructive_confirm_dialog.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
@@ -1204,7 +1206,86 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       onViewChampions: () {
         context.push('/memory-verses/champions');
       },
+      onReset: () => _handleResetProgress(context),
     );
+  }
+
+  /// Confirms and then deletes the entire memory verse deck.
+  ///
+  /// `MemoryVerseBloc` is registered as a `Factory` in the DI container, so
+  /// `sl<MemoryVerseBloc>()` would return a fresh, disconnected instance —
+  /// `context.read` is required to reach the one actually driving this page.
+  /// `GamificationBloc`, by contrast, is a `LazySingleton` with no
+  /// `BlocProvider` anywhere in the app, so it must be reached via
+  /// `sl<GamificationBloc>()`; `context.read<GamificationBloc>()` would throw
+  /// `ProviderNotFoundException`.
+  Future<void> _handleResetProgress(BuildContext context) async {
+    final bloc = context.read<MemoryVerseBloc>();
+    final gamificationBloc = sl<GamificationBloc>();
+    final messenger = ScaffoldMessenger.of(context);
+    final successMessage = context.tr(TranslationKeys.memoryResetSuccess);
+
+    final confirmed = await DestructiveConfirmDialog.show(
+      context,
+      title: context.tr(TranslationKeys.memoryResetTitle),
+      consequences: [
+        context.tr(TranslationKeys.memoryResetItemVerses),
+        context.tr(TranslationKeys.memoryResetItemProgress),
+        context.tr(TranslationKeys.memoryResetItemStreak),
+        context.tr(TranslationKeys.memoryResetItemBadges),
+      ],
+      confirmWord: context.tr(TranslationKeys.resetProgressConfirmWord),
+      confirmLabel: context.tr(TranslationKeys.memoryResetConfirm),
+    );
+
+    if (!confirmed) return;
+
+    // Wait for the bloc to settle so the snackbar reflects the real outcome.
+    //
+    // If the user navigates away while the reset round-trip is outstanding,
+    // this widget's `dispose()` closes the bloc, ending its stream with no
+    // matching state. `orElse` supplies a sentinel so this await completes
+    // cleanly instead of throwing an uncaught `StateError`; the
+    // `context.mounted` check below then skips the snackbar since there is
+    // no widget left to report to (the reset still completes server-side).
+    final completion = bloc.stream.firstWhere(
+      (state) =>
+          state is MemoryProgressResetSuccess ||
+          state is MemoryProgressResetError,
+      orElse: () => const MemoryVerseInitial(),
+    );
+
+    bloc.add(const ResetMemoryProgressRequested());
+
+    final outcome = await completion;
+
+    if (!context.mounted) return;
+
+    if (outcome is MemoryProgressResetSuccess) {
+      messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+      // Clear the stale-while-revalidate snapshot so the builder cannot
+      // re-render the just-deleted deck while the reload below is in
+      // flight.
+      setState(() {
+        _lastLoadedState = null;
+      });
+      // Deck is empty now — reload using the same helper the rest of the
+      // page uses, so the language filter and gamification widgets
+      // (streak, daily goal) are refreshed consistently rather than by
+      // coincidence of the empty-state UI hiding stale values.
+      _loadVerses();
+      // Memory badges and challenge progress are gone; refetch gamification
+      // stats so they reflect the reset immediately.
+      gamificationBloc.add(const RefreshGamificationStats());
+    } else if (outcome is MemoryProgressResetError) {
+      final errorMessage = localizeResetProgressError(
+        context,
+        code: outcome.code,
+        isNetworkError: outcome.isNetworkError,
+        fallbackMessage: outcome.message,
+      );
+      messenger.showSnackBar(SnackBar(content: Text(errorMessage)));
+    }
   }
 
   void _navigateToReviewPage(BuildContext context, String verseId) {

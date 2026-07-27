@@ -203,6 +203,17 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
   Widget build(BuildContext context) {
     super.build(context);
     return BlocBuilder<LearningPathsBloc, LearningPathsState>(
+      // A progress reset emits LearningPathsResetting / LearningPathsResetSuccess
+      // / LearningPathsResetError as siblings of LearningPathsLoaded on the same
+      // bloc — ignore them here so the currently displayed paths don't flash
+      // away (or disappear entirely, since this builder's fallback is
+      // SizedBox.shrink()) mid-reset or on a failed reset. The follow-up
+      // LoadLearningPaths(forceRefresh: true) emits LearningPathsLoading /
+      // LearningPathsLoaded normally, which this builder still reacts to.
+      buildWhen: (previous, current) =>
+          current is! LearningPathsResetting &&
+          current is! LearningPathsResetSuccess &&
+          current is! LearningPathsResetError,
       builder: (context, state) {
         if (state is LearningPathsLoading ||
             state is LearningPathsInitial ||

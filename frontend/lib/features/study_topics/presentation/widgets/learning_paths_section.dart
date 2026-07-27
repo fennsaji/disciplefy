@@ -210,6 +210,18 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           });
         }
       },
+      // A progress reset emits LearningPathsResetting / LearningPathsResetSuccess
+      // / LearningPathsResetError as siblings of LearningPathsLoaded on the same
+      // bloc — ignore them here so the currently displayed categories don't
+      // flash away to the full-width error panel mid-reset or on a failed
+      // reset (nothing changed server-side, so there's nothing to report).
+      // The follow-up LoadLearningPaths(forceRefresh: true) emits
+      // LearningPathsLoading / LearningPathsLoaded normally, which this
+      // builder still reacts to.
+      buildWhen: (previous, current) =>
+          current is! LearningPathsResetting &&
+          current is! LearningPathsResetSuccess &&
+          current is! LearningPathsResetError,
       builder: (context, state) {
         if (state is LearningPathsInitial) return const SizedBox.shrink();
         if (state is LearningPathsLoading) return _buildLoadingState(context);

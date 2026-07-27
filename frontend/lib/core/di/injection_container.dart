@@ -108,6 +108,7 @@ import '../../features/study_topics/data/datasources/learning_paths_remote_datas
 import '../../features/study_topics/data/repositories/learning_paths_repository_impl.dart';
 import '../../features/study_topics/data/services/learning_paths_cache_service.dart';
 import '../../features/study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../features/study_topics/domain/usecases/reset_learning_progress.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/continue_learning_bloc.dart';
 import '../../features/study_topics/data/datasources/leaderboard_remote_datasource.dart';
@@ -198,6 +199,7 @@ import '../../features/memory_verses/domain/usecases/submit_review.dart';
 import '../../features/memory_verses/domain/usecases/get_statistics.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/delete_verse.dart';
+import '../../features/memory_verses/domain/usecases/reset_memory_progress.dart';
 import '../../features/memory_verses/domain/usecases/select_practice_mode.dart';
 import '../../features/memory_verses/domain/usecases/submit_practice_session.dart';
 import '../../features/memory_verses/domain/usecases/get_practice_mode_statistics.dart';
@@ -576,6 +578,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetStatistics(sl()));
   sl.registerLazySingleton(() => FetchVerseText(sl()));
   sl.registerLazySingleton(() => DeleteVerse(sl()));
+  sl.registerLazySingleton(() => ResetMemoryProgress(sl()));
 
   // Memory Verses Enhancement - Practice Mode Use Cases
   sl.registerLazySingleton(() => SelectPracticeMode(sl()));
@@ -617,6 +620,7 @@ Future<void> initializeDependencies() async {
         getStatistics: sl(),
         fetchVerseText: sl(),
         deleteVerse: sl(),
+        resetMemoryProgress: sl(),
         selectPracticeMode: sl(),
         submitPracticeSession: sl(),
         getPracticeModeStatistics: sl(),
@@ -781,8 +785,11 @@ Future<void> initializeDependencies() async {
     () => LearningPathsRepositoryImpl(remoteDataSource: sl()),
   );
 
+  sl.registerLazySingleton(() => ResetLearningProgress(sl()));
+
   sl.registerFactory(() => LearningPathsBloc(
         repository: sl(),
+        resetLearningProgress: sl(),
       ));
 
   //! Continue Learning (In-Progress Topics)

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/models/reset_progress_result.dart';
 import '../../../gamification/domain/entities/achievement.dart';
 import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
@@ -997,4 +998,53 @@ class MemoryVerseUnlockLimitExceeded extends MemoryVerseState {
         date,
         message,
       ];
+}
+
+// =============================================================================
+// RESET PROGRESS STATES
+// =============================================================================
+
+/// The reset request is in flight.
+class MemoryProgressResetting extends MemoryVerseState {
+  const MemoryProgressResetting();
+}
+
+/// The reset completed. [result] holds the row counts that were removed.
+class MemoryProgressResetSuccess extends MemoryVerseState {
+  /// Counts of what was deleted.
+  final ResetProgressResult result;
+
+  const MemoryProgressResetSuccess({required this.result});
+
+  @override
+  List<Object?> get props => [result];
+}
+
+/// The reset request failed.
+///
+/// Deliberately distinct from [MemoryVerseError] — that state is also
+/// emitted by every other operation on this bloc, so a page-wide catch-all
+/// listener treating [MemoryVerseError] as "some unrelated operation failed"
+/// would otherwise show a generic snackbar for this destructive,
+/// session-relevant failure. It also lets code awaiting the reset's specific
+/// outcome (e.g. `bloc.stream.firstWhere`) ignore unrelated errors from other
+/// in-flight operations instead of resolving on the wrong one.
+///
+/// **Parameters:**
+/// - [message] - User-friendly error message
+/// - [code] - Technical error code for debugging
+/// - [isNetworkError] - True if error is network-related (for offline indicator)
+class MemoryProgressResetError extends MemoryVerseState {
+  final String message;
+  final String code;
+  final bool isNetworkError;
+
+  const MemoryProgressResetError({
+    required this.message,
+    required this.code,
+    this.isNetworkError = false,
+  });
+
+  @override
+  List<Object?> get props => [message, code, isNetworkError];
 }

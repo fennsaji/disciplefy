@@ -8,6 +8,8 @@ import 'dart:async' as _i8;
 import 'package:dartz/dartz.dart' as _i6;
 import 'package:disciplefy_bible_study/core/error/failures.dart' as _i21;
 import 'package:disciplefy_bible_study/core/models/app_language.dart' as _i18;
+import 'package:disciplefy_bible_study/core/models/reset_progress_result.dart'
+    as _i23;
 import 'package:disciplefy_bible_study/core/services/language_preference_service.dart'
     as _i17;
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart'
@@ -31,7 +33,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/study_generation/domain/entities/study_mode.dart'
     as _i19;
 import 'package:disciplefy_bible_study/features/study_topics/data/services/learning_paths_cache_service.dart'
-    as _i23;
+    as _i24;
 import 'package:disciplefy_bible_study/features/study_topics/domain/entities/learning_path.dart'
     as _i22;
 import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart'
@@ -1057,6 +1059,24 @@ class MockLearningPathsRepository extends _i1.Mock
       ) as _i8.Future<_i6.Either<_i21.Failure, _i22.EnrollmentResult>>);
 
   @override
+  _i8.Future<_i6.Either<_i21.Failure, _i23.ResetProgressResult>>
+      resetLearningProgress() => (super.noSuchMethod(
+            Invocation.method(
+              #resetLearningProgress,
+              [],
+            ),
+            returnValue: _i8.Future<
+                    _i6.Either<_i21.Failure, _i23.ResetProgressResult>>.value(
+                _FakeEither_4<_i21.Failure, _i23.ResetProgressResult>(
+              this,
+              Invocation.method(
+                #resetLearningProgress,
+                [],
+              ),
+            )),
+          ) as _i8.Future<_i6.Either<_i21.Failure, _i23.ResetProgressResult>>);
+
+  @override
   _i8.Future<
       _i6.Either<_i21.Failure, List<_i22.LearningPath>>> getEnrolledPaths(
           {String? language = 'en'}) =>
@@ -1152,7 +1172,7 @@ class MockLearningPathsRepository extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockLearningPathsCacheService extends _i1.Mock
-    implements _i23.LearningPathsCacheService {
+    implements _i24.LearningPathsCacheService {
   MockLearningPathsCacheService() {
     _i1.throwOnMissingStub(this);
   }
