@@ -60,8 +60,18 @@
 
 BEGIN;
 
-WITH new_sequence(slug, disciple_level, difficulty_level, display_order) AS (
-  VALUES
+-- Materialised rather than inlined as a CTE so the verification block below can
+-- assert against the SAME 41 slugs this migration names, instead of against a
+-- global display_order range that out-of-band paths also occupy.
+CREATE TEMP TABLE new_sequence (
+  slug             TEXT PRIMARY KEY,
+  disciple_level   TEXT    NOT NULL,
+  difficulty_level TEXT    NOT NULL,
+  display_order    INTEGER NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO new_sequence (slug, disciple_level, difficulty_level, display_order)
+VALUES
     -- ---- Stage 1: Foundations (seeker, months 1-4) --------------------------
     ('new-believer-essentials',            'seeker',   'beginner',      1),
     ('rooted-in-christ',                   'seeker',   'beginner',      2),
@@ -109,8 +119,8 @@ WITH new_sequence(slug, disciple_level, difficulty_level, display_order) AS (
 
     -- ---- Stage 4: Outward-facing (leader) ----------------------------------
     ('christianity-and-culture',           'leader',   'advanced',     40),
-    ('heart-for-the-world',                'leader',   'intermediate', 41)
-)
+    ('heart-for-the-world',                'leader',   'intermediate', 41);
+
 UPDATE learning_paths lp
 SET disciple_level   = ns.disciple_level,
     difficulty_level = ns.difficulty_level,
@@ -136,47 +146,67 @@ WHERE lp.slug = ns.slug;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  v_updated   INTEGER;
-  v_dupes     INTEGER;
-  v_bad_level INTEGER;
+  v_correct    INTEGER;
+  v_missing    TEXT;
+  v_dupes      INTEGER;
+  v_foreign    INTEGER;
+  v_collisions TEXT;
 BEGIN
-  -- Assert on the 41 slugs this migration names, NOT on a global count of
-  -- active paths. The activation state of any given path is not this
-  -- migration's business, and asserting on it made an unrelated out-of-band
-  -- change abort the deploy.
-  SELECT COUNT(*) INTO v_updated
-    FROM learning_paths
-   WHERE display_order BETWEEN 1 AND 41
-     AND disciple_level IN ('seeker', 'follower', 'disciple', 'leader');
+  -- Assert on the 41 slugs this migration names, NOT on a global display_order
+  -- range. Other paths legitimately occupy 1..41 (added out-of-band, with no
+  -- migration accounting for them), and asserting globally made this migration
+  -- abort on rows it does not own -- which is exactly what broke the deploy.
 
-  IF v_updated <> 41 THEN
-    RAISE EXCEPTION 'Expected 41 paths to receive a new sequence, found %. A slug in this migration does not match the database.', v_updated;
+  -- Every named slug must exist AND now hold the intended values.
+  SELECT COUNT(*) INTO v_correct
+    FROM learning_paths lp
+    JOIN new_sequence ns ON ns.slug = lp.slug
+   WHERE lp.display_order    = ns.display_order
+     AND lp.disciple_level   = ns.disciple_level
+     AND lp.difficulty_level = ns.difficulty_level;
+
+  IF v_correct <> 41 THEN
+    SELECT string_agg(ns.slug, ', ' ORDER BY ns.display_order) INTO v_missing
+      FROM new_sequence ns
+      LEFT JOIN learning_paths lp ON lp.slug = ns.slug
+     WHERE lp.slug IS NULL;
+
+    IF v_missing IS NOT NULL THEN
+      RAISE EXCEPTION 'These slugs do not exist in learning_paths: %', v_missing;
+    END IF;
+
+    RAISE EXCEPTION 'Expected 41 named paths to hold the new sequence, found %.', v_correct;
   END IF;
 
-  -- display_order must be unique across the 41 sequenced paths.
+  -- display_order must be unique among the paths THIS migration sequences.
   SELECT COUNT(*) INTO v_dupes
     FROM (
-      SELECT display_order
-        FROM learning_paths
-       WHERE display_order BETWEEN 1 AND 41
-       GROUP BY display_order
+      SELECT lp.display_order
+        FROM learning_paths lp
+        JOIN new_sequence ns ON ns.slug = lp.slug
+       GROUP BY lp.display_order
       HAVING COUNT(*) > 1
     ) d;
 
   IF v_dupes > 0 THEN
-    RAISE EXCEPTION 'display_order is not unique across the sequenced paths (% duplicated values).', v_dupes;
+    RAISE EXCEPTION 'display_order is not unique across the 41 sequenced paths (% duplicated values).', v_dupes;
   END IF;
 
-  SELECT COUNT(*) INTO v_bad_level
-    FROM learning_paths
-   WHERE display_order BETWEEN 1 AND 41
-     AND disciple_level NOT IN ('seeker', 'follower', 'disciple', 'leader');
+  -- Paths this migration does NOT own that also sit in 1..41. This is a real
+  -- data issue -- it breaks the "globally unique 1..41" property the ordering
+  -- was designed around -- but it is not this migration's to fix, and it must
+  -- not block a deploy. Report it loudly instead of aborting.
+  SELECT COUNT(*), string_agg(lp.slug || ' @ ' || lp.display_order, ', ' ORDER BY lp.display_order)
+    INTO v_foreign, v_collisions
+    FROM learning_paths lp
+   WHERE lp.display_order BETWEEN 1 AND 41
+     AND NOT EXISTS (SELECT 1 FROM new_sequence ns WHERE ns.slug = lp.slug);
 
-  IF v_bad_level > 0 THEN
-    RAISE EXCEPTION 'Invalid disciple_level on % rows.', v_bad_level;
+  IF v_foreign > 0 THEN
+    RAISE WARNING 'Re-sequenced 41 paths, but % path(s) outside this migration also occupy display_order 1..41, so ordering is NOT globally unique: %', v_foreign, v_collisions;
+  ELSE
+    RAISE NOTICE 'Re-sequenced 41 learning paths. display_order is globally unique 1..41.';
   END IF;
-
-  RAISE NOTICE 'Re-sequenced 41 active learning paths. display_order is globally unique 1..41.';
 END $$;
 
 COMMIT;
