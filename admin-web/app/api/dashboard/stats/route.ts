@@ -35,32 +35,34 @@ export async function GET() {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const { data: llmCosts } = await fetchAllRows((from, to) =>
-      supabase
-        .from('llm_api_costs')
-        .select('total_cost')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at', { ascending: true })
-        .range(from, to)
-    )
-
-    const totalLLMCost = llmCosts?.reduce((sum, record) => sum + (record.total_cost || 0), 0) || 0
-
-    // Get LLM costs for previous 30 days for comparison
     const sixtyDaysAgo = new Date()
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
 
-    const { data: previousLLMCosts } = await fetchAllRows((from, to) =>
-      supabase
-        .from('llm_api_costs')
-        .select('total_cost')
-        .gte('created_at', sixtyDaysAgo.toISOString())
-        .lt('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at', { ascending: true })
-        .range(from, to)
-    )
+    /**
+     * Sum LLM spend over a window using the same source as the LLM Costs page:
+     * `usage_logs.llm_cost_usd`, aggregated by Postgres via `get_usage_stats`.
+     *
+     * This previously read `llm_api_costs.total_cost`. That table has no
+     * `total_cost` column (it is `cost_usd`) AND nothing in the codebase ever
+     * inserts into it, so the query errored, the error was discarded, and the
+     * card silently showed $0 forever.
+     */
+    const sumLlmCost = async (start: Date, end: Date): Promise<number> => {
+      const { data, error } = await supabase.rpc('get_usage_stats', {
+        p_start_date: start.toISOString(),
+        p_end_date: end.toISOString(),
+      })
+      if (error) {
+        console.error('Failed to fetch LLM cost stats:', error)
+        return 0
+      }
+      return Number((data as { total_cost_usd?: number } | null)?.total_cost_usd) || 0
+    }
 
-    const previousTotalLLMCost = previousLLMCosts?.reduce((sum, record) => sum + (record.total_cost || 0), 0) || 0
+    const [totalLLMCost, previousTotalLLMCost] = await Promise.all([
+      sumLlmCost(thirtyDaysAgo, new Date()),
+      sumLlmCost(sixtyDaysAgo, thirtyDaysAgo),
+    ])
     const llmCostChange = previousTotalLLMCost > 0
       ? ((totalLLMCost - previousTotalLLMCost) / previousTotalLLMCost) * 100
       : 0
