@@ -6,6 +6,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+/**
+ * Read every row of a query past PostgREST's silent 1000-row response cap.
+ * Cost, user and revenue totals are sums/distinct-counts over these rows, so a
+ * truncated read would quietly plateau the whole P&L at 1000 records.
+ * `buildPage` must build a FRESH query per page (query builders are single-use).
+ */
+async function fetchAllRows(buildPage: (from: number, to: number) => any): Promise<any[]> {
+  const PAGE = 1000
+  const MAX_PAGES = 100 // safety cap: 100k rows
+  const rows: any[] = []
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE
+    const { data, error } = await buildPage(from, from + PAGE - 1)
+    if (error) throw new Error(error.message)
+    rows.push(...(data || []))
+    if (!data || data.length < PAGE) break
+  }
+  return rows
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -69,35 +89,43 @@ serve(async (req) => {
     }
 
     // ── LLM costs: from usage_logs.tier (stamped at call time — always accurate) ──
-    const { data: costRows, error: costError } = await supabase
-      .from('usage_logs')
-      .select('tier, llm_cost_usd')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate)
-      .not('user_id', 'is', null)
-      .not('tier', 'is', null)
-      .neq('tier', 'system')
-
-    if (costError) throw new Error(`Failed to fetch usage costs: ${costError.message}`)
+    const costRows = await fetchAllRows((from, to) =>
+      supabase
+        .from('usage_logs')
+        .select('tier, llm_cost_usd')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
+        .not('user_id', 'is', null)
+        .not('tier', 'is', null)
+        .neq('tier', 'system')
+        .order('id', { ascending: true })
+        .range(from, to)
+    ).catch((e) => {
+      throw new Error(`Failed to fetch usage costs: ${e.message}`)
+    })
 
     // Aggregate costs by tier in TS
     const costByTier: Record<string, number> = {}
-    for (const row of costRows ?? []) {
+    for (const row of costRows) {
       const t = row.tier as string
       costByTier[t] = (costByTier[t] ?? 0) + (Number(row.llm_cost_usd) || 0)
     }
 
     // ── Active users: from subscriptions (current status) ──
-    const { data: subRows, error: subError } = await supabase
-      .from('subscriptions')
-      .select('user_id, plan_id, subscription_plans!inner(plan_code)')
-      .in('status', ['active', 'trial', 'in_progress', 'pending_cancellation', 'paused'])
-
-    if (subError) throw new Error(`Failed to fetch subscriptions: ${subError.message}`)
+    const subRows = await fetchAllRows((from, to) =>
+      supabase
+        .from('subscriptions')
+        .select('user_id, plan_id, subscription_plans!inner(plan_code)')
+        .in('status', ['active', 'trial', 'in_progress', 'pending_cancellation', 'paused'])
+        .order('user_id', { ascending: true })
+        .range(from, to)
+    ).catch((e) => {
+      throw new Error(`Failed to fetch subscriptions: ${e.message}`)
+    })
 
     // Count distinct users per plan_code
     const usersByPlan: Record<string, Set<string>> = {}
-    for (const row of subRows ?? []) {
+    for (const row of subRows) {
       const planCode = (row.subscription_plans as any)?.plan_code as string
       if (!planCode) continue
       if (!usersByPlan[planCode]) usersByPlan[planCode] = new Set()
@@ -109,24 +137,28 @@ serve(async (req) => {
     }
 
     // ── Revenue: from subscription_invoices (cash-basis) ──
-    const { data: invoiceRows, error: invoiceError } = await supabase
-      .from('subscription_invoices')
-      .select('user_id, amount_paise, paid_at')
-      .eq('status', 'paid')
-      .gte('paid_at', startDate)
-      .lte('paid_at', endDate)
-
-    if (invoiceError) throw new Error(`Failed to fetch invoices: ${invoiceError.message}`)
+    const invoiceRows = await fetchAllRows((from, to) =>
+      supabase
+        .from('subscription_invoices')
+        .select('user_id, amount_paise, paid_at')
+        .eq('status', 'paid')
+        .gte('paid_at', startDate)
+        .lte('paid_at', endDate)
+        .order('user_id', { ascending: true })
+        .range(from, to)
+    ).catch((e) => {
+      throw new Error(`Failed to fetch invoices: ${e.message}`)
+    })
 
     // Map user_id → plan_code from subscriptions, then accumulate revenue
     const userToPlan: Record<string, string> = {}
-    for (const row of subRows ?? []) {
+    for (const row of subRows) {
       const planCode = (row.subscription_plans as any)?.plan_code as string
       if (planCode) userToPlan[row.user_id] = planCode
     }
 
     const revenueByPlan: Record<string, number> = {}
-    for (const row of invoiceRows ?? []) {
+    for (const row of invoiceRows) {
       const planCode = userToPlan[row.user_id]
       if (!planCode) continue
       revenueByPlan[planCode] = (revenueByPlan[planCode] ?? 0) + (Number(row.amount_paise) || 0) / 100

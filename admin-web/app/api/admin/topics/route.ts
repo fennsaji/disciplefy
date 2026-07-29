@@ -40,13 +40,18 @@ export async function GET(request: NextRequest) {
     const study_mode = searchParams.get('study_mode') || undefined
     const language = searchParams.get('language') || undefined
     const search = searchParams.get('search') || undefined
+    const limit = searchParams.get('limit') || undefined
+    const offset = searchParams.get('offset') || undefined
 
-    // Build URL with query params
+    // Build URL with query params — every filter is applied by the Edge Function
+    // in SQL so paging, counts and stats all describe the same matching row set.
     const params = new URLSearchParams()
     if (input_type) params.append('input_type', input_type)
     if (study_mode) params.append('study_mode', study_mode)
     if (language) params.append('language', language)
     if (search) params.append('search', search)
+    if (limit) params.append('limit', limit)
+    if (offset) params.append('offset', offset)
 
     const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-study-guides${params.toString() ? `?${params.toString()}` : ''}`
 

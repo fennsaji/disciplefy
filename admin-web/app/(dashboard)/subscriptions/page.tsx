@@ -1,72 +1,66 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
 import { UserSearchInput } from '@/components/ui/user-search-input'
 import { SubscriptionTable } from '@/components/tables/subscription-table'
 import { StatsCard } from '@/components/ui/stats-card'
-import { searchUsers } from '@/lib/api/admin'
+import { searchUsers, getSubscriptionStats } from '@/lib/api/admin'
 import { formatCompactNumber } from '@/lib/utils/date'
 import type { SubscriptionTier } from '@/types/admin'
 import { LoadingState } from '@/components/ui/loading-spinner'
 import { ErrorState } from '@/components/ui/empty-state'
 
 const PAGE_SIZE = 50
+const EXPORT_PAGE_SIZE = 200
+const MAX_EXPORT_ROWS = 5000
 
 export default function SubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterTier, setFilterTier] = useState<SubscriptionTier | 'all'>('all')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'cancelled' | 'expired'>('all')
   const [page, setPage] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
 
-  // Search users query - always enabled to load all users initially
+  // Search AND tier/status filters all run in the database, so `total` and the
+  // returned rows describe every matching user — not just this page.
   const {
     data: searchResults,
     isLoading: isSearching,
+    isFetching,
     error: searchError,
   } = useQuery({
-    queryKey: ['users-search', searchQuery, page],
-    queryFn: () => searchUsers({ query: searchQuery || '', limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
-    enabled: true, // Always enabled to show users on page load
+    queryKey: ['users-search', searchQuery, filterTier, filterStatus, page],
+    queryFn: () =>
+      searchUsers({
+        query: searchQuery || '',
+        tier: filterTier,
+        status: filterStatus,
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+      }),
+    placeholderData: keepPreviousData,
   })
 
+  // Tier counts come from COUNT queries over the whole subscriptions table
+  const { data: dbStats } = useQuery({
+    queryKey: ['subscription-stats'],
+    queryFn: getSubscriptionStats,
+  })
+
+  const users = searchResults?.users ?? []
   const totalResults = searchResults?.total || 0
   const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE))
 
-  // Filter results based on tier and status
-  const filteredUsers = useMemo(() => {
-    if (!searchResults?.users) return []
-
-    return searchResults.users.filter(user => {
-      // Match the table's "subscribed" logic (subscription-table.tsx)
-      const activeSub = user.subscriptions.find(s =>
-        ['active', 'trial', 'in_progress', 'pending_cancellation'].includes(s.status)
-      )
-
-      // Filter by tier (against the subscription shown in the table)
-      if (filterTier !== 'all') {
-        if (!activeSub || activeSub.tier !== filterTier) return false
-      }
-
-      // Filter by status (against any of the user's subscriptions, so
-      // Cancelled/Expired filters can actually match)
-      if (filterStatus !== 'all') {
-        if (!user.subscriptions.some(s => s.status === filterStatus)) return false
-      }
-
-      return true
-    })
-  }, [searchResults, filterTier, filterStatus])
-
-  // Calculate stats from filtered results
-  const stats = searchResults?.users
+  const stats = dbStats
     ? {
-        total: filteredUsers.length,
-        free: filteredUsers.filter(u => u.subscriptions.some(s => s.tier === 'free' && s.status === 'active')).length,
-        standard: filteredUsers.filter(u => u.subscriptions.some(s => s.tier === 'standard' && s.status === 'active')).length,
-        plus: filteredUsers.filter(u => u.subscriptions.some(s => s.tier === 'plus' && s.status === 'active')).length,
-        premium: filteredUsers.filter(u => u.subscriptions.some(s => s.tier === 'premium' && s.status === 'active')).length,
+        total: dbStats.total_users,
+        free: dbStats.by_tier.free,
+        standard: dbStats.by_tier.standard,
+        plus: dbStats.by_tier.plus,
+        premium: dbStats.by_tier.premium,
       }
     : null
 
@@ -75,11 +69,39 @@ export default function SubscriptionsPage() {
     // This function is kept for compatibility but not needed
   }
 
-  const handleExportCSV = () => {
-    if (!filteredUsers.length) return
+  /** Page through the API so the export covers every matching user, not just the page on screen. */
+  const fetchAllMatching = async () => {
+    const all: typeof users = []
+    for (let offset = 0; offset < MAX_EXPORT_ROWS; offset += EXPORT_PAGE_SIZE) {
+      const chunk = await searchUsers({
+        query: searchQuery || '',
+        tier: filterTier,
+        status: filterStatus,
+        limit: EXPORT_PAGE_SIZE,
+        offset,
+      })
+      all.push(...chunk.users)
+      if (chunk.users.length < EXPORT_PAGE_SIZE || all.length >= chunk.total) break
+    }
+    return all
+  }
+
+  const handleExportCSV = async () => {
+    if (!totalResults) return
+
+    setIsExporting(true)
+    let exportRows: typeof users
+    try {
+      exportRows = await fetchAllMatching()
+    } catch {
+      setIsExporting(false)
+      toast.error('Failed to export subscriptions. Please try again.')
+      return
+    }
+    setIsExporting(false)
 
     const headers = ['Name', 'Email', 'Phone', 'Tier', 'Status', 'Plan Name', 'Billing Cycle', 'Start Date', 'End Date', 'Price']
-    const rows = filteredUsers.map(user => {
+    const rows = exportRows.map(user => {
       const activeSub = user.subscriptions.find(s => s.status === 'active')
       return [
         user.full_name || '',
@@ -123,7 +145,7 @@ export default function SubscriptionsPage() {
             setPage(0)
           }}
           onSearch={handleSearch}
-          isLoading={isSearching}
+          isLoading={isFetching}
         />
 
         {/* Filters and Export */}
@@ -134,7 +156,10 @@ export default function SubscriptionsPage() {
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tier:</label>
               <select
                 value={filterTier}
-                onChange={(e) => setFilterTier(e.target.value as SubscriptionTier | 'all')}
+                onChange={(e) => {
+                  setFilterTier(e.target.value as SubscriptionTier | 'all')
+                  setPage(0)
+                }}
                 className="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="all">All Tiers</option>
@@ -150,7 +175,10 @@ export default function SubscriptionsPage() {
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</label>
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'cancelled' | 'expired')}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value as 'all' | 'active' | 'cancelled' | 'expired')
+                  setPage(0)
+                }}
                 className="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="all">All Status</option>
@@ -164,13 +192,13 @@ export default function SubscriptionsPage() {
           {/* Export Button */}
           <button
             onClick={handleExportCSV}
-            disabled={!filteredUsers.length}
+            disabled={!totalResults || isExporting}
             className="w-full sm:w-auto flex items-center gap-2 rounded-lg border border-primary bg-white px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:hover:bg-gray-700"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export CSV ({filteredUsers.length})
+            {isExporting ? 'Exporting…' : `Export CSV (${totalResults})`}
           </button>
         </div>
       </div>
@@ -184,9 +212,9 @@ export default function SubscriptionsPage() {
       {stats && (
         <div className="grid gap-6 md:grid-cols-4">
           <StatsCard
-            title="Total Results"
-            value={formatCompactNumber(totalResults)}
-            subtitle={`${stats.total} shown`}
+            title="Total Users"
+            value={formatCompactNumber(stats.total)}
+            subtitle={`${formatCompactNumber(totalResults)} matching filters`}
             icon="👥"
           />
           <StatsCard
@@ -214,24 +242,12 @@ export default function SubscriptionsPage() {
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">User Subscriptions</h2>
 
-        {!searchResults && !isSearching && !searchError && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center dark:border-gray-700 dark:bg-gray-800">
-            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <p className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">Search for users</p>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Enter an email, name, or user ID to view and manage subscriptions
-            </p>
-          </div>
-        )}
-
         {isSearching && <LoadingState label="Loading subscriptions..." />}
 
-        {searchResults && (
+        {!isSearching && searchResults && (
           <>
-            {filteredUsers.length > 0 ? (
-              <SubscriptionTable users={filteredUsers} />
+            {users.length > 0 ? (
+              <SubscriptionTable users={users} />
             ) : (
               <div className="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
                 <p className="text-gray-500 dark:text-gray-400">
@@ -243,19 +259,19 @@ export default function SubscriptionsPage() {
             {/* Pagination */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Page {page + 1} of {totalPages} ({totalResults} results)
+                Page {page + 1} of {totalPages} ({totalResults} matching users)
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage(p => Math.max(0, p - 1))}
-                  disabled={page === 0 || isSearching}
+                  disabled={page === 0 || isFetching}
                   className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage(p => p + 1)}
-                  disabled={page + 1 >= totalPages || isSearching}
+                  disabled={page + 1 >= totalPages || isFetching}
                   className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   Next

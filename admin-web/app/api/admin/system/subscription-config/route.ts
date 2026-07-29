@@ -59,19 +59,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get active subscription counts
-    const { data: activeSubscriptions } = await supabaseAdmin
-      .from('subscriptions')
-      .select('plan_id, status')
-      .in('status', ['active', 'trial'])
+    // Active subscription counts, one COUNT per plan. Reading the rows instead
+    // would silently stop at PostgREST's 1000-row cap and undercount the totals.
+    const ACTIVE_STATUSES = ['active', 'trial']
+    const planIds = (subscriptionPlans || []).map((p: any) => p.id)
 
-    // Count by plan ID
-    const planCounts: Record<string, number> = {}
-    ;(activeSubscriptions || []).forEach(sub => {
-      if (sub.plan_id) {
-        planCounts[sub.plan_id] = (planCounts[sub.plan_id] || 0) + 1
-      }
-    })
+    const planCountEntries = await Promise.all(
+      planIds.map(async (planId: string) => {
+        const { count } = await supabaseAdmin
+          .from('subscriptions')
+          .select('id', { count: 'exact', head: true })
+          .eq('plan_id', planId)
+          .in('status', ACTIVE_STATUSES)
+        return [planId, count || 0] as const
+      })
+    )
+
+    const planCounts: Record<string, number> = Object.fromEntries(planCountEntries)
 
     // Format plans with pricing and counts
     const formattedPlans = (subscriptionPlans || []).map(plan => {
@@ -105,9 +109,14 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate statistics
+    const { count: totalActiveSubscriptions } = await supabaseAdmin
+      .from('subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ACTIVE_STATUSES)
+
     const stats = {
       total_plans: formattedPlans.length,
-      total_active_subscriptions: Object.values(planCounts).reduce((sum, count) => sum + count, 0),
+      total_active_subscriptions: totalActiveSubscriptions || 0,
       by_plan: planCodeCounts,
     }
 

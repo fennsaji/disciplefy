@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
 import { UserSearchInput } from '@/components/ui/user-search-input'
 import { TokenManagementTable } from '@/components/tables/token-management-table'
@@ -25,25 +26,60 @@ interface UserTokenBalance {
   updated_at: string
 }
 
+interface TokenBalancePage {
+  balances: UserTokenBalance[]
+  total: number
+  limit: number
+  offset: number
+}
+
+const PAGE_SIZE = 50
+const EXPORT_PAGE_SIZE = 200
+const MAX_EXPORT_ROWS = 5000
+
+function balancesUrl(params: {
+  search: string
+  plan: string
+  limit: number
+  offset: number
+}) {
+  const qs = new URLSearchParams()
+  if (params.search) qs.set('search', params.search)
+  if (params.plan && params.plan !== 'all') qs.set('plan', params.plan)
+  qs.set('limit', String(params.limit))
+  qs.set('offset', String(params.offset))
+  return `/api/admin/user-token-balances?${qs.toString()}`
+}
+
 export default function TokenManagementPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [planFilter, setPlanFilter] = useState<'all' | 'free' | 'standard' | 'plus' | 'premium'>('all')
+  const [page, setPage] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
 
-  // Fetch all user token balances
+  // Search + plan filter run in the database, so results and counts cover
+  // every matching row — not just the first page the browser happens to hold.
   const {
-    data: allBalances,
+    data: balancePage,
     isLoading,
+    isFetching,
     error,
-  } = useQuery<UserTokenBalance[]>({
-    queryKey: ['all-user-token-balances'],
+  } = useQuery<TokenBalancePage>({
+    queryKey: ['user-token-balances', searchQuery, planFilter, page],
     queryFn: async () => {
-      const response = await fetch('/api/admin/user-token-balances', {
-        credentials: 'include',
-      })
+      const response = await fetch(
+        balancesUrl({ search: searchQuery, plan: planFilter, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+        { credentials: 'include' }
+      )
       if (!response.ok) throw new Error('Failed to fetch token balances')
       return response.json()
     },
+    placeholderData: keepPreviousData,
   })
+
+  const balances = balancePage?.balances ?? []
+  const matchingTotal = balancePage?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(matchingTotal / PAGE_SIZE))
 
   // Fetch token stats from API
   const { data: tokenStats } = useQuery({
@@ -56,23 +92,6 @@ export default function TokenManagementPage() {
       return response.json()
     },
   })
-
-  // Filter balances based on search and plan filter
-  const filteredBalances = useMemo(() => {
-    if (!allBalances) return []
-
-    return allBalances.filter(balance => {
-      // Filter by search query (email or identifier)
-      const matchesSearch = !searchQuery ||
-        balance.user_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        balance.identifier.toLowerCase().includes(searchQuery.toLowerCase())
-
-      // Filter by plan
-      const matchesPlan = planFilter === 'all' || balance.user_plan === planFilter
-
-      return matchesSearch && matchesPlan
-    })
-  }, [allBalances, searchQuery, planFilter])
 
   // Use stats from API (already excludes premium users from daily tokens)
   const stats = tokenStats
@@ -88,11 +107,38 @@ export default function TokenManagementPage() {
     // Search auto-triggers via React Query when searchQuery changes
   }
 
-  const handleExportCSV = () => {
-    if (!filteredBalances.length) return
+  /** Page through the API so the export covers every matching row, not just the page on screen. */
+  const fetchAllMatching = async (): Promise<UserTokenBalance[]> => {
+    const all: UserTokenBalance[] = []
+    for (let offset = 0; offset < MAX_EXPORT_ROWS; offset += EXPORT_PAGE_SIZE) {
+      const response = await fetch(
+        balancesUrl({ search: searchQuery, plan: planFilter, limit: EXPORT_PAGE_SIZE, offset }),
+        { credentials: 'include' }
+      )
+      if (!response.ok) throw new Error('Failed to fetch token balances')
+      const chunk: TokenBalancePage = await response.json()
+      all.push(...chunk.balances)
+      if (chunk.balances.length < EXPORT_PAGE_SIZE || all.length >= chunk.total) break
+    }
+    return all
+  }
+
+  const handleExportCSV = async () => {
+    if (!matchingTotal) return
+
+    setIsExporting(true)
+    let exportRows: UserTokenBalance[]
+    try {
+      exportRows = await fetchAllMatching()
+    } catch {
+      setIsExporting(false)
+      toast.error('Failed to export token balances. Please try again.')
+      return
+    }
+    setIsExporting(false)
 
     const headers = ['Email', 'Plan', 'Daily Tokens', 'Purchased Tokens', 'Daily Limit', 'Used Today', 'Last Reset']
-    const rows = filteredBalances.map(balance => {
+    const rows = exportRows.map(balance => {
       return [
         balance.user_email || 'Anonymous',
         balance.user_plan,
@@ -127,9 +173,12 @@ export default function TokenManagementPage() {
       <div className="space-y-4">
         <UserSearchInput
           value={searchQuery}
-          onChange={setSearchQuery}
+          onChange={(value) => {
+            setSearchQuery(value)
+            setPage(0)
+          }}
           onSearch={handleSearch}
-          isLoading={isLoading}
+          isLoading={isFetching}
         />
 
         {/* Filters and Export */}
@@ -140,7 +189,10 @@ export default function TokenManagementPage() {
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Plan:</label>
               <select
                 value={planFilter}
-                onChange={(e) => setPlanFilter(e.target.value as typeof planFilter)}
+                onChange={(e) => {
+                  setPlanFilter(e.target.value as typeof planFilter)
+                  setPage(0)
+                }}
                 className="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="all">All Plans</option>
@@ -155,13 +207,13 @@ export default function TokenManagementPage() {
           {/* Export Button */}
           <button
             onClick={handleExportCSV}
-            disabled={!filteredBalances.length}
+            disabled={!matchingTotal || isExporting}
             className="w-full sm:w-auto flex items-center gap-2 rounded-lg border border-primary bg-white px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:hover:bg-gray-700"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export CSV ({filteredBalances.length})
+            {isExporting ? 'Exporting…' : `Export CSV (${matchingTotal})`}
           </button>
         </div>
       </div>
@@ -177,7 +229,7 @@ export default function TokenManagementPage() {
           <StatsCard
             title="Total Users"
             value={formatCompactNumber(stats.total)}
-            subtitle={`${filteredBalances.length} shown`}
+            subtitle={`${formatCompactNumber(matchingTotal)} matching filters`}
             icon="👥"
           />
           <StatsCard
@@ -205,24 +257,12 @@ export default function TokenManagementPage() {
       <div className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800 dark:shadow-gray-900">
         <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">User Token Balances</h2>
 
-        {!allBalances && !isLoading && !error && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center dark:border-gray-700 dark:bg-gray-800">
-            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <p className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">Search for users</p>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Enter an email or user ID to view token balances
-            </p>
-          </div>
-        )}
-
         {isLoading && <LoadingState label="Loading token balances..." />}
 
-        {allBalances && (
+        {!isLoading && balancePage && (
           <>
-            {filteredBalances.length > 0 ? (
-              <TokenManagementTable balances={filteredBalances} />
+            {balances.length > 0 ? (
+              <TokenManagementTable balances={balances} />
             ) : (
               <div className="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
                 <p className="text-gray-500 dark:text-gray-400">
@@ -230,6 +270,29 @@ export default function TokenManagementPage() {
                 </p>
               </div>
             )}
+
+            {/* Pagination — pages are cut in the database, not in the browser */}
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page + 1} of {totalPages} ({matchingTotal} matching users)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0 || isFetching}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page + 1 >= totalPages || isFetching}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>

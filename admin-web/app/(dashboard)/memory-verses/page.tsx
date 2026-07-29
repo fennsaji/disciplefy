@@ -33,7 +33,10 @@ interface SuggestedVerse {
 }
 
 interface Stats {
+  /** Verses matching the current category filter. */
   total: number
+  /** Every suggested verse in the database, ignoring filters. */
+  total_all: number
   by_category: Record<string, number>
   translation_coverage: {
     en: number
@@ -42,12 +45,16 @@ interface Stats {
   }
 }
 
+const PAGE_SIZE = 50
+
 export default function MemoryVersesPage() {
   const [verses, setVerses] = useState<SuggestedVerse[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [page, setPage] = useState(0)
+  const [total, setTotal] = useState(0)
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -57,9 +64,13 @@ export default function MemoryVersesPage() {
     setLoading(true)
     setError(null)
     try {
-      // Always fetch unfiltered so stats/category chips reflect the full
-      // dataset; the category filter is applied client-side for the table.
-      const params = new URLSearchParams({ limit: '200' })
+      // The category filter and paging run in SQL; the stats block returned
+      // alongside always covers the whole table, so the chips stay accurate.
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(page * PAGE_SIZE),
+      })
+      if (categoryFilter !== 'all') params.set('category', categoryFilter)
 
       const res = await fetch(`/api/admin/content/suggested-verses?${params}`)
       if (!res.ok) {
@@ -69,12 +80,13 @@ export default function MemoryVersesPage() {
       const data = await res.json()
       setVerses(data.suggested_verses || [])
       setStats(data.stats || null)
+      setTotal(data.total || 0)
     } catch (err: any) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [categoryFilter, page])
 
   useEffect(() => {
     fetchVerses()
@@ -130,12 +142,9 @@ export default function MemoryVersesPage() {
     fetchVerses()
   }
 
-  // Table shows the filtered subset; stats/chips above stay unfiltered
-  const filteredVerses = categoryFilter === 'all'
-    ? verses
-    : verses.filter((v) => v.category === categoryFilter)
-
-  const totalVerses = stats?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  // Stat cards and chips report the whole table, independent of the filter
+  const totalVerses = stats?.total_all ?? 0
   const enCoverage = stats ? stats.translation_coverage.en : 0
   const hiCoverage = stats ? stats.translation_coverage.hi : 0
   const mlCoverage = stats ? stats.translation_coverage.ml : 0
@@ -226,7 +235,10 @@ export default function MemoryVersesPage() {
             return (
               <button
                 key={cat}
-                onClick={() => setCategoryFilter(cat)}
+                onClick={() => {
+                  setCategoryFilter(cat)
+                  setPage(0)
+                }}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   categoryFilter === cat
                     ? 'bg-primary text-white'
@@ -256,11 +268,34 @@ export default function MemoryVersesPage() {
         {loading ? (
           <LoadingState label="Loading verses..." />
         ) : (
-          <SuggestedVersesTable
-            verses={filteredVerses}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <>
+            <SuggestedVersesTable
+              verses={verses}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+            <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page + 1} of {totalPages} ({total} matching verses)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0 || loading}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page + 1 >= totalPages || loading}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

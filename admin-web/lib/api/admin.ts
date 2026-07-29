@@ -3,6 +3,7 @@ import type {
   UsageAnalyticsResponse,
   SearchUsersRequest,
   SearchUsersResponse,
+  SubscriptionStatsResponse,
   UpdateSubscriptionRequest,
   UpdateSubscriptionResponse,
   CreatePaymentRecordRequest,
@@ -99,6 +100,19 @@ export async function searchUsers(
 
   if (!response.ok) {
     throw new Error(await parseErrorResponse(response, 'Failed to search users'))
+  }
+
+  return response.json()
+}
+
+/** Subscription counts over the whole database, independent of the current page. */
+export async function getSubscriptionStats(): Promise<SubscriptionStatsResponse> {
+  const response = await fetch('/api/admin/subscription-stats', {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response, 'Failed to load subscription stats'))
   }
 
   return response.json()
@@ -591,12 +605,15 @@ export async function updateStudyGuide(
 export async function listBlogPosts(params?: {
   locale?: string
   status?: string
+  /** Free-text search over title, excerpt, slug and tags — applied in SQL. */
+  search?: string
   page?: number
   limit?: number
 }): Promise<ListBlogPostsResponse> {
   const query = new URLSearchParams()
   if (params?.locale) query.set('locale', params.locale)
   if (params?.status) query.set('status', params.status)
+  if (params?.search) query.set('search', params.search)
   if (params?.page) query.set('page', String(params.page))
   if (params?.limit) query.set('limit', String(params.limit))
 

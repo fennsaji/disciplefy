@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const locale = searchParams.get('locale')
     const status = searchParams.get('status')
+    const search = searchParams.get('search')?.trim()
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
     const offset = (page - 1) * limit
@@ -59,6 +60,14 @@ export async function GET(request: NextRequest) {
 
     if (locale) query = query.eq('locale', locale)
     if (status) query = query.eq('status', status)
+    // Search runs in SQL so it spans every post, not just the page on screen.
+    // `tags` is a text[], so match it with the array `cs` (contains) operator.
+    if (search) {
+      const escaped = search.replace(/[%,()]/g, '')
+      query = query.or(
+        `title.ilike.%${escaped}%,excerpt.ilike.%${escaped}%,slug.ilike.%${escaped}%,tags.cs.{"${escaped}"}`
+      )
+    }
 
     const { data: posts, error: dbError, count } = await query
 

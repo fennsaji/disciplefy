@@ -96,16 +96,25 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Calculate statistics
-    const stats = {
-      total: achievementsWithStats.length,
-      by_category: {} as Record<string, number>,
-      total_unlocks: userAchievements?.length || 0,
+    // Statistics cover the whole catalog, so the category chips stay accurate
+    // while a category filter is applied to the list above.
+    const { data: allCategories } = await supabaseAdmin
+      .from('achievements')
+      .select('category')
+
+    const byCategory: Record<string, number> = {}
+    for (const row of allCategories || []) {
+      byCategory[row.category] = (byCategory[row.category] || 0) + 1
     }
 
-    achievementsWithStats.forEach(achievement => {
-      stats.by_category[achievement.category] = (stats.by_category[achievement.category] || 0) + 1
-    })
+    const stats = {
+      /** Achievements matching the current category filter. */
+      total: achievementsWithStats.length,
+      /** Every achievement in the catalog, ignoring filters. */
+      total_all: (allCategories || []).length,
+      by_category: byCategory,
+      total_unlocks: userAchievements?.length || 0,
+    }
 
     return NextResponse.json({
       achievements: achievementsWithStats,

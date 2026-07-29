@@ -65,10 +65,20 @@ Deno.serve(async (req) => {
     const limit = body.limit || 100
     const offset = body.offset || 0
 
-    // Build query
-    let query = adminSupabase
-      .from('promotional_campaigns')
-      .select(`
+    const now = new Date().toISOString()
+
+    // The status filter runs in SQL and is applied to BOTH the page and the
+    // count, so pagination totals match the rows actually being browsed.
+    const applyStatusFilter = (q: any) => {
+      if (body.status === 'active') {
+        return q.eq('is_active', true).lte('valid_from', now).gte('valid_until', now)
+      }
+      if (body.status === 'inactive') return q.eq('is_active', false)
+      if (body.status === 'expired') return q.lt('valid_until', now)
+      return q
+    }
+
+    const campaignColumns = `
         id,
         campaign_code,
         campaign_name,
@@ -86,20 +96,12 @@ Deno.serve(async (req) => {
         is_active,
         created_at,
         updated_at
-      `)
-
-    // Filter by status
-    const now = new Date().toISOString()
-    if (body.status === 'active') {
-      query = query.eq('is_active', true).lte('valid_from', now).gte('valid_until', now)
-    } else if (body.status === 'inactive') {
-      query = query.eq('is_active', false)
-    } else if (body.status === 'expired') {
-      query = query.lt('valid_until', now)
-    }
+      `
 
     // Execute query with pagination
-    const { data: campaigns, error: listError } = await query
+    const { data: campaigns, error: listError } = await applyStatusFilter(
+      adminSupabase.from('promotional_campaigns').select(campaignColumns)
+    )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -112,7 +114,7 @@ Deno.serve(async (req) => {
     }
 
     // Enhance campaigns with computed fields
-    const enhancedCampaigns = campaigns.map(campaign => ({
+    const enhancedCampaigns = (campaigns || []).map((campaign: any) => ({
       ...campaign,
       code: campaign.campaign_code, // Add code alias for frontend compatibility
       current_uses: campaign.current_use_count || 0,
@@ -121,17 +123,47 @@ Deno.serve(async (req) => {
       end_date: campaign.valid_until,
     }))
 
-    // Get total count for pagination
-    const { count } = await adminSupabase
+    // Total for pagination — same status filter as the page above
+    const { count } = await applyStatusFilter(
+      adminSupabase.from('promotional_campaigns').select('id', { count: 'exact', head: true })
+    )
+
+    // Stat cards describe EVERY campaign in the database, not the current page.
+    // The campaign table is small, so a single read of the summary columns is
+    // enough to compute redemptions and the expiring-soon window.
+    const { data: allCampaigns } = await adminSupabase
       .from('promotional_campaigns')
-      .select('id', { count: 'exact', head: true })
+      .select('is_active, valid_until, current_use_count')
+
+    const sevenDaysOut = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const stats = {
+      total: (allCampaigns || []).length,
+      active: 0,
+      inactive: 0,
+      expired: 0,
+      expiring_soon: 0,
+      total_redemptions: 0,
+    }
+
+    for (const c of allCampaigns || []) {
+      const validUntil = new Date(c.valid_until)
+      const isExpired = validUntil < new Date()
+      stats.total_redemptions += c.current_use_count || 0
+      if (isExpired) stats.expired++
+      if (c.is_active && !isExpired) {
+        stats.active++
+        if (validUntil <= sevenDaysOut) stats.expiring_soon++
+      }
+      if (!c.is_active) stats.inactive++
+    }
 
     return new Response(
       JSON.stringify({
         campaigns: enhancedCampaigns,
         total: count || 0,
         limit,
-        offset
+        offset,
+        stats
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

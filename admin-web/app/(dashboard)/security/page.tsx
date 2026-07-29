@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { SecurityEventsTable } from '@/components/tables/security-events-table'
 import { AdminLogsTable } from '@/components/tables/admin-logs-table'
@@ -43,18 +43,63 @@ export default function SecurityDashboardPage() {
   )
 }
 
+const PAGE_SIZE = 50
+
+/** Prev/next controls for a server-paged list. */
+function Pagination({
+  page,
+  total,
+  isFetching,
+  onChange,
+  noun,
+}: {
+  page: number
+  total: number
+  isFetching: boolean
+  onChange: (page: number) => void
+  noun: string
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  return (
+    <div className="mt-4 flex items-center justify-between">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Page {page + 1} of {totalPages} ({total} {noun})
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onChange(Math.max(0, page - 1))}
+          disabled={page === 0 || isFetching}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          Previous
+        </button>
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page + 1 >= totalPages || isFetching}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SecurityEventsTab() {
   const [eventTypeFilter, setEventTypeFilter] = useState('all')
   const [riskScoreFilter, setRiskScoreFilter] = useState('all')
   const [rangeFilter, setRangeFilter] = useState('week')
+  const [page, setPage] = useState(0)
 
-  const { data: events, isLoading, error, refetch } = useQuery({
-    queryKey: ['security-events', eventTypeFilter, riskScoreFilter, rangeFilter],
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['security-events', eventTypeFilter, riskScoreFilter, rangeFilter, page],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (eventTypeFilter !== 'all') params.append('event_type', eventTypeFilter)
       if (riskScoreFilter !== 'all') params.append('min_risk_score', riskScoreFilter)
       params.append('range', rangeFilter)
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(page * PAGE_SIZE))
 
       const response = await fetch(`/api/admin/security-events?${params}`, {
         credentials: 'include',
@@ -62,16 +107,13 @@ function SecurityEventsTab() {
       if (!response.ok) throw new Error('Failed to fetch security events')
       return response.json()
     },
+    placeholderData: keepPreviousData,
   })
 
-  const stats = events
-    ? {
-        total: events.length,
-        high_risk: events.filter((e: any) => e.risk_score >= 0.7).length,
-        blocked: events.filter((e: any) => e.action_taken === 'blocked').length,
-        unique_users: new Set(events.map((e: any) => e.user_id).filter(Boolean)).size,
-      }
-    : null
+  const events = data?.events ?? []
+  const total = data?.total ?? 0
+  // Counted by Postgres over every matching event, not just this page
+  const stats = data?.stats ?? null
 
   return (
     <div className="space-y-6">
@@ -83,7 +125,10 @@ function SecurityEventsTab() {
           </label>
           <select
             value={eventTypeFilter}
-            onChange={(e) => setEventTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setEventTypeFilter(e.target.value)
+              setPage(0)
+            }}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="all">All Events</option>
@@ -102,7 +147,10 @@ function SecurityEventsTab() {
           </label>
           <select
             value={riskScoreFilter}
-            onChange={(e) => setRiskScoreFilter(e.target.value)}
+            onChange={(e) => {
+              setRiskScoreFilter(e.target.value)
+              setPage(0)
+            }}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="all">All Scores</option>
@@ -117,7 +165,10 @@ function SecurityEventsTab() {
           </label>
           <select
             value={rangeFilter}
-            onChange={(e) => setRangeFilter(e.target.value)}
+            onChange={(e) => {
+              setRangeFilter(e.target.value)
+              setPage(0)
+            }}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="today">Today</option>
@@ -168,7 +219,16 @@ function SecurityEventsTab() {
             </button>
           </div>
         ) : (
-          <SecurityEventsTable events={events || []} />
+          <>
+            <SecurityEventsTable events={events} />
+            <Pagination
+              page={page}
+              total={total}
+              isFetching={isFetching}
+              onChange={setPage}
+              noun="matching events"
+            />
+          </>
         )}
       </div>
     </div>
@@ -178,13 +238,16 @@ function SecurityEventsTab() {
 function AdminLogsTab() {
   const [actionFilter, setActionFilter] = useState('')
   const [rangeFilter, setRangeFilter] = useState('week')
+  const [page, setPage] = useState(0)
 
-  const { data: logs, isLoading, error, refetch } = useQuery({
-    queryKey: ['admin-logs', actionFilter, rangeFilter],
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['admin-logs', actionFilter, rangeFilter, page],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (actionFilter) params.append('action', actionFilter)
       params.append('range', rangeFilter)
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(page * PAGE_SIZE))
 
       const response = await fetch(`/api/admin/admin-logs?${params}`, {
         credentials: 'include',
@@ -192,20 +255,13 @@ function AdminLogsTab() {
       if (!response.ok) throw new Error('Failed to fetch admin logs')
       return response.json()
     },
+    placeholderData: keepPreviousData,
   })
 
-  const stats = logs
-    ? {
-        total: logs.length,
-        unique_admins: new Set(logs.map((l: any) => l.admin_user_id)).size,
-        today: logs.filter((l: any) => {
-          // Use the same UTC day boundary as the server's "today" range filter
-          const utcDayStart = new Date()
-          utcDayStart.setUTCHours(0, 0, 0, 0)
-          return new Date(l.created_at) >= utcDayStart
-        }).length,
-      }
-    : null
+  const logs = data?.logs ?? []
+  const total = data?.total ?? 0
+  // Counted by Postgres across BOTH admin_logs and admin_actions
+  const stats = data?.stats ?? null
 
   return (
     <div className="space-y-6">
@@ -217,7 +273,10 @@ function AdminLogsTab() {
           </label>
           <select
             value={rangeFilter}
-            onChange={(e) => setRangeFilter(e.target.value)}
+            onChange={(e) => {
+              setRangeFilter(e.target.value)
+              setPage(0)
+            }}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-auto"
           >
             <option value="today">Today</option>
@@ -264,7 +323,16 @@ function AdminLogsTab() {
             </button>
           </div>
         ) : (
-          <AdminLogsTable logs={logs || []} />
+          <>
+            <AdminLogsTable logs={logs} />
+            <Pagination
+              page={page}
+              total={total}
+              isFetching={isFetching}
+              onChange={setPage}
+              noun="matching actions"
+            />
+          </>
         )}
       </div>
     </div>

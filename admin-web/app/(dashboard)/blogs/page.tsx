@@ -25,12 +25,12 @@ const LOCALE_COLORS: Record<BlogLocale, string> = {
 export default function BlogsPage() {
   const router = useRouter()
   const [posts, setPosts] = useState<BlogPostListItem[]>([])
-  const [filtered, setFiltered] = useState<BlogPostListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [localeFilter, setLocaleFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [triggeringCron, setTriggeringCron] = useState(false)
@@ -47,6 +47,7 @@ export default function BlogsPage() {
         limit: PAGE_SIZE,
         locale: localeFilter !== 'all' ? localeFilter : undefined,
         status: statusFilter !== 'all' ? statusFilter : undefined,
+        search: searchQuery || undefined,
       })
       setPosts(data.posts)
       setTotal(data.total)
@@ -56,7 +57,7 @@ export default function BlogsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [page, localeFilter, statusFilter])
+  }, [page, localeFilter, statusFilter, searchQuery])
 
   const loadStats = useCallback(async () => {
     try {
@@ -75,21 +76,13 @@ export default function BlogsPage() {
   useEffect(() => { loadStats() }, [loadStats])
 
   // Reset to first page when filters change
-  useEffect(() => { setPage(1) }, [localeFilter, statusFilter])
+  useEffect(() => { setPage(1) }, [localeFilter, statusFilter, searchQuery])
 
-  // Search filters the currently loaded page client-side
+  // Debounce typing, then let the API search every post in the database
   useEffect(() => {
-    let result = posts
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.excerpt.toLowerCase().includes(q) ||
-        p.tags.some(t => t.toLowerCase().includes(q))
-      )
-    }
-    setFiltered(result)
-  }, [posts, search])
+    const timer = setTimeout(() => setSearchQuery(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const handleToggleStatus = async (post: BlogPostListItem) => {
     setTogglingId(post.id)
@@ -217,7 +210,7 @@ export default function BlogsPage() {
           {error}
           <button onClick={loadPosts} className="ml-3 underline">Retry</button>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : posts.length === 0 ? (
         <div className="rounded-xl border border-white/10 bg-white/5 py-16 text-center text-sm text-indigo-400/60">
           No posts found.
         </div>
@@ -235,7 +228,7 @@ export default function BlogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.map(post => (
+              {posts.map(post => (
                 <tr key={post.id} className="group transition-colors hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="flex items-start gap-2">
