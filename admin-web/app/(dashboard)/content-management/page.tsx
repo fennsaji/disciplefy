@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { StatsCard } from '@/components/ui/stats-card'
 import DailyVersesTable from '@/components/tables/daily-verses-table'
 import { PageHeader } from '@/components/ui/page-header'
+
+const PAGE_SIZE = 50
 
 export default function ContentManagementPage() {
   const queryClient = useQueryClient()
@@ -14,18 +16,22 @@ export default function ContentManagementPage() {
     language: '',
     is_active: '',
   })
+  const [page, setPage] = useState(0)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['content-daily-verses', filters],
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['content-daily-verses', filters, page],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (filters.language) params.set('language', filters.language)
       if (filters.is_active) params.set('is_active', filters.is_active)
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(page * PAGE_SIZE))
 
       const res = await fetch(`/api/admin/content/daily-verses?${params}`)
       if (!res.ok) throw new Error('Failed to fetch daily verses')
       return res.json()
     },
+    placeholderData: keepPreviousData,
   })
 
   const toggleActive = useMutation({
@@ -64,7 +70,10 @@ export default function ContentManagementPage() {
     },
   })
 
+  // Counted by Postgres over every row matching the filters, not this page
   const stats = data?.stats
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="space-y-6">
@@ -87,7 +96,10 @@ export default function ContentManagementPage() {
       <div className="flex flex-wrap gap-4">
         <select
           value={filters.language}
-          onChange={(e) => setFilters({ ...filters, language: e.target.value })}
+          onChange={(e) => {
+            setFilters({ ...filters, language: e.target.value })
+            setPage(0)
+          }}
           className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         >
           <option value="">All Languages</option>
@@ -98,7 +110,10 @@ export default function ContentManagementPage() {
 
         <select
           value={filters.is_active}
-          onChange={(e) => setFilters({ ...filters, is_active: e.target.value })}
+          onChange={(e) => {
+            setFilters({ ...filters, is_active: e.target.value })
+            setPage(0)
+          }}
           className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         >
           <option value="">All Status</option>
@@ -142,11 +157,34 @@ export default function ContentManagementPage() {
             <p className="text-gray-500 dark:text-gray-400">Loading...</p>
           </div>
         ) : (
-          <DailyVersesTable
-            verses={data?.daily_verses || []}
-            onToggleActive={(id, is_active) => toggleActive.mutate({ id, is_active })}
-            onDelete={(id) => deleteVerse.mutate(id)}
-          />
+          <>
+            <DailyVersesTable
+              verses={data?.daily_verses || []}
+              onToggleActive={(id, is_active) => toggleActive.mutate({ id, is_active })}
+              onDelete={(id) => deleteVerse.mutate(id)}
+            />
+            <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page + 1} of {totalPages} ({total} matching verses)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0 || isFetching}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page + 1 >= totalPages || isFetching}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -27,7 +27,7 @@ export default function UserTokenDetailsPage() {
       })
       if (!response.ok) throw new Error('Failed to fetch balance')
       const data = await response.json()
-      return data.find((b: any) => b.identifier === userId)
+      return (data.balances || []).find((b: any) => b.identifier === userId)
     },
   })
 

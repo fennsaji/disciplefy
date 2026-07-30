@@ -204,6 +204,24 @@ serve(async (req) => {
 })
 
 /**
+ * Read every row of a query past PostgREST's silent 1000-row response cap.
+ * `buildPage` must build a FRESH query per page (query builders are single-use).
+ */
+async function fetchAllRows(buildPage: (from: number, to: number) => any): Promise<any[]> {
+  const PAGE = 1000
+  const MAX_PAGES = 100 // safety cap: 100k rows
+  const rows: any[] = []
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE
+    const { data, error } = await buildPage(from, from + PAGE - 1)
+    if (error) throw new Error(error.message)
+    rows.push(...(data || []))
+    if (!data || data.length < PAGE) break
+  }
+  return rows
+}
+
+/**
  * List all learning paths with enrollment and topic counts
  */
 async function handleList(client: any): Promise<Response> {
@@ -217,33 +235,34 @@ async function handleList(client: any): Promise<Response> {
     throw new Error(`Failed to fetch learning paths: ${pathsError.message}`)
   }
 
-  // Fetch topic counts for each path
-  const { data: topicCounts, error: topicError } = await client
-    .from('learning_path_topics')
-    .select('learning_path_id, topic_id')
+  // Topic and enrollment counts back the "Topics" and "Total Enrolled" stats,
+  // so both reads must page past the 1000-row cap or the numbers silently
+  // plateau once a path passes a thousand rows.
+  const topicCounts = await fetchAllRows((from, to) =>
+    client
+      .from('learning_path_topics')
+      .select('learning_path_id, topic_id')
+      .order('learning_path_id', { ascending: true })
+      .range(from, to)
+  )
 
-  if (topicError) {
-    throw new Error(`Failed to fetch topic counts: ${topicError.message}`)
-  }
-
-  // Fetch enrollment counts for each path
-  const { data: enrollments, error: enrollmentError } = await client
-    .from('user_learning_path_progress')
-    .select('learning_path_id, user_id')
-
-  if (enrollmentError) {
-    throw new Error(`Failed to fetch enrollment counts: ${enrollmentError.message}`)
-  }
+  const enrollments = await fetchAllRows((from, to) =>
+    client
+      .from('user_learning_path_progress')
+      .select('learning_path_id, user_id')
+      .order('learning_path_id', { ascending: true })
+      .range(from, to)
+  )
 
   // Aggregate counts
   const topicCountMap: Record<string, number> = {}
   const enrollmentCountMap: Record<string, number> = {}
 
-  topicCounts?.forEach((tc: any) => {
+  topicCounts.forEach((tc: any) => {
     topicCountMap[tc.learning_path_id] = (topicCountMap[tc.learning_path_id] || 0) + 1
   })
 
-  enrollments?.forEach((e: any) => {
+  enrollments.forEach((e: any) => {
     enrollmentCountMap[e.learning_path_id] = (enrollmentCountMap[e.learning_path_id] || 0) + 1
   })
 

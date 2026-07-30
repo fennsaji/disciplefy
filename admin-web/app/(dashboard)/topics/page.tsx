@@ -2,9 +2,11 @@
 
 import { Fragment, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
 import type {
+  ListStudyGuidesResponse,
   StudyGuideListItem,
   InputType,
   StudyMode,
@@ -15,18 +17,69 @@ type InputTypeFilter = InputType | 'all'
 type StudyModeFilter = StudyMode | 'all'
 type LanguageFilter = LanguageCode | 'all'
 
+const PAGE_SIZE = 50
+
 export default function StudyGuidesPage() {
   const router = useRouter()
-  const [guides, setGuides] = useState<StudyGuideListItem[]>([])
-  const [filteredGuides, setFilteredGuides] = useState<StudyGuideListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  // Filters
+  // Filters — every one of these is sent to the API and applied in SQL
   const [inputTypeFilter, setInputTypeFilter] = useState<InputTypeFilter>('all')
   const [studyModeFilter, setStudyModeFilter] = useState<StudyModeFilter>('all')
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>('all')
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(0)
+
+  // Debounce typing so each keystroke doesn't fire a query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput.trim())
+      setPage(0)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error: queryError,
+  } = useQuery<ListStudyGuidesResponse>({
+    queryKey: ['study-guides', inputTypeFilter, studyModeFilter, languageFilter, searchQuery, page],
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      if (inputTypeFilter !== 'all') params.set('input_type', inputTypeFilter)
+      if (studyModeFilter !== 'all') params.set('study_mode', studyModeFilter)
+      if (languageFilter !== 'all') params.set('language', languageFilter)
+      if (searchQuery) params.set('search', searchQuery)
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(page * PAGE_SIZE))
+
+      const response = await fetch(`/api/admin/topics?${params.toString()}`, {
+        credentials: 'include',
+      })
+      if (!response.ok) throw new Error('Failed to load study guides')
+      return response.json()
+    },
+    placeholderData: keepPreviousData,
+  })
+
+  const guides = data?.study_guides ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const error = queryError ? 'Failed to load study guides. Please try again.' : null
+
+  // Stat values come from COUNT queries over every matching row, not this page
+  const stats = {
+    total: data?.stats?.total ?? 0,
+    totalUsage: data?.stats?.total_usage ?? 0,
+    byInputType: data?.stats?.by_input_type ?? {},
+    byLanguage: data?.stats?.by_language ?? {},
+    byStudyMode: data?.stats?.by_study_mode ?? {},
+  }
+
+  const reloadGuides = () => queryClient.invalidateQueries({ queryKey: ['study-guides'] })
 
   // Inline preview expand
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -68,93 +121,6 @@ export default function StudyGuidesPage() {
     }
   }
 
-  // Stats
-  const [stats, setStats] = useState({
-    total: 0,
-    totalUsage: 0,
-    byInputType: {} as Record<string, number>,
-    byLanguage: {} as Record<string, number>,
-    byStudyMode: {} as Record<string, number>,
-  })
-
-  // Load guides
-  useEffect(() => {
-    loadGuides()
-  }, [])
-
-  // Apply filters
-  useEffect(() => {
-    let filtered = guides
-
-    // Input type filter
-    if (inputTypeFilter !== 'all') {
-      filtered = filtered.filter((g) => g.input_type === inputTypeFilter)
-    }
-
-    // Study mode filter
-    if (studyModeFilter !== 'all') {
-      filtered = filtered.filter((g) => g.study_mode === studyModeFilter)
-    }
-
-    // Language filter
-    if (languageFilter !== 'all') {
-      filtered = filtered.filter((g) => g.language === languageFilter)
-    }
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (g) =>
-          g.input_value.toLowerCase().includes(query) ||
-          g.topic_title?.toLowerCase().includes(query) ||
-          g.creator_name?.toLowerCase().includes(query)
-      )
-    }
-
-    setFilteredGuides(filtered)
-  }, [guides, inputTypeFilter, studyModeFilter, languageFilter, searchQuery])
-
-  const loadGuides = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetch('/api/admin/topics')
-      if (!response.ok) {
-        throw new Error('Failed to load study guides')
-      }
-      const data = await response.json()
-      const loadedGuides = data.study_guides || []
-      setGuides(loadedGuides)
-
-      // Calculate stats
-      const byInputType: Record<string, number> = {}
-      const byLanguage: Record<string, number> = {}
-      const byStudyMode: Record<string, number> = {}
-      let totalUsage = 0
-
-      loadedGuides.forEach((guide: StudyGuideListItem) => {
-        byInputType[guide.input_type] = (byInputType[guide.input_type] || 0) + 1
-        byLanguage[guide.language] = (byLanguage[guide.language] || 0) + 1
-        byStudyMode[guide.study_mode] = (byStudyMode[guide.study_mode] || 0) + 1
-        totalUsage += guide.usage_count || 0
-      })
-
-      setStats({
-        total: loadedGuides.length,
-        totalUsage,
-        byInputType,
-        byLanguage,
-        byStudyMode,
-      })
-    } catch (err) {
-      console.error('Failed to load study guides:', err)
-      setError('Failed to load study guides. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleEdit = (guide: StudyGuideListItem) => {
     // Build URL with pre-filled parameters
     const params = new URLSearchParams()
@@ -187,7 +153,7 @@ export default function StudyGuidesPage() {
         throw new Error(data.error || 'Failed to delete study guide')
       }
 
-      await loadGuides()
+      await reloadGuides()
     } catch (err: any) {
       console.error('Failed to delete study guide:', err)
       toast.error(err.message || 'Failed to delete study guide. Please try again.')
@@ -308,7 +274,7 @@ export default function StudyGuidesPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Guides</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Guides Matching Filters</p>
               <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {stats.total}
               </p>
@@ -334,7 +300,7 @@ export default function StudyGuidesPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Usage</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Saves (all guides)</p>
               <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {stats.totalUsage}
               </p>
@@ -427,7 +393,7 @@ export default function StudyGuidesPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setInputTypeFilter('all')}
+                onClick={() => { setInputTypeFilter('all'); setPage(0) }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   inputTypeFilter === 'all'
                     ? 'bg-primary text-white'
@@ -438,7 +404,7 @@ export default function StudyGuidesPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setInputTypeFilter('topic')}
+                onClick={() => { setInputTypeFilter('topic'); setPage(0) }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   inputTypeFilter === 'topic'
                     ? 'bg-primary text-white'
@@ -449,9 +415,9 @@ export default function StudyGuidesPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setInputTypeFilter('verse')}
+                onClick={() => { setInputTypeFilter('scripture'); setPage(0) }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  inputTypeFilter === 'verse'
+                  inputTypeFilter === 'scripture'
                     ? 'bg-primary text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
@@ -460,7 +426,7 @@ export default function StudyGuidesPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setInputTypeFilter('question')}
+                onClick={() => { setInputTypeFilter('question'); setPage(0) }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   inputTypeFilter === 'question'
                     ? 'bg-primary text-white'
@@ -477,7 +443,7 @@ export default function StudyGuidesPage() {
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Mode:</label>
             <select
               value={studyModeFilter}
-              onChange={(e) => setStudyModeFilter(e.target.value as StudyModeFilter)}
+              onChange={(e) => { setStudyModeFilter(e.target.value as StudyModeFilter); setPage(0) }}
               className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="all">All Modes</option>
@@ -494,7 +460,7 @@ export default function StudyGuidesPage() {
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Language:</label>
             <select
               value={languageFilter}
-              onChange={(e) => setLanguageFilter(e.target.value as LanguageFilter)}
+              onChange={(e) => { setLanguageFilter(e.target.value as LanguageFilter); setPage(0) }}
               className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="all">All Languages</option>
@@ -509,9 +475,9 @@ export default function StudyGuidesPage() {
         <div className="relative flex-1 md:max-w-xs">
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search study guides..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search guides, topics or creators..."
             className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
           />
           <svg
@@ -579,7 +545,7 @@ export default function StudyGuidesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                {filteredGuides.length === 0 ? (
+                {guides.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-8 text-center">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -588,7 +554,7 @@ export default function StudyGuidesPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredGuides.map((guide) => (
+                  guides.map((guide) => (
                     <Fragment key={guide.id}>
                     <tr className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${expandedId === guide.id ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''}`}>
                       <td className="px-6 py-4">
@@ -793,6 +759,31 @@ export default function StudyGuidesPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination — pages are cut in the database, not in the browser */}
+          <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Page {page + 1} of {totalPages} ({total} matching guides)
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || isFetching}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page + 1 >= totalPages || isFetching}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}

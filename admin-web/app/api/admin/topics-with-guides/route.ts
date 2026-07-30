@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - List topics with their generated study guides count
@@ -40,26 +41,21 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const inputType = searchParams.get('input_type')
 
-    // Fetch recommended topics
-    let topicsQuery = supabaseAdmin
-      .from('recommended_topics')
-      .select('*')
-      .order('display_order', { ascending: true })
-
-    // Apply filters
-    if (isActive !== null) {
-      topicsQuery = topicsQuery.eq('is_active', isActive === 'true')
+    // Filters run in SQL. Both reads page past PostgREST's silent 1000-row cap,
+    // otherwise the per-topic guide counts plateau once a thousand guides exist.
+    const applyFilters = (q: any) => {
+      if (isActive !== null) q = q.eq('is_active', isActive === 'true')
+      if (category) q = q.eq('category', category)
+      if (inputType) q = q.eq('input_type', inputType)
+      return q
     }
 
-    if (category) {
-      topicsQuery = topicsQuery.eq('category', category)
-    }
-
-    if (inputType) {
-      topicsQuery = topicsQuery.eq('input_type', inputType)
-    }
-
-    const { data: topics, error: topicsError } = await topicsQuery
+    const { data: topics, error: topicsError } = await fetchAllRows<any>((from, to) =>
+      applyFilters(supabaseAdmin.from('recommended_topics').select('*'))
+        .order('display_order', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to)
+    )
 
     if (topicsError) {
       console.error('Failed to fetch topics:', topicsError)
@@ -70,14 +66,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all study guides for these topics
-    const topicIds = topics?.map(t => t.id) || []
+    const topicIds = topics?.map((t: any) => t.id) || []
 
     let guidesData: any[] = []
     if (topicIds.length > 0) {
-      const { data: guides, error: guidesError } = await supabaseAdmin
-        .from('study_guides')
-        .select('topic_id, study_mode, language, created_at')
-        .in('topic_id', topicIds)
+      const { data: guides, error: guidesError } = await fetchAllRows<any>((from, to) =>
+        supabaseAdmin
+          .from('study_guides')
+          .select('topic_id, study_mode, language, created_at')
+          .in('topic_id', topicIds)
+          .order('id', { ascending: true })
+          .range(from, to)
+      )
 
       if (guidesError) {
         console.error('Failed to fetch study guides:', guidesError)
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Combine topics with their guide counts
-    const topicsWithGuides = topics?.map(topic => {
+    const topicsWithGuides = topics?.map((topic: any) => {
       const topicGuides = guidesData.filter(g => g.topic_id === topic.id)
 
       // Count guides by mode

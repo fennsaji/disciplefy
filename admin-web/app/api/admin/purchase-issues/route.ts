@@ -11,6 +11,11 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status') || ''
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1),
+      200
+    )
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -41,19 +46,34 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch purchase issues without joins
-    let query = supabaseAdmin
-      .from('purchase_issue_reports')
-      .select('*')
+    // Filter and page in SQL. Without an explicit range PostgREST silently caps
+    // the response at 1000 rows, which quietly hides older issues.
+    const applyFilter = (q: any) => (status ? q.eq('status', status) : q)
 
-    // Apply status filter
-    if (status) {
-      query = query.eq('status', status)
-    }
+    const [issuesRes, countRes, statusRows] = await Promise.all([
+      applyFilter(supabaseAdmin.from('purchase_issue_reports').select('*'))
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(offset, offset + limit - 1),
+      applyFilter(
+        supabaseAdmin.from('purchase_issue_reports').select('id', { count: 'exact', head: true })
+      ),
+      // Status breakdown over the whole table, independent of the status filter
+      Promise.all(
+        ['pending', 'investigating', 'resolved', 'closed'].map(async s => ({
+          status: s,
+          count:
+            (
+              await supabaseAdmin
+                .from('purchase_issue_reports')
+                .select('id', { count: 'exact', head: true })
+                .eq('status', s)
+            ).count || 0,
+        }))
+      ),
+    ])
 
-    // Execute query with ordering
-    const { data: issues, error: issuesError } = await query
-      .order('created_at', { ascending: false })
+    const { data: issueRows, error: issuesError } = issuesRes
 
     if (issuesError) {
       console.error('Failed to fetch purchase issues:', issuesError)
@@ -63,12 +83,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (!issues || issues.length === 0) {
-      return NextResponse.json([])
+    const stats = {
+      total: countRes.count || 0,
+      by_status: Object.fromEntries(statusRows.map(r => [r.status, r.count])),
+    }
+
+    const issues: any[] = issueRows || []
+
+    if (issues.length === 0) {
+      return NextResponse.json({ issues: [], total: stats.total, limit, offset, stats })
     }
 
     // Extract unique user IDs
-    const userIds = [...new Set(issues.map(issue => issue.user_id))]
+    const userIds: string[] = [...new Set(issues.map((issue: any) => issue.user_id))] as string[]
 
     // Fetch emails from auth.users (same pattern as search-users API)
     let emailsMap: Record<string, string>
@@ -103,7 +130,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Format response
-    const formattedIssues = issues.map(issue => ({
+    const formattedIssues = issues.map((issue: any) => ({
       id: issue.id,
       user_id: issue.user_id,
       user_email: emailsMap[issue.user_id] || null,
@@ -121,7 +148,13 @@ export async function GET(request: NextRequest) {
       updated_at: issue.updated_at
     }))
 
-    return NextResponse.json(formattedIssues)
+    return NextResponse.json({
+      issues: formattedIssues,
+      total: stats.total,
+      limit,
+      offset,
+      stats
+    })
   } catch (error) {
     console.error('API route error:', error)
     return NextResponse.json(

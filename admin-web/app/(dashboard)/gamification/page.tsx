@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { StatsCard } from '@/components/ui/stats-card'
 import AchievementsTable from '@/components/tables/achievements-table'
 import UserAchievementsTable from '@/components/tables/user-achievements-table'
@@ -21,6 +21,48 @@ const GAMIFICATION_TABS = [
   { value: 'streak-analytics', label: 'Streak Analytics', icon: '🔥' },
 ]
 
+const PAGE_SIZE = 50
+
+/** Prev/next controls for a server-paged table. */
+function TablePagination({
+  page,
+  total,
+  isBusy,
+  onChange,
+  noun,
+}: {
+  page: number
+  total: number
+  isBusy: boolean
+  onChange: (page: number) => void
+  noun: string
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  return (
+    <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Page {page + 1} of {totalPages} ({total} {noun})
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onChange(Math.max(0, page - 1))}
+          disabled={page === 0 || isBusy}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          Previous
+        </button>
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page + 1 >= totalPages || isBusy}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function GamificationPage() {
   const [activeTab, setActiveTab] = useState<TabType>('achievements-catalog')
   const queryClient = useQueryClient()
@@ -38,6 +80,8 @@ export default function GamificationPage() {
   })
 
   const [streaksSort, setStreaksSort] = useState('current_streak')
+  const [userAchievementsPage, setUserAchievementsPage] = useState(0)
+  const [streaksPage, setStreaksPage] = useState(0)
 
   // Fetch Achievements Catalog
   const { data: achievementsData, isLoading: achievementsLoading } = useQuery({
@@ -55,30 +99,36 @@ export default function GamificationPage() {
 
   // Fetch User Achievements
   const { data: userAchievementsData, isLoading: userAchievementsLoading } = useQuery({
-    queryKey: ['gamification-user-achievements', userAchievementsFilters],
+    queryKey: ['gamification-user-achievements', userAchievementsFilters, userAchievementsPage],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (userAchievementsFilters.user_id) params.set('user_id', userAchievementsFilters.user_id)
       if (userAchievementsFilters.achievement_id) params.set('achievement_id', userAchievementsFilters.achievement_id)
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(userAchievementsPage * PAGE_SIZE))
 
       const res = await fetch(`/api/admin/gamification/user-achievements?${params}`)
       if (!res.ok) throw new Error('Failed to fetch user achievements')
       return res.json()
     },
+    placeholderData: keepPreviousData,
     enabled: activeTab === 'user-achievements'
   })
 
   // Fetch Streak Analytics
   const { data: streaksData, isLoading: streaksLoading } = useQuery({
-    queryKey: ['gamification-streaks', streaksSort],
+    queryKey: ['gamification-streaks', streaksSort, streaksPage],
     queryFn: async () => {
       const params = new URLSearchParams()
       params.set('sort_by', streaksSort)
+      params.set('limit', String(PAGE_SIZE))
+      params.set('offset', String(streaksPage * PAGE_SIZE))
 
       const res = await fetch(`/api/admin/gamification/streaks?${params}`)
       if (!res.ok) throw new Error('Failed to fetch streaks')
       return res.json()
     },
+    placeholderData: keepPreviousData,
     enabled: activeTab === 'streak-analytics'
   })
 
@@ -288,10 +338,19 @@ export default function GamificationPage() {
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
             </div>
           ) : (
-            <UserAchievementsTable
-              userAchievements={userAchievementsData?.user_achievements || []}
-              onRevoke={(id) => revokeUserAchievement.mutate(id)}
-            />
+            <>
+              <UserAchievementsTable
+                userAchievements={userAchievementsData?.user_achievements || []}
+                onRevoke={(id) => revokeUserAchievement.mutate(id)}
+              />
+              <TablePagination
+                page={userAchievementsPage}
+                total={userAchievementsData?.total ?? 0}
+                isBusy={userAchievementsLoading}
+                onChange={setUserAchievementsPage}
+                noun="matching unlocks"
+              />
+            </>
           )}
         </div>
       </div>
@@ -468,7 +527,10 @@ export default function GamificationPage() {
           </label>
           <select
             value={streaksSort}
-            onChange={(e) => setStreaksSort(e.target.value)}
+            onChange={(e) => {
+              setStreaksSort(e.target.value)
+              setStreaksPage(0)
+            }}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
             <option value="current_streak">Current Streak</option>
@@ -485,7 +547,16 @@ export default function GamificationPage() {
               <p className="text-gray-500 dark:text-gray-400">Loading...</p>
             </div>
           ) : (
-            <StreaksTable streaks={streaksData?.streaks || []} />
+            <>
+              <StreaksTable streaks={streaksData?.streaks || []} />
+              <TablePagination
+                page={streaksPage}
+                total={streaksData?.total ?? 0}
+                isBusy={streaksLoading}
+                onChange={setStreaksPage}
+                noun="users with a study streak"
+              />
+            </>
           )}
         </div>
       </div>

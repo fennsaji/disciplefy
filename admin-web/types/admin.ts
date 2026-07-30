@@ -164,6 +164,16 @@ export interface SearchUsersRequest {
   query: string
   limit?: number
   offset?: number
+  /** Plan code to filter by; applied in SQL, not on the returned page. */
+  tier?: SubscriptionTier | 'all'
+  /** Subscription status to filter by; applied in SQL, not on the returned page. */
+  status?: string
+}
+
+export interface SubscriptionStatsResponse {
+  total_users: number
+  by_tier: Record<SubscriptionTier, number>
+  active_statuses: string[]
 }
 
 export interface SearchUsersResponse {
@@ -281,11 +291,23 @@ export interface ListPromoCodesRequest {
   offset?: number
 }
 
+export interface PromoCodeStats {
+  total: number
+  active: number
+  inactive: number
+  expired: number
+  expiring_soon: number
+  total_redemptions: number
+}
+
 export interface ListPromoCodesResponse {
   campaigns: PromoCodeCampaign[]
+  /** Campaigns matching the current status filter. */
   total: number
   limit: number
   offset: number
+  /** Counts over EVERY campaign in the database, ignoring the status filter. */
+  stats: PromoCodeStats
 }
 
 export interface CreatePromoCodeRequest {
@@ -748,8 +770,22 @@ export interface StudyGuideListItem {
   usage_count: number
 }
 
+export interface StudyGuideListStats {
+  /** Guides matching the current filters, across the whole table. */
+  total: number
+  /** Saves across ALL guides in the database (not narrowed by the filters). */
+  total_usage: number
+  by_input_type: Record<string, number>
+  by_study_mode: Record<string, number>
+  by_language: Record<string, number>
+}
+
 export interface ListStudyGuidesResponse {
   study_guides: StudyGuideListItem[]
+  total: number
+  limit: number
+  offset: number
+  stats: StudyGuideListStats
 }
 
 // ============================================================================

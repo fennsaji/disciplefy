@@ -44,18 +44,13 @@ export default function PromoCodesPage() {
     },
   })
 
-  // Calculate stats
-  const stats = promoData?.campaigns
+  // Counted by the database over every campaign — not just the loaded page
+  const stats = promoData?.stats
     ? {
-        active: promoData.campaigns.filter((c) => c.is_active && !c.is_expired).length,
-        totalRedemptions: promoData.campaigns.reduce((sum, c) => sum + c.current_uses, 0),
-        expiringSoon: promoData.campaigns.filter((c) => {
-          const daysUntilExpiry = Math.ceil(
-            (new Date(c.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-          )
-          return daysUntilExpiry <= 7 && daysUntilExpiry > 0 && c.is_active
-        }).length,
-        inactive: promoData.campaigns.filter((c) => !c.is_active).length,
+        active: promoData.stats.active,
+        totalRedemptions: promoData.stats.total_redemptions,
+        expiringSoon: promoData.stats.expiring_soon,
+        inactive: promoData.stats.inactive,
       }
     : null
 

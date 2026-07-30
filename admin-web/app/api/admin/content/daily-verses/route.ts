@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch daily verses cache
@@ -10,7 +11,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const language = searchParams.get('language') || ''
     const isActive = searchParams.get('is_active') || ''
-    const limit = parseInt(searchParams.get('limit') || '30')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -41,21 +43,41 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build query with filters
-    let query = supabaseAdmin
-      .from('daily_verses_cache')
-      .select('*')
-      .order('date_key', { ascending: false })
-      .limit(limit)
-
-    if (language) {
-      query = query.eq('language', language)
-    }
-    if (isActive) {
-      query = query.eq('is_active', isActive === 'true')
+    // Filters run in SQL, so the page, the total and the stats all describe the
+    // same row set. Counts come from Postgres — never from the returned page.
+    const applyFilters = (q: any) => {
+      if (language) q = q.eq('language', language)
+      if (isActive) q = q.eq('is_active', isActive === 'true')
+      return q
     }
 
-    const { data: dailyVerses, error: versesError } = await query
+    const todayKey = new Date().toISOString().slice(0, 10)
+
+    const [versesRes, totalRes, activeRes, upcomingRes, pastRes, languageRows] = await Promise.all([
+      applyFilters(supabaseAdmin.from('daily_verses_cache').select('*'))
+        .order('date_key', { ascending: false })
+        .order('id', { ascending: true })
+        .range(offset, offset + limit - 1),
+      applyFilters(
+        supabaseAdmin.from('daily_verses_cache').select('id', { count: 'exact', head: true })
+      ),
+      applyFilters(
+        supabaseAdmin.from('daily_verses_cache').select('id', { count: 'exact', head: true })
+      ).eq('is_active', true),
+      applyFilters(
+        supabaseAdmin.from('daily_verses_cache').select('id', { count: 'exact', head: true })
+      ).gt('date_key', todayKey),
+      applyFilters(
+        supabaseAdmin.from('daily_verses_cache').select('id', { count: 'exact', head: true })
+      ).lt('date_key', todayKey),
+      fetchAllRows<{ language: string }>((from, to) =>
+        applyFilters(supabaseAdmin.from('daily_verses_cache').select('language'))
+          .order('id', { ascending: true })
+          .range(from, to)
+      ),
+    ])
+
+    const { data: dailyVerses, error: versesError } = versesRes
 
     if (versesError) {
       console.error('Failed to fetch daily verses:', versesError)
@@ -65,29 +87,33 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get current active verse for each language
+    // The currently active verse per language (one row each, so no paging needed)
     const { data: activeVerses } = await supabaseAdmin
       .from('daily_verses_cache')
       .select('*')
       .eq('is_active', true)
       .order('date_key', { ascending: false })
+      .limit(50)
 
-    // Get statistics
-    const stats = {
-      total: dailyVerses?.length || 0,
-      active: activeVerses?.length || 0,
-      by_language: {} as Record<string, number>,
-      upcoming_count: (dailyVerses || []).filter(v => new Date(v.date_key) > new Date()).length,
-      past_count: (dailyVerses || []).filter(v => new Date(v.date_key) < new Date()).length,
+    const byLanguage: Record<string, number> = {}
+    for (const row of languageRows.data || []) {
+      byLanguage[row.language] = (byLanguage[row.language] || 0) + 1
     }
 
-    ;(dailyVerses || []).forEach(verse => {
-      stats.by_language[verse.language] = (stats.by_language[verse.language] || 0) + 1
-    })
+    const stats = {
+      total: totalRes.count || 0,
+      active: activeRes.count || 0,
+      by_language: byLanguage,
+      upcoming_count: upcomingRes.count || 0,
+      past_count: pastRes.count || 0,
+    }
 
     return NextResponse.json({
       daily_verses: dailyVerses,
       active_verses: activeVerses,
+      total: stats.total,
+      limit,
+      offset,
       stats
     })
   } catch (error) {

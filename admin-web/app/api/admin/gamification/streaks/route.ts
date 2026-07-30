@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 // Valid columns for ordering user_study_streaks — prevents invalid sort param from reaching DB
 const VALID_SORT_COLUMNS = ['current_streak', 'longest_streak', 'last_study_date', 'total_study_days']
@@ -14,7 +15,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const rawSortBy = searchParams.get('sort_by') || 'current_streak'
     const sortBy = VALID_SORT_COLUMNS.includes(rawSortBy) ? rawSortBy : 'current_streak'
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -45,50 +47,83 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch all data sources in parallel
+    // Every source is read in full (paging past PostgREST's silent 1000-row cap)
+    // so the stats and leaderboards below describe the whole database. The table
+    // itself is served one page at a time from `allStudyStreaks`.
     const [
-      { data: studyStreaks, error: studyStreaksError },
-      { data: verseStreaks },
-      { data: xpRows },
-      { data: achievementXpRows },
-      { data: allProfiles },
+      studyStreaksRes,
+      verseStreaksRes,
+      xpRowsRes,
+      achievementXpRes,
+      profilesRes,
     ] = await Promise.all([
-      supabaseAdmin
-        .from('user_study_streaks')
-        .select('*')
-        .order(sortBy, { ascending: false })
-        .limit(limit),
-      supabaseAdmin
-        .from('daily_verse_streaks')
-        .select('user_id, current_streak, longest_streak, last_viewed_at, total_views'),
+      fetchAllRows<any>((from, to) =>
+        supabaseAdmin
+          .from('user_study_streaks')
+          .select('*')
+          .order(sortBy, { ascending: false })
+          .order('user_id', { ascending: true })
+          .range(from, to)
+      ),
+      fetchAllRows<{
+        user_id: string
+        current_streak: number
+        longest_streak: number
+        last_viewed_at: string | null
+        total_views: number
+      }>((from, to) =>
+        supabaseAdmin
+          .from('daily_verse_streaks')
+          .select('user_id, current_streak, longest_streak, last_viewed_at, total_views')
+          .order('user_id', { ascending: true })
+          .range(from, to)
+      ),
       // Study XP from user_topic_progress
-      supabaseAdmin
-        .from('user_topic_progress')
-        .select('user_id, xp_earned'),
+      fetchAllRows<{ user_id: string; xp_earned: number | null }>((from, to) =>
+        supabaseAdmin
+          .from('user_topic_progress')
+          .select('user_id, xp_earned')
+          .order('user_id', { ascending: true })
+          .range(from, to)
+      ),
       // Achievement XP: join user_achievements with achievements to get xp_reward per unlock
-      supabaseAdmin
-        .from('user_achievements')
-        .select('user_id, achievements(xp_reward)'),
+      fetchAllRows<any>((from, to) =>
+        supabaseAdmin
+          .from('user_achievements')
+          .select('user_id, achievements(xp_reward)')
+          .order('user_id', { ascending: true })
+          .range(from, to)
+      ),
       // All registered users for total count and profile lookup
-      supabaseAdmin
-        .from('user_profiles')
-        .select('id, first_name, last_name'),
+      fetchAllRows<{ id: string; first_name: string | null; last_name: string | null }>((from, to) =>
+        supabaseAdmin
+          .from('user_profiles')
+          .select('id, first_name, last_name')
+          .order('id', { ascending: true })
+          .range(from, to)
+      ),
     ])
 
-    if (studyStreaksError) {
-      console.error('Failed to fetch streaks:', studyStreaksError)
+    if (studyStreaksRes.error) {
+      console.error('Failed to fetch streaks:', studyStreaksRes.error)
       return NextResponse.json(
         { error: 'Failed to fetch streaks' },
         { status: 500 }
       )
     }
 
+    const allStudyStreaks = studyStreaksRes.data
+    const verseStreaks = verseStreaksRes.data
+    const xpRows = xpRowsRes.data
+    const achievementXpRows = achievementXpRes.data
+    const allProfiles = profilesRes.data
+
     // Aggregate XP per user: study XP (user_topic_progress) + achievement XP (user_achievements)
     const xpByUser: Record<string, number> = {}
-    for (const row of xpRows || []) {
+    for (const row of xpRows) {
       xpByUser[row.user_id] = (xpByUser[row.user_id] || 0) + (row.xp_earned || 0)
     }
-    for (const row of achievementXpRows || []) {
+    for (const row of achievementXpRows) {
       const xp = Array.isArray(row.achievements)
         ? row.achievements[0]?.xp_reward ?? 0
         : (row.achievements as any)?.xp_reward ?? 0
@@ -97,18 +132,18 @@ export async function GET(request: NextRequest) {
 
     // Map daily verse streaks by user_id for quick lookup
     const verseStreakByUser: Record<string, { user_id: string; current_streak: number; longest_streak: number; last_viewed_at: string | null; total_views: number }> = {}
-    for (const vs of verseStreaks || []) {
+    for (const vs of verseStreaks) {
       verseStreakByUser[vs.user_id] = vs
     }
 
     // Build profile lookup map (covers all registered users)
     const profilesMap = Object.fromEntries(
-      (allProfiles || []).map(p => [p.id, p])
+      allProfiles.map(p => [p.id, p])
     )
 
     // Collect ALL unique user IDs across all data sources for email lookup
-    const studyUserIds = (studyStreaks || []).map(s => s.user_id)
-    const verseUserIds = (verseStreaks || []).map(vs => vs.user_id)
+    const studyUserIds = allStudyStreaks.map((s: any) => s.user_id)
+    const verseUserIds = verseStreaks.map(vs => vs.user_id)
     const xpUserIds = Object.keys(xpByUser)
     const allUserIds = [...new Set([...studyUserIds, ...verseUserIds, ...xpUserIds])]
 
@@ -121,13 +156,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Combine study streak rows with user details, XP, and daily verse streak
-    const streaksWithUserDetails = (studyStreaks || []).map(streak => ({
+    const withUserDetails = (streak: any) => ({
       ...streak,
       user_email: emailsMap[streak.user_id] || 'N/A',
       user_name: getUserName(streak.user_id),
       total_xp_earned: xpByUser[streak.user_id] || 0,
       verse_streak: verseStreakByUser[streak.user_id]?.current_streak || 0,
-    }))
+    })
+
+    // Stats and leaderboards run over ALL streak rows; only the table is paged
+    const streaksWithUserDetails = allStudyStreaks
+      .slice(offset, offset + limit)
+      .map(withUserDetails)
 
     // Active = studied today or yesterday; >= 2 days = streak is broken
     const now = new Date()
@@ -137,10 +177,10 @@ export async function GET(request: NextRequest) {
       return daysDiff <= 1
     }
 
-    const activeStreaks = streaksWithUserDetails.filter(s => isActive(s.last_study_date))
+    const activeStreaks = allStudyStreaks.filter((s: any) => isActive(s.last_study_date))
 
     // Daily verse streak summary stats
-    const verseStreakList = verseStreaks || []
+    const verseStreakList = verseStreaks
     const activeVerseStreaks = verseStreakList.filter(vs => {
       if (!vs.last_viewed_at) return false
       const daysDiff = Math.floor((now.getTime() - new Date(vs.last_viewed_at).getTime()) / (1000 * 60 * 60 * 24))
@@ -149,27 +189,23 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       // Total registered users (not just those with streak records)
-      total_users: (allProfiles || []).length,
+      total_users: allProfiles.length,
       // Study streak counts
       active_streakers: activeStreaks.length,
-      inactive_streakers: streaksWithUserDetails.length - activeStreaks.length,
-      users_with_study_streak: streaksWithUserDetails.length,
+      inactive_streakers: allStudyStreaks.length - activeStreaks.length,
+      users_with_study_streak: allStudyStreaks.length,
       // Daily verse streak counts
       users_with_verse_streak: verseStreakList.length,
       active_verse_streakers: activeVerseStreaks.length,
       // Study streak averages/records
-      avg_current_streak: streaksWithUserDetails.length > 0
-        ? Math.round(streaksWithUserDetails.reduce((sum, s) => sum + (s.current_streak || 0), 0) / streaksWithUserDetails.length)
+      avg_current_streak: allStudyStreaks.length > 0
+        ? Math.round(allStudyStreaks.reduce((sum: number, s: any) => sum + (s.current_streak || 0), 0) / allStudyStreaks.length)
         : 0,
-      avg_longest_streak: streaksWithUserDetails.length > 0
-        ? Math.round(streaksWithUserDetails.reduce((sum, s) => sum + (s.longest_streak || 0), 0) / streaksWithUserDetails.length)
+      avg_longest_streak: allStudyStreaks.length > 0
+        ? Math.round(allStudyStreaks.reduce((sum: number, s: any) => sum + (s.longest_streak || 0), 0) / allStudyStreaks.length)
         : 0,
-      max_current_streak: streaksWithUserDetails.length > 0
-        ? Math.max(...streaksWithUserDetails.map(s => s.current_streak || 0))
-        : 0,
-      max_longest_streak: streaksWithUserDetails.length > 0
-        ? Math.max(...streaksWithUserDetails.map(s => s.longest_streak || 0))
-        : 0,
+      max_current_streak: allStudyStreaks.reduce((max: number, s: any) => Math.max(max, s.current_streak || 0), 0),
+      max_longest_streak: allStudyStreaks.reduce((max: number, s: any) => Math.max(max, s.longest_streak || 0), 0),
       // XP from user_topic_progress (actual source)
       total_xp_earned: Object.values(xpByUser).reduce((sum, xp) => sum + xp, 0),
       streak_distribution: {
@@ -182,7 +218,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Streak distribution buckets (by current study streak)
-    streaksWithUserDetails.forEach(s => {
+    allStudyStreaks.forEach((s: any) => {
       const current = s.current_streak || 0
       if (current === 0) stats.streak_distribution['0 days']++
       else if (current <= 7) stats.streak_distribution['1-7 days']++
@@ -192,13 +228,15 @@ export async function GET(request: NextRequest) {
     })
 
     // Top streak leaderboards (from user_study_streaks)
-    const topCurrentStreaks = [...streaksWithUserDetails]
-      .sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0))
+    const topCurrentStreaks = [...allStudyStreaks]
+      .sort((a: any, b: any) => (b.current_streak || 0) - (a.current_streak || 0))
       .slice(0, 10)
+      .map(withUserDetails)
 
-    const topLongestStreaks = [...streaksWithUserDetails]
-      .sort((a, b) => (b.longest_streak || 0) - (a.longest_streak || 0))
+    const topLongestStreaks = [...allStudyStreaks]
+      .sort((a: any, b: any) => (b.longest_streak || 0) - (a.longest_streak || 0))
       .slice(0, 10)
+      .map(withUserDetails)
 
     // Top XP leaderboard — all users with any XP, not only those with streak records
     const topXpEarners = xpUserIds
@@ -224,6 +262,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       streaks: streaksWithUserDetails,
+      total: allStudyStreaks.length,
+      limit,
+      offset,
       stats,
       leaderboards: {
         top_current_streaks: topCurrentStreaks,

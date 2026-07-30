@@ -1,11 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import type { User } from '@supabase/supabase-js'
+import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { listAllAuthUsers, getAuthEmailMap } from '@/lib/supabase/list-all-users'
 
+const DEFAULT_LIMIT = 50
+const MAX_LIMIT = 200
+// PostgREST filters travel in the URL, so an unbounded id list can exceed the
+// server's URL/header limits. Cap the email-matched id set we inline.
+const MAX_INLINE_IDS = 500
+
 /**
- * GET - Fetch user token balances with optional search and filtering
+ * Apply the search + plan filters to a `user_tokens` query.
+ *
+ * Both filters run in SQL so paging and counting see the same row set the
+ * caller is browsing — never a client-side slice of the first page.
+ */
+function applyFilters<T>(
+  query: T,
+  search: string,
+  plan: string,
+  emailMatchedIds: string[]
+): T {
+  let q = query as any
+
+  if (plan) {
+    q = q.eq('user_plan', plan)
+  }
+
+  if (search) {
+    const conditions = [`identifier.ilike.%${search}%`]
+    if (emailMatchedIds.length > 0) {
+      conditions.push(`identifier.in.(${emailMatchedIds.join(',')})`)
+    }
+    q = q.or(conditions.join(','))
+  }
+
+  return q as T
+}
+
+/**
+ * GET - Fetch a page of user token balances, filtered in the database.
+ *
+ * Query params: `search` (email or user id substring), `plan`, `limit`, `offset`.
+ * Returns `{ balances, total, limit, offset }` where `total` counts ALL rows
+ * matching the filters, not just the returned page.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +52,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
     const plan = searchParams.get('plan') || ''
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT, 1),
+      MAX_LIMIT
+    )
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -26,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify admin status
-    const supabaseAdmin = createAdminClient(
+    const supabaseAdmin: SupabaseClient = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
@@ -44,8 +88,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // If searching, resolve matching user IDs by email first so the filter
-    // is applied BEFORE the row limit (not after fetching the latest 100 rows)
+    // Resolve matching user IDs by email first so the filter is applied in the
+    // query, BEFORE paging — not against an already-truncated page of rows.
     let allAuthUsers: User[] | null = null
     let emailMatchedIds: string[] = []
     if (search) {
@@ -54,36 +98,41 @@ export async function GET(request: NextRequest) {
         emailMatchedIds = allAuthUsers
           .filter(u => u.email?.toLowerCase().includes(search.toLowerCase()))
           .map(u => u.id)
+          .slice(0, MAX_INLINE_IDS)
       } catch (error) {
         console.error('Email query error:', error)
       }
     }
 
-    // Fetch user tokens
-    let query = supabaseAdmin
-      .from('user_tokens')
-      .select('*')
+    // Count every row matching the filters (drives pagination + "N matching")
+    const countQuery = applyFilters(
+      supabaseAdmin.from('user_tokens').select('id', { count: 'exact', head: true }),
+      search,
+      plan,
+      emailMatchedIds
+    )
+    const { count: total, error: countError } = await countQuery
 
-    // Apply plan filter
-    if (plan) {
-      query = query.eq('user_plan', plan)
+    if (countError) {
+      console.error('Failed to count token balances:', countError)
+      return NextResponse.json(
+        { error: 'Failed to fetch token balances' },
+        { status: 500 }
+      )
     }
 
-    // Apply search filter in the query (email-matched user IDs or identifier substring)
-    if (search) {
-      const searchConditions = [`identifier.ilike.%${search}%`]
-      if (emailMatchedIds.length > 0) {
-        searchConditions.push(`identifier.in.(${emailMatchedIds.join(',')})`)
-      }
-      query = query.or(searchConditions.join(','))
-    }
+    // Fetch the requested page
+    const pageQuery = applyFilters(
+      supabaseAdmin.from('user_tokens').select('*'),
+      search,
+      plan,
+      emailMatchedIds
+    )
+      .order('updated_at', { ascending: false })
+      .order('identifier', { ascending: true })
+      .range(offset, offset + limit - 1)
 
-    // Execute query with ordering; limit only applies to the unfiltered browse case
-    query = query.order('updated_at', { ascending: false })
-    if (!search) {
-      query = query.limit(100)
-    }
-    const { data: tokenBalances, error: balancesError } = await query
+    const { data: tokenBalances, error: balancesError } = await pageQuery
 
     if (balancesError) {
       console.error('Failed to fetch token balances:', balancesError)
@@ -94,7 +143,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!tokenBalances || tokenBalances.length === 0) {
-      return NextResponse.json([])
+      return NextResponse.json({ balances: [], total: total || 0, limit, offset })
     }
 
     // Get user IDs to fetch emails and names
@@ -124,47 +173,44 @@ export async function GET(request: NextRequest) {
       (userProfiles || []).map(p => [p.id, { first_name: p.first_name, last_name: p.last_name }])
     )
 
-    // Calculate today's consumption for each user
+    // Today's consumption for the whole page in ONE query (was N+1, one per row)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const enrichedBalances = await Promise.all(
-      tokenBalances.map(async (balance) => {
-        const userEmail = emailsMap[balance.identifier] || null
-        const profile = profilesMap[balance.identifier]
-        const fullName = profile
-          ? [profile.first_name, profile.last_name].filter(Boolean).join(' ')
-          : null
+    const { data: todayUsage } = await supabaseAdmin
+      .from('token_usage_history')
+      .select('user_id, token_cost')
+      .in('user_id', userIds)
+      .gte('created_at', today.toISOString())
 
-        const { data: todayUsage } = await supabaseAdmin
-          .from('token_usage_history')
-          .select('token_cost')
-          .eq('user_id', balance.identifier)
-          .gte('created_at', today.toISOString())
+    const consumedTodayMap: Record<string, number> = {}
+    for (const row of todayUsage || []) {
+      consumedTodayMap[row.user_id] = (consumedTodayMap[row.user_id] || 0) + (row.token_cost || 0)
+    }
 
-        const totalConsumedToday = todayUsage?.reduce((sum, row) => sum + (row.token_cost || 0), 0) || 0
+    const balances = tokenBalances.map((balance) => {
+      const profileRow = profilesMap[balance.identifier]
+      const fullName = profileRow
+        ? [profileRow.first_name, profileRow.last_name].filter(Boolean).join(' ')
+        : null
 
-        return {
-          id: balance.id,
-          identifier: balance.identifier,
-          user_email: userEmail,
-          user_name: fullName,
-          user_plan: balance.user_plan,
-          available_tokens: balance.available_tokens,
-          purchased_tokens: balance.purchased_tokens,
-          daily_limit: balance.daily_limit,
-          last_reset: balance.last_reset,
-          total_consumed_today: totalConsumedToday,
-          created_at: balance.created_at,
-          updated_at: balance.updated_at
-        }
-      })
-    )
+      return {
+        id: balance.id,
+        identifier: balance.identifier,
+        user_email: emailsMap[balance.identifier] || null,
+        user_name: fullName,
+        user_plan: balance.user_plan,
+        available_tokens: balance.available_tokens,
+        purchased_tokens: balance.purchased_tokens,
+        daily_limit: balance.daily_limit,
+        last_reset: balance.last_reset,
+        total_consumed_today: consumedTodayMap[balance.identifier] || 0,
+        created_at: balance.created_at,
+        updated_at: balance.updated_at
+      }
+    })
 
-    // Filter out null values (from search filter)
-    const filteredBalances = enrichedBalances.filter(b => b !== null)
-
-    return NextResponse.json(filteredBalances)
+    return NextResponse.json({ balances, total: total || 0, limit, offset })
   } catch (error) {
     console.error('API route error:', error)
     return NextResponse.json(

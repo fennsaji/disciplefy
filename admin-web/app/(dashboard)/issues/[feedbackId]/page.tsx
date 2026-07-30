@@ -32,7 +32,8 @@ export default function FeedbackDetailPage() {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch feedback')
-      return response.json()
+      const data = await response.json()
+      return data.feedback ?? []
     },
   })
 

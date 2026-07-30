@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch suggested verses with translations
@@ -10,7 +11,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category') || ''
     const language = searchParams.get('language') || ''
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -41,18 +43,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch suggested verses
-    let query = supabaseAdmin
-      .from('suggested_verses')
-      .select('*')
-      .order('display_order', { ascending: true })
-      .limit(limit)
+    // The category filter runs in SQL, so paging and the total both describe
+    // the same matching row set.
+    const applyFilter = (q: any) => (category ? q.eq('category', category) : q)
 
-    if (category) {
-      query = query.eq('category', category)
-    }
+    const [versesRes, totalRes] = await Promise.all([
+      applyFilter(supabaseAdmin.from('suggested_verses').select('*'))
+        .order('display_order', { ascending: true })
+        .order('id', { ascending: true })
+        .range(offset, offset + limit - 1),
+      applyFilter(supabaseAdmin.from('suggested_verses').select('id', { count: 'exact', head: true })),
+    ])
 
-    const { data: suggestedVerses, error: versesError } = await query
+    const { data: suggestedVerses, error: versesError } = versesRes
 
     if (versesError) {
       console.error('Failed to fetch suggested verses:', versesError)
@@ -63,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch translations for all verses
-    const verseIds = (suggestedVerses || []).map(v => v.id)
+    const verseIds = (suggestedVerses || []).map((v: any) => v.id)
     let translationsQuery = supabaseAdmin
       .from('suggested_verse_translations')
       .select('*')
@@ -76,11 +79,11 @@ export async function GET(request: NextRequest) {
     const { data: translations } = await translationsQuery
 
     // Map translations to verses using correct column names (language_code, verse_text, localized_reference)
-    const versesWithTranslations = (suggestedVerses || []).map(verse => {
-      const verseTranslations = (translations || []).filter(t => t.suggested_verse_id === verse.id)
+    const versesWithTranslations = (suggestedVerses || []).map((verse: any) => {
+      const verseTranslations = (translations || []).filter((t: any) => t.suggested_verse_id === verse.id)
       return {
         ...verse,
-        translations: verseTranslations.reduce((acc, t) => {
+        translations: verseTranslations.reduce((acc: Record<string, { reference: string; text: string }>, t: any) => {
           acc[t.language_code] = {
             reference: t.localized_reference,
             text: t.verse_text
@@ -90,26 +93,53 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get statistics
+    // Statistics cover EVERY suggested verse in the database, not the page.
+    // Both reads page past PostgREST's silent 1000-row response cap.
+    const [allCategories, allTranslations] = await Promise.all([
+      fetchAllRows<{ category: string }>((from, to) =>
+        supabaseAdmin
+          .from('suggested_verses')
+          .select('category')
+          .order('id', { ascending: true })
+          .range(from, to)
+      ),
+      fetchAllRows<{ suggested_verse_id: string; language_code: string }>((from, to) =>
+        supabaseAdmin
+          .from('suggested_verse_translations')
+          .select('suggested_verse_id, language_code')
+          .order('suggested_verse_id', { ascending: true })
+          .range(from, to)
+      ),
+    ])
+
+    const byCategory: Record<string, number> = {}
+    for (const row of allCategories.data || []) {
+      byCategory[row.category] = (byCategory[row.category] || 0) + 1
+    }
+
+    const coverageSets: Record<string, Set<string>> = { en: new Set(), hi: new Set(), ml: new Set() }
+    for (const row of allTranslations.data || []) {
+      coverageSets[row.language_code]?.add(row.suggested_verse_id)
+    }
+
     const stats = {
-      total: versesWithTranslations.length,
-      by_category: {} as Record<string, number>,
+      /** Verses matching the current category filter. */
+      total: totalRes.count || 0,
+      /** Every suggested verse in the database, ignoring filters. */
+      total_all: (allCategories.data || []).length,
+      by_category: byCategory,
       translation_coverage: {
-        en: 0,
-        hi: 0,
-        ml: 0
+        en: coverageSets.en.size,
+        hi: coverageSets.hi.size,
+        ml: coverageSets.ml.size
       }
     }
 
-    versesWithTranslations.forEach(verse => {
-      stats.by_category[verse.category] = (stats.by_category[verse.category] || 0) + 1
-      if (verse.translations['en']) stats.translation_coverage.en++
-      if (verse.translations['hi']) stats.translation_coverage.hi++
-      if (verse.translations['ml']) stats.translation_coverage.ml++
-    })
-
     return NextResponse.json({
       suggested_verses: versesWithTranslations,
+      total: stats.total,
+      limit,
+      offset,
       stats
     })
   } catch (error) {

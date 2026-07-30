@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch user achievements with user details
@@ -11,7 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('user_id') || ''
     const achievementId = searchParams.get('achievement_id') || ''
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -42,21 +44,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch user achievements
-    let query = supabaseAdmin
-      .from('user_achievements')
-      .select('*')
-      .order('unlocked_at', { ascending: false })
-      .limit(limit)
-
-    if (userId) {
-      query = query.eq('user_id', userId)
-    }
-    if (achievementId) {
-      query = query.eq('achievement_id', achievementId)
+    // Filters run in SQL so the page, the total and the stats describe the same
+    // row set. Stats are computed over EVERY matching unlock, not the page.
+    const applyFilters = (q: any) => {
+      if (userId) q = q.eq('user_id', userId)
+      if (achievementId) q = q.eq('achievement_id', achievementId)
+      return q
     }
 
-    const { data: userAchievements, error: achievementsError } = await query
+    const [pageRes, totalRes, allUnlocks] = await Promise.all([
+      applyFilters(supabaseAdmin.from('user_achievements').select('*'))
+        .order('unlocked_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(offset, offset + limit - 1),
+      applyFilters(
+        supabaseAdmin.from('user_achievements').select('id', { count: 'exact', head: true })
+      ),
+      fetchAllRows<{ user_id: string; achievement_id: string }>((from, to) =>
+        applyFilters(supabaseAdmin.from('user_achievements').select('user_id, achievement_id'))
+          .order('id', { ascending: true })
+          .range(from, to)
+      ),
+    ])
+
+    const { data: userAchievements, error: achievementsError } = pageRes
 
     if (achievementsError) {
       console.error('Failed to fetch user achievements:', achievementsError)
@@ -67,8 +78,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unique user IDs and achievement IDs
-    const userIds = [...new Set((userAchievements || []).map(ua => ua.user_id))]
-    const achievementIds = [...new Set((userAchievements || []).map(ua => ua.achievement_id))]
+    const userIds = [...new Set((userAchievements || []).map((ua: any) => ua.user_id))] as string[]
+    const achievementIds = [...new Set((userAchievements || []).map((ua: any) => ua.achievement_id))] as string[]
 
     // Fetch user emails (paginated past the admin API's page limit)
     const emailsMap = await getAuthEmailMap(supabaseAdmin, userIds)
@@ -103,7 +114,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Combine data — DB uses name_en (not title) and has no tier column
-    const userAchievementsWithDetails = (userAchievements || []).map(ua => {
+    const userAchievementsWithDetails = (userAchievements || []).map((ua: any) => {
       const profile = profilesMap[ua.user_id]
       const achievement = achievementsMap[ua.achievement_id]
 
@@ -121,27 +132,49 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Calculate statistics
-    const stats = {
-      total_unlocks: userAchievementsWithDetails.length,
-      unique_users: new Set(userAchievementsWithDetails.map(ua => ua.user_id)).size,
-      unique_achievements: new Set(userAchievementsWithDetails.map(ua => ua.achievement_id)).size,
-      total_xp_awarded: userAchievementsWithDetails.reduce((sum, ua) => sum + (ua.xp_reward || 0), 0),
-      by_category: {} as Record<string, number>,
-      by_tier: {} as Record<string, number>,
+    // Statistics cover every matching unlock in the database. The unlock rows
+    // only carry ids, so category/tier/XP are resolved from the (small)
+    // achievements table rather than from the page of rows above.
+    const unlockRows = allUnlocks.data || []
+    const { data: allAchievements } = await supabaseAdmin
+      .from('achievements')
+      .select('id, category, xp_reward')
+
+    const achievementMetaMap: Record<string, { category: string; xp_reward: number }> =
+      Object.fromEntries(
+        (allAchievements || []).map((a: any) => [
+          a.id,
+          { category: a.category, xp_reward: a.xp_reward || 0 },
+        ])
+      )
+
+    const byCategory: Record<string, number> = {}
+    const byTier: Record<string, number> = {}
+    let totalXpAwarded = 0
+
+    for (const row of unlockRows) {
+      const meta = achievementMetaMap[row.achievement_id]
+      if (!meta) continue
+      totalXpAwarded += meta.xp_reward
+      if (meta.category) byCategory[meta.category] = (byCategory[meta.category] || 0) + 1
+      const tier = getTierFromXP(meta.xp_reward)
+      byTier[tier] = (byTier[tier] || 0) + 1
     }
 
-    userAchievementsWithDetails.forEach(ua => {
-      if (ua.achievement_category) {
-        stats.by_category[ua.achievement_category] = (stats.by_category[ua.achievement_category] || 0) + 1
-      }
-      if (ua.achievement_tier) {
-        stats.by_tier[ua.achievement_tier] = (stats.by_tier[ua.achievement_tier] || 0) + 1
-      }
-    })
+    const stats = {
+      total_unlocks: totalRes.count || 0,
+      unique_users: new Set(unlockRows.map(r => r.user_id)).size,
+      unique_achievements: new Set(unlockRows.map(r => r.achievement_id)).size,
+      total_xp_awarded: totalXpAwarded,
+      by_category: byCategory,
+      by_tier: byTier,
+    }
 
     return NextResponse.json({
       user_achievements: userAchievementsWithDetails,
+      total: stats.total_unlocks,
+      limit,
+      offset,
       stats
     })
   } catch (error) {

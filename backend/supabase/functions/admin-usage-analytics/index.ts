@@ -13,6 +13,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Read every row of a query past PostgREST's silent 1000-row response cap.
+ * Cost/token totals are sums over these rows, so a truncated read would report
+ * numbers that quietly plateau at 1000 log entries.
+ * `buildPage` must build a FRESH query per page (query builders are single-use).
+ */
+async function fetchAllRows(buildPage: (from: number, to: number) => any): Promise<any[]> {
+  const PAGE = 1000;
+  const MAX_PAGES = 100; // safety cap: 100k rows
+  const rows: any[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE;
+    const { data, error } = await buildPage(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...(data || []));
+    if (!data || data.length < PAGE) break;
+  }
+  return rows;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -216,14 +236,19 @@ serve(async (req) => {
     }
 
     // Get provider breakdown
-    const { data: providerData, error: providerError } = await supabaseClient
-      .from('usage_logs')
-      .select('llm_provider, llm_cost_usd, llm_input_tokens, llm_output_tokens')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate)
-      .not('llm_provider', 'is', null);
-
-    if (providerError) {
+    let providerData: any[] = [];
+    try {
+      providerData = await fetchAllRows((from, to) =>
+        supabaseClient
+          .from('usage_logs')
+          .select('llm_provider, llm_cost_usd, llm_input_tokens, llm_output_tokens')
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
+          .not('llm_provider', 'is', null)
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
+    } catch (providerError) {
       console.error('Error fetching provider breakdown:', providerError);
     }
 
@@ -245,14 +270,19 @@ serve(async (req) => {
     }
 
     // Get model breakdown
-    const { data: modelData, error: modelError } = await supabaseClient
-      .from('usage_logs')
-      .select('llm_model, llm_provider, llm_cost_usd, llm_input_tokens, llm_output_tokens')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate)
-      .not('llm_model', 'is', null);
-
-    if (modelError) {
+    let modelData: any[] = [];
+    try {
+      modelData = await fetchAllRows((from, to) =>
+        supabaseClient
+          .from('usage_logs')
+          .select('llm_model, llm_provider, llm_cost_usd, llm_input_tokens, llm_output_tokens')
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
+          .not('llm_model', 'is', null)
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
+    } catch (modelError) {
       console.error('Error fetching model breakdown:', modelError);
     }
 
@@ -271,13 +301,18 @@ serve(async (req) => {
     }
 
     // Get daily breakdown (also used for total token sum)
-    const { data: dailyData, error: dailyError } = await supabaseClient
-      .from('usage_logs')
-      .select('created_at, llm_cost_usd, llm_input_tokens, llm_output_tokens, estimated_revenue_inr, profit_margin_inr')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate);
-
-    if (dailyError) {
+    let dailyData: any[] = [];
+    try {
+      dailyData = await fetchAllRows((from, to) =>
+        supabaseClient
+          .from('usage_logs')
+          .select('created_at, llm_cost_usd, llm_input_tokens, llm_output_tokens, estimated_revenue_inr, profit_margin_inr')
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
+    } catch (dailyError) {
       console.error('Error fetching daily data:', dailyError);
     }
 

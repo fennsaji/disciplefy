@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
 
 /**
  * GET - Fetch admin activity logs from both admin_logs and admin_actions tables
@@ -13,6 +14,11 @@ export async function GET(request: NextRequest) {
     const actionFilter = searchParams.get('action') || ''
     const adminUserId = searchParams.get('admin_user_id') || ''
     const range = searchParams.get('range') || 'week'
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1),
+      200
+    )
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -66,41 +72,67 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    // Fetch from admin_logs table
-    let logsQuery = supabaseAdmin
-      .from('admin_logs')
-      .select('*')
-      .gte('created_at', dateFilter.toISOString())
+    // The feed is a union of two tables. Both sides are filtered in SQL; to page
+    // the merged result we over-fetch offset+limit from each side, merge, sort
+    // and slice — the classic merge-paging technique for a UNION ALL feed.
+    const overFetch = offset + limit
 
-    if (actionFilter) {
-      logsQuery = logsQuery.eq('action', actionFilter)
+    const applyLogFilters = (q: any) => {
+      q = q.gte('created_at', dateFilter.toISOString())
+      if (actionFilter) q = q.eq('action', actionFilter)
+      if (adminUserId) q = q.eq('admin_user_id', adminUserId)
+      return q
     }
 
-    if (adminUserId) {
-      logsQuery = logsQuery.eq('admin_user_id', adminUserId)
+    const applyActionFilters = (q: any) => {
+      q = q.gte('created_at', dateFilter.toISOString())
+      if (actionFilter) q = q.eq('action_type', actionFilter)
+      if (adminUserId) q = q.eq('admin_user_id', adminUserId)
+      return q
     }
 
-    const { data: adminLogs, error: logsError } = await logsQuery
-      .order('created_at', { ascending: false })
-      .limit(250)
+    // "Today" uses the same UTC day boundary as the `today` range option
+    const utcDayStart = new Date()
+    utcDayStart.setUTCHours(0, 0, 0, 0)
 
-    // Fetch from admin_actions table
-    let actionsQuery = supabaseAdmin
-      .from('admin_actions')
-      .select('*')
-      .gte('created_at', dateFilter.toISOString())
+    const [
+      logsRes,
+      actionsRes,
+      logsCountRes,
+      actionsCountRes,
+      logsTodayRes,
+      actionsTodayRes,
+      logAdminIds,
+      actionAdminIds,
+    ] = await Promise.all([
+      applyLogFilters(supabaseAdmin.from('admin_logs').select('*'))
+        .order('created_at', { ascending: false })
+        .range(0, Math.max(overFetch - 1, 0)),
+      applyActionFilters(supabaseAdmin.from('admin_actions').select('*'))
+        .order('created_at', { ascending: false })
+        .range(0, Math.max(overFetch - 1, 0)),
+      applyLogFilters(supabaseAdmin.from('admin_logs').select('id', { count: 'exact', head: true })),
+      applyActionFilters(supabaseAdmin.from('admin_actions').select('id', { count: 'exact', head: true })),
+      applyLogFilters(
+        supabaseAdmin.from('admin_logs').select('id', { count: 'exact', head: true })
+      ).gte('created_at', utcDayStart.toISOString()),
+      applyActionFilters(
+        supabaseAdmin.from('admin_actions').select('id', { count: 'exact', head: true })
+      ).gte('created_at', utcDayStart.toISOString()),
+      fetchAllRows<{ admin_user_id: string | null }>((from, to) =>
+        applyLogFilters(supabaseAdmin.from('admin_logs').select('admin_user_id'))
+          .order('admin_user_id', { ascending: true })
+          .range(from, to)
+      ),
+      fetchAllRows<{ admin_user_id: string | null }>((from, to) =>
+        applyActionFilters(supabaseAdmin.from('admin_actions').select('admin_user_id'))
+          .order('admin_user_id', { ascending: true })
+          .range(from, to)
+      ),
+    ])
 
-    if (actionFilter) {
-      actionsQuery = actionsQuery.eq('action_type', actionFilter)
-    }
-
-    if (adminUserId) {
-      actionsQuery = actionsQuery.eq('admin_user_id', adminUserId)
-    }
-
-    const { data: adminActions, error: actionsError } = await actionsQuery
-      .order('created_at', { ascending: false })
-      .limit(250)
+    const { data: adminLogs, error: logsError } = logsRes
+    const { data: adminActions, error: actionsError } = actionsRes
 
     if (logsError && actionsError) {
       console.error('Failed to fetch admin logs:', logsError, actionsError)
@@ -110,9 +142,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Stats counted by Postgres across BOTH tables, not from the page on screen
+    const stats = {
+      total: (logsCountRes.count || 0) + (actionsCountRes.count || 0),
+      today: (logsTodayRes.count || 0) + (actionsTodayRes.count || 0),
+      unique_admins: new Set(
+        [...(logAdminIds.data || []), ...(actionAdminIds.data || [])]
+          .map(r => r.admin_user_id)
+          .filter(Boolean)
+      ).size,
+    }
+
     // Combine and normalize both sources
     const allLogs = [
-      ...(adminLogs || []).map(log => ({
+      ...(adminLogs || []).map((log: any) => ({
         id: log.id,
         admin_user_id: log.admin_user_id,
         action: log.action,
@@ -126,7 +169,7 @@ export async function GET(request: NextRequest) {
         created_at: log.created_at,
         source: 'admin_logs'
       })),
-      ...(adminActions || []).map(action => ({
+      ...(adminActions || []).map((action: any) => ({
         id: action.id,
         admin_user_id: action.admin_user_id,
         action: action.action_type,
@@ -140,10 +183,12 @@ export async function GET(request: NextRequest) {
         created_at: action.created_at,
         source: 'admin_actions'
       }))
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    ]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit)
 
     if (allLogs.length === 0) {
-      return NextResponse.json([])
+      return NextResponse.json({ logs: [], total: stats.total, limit, offset, stats })
     }
 
     // Extract unique admin user IDs
@@ -177,7 +222,13 @@ export async function GET(request: NextRequest) {
       admin_name: namesMap[log.admin_user_id] || 'Unknown',
     }))
 
-    return NextResponse.json(formattedLogs.slice(0, 500))
+    return NextResponse.json({
+      logs: formattedLogs,
+      total: stats.total,
+      limit,
+      offset,
+      stats
+    })
   } catch (error) {
     console.error('API route error:', error)
     return NextResponse.json(

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthEmailMap } from '@/lib/supabase/list-all-users'
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows'
+
+const DEFAULT_LIMIT = 50
+const MAX_LIMIT = 200
 
 /**
  * GET - Fetch user feedback with optional filtering
@@ -13,6 +17,11 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id') || ''
     const category = searchParams.get('category') || ''
     const helpful = searchParams.get('helpful') || ''
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT, 1),
+      MAX_LIMIT
+    )
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
     // Verify user authentication
     const supabaseUser = await createClient()
@@ -43,32 +52,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch feedback without joins
-    let query = supabaseAdmin
-      .from('feedback')
-      .select('*')
-
-    // Fetch a single row by id (used by the detail page)
-    if (id) {
-      query = query.eq('id', id)
+    // Every filter is applied in SQL, so the page, the count and the stats all
+    // describe the same row set — no client-side filtering of a truncated list.
+    const applyFilters = (q: any) => {
+      if (id) q = q.eq('id', id) // single row, used by the detail page
+      if (category) q = q.eq('category', category)
+      if (helpful === 'true') q = q.eq('was_helpful', true)
+      else if (helpful === 'false') q = q.eq('was_helpful', false)
+      return q
     }
 
-    // Apply category filter
-    if (category) {
-      query = query.eq('category', category)
-    }
-
-    // Apply helpful filter
-    if (helpful === 'true') {
-      query = query.eq('was_helpful', true)
-    } else if (helpful === 'false') {
-      query = query.eq('was_helpful', false)
-    }
-
-    // Execute query with ordering
-    const { data: feedbackList, error: feedbackError } = await query
+    const { data: feedbackRows, error: feedbackError } = await applyFilters(
+      supabaseAdmin.from('feedback').select('*')
+    )
       .order('created_at', { ascending: false })
-      .limit(500)
+      .order('id', { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (feedbackError) {
       console.error('Failed to fetch feedback:', feedbackError)
@@ -78,12 +77,38 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (!feedbackList || feedbackList.length === 0) {
-      return NextResponse.json([])
+    // Stats are computed by Postgres over EVERY matching row, not the page
+    const [totalRes, helpfulRes, notHelpfulRes, sentimentRows] = await Promise.all([
+      applyFilters(supabaseAdmin.from('feedback').select('id', { count: 'exact', head: true })),
+      applyFilters(supabaseAdmin.from('feedback').select('id', { count: 'exact', head: true })).eq('was_helpful', true),
+      applyFilters(supabaseAdmin.from('feedback').select('id', { count: 'exact', head: true })).eq('was_helpful', false),
+      fetchAllRows<{ sentiment_score: number | null }>((from, to) =>
+        applyFilters(supabaseAdmin.from('feedback').select('sentiment_score'))
+          .not('sentiment_score', 'is', null)
+          .order('id', { ascending: true })
+          .range(from, to)
+      ),
+    ])
+
+    const scores = (sentimentRows.data || [])
+      .map(r => r.sentiment_score)
+      .filter((v): v is number => typeof v === 'number')
+    const stats = {
+      total: totalRes.count || 0,
+      helpful: helpfulRes.count || 0,
+      not_helpful: notHelpfulRes.count || 0,
+      avg_sentiment: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0,
+      sentiment_sample_size: scores.length,
+    }
+
+    const feedbackList: any[] = feedbackRows || []
+
+    if (feedbackList.length === 0) {
+      return NextResponse.json({ feedback: [], total: stats.total, limit, offset, stats })
     }
 
     // Extract unique user IDs
-    const userIds = [...new Set(feedbackList.map(f => f.user_id).filter(Boolean))]
+    const userIds: string[] = [...new Set(feedbackList.map((f: any) => f.user_id).filter(Boolean))] as string[]
 
     // Fetch emails from auth.users (paginated past the admin API's page limit)
     let emailsMap: Record<string, string>
@@ -115,7 +140,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Format response
-    const formattedFeedback = feedbackList.map(feedback => ({
+    const formattedFeedback = feedbackList.map((feedback: any) => ({
       id: feedback.id,
       user_id: feedback.user_id,
       user_email: feedback.user_id ? emailsMap[feedback.user_id] || null : 'Anonymous',
@@ -129,7 +154,13 @@ export async function GET(request: NextRequest) {
       created_at: feedback.created_at
     }))
 
-    return NextResponse.json(formattedFeedback)
+    return NextResponse.json({
+      feedback: formattedFeedback,
+      total: stats.total,
+      limit,
+      offset,
+      stats
+    })
   } catch (error) {
     console.error('API route error:', error)
     return NextResponse.json(
