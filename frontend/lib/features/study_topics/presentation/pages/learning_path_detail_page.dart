@@ -63,6 +63,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   LearningPathDownloadModel? _downloadModel;
   StreamSubscription<LearningPathDownloadModel>? _downloadSub;
 
+  /// Whether anything happened on this page that changed server-side progress
+  /// (enrollment, or a topic study session). Returned as the pop result so the
+  /// caller can refetch its own path list only when the data is actually stale
+  /// — an ordinary look-and-go-back leaves the caller's state untouched.
+  bool _progressChanged = false;
+
   @override
   void initState() {
     super.initState();
@@ -120,6 +126,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       context
           .read<LearningPathsBloc>()
           .add(EnrollInLearningPath(pathId: path.id));
+      _progressChanged = true;
     }
 
     // Get learning path study mode preference from Settings
@@ -339,6 +346,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     // Persist that this topic was accessed so future visits bypass the token check
     _markTopicAsAccessed(topic);
 
+    // A study session may have completed a topic, so the caller's cached path
+    // progress is now stale.
+    _progressChanged = true;
+
     // Refresh data when returning from the study guide - force refresh to bypass cache
     if (mounted) {
       Logger.debug(
@@ -371,8 +382,11 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   /// Handle back navigation - go to appropriate screen when can't pop
   void _handleBackNavigation() {
     if (context.canPop()) {
-      context.pop();
+      // Pop result tells the caller whether its path progress needs refetching.
+      context.pop(_progressChanged);
     } else {
+      // No stack below (deep link / shared URL opened this page directly), so
+      // there is no caller state to preserve — fall back to a full navigation.
       // Navigate based on source - default to home if source is 'home', otherwise study topics
       if (widget.source == 'home') {
         context.go(AppRoutes.home);
@@ -1041,6 +1055,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           context.read<LearningPathsBloc>().add(
                 EnrollInLearningPath(pathId: path.id),
               );
+          _progressChanged = true;
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
