@@ -585,22 +585,37 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
   }
 
-  /// Navigate to learning path detail page
-  void _navigateToLearningPath(LearningPath path) {
+  /// Navigate to learning path detail page.
+  ///
+  /// Uses `push`, not `go`: the detail route sits on the root navigator as a
+  /// sibling of the `StatefulShellRoute`, so `go` would unmatch the shell and
+  /// dispose every branch navigator — wiping this screen's scroll offset,
+  /// category pagination and loaded bloc state, forcing a full reload on the
+  /// way back. `push` keeps the shell mounted underneath (and still updates the
+  /// browser URL on web).
+  Future<void> _navigateToLearningPath(LearningPath path) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
     Logger.debug(
         '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
 
-    // Use context.go() to properly update the browser URL
-    // Include source=studyTopics so back button returns to study topics screen
-    context.go('/learning-path/${path.id}?source=studyTopics');
+    // Include source=studyTopics so a directly-opened deep link still has a
+    // sensible back target.
+    final progressChanged = await context
+        .push<bool>('/learning-path/${path.id}?source=studyTopics');
 
-    // Reset navigation flag after navigation completes
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _isNavigating = false;
-    });
+    _isNavigating = false;
+
+    // Only refetch when the detail page reports progress actually changed;
+    // otherwise the preserved state stands and there is no visible reload.
+    if (!mounted || progressChanged != true) return;
+    context.read<LearningPathsBloc>()
+      ..add(LoadLearningPaths(
+        forceRefresh: true,
+        language: widget.currentLanguage,
+      ))
+      ..add(LoadPersonalizedPaths(language: widget.currentLanguage));
   }
 }
 

@@ -1331,21 +1331,28 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     });
   }
 
-  /// Navigate to learning path detail and refresh on return
-  void _navigateToLearningPath(String pathId) {
+  /// Navigate to learning path detail and refresh on return.
+  ///
+  /// Uses `push`, not `go`: the detail route is a sibling of the
+  /// `StatefulShellRoute` on the root navigator, so `go` unmatches the shell and
+  /// disposes every branch navigator — this screen would be rebuilt from
+  /// scratch on the way back. `push` keeps it mounted (URL still updates on
+  /// web), and the pop result says whether a refresh is actually needed.
+  Future<void> _navigateToLearningPath(String pathId) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
     Logger.debug('[HOME] Navigating to learning path: $pathId');
 
-    // Use context.go() to properly update the browser URL
-    // Include source=home so back button returns to home screen
-    context.go('/learning-path/$pathId?source=home');
+    // Include source=home so a directly-opened deep link still has a sensible
+    // back target.
+    final progressChanged =
+        await context.push<bool>('/learning-path/$pathId?source=home');
 
-    // Reset navigation flag after navigation completes
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _isNavigating = false;
-    });
+    _isNavigating = false;
+
+    if (!mounted || progressChanged != true) return;
+    sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
   }
 
   Widget _buildTopicsErrorWidget(String error) {
