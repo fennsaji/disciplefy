@@ -261,24 +261,9 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
               onNext: _onNext,
               child: _PillTabs(
                 selected: _selectedTab,
-                onChanged: (i) {
-                  setState(() => _selectedTab = i);
-                  if (i == 1) {
-                    final discoverBloc = context.read<DiscoverBloc>();
-                    if (discoverBloc.state.status == DiscoverStatus.initial) {
-                      // Default the language filter to the user's current app
-                      // locale, bounded to the set of supported fellowship languages.
-                      final localeCode =
-                          AppLocalizations.of(context)!.locale.languageCode;
-                      final initialLang =
-                          ['en', 'hi', 'ml'].contains(localeCode)
-                              ? localeCode
-                              : null;
-                      discoverBloc
-                          .add(DiscoverLoadRequested(language: initialLang));
-                    }
-                  }
-                },
+                // _DiscoverTab loads itself on mount, so switching tabs from
+                // anywhere (pills or the empty-state CTA) always triggers a fetch.
+                onChanged: (i) => setState(() => _selectedTab = i),
                 tabs: [
                   Text(l10n.communityMyFellowships),
                   Row(
@@ -840,6 +825,24 @@ class _DiscoverTab extends StatefulWidget {
 class _DiscoverTabState extends State<_DiscoverTab> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load on mount so the tab is never stuck on the initial (spinner) state,
+    // regardless of how the user reached Discover.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<DiscoverBloc>();
+      if (bloc.state.status != DiscoverStatus.initial) return;
+      // Default the language filter to the user's current app locale, bounded
+      // to the set of supported fellowship languages.
+      final localeCode = AppLocalizations.of(context)!.locale.languageCode;
+      final initialLang =
+          ['en', 'hi', 'ml'].contains(localeCode) ? localeCode : null;
+      bloc.add(DiscoverLoadRequested(language: initialLang));
+    });
+  }
 
   @override
   void dispose() {
