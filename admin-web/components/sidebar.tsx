@@ -42,6 +42,7 @@ const navGroups = [
       { name: 'System Config', href: '/system-config', emoji: '⚙️' },
       { name: 'Admin Management', href: '/admin-management', emoji: '🛡️' },
       { name: 'Issues & Feedback', href: '/issues', emoji: '⚠️' },
+      { name: 'Moderation', href: '/moderation', emoji: '🚫' },
       { name: 'Cron Jobs', href: '/crons', emoji: '⏰' },
     ],
   },
