@@ -17,6 +17,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String bibleAttribution = '/settings/bible-attribution';
   static const String notificationSettings = '/notification-settings';
+  static const String blockedUsers = '/blocked-users';
   static const String saved = '/saved';
   static const String studyTopics = '/study-topics';
   static const String tokenManagement = '/token-management';

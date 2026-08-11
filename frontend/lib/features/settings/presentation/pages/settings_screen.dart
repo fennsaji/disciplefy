@@ -543,6 +543,19 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             onTap: () => context.push('/notification-settings'),
           ),
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.block,
+            title: context.tr(TranslationKeys.settingsBlockedUsers),
+            subtitle: context.tr(TranslationKeys.settingsBlockedUsersSubtitle),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => context.push(AppRoutes.blockedUsers),
+          ),
         ],
       );
 

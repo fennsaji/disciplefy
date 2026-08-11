@@ -408,6 +408,8 @@ class AppTranslations {
       'notifications': 'Notifications',
       'notification_preferences': 'Notification Preferences',
       'notification_subtitle': 'Manage daily verse and topic reminders',
+      'blocked_users': 'Blocked Users',
+      'blocked_users_subtitle': 'Manage the people you have blocked',
       'theme': 'Theme',
       'content_language': 'Language',
       'account_actions': 'Account Actions',
@@ -2430,6 +2432,9 @@ class AppTranslations {
       'notifications': 'नोटिफिकेशन',
       'notification_preferences': 'नोटिफिकेशन प्राथमिकताएं',
       'notification_subtitle': 'दैनिक वचन और विषय रिमाइंडर प्रबंधित करें',
+      'blocked_users': 'ब्लॉक किए गए उपयोगकर्ता',
+      'blocked_users_subtitle':
+          'आपके द्वारा ब्लॉक किए गए लोगों को प्रबंधित करें',
       'theme': 'थीम',
       'content_language': 'भाषा',
       'account_actions': 'खाता एक्शन',
@@ -4475,6 +4480,8 @@ class AppTranslations {
       'notification_preferences': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
       'notification_subtitle':
           'ദൈനിക വചനവും വിഷയ ഓർമ്മപ്പെടുത്തലുകളും നിയന്ത്രിക്കുക',
+      'blocked_users': 'ബ്ലോക്ക് ചെയ്ത ഉപയോക്താക്കൾ',
+      'blocked_users_subtitle': 'നിങ്ങൾ ബ്ലോക്ക് ചെയ്ത ആളുകളെ കൈകാര്യം ചെയ്യുക',
       'theme': 'ഥീം',
       'content_language': 'ഭാഷ',
       'account_actions': 'അക്കൗണ്ട് പ്രവർ‍ത്തനങ്ങൾ',

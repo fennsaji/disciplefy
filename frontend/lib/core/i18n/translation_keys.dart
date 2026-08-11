@@ -320,6 +320,8 @@ class TranslationKeys {
   static const settingsNotificationPreferences =
       'settings.notification_preferences';
   static const settingsNotificationSubtitle = 'settings.notification_subtitle';
+  static const settingsBlockedUsers = 'settings.blocked_users';
+  static const settingsBlockedUsersSubtitle = 'settings.blocked_users_subtitle';
   static const settingsTheme = 'settings.theme';
   static const settingsContentLanguage = 'settings.content_language';
   static const settingsAccountActions = 'settings.account_actions';

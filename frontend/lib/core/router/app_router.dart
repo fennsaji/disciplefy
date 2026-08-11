@@ -30,6 +30,7 @@ import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/bible_attribution_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/settings/presentation/pages/offline_guides_screen.dart';
+import '../../features/community/presentation/screens/blocked_users_screen.dart';
 import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
@@ -372,6 +373,12 @@ class AppRouter {
         name: 'notification_settings',
         builder: (context, state) =>
             const MaxWidthWrapper(child: NotificationSettingsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.blockedUsers,
+        name: 'blocked_users',
+        builder: (context, state) =>
+            const MaxWidthWrapper(child: BlockedUsersScreen()),
       ),
       GoRoute(
         path: AppRoutes.tokenManagement,
