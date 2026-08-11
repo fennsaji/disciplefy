@@ -13,6 +13,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { FCMService } from '../_shared/fcm-service.ts'
+import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
 
 // ---------------------------------------------------------------------------
 // List posts  GET /fellowship-posts
@@ -48,13 +49,21 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
   }
   if (!isMember) throw new AppError('PERMISSION_DENIED', 'Must be a fellowship member', 403)
 
+  // Cast: SupabaseClient's real rpc()/from() return thenable query builders, not
+  // literal Promises, which trips TS2589 (excessively deep instantiation) when
+  // compared structurally against SupabaseLike. The runtime shape is identical.
+  const hiddenIds = await hiddenAuthorIds(db as unknown as SupabaseLike, user.id, fellowshipId)
+
   if (countByTopic) {
-    const { data: topicPosts, error: topicError } = await db
+    let topicQuery = db
       .from('fellowship_posts')
       .select('topic_id')
       .eq('fellowship_id', fellowshipId)
       .eq('is_deleted', false)
       .not('topic_id', 'is', null)
+    // UUIDs come from the database, so interpolation here is safe.
+    if (hiddenIds.length > 0) topicQuery = topicQuery.not('author_user_id', 'in', `(${hiddenIds.join(',')})`)
+    const { data: topicPosts, error: topicError } = await topicQuery
     if (topicError) throw new AppError('DATABASE_ERROR', 'Failed to fetch topic counts', 500)
     const counts: Record<string, number> = {}
     for (const post of topicPosts ?? []) {
@@ -77,6 +86,8 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
 
   if (topicId) query = query.eq('topic_id', topicId)
   if (cursor) query = query.lt('created_at', cursor)
+  // UUIDs come from the database, so interpolation here is safe.
+  if (hiddenIds.length > 0) query = query.not('author_user_id', 'in', `(${hiddenIds.join(',')})`)
 
   const { data: posts, error } = await query
   if (error) {
@@ -116,7 +127,11 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
         }
       })
     ),
-    db.from('fellowship_comments').select('post_id').in('post_id', postIds).eq('is_deleted', false),
+    (() => {
+      let q = db.from('fellowship_comments').select('post_id').in('post_id', postIds).eq('is_deleted', false)
+      if (hiddenIds.length > 0) q = q.not('author_user_id', 'in', `(${hiddenIds.join(',')})`)
+      return q
+    })(),
     db.from('fellowship_reactions').select('post_id, reaction_type').eq('user_id', user.id).in('post_id', postIds)
   ])
 
@@ -276,11 +291,18 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   if (membersResult.error) console.error('[fellowship-posts/create] Members fetch error:', membersResult.error)
   const members = membersResult.data ?? []
 
-  // Send FCM to all other active members (fire-and-forget)
+  // Send FCM to all other active members (fire-and-forget), excluding anyone
+  // in a mutual block with the author so blocked users don't get notified of
+  // (or leak notifications to) each other.
   if (members.length > 0) {
     ;(async () => {
       try {
-        const memberIds = members.map((m: { user_id: string }) => m.user_id)
+        const { data: blockedRows } = await db.rpc('blocked_user_ids', { p_user_id: user.id })
+        const blockedIds = new Set((blockedRows ?? []).map((r: { user_id: string }) => r.user_id))
+        const memberIds = members
+          .map((m: { user_id: string }) => m.user_id)
+          .filter((id: string) => !blockedIds.has(id))
+        if (memberIds.length === 0) return
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
         if (tokens.length === 0) return
