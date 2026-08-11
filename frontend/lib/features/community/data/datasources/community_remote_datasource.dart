@@ -4,6 +4,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../../domain/entities/sync_calendar_result.dart';
+import '../models/blocked_user_model.dart';
 import '../models/fellowship_comment_model.dart';
 import '../models/fellowship_meeting_model.dart';
 import '../models/fellowship_member_model.dart';
@@ -173,6 +174,24 @@ abstract class CommunityRemoteDatasource {
     required String reason,
   });
 
+  /// Blocks [blockedUserId] globally and mutually.
+  ///
+  /// When the block originates from a specific post or comment, pass
+  /// [fellowshipId], [contentType] (`'post'` or `'comment'`) and [contentId]
+  /// so the server records a moderation report alongside the block.
+  Future<void> blockUser({
+    required String blockedUserId,
+    String? fellowshipId,
+    String? contentType,
+    String? contentId,
+  });
+
+  /// Removes the current user's block on [blockedUserId].
+  Future<void> unblockUser(String blockedUserId);
+
+  /// Returns the users the current user has blocked, newest first.
+  Future<List<BlockedUserModel>> getBlockedUsers();
+
   /// Returns a map of `topicId → post count` for all guide-specific posts in
   /// [fellowshipId]. Uses the lightweight `count_by_topic=true` endpoint mode.
   Future<Map<String, int>> getTopicPostCounts(String fellowshipId);
@@ -269,6 +288,10 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       '/functions/v1/fellowship-members/remove';
   static const String _fellowshipTransferMentorEndpoint =
       '/functions/v1/fellowship-members/transfer';
+
+  // fellowship-blocks (block, unblock, list)
+  static const String _fellowshipBlocksEndpoint =
+      '/functions/v1/fellowship-blocks';
 
   // Merged: fellowship-posts (list, create, delete)
   static const String _fellowshipPostsListEndpoint =
@@ -1406,6 +1429,106 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       throw ServerException(
         message: 'Failed to submit report: $e',
         code: 'FELLOWSHIP_REPORT_ERROR',
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // User blocks
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> blockUser({
+    required String blockedUserId,
+    String? fellowshipId,
+    String? contentType,
+    String? contentId,
+  }) async {
+    try {
+      final url = '$_baseUrl$_fellowshipBlocksEndpoint';
+      final body = jsonEncode({
+        'blocked_user_id': blockedUserId,
+        if (fellowshipId != null) 'fellowship_id': fellowshipId,
+        if (contentType != null) 'content_type': contentType,
+        if (contentId != null) 'content_id': contentId,
+      });
+
+      final headers = await _httpService.createHeaders();
+      final response =
+          await _httpService.post(url, headers: headers, body: body);
+
+      if (response.statusCode >= 400) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        throw ServerException(
+          message: (json['error'] as String?) ?? 'Failed to block user',
+          code: 'FELLOWSHIP_BLOCK_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to block user: $e',
+        code: 'FELLOWSHIP_BLOCK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<void> unblockUser(String blockedUserId) async {
+    try {
+      final url = '$_baseUrl$_fellowshipBlocksEndpoint';
+      final body = jsonEncode({'blocked_user_id': blockedUserId});
+
+      final headers = await _httpService.createHeaders();
+      final response =
+          await _httpService.delete(url, headers: headers, body: body);
+
+      if (response.statusCode >= 400) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        throw ServerException(
+          message: (json['error'] as String?) ?? 'Failed to unblock user',
+          code: 'FELLOWSHIP_UNBLOCK_ERROR',
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to unblock user: $e',
+        code: 'FELLOWSHIP_UNBLOCK_ERROR',
+      );
+    }
+  }
+
+  @override
+  Future<List<BlockedUserModel>> getBlockedUsers() async {
+    try {
+      final url = '$_baseUrl$_fellowshipBlocksEndpoint';
+
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.get(url, headers: headers);
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode >= 400) {
+        throw ServerException(
+          message:
+              (json['error'] as String?) ?? 'Failed to fetch blocked users',
+          code: 'FELLOWSHIP_BLOCKED_LIST_ERROR',
+        );
+      }
+
+      final data = (json['data'] as List<dynamic>? ?? []);
+      return data
+          .map((e) => BlockedUserModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to fetch blocked users: $e',
+        code: 'FELLOWSHIP_BLOCKED_LIST_ERROR',
       );
     }
   }

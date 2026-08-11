@@ -388,6 +388,18 @@ class AppLocalizations {
       'reportReasonHint': 'Why are you reporting this? (5–500 characters)',
       'reportSubmit': 'Submit Report',
       'reportSuccess': 'Report submitted. Thank you.',
+      // Block user
+      'blockUserTitle': 'Block User',
+      'blockUserConfirmTitle': 'Block this user?',
+      'blockUserConfirmBody':
+          'You will no longer see their posts or comments, and they will no longer see yours. This applies across all your fellowships. Our team is notified so we can review the content.',
+      'blockUserConfirmAction': 'Block',
+      'blockUserCancel': 'Cancel',
+      'blockUserSuccess': 'User blocked',
+      'blockedUsersTitle': 'Blocked Users',
+      'blockedUsersEmpty': "You haven't blocked anyone.",
+      'unblockAction': 'Unblock',
+      'unblockSuccess': 'User unblocked',
       // Create Fellowship Screen
       'createFellowshipTitle': 'Create Fellowship',
       'createFellowshipHeading': 'Start a new fellowship',
@@ -961,6 +973,18 @@ class AppLocalizations {
       'reportReasonHint': 'आप इसे क्यों रिपोर्ट कर रहे हैं? (5–500 अक्षर)',
       'reportSubmit': 'रिपोर्ट सबमिट करें',
       'reportSuccess': 'रिपोर्ट सबमिट हुई। धन्यवाद।',
+      // Block user
+      'blockUserTitle': 'उपयोगकर्ता को ब्लॉक करें',
+      'blockUserConfirmTitle': 'इस उपयोगकर्ता को ब्लॉक करें?',
+      'blockUserConfirmBody':
+          'आप उनकी पोस्ट और टिप्पणियाँ नहीं देख पाएंगे, और वे आपकी नहीं देख पाएंगे। यह आपकी सभी फ़ेलोशिप पर लागू होता है। हमारी टीम को सूचित किया जाता है ताकि हम सामग्री की समीक्षा कर सकें।',
+      'blockUserConfirmAction': 'ब्लॉक करें',
+      'blockUserCancel': 'रद्द करें',
+      'blockUserSuccess': 'उपयोगकर्ता ब्लॉक किया गया',
+      'blockedUsersTitle': 'ब्लॉक किए गए उपयोगकर्ता',
+      'blockedUsersEmpty': 'आपने किसी को ब्लॉक नहीं किया है।',
+      'unblockAction': 'अनब्लॉक करें',
+      'unblockSuccess': 'उपयोगकर्ता अनब्लॉक किया गया',
       // Create Fellowship Screen
       'createFellowshipTitle': 'संगति बनाएं',
       'createFellowshipHeading': 'एक नई संगति शुरू करें',
@@ -1538,6 +1562,18 @@ class AppLocalizations {
           'നിങ്ങൾ ഇത് എന്തിന് റിപ്പോർട്ട് ചെയ്യുന്നു? (5–500 അക്ഷരങ്ങൾ)',
       'reportSubmit': 'റിപ്പോർട്ട് സമർപ്പിക്കുക',
       'reportSuccess': 'റിപ്പോർട്ട് സമർപ്പിച്ചു. നന്ദി.',
+      // Block user
+      'blockUserTitle': 'ഉപയോക്താവിനെ ബ്ലോക്ക് ചെയ്യുക',
+      'blockUserConfirmTitle': 'ഈ ഉപയോക്താവിനെ ബ്ലോക്ക് ചെയ്യണോ?',
+      'blockUserConfirmBody':
+          'അവരുടെ പോസ്റ്റുകളും അഭിപ്രായങ്ങളും നിങ്ങൾ കാണില്ല, നിങ്ങളുടേത് അവരും കാണില്ല. ഇത് നിങ്ങളുടെ എല്ലാ കൂട്ടായ്മകളിലും ബാധകമാണ്. ഉള്ളടക്കം പരിശോധിക്കാൻ ഞങ്ങളുടെ ടീമിനെ അറിയിക്കുന്നു.',
+      'blockUserConfirmAction': 'ബ്ലോക്ക് ചെയ്യുക',
+      'blockUserCancel': 'റദ്ദാക്കുക',
+      'blockUserSuccess': 'ഉപയോക്താവിനെ ബ്ലോക്ക് ചെയ്തു',
+      'blockedUsersTitle': 'ബ്ലോക്ക് ചെയ്ത ഉപയോക്താക്കൾ',
+      'blockedUsersEmpty': 'നിങ്ങൾ ആരെയും ബ്ലോക്ക് ചെയ്തിട്ടില്ല.',
+      'unblockAction': 'അൺബ്ലോക്ക് ചെയ്യുക',
+      'unblockSuccess': 'ഉപയോക്താവിനെ അൺബ്ലോക്ക് ചെയ്തു',
       // Create Fellowship Screen
       'createFellowshipTitle': 'കൂട്ടായ്മ ഉണ്ടാക്കുക',
       'createFellowshipHeading': 'ഒരു പുതിയ കൂട്ടായ്മ ആരംഭിക്കുക',
@@ -2166,6 +2202,27 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['reportReasonHint']!;
   String get reportSubmit =>
       _localizedValues[locale.languageCode]!['reportSubmit']!;
+  // Block user
+  String get blockUserTitle =>
+      _localizedValues[locale.languageCode]!['blockUserTitle']!;
+  String get blockUserConfirmTitle =>
+      _localizedValues[locale.languageCode]!['blockUserConfirmTitle']!;
+  String get blockUserConfirmBody =>
+      _localizedValues[locale.languageCode]!['blockUserConfirmBody']!;
+  String get blockUserConfirmAction =>
+      _localizedValues[locale.languageCode]!['blockUserConfirmAction']!;
+  String get blockUserCancel =>
+      _localizedValues[locale.languageCode]!['blockUserCancel']!;
+  String get blockUserSuccess =>
+      _localizedValues[locale.languageCode]!['blockUserSuccess']!;
+  String get blockedUsersTitle =>
+      _localizedValues[locale.languageCode]!['blockedUsersTitle']!;
+  String get blockedUsersEmpty =>
+      _localizedValues[locale.languageCode]!['blockedUsersEmpty']!;
+  String get unblockAction =>
+      _localizedValues[locale.languageCode]!['unblockAction']!;
+  String get unblockSuccess =>
+      _localizedValues[locale.languageCode]!['unblockSuccess']!;
   String get reportSuccess =>
       _localizedValues[locale.languageCode]!['reportSuccess']!;
 

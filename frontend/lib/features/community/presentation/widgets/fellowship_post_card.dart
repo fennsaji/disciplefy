@@ -48,6 +48,9 @@ class FellowshipPostCard extends StatelessWidget {
   /// If null, report item is hidden.
   final VoidCallback? onReportTap;
 
+  /// Called when the "Block" menu item is tapped (interactive mode only).
+  final VoidCallback? onBlockTap;
+
   const FellowshipPostCard({
     required this.post,
     required this.fellowshipId,
@@ -57,6 +60,7 @@ class FellowshipPostCard extends StatelessWidget {
     this.maxContentLines,
     this.onCommentTap,
     this.onReportTap,
+    this.onBlockTap,
     super.key,
   });
 
@@ -142,6 +146,8 @@ class FellowshipPostCard extends StatelessWidget {
                             );
                       } else if (value == 'report') {
                         onReportTap?.call();
+                      } else if (value == 'block') {
+                        onBlockTap?.call();
                       }
                     },
                     itemBuilder: (_) => [
@@ -169,6 +175,21 @@ class FellowshipPostCard extends StatelessWidget {
                               Text(
                                 AppLocalizations.of(context)!.reportTitle,
                                 style: TextStyle(color: context.appTextPrimary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (post.authorUserId != currentUserId)
+                        PopupMenuItem<String>(
+                          value: 'block',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.block,
+                                  color: AppColors.error, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)!.blockUserTitle,
+                                style: const TextStyle(color: AppColors.error),
                               ),
                             ],
                           ),

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../features/community/domain/entities/fellowship_member_entity.dart';
+import '../../../../features/community/domain/repositories/community_repository.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_state.dart';
 import '../bloc/fellowship_members/fellowship_members_bloc.dart';
 import '../bloc/fellowship_members/fellowship_members_event.dart';
 import '../bloc/fellowship_members/fellowship_members_state.dart';
+import '../widgets/block_user_dialog.dart';
 import 'fellowship_invites_screen.dart';
 
 /// Displays the member list for a fellowship and provides an invite action.
@@ -78,6 +81,8 @@ class FellowshipMembersTabScreen extends StatelessWidget {
                   return _MemberList(
                     members: state.members,
                     isMentor: state.isMentor,
+                    currentUserId: state.currentUserId,
+                    fellowshipId: fellowshipId,
                     totalTopics: totalTopics,
                   );
                 },
@@ -111,11 +116,15 @@ class FellowshipMembersTabScreen extends StatelessWidget {
 class _MemberList extends StatelessWidget {
   final List<FellowshipMemberEntity> members;
   final bool isMentor;
+  final String? currentUserId;
+  final String fellowshipId;
   final int? totalTopics;
 
   const _MemberList({
     required this.members,
     required this.isMentor,
+    required this.currentUserId,
+    required this.fellowshipId,
     this.totalTopics,
   });
 
@@ -131,6 +140,8 @@ class _MemberList extends StatelessWidget {
       itemBuilder: (context, index) => _MemberCard(
         member: members[index],
         isMentor: isMentor,
+        currentUserId: currentUserId,
+        fellowshipId: fellowshipId,
         totalTopics: totalTopics,
       ),
     );
@@ -146,11 +157,15 @@ class _MemberCard extends StatelessWidget {
 
   /// True when the current viewer is the mentor of this fellowship.
   final bool isMentor;
+  final String? currentUserId;
+  final String fellowshipId;
   final int? totalTopics;
 
   const _MemberCard({
     required this.member,
     required this.isMentor,
+    required this.currentUserId,
+    required this.fellowshipId,
     this.totalTopics,
   });
 
@@ -237,6 +252,33 @@ class _MemberCard extends StatelessWidget {
     );
   }
 
+  Future<void> _handleBlock(BuildContext context) async {
+    // FellowshipFeedBloc is not reachable from this screen's widget tree
+    // (the members tab route only provides FellowshipMembersBloc and
+    // LearningPathsBloc — see fellowship_home_screen.dart `_openMembers`),
+    // so block directly through the repository and refresh the member list.
+    final membersBloc = context.read<FellowshipMembersBloc>();
+    final messenger = ScaffoldMessenger.of(context);
+    final successText = AppLocalizations.of(context)!.blockUserSuccess;
+    final blockedUserId = member.userId;
+    if (await showBlockUserConfirmation(context)) {
+      final result = await sl<CommunityRepository>().blockUser(
+        blockedUserId: blockedUserId,
+      );
+      result.fold(
+        (failure) {
+          messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+        },
+        (_) {
+          messenger.showSnackBar(SnackBar(content: Text(successText)));
+          membersBloc.add(
+            FellowshipMembersLoadRequested(fellowshipId: fellowshipId),
+          );
+        },
+      );
+    }
+  }
+
   // ── Build ────────────────────────────────────────────────────────────────
 
   @override
@@ -248,6 +290,9 @@ class _MemberCard extends StatelessWidget {
 
     // Mentor may act on any non-mentor member (not on themselves/mentor card)
     final canAct = isMentor && !isMemberMentor;
+    // Any viewer may block any other member, mentor or not.
+    final canBlock = currentUserId != null && member.userId != currentUserId;
+    final showMenu = canAct || canBlock;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -326,7 +371,7 @@ class _MemberCard extends StatelessWidget {
           // ── Mentor action menu ───────────────────────────────────────────
           // Always reserve the same right-side width so the progress bar
           // and fraction text align consistently across all member cards.
-          if (canAct)
+          if (showMenu)
             PopupMenuButton<_MemberAction>(
               iconSize: 20,
               icon: Icon(Icons.more_vert, color: context.appTextTertiary),
@@ -345,46 +390,60 @@ class _MemberCard extends StatelessWidget {
                     _showTransferConfirm(context);
                   case _MemberAction.remove:
                     _showRemoveConfirm(context);
+                  case _MemberAction.block:
+                    _handleBlock(context);
                 }
               },
               itemBuilder: (_) => [
-                // Mute / unmute
-                PopupMenuItem(
-                  value: member.isMuted
-                      ? _MemberAction.unmute
-                      : _MemberAction.mute,
-                  child: _PopupItem(
-                    icon: member.isMuted
-                        ? Icons.mic_rounded
-                        : Icons.mic_off_rounded,
-                    label:
-                        member.isMuted ? l10n.unmuteSuccess : l10n.muteSuccess,
-                    color: context.appTextPrimary,
+                if (canAct) ...[
+                  // Mute / unmute
+                  PopupMenuItem(
+                    value: member.isMuted
+                        ? _MemberAction.unmute
+                        : _MemberAction.mute,
+                    child: _PopupItem(
+                      icon: member.isMuted
+                          ? Icons.mic_rounded
+                          : Icons.mic_off_rounded,
+                      label: member.isMuted
+                          ? l10n.unmuteSuccess
+                          : l10n.muteSuccess,
+                      color: context.appTextPrimary,
+                    ),
                   ),
-                ),
-                // Transfer mentor role
-                PopupMenuItem(
-                  value: _MemberAction.transfer,
-                  child: _PopupItem(
-                    icon: Icons.swap_horiz_rounded,
-                    label: l10n.transferMentorTitle,
-                    color: context.appTextPrimary,
+                  // Transfer mentor role
+                  PopupMenuItem(
+                    value: _MemberAction.transfer,
+                    child: _PopupItem(
+                      icon: Icons.swap_horiz_rounded,
+                      label: l10n.transferMentorTitle,
+                      color: context.appTextPrimary,
+                    ),
                   ),
-                ),
-                // Remove — destructive, shown in error red
-                PopupMenuItem(
-                  value: _MemberAction.remove,
-                  child: _PopupItem(
-                    icon: Icons.person_remove_outlined,
-                    label: l10n.removeMemberTitle,
-                    color: AppColors.error,
+                  // Remove — destructive, shown in error red
+                  PopupMenuItem(
+                    value: _MemberAction.remove,
+                    child: _PopupItem(
+                      icon: Icons.person_remove_outlined,
+                      label: l10n.removeMemberTitle,
+                      color: AppColors.error,
+                    ),
                   ),
-                ),
+                ],
+                if (canBlock)
+                  PopupMenuItem(
+                    value: _MemberAction.block,
+                    child: _PopupItem(
+                      icon: Icons.block,
+                      label: l10n.blockUserTitle,
+                      color: AppColors.error,
+                    ),
+                  ),
               ],
             )
-          else if (isMentor)
+          else
             // Placeholder so the Expanded info column is the same width on
-            // every card (mentor's own card has no ⋮ button).
+            // every card (e.g. the viewer's own card has no ⋮ button).
             const SizedBox(width: 48),
         ],
       ),
@@ -394,7 +453,7 @@ class _MemberCard extends StatelessWidget {
 
 // ── Popup menu helpers ──────────────────────────────────────────────────────
 
-enum _MemberAction { mute, unmute, transfer, remove }
+enum _MemberAction { mute, unmute, transfer, remove, block }
 
 class _PopupItem extends StatelessWidget {
   final IconData icon;

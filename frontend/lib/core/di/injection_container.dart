@@ -245,6 +245,7 @@ import '../../features/community/presentation/bloc/fellowship_members/fellowship
 import '../../features/community/presentation/bloc/fellowship_study/fellowship_study_bloc.dart';
 import '../../features/community/presentation/bloc/discover/discover_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
+import '../../features/community/presentation/bloc/blocked_users/blocked_users_bloc.dart';
 import '../../features/walkthrough/domain/walkthrough_repository.dart';
 import '../../features/walkthrough/data/walkthrough_repository_impl.dart';
 import '../connectivity/connectivity_bloc.dart';
@@ -1063,6 +1064,10 @@ Future<void> initializeDependencies() async {
 
   sl.registerFactory<FellowshipFeedBloc>(
     () => FellowshipFeedBloc(repository: sl()),
+  );
+
+  sl.registerFactory<BlockedUsersBloc>(
+    () => BlockedUsersBloc(repository: sl()),
   );
 
   sl.registerFactory<FellowshipMembersBloc>(

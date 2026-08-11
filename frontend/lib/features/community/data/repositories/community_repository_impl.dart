@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/blocked_user_entity.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
 import '../../domain/entities/fellowship_entity.dart';
 import '../../domain/entities/fellowship_meeting_entity.dart';
@@ -591,6 +592,58 @@ class CommunityRepositoryImpl implements CommunityRepository {
       return Left(ServerFailure(message: e.message));
     } catch (e) {
       return Left(ServerFailure(message: 'Failed to submit report: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> blockUser({
+    required String blockedUserId,
+    String? fellowshipId,
+    String? contentType,
+    String? contentId,
+  }) async {
+    try {
+      await _datasource.blockUser(
+        blockedUserId: blockedUserId,
+        fellowshipId: fellowshipId,
+        contentType: contentType,
+        contentId: contentId,
+      );
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to block user: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> unblockUser(String blockedUserId) async {
+    try {
+      await _datasource.unblockUser(blockedUserId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to unblock user: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<BlockedUserEntity>>> getBlockedUsers() async {
+    try {
+      final models = await _datasource.getBlockedUsers();
+      return Right(models);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to fetch blocked users: $e'));
     }
   }
 

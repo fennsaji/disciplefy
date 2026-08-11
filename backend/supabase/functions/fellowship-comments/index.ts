@@ -11,6 +11,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { FCMService } from '../_shared/fcm-service.ts'
+import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
 
 // ---------------------------------------------------------------------------
 // List comments  GET /fellowship-comments?post_id=UUID
@@ -53,12 +54,20 @@ async function handleListComments(req: Request, services: ServiceContainer): Pro
   }
   if (!isMember) throw new AppError('PERMISSION_DENIED', 'Must be a fellowship member', 403)
 
-  const { data: comments, error } = await db
+  const hiddenIds = await hiddenAuthorIds(db as unknown as SupabaseLike, user.id, post.fellowship_id)
+
+  let commentsQuery = db
     .from('fellowship_comments')
     .select('id, post_id, content, author_user_id, is_deleted, created_at')
     .eq('post_id', postId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true })
+
+  if (hiddenIds.length > 0) {
+    commentsQuery = commentsQuery.not('author_user_id', 'in', `(${hiddenIds.join(',')})`)
+  }
+
+  const { data: comments, error } = await commentsQuery
 
   if (error) {
     console.error('[fellowship-comments/list] Query error:', error)
@@ -183,10 +192,14 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
     authorUser?.user_metadata?.display_name ?? authorUser?.email ?? 'Unknown Member'
   const authorAvatarUrl: string | null = authorUser?.user_metadata?.avatar_url ?? null
 
-  // Notify post author about the new comment (fire-and-forget, skip self-comments)
+  // Notify post author about the new comment (fire-and-forget, skip self-comments
+  // and skip if commenter and post author are in a mutual block)
   if (post.author_user_id !== user.id) {
     ;(async () => {
       try {
+        const { data: blockedRows } = await db.rpc('blocked_user_ids', { p_user_id: user.id })
+        const blockedIds = new Set((blockedRows ?? []).map((r: { user_id: string }) => r.user_id))
+        if (blockedIds.has(post.author_user_id)) return
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', post.author_user_id)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
         if (tokens.length > 0) {

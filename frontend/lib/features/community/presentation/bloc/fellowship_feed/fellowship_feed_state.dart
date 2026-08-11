@@ -12,6 +12,9 @@ enum FellowshipCommentsStatus { initial, loading, success, failure }
 /// Status of a report-content operation.
 enum FellowshipReportStatus { idle, loading, success, failure }
 
+/// Status of a block-user operation.
+enum FellowshipBlockStatus { idle, loading, success, failure }
+
 /// Single immutable state for [FellowshipFeedBloc].
 ///
 /// Use [copyWith] to produce updated snapshots; never mutate fields directly.
@@ -68,6 +71,9 @@ class FellowshipFeedState extends Equatable {
   /// Status of the most recent report-content operation.
   final FellowshipReportStatus reportStatus;
 
+  /// Status of the most recent block-user operation.
+  final FellowshipBlockStatus blockStatus;
+
   /// Per-topic post counts (`topicId → count`). Populated lazily when the
   /// Lessons tab requests topic counts.
   final Map<String, int> topicPostCounts;
@@ -88,6 +94,7 @@ class FellowshipFeedState extends Equatable {
     this.commentsStatus = FellowshipCommentsStatus.initial,
     this.commentSubmitting = false,
     this.reportStatus = FellowshipReportStatus.idle,
+    this.blockStatus = FellowshipBlockStatus.idle,
     this.topicPostCounts = const {},
   });
 
@@ -121,6 +128,7 @@ class FellowshipFeedState extends Equatable {
         commentsStatus,
         commentSubmitting,
         reportStatus,
+        blockStatus,
         topicPostCounts,
       ];
 
@@ -143,6 +151,7 @@ class FellowshipFeedState extends Equatable {
     FellowshipCommentsStatus? commentsStatus,
     bool? commentSubmitting,
     FellowshipReportStatus? reportStatus,
+    FellowshipBlockStatus? blockStatus,
     Map<String, int>? topicPostCounts,
   }) {
     return FellowshipFeedState(
@@ -163,6 +172,7 @@ class FellowshipFeedState extends Equatable {
       commentsStatus: commentsStatus ?? this.commentsStatus,
       commentSubmitting: commentSubmitting ?? this.commentSubmitting,
       reportStatus: reportStatus ?? this.reportStatus,
+      blockStatus: blockStatus ?? this.blockStatus,
       topicPostCounts: topicPostCounts ?? this.topicPostCounts,
     );
   }
