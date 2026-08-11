@@ -8,6 +8,7 @@ import '../../domain/entities/fellowship_post_entity.dart';
 import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../bloc/fellowship_feed/fellowship_feed_state.dart';
+import '../widgets/block_user_dialog.dart';
 import '../widgets/fellowship_post_card.dart';
 
 /// Real implementation of the Fellowship Feed tab.
@@ -98,214 +99,245 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: context.appScaffold,
-      floatingActionButton:
-          BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-        buildWhen: (prev, curr) =>
-            prev.canShowPostButton != curr.canShowPostButton,
-        builder: (context, state) {
-          if (!state.canShowPostButton) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            onPressed: _openCreatePostSheet,
-            backgroundColor: context.appInteractive,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add),
-            label: Text(
-              l10n.feedNewPost,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          );
-        },
-      ),
-      body: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-        builder: (context, state) {
-          // ── Loading (initial or hard refresh with no posts yet) ──────────
-          if ((state.status == FellowshipFeedStatus.initial ||
-                  state.status == FellowshipFeedStatus.loading) &&
-              state.posts.isEmpty) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
+    return BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
+      listenWhen: (prev, curr) => prev.blockStatus != curr.blockStatus,
+      listener: (context, state) {
+        if (state.blockStatus == FellowshipBlockStatus.success) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(l10n.blockUserSuccess)),
+            );
+        } else if (state.blockStatus == FellowshipBlockStatus.failure) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage ?? l10n.feedLoadError),
               ),
             );
-          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: context.appScaffold,
+        floatingActionButton:
+            BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+          buildWhen: (prev, curr) =>
+              prev.canShowPostButton != curr.canShowPostButton,
+          builder: (context, state) {
+            if (!state.canShowPostButton) return const SizedBox.shrink();
+            return FloatingActionButton.extended(
+              onPressed: _openCreatePostSheet,
+              backgroundColor: context.appInteractive,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: Text(
+                l10n.feedNewPost,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            );
+          },
+        ),
+        body: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+          builder: (context, state) {
+            // ── Loading (initial or hard refresh with no posts yet) ──────────
+            if ((state.status == FellowshipFeedStatus.initial ||
+                    state.status == FellowshipFeedStatus.loading) &&
+                state.posts.isEmpty) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              );
+            }
 
-          // ── Error state ────────────────────────────────────────────────
-          if (state.status == FellowshipFeedStatus.failure &&
-              state.posts.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.wifi_off_rounded,
-                      size: 48,
-                      color: context.appTextTertiary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      state.errorMessage ?? l10n.feedLoadError,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 15,
-                        color: context.appTextSecondary,
+            // ── Error state ────────────────────────────────────────────────
+            if (state.status == FellowshipFeedStatus.failure &&
+                state.posts.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.wifi_off_rounded,
+                        size: 48,
+                        color: context.appTextTertiary,
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.appInteractive,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        context.read<FellowshipFeedBloc>().add(
-                              FellowshipFeedLoadRequested(
-                                fellowshipId: widget.fellowshipId,
-                              ),
-                            );
-                      },
-                      child: Text(
-                        l10n.feedRetry,
-                        style: const TextStyle(
+                      const SizedBox(height: 16),
+                      Text(
+                        state.errorMessage ?? l10n.feedLoadError,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
                           fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: context.appTextSecondary,
                         ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.appInteractive,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: () {
+                          context.read<FellowshipFeedBloc>().add(
+                                FellowshipFeedLoadRequested(
+                                  fellowshipId: widget.fellowshipId,
+                                ),
+                              );
+                        },
+                        child: Text(
+                          l10n.feedRetry,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // ── Empty state (success + no posts) ──────────────────────────
+            if (state.status == FellowshipFeedStatus.success &&
+                state.posts.isEmpty) {
+              return RefreshIndicator(
+                color: Theme.of(context).colorScheme.primary,
+                onRefresh: _onRefresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    const SizedBox(height: 120),
+                    Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 56,
+                            color: context.appTextTertiary,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            state.canPost
+                                ? l10n.feedEmpty
+                                : l10n.feedEmptyReadOnly,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 16,
+                              color: context.appTextSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            );
-          }
+              );
+            }
 
-          // ── Empty state (success + no posts) ──────────────────────────
-          if (state.status == FellowshipFeedStatus.success &&
-              state.posts.isEmpty) {
+            // ── List state ────────────────────────────────────────────────
             return RefreshIndicator(
               color: Theme.of(context).colorScheme.primary,
               onRefresh: _onRefresh,
-              child: ListView(
+              child: ListView.builder(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  const SizedBox(height: 120),
-                  Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline_rounded,
-                          size: 56,
-                          color: context.appTextTertiary,
+                padding: const EdgeInsets.only(
+                  top: 12,
+                  bottom: 100, // space above FAB
+                ),
+                itemCount: state.posts.length + (state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == state.posts.length) {
+                    // Pagination loading indicator at the bottom.
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 2.5,
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          state.canPost
-                              ? l10n.feedEmpty
-                              : l10n.feedEmptyReadOnly,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 16,
-                            color: context.appTextSecondary,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // ── List state ────────────────────────────────────────────────
-          return RefreshIndicator(
-            color: Theme.of(context).colorScheme.primary,
-            onRefresh: _onRefresh,
-            child: ListView.builder(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(
-                top: 12,
-                bottom: 100, // space above FAB
-              ),
-              itemCount: state.posts.length + (state.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == state.posts.length) {
-                  // Pagination loading indicator at the bottom.
-                  return Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.primary,
-                        strokeWidth: 2.5,
                       ),
-                    ),
-                  );
-                }
-                final post = state.posts[index];
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-                  child: FellowshipPostCard(
-                    post: post,
-                    fellowshipId: widget.fellowshipId,
-                    isMentor: state.isMentor,
-                    currentUserId: state.currentUserId,
-                    onCommentTap: () {
-                      context.read<FellowshipFeedBloc>().add(
-                            FellowshipCommentsOpenRequested(postId: post.id),
-                          );
-                      showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<FellowshipFeedBloc>(),
-                          child: _CommentsSheet(
-                            postId: post.id,
-                            fellowshipId: widget.fellowshipId,
-                            isMentor: state.isMentor,
-                            currentUserId: state.currentUserId,
+                    );
+                  }
+                  final post = state.posts[index];
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    child: FellowshipPostCard(
+                      post: post,
+                      fellowshipId: widget.fellowshipId,
+                      isMentor: state.isMentor,
+                      currentUserId: state.currentUserId,
+                      onCommentTap: () {
+                        context.read<FellowshipFeedBloc>().add(
+                              FellowshipCommentsOpenRequested(postId: post.id),
+                            );
+                        showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<FellowshipFeedBloc>(),
+                            child: _CommentsSheet(
+                              postId: post.id,
+                              fellowshipId: widget.fellowshipId,
+                              isMentor: state.isMentor,
+                              currentUserId: state.currentUserId,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    onReportTap: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<FellowshipFeedBloc>(),
-                          child: _ReportSheet(
+                        );
+                      },
+                      onReportTap: () {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<FellowshipFeedBloc>(),
+                            child: _ReportSheet(
+                              fellowshipId: widget.fellowshipId,
+                              contentType: 'post',
+                              contentId: post.id,
+                            ),
+                          ),
+                        );
+                      },
+                      onBlockTap: () async {
+                        final bloc = context.read<FellowshipFeedBloc>();
+                        if (await showBlockUserConfirmation(context)) {
+                          bloc.add(FellowshipBlockUserRequested(
+                            blockedUserId: post.authorUserId,
                             fellowshipId: widget.fellowshipId,
                             contentType: 'post',
                             contentId: post.id,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          );
-        },
+                          ));
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -426,6 +458,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                             comment.authorUserId == widget.currentUserId;
                         final canReport = !widget.isMentor &&
                             comment.authorUserId != widget.currentUserId;
+                        final canBlock =
+                            comment.authorUserId != widget.currentUserId;
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Row(
@@ -511,6 +545,32 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                               color: context.appTextTertiary,
                                             ),
                                           ),
+                                        if (canBlock) ...[
+                                          const SizedBox(width: 10),
+                                          GestureDetector(
+                                            onTap: () async {
+                                              final bloc = context
+                                                  .read<FellowshipFeedBloc>();
+                                              if (await showBlockUserConfirmation(
+                                                  context)) {
+                                                bloc.add(
+                                                    FellowshipBlockUserRequested(
+                                                  blockedUserId:
+                                                      comment.authorUserId,
+                                                  fellowshipId:
+                                                      widget.fellowshipId,
+                                                  contentType: 'comment',
+                                                  contentId: comment.id,
+                                                ));
+                                              }
+                                            },
+                                            child: Icon(
+                                              Icons.block,
+                                              size: 16,
+                                              color: context.appTextTertiary,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                     const SizedBox(height: 2),
