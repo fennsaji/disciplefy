@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../entities/blocked_user_entity.dart';
 import '../entities/fellowship_comment_entity.dart';
 import '../entities/fellowship_entity.dart';
 import '../entities/fellowship_meeting_entity.dart';
@@ -191,6 +192,23 @@ abstract class CommunityRepository {
     required String contentId,
     required String reason,
   });
+
+  /// Blocks [blockedUserId] globally and mutually.
+  ///
+  /// Pass [fellowshipId], [contentType] and [contentId] when the block starts
+  /// from a specific post or comment so the server files a moderation report.
+  Future<Either<Failure, void>> blockUser({
+    required String blockedUserId,
+    String? fellowshipId,
+    String? contentType,
+    String? contentId,
+  });
+
+  /// Removes the current user's block on [blockedUserId].
+  Future<Either<Failure, void>> unblockUser(String blockedUserId);
+
+  /// Returns the users the current user has blocked, newest first.
+  Future<Either<Failure, List<BlockedUserEntity>>> getBlockedUsers();
 
   /// Returns a map of `topicId → post count` for guide-specific posts.
   Future<Either<Failure, Map<String, int>>> getTopicPostCounts(

@@ -220,6 +220,29 @@ class FellowshipReportRequested extends FellowshipFeedEvent {
   List<Object?> get props => [fellowshipId, contentType, contentId, reason];
 }
 
+/// Requests a global, mutual block of [blockedUserId].
+///
+/// [fellowshipId], [contentType] and [contentId] are set when the block was
+/// started from a specific post or comment; they let the server file a
+/// moderation report alongside the block.
+class FellowshipBlockUserRequested extends FellowshipFeedEvent {
+  final String blockedUserId;
+  final String? fellowshipId;
+  final String? contentType;
+  final String? contentId;
+
+  const FellowshipBlockUserRequested({
+    required this.blockedUserId,
+    this.fellowshipId,
+    this.contentType,
+    this.contentId,
+  });
+
+  @override
+  List<Object?> get props =>
+      [blockedUserId, fellowshipId, contentType, contentId];
+}
+
 class FellowshipTopicCountsRequested extends FellowshipFeedEvent {
   final String fellowshipId;
   const FellowshipTopicCountsRequested({required this.fellowshipId});

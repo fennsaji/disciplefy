@@ -33,6 +33,7 @@ class FellowshipFeedBloc
     on<FellowshipCommentCreateRequested>(_onCommentCreateRequested);
     on<FellowshipCommentDeleteRequested>(_onCommentDeleteRequested);
     on<FellowshipReportRequested>(_onReportRequested);
+    on<FellowshipBlockUserRequested>(_onBlockUserRequested);
     on<FellowshipTopicCountsRequested>(_onTopicCountsRequested);
   }
 
@@ -388,6 +389,47 @@ class FellowshipFeedBloc
         errorMessage: failure.message,
       )),
       (_) => emit(state.copyWith(reportStatus: FellowshipReportStatus.success)),
+    );
+  }
+
+  /// Blocks a user and strips their content from the feed immediately.
+  ///
+  /// Removal happens before the network call completes because App Review
+  /// checks that blocked content disappears instantly. On failure the removed
+  /// posts and comments are restored.
+  Future<void> _onBlockUserRequested(
+    FellowshipBlockUserRequested event,
+    Emitter<FellowshipFeedState> emit,
+  ) async {
+    final previousPosts = state.posts;
+    final previousComments = state.comments;
+
+    emit(state.copyWith(
+      blockStatus: FellowshipBlockStatus.loading,
+      posts: previousPosts
+          .where((p) => p.authorUserId != event.blockedUserId)
+          .toList(),
+      comments: previousComments
+          .where((c) => c.authorUserId != event.blockedUserId)
+          .toList(),
+      clearErrorMessage: true,
+    ));
+
+    final result = await _repository.blockUser(
+      blockedUserId: event.blockedUserId,
+      fellowshipId: event.fellowshipId,
+      contentType: event.contentType,
+      contentId: event.contentId,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        blockStatus: FellowshipBlockStatus.failure,
+        posts: previousPosts,
+        comments: previousComments,
+        errorMessage: failure.message,
+      )),
+      (_) => emit(state.copyWith(blockStatus: FellowshipBlockStatus.success)),
     );
   }
 
