@@ -13,15 +13,16 @@ Today `LoginScreen` shows a static, non-tappable "By using this app you agree to
 
 ## Scope
 
-In scope: a terms/privacy acceptance gate on `LoginScreen`, covering every sign-in path (Google, Apple, Email — all reached from this one screen; `EmailAuthScreen` is only navigated to via this screen's "Continue with Email" button, so gating here covers it without touching it). A shared constants file for the Terms/Privacy URLs, replacing three independent hardcoded copies.
+In scope: a terms/privacy acceptance gate covering every sign-in path (Google, Apple, Email), enforced in `RouterGuard` and surfaced as a checkbox on `LoginScreen`. A shared constants file for the Terms/Privacy URLs, replacing the independent hardcoded copies in `subscription_legal_links.dart` and `settings_screen.dart`.
 
 Out of scope: the screen recording itself (user's job, on a physical device, after this ships), the China-mainland Guideline 2.1 fix (App Store Connect config, no code), and any change to `settings_screen.dart`'s existing terms/privacy tiles beyond pointing them at the new shared constants.
 
 ## Decisions
 
 1. **Explicit checkbox, not passive links.** Given this is a second rejection on the same guideline, the checkbox gate removes any reviewer ambiguity about whether terms were "presented" — sign-in buttons are disabled until checked.
-2. **Persisted locally, once.** Acceptance is written to the existing Hive `app_settings` box only after a successful sign-in with the box checked (not on checkbox-tap alone, so an abandoned session isn't falsely recorded). Subsequent logins on the same device skip the checkbox but keep a static, always-visible Terms/Privacy link line — still "presented," just not blocking a returning user.
-3. **One gate, not one per auth method.** `LoginScreen` is the single choke point for all three sign-in methods; no duplication needed in `EmailAuthScreen`.
+2. **Persisted locally, on sign-in button tap.** Acceptance is written to the existing Hive `app_settings` box at the moment the user taps a sign-in button with the box checked — not on checkbox-tick alone (an abandoned tick shouldn't count), and *not* after `AuthenticatedState`. Writing after authentication would break Google/Apple OAuth: the user leaves the app for the provider and returns to `/auth/callback`, at which point the flag would still be false and the router gate (decision 3) would bounce them back to `/login`, making sign-in impossible. Tapping a sign-in button means "accepted and proceeding," which is the correct semantic and survives the OAuth round-trip.
+3. **Enforced in `RouterGuard`, not just on the screen.** `/email-auth` and `/phone-auth` are top-level public routes (`router_guard.dart:535`, plus a `startsWith('/email-auth')` catch-all at :546), directly reachable by URL or deep link without ever rendering `LoginScreen`. Gating only the screen would leave registration reachable without the terms being shown. The guard enforces the rule for every auth route so it cannot be skipped, and covers any auth route added later.
+4. **One checkbox UI, in `LoginScreen`.** The guard makes the gate unskippable; `LoginScreen` remains the only place the checkbox is rendered. No duplication into `EmailAuthScreen` or `PhoneNumberInputScreen`.
 4. **Hoist the URLs.** `https://www.disciplefy.in/terms` and `/privacy` currently exist verbatim in `subscription_legal_links.dart` and `settings_screen.dart`. A third hardcoded copy for this feature would be the same drift risk this codebase already tracks for Bible book names. New shared constants file; both existing call sites updated to use it.
 
 ## Existing code
@@ -47,12 +48,29 @@ class LegalUrls {
 **LoginScreen changes.**
 - `initState`: read `Hive.box('app_settings').get('terms_accepted', defaultValue: false)` into `_termsAccepted`.
 - When `_termsAccepted` is `false`: render `TermsAcceptanceCheckbox` above the sign-in buttons; `_buildSignInButtons` treats `!_termsAccepted` the same as `isLoading` for each button's `onPressed` (disabled, not hidden — visible-but-disabled communicates the gate rather than a layout jump).
-- When `_termsAccepted` is `true`: skip the checkbox row entirely; render a static, non-interactive-but-tappable-links line ("By continuing you agree to our Terms of Use and Privacy Policy") in its place — this is `_buildPrivacyText`'s replacement, always present regardless of gate state, using `LegalUrls`.
-- `AuthenticatedState` branch of the existing `BlocListener` (~line 113): if `_termsAccepted` is true (i.e., the user just passed the gate this session — writing unconditionally on every authenticated event would also re-write for a user who was already `true` from a prior session, which is harmless but pointless), call `Hive.box('app_settings').put('terms_accepted', true)` before the existing redirect logic runs.
+- When `_termsAccepted` is `true`: skip the checkbox row entirely; render a static line with tappable links ("By continuing you agree to our Terms of Use and Privacy Policy") in its place — this is `_buildPrivacyText`'s replacement, always present regardless of gate state, using `LegalUrls`.
+- Each of the three sign-in handlers (`_handleGoogleSignIn`, `_handleAppleSignIn`, `_handleEmailSignIn`) writes `Hive.box('app_settings').put('terms_accepted', true)` before dispatching its event / navigating. The write is idempotent, so no conditional is needed. `_handleEmailSignIn` must write before `context.push(AppRoutes.emailAuth)`, otherwise the router gate (below) would immediately bounce the push back to `/login`.
+
+**RouterGuard changes.** In `_handleUnauthenticatedUser` (`router_guard.dart:665`), before the existing `isPublicRoute` early-return: if the route is an auth route *other than* `/login`, `/auth/callback`, or `/password-reset`, and `terms_accepted` is false in the `app_settings` box (already accessed throughout this file as `_hiveBboxName`), redirect to `AppRoutes.login`.
+
+The three exclusions are load-bearing, not incidental:
+- `/login` — redirecting it to itself is an infinite loop.
+- `/auth/callback` — the OAuth return leg; blocking it breaks Google and Apple sign-in outright.
+- `/password-reset` — an existing user resetting a password is not registering, and blocking a reset link from email would strand them.
+
+The guard reads Hive defensively, matching the `Hive.isBoxOpen`-style guards already used elsewhere in this file (see the fallback at :433); if the box isn't open it returns `null` (no redirect) rather than throwing, since a hard failure here would lock users out of auth entirely.
 
 **Error handling.** No new failure modes — this is local state and a Hive write, no network call. If `url_launcher` can't open a link (no browser), `SubscriptionLegalLinks`' existing silent-no-op pattern (`if (await canLaunchUrl(uri))`) is followed rather than introducing new error UI.
 
-**Testing.** Widget test on `LoginScreen`: (1) fresh state (no Hive flag) → checkbox visible and unchecked → all three sign-in buttons disabled → check the box → buttons enabled → tap Google → `GoogleSignInRequested` added to `AuthBloc`. (2) Hive flag pre-set to `true` → checkbox row absent, static links line present, buttons enabled from first render. Existing `test/helpers/mock_translation_provider.dart` reused for `context.tr(...)` in tests, matching this feature module's existing test conventions.
+**Testing.** Widget tests on `LoginScreen`: (1) fresh state (no Hive flag) → checkbox visible and unchecked → all three sign-in buttons disabled → check the box → buttons enabled → tap Google → `GoogleSignInRequested` added to `AuthBloc` **and** `terms_accepted` is now true in Hive. (2) Hive flag pre-set to `true` → checkbox row absent, static links line present, buttons enabled from first render.
+
+Unit tests on `RouterGuard._handleUnauthenticatedUser`: with `terms_accepted` false, `/email-auth` and `/phone-auth` redirect to `/login`, while `/login`, `/auth/callback`, and `/password-reset` return null (no redirect) — the last three are the regression tests that protect the OAuth and password-reset flows. With the flag true, `/email-auth` returns null.
+
+Existing `test/helpers/mock_translation_provider.dart` is reused for `context.tr(...)`, matching this module's test conventions.
+
+## Note for the App Review recording
+
+Because acceptance is remembered per device, the checkbox only appears on a device that has never signed in. Record the App Review screen capture on a **fresh install** (delete the app first), or the gate will not be on camera — Apple asked specifically to see the terms presented before login.
 
 ## Constraints
 
