@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/legal_urls.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 
@@ -13,8 +14,8 @@ import '../../../../core/i18n/translation_keys.dart';
 class SubscriptionLegalLinks extends StatelessWidget {
   const SubscriptionLegalLinks({super.key});
 
-  static const String termsUrl = 'https://www.disciplefy.in/terms';
-  static const String privacyUrl = 'https://www.disciplefy.in/privacy';
+  static const String termsUrl = LegalUrls.terms;
+  static const String privacyUrl = LegalUrls.privacy;
 
   Future<void> _launch(String url) async {
     final uri = Uri.parse(url);
