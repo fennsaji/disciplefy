@@ -343,6 +343,8 @@ class AppTranslations {
       'terms_notice': 'By continuing, you agree to our ',
       'terms_notice_suffix': '',
       'continue_with_email': 'Continue with Email',
+      'accept_terms_toast':
+          'Please agree to the Terms of Use and Privacy Policy to continue',
     },
     'email_auth': {
       'title': 'Email Sign In',
@@ -2374,6 +2376,8 @@ class AppTranslations {
       'terms_notice': 'जारी रखते हुए, आप हमारी ',
       'terms_notice_suffix': ' से सहमत हैं',
       'continue_with_email': 'ईमेल से जारी रखें',
+      'accept_terms_toast':
+          'जारी रखने के लिए कृपया सेवा की शर्तों और गोपनीयता नीति से सहमत हों',
     },
     'email_auth': {
       'title': 'ईमेल से साइन इन',
@@ -4426,6 +4430,8 @@ class AppTranslations {
       'terms_notice': 'തുടരുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ ',
       'terms_notice_suffix': ' അംഗീകരിക്കുന്നു',
       'continue_with_email': 'ഇമെയിൽ ഉപയോഗിച്ച് തുടരുക',
+      'accept_terms_toast':
+          'തുടരുന്നതിന് ദയവായി സേവന നിബന്ധനകളും സ്വകാര്യതാ നയവും അംഗീകരിക്കുക',
     },
     'email_auth': {
       'title': 'ഇമെയിൽ സൈൻ ഇൻ',

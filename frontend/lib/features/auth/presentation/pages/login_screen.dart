@@ -340,8 +340,11 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, state) {
           final isLoading = state is auth_states.AuthLoadingState;
-          // Guideline 1.2: no sign-in path is reachable before acceptance.
-          final isBlocked = isLoading || !_termsAccepted;
+          // Buttons stay tappable even before terms acceptance — tapping
+          // shows a toast prompting acceptance instead of a silent no-op.
+          // Guideline 1.2 is satisfied in _onSignInPressed: no sign-in path
+          // actually fires before acceptance.
+          final isBlocked = isLoading;
 
           return Column(
             children: [
@@ -394,7 +397,10 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: isDisabled ? null : () => _handleGoogleSignIn(context),
+        onPressed: isDisabled
+            ? null
+            : () =>
+                _onSignInPressed(context, () => _handleGoogleSignIn(context)),
         style: OutlinedButton.styleFrom(
           backgroundColor: isDisabled ? disabledBg : bgColor,
           foregroundColor: textColor,
@@ -444,7 +450,10 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: isDisabled ? null : () => _handleEmailSignIn(context),
+        onPressed: isDisabled
+            ? null
+            : () =>
+                _onSignInPressed(context, () => _handleEmailSignIn(context)),
         style: OutlinedButton.styleFrom(
           foregroundColor: theme.colorScheme.primary,
           side: BorderSide(
@@ -593,7 +602,10 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: isDisabled ? null : () => _handleAppleSignIn(context),
+        onPressed: isDisabled
+            ? null
+            : () =>
+                _onSignInPressed(context, () => _handleAppleSignIn(context)),
         style: OutlinedButton.styleFrom(
           backgroundColor: isDisabled ? bgColor.withOpacity(0.6) : bgColor,
           foregroundColor: fgColor,
@@ -627,6 +639,29 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+
+  /// Gates a sign-in action on terms acceptance. Buttons stay enabled even
+  /// before acceptance so a tap always gets a response — a toast prompting
+  /// acceptance, rather than a silent no-op (App Store Guideline 1.2 is
+  /// still satisfied: [action] never runs before [_termsAccepted] is true).
+  void _onSignInPressed(BuildContext context, VoidCallback action) {
+    if (!_termsAccepted) {
+      _showAcceptTermsToast(context);
+      return;
+    }
+    action();
+  }
+
+  void _showAcceptTermsToast(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.tr(TranslationKeys.loginAcceptTermsToast)),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
