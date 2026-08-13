@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +22,7 @@ class RouterGuard {
   static const String _sessionExpiresAtKey =
       'session_expires_at'; // SECURITY FIX
   static const String _deviceIdKey = 'device_id'; // SECURITY FIX
+  static const String _termsAcceptedKey = 'terms_accepted';
 
   // Router-level caching to prevent excessive API calls
   static String? _cachedUserId;
@@ -660,9 +662,88 @@ class RouterGuard {
     return null;
   }
 
+  /// Auth routes that stay reachable before the terms are accepted.
+  ///
+  /// Each exclusion is load-bearing:
+  ///  - [AppRoutes.login] hosts the acceptance checkbox; redirecting it to
+  ///    itself would loop forever.
+  ///  - `/auth/callback` is the OAuth return leg. The user leaves the app for
+  ///    Google/Apple before the flag is written, so blocking it would make
+  ///    social sign-in impossible.
+  ///  - `/password-reset` is an existing user recovering an account, not a
+  ///    registration, and blocking an emailed reset link would strand them.
+  static bool _isTermsGateExempt(String path) =>
+      path == AppRoutes.login ||
+      path.startsWith('/auth/callback') ||
+      path.startsWith('/password-reset');
+
+  /// Returns [AppRoutes.login] when [currentPath] is an auth route the user
+  /// may not reach before accepting the Terms of Use and Privacy Policy.
+  ///
+  /// Required by App Store Review Guideline 1.2: `/email-auth` and
+  /// `/phone-auth` are public, directly-addressable routes, so gating the
+  /// login screen alone would leave registration reachable without the terms
+  /// ever being presented.
+  static String? _termsGateRedirect(String currentPath) {
+    final isAuthRoute = currentPath == AppRoutes.login ||
+        currentPath == AppRoutes.phoneAuth ||
+        currentPath == AppRoutes.phoneAuthVerify ||
+        currentPath == AppRoutes.emailAuth ||
+        currentPath == AppRoutes.passwordReset ||
+        currentPath.startsWith('/auth/callback') ||
+        currentPath.startsWith('/email-auth') ||
+        currentPath.startsWith('/phone-auth');
+
+    if (!isAuthRoute || _isTermsGateExempt(currentPath)) return null;
+
+    // Read defensively: a hard failure here would lock users out of auth
+    // entirely, which is far worse than letting an ungated request through.
+    if (!Hive.isBoxOpen(_hiveBboxName)) {
+      Logger.warning(
+        'Hive box not open, skipping terms gate',
+        tag: 'ROUTER',
+      );
+      return null;
+    }
+
+    final accepted = Hive.box(_hiveBboxName)
+        .get(_termsAcceptedKey, defaultValue: false) as bool;
+    if (accepted) return null;
+
+    // Preserve the original destination the same way
+    // _determineUnauthenticatedRedirect's loginWithRedirect() does, so a
+    // user deep-linked to a gated auth route (e.g. /email-auth?redirect=...)
+    // still lands there after accepting the terms and signing in.
+    final redirectTarget = (currentPath != AppRoutes.login)
+        ? '${AppRoutes.login}?redirect=${Uri.encodeComponent(currentPath)}'
+        : AppRoutes.login;
+
+    Logger.info(
+      'Terms not accepted - redirecting auth route to login',
+      tag: 'ROUTER_SECURITY',
+      context: {
+        'attempted_route': currentPath,
+        'redirect_target': redirectTarget,
+        'redirect_reason': 'terms_not_accepted',
+      },
+    );
+    return redirectTarget;
+  }
+
+  /// Test-only entry point for [_termsGateRedirect].
+  @visibleForTesting
+  static String? debugTermsGateRedirect(String currentPath) =>
+      _termsGateRedirect(currentPath);
+
   /// Handle redirect logic for unauthenticated users
   /// Phase 2 Enhancement: Better analytics and edge case handling
   static String? _handleUnauthenticatedUser(RouteAnalysis routeAnalysis) {
+    // Guideline 1.2: block auth routes until the terms are accepted. This
+    // must precede the public-route check below, because the routes being
+    // gated are themselves public.
+    final termsRedirect = _termsGateRedirect(routeAnalysis.currentPath);
+    if (termsRedirect != null) return termsRedirect;
+
     // Phase 2: Enhanced logging for public routes
     if (routeAnalysis.isPublicRoute) {
       Logger.info(

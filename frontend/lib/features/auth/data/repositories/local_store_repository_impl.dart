@@ -25,9 +25,15 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       // Snapshot the device-level language setting before wiping the box so
       // logout doesn't reset the Settings screen back to English.
       Object? preservedSettingsLanguage;
+      // Snapshot terms acceptance too — it's a per-device Guideline 1.2
+      // acknowledgement, not user account data, and must survive logout so
+      // the checkbox gate doesn't reappear on every sign-out.
+      bool preservedTermsAccepted = false;
       if (Hive.isBoxOpen('app_settings')) {
-        preservedSettingsLanguage =
-            Hive.box('app_settings').get('settings_language');
+        final box = Hive.box('app_settings');
+        preservedSettingsLanguage = box.get('settings_language');
+        preservedTermsAccepted =
+            box.get('terms_accepted', defaultValue: false) as bool;
       }
 
       // Close all open Hive boxes
@@ -48,6 +54,7 @@ class LocalStoreRepositoryImpl implements LocalStoreRepository {
       await appSettingsBox.putAll({
         'onboarding_completed': true,
         'app_version': '1.0.0',
+        'terms_accepted': preservedTermsAccepted,
         if (preservedSettingsLanguage != null)
           'settings_language': preservedSettingsLanguage,
       });

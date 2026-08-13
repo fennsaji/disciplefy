@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -3083,14 +3084,14 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   }
 
   Future<void> _launchPrivacyPolicy() async {
-    final uri = Uri.parse('https://www.disciplefy.in/privacy');
+    final uri = Uri.parse(LegalUrls.privacy);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
   Future<void> _launchTermsOfService() async {
-    final uri = Uri.parse('https://www.disciplefy.in/terms');
+    final uri = Uri.parse(LegalUrls.terms);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

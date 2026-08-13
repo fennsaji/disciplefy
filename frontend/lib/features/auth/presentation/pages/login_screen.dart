@@ -14,6 +14,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
 
 /// Login screen with Google OAuth and email sign-in options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
@@ -28,9 +29,17 @@ class _LoginScreenState extends State<LoginScreen> {
   // Flag to prevent navigation conflicts during phone auth flow
   final bool _isPhoneAuthInProgress = false;
 
+  /// Whether the user has accepted the Terms of Use and Privacy Policy.
+  ///
+  /// Seeded from Hive so a returning user is not re-gated. Required before
+  /// any sign-in method is reachable (App Store Guideline 1.2).
+  bool _termsAccepted = false;
+
   @override
   void initState() {
     super.initState();
+    _termsAccepted = Hive.box('app_settings')
+        .get('terms_accepted', defaultValue: false) as bool;
     _checkAuthenticationStatus();
   }
 
@@ -237,13 +246,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 32),
 
-                          // Sign-in buttons
-                          _buildSignInButtons(context),
+                          // Terms gate (first run) or static legal links
+                          if (!_termsAccepted)
+                            TermsAcceptanceCheckbox(
+                              value: _termsAccepted,
+                              onChanged: (accepted) =>
+                                  setState(() => _termsAccepted = accepted),
+                            )
+                          else
+                            const LegalLinksLine(),
 
                           const SizedBox(height: 32),
 
-                          // Privacy policy text
-                          _buildPrivacyText(context),
+                          // Sign-in buttons
+                          _buildSignInButtons(context),
                         ],
                       ),
                     ),
@@ -324,23 +340,25 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, state) {
           final isLoading = state is auth_states.AuthLoadingState;
+          // Guideline 1.2: no sign-in path is reachable before acceptance.
+          final isBlocked = isLoading || !_termsAccepted;
 
           return Column(
             children: [
               // Google Sign-In Button
-              _buildGoogleSignInButton(context, isLoading),
+              _buildGoogleSignInButton(context, isBlocked, isLoading),
 
               const SizedBox(height: 16),
 
               // Apple Sign-In Button — iOS only (required by App Store
               // Guideline 4.8 when other social logins are offered).
               if (!kIsWeb && Platform.isIOS) ...[
-                _buildAppleSignInButton(context, isLoading),
+                _buildAppleSignInButton(context, isBlocked, isLoading),
                 const SizedBox(height: 16),
               ],
 
               // Email Sign-In Button
-              _buildEmailSignInButton(context, isLoading),
+              _buildEmailSignInButton(context, isBlocked),
 
               const SizedBox(height: 16),
 
@@ -359,7 +377,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Builds the Google sign-in button following Google branding guidelines:
   /// https://developers.google.com/identity/branding-guidelines
-  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) {
+  Widget _buildGoogleSignInButton(
+      BuildContext context, bool isDisabled, bool isLoading) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Google-specified colors: light=#FFFFFF bg + #1F1F1F text; dark=#131314 bg + #E3E3E3 text
     final bgColor = isDark ? const Color(0xFF131314) : Colors.white;
@@ -375,9 +394,9 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: isLoading ? null : () => _handleGoogleSignIn(context),
+        onPressed: isDisabled ? null : () => _handleGoogleSignIn(context),
         style: OutlinedButton.styleFrom(
-          backgroundColor: isLoading ? disabledBg : bgColor,
+          backgroundColor: isDisabled ? disabledBg : bgColor,
           foregroundColor: textColor,
           side: BorderSide(color: borderColor),
           shape: RoundedRectangleBorder(
@@ -418,14 +437,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// Builds the email sign-in button
-  Widget _buildEmailSignInButton(BuildContext context, bool isLoading) {
+  Widget _buildEmailSignInButton(BuildContext context, bool isDisabled) {
     final theme = Theme.of(context);
 
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: isLoading ? null : () => _handleEmailSignIn(context),
+        onPressed: isDisabled ? null : () => _handleEmailSignIn(context),
         style: OutlinedButton.styleFrom(
           foregroundColor: theme.colorScheme.primary,
           side: BorderSide(
@@ -563,24 +582,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Builds the privacy policy text
-  Widget _buildPrivacyText(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Text(
-      context.tr(TranslationKeys.loginPrivacyPolicy),
-      style: AppFonts.inter(
-        fontSize: 12,
-        color: theme.colorScheme.onSurface.withOpacity(0.6),
-        height: 1.4,
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-
   /// Builds the Sign in with Apple button (iOS only), following Apple's
   /// Human Interface Guidelines: black button, Apple logo, white label.
-  Widget _buildAppleSignInButton(BuildContext context, bool isLoading) {
+  Widget _buildAppleSignInButton(
+      BuildContext context, bool isDisabled, bool isLoading) {
     const bgColor = Colors.black;
     const fgColor = Colors.white;
 
@@ -588,9 +593,9 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: isLoading ? null : () => _handleAppleSignIn(context),
+        onPressed: isDisabled ? null : () => _handleAppleSignIn(context),
         style: OutlinedButton.styleFrom(
-          backgroundColor: isLoading ? bgColor.withOpacity(0.6) : bgColor,
+          backgroundColor: isDisabled ? bgColor.withOpacity(0.6) : bgColor,
           foregroundColor: fgColor,
           side: BorderSide.none,
           shape: RoundedRectangleBorder(
@@ -628,6 +633,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Handles Apple sign-in button tap
   void _handleAppleSignIn(BuildContext context) {
+    Hive.box('app_settings').put('terms_accepted', true);
     String? redirectTo;
     try {
       redirectTo = GoRouterState.of(context).uri.queryParameters['redirect'];
@@ -640,6 +646,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
+    Hive.box('app_settings').put('terms_accepted', true);
     // Persist redirect target before OAuth so it survives the browser round-trip
     // to Google and back (the ?redirect= URL param is lost after the callback).
     String? redirectTo;
@@ -654,6 +661,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Handles email sign-in button tap
   void _handleEmailSignIn(BuildContext context) {
+    Hive.box('app_settings').put('terms_accepted', true);
     context.push(AppRoutes.emailAuth);
   }
 

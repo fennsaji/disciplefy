@@ -18,6 +18,8 @@ import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
+
 import 'login_screen_test.mocks.dart';
 import '../../../test/helpers/mock_translation_provider.dart';
 
@@ -133,13 +135,22 @@ void main() {
       when(mockAuthBloc.stream).thenAnswer(
           (_) => Stream.value(const auth_states.UnauthenticatedState()));
 
+      // Terms gate: only a user who already accepted can reach the button.
+      // The gate itself is covered by login_terms_gate_test.dart.
+      await tester
+          .runAsync(() => Hive.box('app_settings').put('terms_accepted', true));
+
       // Set a larger test surface to avoid tap-outside-bounds issues
       await tester.binding.setSurfaceSize(const Size(800, 1200));
 
       // Act
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue with Google'));
+      // _handleGoogleSignIn fires a real (un-awaited) Hive write; running
+      // the tap through runAsync keeps that write out of the FakeAsync zone
+      // so it cannot stall the test binding's teardown.
+      await tester
+          .runAsync(() => tester.tap(find.text('Continue with Google')));
       await tester.pump();
 
       // Assert
@@ -265,8 +276,32 @@ void main() {
       expect(find.text('Continue with Google'), findsOneWidget);
     });
 
-    testWidgets('should display privacy policy text', (tester) async {
-      // Arrange
+    testWidgets(
+        'should display the terms acceptance checkbox for a first-run user',
+        (tester) async {
+      // Arrange — no acceptance recorded yet.
+      await tester
+          .runAsync(() => Hive.box('app_settings').delete('terms_accepted'));
+      when(mockAuthBloc.state)
+          .thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer(
+          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+
+      // Act
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Assert — the gate (not the static legal links) is shown, and the
+      // sentence includes the Terms of Use / Privacy Policy legal links.
+      expect(find.byType(TermsAcceptanceCheckbox), findsOneWidget);
+      expect(find.byType(LegalLinksLine), findsNothing);
+    });
+
+    testWidgets('should display the static legal links for a returning user',
+        (tester) async {
+      // Arrange — user already accepted on a previous visit.
+      await tester
+          .runAsync(() => Hive.box('app_settings').put('terms_accepted', true));
       when(mockAuthBloc.state)
           .thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer(
@@ -277,11 +312,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(
-        find.text(
-            'By continuing, you agree to our Terms of Service and Privacy Policy'),
-        findsOneWidget,
-      );
+      expect(find.byType(LegalLinksLine), findsOneWidget);
+      expect(find.byType(TermsAcceptanceCheckbox), findsNothing);
     });
 
     testWidgets('should display app logo', (tester) async {
