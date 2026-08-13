@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/constants/legal_urls.dart';
+import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
 import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';

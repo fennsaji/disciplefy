@@ -2,10 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/constants/app_fonts.dart';
-import '../../../../core/constants/legal_urls.dart';
-import '../../../../core/extensions/translation_extension.dart';
-import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/constants/app_fonts.dart';
+import 'package:disciplefy_bible_study/core/constants/legal_urls.dart';
+import 'package:disciplefy_bible_study/core/extensions/translation_extension.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_keys.dart';
 
 /// Opens [url] in the platform browser, silently doing nothing if no handler
 /// exists. Mirrors [SubscriptionLegalLinks]'s behaviour.
@@ -44,7 +44,10 @@ List<InlineSpan> _legalSpans(BuildContext context, TextStyle linkStyle) => [
 /// be presented before a user registers or logs in. Stateless — the parent
 /// owns the boolean.
 class TermsAcceptanceCheckbox extends StatelessWidget {
+  /// Whether the terms are currently accepted.
   final bool value;
+
+  /// Called with the new value when the user taps the checkbox or label.
   final ValueChanged<bool> onChanged;
 
   const TermsAcceptanceCheckbox({

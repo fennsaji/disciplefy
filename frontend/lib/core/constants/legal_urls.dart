@@ -6,6 +6,9 @@
 class LegalUrls {
   const LegalUrls._();
 
+  /// Terms of Use document URL.
   static const String terms = 'https://www.disciplefy.in/terms';
+
+  /// Privacy Policy document URL.
   static const String privacy = 'https://www.disciplefy.in/privacy';
 }

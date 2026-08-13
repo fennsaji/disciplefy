@@ -14,7 +14,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
-import '../widgets/terms_acceptance_checkbox.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/terms_acceptance_checkbox.dart';
 
 /// Login screen with Google OAuth and email sign-in options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
