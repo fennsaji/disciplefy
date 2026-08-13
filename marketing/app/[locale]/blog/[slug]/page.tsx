@@ -1,6 +1,7 @@
 // marketing/app/[locale]/blog/[slug]/page.tsx
-// Force SSR so newly published posts are immediately visible.
-export const dynamic = "force-dynamic";
+// ISR: page is cached at the edge and revalidated in the background every 60s
+// (see lib/blog.ts fetch revalidate), so newly published posts show up within
+// a minute without every visitor paying a live API round-trip.
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";

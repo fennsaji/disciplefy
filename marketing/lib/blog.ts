@@ -67,7 +67,7 @@ export async function getAllPosts(
   const url = `${BLOG_API_URL}/api/v1/posts?${params}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(url, { next: { revalidate: 60 } });
 
       if (!res.ok) {
         if (attempt < 3) { await delay(300 * attempt); continue; }
@@ -128,8 +128,8 @@ export const getPost = cache(async function getPost(slug: string): Promise<Post 
   // A genuine 404 from the API is returned immediately — no retry needed.
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      // cache: "no-store" is consistent with the page's force-dynamic setting.
-      const res = await fetch(url, { cache: "no-store" });
+      // Cached for 60s (ISR) — the page is no longer force-dynamic.
+      const res = await fetch(url, { next: { revalidate: 60 } });
 
       // Post genuinely doesn't exist → stop immediately, let caller notFound()
       if (res.status === 404) return null;
@@ -183,7 +183,7 @@ export async function getAdjacentPosts(slug: string): Promise<AdjacentPosts> {
   try {
     const res = await fetch(
       `${BLOG_API_URL}/api/v1/posts/${encodeURIComponent(slug)}/adjacent`,
-      { cache: "no-store" },
+      { next: { revalidate: 60 } },
     );
     if (!res.ok) return { prev: null, next: null };
     const json = await res.json();
@@ -196,7 +196,7 @@ export async function getAdjacentPosts(slug: string): Promise<AdjacentPosts> {
 export async function getTags(locale: Locale): Promise<string[]> {
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/posts/tags?locale=${locale}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -210,7 +210,7 @@ export async function getTags(locale: Locale): Promise<string[]> {
 export async function getLearningPaths(locale: Locale): Promise<LearningPathMeta[]> {
   try {
     const res = await fetch(`${BLOG_API_URL}/api/v1/learning-paths?locale=${locale}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
