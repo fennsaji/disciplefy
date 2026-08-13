@@ -249,6 +249,13 @@ class TranslationKeys {
   static const loginFeatureMemoryVerseSubtitle =
       'login.feature_memory_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
+  static const loginTermsAgree = 'login.terms_agree';
+  static const loginTermsOfUse = 'login.terms_of_use';
+  static const loginTermsAnd = 'login.terms_and';
+  static const loginPrivacyPolicyLink = 'login.privacy_policy_link';
+  static const loginTermsSuffix = 'login.terms_suffix';
+  static const loginTermsNotice = 'login.terms_notice';
+  static const loginTermsNoticeSuffix = 'login.terms_notice_suffix';
   static const loginContinueWithEmail = 'login.continue_with_email';
 
   // Email Auth Screen
