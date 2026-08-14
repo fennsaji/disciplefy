@@ -1,6 +1,7 @@
 // marketing/components/blog/MDXComponents.tsx
 import type { MDXComponents } from "mdx/types";
 import { AppDownloadLink } from "@/components/blog/AppDownloadLink";
+import { AdSlot } from "@/components/blog/AdSlot";
 
 // Body text: slate-300 in dark (softer than pure white), gray-700 in light
 // Headings:  white/gray-900 — strong hierarchy
@@ -56,6 +57,7 @@ export const mdxComponents: MDXComponents = {
     <li className="leading-[1.9]" {...props} />
   ),
   a: (props) => <AppDownloadLink {...props} />,
+  AdSlot,
   // Scripture / quote block — amber accent to feel like a Bible verse callout
   blockquote: (props) => (
     <blockquote
