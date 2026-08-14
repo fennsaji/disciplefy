@@ -16,6 +16,8 @@ import { ShareButtons } from "@/components/blog/ShareButtons";
 import { ScrollToTop } from "@/components/blog/ScrollToTop";
 import { PostCard } from "@/components/blog/PostCard";
 import { Link } from "@/lib/navigation";
+import { insertAd } from "@/lib/insertAd";
+import { ADS } from "@/lib/ads";
 
 // Minimal server-side UI strings — avoids async getTranslations in a server component
 // while keeping the component usable from both the locale and fallback routes.
@@ -59,6 +61,7 @@ export function BlogPostContent({
   const gradient = getGradient(post.tags);
   const ui = UI_STRINGS[(locale as UILocale) in UI_STRINGS ? (locale as UILocale) : "en"];
   const toc = extractToc(post.content);
+  const contentWithAd = insertAd(post.content, ADS, post.slug);
   // Always share the post's own canonical (single-locale) URL, not the page-chrome locale.
   const postLocale = post.locale ?? locale;
   const shareUrl = `https://www.disciplefy.in${postLocale === "en" ? "" : `/${postLocale}`}/blog/${post.slug}`;
@@ -164,7 +167,7 @@ export function BlogPostContent({
           <div className="min-w-0 max-w-[68ch]">
             <article>
               <MDXRemote
-                source={post.content}
+                source={contentWithAd}
                 components={mdxComponents}
                 options={{ mdxOptions: { remarkPlugins: [remarkGfm], rehypePlugins: [rehypeSlug] } }}
               />
