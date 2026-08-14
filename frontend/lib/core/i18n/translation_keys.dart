@@ -257,6 +257,7 @@ class TranslationKeys {
   static const loginTermsNotice = 'login.terms_notice';
   static const loginTermsNoticeSuffix = 'login.terms_notice_suffix';
   static const loginContinueWithEmail = 'login.continue_with_email';
+  static const loginAcceptTermsToast = 'login.accept_terms_toast';
 
   // Email Auth Screen
   static const emailAuthTitle = 'email_auth.title';

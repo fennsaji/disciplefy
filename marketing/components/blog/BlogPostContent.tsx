@@ -6,6 +6,7 @@ import { ReadingProgress } from "@/components/blog/ReadingProgress";
 import { BlogPostCTA } from "@/components/blog/BlogPostCTA";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypeSlug from "rehype-slug";
+import remarkGfm from "remark-gfm";
 import { formatDate } from "@/lib/format";
 import { getBlogPostingJsonLd, getBreadcrumbJsonLd } from "@/lib/seo";
 import type { Post, AdjacentPosts, PostMeta } from "@/lib/blog";
@@ -165,7 +166,7 @@ export function BlogPostContent({
               <MDXRemote
                 source={post.content}
                 components={mdxComponents}
-                options={{ mdxOptions: { rehypePlugins: [rehypeSlug] } }}
+                options={{ mdxOptions: { remarkPlugins: [remarkGfm], rehypePlugins: [rehypeSlug] } }}
               />
             </article>
 

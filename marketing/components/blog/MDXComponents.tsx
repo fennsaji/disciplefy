@@ -89,4 +89,23 @@ export const mdxComponents: MDXComponents = {
       {...props}
     />
   ),
+  // GFM tables (remark-gfm) — wrapped for horizontal scroll on narrow screens
+  // rather than letting the table force the whole page wider.
+  table: (props) => (
+    <div className="overflow-x-auto my-6 rounded-xl border border-gray-200 dark:border-slate-700">
+      <table className="w-full text-sm border-collapse" {...props} />
+    </div>
+  ),
+  thead: (props) => (
+    <thead className="bg-gray-100 dark:bg-slate-800/60" {...props} />
+  ),
+  tr: (props) => (
+    <tr className="border-b border-gray-200 dark:border-slate-700 last:border-0" {...props} />
+  ),
+  th: (props) => (
+    <th className="text-left font-semibold text-gray-900 dark:text-slate-100 px-4 py-2.5 whitespace-nowrap" {...props} />
+  ),
+  td: (props) => (
+    <td className="text-gray-700 dark:text-slate-300 px-4 py-2.5 align-top" {...props} />
+  ),
 };

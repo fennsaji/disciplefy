@@ -81,14 +81,22 @@ void main() {
     // The gate is visible on a device that has never accepted.
     expect(find.byType(TermsAcceptanceCheckbox), findsOneWidget);
 
-    // Every sign-in button is disabled while unaccepted.
+    // Buttons stay tappable even before acceptance — tapping must not
+    // start sign-in, and must surface a toast instead of doing nothing.
     final buttons =
         tester.widgetList<OutlinedButton>(find.byType(OutlinedButton)).toList();
     expect(buttons, isNotEmpty);
     for (final button in buttons) {
-      expect(button.onPressed, isNull,
-          reason: 'sign-in buttons must be disabled before acceptance');
+      expect(button.onPressed, isNotNull,
+          reason:
+              'sign-in buttons must stay tappable before acceptance so a tap gets a response');
     }
+
+    await tester.tap(find.byType(OutlinedButton).first);
+    await tester.pump();
+
+    verifyNever(mockAuthBloc.add(any));
+    expect(find.byType(SnackBar), findsOneWidget);
 
     // Tick the box.
     await tester.tap(find.byType(Checkbox));
@@ -98,7 +106,7 @@ void main() {
         tester.widgetList<OutlinedButton>(find.byType(OutlinedButton)).toList();
     for (final button in enabled) {
       expect(button.onPressed, isNotNull,
-          reason: 'sign-in buttons must enable once accepted');
+          reason: 'sign-in buttons must remain enabled once accepted');
     }
   });
 
