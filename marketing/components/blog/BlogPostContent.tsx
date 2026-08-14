@@ -63,16 +63,18 @@ export async function BlogPostContent({
   const gradient = getGradient(post.tags);
   const ui = UI_STRINGS[(locale as UILocale) in UI_STRINGS ? (locale as UILocale) : "en"];
   const toc = extractToc(post.content);
+  // Always share the post's own canonical (single-locale) URL, not the page-chrome locale.
+  // Also governs which language the house ad renders in — blog content
+  // (including the ad) stays in its own locale, independent of site chrome.
+  const postLocale = post.locale ?? locale;
   const affiliateKeywords = await getActiveAffiliateKeywords();
   // Linkify first so the ad-marker paragraph can never be linkified.
   const { content: linkedContent } = linkifyAffiliate(post.content, affiliateKeywords);
-  const contentWithAd = insertAd(linkedContent, ADS, post.slug);
+  const contentWithAd = insertAd(linkedContent, ADS, post.slug, postLocale);
   // Disclosure must cover any amazon.in link in the final rendered content —
   // not just ones linkifyAffiliate auto-inserted — since AppDownloadLink also
   // applies affiliate styling/rel to any hand-written amazon.in href in markdown.
   const hasAffiliateLink = contentWithAd.includes("https://www.amazon.in/");
-  // Always share the post's own canonical (single-locale) URL, not the page-chrome locale.
-  const postLocale = post.locale ?? locale;
   const shareUrl = `https://www.disciplefy.in${postLocale === "en" ? "" : `/${postLocale}`}/blog/${post.slug}`;
   return (
     <>
