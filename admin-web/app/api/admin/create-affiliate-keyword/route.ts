@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const body: { keyword: string } = await request.json()
 
     // Call Edge Function using service role key for admin operations
-    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-create-affiliate-keyword`
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-affiliate-keywords`
 
     const response = await fetch(functionUrl, {
       method: 'POST',

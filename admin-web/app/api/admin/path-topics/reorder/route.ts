@@ -37,21 +37,29 @@ export async function PATCH(request: NextRequest) {
     // Parse request body
     const body: ReorderTopicsRequest = await request.json()
 
-    // Call the admin-learning-path-topics Edge Function
-    // (forwards the user's JWT — the Edge Function verifies admin identity itself)
-    const { data, error } = await supabaseUser.functions.invoke('admin-learning-path-topics/reorder', {
+    // Call Edge Function using service role key
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-learning-paths/topics/reorder`
+
+    const response = await fetch(functionUrl, {
       method: 'PATCH',
-      body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'x-admin-user-id': user.id,
+      },
+      body: JSON.stringify(body),
     })
 
-    if (error) {
-      console.error('Supabase function error:', error)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Edge Function error:', response.status, errorData)
       return NextResponse.json(
-        { error: error.message || 'Failed to reorder topics' },
-        { status: 500 }
+        { error: errorData.error || 'Failed to reorder topics' },
+        { status: response.status }
       )
     }
 
+    const data = await response.json()
     return NextResponse.json(data as ReorderTopicsResponse)
   } catch (error) {
     console.error('API route error:', error)

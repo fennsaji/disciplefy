@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call Edge Function using service role key for admin operations
-    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-toggle-promo-code`
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-promo-codes/toggle`
 
     const response = await fetch(functionUrl, {
       method: 'POST',

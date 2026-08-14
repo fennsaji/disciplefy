@@ -153,7 +153,6 @@ admin-web/
    # Deploy admin functions
    supabase functions deploy admin-learning-paths
    supabase functions deploy admin-recommended-topics
-   supabase functions deploy admin-learning-path-topics
    supabase functions deploy admin-study-generator
    supabase functions deploy admin-study-modifier
    ```

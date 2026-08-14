@@ -285,7 +285,7 @@ if [[ $FAILED -eq 0 ]]; then
   echo "     still resolves to the SAME topic title. That is the only real proof"
   echo "     the remap worked on production data."
   echo "   * Do NOT use the admin add/remove/reorder topic screens on Stage 1"
-  echo "     paths until admin-learning-path-topics is made is_active-aware."
+  echo "     paths until admin-learning-paths is made is_active-aware."
   echo "═══════════════════════════════════════════════════════════════"
   exit 0
 else

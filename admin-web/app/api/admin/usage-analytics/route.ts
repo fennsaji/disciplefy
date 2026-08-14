@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const body: UsageAnalyticsRequest = await request.json()
 
     // Call the Edge Function using service role key for admin operations
-    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-usage-analytics`
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-analytics/usage`
 
     const response = await fetch(functionUrl, {
       method: 'POST',

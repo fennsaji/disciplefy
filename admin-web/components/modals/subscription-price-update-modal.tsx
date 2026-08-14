@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { updateSubscriptionPrice } from '@/lib/api/admin'
 
 interface PlanProvider {
   id: string
@@ -103,25 +104,12 @@ export default function SubscriptionPriceUpdateModal({
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/admin/subscription/update-price', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          plan_provider_id: planProvider.id,
-          new_price_minor: newPriceMinor,
-          notes,
-          external_console_updated: externalConsoleUpdated
-        })
+      const data = await updateSubscriptionPrice({
+        plan_provider_id: planProvider.id,
+        new_price_minor: newPriceMinor,
+        notes,
+        external_console_updated: externalConsoleUpdated
       })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to update price')
-      }
 
       // Success!
       const priceChange = newPriceMinor - planProvider.currentPriceMinor

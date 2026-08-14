@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call the admin-update-subscription Supabase Edge Function
+    // Call the admin-subscriptions Supabase Edge Function
     // Pass the user's access token so the Edge Function can verify admin status
-    const { data, error } = await supabase.functions.invoke('admin-update-subscription', {
+    const { data, error } = await supabase.functions.invoke('admin-subscriptions', {
       body: {
         target_user_id: body.target_user_id,
         new_tier: body.new_tier,
