@@ -2,7 +2,6 @@
 // House ad config. Empty by default — the blog ad feature is a no-op until
 // an entry is added here by hand. `gradient` follows the same Tailwind
 // "from-x to-y" pattern used for post tag accents in BlogPostContent.tsx.
-import { WEB_APP_URL } from "@/lib/app-links";
 
 export type AdLocale = "en" | "hi" | "ml";
 
@@ -39,7 +38,9 @@ export const ADS: HouseAd[] = [
       hi: "किसी भी वचन या विषय को अपनी भाषा में एक पूर्ण बाइबल अध्ययन में बदलें — मुफ़्त",
       ml: "ഏതു വാക്യമോ വിഷയമോ നിങ്ങളുടെ ഭാഷയിൽ പൂർണ്ണമായ ബൈബിൾ പഠനമാക്കി മാറ്റുക — സൗജന്യമായി",
     },
-    href: WEB_APP_URL,
+    // Marketing's own /download page (lets the reader pick app vs web),
+    // not the web app directly.
+    href: "/download",
     gradient: "from-indigo-500 to-violet-500",
     tagLabel: "Disciplefy",
   },
