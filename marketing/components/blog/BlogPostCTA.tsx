@@ -1,9 +1,10 @@
 // marketing/components/blog/BlogPostCTA.tsx
 "use client";
 import { useTranslations } from "next-intl";
+import { track } from "@vercel/analytics";
 import { Link } from "@/lib/navigation";
 
-export function BlogPostCTA({ gradient }: { gradient: string }) {
+export function BlogPostCTA({ gradient, slug }: { gradient: string; slug: string }) {
   const t = useTranslations("blogPost");
 
   return (
@@ -17,7 +18,8 @@ export function BlogPostCTA({ gradient }: { gradient: string }) {
           {t("ctaSubtitle")}
         </p>
         <Link
-          href="/download"
+          href="/download?ref=blog"
+          onClick={() => track("blog_cta_click", { slug })}
           className={`inline-block bg-gradient-to-r ${gradient} text-white text-sm font-semibold px-7 py-3 rounded-xl shadow-md hover:shadow-lg hover:opacity-90 transition-all`}
         >
           {t("getApp")}

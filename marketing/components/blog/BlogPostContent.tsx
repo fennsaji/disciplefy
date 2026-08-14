@@ -177,7 +177,7 @@ export function BlogPostContent({
         <ShareButtons url={shareUrl} title={post.title} label={ui.share} />
 
         {/* App CTA */}
-        <BlogPostCTA gradient={gradient} />
+        <BlogPostCTA gradient={gradient} slug={post.slug} />
 
         {/* Next / Previous navigation */}
         {adjacent && (adjacent.prev || adjacent.next) && (
