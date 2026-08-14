@@ -37,21 +37,29 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body: AddTopicToPathRequest = await request.json()
 
-    // Call the admin-learning-path-topics Edge Function
-    // (forwards the user's JWT — the Edge Function verifies admin identity itself)
-    const { data, error } = await supabaseUser.functions.invoke('admin-learning-path-topics', {
+    // Call Edge Function using service role key
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-learning-paths/topics`
+
+    const response = await fetch(functionUrl, {
       method: 'POST',
-      body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'x-admin-user-id': user.id,
+      },
+      body: JSON.stringify(body),
     })
 
-    if (error) {
-      console.error('Supabase function error:', error)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Edge Function error:', response.status, errorData)
       return NextResponse.json(
-        { error: error.message || 'Failed to add topic to path' },
-        { status: 500 }
+        { error: errorData.error || 'Failed to add topic to path' },
+        { status: response.status }
       )
     }
 
+    const data = await response.json()
     return NextResponse.json(data as AddTopicToPathResponse, { status: 201 })
   } catch (error) {
     console.error('API route error:', error)
@@ -96,21 +104,29 @@ export async function DELETE(request: NextRequest) {
     // Parse request body
     const body: RemoveTopicFromPathRequest = await request.json()
 
-    // Call the admin-learning-path-topics Edge Function
-    // (forwards the user's JWT — the Edge Function verifies admin identity itself)
-    const { data, error } = await supabaseUser.functions.invoke('admin-learning-path-topics', {
+    // Call Edge Function using service role key
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-learning-paths/topics`
+
+    const response = await fetch(functionUrl, {
       method: 'DELETE',
-      body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'x-admin-user-id': user.id,
+      },
+      body: JSON.stringify(body),
     })
 
-    if (error) {
-      console.error('Supabase function error:', error)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Edge Function error:', response.status, errorData)
       return NextResponse.json(
-        { error: error.message || 'Failed to remove topic from path' },
-        { status: error.message?.includes('not found') ? 404 : 500 }
+        { error: errorData.error || 'Failed to remove topic from path' },
+        { status: response.status }
       )
     }
 
+    const data = await response.json()
     return NextResponse.json(data as RemoveTopicFromPathResponse)
   } catch (error) {
     console.error('API route error:', error)

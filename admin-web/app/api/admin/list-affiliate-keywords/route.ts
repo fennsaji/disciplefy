@@ -32,7 +32,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Call Edge Function using service role key for admin operations
-    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-list-affiliate-keywords`
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-affiliate-keywords`
 
     const response = await fetch(functionUrl, {
       headers: {

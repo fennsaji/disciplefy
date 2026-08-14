@@ -204,6 +204,26 @@ export interface UpdateSubscriptionResponse {
   message: string
 }
 
+export interface UpdateSubscriptionPriceRequest {
+  plan_provider_id: string
+  new_price_minor: number
+  notes?: string
+  external_console_updated?: boolean
+}
+
+export interface UpdateSubscriptionPriceResponse {
+  success: boolean
+  provider: string
+  old_price_minor: number
+  new_price_minor: number
+  old_provider_plan_id?: string
+  new_provider_plan_id?: string
+  sync_status?: string
+  audit_log_id?: string
+  warning?: string
+  error?: string
+}
+
 export interface CreatePaymentRecordRequest {
   user_id: string
   subscription_id: string

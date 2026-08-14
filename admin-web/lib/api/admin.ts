@@ -6,6 +6,8 @@ import type {
   SubscriptionStatsResponse,
   UpdateSubscriptionRequest,
   UpdateSubscriptionResponse,
+  UpdateSubscriptionPriceRequest,
+  UpdateSubscriptionPriceResponse,
   CreatePaymentRecordRequest,
   CreatePaymentRecordResponse,
   ListPromoCodesRequest,
@@ -134,6 +136,25 @@ export async function updateSubscription(
 
   if (!response.ok) {
     throw new Error(await parseErrorResponse(response, 'Failed to update subscription'))
+  }
+
+  return response.json()
+}
+
+export async function updateSubscriptionPrice(
+  params: UpdateSubscriptionPriceRequest
+): Promise<UpdateSubscriptionPriceResponse> {
+  const response = await fetch('/api/admin/subscription/update-price', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for authentication
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response, 'Failed to update subscription price'))
   }
 
   return response.json()

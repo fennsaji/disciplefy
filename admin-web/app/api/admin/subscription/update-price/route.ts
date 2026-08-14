@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
  * POST /api/admin/subscription/update-price
  *
  * Update subscription price for any provider (Razorpay, Google Play, Apple App Store)
- * Proxies to Edge Function: admin-update-subscription-price
+ * Proxies to Edge Function: admin-subscriptions (POST /price)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call Edge Function
-    const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-update-subscription-price`
+    const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-subscriptions/price`
 
     console.log('[update-price API] Calling Edge Function:', {
       plan_provider_id,

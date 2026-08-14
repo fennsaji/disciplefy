@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: UsageLogsRequest = await request.json()
-    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-usage-logs`
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-analytics/logs`
 
     const response = await fetch(functionUrl, {
       method: 'POST',

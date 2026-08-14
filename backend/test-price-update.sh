@@ -3,7 +3,7 @@
 # ============================================================================
 # Subscription Price Update - Edge Function Test Script
 # ============================================================================
-# Tests the admin-update-subscription-price Edge Function
+# Tests the admin-subscriptions Edge Function (POST /price)
 # Usage: ./test-price-update.sh
 
 set -e
@@ -19,7 +19,7 @@ echo ""
 
 # Get these from your Supabase dashboard or .env.local
 SUPABASE_URL="${SUPABASE_URL:-http://localhost:54321}"
-EDGE_FUNCTION_URL="${SUPABASE_URL}/functions/v1/admin-update-subscription-price"
+EDGE_FUNCTION_URL="${SUPABASE_URL}/functions/v1/admin-subscriptions/price"
 
 # You need to provide these
 JWT_TOKEN="${JWT_TOKEN:-}"
