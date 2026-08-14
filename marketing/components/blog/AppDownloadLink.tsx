@@ -14,6 +14,10 @@ function isDownloadHref(href?: string) {
   );
 }
 
+function isAmazonAffiliateHref(href?: string) {
+  return href?.startsWith("https://www.amazon.in/") ?? false;
+}
+
 export function AppDownloadLink({
   href,
   children,
@@ -27,6 +31,20 @@ export function AppDownloadLink({
       >
         {children}
       </Link>
+    );
+  }
+
+  if (isAmazonAffiliateHref(href)) {
+    return (
+      <a
+        {...rest}
+        href={href}
+        target="_blank"
+        rel="sponsored nofollow noopener noreferrer"
+        className="text-primary dark:text-indigo-300 underline decoration-primary/30 dark:decoration-indigo-400/40 underline-offset-2 hover:decoration-primary dark:hover:decoration-indigo-300 transition-all"
+      >
+        {children}
+      </a>
     );
   }
 

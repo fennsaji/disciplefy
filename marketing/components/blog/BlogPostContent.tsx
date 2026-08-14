@@ -18,13 +18,15 @@ import { PostCard } from "@/components/blog/PostCard";
 import { Link } from "@/lib/navigation";
 import { insertAd } from "@/lib/insertAd";
 import { ADS } from "@/lib/ads";
+import { linkifyAffiliate } from "@/lib/linkifyAffiliate";
+import { getActiveAffiliateKeywords } from "@/lib/affiliateKeywords";
 
 // Minimal server-side UI strings — avoids async getTranslations in a server component
 // while keeping the component usable from both the locale and fallback routes.
 const UI_STRINGS = {
-  en: { home: "Home",  blog: "Blog",  minRead: (n: number) => `${n} min read`, onThisPage: "On this page", prev: "Previous", next: "Next", related: "Related reading", backToTop: "Back to top", share: "Share" },
-  hi: { home: "होम",   blog: "ब्लॉग", minRead: (n: number) => `${n} मिनट पढ़ें`, onThisPage: "इस पृष्ठ पर", prev: "पिछला", next: "अगला", related: "संबंधित लेख", backToTop: "ऊपर जाएं", share: "साझा करें" },
-  ml: { home: "ഹോം",  blog: "ബ്ലോഗ്", minRead: (n: number) => `${n} മിനിറ്റ് വായന`, onThisPage: "ഈ പേജിൽ", prev: "മുമ്പത്തേത്", next: "അടുത്തത്", related: "അനുബന്ധ വായന", backToTop: "മുകളിലേക്ക്", share: "പങ്കിടുക" },
+  en: { home: "Home",  blog: "Blog",  minRead: (n: number) => `${n} min read`, onThisPage: "On this page", prev: "Previous", next: "Next", related: "Related reading", backToTop: "Back to top", share: "Share", affiliateDisclosure: "As an Amazon Associate, Disciplefy earns from qualifying purchases." },
+  hi: { home: "होम",   blog: "ब्लॉग", minRead: (n: number) => `${n} मिनट पढ़ें`, onThisPage: "इस पृष्ठ पर", prev: "पिछला", next: "अगला", related: "संबंधित लेख", backToTop: "ऊपर जाएं", share: "साझा करें", affiliateDisclosure: "एक Amazon Associate के रूप में, Disciplefy योग्य खरीदारी से कमाता है।" },
+  ml: { home: "ഹോം",  blog: "ബ്ലോഗ്", minRead: (n: number) => `${n} മിനിറ്റ് വായന`, onThisPage: "ഈ പേജിൽ", prev: "മുമ്പത്തേത്", next: "അടുത്തത്", related: "അനുബന്ധ വായന", backToTop: "മുകളിലേക്ക്", share: "പങ്കിടുക", affiliateDisclosure: "ഒരു Amazon Associate എന്ന നിലയിൽ, യോഗ്യമായ വാങ്ങലുകളിൽ നിന്ന് Disciplefy വരുമാനം നേടുന്നു." },
 } as const;
 type UILocale = keyof typeof UI_STRINGS;
 
@@ -47,7 +49,7 @@ function getGradient(tags: string[]) {
   return DEFAULT_GRADIENT;
 }
 
-export function BlogPostContent({
+export async function BlogPostContent({
   post,
   locale = "en",
   adjacent,
@@ -61,7 +63,14 @@ export function BlogPostContent({
   const gradient = getGradient(post.tags);
   const ui = UI_STRINGS[(locale as UILocale) in UI_STRINGS ? (locale as UILocale) : "en"];
   const toc = extractToc(post.content);
-  const contentWithAd = insertAd(post.content, ADS, post.slug);
+  const affiliateKeywords = await getActiveAffiliateKeywords();
+  // Linkify first so the ad-marker paragraph can never be linkified.
+  const { content: linkedContent } = linkifyAffiliate(post.content, affiliateKeywords);
+  const contentWithAd = insertAd(linkedContent, ADS, post.slug);
+  // Disclosure must cover any amazon.in link in the final rendered content —
+  // not just ones linkifyAffiliate auto-inserted — since AppDownloadLink also
+  // applies affiliate styling/rel to any hand-written amazon.in href in markdown.
+  const hasAffiliateLink = contentWithAd.includes("https://www.amazon.in/");
   // Always share the post's own canonical (single-locale) URL, not the page-chrome locale.
   const postLocale = post.locale ?? locale;
   const shareUrl = `https://www.disciplefy.in${postLocale === "en" ? "" : `/${postLocale}`}/blog/${post.slug}`;
@@ -175,6 +184,13 @@ export function BlogPostContent({
 
         {/* Share */}
         <ShareButtons url={shareUrl} title={post.title} label={ui.share} />
+
+        {/* Amazon Associates disclosure — required whenever affiliate links render */}
+        {hasAffiliateLink && (
+          <p className="mt-10 text-xs text-[var(--muted)] italic">
+            {ui.affiliateDisclosure}
+          </p>
+        )}
 
         {/* App CTA */}
         <BlogPostCTA gradient={gradient} slug={post.slug} />

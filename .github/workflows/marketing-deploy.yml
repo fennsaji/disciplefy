@@ -91,6 +91,8 @@ jobs:
           cat > .env.local << EOF
           NEXT_PUBLIC_APP_URL=https://app.disciplefy.in
           BLOG_API_URL=${{ secrets.RS_BACKEND_URL }}
+          NEXT_PUBLIC_SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
           EOF
           echo "✅ Production environment file created"
 
