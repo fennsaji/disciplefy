@@ -32,6 +32,7 @@ const navGroups = [
       { name: 'LLM Costs', href: '/llm-costs', emoji: '💰' },
       { name: 'Token Management', href: '/token-management', emoji: '🪙' },
       { name: 'Promo Codes', href: '/promo-codes', emoji: '🎟️' },
+      { name: 'Affiliate Keywords', href: '/affiliate-keywords', emoji: '🔗' },
       { name: 'IAP Config', href: '/iap-config', emoji: '🍎' },
     ],
   },

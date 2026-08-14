@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
+import { useSearchParams } from "next/navigation";
 import { PLAY_STORE_URL } from "@/lib/app-links";
 
 const FEATURES = [
@@ -14,6 +15,9 @@ const FEATURES = [
 
 export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
   const t = useTranslations("downloadPage");
+  // Closes the attribution loop from BlogPostCTA's `?ref=blog` — lets us see
+  // which arrivals actually convert to a store click, not just CTA clicks.
+  const ref = useSearchParams().get("ref") ?? undefined;
 
   return (
     <>
@@ -47,7 +51,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
                 rel="noopener noreferrer"
                 aria-label="Get it on Google Play"
                 className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
-                onClick={() => track("play_store_click", { source: "download_page_hero" })}
+                onClick={() => track("play_store_click", { source: "download_page_hero", ref })}
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0" aria-hidden="true">
                   <path d="M3.18 23.76c.37.2.8.19 1.17-.03L16.83 12 12.5 7.67 3.18 23.76zm-1.62-2.1c-.12-.22-.18-.47-.18-.73V3.07c0-.26.06-.51.18-.73l9.5 9.66-9.5 9.66zm20.28-9.19c.41.22.66.61.66 1.02 0 .41-.25.8-.66 1.02l-2.7 1.54-3.45-3.51 3.45-3.51 2.7 1.44zM4.35.27l11.48 6.57L12.5 10.17 3.35.24c.37-.17.79-.16 1-.03z" />
@@ -60,7 +64,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
                 rel="noopener noreferrer"
                 aria-label="Open Web App"
                 className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
-                onClick={() => track("web_app_click", { source: "download_page_hero" })}
+                onClick={() => track("web_app_click", { source: "download_page_hero", ref })}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5 shrink-0" aria-hidden="true">
                   <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -126,7 +130,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
-            onClick={() => track("play_store_click", { source: "download_page_sticky" })}
+            onClick={() => track("play_store_click", { source: "download_page_sticky", ref })}
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0" aria-hidden="true">
               <path d="M3.18 23.76c.37.2.8.19 1.17-.03L16.83 12 12.5 7.67 3.18 23.76zm-1.62-2.1c-.12-.22-.18-.47-.18-.73V3.07c0-.26.06-.51.18-.73l9.5 9.66-9.5 9.66zm20.28-9.19c.41.22.66.61.66 1.02 0 .41-.25.8-.66 1.02l-2.7 1.54-3.45-3.51 3.45-3.51 2.7 1.44zM4.35.27l11.48 6.57L12.5 10.17 3.35.24c.37-.17.79-.16 1-.03z" />
@@ -138,7 +142,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 border border-primary text-primary px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/5 transition-colors"
-            onClick={() => track("web_app_click", { source: "download_page_sticky" })}
+            onClick={() => track("web_app_click", { source: "download_page_sticky", ref })}
           >
             {t("webAppCta")}
           </a>

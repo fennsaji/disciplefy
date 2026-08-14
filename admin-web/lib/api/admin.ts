@@ -53,7 +53,9 @@ import type {
   TriggerCronResponse,
   UsageLogsRequest,
   UsageLogsResponse,
-  PlAnalyticsResponse
+  PlAnalyticsResponse,
+  ListAffiliateKeywordsResponse,
+  MutateAffiliateKeywordResponse
 } from '@/types/admin'
 
 // Safely parse an error response body: non-JSON (HTML/empty) error bodies fall
@@ -740,5 +742,78 @@ export async function fetchPlAnalytics(params: {
   if (!response.ok) {
     throw new Error(await parseErrorResponse(response, 'Failed to fetch P&L analytics'))
   }
+  return response.json()
+}
+
+// ============================================================================
+// Affiliate Keywords API
+// ============================================================================
+
+export async function listAffiliateKeywords(): Promise<ListAffiliateKeywordsResponse> {
+  const response = await fetch('/api/admin/list-affiliate-keywords', {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response, 'Failed to load affiliate keywords'))
+  }
+
+  return response.json()
+}
+
+export async function createAffiliateKeyword(
+  params: { keyword: string }
+): Promise<MutateAffiliateKeywordResponse> {
+  const response = await fetch('/api/admin/create-affiliate-keyword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response, 'Failed to create affiliate keyword'))
+  }
+
+  return response.json()
+}
+
+export async function toggleAffiliateKeyword(
+  params: { id: string; is_active: boolean }
+): Promise<MutateAffiliateKeywordResponse> {
+  const response = await fetch('/api/admin/toggle-affiliate-keyword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response, 'Failed to toggle affiliate keyword'))
+  }
+
+  return response.json()
+}
+
+export async function deleteAffiliateKeyword(
+  params: { id: string }
+): Promise<MutateAffiliateKeywordResponse> {
+  const response = await fetch('/api/admin/delete-affiliate-keyword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response, 'Failed to delete affiliate keyword'))
+  }
+
   return response.json()
 }

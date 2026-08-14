@@ -1,4 +1,5 @@
 // marketing/app/download/page.tsx
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getAlternates, downloadPageJsonLd } from "@/lib/seo";
@@ -22,7 +23,9 @@ export const metadata: Metadata = {
 export default function DownloadPage() {
   return (
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
-      <DownloadPageContent jsonLd={JSON.stringify(downloadPageJsonLd)} />
+      <Suspense>
+        <DownloadPageContent jsonLd={JSON.stringify(downloadPageJsonLd)} />
+      </Suspense>
     </NextIntlClientProvider>
   );
 }

@@ -902,3 +902,26 @@ export interface PlAnalyticsResponse {
   exchange_rate_used: number
   exchange_rate_is_live: boolean
 }
+
+// ============================================================================
+// Affiliate Keywords Types
+// ============================================================================
+
+export interface AffiliateKeyword {
+  id: string
+  keyword: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ListAffiliateKeywordsResponse {
+  success: boolean
+  keywords: AffiliateKeyword[]
+}
+
+export interface MutateAffiliateKeywordResponse {
+  success: boolean
+  keyword?: AffiliateKeyword
+  error?: string
+}
