@@ -23,7 +23,7 @@ interface Topic {
 
 interface TopicTranslation {
   topic_id: string;
-  lang_code: string;
+  language_code: string;
   title: string;
   description: string;
   category: string;
@@ -415,7 +415,7 @@ export async function getLocalizedTopicContent(
       .from('recommended_topics_translations')
       .select('title, description')
       .eq('topic_id', topic.id)
-      .eq('lang_code', language)
+      .eq('language_code', language)
       .single();
 
     if (error) {

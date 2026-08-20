@@ -95,13 +95,13 @@ export class TopicsRepository {
         display_order,
         created_at,
         recommended_topics_translations!left(
-          lang_code,
+          language_code,
           title,
           description,
           category
         )
       `)
-      .or(`lang_code.eq.${language},lang_code.eq.en`, { foreignTable: 'recommended_topics_translations' })
+      .or(`language_code.eq.${language},language_code.eq.en`, { foreignTable: 'recommended_topics_translations' })
       .order('display_order', { ascending: true })
       .range(offset, offset + limit - 1)
 
@@ -170,14 +170,14 @@ export class TopicsRepository {
         display_order,
         created_at,
         recommended_topics_translations!left(
-          lang_code,
+          language_code,
           title,
           description,
           category
         )
       `)
       .eq('category', category)
-      .eq('recommended_topics_translations.lang_code', language)
+      .eq('recommended_topics_translations.language_code', language)
       .order('display_order', { ascending: true })
       .range(offset, offset + limit - 1)
 
@@ -214,7 +214,7 @@ export class TopicsRepository {
     const { data, error } = await this.supabaseClient
       .from('recommended_topics_translations')
       .select('category')
-      .eq('lang_code', language)
+      .eq('language_code', language)
 
     if (error) {
       console.error(`Error fetching categories for language ${language}:`, error)
@@ -336,14 +336,14 @@ export class TopicsRepository {
         display_order,
         created_at,
         recommended_topics_translations!left(
-          lang_code,
+          language_code,
           title,
           description,
           category
         )
       `)
       .in('category', categories as string[])
-      .or(`lang_code.eq.${language},lang_code.is.null`, { foreignTable: 'recommended_topics_translations' })
+      .or(`language_code.eq.${language},language_code.is.null`, { foreignTable: 'recommended_topics_translations' })
       .order('display_order', { ascending: true })
       .range(offset, offset + limit - 1)
 
@@ -391,8 +391,8 @@ export class TopicsRepository {
     // For other languages, count from translations table
     let query = this.supabaseClient
       .from('recommended_topics')
-      .select('id, recommended_topics_translations!inner(lang_code)', { count: 'exact', head: true })
-      .eq('recommended_topics_translations.lang_code', language)
+      .select('id, recommended_topics_translations!inner(language_code)', { count: 'exact', head: true })
+      .eq('recommended_topics_translations.language_code', language)
 
     if (category) {
       query = query.eq('category', category)
@@ -443,7 +443,7 @@ export class TopicsRepository {
       .from('recommended_topics')
       .select('id, recommended_topics_translations!inner(id)', { count: 'exact', head: true })
       .in('category', categories as string[])
-      .eq('recommended_topics_translations.lang_code', language)
+      .eq('recommended_topics_translations.language_code', language)
 
     if (error) {
       console.error(`Error fetching topics count by multiple categories for language ${language}:`, error)
@@ -488,8 +488,8 @@ export class TopicsRepository {
       const translations = dbTopic.recommended_topics_translations || []
       
       // Prefer requested language translation, fallback to English
-      const preferredTranslation = translations.find((t: any) => t.lang_code === language)
-      const englishTranslation = translations.find((t: any) => t.lang_code === 'en')
+      const preferredTranslation = translations.find((t: any) => t.language_code === language)
+      const englishTranslation = translations.find((t: any) => t.language_code === 'en')
       const translation = preferredTranslation || englishTranslation
       
       return {

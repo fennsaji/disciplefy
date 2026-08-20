@@ -250,9 +250,12 @@ async function upsertProfile(
 
   if (updateError?.code === 'PGRST116') {
     const defaultProfile = await createDefaultProfile(services, userId, updateData)
-    const { data, error } = await services.supabaseServiceClient
+    // Concurrent requests can race here (both see PGRST116, both try to create
+    // the row) — upsert with ignoreDuplicates so the loser no-ops instead of
+    // hitting 23505 (and never clobbers fields the winner may have already set).
+    const { error: upsertError } = await services.supabaseServiceClient
       .from('user_profiles')
-      .insert({
+      .upsert({
         id: userId,
         language_preference: defaultProfile.language_preference,
         theme_preference: defaultProfile.theme_preference,
@@ -260,11 +263,18 @@ async function upsertProfile(
         last_name: defaultProfile.last_name,
         profile_picture: defaultProfile.profile_picture,
         is_admin: defaultProfile.is_admin
-      })
-      .select()
-      .single()
+      }, { onConflict: 'id', ignoreDuplicates: true })
 
-    if (error) throw new AppError('DATABASE_ERROR', error.message, 500)
+    if (upsertError) throw new AppError('DATABASE_ERROR', upsertError.message, 500)
+
+    // Whether we created the row or lost the race, this request's own
+    // updateData still needs to land — re-apply it now that the row exists.
+    const { error: reapplyError } = await services.supabaseServiceClient
+      .from('user_profiles')
+      .update(updateWithTimestamp)
+      .eq('id', userId)
+
+    if (reapplyError) throw new AppError('DATABASE_ERROR', reapplyError.message, 500)
   } else if (updateError) {
     throw new AppError('DATABASE_ERROR', updateError.message, 500)
   }
@@ -313,9 +323,12 @@ async function handleGetProfile(
 
   if (error?.code === 'PGRST116') {
     const defaultProfile = await createDefaultProfile(services, userId)
+    // Concurrent requests can race here (both see PGRST116, both try to create
+    // the row) — upsert with ignoreDuplicates so the loser no-ops instead of
+    // hitting 23505 (and never clobbers fields the winner may have already set).
     const { data: newProfile, error: insertError } = await services.supabaseServiceClient
       .from('user_profiles')
-      .insert({
+      .upsert({
         id: userId,
         language_preference: defaultProfile.language_preference,
         theme_preference: defaultProfile.theme_preference,
@@ -323,12 +336,24 @@ async function handleGetProfile(
         last_name: defaultProfile.last_name,
         profile_picture: defaultProfile.profile_picture,
         is_admin: defaultProfile.is_admin
-      })
+      }, { onConflict: 'id', ignoreDuplicates: true })
       .select()
-      .single()
+      .maybeSingle()
 
     if (insertError) throw new AppError('DATABASE_ERROR', 'Failed to create user profile', 500)
-    userProfile = newProfile
+
+    if (newProfile) {
+      userProfile = newProfile
+    } else {
+      // Lost the race — another request already created the row. Fetch it.
+      const { data: existingProfile, error: refetchError } = await services.supabaseServiceClient
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (refetchError) throw new AppError('DATABASE_ERROR', 'Failed to fetch user profile', 500)
+      userProfile = existingProfile
+    }
   } else if (error) {
     throw new AppError('DATABASE_ERROR', 'Failed to fetch user profile', 500)
   } else {

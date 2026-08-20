@@ -151,16 +151,19 @@ class StreakRepositoryImpl implements StreakRepository {
   Future<DailyVerseStreak> _createInitialStreak(String userId) async {
     try {
       final now = DateTime.now();
+      // Concurrent calls can both see no existing row and race here — upsert
+      // on the unique user_id constraint so the loser updates instead of
+      // hitting 23505 (unique_user_daily_verse_streak).
       final response = await _supabaseClient
           .from('daily_verse_streaks')
-          .insert({
+          .upsert({
             'user_id': userId,
             'current_streak': 0,
             'longest_streak': 0,
             'total_views': 0,
             'created_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
-          })
+          }, onConflict: 'user_id')
           .select()
           .single();
 
