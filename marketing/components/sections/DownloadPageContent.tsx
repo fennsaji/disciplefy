@@ -58,19 +58,6 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
                 </svg>
                 Google Play
               </a>
-              <a
-                href="https://app.disciplefy.in"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open Web App"
-                className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
-                onClick={() => track("web_app_click", { source: "download_page_hero", ref })}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5 shrink-0" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-                Web App
-              </a>
               {APP_STORE_URL && (
                 <a
                   href={APP_STORE_URL}
@@ -86,6 +73,19 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
                   App Store
                 </a>
               )}
+              <a
+                href="https://app.disciplefy.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open Web App"
+                className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
+                onClick={() => track("web_app_click", { source: "download_page_hero", ref })}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5 shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+                Web App
+              </a>
             </div>
           </motion.div>
         </section>
@@ -137,7 +137,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0" aria-hidden="true">
               <path d="M3.18 23.76c.37.2.8.19 1.17-.03L16.83 12 12.5 7.67 3.18 23.76zm-1.62-2.1c-.12-.22-.18-.47-.18-.73V3.07c0-.26.06-.51.18-.73l9.5 9.66-9.5 9.66zm20.28-9.19c.41.22.66.61.66 1.02 0 .41-.25.8-.66 1.02l-2.7 1.54-3.45-3.51 3.45-3.51 2.7 1.44zM4.35.27l11.48 6.57L12.5 10.17 3.35.24c.37-.17.79-.16 1-.03z" />
             </svg>
-            {t("cta")}
+            Google Play
           </a>
           {APP_STORE_URL && (
             <a
