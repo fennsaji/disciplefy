@@ -58,7 +58,7 @@
   "downloadPage": {
     "title": "Download Disciplefy — Free Bible Study App",
     "subtitle": "Bible study in English, हिन्दी & മലയാളം. Free to download.",
-    "cta": "Download Free on Google Play",
+    "cta": "Download Free",
     "or": "or",
     "openWebApp": "open the web app",
     "webAppCta": "Open Web App →",
@@ -69,13 +69,13 @@
     "feature4": { "title": "3 Languages", "desc": "English, हिन्दी & മലയാളം — native quality, not a translation" },
     "q1": { "q": "Is Disciplefy free?", "a": "Yes — the core app is completely free. Premium plans with more daily tokens are available starting at ₹79/month." },
     "q2": { "q": "What languages are supported?", "a": "English, Hindi, and Malayalam. All features work in all three languages." },
-    "q3": { "q": "Is there an iOS app?", "a": "Not yet. Android and web app are available now. iOS is coming soon." },
+    "q3": { "q": "Is there an iOS app?", "a": "Yes — Disciplefy is available on the App Store, Google Play, and web." },
     "q4": { "q": "How does the Bible study work?", "a": "Enter any Bible verse or question; Disciplefy generates a complete study guide in seconds in your language." }
   },
   "downloadSection": {
     "title": "Start Studying the Bible Today",
     "subtitle": "English, हिन्दी & മലയാളം",
-    "cta": "Download Free on Google Play",
+    "cta": "Download Free",
     "openWebApp": "or open the web app →"
   },
   "downloadCTA": {
