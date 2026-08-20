@@ -123,12 +123,11 @@ async function getLocalizedContent(
   }
 
   // Try to get localized content from recommended_topics_translations table
-  // using lang_code column (not language_code)
   const { data: translation } = await services.supabaseServiceClient
     .from("recommended_topics_translations")
     .select("title, description")
     .eq("topic_id", topicId)
-    .eq("lang_code", language)
+    .eq("language_code", language)
     .single();
 
   if (translation) {
