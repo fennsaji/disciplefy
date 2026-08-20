@@ -124,7 +124,7 @@ platform :ios do
       # Pin SPM checkout dir so it matches the earlier `flutter build ios` resolution —
       # otherwise gym re-resolves packages into DerivedData and
       # crashlytics_upload_symbols_binary's SPM path guess can silently miss.
-      clonedSourcePackagesDirPath: "../build/ios/SourcePackages",
+      cloned_source_packages_path: "../build/ios/SourcePackages",
       # Flutter already compiled via `flutter build ios --no-codesign`; gym re-archives.
       export_options: {
         signingStyle: "manual",
