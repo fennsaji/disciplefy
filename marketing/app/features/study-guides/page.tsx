@@ -8,7 +8,7 @@ import messages from "@/messages/en.json";
 export const metadata: Metadata = {
   title: "Bible Study Guide App — Free | Disciplefy",
   description:
-    "Access structured study guides for any Bible passage. Save, revisit, and grow in your faith. Free on Android.",
+    "Access structured study guides for any Bible passage. Save, revisit, and grow in your faith. Free on iOS, Android & web.",
   alternates: getAlternates("/features/study-guides"),
   openGraph: {
     images: [{
@@ -25,7 +25,7 @@ export default function StudyGuidesPage() {
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Bible Study Guides — Free, In Your Language"
-        description="Access structured study guides for any Bible passage. Save, revisit, and grow in your faith. Free on Android."
+        description="Access structured study guides for any Bible passage. Save, revisit, and grow in your faith. Free on iOS, Android & web."
         howItWorks={[
           "Search by Bible passage or spiritual topic",
           "Get a full study guide with context, interpretation, and prayer points",

@@ -35,7 +35,7 @@ const FEATURES = [
   { feature: "Reading plans", disciplefy: true, youversion: true },
   { feature: "Fellowship groups", disciplefy: true, youversion: false },
   { feature: "Free tier", disciplefy: true, youversion: true },
-  { feature: "Android app", disciplefy: true, youversion: true },
+  { feature: "iOS & Android app", disciplefy: true, youversion: true },
 ];
 
 function ComparisonTable() {
@@ -73,7 +73,7 @@ export default function VsYouversionPage() {
           Disciplefy vs YouVersion
         </h1>
         <p className="text-[var(--muted)] text-lg mb-10">
-          Both are free Bible apps for Android. Here is an honest look at how they differ — and which one works better for Indian Christians who want to go deeper in their study.
+          Both are free Bible apps for iOS and Android. Here is an honest look at how they differ — and which one works better for Indian Christians who want to go deeper in their study.
         </p>
 
         <ComparisonTable />

@@ -1,6 +1,6 @@
 // marketing/lib/seo.ts
 import { locales } from "@/i18n";
-import { PLAY_STORE_URL } from "@/lib/app-links";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-links";
 
 const BASE = "https://www.disciplefy.in";
 
@@ -36,6 +36,16 @@ export const homepageJsonLd = {
       applicationCategory: "LifestyleApplication",
       description: "Bible study app in English, Hindi, and Malayalam for Indian Christians.",
       installUrl: PLAY_STORE_URL,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+      url: BASE,
+    },
+    {
+      "@type": "MobileApplication",
+      name: "Disciplefy",
+      operatingSystem: "iOS",
+      applicationCategory: "LifestyleApplication",
+      description: "Bible study app in English, Hindi, and Malayalam for Indian Christians.",
+      installUrl: APP_STORE_URL,
       offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
       url: BASE,
     },
@@ -128,6 +138,16 @@ export const downloadPageJsonLd = {
       url: BASE,
     },
     {
+      "@type": "MobileApplication",
+      name: "Disciplefy",
+      operatingSystem: "iOS",
+      applicationCategory: "LifestyleApplication",
+      description: "Bible study app in English, Hindi, and Malayalam for Indian Christians.",
+      installUrl: APP_STORE_URL,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+      url: BASE,
+    },
+    {
       "@type": "FAQPage",
       mainEntity: [
         {
@@ -143,7 +163,7 @@ export const downloadPageJsonLd = {
         {
           "@type": "Question",
           name: "Is there an iOS app?",
-          acceptedAnswer: { "@type": "Answer", text: "Not yet. Android and web app are available. iOS is coming soon." },
+          acceptedAnswer: { "@type": "Answer", text: "Yes — Disciplefy is available on the App Store, Google Play, and web." },
         },
         {
           "@type": "Question",

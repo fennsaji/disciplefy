@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
 import { useSearchParams } from "next/navigation";
-import { PLAY_STORE_URL } from "@/lib/app-links";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-links";
 
 const FEATURES = [
   { icon: "✝", key: "feature1" },
@@ -34,7 +34,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
             transition={{ duration: 0.5 }}
           >
             <div className="inline-flex items-center gap-2 bg-gold-light/60 dark:bg-gold/10 border border-gold/30 text-amber-900 dark:text-amber-300 px-3.5 py-1.5 rounded-full text-sm font-semibold mb-6">
-              <span>Free · Android &amp; Web</span>
+              <span>Free · iOS, Android &amp; Web</span>
             </div>
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl mb-4 leading-snug">
               {t("title")}
@@ -71,19 +71,21 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
                 </svg>
                 Web App
               </a>
-              {/* App Store — coming soon */}
-              <div
-                className="relative inline-flex items-center gap-2 bg-[var(--surface)] text-[var(--muted)] px-4 py-2.5 rounded-xl text-sm font-semibold border border-[var(--border)] cursor-not-allowed select-none"
-                aria-label="App Store — Coming Soon"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0" aria-hidden="true">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                </svg>
-                App Store
-                <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                  Soon
-                </span>
-              </div>
+              {APP_STORE_URL && (
+                <a
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Download on the App Store"
+                  className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
+                  onClick={() => track("app_store_click", { source: "download_page_hero", ref })}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0" aria-hidden="true">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  App Store
+                </a>
+              )}
             </div>
           </motion.div>
         </section>
@@ -137,6 +139,20 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
             </svg>
             {t("cta")}
           </a>
+          {APP_STORE_URL && (
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 transition-colors"
+              onClick={() => track("app_store_click", { source: "download_page_sticky", ref })}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0" aria-hidden="true">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+              App Store
+            </a>
+          )}
           <a
             href="https://app.disciplefy.in"
             target="_blank"

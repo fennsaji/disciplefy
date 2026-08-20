@@ -6,16 +6,16 @@ import { FeaturePageContent } from "@/components/sections/FeaturePageContent";
 import messages from "@/messages/en.json";
 
 export const metadata: Metadata = {
-  title: "Bible Verse of the Day App for Android — Disciplefy",
+  title: "Bible Verse of the Day App — Disciplefy",
   description:
-    "Start every day with a fresh Bible verse and short devotional in your language. Free on Android.",
+    "Start every day with a fresh Bible verse and short devotional in your language. Free on iOS, Android & web.",
   alternates: getAlternates("/features/daily-verse"),
   openGraph: {
     images: [{
       url: `https://www.disciplefy.in/og?title=Daily+Bible+Verse&subtitle=Fresh+Devotional+Every+Day`,
       width: 1200,
       height: 675,
-      alt: "Bible Verse of the Day App for Android — Disciplefy",
+      alt: "Bible Verse of the Day App — Disciplefy",
     }],
   },
 };
@@ -25,7 +25,7 @@ export default function DailyVersePage() {
     <NextIntlClientProvider locale="en" messages={messages as unknown as import("next-intl").AbstractIntlMessages}>
       <FeaturePageContent
         title="Bible Verse of the Day App"
-        description="Start every day with a fresh Bible verse and short devotional in your language. Free on Android."
+        description="Start every day with a fresh Bible verse and short devotional in your language. Free on iOS, Android & web."
         howItWorks={[
           "Open the app each morning to receive a new daily verse",
           "Read a short devotional in English, Hindi, or Malayalam",

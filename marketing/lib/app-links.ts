@@ -6,8 +6,6 @@ export const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${A
 
 export const WEB_APP_URL = "https://app.disciplefy.in";
 
-/**
- * iOS App Store URL. Null until the app clears App Review — the /links page
- * renders a disabled "coming soon" row while this is null.
- */
-export const APP_STORE_URL: string | null = null;
+/** iOS App Store URL. Live — app cleared App Review. */
+export const APP_STORE_URL: string | null =
+  "https://apps.apple.com/in/app/disciplefy-bible-study-app/id6778309947";
