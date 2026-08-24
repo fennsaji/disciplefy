@@ -81,7 +81,9 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
 
       emit(loadedState);
     } catch (e) {
-      emit(FollowUpChatError('Failed to start conversation: ${e.toString()}'));
+      Logger.error('Failed to start conversation', error: e);
+      emit(const FollowUpChatError(
+          'Failed to start conversation. Please try again.'));
     }
   }
 
@@ -135,9 +137,10 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
         emit,
       );
     } catch (e) {
+      Logger.error('Failed to send question', error: e);
       emit(stateWithUserMessage.copyWith(
         isProcessing: false,
-        error: 'Failed to send question: ${e.toString()}',
+        error: 'Failed to send question. Please try again.',
       ));
     }
   }
@@ -182,7 +185,9 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
         );
       }
     } catch (e) {
-      add(StreamingErrorEvent('Failed to start streaming: ${e.toString()}'));
+      Logger.error('Failed to start streaming', error: e);
+      add(const StreamingErrorEvent(
+          'Failed to start streaming. Please try again.'));
     }
   }
 
@@ -349,7 +354,8 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
             'HTTP ${response.statusCode}: ${response.body}'));
       }
     } catch (e) {
-      add(StreamingErrorEvent('HTTP request failed: ${e.toString()}'));
+      Logger.error('HTTP request failed', error: e);
+      add(const StreamingErrorEvent('Request failed. Please try again.'));
     }
   }
 

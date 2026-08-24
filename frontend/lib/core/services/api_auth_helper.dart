@@ -258,7 +258,7 @@ class ApiAuthHelper {
         throw lastError;
       } else {
         throw TokenValidationException(
-          message: 'Token validation failed: ${lastError.toString()}',
+          message: 'Token validation failed. Please try again.',
           code: 'VALIDATION_ERROR',
         );
       }

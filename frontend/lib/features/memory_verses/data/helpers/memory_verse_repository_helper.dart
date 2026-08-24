@@ -78,7 +78,7 @@ class MemoryVerseRepositoryHelper {
     } catch (e) {
       logError('Unexpected error in $operationName: $e');
       return Left(ServerFailure(
-        message: 'Failed to complete $operationName: ${e.toString()}',
+        message: 'Failed to complete $operationName. Please try again.',
         code: 'UNEXPECTED_ERROR',
       ));
     }

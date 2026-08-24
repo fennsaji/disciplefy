@@ -9,6 +9,7 @@ import '../widgets/language_selection_card.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Screen for selecting preferred language during onboarding
 class LanguageSelectionScreen extends StatefulWidget {
@@ -83,11 +84,12 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       }
     } catch (e) {
       // Show error and do NOT navigate - allow user to retry
+      Logger.error('Failed to save language preference', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to save language preference: ${e.toString()}',
+              'Failed to save language preference. Please try again.',
               style: AppFonts.inter(),
             ),
             backgroundColor: AppColors.error,

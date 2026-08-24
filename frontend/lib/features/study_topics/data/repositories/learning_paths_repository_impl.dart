@@ -91,7 +91,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('[LearningPathsRepo] Failed to load learning paths',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to load learning paths.'));
     }
   }
 
@@ -136,7 +139,11 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error(
+          '[LearningPathsRepo] Failed to load learning path categories',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to load learning path categories.'));
     }
   }
 
@@ -166,7 +173,11 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error(
+          '[LearningPathsRepo] Failed to load learning paths for category',
+          error: e);
+      return const Left(ClientFailure(
+          message: 'Failed to load learning paths for category.'));
     }
   }
 
@@ -232,7 +243,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('[LearningPathsRepo] Failed to load learning path details',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to load learning path details.'));
     }
   }
 
@@ -346,7 +360,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('[LearningPathsRepo] Failed to enroll in learning path',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to enroll in learning path.'));
     }
   }
 
@@ -491,7 +508,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('[LearningPathsRepo] Failed to load personalized paths',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to load personalized paths.'));
     }
   }
 
@@ -542,7 +562,10 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
       }
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('[LearningPathsRepo] Failed to load recommended path',
+          error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to load recommended path.'));
     }
   }
 }

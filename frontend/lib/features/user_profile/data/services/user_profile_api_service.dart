@@ -7,6 +7,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../models/user_profile_model.dart';
 import '../../domain/entities/user_profile_entity.dart';
 
@@ -70,8 +71,9 @@ class UserProfileApiService {
         message: 'Invalid response format: ${e.message}',
       ));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Unexpected error: ${e.toString()}',
+      Logger.error('Failed to fetch user profile', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to fetch user profile. Please try again.',
       ));
     }
   }
@@ -215,8 +217,9 @@ class UserProfileApiService {
         message: 'Invalid response format: ${e.message}',
       ));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Unexpected error: ${e.toString()}',
+      Logger.error('Failed to update user profile', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to update user profile. Please try again.',
       ));
     }
   }
@@ -247,8 +250,9 @@ class UserProfileApiService {
         message: 'Invalid JSON response: ${e.message}',
       ));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to parse profile response: ${e.toString()}',
+      Logger.error('Failed to parse profile response', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to parse profile response. Please try again.',
       ));
     }
   }
@@ -308,8 +312,9 @@ class UserProfileApiService {
         message: 'Invalid response format: ${e.message}',
       ));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Unexpected error: ${e.toString()}',
+      Logger.error('Failed to send profile request', error: e);
+      return const Left(ServerFailure(
+        message: 'Unexpected error. Please try again.',
       ));
     }
   }

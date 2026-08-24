@@ -406,8 +406,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       }
     } catch (e) {
       Logger.error('🔐 [AUTH BLOC] ❌ Session check error: $e');
-      emit(auth_states.AuthErrorState(
-          message: 'Session check failed: ${e.toString()}'));
+      emit(const auth_states.AuthErrorState(
+          message: 'Session check failed. Please try again.'));
     }
   }
 

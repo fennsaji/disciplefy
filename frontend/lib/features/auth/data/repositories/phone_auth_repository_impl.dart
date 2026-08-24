@@ -1,5 +1,6 @@
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/repositories/phone_auth_repository.dart';
 import '../datasources/phone_auth_remote_datasource.dart';
 
@@ -39,8 +40,9 @@ class PhoneAuthRepositoryImpl implements PhoneAuthRepository {
         code: e.code,
       );
     } catch (e) {
+      Logger.error('Failed to send OTP', error: e);
       throw ServerFailure(
-        message: 'An unexpected error occurred: ${e.toString()}',
+        message: 'An unexpected error occurred. Please try again.',
         code: 'UNEXPECTED_ERROR',
       );
     }
@@ -78,8 +80,9 @@ class PhoneAuthRepositoryImpl implements PhoneAuthRepository {
         code: e.code,
       );
     } catch (e) {
+      Logger.error('Failed to verify OTP', error: e);
       throw ServerFailure(
-        message: 'An unexpected error occurred: ${e.toString()}',
+        message: 'An unexpected error occurred. Please try again.',
         code: 'UNEXPECTED_ERROR',
       );
     }

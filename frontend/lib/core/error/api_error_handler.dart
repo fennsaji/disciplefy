@@ -61,7 +61,7 @@ class ApiErrorHandler {
     }
 
     throw ServerException(
-      message: 'Failed to complete $operation: ${error.toString()}',
+      message: 'Failed to complete $operation. Please try again.',
       code: 'OPERATION_FAILED',
     );
   }

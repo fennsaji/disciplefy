@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/utils/logger.dart';
 import '../entities/user_profile_entity.dart';
 import '../repositories/user_profile_repository.dart';
 
@@ -19,8 +20,9 @@ class GetUserProfile
       final profile = await repository.getUserProfile(params.userId);
       return Right(profile);
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to get user profile: ${e.toString()}',
+      Logger.error('Failed to get user profile', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to get user profile. Please try again.',
         code: 'GET_PROFILE_ERROR',
       ));
     }

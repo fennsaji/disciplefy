@@ -230,12 +230,12 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           );
         }
       } catch (e) {
+        Logger.error('Failed to delete reflection', error: e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(context
-                    .tr(TranslationKeys.reflectionJournalDeleteFailed)
-                    .replaceAll('{error}', e.toString()))),
+                content: Text(
+                    context.tr(TranslationKeys.reflectionJournalDeleteFailed))),
           );
         }
       }

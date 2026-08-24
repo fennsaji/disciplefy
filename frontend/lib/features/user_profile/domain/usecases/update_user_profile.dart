@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/utils/logger.dart';
 import '../entities/user_profile_entity.dart';
 import '../repositories/user_profile_repository.dart';
 
@@ -17,8 +18,9 @@ class UpdateUserProfile implements UseCase<void, UpdateUserProfileParams> {
       await repository.upsertUserProfile(params.profile);
       return const Right(null);
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to update user profile: ${e.toString()}',
+      Logger.error('Failed to update user profile', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to update user profile. Please try again.',
         code: 'UPDATE_PROFILE_ERROR',
       ));
     }

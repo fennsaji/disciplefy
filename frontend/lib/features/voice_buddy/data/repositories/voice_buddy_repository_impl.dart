@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
 import '../../domain/entities/voice_preferences_entity.dart';
 import '../../domain/repositories/voice_buddy_repository.dart';
@@ -30,8 +31,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to get preferences: ${e.toString()}',
+      Logger.error('Failed to get preferences', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to get preferences. Please try again.',
         code: 'GET_PREFERENCES_FAILED',
       ));
     }
@@ -53,8 +55,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to update preferences: ${e.toString()}',
+      Logger.error('Failed to update preferences', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to update preferences. Please try again.',
         code: 'UPDATE_PREFERENCES_FAILED',
       ));
     }
@@ -74,8 +77,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to reset preferences: ${e.toString()}',
+      Logger.error('Failed to reset preferences', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to reset preferences. Please try again.',
         code: 'RESET_PREFERENCES_FAILED',
       ));
     }
@@ -95,8 +99,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to check quota: ${e.toString()}',
+      Logger.error('Failed to check quota', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to check quota. Please try again.',
         code: 'CHECK_QUOTA_FAILED',
       ));
     }
@@ -114,8 +119,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on AuthenticationException catch (e) {
       return Left(AuthenticationFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to increment usage: ${e.toString()}',
+      Logger.error('Failed to increment usage', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to increment usage. Please try again.',
         code: 'INCREMENT_USAGE_FAILED',
       ));
     }
@@ -145,8 +151,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to start conversation: ${e.toString()}',
+      Logger.error('Failed to start conversation', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to start conversation. Please try again.',
         code: 'START_CONVERSATION_FAILED',
       ));
     }
@@ -173,8 +180,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to get conversation history: ${e.toString()}',
+      Logger.error('Failed to get conversation history', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to get conversation history. Please try again.',
         code: 'GET_HISTORY_FAILED',
       ));
     }
@@ -196,8 +204,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to get conversation: ${e.toString()}',
+      Logger.error('Failed to get conversation', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to get conversation. Please try again.',
         code: 'GET_CONVERSATION_FAILED',
       ));
     }
@@ -227,8 +236,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to end conversation: ${e.toString()}',
+      Logger.error('Failed to end conversation', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to end conversation. Please try again.',
         code: 'END_CONVERSATION_FAILED',
       ));
     }
@@ -269,8 +279,9 @@ class VoiceBuddyRepositoryImpl implements VoiceBuddyRepository {
     } on ClientException catch (e) {
       return Left(ClientFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to save message: ${e.toString()}',
+      Logger.error('Failed to save message', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to save message. Please try again.',
         code: 'SAVE_MESSAGE_FAILED',
       ));
     }

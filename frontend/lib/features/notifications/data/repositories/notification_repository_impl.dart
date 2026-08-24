@@ -373,7 +373,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
       return Left(AuthenticationFailure(message: e.message));
     } catch (e) {
       Logger.error('[NotificationRepo] Error updating preferences: $e');
-      return Left(ServerFailure(message: e.toString()));
+      return const Left(
+          ServerFailure(message: 'Failed to update notification preferences.'));
     }
   }
 
@@ -383,7 +384,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
       final enabled = await notificationService.areNotificationsEnabled();
       return Right(enabled);
     } catch (e) {
-      return Left(CacheFailure(message: e.toString()));
+      Logger.error('[NotificationRepo] Error checking notification status',
+          error: e);
+      return const Left(
+          CacheFailure(message: 'Failed to check notification status.'));
     }
   }
 
@@ -393,7 +397,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
       final granted = await notificationService.requestPermissions();
       return Right(granted);
     } catch (e) {
-      return Left(CacheFailure(message: e.toString()));
+      Logger.error('[NotificationRepo] Error requesting permissions', error: e);
+      return const Left(
+          CacheFailure(message: 'Failed to request permissions.'));
     }
   }
 }

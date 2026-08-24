@@ -161,8 +161,9 @@ class PhoneAuthRemoteDataSourceImpl implements PhoneAuthRemoteDataSource {
         );
       }
 
+      Logger.error('Failed to send OTP', error: e);
       throw ServerException(
-        message: 'Failed to send OTP: ${e.toString()}',
+        message: 'Failed to send OTP. Please try again.',
         code: 'UNEXPECTED_ERROR',
       );
     }
@@ -274,8 +275,9 @@ class PhoneAuthRemoteDataSourceImpl implements PhoneAuthRemoteDataSource {
         );
       }
 
+      Logger.error('Failed to verify OTP', error: e);
       throw ServerException(
-        message: 'Failed to verify OTP: ${e.toString()}',
+        message: 'Failed to verify OTP. Please try again.',
         code: 'UNEXPECTED_ERROR',
       );
     }

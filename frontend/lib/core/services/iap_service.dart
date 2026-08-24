@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
@@ -80,7 +81,11 @@ class IAPService {
       onDone: () => Logger.debug('🛒 [IAP] Purchase stream closed'),
       onError: (error) {
         Logger.debug('🛒 [IAP] Purchase stream error: $error');
-        onPurchaseError?.call(error.toString());
+        if (_isCancellationException(error)) {
+          onPurchaseCancelled?.call();
+          return;
+        }
+        onPurchaseError?.call(_friendlyPurchaseError(error));
       },
     );
 
@@ -157,7 +162,11 @@ class IAPService {
       }
     } catch (e) {
       Logger.debug('🛒 [IAP] Purchase error: $e');
-      onPurchaseError?.call(e.toString());
+      if (_isCancellationException(e)) {
+        onPurchaseCancelled?.call();
+        return;
+      }
+      onPurchaseError?.call(_friendlyPurchaseError(e));
     }
   }
 
@@ -207,7 +216,7 @@ class IAPService {
       Logger.debug('🛒 [IAP] Restore completed');
     } catch (e) {
       Logger.debug('🛒 [IAP] Restore error: $e');
-      onPurchaseError?.call('Failed to restore purchases: $e');
+      onPurchaseError?.call(_friendlyPurchaseError(e));
     } finally {
       _restoreInProgress = false;
     }
@@ -278,8 +287,19 @@ class IAPService {
         // app start if the backend call fails.
         onPurchaseUpdate?.call(purchase);
       } else if (purchase.status == PurchaseStatus.error) {
+        // iOS/StoreKit often reports a user cancellation as an error rather
+        // than PurchaseStatus.canceled — treat those as a clean cancel.
+        if (_isCancellationError(purchase.error)) {
+          Logger.debug('🛒 [IAP] Purchase cancelled by user (error)');
+          onPurchaseCancelled?.call();
+          if (purchase.pendingCompletePurchase) {
+            _iap.completePurchase(purchase);
+          }
+          continue;
+        }
         Logger.debug('🛒 [IAP] Purchase error: ${purchase.error}');
-        onPurchaseError?.call(purchase.error?.message ?? 'Purchase failed');
+        onPurchaseError?.call('Something went wrong with the purchase. '
+            'Please try again.');
         // Clear failed transactions from the queue immediately.
         if (purchase.pendingCompletePurchase) {
           _iap.completePurchase(purchase);
@@ -319,7 +339,7 @@ class IAPService {
       }
       Logger.debug('🛒 [IAP] Consumable purchase error: ${purchase.error}');
       onConsumablePurchaseError
-          ?.call(purchase.error?.message ?? 'Purchase failed');
+          ?.call('Something went wrong with the purchase. Please try again.');
       if (purchase.pendingCompletePurchase) {
         _iap.completePurchase(purchase);
       }
@@ -345,6 +365,25 @@ class IAPService {
     return haystack.contains('cancel') || error.code == '2';
   }
 
+  /// Same cancellation heuristic as [_isCancellationError], applied to a raw
+  /// thrown exception (e.g. a [PlatformException] from `buyConsumable`/
+  /// `buyNonConsumable`, which — unlike the purchase stream — surfaces a
+  /// StoreKit2 user cancel as a throw rather than a [PurchaseStatus]).
+  static bool _isCancellationException(Object e) {
+    final haystack = (e is PlatformException
+            ? '${e.code} ${e.message} ${e.details}'
+            : e.toString())
+        .toLowerCase();
+    return haystack.contains('cancel');
+  }
+
+  /// Never surface a raw exception (platform codes, stack-ish details) to the
+  /// user — only a generic, safe message. Real diagnostic detail stays in logs.
+  static String _friendlyPurchaseError(Object e) {
+    Logger.debug('🛒 [IAP] Purchase error detail: $e');
+    return 'Something went wrong with the purchase. Please try again.';
+  }
+
   /// Purchase a consumable product (token pack or developer tip).
   Future<void> purchaseConsumable(ProductDetails productDetails) async {
     Logger.debug(
@@ -357,7 +396,11 @@ class IAPService {
       }
     } catch (e) {
       Logger.debug('🛒 [IAP] Consumable purchase error: $e');
-      onConsumablePurchaseError?.call(e.toString());
+      if (_isCancellationException(e)) {
+        onConsumablePurchaseCancelled?.call();
+        return;
+      }
+      onConsumablePurchaseError?.call(_friendlyPurchaseError(e));
     }
   }
 

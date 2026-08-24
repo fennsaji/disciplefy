@@ -77,7 +77,7 @@ class MemoryVerseSyncService {
     } catch (e) {
       Logger.error('❌ [SYNC] Sync failed: $e');
       return Left(ServerFailure(
-          message: 'Sync failed: ${e.toString()}', code: 'SYNC_FAILED'));
+          message: 'Sync failed. Please try again.', code: 'SYNC_FAILED'));
     }
   }
 

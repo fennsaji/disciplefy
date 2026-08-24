@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/utils/logger.dart';
 import '../repositories/user_profile_repository.dart';
 
 /// Use case for deleting user profile
@@ -16,8 +17,9 @@ class DeleteUserProfile implements UseCase<void, DeleteUserProfileParams> {
       await repository.deleteUserProfile(params.userId);
       return const Right(null);
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to delete user profile: ${e.toString()}',
+      Logger.error('Failed to delete user profile', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to delete user profile. Please try again.',
         code: 'DELETE_PROFILE_ERROR',
       ));
     }

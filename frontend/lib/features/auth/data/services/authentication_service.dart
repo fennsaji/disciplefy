@@ -286,7 +286,7 @@ class AuthenticationService {
         rethrow;
       }
       throw auth_exceptions.AuthenticationFailedException(
-          'Google authentication failed: ${e.toString()}');
+          'Google authentication failed. Please try again.');
     }
   }
 
@@ -454,7 +454,8 @@ class AuthenticationService {
     } catch (e) {
       Logger.error('🔐 [EMAIL AUTH] ❌ Email Sign-Up Error: $e');
       if (e is auth_exceptions.AuthException) rethrow;
-      throw auth_exceptions.AuthenticationFailedException(e.toString());
+      throw const auth_exceptions.AuthenticationFailedException(
+          'Sign up failed. Please try again.');
     }
   }
 
@@ -510,7 +511,8 @@ class AuthenticationService {
     } catch (e) {
       Logger.error('🔐 [EMAIL AUTH] ❌ Email Sign-In Error: $e');
       if (e is auth_exceptions.AuthException) rethrow;
-      throw auth_exceptions.AuthenticationFailedException(e.toString());
+      throw const auth_exceptions.AuthenticationFailedException(
+          'Sign in failed. Please try again.');
     }
   }
 
