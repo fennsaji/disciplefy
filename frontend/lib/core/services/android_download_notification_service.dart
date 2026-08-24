@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import '../utils/logger.dart';
 
 /// Manages the Android foreground service for two use cases:
 /// 1. Learning path downloads (actual download runs in main isolate; service shows notifications)
@@ -24,6 +27,14 @@ class AndroidDownloadNotificationService {
 
   static bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  /// Android 12+ throws ForegroundServiceStartNotAllowedException when a FGS
+  /// is started while the app process isn't in the foreground (e.g. the OS
+  /// restarts our process for a background task right before the UI resumes).
+  static bool get _isAppInForeground {
+    final state = WidgetsBinding.instance.lifecycleState;
+    return state == null || state == AppLifecycleState.resumed;
+  }
 
   /// Call once after Hive init in main.dart.
   static Future<void> configure() async {
@@ -70,7 +81,7 @@ class AndroidDownloadNotificationService {
   // ─── Download methods ────────────────────────────────────────────────────
 
   static Future<void> startForeground(String pathTitle) async {
-    if (!_isAndroid) return;
+    if (!_isAndroid || !_isAppInForeground) return;
     _downloadActive = true;
     try {
       final service = FlutterBackgroundService();
@@ -79,7 +90,10 @@ class AndroidDownloadNotificationService {
         'title': 'Downloading "$pathTitle"',
         'content': 'Starting...',
       });
-    } catch (_) {}
+    } catch (e) {
+      Logger.error('[FGS] Failed to start download foreground service',
+          error: e);
+    }
   }
 
   static Future<void> updateProgress({
@@ -128,13 +142,15 @@ class AndroidDownloadNotificationService {
 
   /// Start foreground service for TTS audio playback.
   static Future<void> startTtsForeground(String sectionName) async {
-    if (!_isAndroid) return;
+    if (!_isAndroid || !_isAppInForeground) return;
     _ttsActive = true;
     try {
       final service = FlutterBackgroundService();
       await service.startService();
       service.invoke('startTts', {'section': sectionName});
-    } catch (_) {}
+    } catch (e) {
+      Logger.error('[FGS] Failed to start TTS foreground service', error: e);
+    }
   }
 
   /// Update the TTS notification with the current section.

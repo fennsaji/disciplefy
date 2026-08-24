@@ -175,7 +175,15 @@ void main() async {
           FlutterError.onError =
               FirebaseCrashlytics.instance.recordFlutterFatalError;
           PlatformDispatcher.instance.onError = (error, stack) {
-            FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+            // Transient network errors from Supabase's internal token-refresh
+            // fetch layer are recovered from automatically and never actually
+            // crash the app — recording them as fatal inflates crash counts.
+            final isRetryableAuthError = error is AuthRetryableFetchException;
+            FirebaseCrashlytics.instance.recordError(
+              error,
+              stack,
+              fatal: !isRetryableAuthError,
+            );
             return true;
           };
         }
