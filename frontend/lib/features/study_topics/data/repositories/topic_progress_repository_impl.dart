@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/entities/topic_progress.dart';
 import '../../domain/repositories/learning_paths_repository.dart';
 import '../../domain/repositories/topic_progress_repository.dart';
@@ -37,7 +38,8 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('Failed to start topic', error: e);
+      return const Left(ClientFailure(message: 'Failed to start topic.'));
     }
   }
 
@@ -74,7 +76,8 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('Failed to complete topic', error: e);
+      return const Left(ClientFailure(message: 'Failed to complete topic.'));
     }
   }
 
@@ -91,7 +94,8 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('Failed to update time spent', error: e);
+      return const Left(ClientFailure(message: 'Failed to update time spent.'));
     }
   }
 
@@ -112,7 +116,9 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message, code: e.code));
     } catch (e) {
-      return Left(ClientFailure(message: e.toString()));
+      Logger.error('Failed to fetch in-progress topics', error: e);
+      return const Left(
+          ClientFailure(message: 'Failed to fetch in-progress topics.'));
     }
   }
 }

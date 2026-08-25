@@ -196,7 +196,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
-          message: 'Failed to fetch verses: ${e.toString()}',
+          message: 'Failed to fetch verses. Please try again.',
           code: 'UNEXPECTED_ERROR'));
     }
   }
@@ -238,7 +238,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
-          message: 'Failed to submit review: ${e.toString()}',
+          message: 'Failed to submit review. Please try again.',
           code: 'UNEXPECTED_ERROR'));
     }
   }
@@ -252,7 +252,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Error fetching statistics: $e');
       return Left(ServerFailure(
-          message: 'Failed to fetch statistics: ${e.toString()}',
+          message: 'Failed to fetch statistics. Please try again.',
           code: 'STATS_FETCH_FAILED'));
     }
   }
@@ -281,7 +281,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
-          message: 'Failed to get verse: ${e.toString()}',
+          message: 'Failed to get verse. Please try again.',
           code: 'GET_VERSE_FAILED'));
     }
   }
@@ -295,7 +295,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Error getting all verses: $e');
       return Left(ServerFailure(
-          message: 'Failed to get verses: ${e.toString()}',
+          message: 'Failed to get verses. Please try again.',
           code: 'GET_VERSES_FAILED'));
     }
   }
@@ -334,7 +334,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Error deleting verse: $e');
       return Left(ServerFailure(
-          message: 'Failed to delete verse: ${e.toString()}',
+          message: 'Failed to delete verse. Please try again.',
           code: 'DELETE_FAILED'));
     }
   }
@@ -391,7 +391,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Failed to clear cache: $e');
       return Left(ServerFailure(
-          message: 'Failed to clear cache: ${e.toString()}',
+          message: 'Failed to clear cache. Please try again.',
           code: 'CACHE_CLEAR_FAILED'));
     }
   }
@@ -440,7 +440,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
-          message: 'Failed to fetch verse text: ${e.toString()}',
+          message: 'Failed to fetch verse text. Please try again.',
           code: 'FETCH_VERSE_TEXT_FAILED'));
     }
   }
@@ -472,7 +472,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Error selecting practice mode: $e');
       return Left(ClientFailure(
-        message: 'Failed to select practice mode: ${e.toString()}',
+        message: 'Failed to select practice mode. Please try again.',
         code: 'SELECT_MODE_FAILED',
       ));
     }
@@ -549,7 +549,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to submit practice session: ${e.toString()}',
+        message: 'Failed to submit practice session. Please try again.',
         code: 'SUBMIT_PRACTICE_FAILED',
       ));
     }
@@ -585,7 +585,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch practice mode statistics: ${e.toString()}',
+        message: 'Failed to fetch practice mode statistics. Please try again.',
         code: 'GET_PRACTICE_STATS_FAILED',
       ));
     }
@@ -622,7 +622,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch memory streak: ${e.toString()}',
+        message: 'Failed to fetch memory streak. Please try again.',
         code: 'GET_STREAK_FAILED',
       ));
     }
@@ -691,7 +691,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to use streak freeze: ${e.toString()}',
+        message: 'Failed to use streak freeze. Please try again.',
         code: 'USE_FREEZE_FAILED',
       ));
     }
@@ -718,7 +718,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to check streak milestone: ${e.toString()}',
+        message: 'Failed to check streak milestone. Please try again.',
         code: 'CHECK_MILESTONE_FAILED',
       ));
     }
@@ -760,7 +760,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch mastery progress: ${e.toString()}',
+        message: 'Failed to fetch mastery progress. Please try again.',
         code: 'GET_MASTERY_FAILED',
       ));
     }
@@ -802,7 +802,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to update mastery level: ${e.toString()}',
+        message: 'Failed to update mastery level. Please try again.',
         code: 'UPDATE_MASTERY_FAILED',
       ));
     }
@@ -839,7 +839,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch daily goal: ${e.toString()}',
+        message: 'Failed to fetch daily goal. Please try again.',
         code: 'GET_DAILY_GOAL_FAILED',
       ));
     }
@@ -886,7 +886,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to update daily goal progress: ${e.toString()}',
+        message: 'Failed to update daily goal progress. Please try again.',
         code: 'UPDATE_DAILY_GOAL_FAILED',
       ));
     }
@@ -926,7 +926,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to set daily goal targets: ${e.toString()}',
+        message: 'Failed to set daily goal targets. Please try again.',
         code: 'SET_DAILY_GOAL_TARGETS_FAILED',
       ));
     }
@@ -973,7 +973,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch active challenges: ${e.toString()}',
+        message: 'Failed to fetch active challenges. Please try again.',
         code: 'GET_CHALLENGES_FAILED',
       ));
     }
@@ -1021,7 +1021,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to claim challenge reward: ${e.toString()}',
+        message: 'Failed to claim challenge reward. Please try again.',
         code: 'CLAIM_REWARD_FAILED',
       ));
     }
@@ -1073,7 +1073,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
         message:
-            'Failed to fetch Memory Champions leaderboard: ${e.toString()}',
+            'Failed to fetch Memory Champions leaderboard. Please try again.',
         code: 'GET_LEADERBOARD_FAILED',
       ));
     }
@@ -1097,7 +1097,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch memory statistics: ${e.toString()}',
+        message: 'Failed to fetch memory statistics. Please try again.',
         code: 'GET_MEMORY_STATS_FAILED',
       ));
     }
@@ -1173,7 +1173,7 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     } catch (e) {
       _helper.logError('Unexpected error: $e');
       return Left(ClientFailure(
-        message: 'Failed to fetch suggested verses: ${e.toString()}',
+        message: 'Failed to fetch suggested verses. Please try again.',
         code: 'GET_SUGGESTED_VERSES_FAILED',
       ));
     }

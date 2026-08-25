@@ -18,6 +18,7 @@ import '../bloc/token_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/error_message_sanitizer.dart';
 import '../../../../core/services/system_config_service.dart';
 
 /// Token Purchase Page
@@ -403,7 +404,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.failure.message),
+              content: Text(ErrorMessageSanitizer.sanitize(state.failure)),
               backgroundColor: AppColors.error,
               duration: const Duration(seconds: 5),
             ),

@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/entities/leaderboard_entry.dart';
 import '../../domain/repositories/leaderboard_repository.dart';
 import '../datasources/leaderboard_remote_datasource.dart';
@@ -21,8 +22,9 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       final entries = await _remoteDataSource.getLeaderboard();
       return Right(entries);
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to load leaderboard: ${e.toString()}',
+      Logger.error('Failed to load leaderboard', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to load leaderboard. Please try again.',
       ));
     }
   }
@@ -33,8 +35,9 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       final userRank = await _remoteDataSource.getCurrentUserXpRank();
       return Right(userRank);
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to load user rank: ${e.toString()}',
+      Logger.error('Failed to load user rank', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to load user rank. Please try again.',
       ));
     }
   }
@@ -48,8 +51,9 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
         userRank: result.userRank,
       ));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to load leaderboard data: ${e.toString()}',
+      Logger.error('Failed to load leaderboard data', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to load leaderboard data. Please try again.',
       ));
     }
   }

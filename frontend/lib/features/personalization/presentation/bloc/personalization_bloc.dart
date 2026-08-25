@@ -249,7 +249,8 @@ class PersonalizationBloc
     } catch (e) {
       Logger.error('Failed to submit questionnaire',
           tag: 'PERSONALIZATION', error: e);
-      emit(PersonalizationError(e.toString()));
+      emit(const PersonalizationError(
+          'Failed to submit questionnaire. Please try again.'));
     }
   }
 

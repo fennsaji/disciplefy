@@ -449,7 +449,8 @@ class VoiceConversationBloc
         },
       );
     } catch (e) {
-      add(StreamError(e.toString()));
+      Logger.error('Failed to start listening', error: e);
+      add(const StreamError('Failed to start listening. Please try again.'));
     }
   }
 
@@ -572,7 +573,8 @@ class VoiceConversationBloc
         await _fallbackHttpRequest(message);
       }
     } catch (e) {
-      add(StreamError(e.toString()));
+      Logger.error('Failed to send message', error: e);
+      add(const StreamError('Failed to send message. Please try again.'));
     }
   }
 
@@ -627,7 +629,9 @@ class VoiceConversationBloc
             add(const StreamError(
                 'Conversation message limit reached. Please start a new conversation.'));
           } else {
-            add(StreamError('Streaming connection error: $error'));
+            Logger.error('Streaming connection error', error: error);
+            add(const StreamError(
+                'Streaming connection error. Please try again.'));
           }
         },
         onDone: () {
@@ -635,7 +639,8 @@ class VoiceConversationBloc
         },
       );
     } catch (e) {
-      add(StreamError('Failed to start streaming: $e'));
+      Logger.error('Failed to start streaming', error: e);
+      add(const StreamError('Failed to start streaming. Please try again.'));
     }
   }
 
@@ -821,7 +826,8 @@ class VoiceConversationBloc
         add(StreamError('No response received'));
       }
     } catch (e) {
-      add(StreamError(e.toString()));
+      Logger.error('Streaming request failed', error: e);
+      add(const StreamError('Request failed. Please try again.'));
     }
   }
 

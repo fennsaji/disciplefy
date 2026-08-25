@@ -82,7 +82,17 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[var(--muted)]">© 2026 Disciplefy. {t("copyright")}</p>
+          <p className="text-xs text-[var(--muted)]">
+            © 2026 Disciplefy. {t("copyright")} ·{" "}
+            <a
+              href="https://www.fennsaji.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--text)]"
+            >
+              {t("builtBy")}
+            </a>
+          </p>
           <LocaleSwitcher />
         </div>
       </div>

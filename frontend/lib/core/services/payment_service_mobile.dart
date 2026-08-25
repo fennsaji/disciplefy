@@ -52,7 +52,7 @@ class PaymentServiceMobile {
       Logger.debug('[PaymentServiceMobile] Error opening checkout: $e');
       final mockError = PaymentFailureResponse(
         1,
-        'Failed to initialize payment: ${e.toString()}',
+        'Failed to start payment. Please try again.',
       );
       onError(mockError);
     }

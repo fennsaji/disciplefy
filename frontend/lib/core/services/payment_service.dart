@@ -124,7 +124,7 @@ class PaymentService {
         // Create a mock failure response for initialization errors
         final mockError = PaymentFailureResponse(
           1, // code
-          'Failed to initialize payment: ${e.toString()}', // message
+          'Failed to initialize payment. Please try again.', // message
         );
         _onPaymentError!(mockError);
       }
@@ -238,7 +238,7 @@ class PaymentService {
 
       final paymentFailureResponse = PaymentFailureResponse(
         1,
-        'Web checkout failed: ${e.toString()}',
+        'Web checkout failed. Please try again.',
       );
       _handlePaymentError(paymentFailureResponse);
     }

@@ -114,8 +114,18 @@ class OAuthService {
             'Google Sign-In configuration error. Please check SHA-1 fingerprints in Firebase Console.');
       }
 
+      // GoogleSignInException(code: canceled) isn't caught by the
+      // OAuthCancelledException clause above (only Apple's flow throws that
+      // typed exception) — detect it here so login_screen's cancel check
+      // (message.contains('cancel')) still matches and shows a neutral
+      // "cancelled" snackbar instead of an error.
+      if (e.toString().toLowerCase().contains('cancel')) {
+        throw auth_exceptions.AuthenticationFailedException(
+            'Google Sign-In was cancelled.');
+      }
+
       throw auth_exceptions.AuthenticationFailedException(
-          'Google Sign-In failed: ${e.toString()}');
+          'Google Sign-In failed. Please try again.');
     }
   }
 
@@ -230,7 +240,7 @@ class OAuthService {
     } catch (e) {
       Logger.error('🔐 [OAUTH SERVICE] ❌ Error checking OAuth session: $e');
       throw auth_exceptions.AuthenticationFailedException(
-          'Failed to verify OAuth session: ${e.toString()}');
+          'Failed to verify OAuth session. Please try again.');
     }
   }
 
@@ -342,7 +352,7 @@ class OAuthService {
     } catch (e) {
       Logger.error('🍎 [OAUTH SERVICE] ❌ Apple Sign-In Error: $e');
       throw auth_exceptions.AuthenticationFailedException(
-          'Apple Sign-In failed: ${e.toString()}');
+          'Apple Sign-In failed. Please try again.');
     }
   }
 

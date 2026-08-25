@@ -6,6 +6,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../models/daily_verse_model.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 
@@ -109,16 +110,19 @@ class DailyVerseApiService {
           DailyVerseResponse.fromJson(jsonData);
       return Right(verseResponse.data.toEntity());
     } on FormatException catch (e) {
-      return Left(ServerFailure(
-        message: 'Invalid JSON format in response: ${e.message}',
+      Logger.error('Invalid JSON format in daily verse response', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to parse daily verse response. Please try again.',
       ));
     } on TypeError catch (e) {
-      return Left(ServerFailure(
-        message: 'Data type mismatch in response: ${e.toString()}',
+      Logger.error('Data type mismatch in daily verse response', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to parse daily verse response. Please try again.',
       ));
     } catch (e) {
-      return Left(ServerFailure(
-        message: 'Failed to parse daily verse response: $e',
+      Logger.error('Failed to parse daily verse response', error: e);
+      return const Left(ServerFailure(
+        message: 'Failed to parse daily verse response. Please try again.',
       ));
     }
   }

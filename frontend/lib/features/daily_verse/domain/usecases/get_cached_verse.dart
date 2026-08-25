@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/utils/logger.dart';
 import '../entities/daily_verse_entity.dart';
 import '../repositories/daily_verse_repository.dart';
 
@@ -18,8 +19,9 @@ class GetCachedVerse
       final cachedVerse = await repository.getCachedVerse(params.date);
       return Right(cachedVerse);
     } catch (e) {
-      return Left(CacheFailure(
-        message: 'Failed to load cached verse: ${e.toString()}',
+      Logger.error('Failed to load cached verse', error: e);
+      return const Left(CacheFailure(
+        message: 'Failed to load cached verse. Please try again.',
         code: 'CACHE_VERSE_ERROR',
       ));
     }

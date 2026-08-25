@@ -19,6 +19,7 @@ import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/services/platform_payment_provider_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/error_message_sanitizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
@@ -314,7 +315,7 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
             setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.failure.message),
+                content: Text(ErrorMessageSanitizer.sanitize(state.failure)),
                 backgroundColor: AppTheme.errorColor,
                 duration: const Duration(seconds: 5),
               ),
