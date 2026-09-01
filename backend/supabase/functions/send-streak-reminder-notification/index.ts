@@ -1,8 +1,14 @@
 // ============================================================================
-// Send Streak Reminder Notification Edge Function
+// Send Streak Notification Edge Function
 // ============================================================================
-// Sends streak reminder push notifications to users who haven't viewed today's verse
-// Triggered by GitHub Actions workflow at user's preferred reminder time (default 8 PM)
+// Two modes, selected by the `type` query parameter:
+//   ?type=reminder (default) — nudge users who haven't viewed today's verse,
+//                              at their preferred time (default 8 PM local)
+//   ?type=lost               — "Streak Reset Motivation" for users whose streak
+//                              has already broken, ~10 AM local
+//
+// Both are triggered hourly; the SQL selectors match on a local-time catch-up
+// window so a delayed or dropped run is picked up by a later one.
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
@@ -12,6 +18,7 @@ import {
   NotificationContentParams,
 } from '../_shared/services/notification-helper-service.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { DEDUP_LOOKBACK_HOURS } from '../_shared/utils/notification-window.ts'
 
 // ============================================================================
 // Types
@@ -46,6 +53,56 @@ const NOTIFICATION_MESSAGES: Record<string, { title: string; body: (streak: numb
   },
 }
 
+/** Messages for a streak that has already broken (Streak Reset Motivation). */
+const STREAK_LOST_MESSAGES: Record<string, { title: string; body: (streak: number) => string }> = {
+  en: {
+    title: '💪 Start a New Streak',
+    body: (streak: number) =>
+      `Your ${streak}-day streak ended — every streak starts with one day. Read today's verse. 📖`
+  },
+  hi: {
+    title: '💪 नई स्ट्रीक शुरू करें',
+    body: (streak: number) =>
+      `आपकी ${streak} दिन की स्ट्रीक समाप्त हो गई — हर स्ट्रीक एक दिन से शुरू होती है। आज का पद पढ़ें। 📖`
+  },
+  ml: {
+    title: '💪 പുതിയ സ്ട്രീക് ആരംഭിക്കൂ',
+    body: (streak: number) =>
+      `നിങ്ങളുടെ ${streak} ദിവസത്തെ സ്ട്രീക് അവസാനിച്ചു — എല്ലാ സ്ട്രീക്കും ഒരു ദിവസത്തിൽ തുടങ്ങുന്നു. ഇന്നത്തെ വാക്യം വായിക്കൂ. 📖`
+  },
+}
+
+/** Which of the two modes this invocation should run. */
+type StreakMode = 'reminder' | 'lost'
+
+interface ModeConfig {
+  readonly rpc: string
+  readonly notificationType: 'streak_reminder' | 'streak_lost'
+  readonly messages: Record<string, { title: string; body: (streak: number) => string }>
+}
+
+const MODES: Record<StreakMode, ModeConfig> = {
+  reminder: {
+    rpc: 'get_streak_reminder_notification_users',
+    notificationType: 'streak_reminder',
+    messages: NOTIFICATION_MESSAGES,
+  },
+  lost: {
+    rpc: 'get_streak_lost_notification_users',
+    notificationType: 'streak_lost',
+    messages: STREAK_LOST_MESSAGES,
+  },
+}
+
+/**
+ * Reads the mode from `?type=`. Anything unrecognised falls back to reminder,
+ * matching the previous behaviour of this endpoint.
+ */
+function resolveMode(req: Request): StreakMode {
+  const type = new URL(req.url).searchParams.get('type')
+  return type === 'lost' ? 'lost' : 'reminder'
+}
+
 // ============================================================================
 // Main Handler
 // ============================================================================
@@ -59,7 +116,10 @@ async function handleStreakReminderNotification(
   // Verify cron authentication
   notificationHelper.verifyCronSecret(req)
 
-  console.log('[StreakReminder] Starting notification process...')
+  const mode = resolveMode(req)
+  const config = MODES[mode]
+
+  console.log(`[Streak] Starting ${mode} notification process...`)
 
   const supabase = services.supabaseServiceClient
 
@@ -67,13 +127,19 @@ async function handleStreakReminderNotification(
   const now = new Date()
   const currentHour = now.getUTCHours()
   const currentMinute = now.getUTCMinutes()
-  console.log(`[StreakReminder] Current UTC time: ${currentHour}:${String(currentMinute).padStart(2, '0')}`)
+  console.log(`[Streak] Current UTC time: ${currentHour}:${String(currentMinute).padStart(2, '0')}`)
 
-  // Step 2: Use the helper function to get users who need streak reminders
+  // Step 2: Select eligible users.
+  // The real clock minute is passed through as-is: the RPC matches everyone
+  // whose local target time has already passed today (a catch-up window),
+  // not a narrow slot, so a delayed or dropped cron no longer skips the day.
+  // Rounding this to a 15-minute bucket previously made half-hour timezones
+  // (IST, +05:30) unmatchable, since an on-time :00 cron always lands on :30
+  // local while the window only covered :00–:14.
   const { data: eligibleUsers, error: usersError } = await supabase
-    .rpc('get_streak_reminder_notification_users', {
+    .rpc(config.rpc, {
       target_hour: currentHour,
-      target_minute: Math.floor(currentMinute / 15) * 15
+      target_minute: currentMinute
     })
 
   if (usersError) {
@@ -81,7 +147,7 @@ async function handleStreakReminderNotification(
   }
 
   if (!eligibleUsers || eligibleUsers.length === 0) {
-    return notificationHelper.createSuccessResponse('No eligible users for streak reminders', { sentCount: 0 })
+    return notificationHelper.createSuccessResponse(`No eligible users for streak ${mode}`, { sentCount: 0 })
   }
 
   const mappedUsers: StreakReminderUser[] = eligibleUsers.map((u: { user_id: string; fcm_token: string; current_streak?: number }) => ({
@@ -90,7 +156,7 @@ async function handleStreakReminderNotification(
     current_streak: u.current_streak,
   }))
 
-  console.log(`[StreakReminder] Found ${mappedUsers.length} eligible users`)
+  console.log(`[Streak] Found ${mappedUsers.length} eligible users`)
 
   // Step 3: Filter out anonymous users
   const authenticatedUsers = await notificationHelper.filterAnonymousUsers(supabase, mappedUsers)
@@ -101,10 +167,10 @@ async function handleStreakReminderNotification(
 
   // Step 4: Filter out users who already received streak reminder today
   const userIds = authenticatedUsers.map(u => u.user_id)
-  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'streak_reminder')
+  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, config.notificationType, DEDUP_LOOKBACK_HOURS)
   const usersToNotify = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
 
-  console.log(`[StreakReminder] ${usersToNotify.length} users need notification (${alreadySentUserIds.size} already received)`)
+  console.log(`[Streak] ${usersToNotify.length} users need notification (${alreadySentUserIds.size} already received)`)
 
   if (usersToNotify.length === 0) {
     return notificationHelper.createSuccessResponse('All users already received notification today', { sentCount: 0 })
@@ -119,11 +185,11 @@ async function handleStreakReminderNotification(
   // Step 6: Send notifications using helper
   const result = await notificationHelper.sendNotificationBatch(
     usersToNotify,
-    'streak_reminder',
+    config.notificationType,
     languageMap,
     ({ user, language }: NotificationContentParams<StreakReminderUser>) => {
       const currentStreak = user.current_streak || 0
-      const messages = NOTIFICATION_MESSAGES[language] || NOTIFICATION_MESSAGES.en
+      const messages = config.messages[language] || config.messages.en
 
       return {
         title: messages.title,
@@ -135,9 +201,10 @@ async function handleStreakReminderNotification(
     }
   )
 
-  console.log(`[StreakReminder] Complete: ${result.successCount} sent, ${result.failureCount} failed`)
+  console.log(`[Streak] ${mode} complete: ${result.successCount} sent, ${result.failureCount} failed`)
 
-  return notificationHelper.createSuccessResponse('Streak reminder notifications sent', {
+  return notificationHelper.createSuccessResponse(`Streak ${mode} notifications sent`, {
+    mode,
     totalEligible: usersToNotify.length,
     successCount: result.successCount,
     failureCount: result.failureCount,

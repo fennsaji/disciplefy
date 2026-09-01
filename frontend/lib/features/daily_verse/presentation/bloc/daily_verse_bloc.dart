@@ -373,14 +373,15 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
         }
       }
 
-      // Check for streak lost (streak reset from > 0 to 1)
-      if (previousCount > 1 && newCount == 1) {
-        // Streak was lost! Send notification
-        await _sendStreakNotification(
-          notificationType: 'streak_lost',
-          streakCount: previousCount,
-        );
-      }
+      // Streak-lost is intentionally NOT sent from here.
+      //
+      // This code path only runs when the user opens the app and views a
+      // verse, so the `previousCount > 1 && newCount == 1` condition could
+      // only ever fire once the user had ALREADY come back — delivering
+      // "you lost your streak, come back" at the exact moment they returned.
+      // It is now detected server-side by get_streak_lost_notification_users()
+      // and pushed the morning after the streak breaks, which is the point of
+      // the "Streak Reset Motivation" preference.
     } catch (e) {
       // Silently fail - notifications are optional
     }
