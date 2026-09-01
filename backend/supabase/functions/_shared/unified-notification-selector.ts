@@ -96,7 +96,7 @@ export async function selectNotificationForUser(
     console.log(`[UnifiedSelector] Selecting notification for user ${userId} (language: ${language})`);
 
     // Step 1: Check for incomplete guides (Continue Learning priority)
-    const incompleteGuide = await getOldestIncompleteGuide(supabase, userId);
+    const incompleteGuide = await selectGuideToRemindAbout(supabase, userId);
 
     if (incompleteGuide) {
       console.log(`[UnifiedSelector] Found incomplete guide: ${incompleteGuide.topic_title}`);
@@ -130,11 +130,30 @@ export async function selectNotificationForUser(
 // ============================================================================
 
 /**
- * Gets the oldest incomplete study guide for a user
- * Prioritizes guides created more than 1 day ago to avoid spamming
- * new guides created today
+ * How many times a single incomplete guide may be reminded about before it is
+ * given up on. Without a cap, one guide the user never finishes pins the
+ * notification to that topic forever and starves the "For You" fallback.
  */
-async function getOldestIncompleteGuide(
+const MAX_CONTINUE_REMINDERS = 3;
+
+/**
+ * Ignore incomplete guides older than this. A guide abandoned months ago is not
+ * something the user intends to come back to.
+ */
+const MAX_GUIDE_AGE_DAYS = 30;
+
+/**
+ * Picks the incomplete study guide to remind the user about.
+ *
+ * Guides are only eligible once they are a day old (so a guide started today
+ * isn't nagged about) and until they are MAX_GUIDE_AGE_DAYS old or have been
+ * reminded about MAX_CONTINUE_REMINDERS times.
+ *
+ * Selection prefers the LEAST RECENTLY reminded guide — never-reminded first —
+ * so a user with several unfinished guides sees them rotate instead of
+ * receiving the same one every day.
+ */
+async function selectGuideToRemindAbout(
   supabase: SupabaseClient,
   userId: string
 ): Promise<IncompleteGuide | null> {
@@ -142,12 +161,17 @@ async function getOldestIncompleteGuide(
   const oneDayAgo = new Date();
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
+  const oldestAllowed = new Date();
+  oldestAllowed.setDate(oldestAllowed.getDate() - MAX_GUIDE_AGE_DAYS);
+
   const { data: guides, error } = await supabase
     .from('user_study_guides')
     .select(`
       id,
       time_spent_seconds,
       created_at,
+      continue_reminder_count,
+      last_continue_reminder_at,
       study_guides!inner(
         topic_id,
         input_type,
@@ -157,7 +181,15 @@ async function getOldestIncompleteGuide(
     .eq('user_id', userId)
     .is('completed_at', null)
     .lte('created_at', oneDayAgo.toISOString())
-    .order('created_at', { ascending: true }) // Oldest first
+    .gte('created_at', oldestAllowed.toISOString())
+    .lt('continue_reminder_count', MAX_CONTINUE_REMINDERS)
+    // Filter to topic guides in the query, not after LIMIT — otherwise a
+    // scripture guide at the front of the queue would abort the whole
+    // selection and skip an eligible topic guide behind it.
+    .eq('study_guides.input_type', 'topic')
+    // Least recently reminded first; never-reminded guides sort ahead of all.
+    .order('last_continue_reminder_at', { ascending: true, nullsFirst: true })
+    .order('created_at', { ascending: true }) // Tie-break: oldest first
     .limit(1);
 
   if (error) {
@@ -172,8 +204,7 @@ async function getOldestIncompleteGuide(
   const guide = guides[0];
   const studyGuide = guide.study_guides as any;
 
-  // Ensure we have topic information
-  if (!studyGuide || studyGuide.input_type !== 'topic') {
+  if (!studyGuide) {
     return null;
   }
 
@@ -205,6 +236,35 @@ async function getOldestIncompleteGuide(
     time_spent_seconds: guide.time_spent_seconds || 0,
     created_at: guide.created_at,
   };
+}
+
+/**
+ * Records that a "Continue Your Study" reminder was sent for a guide.
+ *
+ * MUST be called after a successful send: the selector's repeat cap and
+ * least-recently-reminded rotation both read these columns, so without this the
+ * same guide would keep being chosen every day.
+ *
+ * Best-effort — a failure here must not fail the notification that was already
+ * delivered.
+ */
+export async function recordContinueLearningReminder(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  guideId: string
+): Promise<void> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { error } = await supabase.rpc('increment_continue_reminder', {
+    p_guide_id: guideId,
+  });
+
+  if (error) {
+    console.error(
+      `[UnifiedSelector] Failed to record continue reminder for guide ${guideId}:`,
+      error.message
+    );
+  }
 }
 
 /**
