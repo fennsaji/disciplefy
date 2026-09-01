@@ -434,38 +434,53 @@ export async function hasReceivedNotificationToday(
 }
 
 /**
- * Batch check if multiple users have already received a notification today
- * Returns a Set of user IDs who have already received the notification
- * Only counts successful notifications (sent, delivered, clicked) - excludes failed attempts
- * This is much more efficient than checking each user individually (avoids N+1 queries)
+ * Batch check which users have already received a notification recently.
+ * Returns a Set of user IDs who have already received the notification.
+ * Only counts successful notifications (sent, delivered, clicked) - excludes failed attempts.
+ * This is much more efficient than checking each user individually (avoids N+1 queries).
+ *
+ * @param lookbackHours - When set, dedups over a rolling window of this many
+ *   hours instead of the UTC calendar day. Required for any notification whose
+ *   local-time delivery window can straddle UTC midnight (anything at UTC+7 or
+ *   later): a calendar-day check resets mid-window and would send twice.
  */
 export async function getBatchNotificationStatus(
   supabaseUrl: string,
   supabaseKey: string,
   userIds: string[],
-  notificationType: NotificationType
+  notificationType: NotificationType,
+  lookbackHours?: number
 ): Promise<Set<string>> {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Calculate today and tomorrow in UTC
   const now = new Date();
-  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('notification_logs')
     .select('user_id')
     .eq('notification_type', notificationType)
     .in('delivery_status', ['sent', 'delivered', 'clicked']) // Only count successful notifications
-    .gte('sent_at', `${today}T00:00:00`)
-    .lt('sent_at', `${tomorrow}T00:00:00`) // Fixed: Use tomorrow 00:00:00 instead of today 23:59:59
     .in('user_id', userIds);
+
+  if (lookbackHours !== undefined) {
+    const since = new Date(now.getTime() - lookbackHours * 60 * 60 * 1000);
+    query = query.gte('sent_at', since.toISOString());
+  } else {
+    // Calculate today and tomorrow in UTC
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD
+    query = query
+      .gte('sent_at', `${today}T00:00:00`)
+      .lt('sent_at', `${tomorrow}T00:00:00`); // Fixed: Use tomorrow 00:00:00 instead of today 23:59:59
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error checking batch notification logs:', error);
     return new Set(); // Return empty set if error (assume no one received)
   }
 
-  // Return Set of user IDs who already received notification today
+  // Return Set of user IDs who already received notification recently
   return new Set(data?.map(row => row.user_id) || []);
 }

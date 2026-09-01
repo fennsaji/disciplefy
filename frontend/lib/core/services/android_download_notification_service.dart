@@ -62,6 +62,13 @@ class AndroidDownloadNotificationService {
         androidConfiguration: AndroidConfiguration(
           onStart: _onBackgroundServiceStart,
           autoStart: false,
+          // Defaults to true in the plugin — without this, its native
+          // BootReceiver unconditionally calls startForeground(mediaPlayback)
+          // on every device boot (no download/TTS session to resume), which
+          // throws ForegroundServiceStartNotAllowedException on Android
+          // versions/OEM images that enforce active-playback for that FGS
+          // type, crash-looping the app right after a restart.
+          autoStartOnBoot: false,
           isForegroundMode: true,
           notificationChannelId: _channelId,
           initialNotificationTitle: 'Disciplefy',

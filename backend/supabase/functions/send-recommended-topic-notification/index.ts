@@ -7,12 +7,17 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { FCMService, logNotification } from '../_shared/fcm-service.ts'
-import { selectNotificationForUser } from '../_shared/unified-notification-selector.ts'
+import {
+  selectNotificationForUser,
+  recordContinueLearningReminder,
+} from '../_shared/unified-notification-selector.ts'
 import {
   createNotificationHelper,
   NotificationUser,
 } from '../_shared/services/notification-helper-service.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { isWithinDeliveryWindow, DEDUP_LOOKBACK_HOURS } from '../_shared/utils/notification-window.ts'
+import { fetchAllRows } from '../_shared/utils/supabase-paginate.ts'
 
 // ============================================================================
 // Types
@@ -31,86 +36,44 @@ interface RecommendedTopicUser extends NotificationUser {
 // Helper Functions
 // ============================================================================
 
-function calculateTimezoneOffsetRange(currentHour: number): { offsetRangeMin: number; offsetRangeMax: number } {
-  let targetOffsetMinutes = (8 - currentHour) * 60 // 8 AM target
+/** Intended local delivery time: 8 AM. */
+const TARGET_LOCAL_MINUTES = 8 * 60
 
-  // Normalize to valid timezone range: -720 (UTC-12) to +840 (UTC+14)
-  if (targetOffsetMinutes < -720) {
-    targetOffsetMinutes += 1440
-  } else if (targetOffsetMinutes > 840) {
-    targetOffsetMinutes -= 1440
-  }
-
-  // Use ±90 min (half of the 3-hour cron interval) so each timezone falls in
-  // exactly ONE cron window. ±180 caused overlap between consecutive windows
-  // (e.g. IST +330 matched both UTC-2 and UTC-5), leading to late delivery
-  // when the earlier run failed silently and the next one retried 3 hr late.
-  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 90)
-  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 90)
-
-  return { offsetRangeMin, offsetRangeMax }
-}
-
-async function getUserTokensPage(
+async function getAllUserTokens(
   supabase: ServiceContainer['supabaseServiceClient']
 ): Promise<Array<{ user_id: string; fcm_token: string }>> {
-  const { data: tokens, error: tokensError } = await supabase
-    .from('user_notification_tokens')
-    .select('user_id, fcm_token')
-
-  if (tokensError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500)
-  }
-
-  return tokens || []
+  return await fetchAllRows<{ user_id: string; fcm_token: string }>(
+    (from, to) =>
+      supabase
+        .from('user_notification_tokens')
+        .select('user_id, fcm_token')
+        .order('user_id', { ascending: true })
+        .range(from, to)
+  ).catch((error: Error) => {
+    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${error.message}`, 500)
+  })
 }
 
-async function fetchPreferencesInOffsetRange(
-  supabase: ServiceContainer['supabaseServiceClient'],
-  offsetRangeMin: number,
-  offsetRangeMax: number
+async function fetchEnabledPreferences(
+  supabase: ServiceContainer['supabaseServiceClient']
 ): Promise<Array<{ user_id: string; timezone_offset_minutes: number }>> {
-  if (offsetRangeMin > offsetRangeMax) {
-    const [result1, result2] = await Promise.all([
+  return await fetchAllRows<{ user_id: string; timezone_offset_minutes: number }>(
+    (from, to) =>
       supabase
         .from('user_notification_preferences')
         .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
         .eq('recommended_topic_enabled', true)
-        .gte('timezone_offset_minutes', offsetRangeMin)
-        .lte('timezone_offset_minutes', 840),
-
-      supabase
-        .from('user_notification_preferences')
-        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
-        .eq('recommended_topic_enabled', true)
-        .gte('timezone_offset_minutes', -720)
-        .lte('timezone_offset_minutes', offsetRangeMax)
-    ])
-
-    if (result1.error || result2.error) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${(result1.error || result2.error)!.message}`, 500)
-    }
-
-    return [...(result1.data || []), ...(result2.data || [])]
-  }
-
-  const { data, error } = await supabase
-    .from('user_notification_preferences')
-    .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
-    .eq('recommended_topic_enabled', true)
-    .gte('timezone_offset_minutes', offsetRangeMin)
-    .lte('timezone_offset_minutes', offsetRangeMax)
-
-  if (error) {
+        .order('user_id', { ascending: true })
+        .range(from, to)
+  ).catch((error: Error) => {
     throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error.message}`, 500)
-  }
-
-  return data || []
+  })
 }
 
 function enrichUsersWithTimezone(
   tokens: Array<{ user_id: string; fcm_token: string }>,
-  preferences: Array<{ user_id: string; timezone_offset_minutes: number }>
+  preferences: Array<{ user_id: string; timezone_offset_minutes: number }>,
+  now: Date
 ): RecommendedTopicUser[] {
   const prefsMap = new Map(preferences.map(p => [p.user_id, p]))
   return tokens
@@ -120,25 +83,28 @@ function enrichUsersWithTimezone(
       fcm_token: t.fcm_token,
       timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
     }))
+    .filter(u => isWithinDeliveryWindow(u.timezone_offset_minutes, TARGET_LOCAL_MINUTES, undefined, now))
 }
 
 /**
- * Fetches users eligible for recommended topic notifications within specified timezone offset range.
- * Returns users with FCM tokens who have enabled recommended topic notifications.
+ * Fetches users whose local time has reached the 8 AM target and who have
+ * recommended topic notifications enabled.
+ *
+ * Evaluated as a forward-looking catch-up window rather than a single exact UTC
+ * hour, so a dropped or delayed cron is picked up by a later run instead of
+ * skipping that timezone for the day. Per-day dedup prevents repeat sends.
  *
  * @param supabase - Supabase service client for database operations
- * @param offsetRangeMin - Minimum timezone offset in minutes (UTC-12 = -720)
- * @param offsetRangeMax - Maximum timezone offset in minutes (UTC+14 = +840)
+ * @param now - Instant to evaluate the delivery window against
  * @returns Array of users with FCM tokens and timezone offsets
  */
 async function fetchEligibleUsersWithTimezone(
   supabase: ServiceContainer['supabaseServiceClient'],
-  offsetRangeMin: number,
-  offsetRangeMax: number
+  now: Date
 ): Promise<RecommendedTopicUser[]> {
-  const tokens = await getUserTokensPage(supabase)
-  const preferences = await fetchPreferencesInOffsetRange(supabase, offsetRangeMin, offsetRangeMax)
-  return enrichUsersWithTimezone(tokens, preferences)
+  const tokens = await getAllUserTokens(supabase)
+  const preferences = await fetchEnabledPreferences(supabase)
+  return enrichUsersWithTimezone(tokens, preferences, now)
 }
 
 async function computeUsersToNotify(
@@ -147,8 +113,8 @@ async function computeUsersToNotify(
 ): Promise<RecommendedTopicUser[]> {
   const userIds = authenticatedUsers.map(u => u.user_id)
   const [alreadySentRecommended, alreadySentContinue] = await Promise.all([
-    notificationHelper.getAlreadySentUserIds(userIds, 'recommended_topic'),
-    notificationHelper.getAlreadySentUserIds(userIds, 'continue_learning'),
+    notificationHelper.getAlreadySentUserIds(userIds, 'recommended_topic', DEDUP_LOOKBACK_HOURS),
+    notificationHelper.getAlreadySentUserIds(userIds, 'continue_learning', DEDUP_LOOKBACK_HOURS),
   ])
   const alreadySentUserIds = new Set([...alreadySentRecommended, ...alreadySentContinue])
   return authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
@@ -202,6 +168,13 @@ async function sendSingleNotification(
         payload: { aps: { sound: 'default', badge: 1 } },
       },
     })
+
+    // Record the reminder so this guide's repeat cap advances and the next run
+    // rotates to a different one. Only on success — a failed send shouldn't
+    // burn one of the guide's limited reminders.
+    if (result.success && notification.type === 'continue_learning' && notification.guideId) {
+      await recordContinueLearningReminder(supabaseUrl, serviceRoleKey, notification.guideId)
+    }
 
     await logNotification(supabaseUrl, serviceRoleKey, {
       userId: user.user_id,
@@ -283,10 +256,9 @@ async function sendNotificationBatch(
 async function prepareUserNotifications(
   supabase: ServiceContainer['supabaseServiceClient'],
   notificationHelper: ReturnType<typeof createNotificationHelper>,
-  offsetRangeMin: number,
-  offsetRangeMax: number
+  now: Date
 ): Promise<{ usersToNotify: RecommendedTopicUser[]; languageMap: Map<string, string> } | Response> {
-  const allUsers = await fetchEligibleUsersWithTimezone(supabase, offsetRangeMin, offsetRangeMax)
+  const allUsers = await fetchEligibleUsersWithTimezone(supabase, now)
   if (allUsers.length === 0) return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
   console.log(`[RecommendedTopic] Found ${allUsers.length} users with tokens`)
 
@@ -322,10 +294,10 @@ async function handleRecommendedTopicNotification(req: Request, services: Servic
   notificationHelper.verifyCronSecret(req)
   console.log('[RecommendedTopic] Starting notification process...')
 
-  const { offsetRangeMin, offsetRangeMax } = calculateTimezoneOffsetRange(new Date().getUTCHours())
-  console.log(`[RecommendedTopic] Offset range: ${offsetRangeMin} to ${offsetRangeMax}`)
+  const now = new Date()
+  console.log(`[RecommendedTopic] UTC time: ${now.toISOString()}, target: 08:00 local (+ catch-up window)`)
 
-  const result = await prepareUserNotifications(services.supabaseServiceClient, notificationHelper, offsetRangeMin, offsetRangeMax)
+  const result = await prepareUserNotifications(services.supabaseServiceClient, notificationHelper, now)
   if (isResponse(result)) return result
 
   const { usersToNotify, languageMap } = result
