@@ -167,17 +167,23 @@ export class NotificationHelperService {
    *
    * @param userIds - User IDs to check
    * @param notificationType - Type of notification
+   * @param lookbackHours - Dedup over a rolling window of this many hours
+   *   instead of the UTC calendar day. Pass this for notifications delivered on
+   *   a local-time window, which can straddle UTC midnight for UTC+7 and later
+   *   — a calendar-day check resets mid-window and sends a second time.
    * @returns Set of user IDs that already received notification
    */
   async getAlreadySentUserIds(
     userIds: readonly string[],
-    notificationType: NotificationType
+    notificationType: NotificationType,
+    lookbackHours?: number
   ): Promise<Set<string>> {
     return getBatchNotificationStatus(
       this.config.supabaseUrl,
       this.config.serviceRoleKey,
       userIds as string[],
-      notificationType
+      notificationType,
+      lookbackHours
     )
   }
 

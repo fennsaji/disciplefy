@@ -23,6 +23,8 @@ import {
 } from '../_shared/services/notification-helper-service.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { formatError } from '../_shared/utils/error-formatter.ts'
+import { isWithinDeliveryWindow, DEDUP_LOOKBACK_HOURS } from '../_shared/utils/notification-window.ts'
+import { fetchAllRows } from '../_shared/utils/supabase-paginate.ts'
 
 // ============================================================================
 // Types
@@ -73,55 +75,51 @@ async function handleDailyVerseNotification(
 
   const supabase = services.supabaseServiceClient
 
-  // Step 1: Calculate timezone offset range for users who should receive notification
-  const currentHour = new Date().getUTCHours()
-  let targetOffsetMinutes = (6 - currentHour) * 60 // 6 AM target
+  // Step 1: Select users whose local time has reached the 6 AM target.
+  // This runs every hour and re-checks the window rather than requiring one
+  // exact UTC hour, so a dropped or delayed cron is picked up by the next run
+  // instead of skipping that timezone for the whole day. The per-day dedup in
+  // Step 4 keeps it to a single send per user.
+  const now = new Date()
+  const TARGET_LOCAL_MINUTES = 6 * 60 // 6 AM local
 
-  // Normalize to valid timezone range: -720 (UTC-12) to +840 (UTC+14).
-  // Without this, the UTC-21 cron fires with targetOffsetMinutes = -900 which
-  // clamps to [-720, -720] and misses UTC+7:30–UTC+10:30 users entirely.
-  if (targetOffsetMinutes < -720) {
-    targetOffsetMinutes += 1440
-  } else if (targetOffsetMinutes > 840) {
-    targetOffsetMinutes -= 1440
-  }
-
-  // Use ±90 min (half the 3-hour cron interval) so each timezone falls in
-  // exactly ONE cron window and avoids duplicate/late deliveries.
-  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 90)
-  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 90)
-
-  console.log(`[DailyVerse] UTC hour: ${currentHour}, targeting offset: ${targetOffsetMinutes} (±90 min)`)
+  console.log(`[DailyVerse] UTC time: ${now.toISOString()}, target: 06:00 local (+ catch-up window)`)
 
   // Step 2: Fetch eligible users with valid FCM tokens
-  const { data: tokens, error: tokensError } = await supabase
-    .from('user_notification_tokens')
-    .select('user_id, fcm_token')
+  const tokens = await fetchAllRows<{ user_id: string; fcm_token: string }>(
+    (from, to) =>
+      supabase
+        .from('user_notification_tokens')
+        .select('user_id, fcm_token')
+        .order('user_id', { ascending: true })
+        .range(from, to)
+  ).catch((error: Error) => {
+    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${error.message}`, 500)
+  })
 
-  if (tokensError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500)
-  }
+  const preferences = await fetchAllRows<{ user_id: string; timezone_offset_minutes: number }>(
+    (from, to) =>
+      supabase
+        .from('user_notification_preferences')
+        .select('user_id, timezone_offset_minutes, daily_verse_enabled')
+        .eq('daily_verse_enabled', true)
+        .order('user_id', { ascending: true })
+        .range(from, to)
+  ).catch((error: Error) => {
+    throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error.message}`, 500)
+  })
 
-  const { data: preferences, error: prefsError } = await supabase
-    .from('user_notification_preferences')
-    .select('user_id, timezone_offset_minutes, daily_verse_enabled')
-    .eq('daily_verse_enabled', true)
-    .gte('timezone_offset_minutes', offsetRangeMin)
-    .lte('timezone_offset_minutes', offsetRangeMax)
-
-  if (prefsError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${prefsError.message}`, 500)
-  }
-
-  // Manual join: match tokens with preferences
-  const prefsMap = new Map(preferences?.map(p => [p.user_id, p]) || [])
+  // Manual join: match tokens with preferences, keeping only users currently
+  // inside their local delivery window.
+  const prefsMap = new Map(preferences.map(p => [p.user_id, p]))
   const allUsers: DailyVerseUser[] = tokens
-    ?.filter(t => prefsMap.has(t.user_id))
+    .filter(t => prefsMap.has(t.user_id))
     .map(t => ({
       user_id: t.user_id,
       fcm_token: t.fcm_token,
       timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes,
-    })) || []
+    }))
+    .filter(u => isWithinDeliveryWindow(u.timezone_offset_minutes, TARGET_LOCAL_MINUTES, undefined, now))
 
   if (allUsers.length === 0) {
     return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
@@ -136,7 +134,7 @@ async function handleDailyVerseNotification(
 
   // Step 4: Filter out users who already received notification today
   const userIds = authenticatedUsers.map(u => u.user_id)
-  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'daily_verse')
+  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'daily_verse', DEDUP_LOOKBACK_HOURS)
   const eligibleUsers = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
 
   console.log(`[DailyVerse] ${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received)`)
