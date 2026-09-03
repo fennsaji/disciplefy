@@ -138,6 +138,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/brand/
 
   # Bundled fonts for faster loading (no network fetch)
   fonts:
@@ -167,27 +168,32 @@ flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  image_path: "web/icons/icon-512.png"
-  adaptive_icon_background: "#6A4FB6"  # Primary purple color
-  adaptive_icon_foreground: "web/icons/icon-512.png"
+  # Generated from brand/app-icon (see brand/README.md). The foreground is the
+  # symbol alone on a transparent ground with safe-zone padding, so Android's
+  # circular/squircle mask never clips the mark.
+  image_path: "assets/brand/icon-1024.png"
+  adaptive_icon_background: "#0B0B0B"
+  adaptive_icon_foreground: "assets/brand/adaptive-foreground-1024.png"
 
 # Flutter Native Splash Configuration
 flutter_native_splash:
-  # Splash screen background color (matches splash_screen.png background)
-  color: "#FBEDD9"
+  # Splash background matches the brand black the gold symbol sits on.
+  color: "#0B0B0B"
 
-  # Splash screen image (centered)
-  image: "web/splash_screen.png"
-
-  # Branding image at bottom of screen (optional)
-  # branding: assets/images/branding.png
+  # Splash screen image (centered) — full lockup: symbol with DISCIPLEFY below.
+  # Android <12, iOS and web draw this as-is, with no masking.
+  image: "assets/brand/splash-lockup.png"
 
   # Android-specific configuration
   android: true
   android_12:
-    # Android 12+ uses a different splash screen system
-    image: "web/splash_screen.png"
-    color: "#FBEDD9"
+    # Android 12+ masks the splash icon to a CIRCLE, so this one is the symbol
+    # alone on a padded transparent canvas — a full-bleed or lockup image gets
+    # its top and bottom clipped by the mask. The wordmark rides along as
+    # `branding`, which Android draws separately at the bottom, unmasked.
+    image: "assets/brand/splash-android12-icon.png"
+    color: "#0B0B0B"
+    branding: "assets/brand/branding-wordmark.png"
 
   # iOS configuration
   ios: true
