@@ -158,9 +158,9 @@ class StreakDisplayWidget extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.ac_unit,
-                        color: AppColors.info,
+                        color: context.appInfo,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -327,16 +327,16 @@ class _MilestoneProgress extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.trending_up,
                         size: 14,
-                        color: AppColors.warning,
+                        color: context.appWarning,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Almost there!',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.warning,
+                          color: context.appWarning,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -422,16 +422,16 @@ class _MilestoneChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.check_circle,
             size: 14,
-            color: AppColors.success,
+            color: context.appSuccess,
           ),
           const SizedBox(width: 4),
           Text(
             '$days',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.success,
+              color: context.appSuccess,
               fontWeight: FontWeight.bold,
             ),
           ),

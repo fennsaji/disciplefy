@@ -66,9 +66,9 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               color: AppTheme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
-              color: AppTheme.primaryColor,
+              color: context.appBrandAccent,
               size: 18,
             ),
           ),

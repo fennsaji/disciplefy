@@ -482,9 +482,9 @@ class _MeetingCard extends StatelessWidget {
               Navigator.of(ctx).pop();
               onCancel();
             },
-            child: const Text(
+            child: Text(
               'Cancel Meeting',
-              style: TextStyle(color: AppColors.error),
+              style: TextStyle(color: context.appError),
             ),
           ),
         ],

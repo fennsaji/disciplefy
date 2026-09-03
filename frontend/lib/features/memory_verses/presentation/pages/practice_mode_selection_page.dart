@@ -868,9 +868,9 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.check_circle,
-                        color: AppColors.success,
+                        color: context.appSuccess,
                         size: 14,
                       ),
                       const SizedBox(width: 6),

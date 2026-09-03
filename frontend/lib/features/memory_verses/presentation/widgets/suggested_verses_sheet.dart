@@ -479,16 +479,16 @@ class _SuggestedVerseCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.check,
                           size: 16,
-                          color: AppColors.success,
+                          color: context.appSuccess,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           context.tr(TranslationKeys.alreadyAdded),
                           style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.success,
+                            color: context.appSuccess,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Standard error display widget with consistent styling
 ///
@@ -43,7 +44,7 @@ class AppErrorWidget extends StatelessWidget {
             Icon(
               icon ?? Icons.error_outline,
               size: 64,
-              color: AppColors.error,
+              color: context.appError,
             ),
             const SizedBox(height: 16),
             Text(

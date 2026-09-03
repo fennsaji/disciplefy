@@ -107,7 +107,7 @@ class UpgradeDialog extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.lock_rounded,
-                      color: AppColors.warning,
+                      color: context.appWarning,
                       size: 18,
                     ),
                     const SizedBox(width: 8),

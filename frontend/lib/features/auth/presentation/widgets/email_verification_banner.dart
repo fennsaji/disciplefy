@@ -75,7 +75,7 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
                 children: [
                   Icon(
                     Icons.email_outlined,
-                    color: AppTheme.warningColor,
+                    color: context.appWarning,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -88,7 +88,7 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
                           style:
                               Theme.of(context).textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: AppTheme.warningColor,
+                                    color: context.appWarning,
                                   ),
                         ),
                         const SizedBox(height: 4),

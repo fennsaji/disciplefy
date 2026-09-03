@@ -918,7 +918,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             color: AppTheme.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 22),
+          child: Icon(icon, color: context.appBrandAccent, size: 22),
         ),
         title: Text(
           title,
@@ -1284,7 +1284,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 Icon(
                   icon,
                   size: 24,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1841,7 +1841,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 24,
                 ),
             ],
@@ -2276,7 +2276,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 24,
                 ),
             ],
@@ -2366,7 +2366,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 24,
                 ),
             ],
@@ -2544,7 +2544,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 24,
                 ),
             ],
@@ -2710,7 +2710,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 24,
                 ),
             ],

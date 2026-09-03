@@ -1099,7 +1099,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
               children: [
                 Icon(
                   Icons.receipt_long_rounded,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 24,
                 ),
                 const SizedBox(width: 8),
@@ -1254,7 +1254,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                   children: [
                     Icon(
                       Icons.history_rounded,
-                      color: AppTheme.primaryColor,
+                      color: context.appBrandAccent,
                       size: 24,
                     ),
                     const SizedBox(width: 8),

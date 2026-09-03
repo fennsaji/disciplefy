@@ -743,7 +743,7 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: AppColors.warning),
+            Icon(Icons.info_outline_rounded, color: context.appWarning),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(

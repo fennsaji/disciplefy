@@ -884,12 +884,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // logo shrinks on narrow screens; maxWidth caps it on wide screens. Left-
     // aligned so it hugs the leading edge as it scales.
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 180, maxHeight: 40),
+      constraints: const BoxConstraints(maxWidth: 230, maxHeight: 52),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Image.asset(
           logoAsset,
-          height: 40,
+          height: 52,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) => _buildLogoFallback(),
         ),
@@ -1873,9 +1873,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.route_outlined,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 22,
                 ),
               ),

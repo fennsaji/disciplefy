@@ -118,7 +118,7 @@ class PracticeModeCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success,
+                                  color: context.appSuccess,
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: theme.colorScheme.surface,
@@ -140,9 +140,9 @@ class PracticeModeCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (mode.isFavorite)
-                              const Icon(
+                              Icon(
                                 Icons.favorite,
-                                color: AppColors.error,
+                                color: context.appError,
                                 size: 20,
                               ),
                             if (onInfoTap != null)
@@ -164,9 +164,9 @@ class PracticeModeCard extends StatelessWidget {
                           ],
                         )
                       else if (mode.isFavorite)
-                        const Icon(
+                        Icon(
                           Icons.favorite,
-                          color: AppColors.error,
+                          color: context.appError,
                           size: 20,
                         ),
                     ],

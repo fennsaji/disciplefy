@@ -2081,8 +2081,8 @@ class _MemberProgressRow extends StatelessWidget {
 
           // Fraction or checkmark
           if (isDone)
-            const Icon(Icons.check_circle_rounded,
-                color: AppColors.success, size: 18)
+            Icon(Icons.check_circle_rounded,
+                color: context.appSuccess, size: 18)
           else if (totalTopics != null)
             Text(
               '$completed/$total',

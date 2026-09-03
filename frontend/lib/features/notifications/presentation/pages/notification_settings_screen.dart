@@ -297,6 +297,23 @@ class _NotificationSettingsView extends StatelessWidget {
                 : null,
           ),
 
+          const SizedBox(height: 12),
+
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsMemoryVerseOverdueTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsMemoryVerseOverdueDescription),
+            icon: Icons.warning_amber_rounded,
+            enabled: state.preferences.memoryVerseOverdueEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        memoryVerseOverdueEnabled: value),
+                  );
+            },
+          ),
+
           const SizedBox(height: 28),
           _buildInfoSection(context),
         ],
@@ -569,10 +586,10 @@ class _NotificationSettingsView extends StatelessWidget {
                 color: AppColors.error.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.error_outline_rounded,
                 size: 36,
-                color: AppColors.error,
+                color: context.appError,
               ),
             ),
             const SizedBox(height: 20),

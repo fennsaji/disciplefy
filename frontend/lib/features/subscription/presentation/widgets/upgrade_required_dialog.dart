@@ -273,7 +273,7 @@ class UpgradeRequiredDialog extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: AppTheme.primaryColor,
+          color: context.appBrandAccent,
         ),
         const SizedBox(width: 8),
         Expanded(

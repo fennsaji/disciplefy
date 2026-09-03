@@ -169,16 +169,16 @@ class MilestoneCelebrationDialog extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.stars,
-                    color: AppColors.success,
+                    color: context.appSuccess,
                     size: 24,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '+$xpEarned XP',
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: AppColors.success,
+                      color: context.appSuccess,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

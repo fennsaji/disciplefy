@@ -23,7 +23,7 @@ Future<bool> showBlockUserConfirmation(BuildContext context) async {
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(
             l10n.blockUserConfirmAction,
-            style: const TextStyle(color: AppColors.error),
+            style: TextStyle(color: context.appError),
           ),
         ),
       ],

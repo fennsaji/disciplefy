@@ -305,7 +305,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            Icon(Icons.error_outline, size: 48, color: context.appError),
             const SizedBox(height: 16),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -514,13 +514,13 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: AppTheme.primaryColor, size: 24),
+          Icon(icon, color: context.appBrandAccent, size: 24),
           const SizedBox(height: 4),
           Text(
             value,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppTheme.primaryColor,
+              color: context.appBrandAccent,
             ),
           ),
           Text(
@@ -602,7 +602,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                     child: Text(
                       '${reflection.studyMode.icon} ${reflection.studyMode.displayName}',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppTheme.primaryColor,
+                        color: context.appBrandAccent,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -659,7 +659,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                       label: Text(
                           context.tr(TranslationKeys.reflectionJournalDelete)),
                       style: TextButton.styleFrom(
-                          foregroundColor: AppColors.error),
+                          foregroundColor: context.appError),
                     ),
                   ],
                 ),

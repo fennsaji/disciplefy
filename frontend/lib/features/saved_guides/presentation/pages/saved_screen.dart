@@ -176,9 +176,9 @@ class _SavedScreenContent extends StatelessWidget {
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios_new,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 18,
                 ),
               ),
@@ -355,10 +355,10 @@ class _SavedScreenContent extends StatelessWidget {
                   color: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.error_outline,
                   size: 40,
-                  color: AppColors.error,
+                  color: context.appError,
                 ),
               ),
               const SizedBox(height: 20),
@@ -462,7 +462,7 @@ class _SavedScreenContent extends StatelessWidget {
                       ? Icons.bookmark_border
                       : Icons.history,
                   size: 40,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                 ),
               ),
               const SizedBox(height: 20),

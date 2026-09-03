@@ -99,24 +99,24 @@ class MasteryProgressCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.success
+                            color: context.appSuccess
                                 .withAlpha((0.1 * 255).round()),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.success),
+                            border: Border.all(color: context.appSuccess),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.arrow_upward,
                                 size: 14,
-                                color: AppColors.success,
+                                color: context.appSuccess,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Ready',
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: AppColors.success,
+                                  color: context.appSuccess,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

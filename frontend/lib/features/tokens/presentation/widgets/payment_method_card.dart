@@ -4,6 +4,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../domain/entities/saved_payment_method.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 class PaymentMethodCard extends StatelessWidget {
   final SavedPaymentMethod paymentMethod;
@@ -113,10 +114,10 @@ class PaymentMethodCard extends StatelessWidget {
                         child: Row(
                           children: [
                             Icon(Icons.delete_outline,
-                                size: 20, color: AppColors.error),
+                                size: 20, color: context.appError),
                             SizedBox(width: 8),
                             Text('Delete',
-                                style: TextStyle(color: AppColors.error)),
+                                style: TextStyle(color: context.appError)),
                           ],
                         ),
                       ),
@@ -143,13 +144,13 @@ class PaymentMethodCard extends StatelessWidget {
                       Icon(
                         Icons.warning_outlined,
                         size: 16,
-                        color: AppColors.error,
+                        color: context.appError,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         'Card Expired',
                         style: AppTextStyles.captionSmall.copyWith(
-                          color: AppColors.error,
+                          color: context.appError,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

@@ -314,7 +314,7 @@ class _PricingPageState extends State<PricingPage> {
               Icon(
                 Icons.error_outline,
                 size: 64,
-                color: AppTheme.errorColor,
+                color: context.appError,
               ),
               const SizedBox(height: 16),
               Text(
@@ -373,7 +373,7 @@ class _PricingPageState extends State<PricingPage> {
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.warning),
+                Icon(Icons.info_outline, color: context.appWarning),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
@@ -421,7 +421,7 @@ class _PricingPageState extends State<PricingPage> {
         Icon(
           Icons.workspace_premium_rounded,
           size: 56,
-          color: AppTheme.primaryColor,
+          color: context.appBrandAccent,
         ),
         const SizedBox(height: 16),
         Text(
