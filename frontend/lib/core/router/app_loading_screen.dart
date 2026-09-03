@@ -24,9 +24,9 @@ class AppLoadingScreen extends StatelessWidget {
         ? AppColors.splashBackgroundDark
         : AppColors.splashBackgroundLight;
 
-    final loaderColor = isDarkMode
-        ? AppColors.onGradient // White loader for dark mode
-        : AppTheme.primaryColor; // Vibrant purple for light mode
+    // Brand gold in both themes: the splash is always gold-on-black, so a purple
+    // loader would clash with the mark it sits under.
+    const loaderColor = AppColors.brandGold;
 
     return Scaffold(
       backgroundColor: backgroundColor,
