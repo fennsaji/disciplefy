@@ -275,33 +275,29 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildAppLogo(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ColorFiltered(
-      colorFilter: const ColorFilter.mode(
-        Color(0xFFB8860B), // Darker gold color
-        BlendMode.srcIn,
-      ),
-      child: Image.asset(
-        'assets/images/logo_transparent.png',
-        width: 120,
-        height: 120,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to icon if image fails to load
-          return Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.auto_stories,
-              size: 60,
-              color: theme.colorScheme.primary,
-            ),
-          );
-        },
-      ),
+    // No ColorFiltered here: the asset is already brand gold. Tinting it meant
+    // the brand colour was defined in two places, and the filter silently won.
+    return Image.asset(
+      'assets/images/logo_transparent.png',
+      width: 120,
+      height: 120,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        // Fallback to icon if image fails to load
+        return Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.auto_stories,
+            size: 60,
+            color: theme.colorScheme.primary,
+          ),
+        );
+      },
     );
   }
 

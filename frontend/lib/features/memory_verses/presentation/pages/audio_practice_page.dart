@@ -866,7 +866,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 Text(
                   '${context.tr(TranslationKeys.audioExpected)}:',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.success,
+                    color: context.appSuccess,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -8,6 +8,20 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
+/// Daily credit allowance per plan, mirroring `subscription_plans.daily_tokens`
+/// in the database.
+///
+/// These were previously written inline as literals and went stale: migration
+/// 20260319000004 raised standard 20→40 and plus 50→60, but this dialog kept
+/// advertising the old numbers, understating both paid tiers on the screen
+/// users see when deciding whether to upgrade. `plan_daily_credits_test.dart`
+/// pins this map to that migration.
+const Map<String, int> kPlanDailyCredits = {
+  'free': 15,
+  'standard': 40,
+  'plus': 60,
+};
+
 /// Dialog shown when user has insufficient tokens to generate a study guide.
 ///
 /// Displays current token balance vs required cost, plan upgrade options,
@@ -207,7 +221,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.radio_button_unchecked,
           iconColor: isDark ? Colors.white54 : Colors.black45,
           label: 'Standard',
-          detail: '20 credits/day — ₹79/month',
+          detail: '${kPlanDailyCredits['standard']} credits/day — ₹79/month',
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
@@ -216,7 +230,7 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.info_outline,
           iconColor: colorScheme.primary,
           label: 'Plus',
-          detail: '50 credits/day — ₹149/month',
+          detail: '${kPlanDailyCredits['plus']} credits/day — ₹149/month',
         ),
         const SizedBox(height: 8),
         _buildPlanRow(

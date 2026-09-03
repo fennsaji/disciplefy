@@ -21,6 +21,7 @@ abstract class NotificationRepository {
     bool? streakLostEnabled,
     TimeOfDayVO? streakReminderTime,
     bool? memoryVerseReminderEnabled,
+    bool? memoryVerseOverdueEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
   });
 

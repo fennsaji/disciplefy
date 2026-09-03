@@ -13,6 +13,7 @@ import '../bloc/fellowship_members/fellowship_members_event.dart';
 import '../bloc/fellowship_members/fellowship_members_state.dart';
 import '../widgets/block_user_dialog.dart';
 import 'fellowship_invites_screen.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Displays the member list for a fellowship and provides an invite action.
 ///
@@ -203,7 +204,7 @@ class _MemberCard extends StatelessWidget {
             },
             child: Text(
               l10n.removeMemberAction,
-              style: const TextStyle(color: AppColors.error),
+              style: TextStyle(color: context.appError),
             ),
           ),
         ],
@@ -267,7 +268,8 @@ class _MemberCard extends StatelessWidget {
       );
       result.fold(
         (failure) {
-          messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+          messenger.showSnackBar(
+              SnackBar(content: Text(ErrorMessageSanitizer.sanitize(failure))));
         },
         (_) {
           messenger.showSnackBar(SnackBar(content: Text(successText)));
@@ -638,10 +640,10 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
               size: 48,
-              color: AppColors.error,
+              color: context.appError,
             ),
             const SizedBox(height: 16),
             Text(

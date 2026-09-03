@@ -359,7 +359,14 @@ export class FCMService {
 // ============================================================================
 
 /**
- * Log notification event to database
+ * Log notification event to database.
+ *
+ * Errors are swallowed so a logging failure can never fail a push that has
+ * already been delivered — but they are logged LOUDLY, because per-day dedup
+ * reads this table: a row that fails to insert is a notification that will be
+ * re-sent on the next run. A CHECK constraint on notification_type that had not
+ * kept up with the application's notification types silently caused exactly
+ * that in production.
  */
 export async function logNotification(
   supabaseUrl: string,
@@ -393,7 +400,12 @@ export async function logNotification(
   });
 
   if (error) {
-    console.error('Failed to log notification:', error);
+    // Deliberately shouty: this failure means dedup is now blind for this user
+    // and the notification will be sent again on the next run.
+    console.error(
+      `[NotificationLog] DEDUP AT RISK — failed to record ${log.notificationType} ` +
+      `for user ${log.userId}; it will be re-sent on the next run. Error: ${error.message}`
+    );
   }
 }
 
@@ -482,5 +494,48 @@ export async function getBatchNotificationStatus(
   }
 
   // Return Set of user IDs who already received notification recently
+  return new Set(data?.map(row => row.user_id) || []);
+}
+
+/**
+ * Batch check which users received ANY notification within the last
+ * `withinMinutes`, regardless of category.
+ *
+ * Every scheduled category now delivers on a local-time catch-up window, and
+ * those windows overlap — around 10-11 AM local, daily verse, recommended
+ * topic, memory verse reminder and streak lost can all be eligible in the same
+ * run, arriving as a burst of four. This is the cross-category spacing check
+ * that keeps them apart: a user who was just notified is skipped and picked up
+ * by a later run, still inside that category's own window.
+ *
+ * Only counts successful sends, so a failed delivery never suppresses the next
+ * category.
+ */
+export async function getRecentlyNotifiedUserIds(
+  supabaseUrl: string,
+  supabaseKey: string,
+  userIds: string[],
+  withinMinutes: number
+): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const since = new Date(Date.now() - withinMinutes * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from('notification_logs')
+    .select('user_id')
+    .in('delivery_status', ['sent', 'delivered', 'clicked'])
+    .gte('sent_at', since)
+    .in('user_id', userIds);
+
+  if (error) {
+    // Fail open: spacing is a politeness constraint, not a correctness one.
+    // Suppressing every notification because this query failed would be worse
+    // than briefly allowing two to land close together.
+    console.error('[NotificationSpacing] Recent-notification check failed:', error.message);
+    return new Set();
+  }
+
   return new Set(data?.map(row => row.user_id) || []);
 }

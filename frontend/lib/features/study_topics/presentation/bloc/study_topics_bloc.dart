@@ -11,6 +11,7 @@ import '../../domain/repositories/study_topics_repository.dart';
 import '../../domain/utils/topic_search_utils.dart';
 import 'study_topics_event.dart';
 import 'study_topics_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing study topics screen state and operations.
 class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
@@ -207,7 +208,8 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
 
         result.fold(
           (failure) {
-            throw Exception('Failed to load more topics: ${failure.message}');
+            throw Exception(
+                'Failed to load more topics: ${ErrorMessageSanitizer.sanitize(failure)}');
           },
           (newTopics) {
             _allLoadedTopics.addAll(newTopics);
@@ -302,7 +304,8 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
 
     if (categoriesResult.isLeft()) {
       final failure = categoriesResult.fold((l) => l, (r) => null)!;
-      throw Exception('Failed to load categories: ${failure.message}');
+      throw Exception(
+          'Failed to load categories: ${ErrorMessageSanitizer.sanitize(failure)}');
     }
 
     _categories = categoriesResult.fold((l) => [], (r) => r);

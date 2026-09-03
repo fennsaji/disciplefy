@@ -530,8 +530,8 @@ class _LogoWidget extends StatelessWidget {
       label: 'Disciplefy app logo',
       child: Image.asset(
         logoAsset,
-        width: 140,
-        height: 32,
+        width: 200,
+        height: 48,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           // Fallback to icon + text if image fails to load

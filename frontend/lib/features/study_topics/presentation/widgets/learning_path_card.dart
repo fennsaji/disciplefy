@@ -297,10 +297,10 @@ class LearningPathCard extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.check_circle,
               size: 14,
-              color: AppColors.success,
+              color: context.appSuccess,
             ),
             const SizedBox(width: 4),
             Text(
@@ -308,7 +308,7 @@ class LearningPathCard extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.success,
+                color: context.appSuccess,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

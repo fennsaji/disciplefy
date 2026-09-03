@@ -65,7 +65,7 @@ class DailyGoalProgressWidget extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.success,
+                        color: context.appSuccess,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(

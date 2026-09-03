@@ -66,6 +66,7 @@ import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -1142,7 +1143,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
+              '❌ [TOPIC_PROGRESS] Failed to start topic: ${ErrorMessageSanitizer.sanitize(failure)}');
         },
         (_) {
           Logger.debug(
@@ -1685,7 +1686,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
+              '❌ [TOPIC_PROGRESS] Failed to complete topic: ${ErrorMessageSanitizer.sanitize(failure)}');
         },
         (completionResult) {
           if (kDebugMode) {
@@ -1863,9 +1864,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                       color: AppColors.success.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check_circle_rounded,
-                      color: AppColors.success,
+                      color: context.appSuccess,
                       size: 28,
                     ),
                   ),
@@ -5214,10 +5215,10 @@ class _FellowshipShareSectionState extends State<_FellowshipShareSection> {
                   color: AppColors.brandPrimary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.group_rounded,
                   size: 18,
-                  color: AppColors.brandPrimary,
+                  color: context.appBrandAccent,
                 ),
               ),
               const SizedBox(width: 10),

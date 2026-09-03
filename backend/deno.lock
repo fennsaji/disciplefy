@@ -1,6 +1,8 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/assert@*": "1.0.19",
+    "jsr:@std/internal@^1.0.12": "1.0.14",
     "jsr:@supabase/functions-js@^0.0.0-automated": "0.0.0-jsr-test.1",
     "jsr:@supabase/supabase-js@2": "2.95.3",
     "npm:@apple/app-store-server-library@1.4.0": "1.4.0",
@@ -18,6 +20,15 @@
     "npm:razorpay@2.9.2": "2.9.2_request@2.88.2"
   },
   "jsr": {
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
+    },
     "@supabase/functions-js@0.0.0-jsr-test.1": {
       "integrity": "b1b37924af1f0011b4753201e1585a37b030e996c6682492e02575eb27d902b2"
     },

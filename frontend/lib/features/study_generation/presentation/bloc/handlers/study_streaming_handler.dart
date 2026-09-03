@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
-import '../../../../../core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../data/services/study_stream_service.dart';
 import '../../../domain/entities/study_mode.dart';
 import '../../../domain/entities/study_stream_event.dart';

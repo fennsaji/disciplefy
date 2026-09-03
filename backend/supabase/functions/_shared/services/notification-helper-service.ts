@@ -9,8 +9,9 @@
  */
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { FCMService, logNotification, getBatchNotificationStatus } from '../fcm-service.ts'
+import { FCMService, logNotification, getBatchNotificationStatus, getRecentlyNotifiedUserIds } from '../fcm-service.ts'
 import { AppError } from '../utils/error-handler.ts'
+import { MIN_MINUTES_BETWEEN_NOTIFICATIONS } from '../utils/notification-window.ts'
 
 /**
  * Valid notification types matching fcm-service.ts
@@ -185,6 +186,41 @@ export class NotificationHelperService {
       notificationType,
       lookbackHours
     )
+  }
+
+  /**
+   * Filters out users who were sent a notification of ANY category too
+   * recently, so overlapping delivery windows don't arrive as a burst.
+   *
+   * Skipped users are not dropped: each category's window stays open for hours,
+   * so a later hourly run picks them up once the gap has passed.
+   *
+   * @param users - Candidate users, already filtered by category rules
+   * @param withinMinutes - Minimum gap between notifications of any category
+   * @returns The users that may be notified right now
+   */
+  async excludeRecentlyNotified<T extends NotificationUser>(
+    users: readonly T[],
+    withinMinutes: number = MIN_MINUTES_BETWEEN_NOTIFICATIONS
+  ): Promise<T[]> {
+    if (users.length === 0) return users as T[]
+
+    const recentlyNotified = await getRecentlyNotifiedUserIds(
+      this.config.supabaseUrl,
+      this.config.serviceRoleKey,
+      users.map(u => u.user_id),
+      withinMinutes
+    )
+
+    const spaced = users.filter(u => !recentlyNotified.has(u.user_id))
+    if (recentlyNotified.size > 0) {
+      console.log(
+        `[NotificationHelper] Deferred ${recentlyNotified.size} user(s) notified ` +
+        `within the last ${withinMinutes} min; they stay eligible for a later run`
+      )
+    }
+
+    return spaced as T[]
   }
 
   /**

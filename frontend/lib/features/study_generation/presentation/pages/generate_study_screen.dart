@@ -49,6 +49,7 @@ import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -227,7 +228,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
+              '❌ [GENERATE STUDY] Failed to load default language: ${ErrorMessageSanitizer.sanitize(failure)}');
         },
         (language) {
           if (mounted) {
@@ -490,7 +491,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
       return result.fold(
         (failure) {
           Logger.error(
-              '❌ [TOKEN_COST] Failed to fetch cost: ${failure.message}');
+              '❌ [TOKEN_COST] Failed to fetch cost: ${ErrorMessageSanitizer.sanitize(failure)}');
           // Fallback already handled by repository
           return (null, null); // Hide on error
         },

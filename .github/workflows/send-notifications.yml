@@ -124,14 +124,22 @@ jobs:
   # ==========================================================================
   send-recommended-topic:
     runs-on: ubuntu-latest
+    # Runs after send-daily-verse so the cross-category spacing check can see
+    # what was already sent this run. always() keeps the chain going when an
+    # earlier category has nothing to send or fails.
+    needs: [send-daily-verse]
     name: Send Recommended Topic Notifications (Prod)
 
     # Run on schedule OR manual dispatch
+    # always() so one category failing or having nothing to send does not
+    # break the chain for the categories after it.
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'recommended_topic' ||
-        github.event.inputs.notification_type == 'all'))
+      always() && (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' &&
+         (github.event.inputs.notification_type == 'recommended_topic' ||
+          github.event.inputs.notification_type == 'all'))
+      )
 
     steps:
       # No hour gate — see the Daily Verse job above; the Edge Function owns the
@@ -175,14 +183,22 @@ jobs:
   # ==========================================================================
   send-streak-reminder:
     runs-on: ubuntu-latest
+    # Runs after send-memory-verse-reminder so the cross-category spacing check can see
+    # what was already sent this run. always() keeps the chain going when an
+    # earlier category has nothing to send or fails.
+    needs: [send-memory-verse-reminder]
     name: Send Streak Reminder Notifications (Prod)
 
     # Run every hour (users set their own reminder time)
+    # always() so one category failing or having nothing to send does not
+    # break the chain for the categories after it.
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'streak_reminder' ||
-        github.event.inputs.notification_type == 'all'))
+      always() && (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' &&
+         (github.event.inputs.notification_type == 'streak_reminder' ||
+          github.event.inputs.notification_type == 'all'))
+      )
 
     steps:
       - name: Send Streak Reminder Push Notifications (Prod)
@@ -254,14 +270,22 @@ jobs:
   # ==========================================================================
   send-memory-verse-reminder:
     runs-on: ubuntu-latest
+    # Runs after send-recommended-topic so the cross-category spacing check can see
+    # what was already sent this run. always() keeps the chain going when an
+    # earlier category has nothing to send or fails.
+    needs: [send-recommended-topic]
     name: Send Memory Verse Reminder Notifications (Prod)
 
     # Run on schedule OR manual dispatch
+    # always() so one category failing or having nothing to send does not
+    # break the chain for the categories after it.
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'memory_verse_reminder' ||
-        github.event.inputs.notification_type == 'all'))
+      always() && (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' &&
+         (github.event.inputs.notification_type == 'memory_verse_reminder' ||
+          github.event.inputs.notification_type == 'all'))
+      )
 
     steps:
       # No hour gate: get_memory_verse_reminder_notification_users() matches on
@@ -306,16 +330,24 @@ jobs:
   # ==========================================================================
   send-memory-verse-overdue:
     runs-on: ubuntu-latest
+    # Runs after send-streak-reminder so the cross-category spacing check can see
+    # what was already sent this run. always() keeps the chain going when an
+    # earlier category has nothing to send or fails.
+    needs: [send-streak-reminder]
     name: Send Memory Verse Overdue Notifications (Prod)
 
     # Runs on every scheduled trigger: the selector targets 6 PM in the user's
     # own timezone with a catch-up window, so it no longer depends on a fixed
     # set of UTC hours firing reliably.
+    # always() so one category failing or having nothing to send does not
+    # break the chain for the categories after it.
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'memory_verse_overdue' ||
-        github.event.inputs.notification_type == 'all'))
+      always() && (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' &&
+         (github.event.inputs.notification_type == 'memory_verse_overdue' ||
+          github.event.inputs.notification_type == 'all'))
+      )
 
     steps:
       - name: Send Memory Verse Overdue Push Notifications (Prod)

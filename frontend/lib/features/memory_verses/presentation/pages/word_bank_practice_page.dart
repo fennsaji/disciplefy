@@ -551,8 +551,8 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.help,
-                                size: 20, color: AppColors.warning),
+                            Icon(Icons.help,
+                                size: 20, color: context.appWarning),
                             const SizedBox(width: 4),
                             Text(
                               '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',

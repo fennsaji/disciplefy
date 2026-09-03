@@ -12,8 +12,18 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
   static const String _lastFetchKey = 'last_daily_verse_fetch';
   static const String _preferredLanguageKey = 'preferred_verse_language';
 
-  late Box<Map> _verseBox;
   bool _isInitialized = false;
+
+  /// Never hold onto the Box. Logout calls a global `Hive.close()`
+  /// (LocalStoreRepositoryImpl.clearAll), which closes every box; a cached
+  /// reference would then throw "Box has already been closed" on the next
+  /// write — silently losing the daily-verse cache for the rest of the
+  /// session. Re-resolve (reopening if needed) on each access instead, the
+  /// same pattern WalkthroughRepositoryImpl uses.
+  Future<Box<Map>> get _box async {
+    if (Hive.isBoxOpen(_boxName)) return Hive.box<Map>(_boxName);
+    return Hive.openBox<Map>(_boxName);
+  }
 
   /// Initialize the cache service
   @override
@@ -27,7 +37,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       }
 
       // Open verse cache box
-      _verseBox = await Hive.openBox<Map>(_boxName);
+      await Hive.openBox<Map>(_boxName);
       _isInitialized = true;
 
       // Clean up old entries
@@ -57,7 +67,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
         'cached_at': DateTime.now().toIso8601String(),
       };
 
-      await _verseBox.put(dateKey, verseData);
+      await (await _box).put(dateKey, verseData);
       await _updateLastFetchTime();
     } catch (e) {
       throw Exception('Failed to cache daily verse: $e');
@@ -71,7 +81,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
 
     try {
       final dateKey = _formatDateKey(date);
-      final verseData = _verseBox.get(dateKey);
+      final verseData = (await _box).get(dateKey);
 
       if (verseData == null) return null;
 
@@ -135,7 +145,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
   Future<bool> isVerseCached(DateTime date) async {
     await _ensureInitialized();
     final dateKey = _formatDateKey(date);
-    return _verseBox.containsKey(dateKey);
+    return (await _box).containsKey(dateKey);
   }
 
   /// Get preferred verse language
@@ -212,10 +222,10 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     await _ensureInitialized();
 
     return {
-      'total_cached_verses': _verseBox.length,
+      'total_cached_verses': (await _box).length,
       'last_fetch': await getLastFetchTime(),
       'preferred_language': (await getPreferredLanguage()).displayName,
-      'cache_size_bytes': _estimateCacheSize(),
+      'cache_size_bytes': await _estimateCacheSize(),
     };
   }
 
@@ -225,7 +235,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     await _ensureInitialized();
 
     try {
-      await _verseBox.clear();
+      await (await _box).clear();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_lastFetchKey);
     } catch (e) {
@@ -239,8 +249,9 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
       final keysToDelete = <String>[];
 
-      for (final key in _verseBox.keys) {
-        final verseData = _verseBox.get(key);
+      final box = await _box;
+      for (final key in box.keys.toList()) {
+        final verseData = box.get(key);
         if (verseData != null && verseData['cached_at'] != null) {
           final cachedAt = DateTime.parse(verseData['cached_at'] as String);
           if (cachedAt.isBefore(cutoffDate)) {
@@ -250,7 +261,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       }
 
       for (final key in keysToDelete) {
-        await _verseBox.delete(key);
+        await box.delete(key);
       }
     } catch (e) {
       // Non-critical error, just log and continue
@@ -274,8 +285,8 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   /// Estimate cache size in bytes (rough approximation)
-  int _estimateCacheSize() {
-    return _verseBox.length * 1500; // Rough estimate: ~1.5KB per verse
+  Future<int> _estimateCacheSize() async {
+    return (await _box).length * 1500; // Rough estimate: ~1.5KB per verse
   }
 
   /// Ensure cache is initialized
@@ -288,7 +299,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
   /// Dispose resources
   Future<void> dispose() async {
     if (_isInitialized) {
-      await _verseBox.close();
+      if (Hive.isBoxOpen(_boxName)) await Hive.box<Map>(_boxName).close();
       _isInitialized = false;
     }
   }

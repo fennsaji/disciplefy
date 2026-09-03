@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/repositories/topic_progress_repository.dart';
 import 'continue_learning_event.dart';
 import 'continue_learning_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing continue learning section.
 ///
@@ -39,7 +40,7 @@ class ContinueLearningBloc
 
     result.fold(
       (failure) => emit(ContinueLearningError(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
       )),
       (topics) {
         if (topics.isEmpty) {
@@ -69,7 +70,7 @@ class ContinueLearningBloc
 
     result.fold(
       (failure) => emit(ContinueLearningError(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
       )),
       (topics) {
         if (topics.isEmpty) {

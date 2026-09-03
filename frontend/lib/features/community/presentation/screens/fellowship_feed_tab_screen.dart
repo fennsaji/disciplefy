@@ -10,6 +10,7 @@ import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../bloc/fellowship_feed/fellowship_feed_state.dart';
 import '../widgets/block_user_dialog.dart';
 import '../widgets/fellowship_post_card.dart';
+import 'package:disciplefy_bible_study/core/theme/contrast.dart';
 
 /// Real implementation of the Fellowship Feed tab.
 ///
@@ -845,7 +846,14 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                       child: Builder(builder: (context) {
                         final t = postTypes[row * 2 + col];
                         final isSelected = _selectedType == t.value;
+                        // The raw accent is tuned as a fill, not as text: on
+                        // the dark card #4F46E5 measures 2.6:1, well under the
+                        // 4.5:1 minimum. Lift it against the surface it is
+                        // actually drawn on; fills and borders keep the
+                        // original.
                         final accent = t.accent;
+                        final accentText =
+                            ensureContrast(accent, context.appSurfaceVariant);
                         return GestureDetector(
                           onTap: () => setState(() => _selectedType = t.value),
                           child: AnimatedContainer(
@@ -878,8 +886,12 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                                   child: Icon(
                                     t.icon,
                                     size: 18,
+                                    // Same corrected colour as the label: the
+                                    // icon sits on `accent.withAlpha(51)` over
+                                    // the card, so the raw accent nearly
+                                    // matches its own background.
                                     color: isSelected
-                                        ? accent
+                                        ? accentText
                                         : context.appTextTertiary,
                                   ),
                                 ),
@@ -896,7 +908,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                           color: isSelected
-                                              ? accent
+                                              ? accentText
                                               : context.appTextPrimary,
                                         ),
                                       ),

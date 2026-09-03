@@ -57,9 +57,9 @@ class StreakProtectionDialog extends StatelessWidget {
               color: AppColors.info.withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.ac_unit,
-              color: AppColors.info,
+              color: context.appInfo,
               size: 28,
             ),
           ),
@@ -88,9 +88,9 @@ class StreakProtectionDialog extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.warning,
-                  color: AppColors.warning,
+                  color: context.appWarning,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -135,16 +135,16 @@ class StreakProtectionDialog extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.ac_unit,
-                      color: AppColors.info,
+                      color: context.appInfo,
                       size: 20,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '$freezeDaysAvailable',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: AppColors.info,
+                        color: context.appInfo,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

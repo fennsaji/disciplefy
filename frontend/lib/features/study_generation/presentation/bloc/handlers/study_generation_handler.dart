@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
 import '../../../../../core/error/token_failures.dart';
-import '../../../../../core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../domain/usecases/generate_study_guide.dart';
 import '../../../data/datasources/study_local_data_source.dart';
 import '../study_event.dart';
@@ -49,7 +49,7 @@ class StudyGenerationHandler {
       result.fold(
         (failure) {
           Logger.error(
-              '🚨 [STUDY_BLOC] Emitting StudyGenerationFailure: ${failure.runtimeType} - ${failure.message}');
+              '🚨 [STUDY_BLOC] Emitting StudyGenerationFailure: ${failure.runtimeType} - ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // SECURITY FIX: Sanitize error message before exposing to user
           final sanitizedMessage = ErrorMessageSanitizer.sanitize(failure);

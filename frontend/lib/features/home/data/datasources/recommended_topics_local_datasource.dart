@@ -14,14 +14,20 @@ class RecommendedTopicsLocalDataSource {
   static const String _cacheKeyPrefix = 'topics_';
   static const String _timestampSuffix = '_timestamp';
 
-  /// Hive box for storing cached topics
-  Box<String>? _cacheBox;
+  /// Hive box for storing cached topics.
+  // Never hold onto the Box. Logout calls a global `Hive.close()`
+  // (LocalStoreRepositoryImpl.clearAll), which closes every box; a cached
+  // reference then throws "Box has already been closed" on the next access.
+  // Re-resolve (reopening if needed) each time instead.
+  Future<Box<String>> get _box async => Hive.isBoxOpen(_boxName)
+      ? Hive.box<String>(_boxName)
+      : await Hive.openBox<String>(_boxName);
 
   /// Initialize the Hive box for caching
   Future<void> initialize() async {
     try {
-      _cacheBox = await Hive.openBox<String>(_boxName);
-      Logger.error('✅ [TOPICS CACHE] Hive box initialized');
+      await _box;
+      Logger.debug('✅ [TOPICS CACHE] Hive box initialized');
     } catch (e) {
       Logger.debug('❌ [TOPICS CACHE] Failed to initialize Hive box: $e');
     }
@@ -43,11 +49,7 @@ class RecommendedTopicsLocalDataSource {
     }
 
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        Logger.warning('⚠️ [TOPICS CACHE] Box not initialized');
-        return null;
-      }
+      final box = await _box;
 
       final fullCacheKey = '$_cacheKeyPrefix$cacheKey';
       final timestampKey = '$fullCacheKey$_timestampSuffix';
@@ -106,11 +108,7 @@ class RecommendedTopicsLocalDataSource {
     // Note: Empty lists are allowed - they represent valid "no topics" responses
 
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        Logger.debug('⚠️ [TOPICS CACHE] Box not initialized, cannot cache');
-        return;
-      }
+      final box = await _box;
 
       final fullCacheKey = '$_cacheKeyPrefix$cacheKey';
       final timestampKey = '$fullCacheKey$_timestampSuffix';
@@ -133,8 +131,7 @@ class RecommendedTopicsLocalDataSource {
   /// Clears all cached topics
   Future<void> clearCache() async {
     try {
-      final box = _cacheBox;
-      if (box == null) return;
+      final box = await _box;
 
       await box.clear();
       Logger.debug('🗑️ [TOPICS CACHE] All caches cleared');
@@ -151,8 +148,7 @@ class RecommendedTopicsLocalDataSource {
     }
 
     try {
-      final box = _cacheBox;
-      if (box == null) return;
+      final box = await _box;
 
       final fullCacheKey = '$_cacheKeyPrefix$cacheKey';
       final timestampKey = '$fullCacheKey$_timestampSuffix';
@@ -177,8 +173,7 @@ class RecommendedTopicsLocalDataSource {
     }
 
     try {
-      final box = _cacheBox;
-      if (box == null) return;
+      final box = await _box;
 
       final fullPrefix = '$_cacheKeyPrefix$prefix';
 
@@ -200,11 +195,8 @@ class RecommendedTopicsLocalDataSource {
   }
 
   /// Gets cache statistics for debugging
-  Map<String, dynamic> getCacheStats() {
-    final box = _cacheBox;
-    if (box == null) {
-      return {'initialized': false};
-    }
+  Future<Map<String, dynamic>> getCacheStats() async {
+    final box = await _box;
 
     final cacheKeys = box.keys
         .where((key) =>
@@ -222,6 +214,6 @@ class RecommendedTopicsLocalDataSource {
 
   /// Closes the Hive box
   Future<void> dispose() async {
-    await _cacheBox?.close();
+    await (await _box).close();
   }
 }

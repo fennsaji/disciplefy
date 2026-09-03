@@ -168,7 +168,7 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          const Icon(Icons.check_circle, color: AppColors.success, size: 16),
+          Icon(Icons.check_circle, color: context.appSuccess, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: RichText(

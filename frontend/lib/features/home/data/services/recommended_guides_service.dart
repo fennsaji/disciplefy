@@ -701,7 +701,7 @@ class RecommendedGuidesService {
         'in_memory_all_topics_cache_keys': _allTopicsCache.keys.toList(),
         'in_memory_filtered_caches_count': _filteredTopicsCache.length,
         'cache_expiry_hours': _defaultCacheExpiry.inHours,
-        'persistent_cache_stats': _localDataSource.getCacheStats(),
+        'persistent_cache_stats': await _localDataSource.getCacheStats(),
       };
     });
   }

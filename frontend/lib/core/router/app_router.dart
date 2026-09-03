@@ -1068,13 +1068,22 @@ class AppRouter {
         name: 'error',
         builder: (context, state) {
           final error = state.extra as String?;
-          return MaxWidthWrapper(child: ErrorPage(error: error));
+          return MaxWidthWrapper(
+            child: ErrorPage(
+              error: error,
+              location: state.uri.toString(),
+            ),
+          );
         },
       ),
     ],
+    // Pass the unmatched location through explicitly: it is the single most
+    // useful detail for diagnosing a routing failure, and by the time the error
+    // screen builds it is no longer recoverable from the router state.
     errorBuilder: (context, state) => MaxWidthWrapper(
       child: ErrorPage(
         error: 'Page not found: ${state.matchedLocation}',
+        location: state.uri.toString(),
       ),
     ),
   );

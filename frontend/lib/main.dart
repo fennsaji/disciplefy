@@ -59,6 +59,7 @@ import 'core/services/android_download_notification_service.dart';
 import 'core/services/android_hybrid_storage.dart';
 import 'core/services/iap_service.dart';
 import 'core/services/apple_consumable_purchase_service.dart';
+import 'core/utils/isolate_error_reporter.dart';
 import 'core/utils/logger.dart';
 import 'core/connectivity/connectivity_bloc.dart';
 import 'core/services/connectivity_sync_service.dart';
@@ -186,6 +187,11 @@ void main() async {
             );
             return true;
           };
+
+          // Errors thrown on other isolates (background work, compute()) reach
+          // neither FlutterError.onError nor PlatformDispatcher.onError, so
+          // they would otherwise go unreported entirely.
+          listenForIsolateErrors();
         }
       }
 
@@ -334,6 +340,24 @@ void main() async {
       Logger.error('🚨 [MAIN] Initialization error: $e');
       Logger.debug('🚨 [MAIN] Stack trace: $stackTrace');
     }
+
+    // A startup failure is the most severe error the app can hit — the user
+    // gets ErrorApp instead of the app. It was previously only logged in debug,
+    // so in production these were completely invisible.
+    if (!kIsWeb && !kDebugMode) {
+      try {
+        await FirebaseCrashlytics.instance.recordError(
+          e,
+          stackTrace,
+          reason: 'App initialization failed — ErrorApp shown',
+          fatal: true,
+        );
+      } catch (_) {
+        // Firebase itself may be what failed to initialize; never let the
+        // reporting attempt replace ErrorApp with a blank screen.
+      }
+    }
+
     runApp(const ErrorApp());
   }
 }

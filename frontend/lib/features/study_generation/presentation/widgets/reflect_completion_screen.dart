@@ -286,14 +286,14 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
             color: AppTheme.primaryColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 24),
+          child: Icon(icon, color: context.appBrandAccent, size: 24),
         ),
         const SizedBox(height: 8),
         Text(
           value,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
         ),
         Text(
@@ -395,7 +395,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: AppTheme.primaryColor),
+              Icon(icon, size: 20, color: context.appBrandAccent),
               const SizedBox(width: 8),
               Text(
                 title,

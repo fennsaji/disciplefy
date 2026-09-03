@@ -126,9 +126,9 @@ class VersionChecker {
       builder: (dialogContext) => PopScope(
         canPop: false, // Prevent back button
         child: AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.system_update_alt, color: AppColors.warning),
+              Icon(Icons.system_update_alt, color: context.appWarning),
               SizedBox(width: 12),
               Text('Update Required'),
             ],
@@ -181,9 +181,9 @@ class VersionChecker {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.new_releases_outlined, color: AppColors.info),
+            Icon(Icons.new_releases_outlined, color: context.appInfo),
             SizedBox(width: 12),
             Text('Update Available'),
           ],

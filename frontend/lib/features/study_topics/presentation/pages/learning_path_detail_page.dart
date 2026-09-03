@@ -684,7 +684,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     if (model.status == PathDownloadStatus.completed) {
       return IconButton(
-        icon: Icon(Icons.check_circle, color: AppColors.success),
+        icon: Icon(Icons.check_circle, color: context.appSuccess),
         tooltip: 'Available offline',
         onPressed: () => _showCompletedDownloadOptions(path),
       );
@@ -1162,10 +1162,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 if (path.isCompleted)
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.check_circle,
                         size: 16,
-                        color: AppColors.success,
+                        color: context.appSuccess,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -1173,7 +1173,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                         style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.success,
+                          color: context.appSuccess,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

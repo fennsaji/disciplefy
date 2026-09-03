@@ -7,6 +7,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/notification_preferences.dart';
@@ -22,6 +24,7 @@ enum NotificationPromptType {
   streakMilestone,
   streakLost,
   memoryVerseReminder,
+  memoryVerseOverdue,
 }
 
 /// Configuration for each notification prompt type
@@ -76,6 +79,13 @@ class NotificationPromptConfig {
           icon: Icons.favorite_border_rounded,
           sharedPrefsKey: 'notification_prompt_shown_streak_lost',
         );
+      case NotificationPromptType.memoryVerseOverdue:
+        return NotificationPromptConfig(
+          title: _getLocalizedTitle(type, languageCode),
+          description: _getLocalizedDescription(type, languageCode),
+          icon: Icons.warning_amber_rounded,
+          sharedPrefsKey: 'notification_prompt_shown_memory_verse_overdue',
+        );
       case NotificationPromptType.memoryVerseReminder:
         return NotificationPromptConfig(
           title: _getLocalizedTitle(type, languageCode),
@@ -118,6 +128,11 @@ class NotificationPromptConfig {
         'en': 'Memory Verse Reminders',
         'hi': 'वचन याद रिमाइंडर',
         'ml': 'വാക്യ ഓർമ്മ റിമൈൻഡർ',
+      },
+      NotificationPromptType.memoryVerseOverdue: {
+        'en': 'Overdue Verses Alert',
+        'hi': 'अतिदेय वचन अलर्ट',
+        'ml': 'കാലഹരണപ്പെട്ട വചന അറിയിപ്പ്',
       },
     };
     return titles[type]?[languageCode] ?? titles[type]?['en'] ?? '';
@@ -174,6 +189,14 @@ class NotificationPromptConfig {
         'ml':
             'നിങ്ങളുടെ വാക്യങ്ങൾ അവലോകനത്തിന് തയ്യാറാകുമ്പോൾ ദൈനംദിന ഓർമ്മപ്പെടുത്തലുകൾ ലഭിക്കുക.',
       },
+      NotificationPromptType.memoryVerseOverdue: {
+        'en':
+            'Be alerted when memory verses fall behind their review date, so none slip away.',
+        'hi':
+            'जब वचन अपनी समीक्षा तिथि से पीछे रह जाएं तो सूचना प्राप्त करें, ताकि कोई छूट न जाए।',
+        'ml':
+            'വാക്യങ്ങൾ അവലോകന തീയതി പിന്നിടുമ്പോൾ അറിയിപ്പ് ലഭിക്കുക, ഒന്നും വിട്ടുപോകാതിരിക്കാൻ.',
+      },
     };
     return descriptions[type]?[languageCode] ?? descriptions[type]?['en'] ?? '';
   }
@@ -187,25 +210,62 @@ Future<bool?> showNotificationEnablePrompt({
   String languageCode = 'en',
   bool forceShow = false,
 }) async {
-  // Check if the notification is already enabled in user preferences.
-  // If preferences are not yet loaded, skip the prompt — we must not show it
-  // until we know the actual preference state (avoids prompting when ON by default).
-  if (!forceShow && context.mounted) {
-    final bloc = context.read<NotificationBloc>();
-    final currentState = bloc.state;
+  // Two independent things can stop a push from arriving: the OS-level
+  // permission, and this category's own preference. Prompt if EITHER is off.
+  //
+  // The OS check matters most: category preferences default to true, so a user
+  // who denied the system permission had every preference reading as "enabled"
+  // and was never prompted — despite receiving nothing at all.
+  if (!forceShow) {
+    final osPermissionGranted = await sl<NotificationService>()
+        .areNotificationsEnabled()
+        .catchError((_) => true); // fail closed on the prompt, not the feature
 
-    if (currentState is NotificationPreferencesLoaded ||
-        currentState is NotificationPreferencesUpdated) {
-      final preferences = currentState is NotificationPreferencesLoaded
-          ? currentState.preferences
-          : (currentState as NotificationPreferencesUpdated).preferences;
+    if (!context.mounted) return null;
 
-      if (_isNotificationEnabled(type, preferences)) {
-        return null; // Already enabled — no need to prompt
+    if (osPermissionGranted) {
+      // System permission is fine, so only the per-category preference can be
+      // the reason this notification would not arrive.
+      final bloc = context.read<NotificationBloc>();
+      var currentState = bloc.state;
+
+      if (currentState is! NotificationPreferencesLoaded &&
+          currentState is! NotificationPreferencesUpdated) {
+        // Load them here rather than giving up.
+        //
+        // Nothing else in the app dispatches LoadNotificationPreferences except
+        // the notification settings screen, so for any session where the user
+        // never opened that screen the bloc sat in its initial state and this
+        // function returned null every time — the prompt could not fire at all,
+        // which is exactly the case it exists for.
+        bloc.add(const LoadNotificationPreferences());
+        try {
+          currentState = await bloc.stream
+              .firstWhere((state) =>
+                  state is NotificationPreferencesLoaded ||
+                  state is NotificationPreferencesUpdated ||
+                  state is NotificationError)
+              .timeout(const Duration(seconds: 5));
+        } catch (_) {
+          return null; // Could not determine the setting — better than nagging
+        }
+
+        if (!context.mounted) return null;
       }
-    } else {
-      // Preferences not loaded yet — skip to avoid false positives
-      return null;
+
+      if (currentState is NotificationPreferencesLoaded ||
+          currentState is NotificationPreferencesUpdated) {
+        final preferences = currentState is NotificationPreferencesLoaded
+            ? currentState.preferences
+            : (currentState as NotificationPreferencesUpdated).preferences;
+
+        if (_isNotificationEnabled(type, preferences)) {
+          return null; // Already enabled — no need to prompt
+        }
+      } else {
+        // Load failed — skip to avoid false positives
+        return null;
+      }
     }
   }
 
@@ -253,6 +313,8 @@ bool _isNotificationEnabled(
       return preferences.streakLostEnabled;
     case NotificationPromptType.memoryVerseReminder:
       return preferences.memoryVerseReminderEnabled;
+    case NotificationPromptType.memoryVerseOverdue:
+      return preferences.memoryVerseOverdueEnabled;
   }
 }
 
@@ -427,9 +489,23 @@ class _NotificationEnableSheet extends StatelessWidget {
     );
   }
 
-  void _enableNotification(BuildContext context) {
+  Future<void> _enableNotification(BuildContext context) async {
     onInteraction();
     final bloc = context.read<NotificationBloc>();
+
+    // Turning the preference on is not enough when the OS permission was never
+    // granted (or was denied) — the push still would not arrive. Ask for it
+    // first, then record the preference either way so the user's intent is not
+    // lost if they decline the system dialog.
+    final notificationService = sl<NotificationService>();
+    final osPermissionGranted = await notificationService
+        .areNotificationsEnabled()
+        .catchError((_) => true);
+    if (!osPermissionGranted) {
+      await notificationService.requestPermissions().catchError((_) => false);
+    }
+
+    if (!context.mounted) return;
 
     switch (type) {
       case NotificationPromptType.dailyVerse:
@@ -453,6 +529,10 @@ class _NotificationEnableSheet extends StatelessWidget {
       case NotificationPromptType.memoryVerseReminder:
         bloc.add(const UpdateNotificationPreferences(
             memoryVerseReminderEnabled: true));
+        break;
+      case NotificationPromptType.memoryVerseOverdue:
+        bloc.add(const UpdateNotificationPreferences(
+            memoryVerseOverdueEnabled: true));
         break;
     }
   }

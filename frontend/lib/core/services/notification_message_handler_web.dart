@@ -179,11 +179,19 @@ class NotificationMessageHandlerWeb {
       return;
     }
 
+    // Must cover every `type` the backend puts in the FCM data payload — an
+    // unlisted type silently dumps the user on the home screen.
     const validTypes = {
       'daily_verse',
       'recommended_topic',
       'continue_learning',
-      'for_you'
+      'for_you',
+      'streak_reminder',
+      'streak_milestone',
+      'streak_lost',
+      'memory_verse_reminder',
+      'memory_verse_overdue',
+      'fellowship_meeting_reminder',
     };
     if (!validTypes.contains(type)) {
       Logger.warning('[FCM] ⚠️ Unknown notification type: $type');
@@ -221,16 +229,21 @@ class NotificationMessageHandlerWeb {
         break;
 
       case 'continue_learning':
-        final guideId = data['guide_id'];
+        // '/study-guide/<id>' is not a route — that path takes no parameter, so
+        // every tap hit the router's "Page not found" page. Opening the guide
+        // itself needs a fetch-by-id path the app does not have yet, so land on
+        // its learning path when there is one, else the Recent list.
+        final pathId = data['path_id'];
         final topicTitle = data['topic_title'];
 
-        if (guideId != null && guideId is String && guideId.isNotEmpty) {
-          _router.go('/study-guide/$guideId');
+        if (pathId is String && pathId.isNotEmpty) {
+          _router.go('/learning-path/$pathId');
           Logger.debug(
-              '[FCM] ✅ Navigate → continue learning: $guideId (${topicTitle ?? 'unknown'})');
+              '[FCM] ✅ Navigate → learning path: $pathId (${topicTitle ?? 'unknown'})');
         } else {
-          _router.go('/study-topics');
-          Logger.warning('[FCM] ⚠️ No guide ID, navigating to study topics');
+          _router.go('/saved');
+          Logger.debug(
+              '[FCM] ✅ No learning path, navigating to Saved/Recent (${topicTitle ?? 'unknown'})');
         }
         break;
 
@@ -261,6 +274,32 @@ class NotificationMessageHandlerWeb {
           _router.go('/study-topics');
           Logger.warning(
               '[FCM] ⚠️ No for_you topic title, navigating to study topics');
+        }
+        break;
+
+      case 'streak_reminder':
+      case 'streak_milestone':
+      case 'streak_lost':
+        // Streak and daily verse both live on the home screen.
+        _router.go('/');
+        Logger.debug('[FCM] ✅ Navigate → home (streak notification)');
+        break;
+
+      case 'memory_verse_reminder':
+      case 'memory_verse_overdue':
+        // Both are a prompt to review verses that are due.
+        _router.go('/memory-verse-review');
+        Logger.debug('[FCM] ✅ Navigate → memory verse review');
+        break;
+
+      case 'fellowship_meeting_reminder':
+        final fellowshipId = data['fellowship_id'];
+        if (fellowshipId is String && fellowshipId.isNotEmpty) {
+          _router.go('/community/$fellowshipId');
+          Logger.debug('[FCM] ✅ Navigate → fellowship: $fellowshipId');
+        } else {
+          _router.go('/community');
+          Logger.warning('[FCM] ⚠️ No fellowship_id, navigating to community');
         }
         break;
     }

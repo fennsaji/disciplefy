@@ -156,11 +156,11 @@ class FellowshipPostCard extends StatelessWidget {
                           value: 'delete',
                           child: Row(
                             children: [
-                              const Icon(Icons.delete_outline_rounded,
-                                  color: AppColors.error, size: 20),
+                              Icon(Icons.delete_outline_rounded,
+                                  color: context.appError, size: 20),
                               const SizedBox(width: 8),
-                              const Text('Delete',
-                                  style: TextStyle(color: AppColors.error)),
+                              Text('Delete',
+                                  style: TextStyle(color: context.appError)),
                             ],
                           ),
                         ),
@@ -184,12 +184,12 @@ class FellowshipPostCard extends StatelessWidget {
                           value: 'block',
                           child: Row(
                             children: [
-                              const Icon(Icons.block,
-                                  color: AppColors.error, size: 20),
+                              Icon(Icons.block,
+                                  color: context.appError, size: 20),
                               const SizedBox(width: 8),
                               Text(
                                 AppLocalizations.of(context)!.blockUserTitle,
-                                style: const TextStyle(color: AppColors.error),
+                                style: TextStyle(color: context.appError),
                               ),
                             ],
                           ),

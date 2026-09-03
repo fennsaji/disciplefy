@@ -46,6 +46,7 @@ class GoRouterStudyNavigator implements StudyNavigator {
       // Fallback to specific routes if there's nothing in the stack
       switch (source) {
         case StudyNavigationSource.home:
+        case StudyNavigationSource.notification:
           context.go(AppRoutes.home);
           break;
         case StudyNavigationSource.generate:

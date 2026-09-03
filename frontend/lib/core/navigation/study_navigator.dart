@@ -94,6 +94,14 @@ enum StudyNavigationSource {
 
   /// Navigated from a fellowship guide detail screen.
   fellowship,
+
+  /// Opened by tapping a push notification.
+  ///
+  /// A push opens the guide on top of nothing, so there is no screen to pop
+  /// back to. Without this value the source string fell through
+  /// `parseNavigationSource`'s `orElse` to [saved] and back-navigation dumped
+  /// the user on the (usually empty) Saved Guides screen.
+  notification,
 }
 
 /// Extension on StudyNavigationSource for convenience methods.
@@ -107,6 +115,8 @@ extension StudyNavigationSourceExtension on StudyNavigationSource {
         return 'Generate Study';
       case StudyNavigationSource.saved:
         return 'Saved Guides';
+      case StudyNavigationSource.notification:
+        return 'Notification';
       case StudyNavigationSource.recent:
         return 'Recent Guides';
       case StudyNavigationSource.studyTopics:

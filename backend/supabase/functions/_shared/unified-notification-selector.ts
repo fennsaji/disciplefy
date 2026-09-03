@@ -26,6 +26,12 @@ interface NotificationContent {
   guideId?: string;
   progress?: number;
   timeSpent?: number;
+  /**
+   * Learning path the topic belongs to, when it belongs to one. The app taps
+   * through to this page: it cannot open the guide itself from a push, because
+   * the study guide route has no fetch-by-id path.
+   */
+  pathId?: string;
 }
 
 interface UnifiedNotificationResult {
@@ -307,6 +313,10 @@ async function createContinueLearningNotification(
   const bodyIntro = CONTINUE_LEARNING_BODIES[language] || CONTINUE_LEARNING_BODIES.en;
   const body = `${bodyIntro} ${topicTitle}`;
 
+  const pathId = guide.topic_id
+    ? await getLearningPathIdForTopic(supabaseUrl, supabaseServiceKey, guide.topic_id)
+    : null;
+
   return {
     success: true,
     notification: {
@@ -318,8 +328,43 @@ async function createContinueLearningNotification(
       topicDescription,
       guideId: guide.id,
       timeSpent: guide.time_spent_seconds,
+      ...(pathId ? { pathId } : {}),
     },
   };
+}
+
+/**
+ * Finds the learning path a topic belongs to, if any.
+ *
+ * Used so a "Continue Your Study" tap can land on that path's page. Returns
+ * null when the topic is standalone or the lookup fails — the app then falls
+ * back to the Saved/Recent list rather than failing the notification.
+ */
+async function getLearningPathIdForTopic(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  topicId: string
+): Promise<string | null> {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data, error } = await supabase
+      .from('learning_path_topics')
+      .select('learning_path_id')
+      .eq('topic_id', topicId)
+      .order('position', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[UnifiedSelector] Learning path lookup failed:', error.message);
+      return null;
+    }
+
+    return data?.learning_path_id ?? null;
+  } catch (error) {
+    console.error('[UnifiedSelector] Learning path lookup threw:', formatError(error));
+    return null;
+  }
 }
 
 // ============================================================================

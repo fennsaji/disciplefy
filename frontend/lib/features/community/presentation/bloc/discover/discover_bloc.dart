@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'discover_event.dart';
 import 'discover_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC that manages discovery of public fellowships and direct-join flow.
 ///
@@ -46,7 +47,7 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
     result.fold(
       (failure) => emit(state.copyWith(
         status: DiscoverStatus.failure,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (page) => emit(state.copyWith(
         status: DiscoverStatus.success,
@@ -75,7 +76,7 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
     result.fold(
       (failure) => emit(state.copyWith(
         isLoadingMore: false,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (page) => emit(state.copyWith(
         isLoadingMore: false,
@@ -105,7 +106,7 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
     result.fold(
       (failure) => emit(state.copyWith(
         joiningIds: updatedJoining,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) {
         // Remove the just-joined fellowship from the discoverable list.

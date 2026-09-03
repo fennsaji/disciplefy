@@ -51,6 +51,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
         final memoryVerseReminderEnabled =
             prefs.getBool('notification_pref_memory_verse_reminder_enabled') ??
                 false;
+        final memoryVerseOverdueEnabled =
+            prefs.getBool('notification_pref_memory_verse_overdue_enabled') ??
+                false;
         final memoryVerseReminderHour =
             prefs.getInt('notification_pref_memory_verse_reminder_hour') ?? 9;
         final memoryVerseReminderMinute =
@@ -65,6 +68,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           streakReminderTime:
               TimeOfDayVO(hour: reminderHour, minute: reminderMinute),
           memoryVerseReminderEnabled: memoryVerseReminderEnabled,
+          memoryVerseOverdueEnabled: memoryVerseOverdueEnabled,
           memoryVerseReminderTime: TimeOfDayVO(
               hour: memoryVerseReminderHour, minute: memoryVerseReminderMinute),
           createdAt: DateTime.now(),
@@ -118,6 +122,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           streakLostEnabled: false,
           streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
           memoryVerseReminderEnabled: false,
+          memoryVerseOverdueEnabled: false,
           memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -135,6 +140,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         streakLostEnabled: true,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         memoryVerseReminderEnabled: true,
+        memoryVerseOverdueEnabled: true,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -150,6 +156,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         streakLostEnabled: true,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         memoryVerseReminderEnabled: true,
+        memoryVerseOverdueEnabled: true,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -166,6 +173,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         streakLostEnabled: true,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         memoryVerseReminderEnabled: true,
+        memoryVerseOverdueEnabled: true,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -182,6 +190,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     bool? streakLostEnabled,
     TimeOfDayVO? streakReminderTime,
     bool? memoryVerseReminderEnabled,
+    bool? memoryVerseOverdueEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
   }) async {
     try {
@@ -230,6 +239,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
                 hour: currentReminderHour, minute: currentReminderMinute);
         final newMemoryVerseReminder =
             memoryVerseReminderEnabled ?? currentMemoryVerseReminder;
+        final newMemoryVerseOverdue = memoryVerseOverdueEnabled ??
+            (prefs.getBool('notification_pref_memory_verse_overdue_enabled') ??
+                false);
         final newMemoryVerseReminderTime = memoryVerseReminderTime ??
             TimeOfDayVO(
                 hour: currentMemoryVerseReminderHour,
@@ -251,6 +263,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
             'notification_pref_streak_reminder_minute', newReminderTime.minute);
         await prefs.setBool('notification_pref_memory_verse_reminder_enabled',
             newMemoryVerseReminder);
+        await prefs.setBool('notification_pref_memory_verse_overdue_enabled',
+            newMemoryVerseOverdue);
         await prefs.setInt('notification_pref_memory_verse_reminder_hour',
             newMemoryVerseReminderTime.hour);
         await prefs.setInt('notification_pref_memory_verse_reminder_minute',
@@ -266,6 +280,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           streakLostEnabled: newStreakLost,
           streakReminderTime: newReminderTime,
           memoryVerseReminderEnabled: newMemoryVerseReminder,
+          memoryVerseOverdueEnabled: newMemoryVerseOverdue,
           memoryVerseReminderTime: newMemoryVerseReminderTime,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -321,6 +336,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
             'streakReminderTime': formattedStreakTime,
           if (memoryVerseReminderEnabled != null)
             'memoryVerseReminderEnabled': memoryVerseReminderEnabled,
+          if (memoryVerseOverdueEnabled != null)
+            'memoryVerseOverdueEnabled': memoryVerseOverdueEnabled,
           if (formattedMemoryVerseTime != null)
             'memoryVerseReminderTime': formattedMemoryVerseTime,
         },

@@ -12,6 +12,7 @@ import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../data/repositories/token_cost_repository.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Bottom sheet for selecting study mode before generating a study guide.
 ///
@@ -145,7 +146,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
       result.fold(
         (failure) {
           Logger.warning(
-              '⚠️ [MODE_SELECTION] Failed to get subscription: ${failure.message}');
+              '⚠️ [MODE_SELECTION] Failed to get subscription: ${ErrorMessageSanitizer.sanitize(failure)}');
           _userPlan = 'free'; // Default to free on error
         },
         (subscription) {
@@ -253,7 +254,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
           (failure) {
             // Repository fallback failed - don't show cost for this mode
             Logger.warning(
-                '⚠️ [MODE_SELECTION] Failed to get cost for ${mode.name}: ${failure.message}');
+                '⚠️ [MODE_SELECTION] Failed to get cost for ${mode.name}: ${ErrorMessageSanitizer.sanitize(failure)}');
             // Don't set cost - badge won't be shown
           },
           (cost) {
@@ -868,10 +869,10 @@ class _ModeOptionCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lock_rounded,
                         size: 16,
-                        color: AppColors.warning,
+                        color: context.appWarning,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -879,7 +880,7 @@ class _ModeOptionCard extends StatelessWidget {
                         style: AppFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.warning,
+                          color: context.appWarning,
                         ),
                       ),
                     ],

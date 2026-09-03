@@ -434,8 +434,8 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.help,
-                                size: 20, color: AppColors.warning),
+                            Icon(Icons.help,
+                                size: 20, color: context.appWarning),
                             const SizedBox(width: 4),
                             Text(
                               '${context.tr(TranslationKeys.practiceHints)}: $hintsUsed',

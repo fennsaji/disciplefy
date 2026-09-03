@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.disciplefy.bible_study",
       "sha256_cert_fingerprints": [
-        "24:DE:DC:91:28:77:35:DB:6F:54:FF:B0:83:FA:43:3B:AC:6E:C3:51:EA:51:56:06:72:8A:E8:86:81:FC:BE:69"
+        "24:DE:DC:91:28:77:35:DB:6F:54:FF:B0:83:FA:43:3B:AC:6E:C3:51:EA:51:56:06:72:8A:E8:86:81:FC:BE:69",
+        "24:74:AC:DD:4F:B4:1D:2C:E1:A4:0E:2C:63:DE:00:0D:49:77:83:57:BF:A8:CE:E7:CE:78:2D:C9:24:DF:03:2F"
       ]
     }
   }

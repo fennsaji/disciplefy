@@ -73,6 +73,9 @@ class AppLocalizations {
       'error_page_network': 'Please check your internet connection',
       'error_page_server': 'Server error occurred',
       'error_page_unknown': 'An unexpected error occurred',
+      'error_page_report_button': 'Report this issue',
+      'error_page_report_unavailable':
+          'No email app found. Please write to techsupport@disciplefy.in',
 
       // Loading Screen Stages
       'loading_stage_preparing': 'Preparing your study guide...',
@@ -258,6 +261,11 @@ class AppLocalizations {
       'communityMyFellowships': 'My Fellowships',
       'communityDiscover': 'Explore Public Fellowships',
       'communityMembers': 'members',
+      'navHome': 'Home',
+      'navGenerate': 'Generate',
+      'navTopics': 'Topics',
+      'navCommunity': 'Community',
+      'communityMemberSingular': 'member',
       'communityGuideLabel': 'Guide',
       'joinFellowshipTitle': 'Join Fellowship',
       'joinFellowshipHeading': 'Enter your invite code',
@@ -656,6 +664,9 @@ class AppLocalizations {
       'error_page_network': 'कृपया अपना इंटरनेट कनेक्शन जांचें',
       'error_page_server': 'सर्वर त्रुटि हुई',
       'error_page_unknown': 'एक अप्रत्याशित त्रुटि हुई',
+      'error_page_report_button': 'इस समस्या की रिपोर्ट करें',
+      'error_page_report_unavailable':
+          'कोई ईमेल ऐप नहीं मिला। कृपया techsupport@disciplefy.in पर लिखें',
 
       // Loading Screen Stages
       'loading_stage_preparing': 'आपका अध्ययन गाइड तैयार किया जा रहा है...',
@@ -842,6 +853,11 @@ class AppLocalizations {
       'communityMyFellowships': 'मेरी संगतियाँ',
       'communityDiscover': 'सार्वजनिक संगतियाँ खोजें',
       'communityMembers': 'सदस्य',
+      'navHome': 'होम',
+      'navGenerate': 'बनाएँ',
+      'navTopics': 'विषय',
+      'navCommunity': 'समुदाय',
+      'communityMemberSingular': 'सदस्य',
       'communityGuideLabel': 'पाठ',
       'joinFellowshipTitle': 'संगति में शामिल हों',
       'joinFellowshipHeading': 'अपना आमंत्रण कोड दर्ज करें',
@@ -1242,6 +1258,9 @@ class AppLocalizations {
       'error_page_network': 'ദയവായി നിങ്ങളുടെ ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക',
       'error_page_server': 'സെർവർ പിശക് സംഭവിച്ചു',
       'error_page_unknown': 'അപ്രതീക്ഷിത പിശക് സംഭവിച്ചു',
+      'error_page_report_button': 'ഈ പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക',
+      'error_page_report_unavailable':
+          'ഇമെയിൽ ആപ്പ് കണ്ടെത്തിയില്ല. techsupport@disciplefy.in എന്ന വിലാസത്തിൽ എഴുതുക',
 
       // Loading Screen Stages
       'loading_stage_preparing': 'നിങ്ങളുടെ പഠന ഗൈഡ് തയ്യാറാക്കുന്നു...',
@@ -1428,6 +1447,11 @@ class AppLocalizations {
       'communityMyFellowships': 'എന്റെ കൂട്ടായ്മകൾ',
       'communityDiscover': 'പൊതു ഫെല്ലോഷിപ്പുകൾ പര്യവേക്ഷണം ചെയ്യുക',
       'communityMembers': 'അംഗങ്ങൾ',
+      'navHome': 'ഹോം',
+      'navGenerate': 'ഉണ്ടാക്കുക',
+      'navTopics': 'വിഷയങ്ങൾ',
+      'navCommunity': 'കൂട്ടായ്മ',
+      'communityMemberSingular': 'അംഗം',
       'communityGuideLabel': 'ഗൈഡ്',
       'joinFellowshipTitle': 'കൂട്ടായ്മയിൽ ചേരുക',
       'joinFellowshipHeading': 'നിങ്ങളുടെ ക്ഷണ കോഡ് നൽകുക',
@@ -1861,6 +1885,10 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['error_page_server']!;
   String get errorPageUnknown =>
       _localizedValues[locale.languageCode]!['error_page_unknown']!;
+  String get errorPageReportButton =>
+      _localizedValues[locale.languageCode]!['error_page_report_button']!;
+  String get errorPageReportUnavailable =>
+      _localizedValues[locale.languageCode]!['error_page_report_unavailable']!;
 
   // Loading Screen Stages
   String get loadingStagePreparing =>
@@ -1975,6 +2003,19 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['communityDiscover']!;
   String get communityMembers =>
       _localizedValues[locale.languageCode]!['communityMembers']!;
+
+  /// Bottom navigation labels. These were hardcoded English strings, so the
+  /// tab bar stayed in English even with the app set to Hindi or Malayalam.
+  String navLabel(String tabId) => _localizedValues[locale.languageCode]!['nav'
+      '${tabId[0].toUpperCase()}${tabId.substring(1)}']!;
+
+  /// Member count label, singular or plural.
+  ///
+  /// The plural form was used for every count, so a fellowship with one person
+  /// read "1 members". Hindi has no distinct plural here; Malayalam does.
+  String communityMembersCount(int count) => count == 1
+      ? _localizedValues[locale.languageCode]!['communityMemberSingular']!
+      : _localizedValues[locale.languageCode]!['communityMembers']!;
   String get communityGuideLabel =>
       _localizedValues[locale.languageCode]!['communityGuideLabel']!;
   String get joinFellowshipTitle =>

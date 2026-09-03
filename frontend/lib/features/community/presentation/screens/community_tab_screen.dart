@@ -620,7 +620,7 @@ class _FellowshipCard extends StatelessWidget {
                             size: 13, color: context.appTextTertiary),
                         const SizedBox(width: 3),
                         Text(
-                          '${fellowship.memberCount} ${l10n.communityMembers}',
+                          '${fellowship.memberCount} ${l10n.communityMembersCount(fellowship.memberCount)}',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 13,

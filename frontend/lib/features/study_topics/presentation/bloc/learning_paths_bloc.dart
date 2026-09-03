@@ -6,6 +6,7 @@ import '../../domain/repositories/learning_paths_repository.dart';
 import '../../domain/usecases/reset_learning_progress.dart';
 import 'learning_paths_event.dart';
 import 'learning_paths_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing learning paths.
 ///
@@ -60,7 +61,8 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
         : <LearningPath>[];
 
     result.fold(
-      (failure) => emit(LearningPathsError(message: failure.message)),
+      (failure) => emit(
+          LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
       (categoriesResult) {
         if (!categoriesResult.categories.any((c) => c.paths.isNotEmpty)) {
           emit(const LearningPathsEmpty());
@@ -94,7 +96,8 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     );
 
     result.fold(
-      (failure) => emit(LearningPathsError(message: failure.message)),
+      (failure) => emit(
+          LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
       (pathDetail) => emit(LearningPathDetailLoaded(pathDetail: pathDetail)),
     );
   }
@@ -109,7 +112,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
 
     result.fold(
       (failure) => emit(LearningPathsError(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
         isInitialLoadError: false,
       )),
       (enrollment) => emit(LearningPathEnrolled(enrollment: enrollment)),
@@ -133,7 +136,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     result.fold(
       (failure) {
         emit(LearningPathsError(
-          message: failure.message,
+          message: ErrorMessageSanitizer.sanitize(failure),
           isInitialLoadError: !hadData,
         ));
       },
@@ -301,7 +304,8 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     );
 
     result.fold(
-      (failure) => emit(LearningPathsError(message: failure.message)),
+      (failure) => emit(
+          LearningPathsError(message: ErrorMessageSanitizer.sanitize(failure))),
       (data) => emit(LearningPathsLoaded(
         categories: const [],
         searchResults: data.paths,
@@ -399,7 +403,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
 
     result.fold(
       (failure) => emit(LearningPathsResetError(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
         code: failure.code,
         isNetworkError: failure is NetworkFailure,
       )),

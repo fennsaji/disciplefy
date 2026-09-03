@@ -69,6 +69,28 @@ class DeepLinkService {
       _router.go('/fellowship/join/$token');
       return;
     }
+    // Match /learning-path/<pathId>
+    //
+    // This path is advertised as an App Link in AndroidManifest.xml and in
+    // api/apple-app-site-association.js. Without a branch here the link
+    // verified, opened the app, and then silently dropped the user on Home.
+    if (segments.length >= 2 &&
+        segments[0] == 'learning-path' &&
+        segments[1].isNotEmpty) {
+      final pathId = segments[1];
+      // Path ids are UUIDs; anything else is a malformed or hostile link.
+      final isValidId = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(pathId);
+      if (!isValidId) {
+        Logger.warning('Invalid learning path id in deep link: ${uri.path}',
+            tag: _tag);
+        return;
+      }
+      _router.go('/learning-path/$pathId');
+      return;
+    }
+
     Logger.warning('Unhandled deep link path: ${uri.path}', tag: _tag);
   }
 

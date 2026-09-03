@@ -503,7 +503,7 @@ class _FellowshipRow extends StatelessWidget {
             if (isSelected)
               Icon(
                 Icons.check_circle_rounded,
-                color: AppColors.brandPrimary,
+                color: context.appBrandAccent,
                 size: 18,
               ),
           ],

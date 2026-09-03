@@ -19,20 +19,18 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   static const String _recentGuidesBoxName = 'recent_guides';
   static const int _maxRecentGuides = 10;
 
-  Box<SavedGuideModel>? _savedGuidesBox;
-  Box<SavedGuideModel>? _recentGuidesBox;
+  // Never hold onto the Box. Logout calls a global `Hive.close()`
+  // (LocalStoreRepositoryImpl.clearAll), which closes every box; a cached
+  // reference then throws "Box has already been closed" on the next access.
+  // Re-resolve (reopening if needed) each time instead.
+  Future<Box<SavedGuideModel>> _open(String name) async => Hive.isBoxOpen(name)
+      ? Hive.box<SavedGuideModel>(name)
+      : await Hive.openBox<SavedGuideModel>(name);
 
-  Future<Box<SavedGuideModel>> get savedGuidesBox async {
-    _savedGuidesBox ??=
-        await Hive.openBox<SavedGuideModel>(_savedGuidesBoxName);
-    return _savedGuidesBox!;
-  }
+  Future<Box<SavedGuideModel>> get savedGuidesBox => _open(_savedGuidesBoxName);
 
-  Future<Box<SavedGuideModel>> get recentGuidesBox async {
-    _recentGuidesBox ??=
-        await Hive.openBox<SavedGuideModel>(_recentGuidesBoxName);
-    return _recentGuidesBox!;
-  }
+  Future<Box<SavedGuideModel>> get recentGuidesBox =>
+      _open(_recentGuidesBoxName);
 
   @override
   Future<List<SavedGuideModel>> getSavedGuides() async {

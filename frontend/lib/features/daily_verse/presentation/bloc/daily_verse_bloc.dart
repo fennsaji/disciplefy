@@ -12,6 +12,7 @@ import '../../domain/repositories/streak_repository.dart';
 import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing daily verse state and operations
 class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
@@ -218,7 +219,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
 
       result.fold(
         (failure) => emit(DailyVerseError(
-          message: 'Failed to get cache stats: ${failure.message}',
+          message:
+              'Failed to get cache stats: ${ErrorMessageSanitizer.sanitize(failure)}',
         )),
         (stats) => emit(DailyVerseCacheStats(stats: stats)),
       );
@@ -239,7 +241,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
 
       result.fold(
         (failure) => emit(DailyVerseError(
-          message: 'Failed to clear cache: ${failure.message}',
+          message:
+              'Failed to clear cache: ${ErrorMessageSanitizer.sanitize(failure)}',
         )),
         (_) => emit(const DailyVerseCacheCleared()),
       );
@@ -296,7 +299,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
 
     await result.fold(
       (failure) async => emit(DailyVerseError(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
       )),
       (verse) async {
         // Load current streak for authenticated users
@@ -430,7 +433,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
 
     result.fold(
       (failure) => emit(DailyVerseError(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
       )),
       (cachedVerse) {
         // NULL SAFETY FIX: Explicit null check with proper error handling

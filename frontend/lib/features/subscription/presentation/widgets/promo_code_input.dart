@@ -5,6 +5,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/subscription_v2_models.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Promo Code Input Widget
 ///
@@ -237,7 +238,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
               Icon(
                 Icons.error_outline,
                 size: 16,
-                color: AppTheme.errorColor,
+                color: context.appError,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -245,7 +246,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                   _errorMessage!,
                   style: AppFonts.inter(
                     fontSize: 12,
-                    color: AppTheme.errorColor,
+                    color: context.appError,
                   ),
                 ),
               ),
@@ -273,7 +274,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
             children: [
               Icon(
                 Icons.check_circle,
-                color: AppTheme.successColor,
+                color: context.appSuccess,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -283,7 +284,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.successColor,
+                    color: context.appSuccess,
                   ),
                 ),
               ),

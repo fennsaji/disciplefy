@@ -117,11 +117,15 @@ async function computeUsersToNotify(
     notificationHelper.getAlreadySentUserIds(userIds, 'continue_learning', DEDUP_LOOKBACK_HOURS),
   ])
   const alreadySentUserIds = new Set([...alreadySentRecommended, ...alreadySentContinue])
-  return authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+  const deduped = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+
+  // Space out categories — a user notified by another category within the last
+  // hour is deferred to a later run, still inside this window.
+  return await notificationHelper.excludeRecentlyNotified(deduped)
 }
 
 function buildNotificationData(
-  notification: { type: string; topicId: string; topicTitle: string; topicDescription: string; guideId?: string; timeSpent?: number },
+  notification: { type: string; topicId: string; topicTitle: string; topicDescription: string; guideId?: string; timeSpent?: number; pathId?: string },
   language: string
 ): Record<string, string> {
   const data: Record<string, string> = {
@@ -135,6 +139,11 @@ function buildNotificationData(
   if (notification.type === 'continue_learning' && notification.guideId) {
     data.guide_id = notification.guideId
     data.time_spent = notification.timeSpent?.toString() || '0'
+    // Lets the app open the topic's learning path on tap; it cannot open the
+    // guide itself, as the study guide route has no fetch-by-id path.
+    if (notification.pathId) {
+      data.path_id = notification.pathId
+    }
   }
 
   return data

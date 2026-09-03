@@ -19,6 +19,7 @@ class NotificationPreferences extends Equatable {
 
   // Memory verse notification preferences
   final bool memoryVerseReminderEnabled;
+  final bool memoryVerseOverdueEnabled;
   final TimeOfDayVO memoryVerseReminderTime;
 
   final DateTime createdAt;
@@ -33,6 +34,7 @@ class NotificationPreferences extends Equatable {
     required this.streakLostEnabled,
     required this.streakReminderTime,
     required this.memoryVerseReminderEnabled,
+    required this.memoryVerseOverdueEnabled,
     required this.memoryVerseReminderTime,
     required this.createdAt,
     required this.updatedAt,
@@ -47,6 +49,7 @@ class NotificationPreferences extends Equatable {
     bool? streakLostEnabled,
     TimeOfDayVO? streakReminderTime,
     bool? memoryVerseReminderEnabled,
+    bool? memoryVerseOverdueEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -64,6 +67,8 @@ class NotificationPreferences extends Equatable {
       streakReminderTime: streakReminderTime ?? this.streakReminderTime,
       memoryVerseReminderEnabled:
           memoryVerseReminderEnabled ?? this.memoryVerseReminderEnabled,
+      memoryVerseOverdueEnabled:
+          memoryVerseOverdueEnabled ?? this.memoryVerseOverdueEnabled,
       memoryVerseReminderTime:
           memoryVerseReminderTime ?? this.memoryVerseReminderTime,
       createdAt: createdAt ?? this.createdAt,
@@ -81,6 +86,7 @@ class NotificationPreferences extends Equatable {
         streakLostEnabled,
         streakReminderTime,
         memoryVerseReminderEnabled,
+        memoryVerseOverdueEnabled,
         memoryVerseReminderTime,
         createdAt,
         updatedAt,

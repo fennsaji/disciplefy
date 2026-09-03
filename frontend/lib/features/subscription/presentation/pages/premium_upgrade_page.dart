@@ -27,6 +27,7 @@ import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../utils/plan_features_extractor.dart';
 import '../widgets/promo_code_input.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 class PremiumUpgradePage extends StatefulWidget {
   const PremiumUpgradePage({super.key});
@@ -345,7 +346,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           Icon(
             Icons.workspace_premium_rounded,
             size: 64,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
           const SizedBox(height: 12),
           Text(
@@ -353,7 +354,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             style: AppFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: AppTheme.primaryColor,
+              color: context.appBrandAccent,
             ),
           ),
           const SizedBox(height: 8),
@@ -504,8 +505,8 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             color: AppTheme.primaryColor.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child:
-              Icon(Icons.check_rounded, size: 18, color: AppTheme.primaryColor),
+          child: Icon(Icons.check_rounded,
+              size: 18, color: context.appBrandAccent),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -609,11 +610,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     return Card(
       color: AppTheme.secondaryColor.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: const Padding(
+      child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: AppTheme.primaryColor),
+            Icon(Icons.info_outline_rounded, color: context.appBrandAccent),
             SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -643,7 +644,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                Icon(Icons.info_outline_rounded, color: AppTheme.primaryColor),
+                Icon(Icons.info_outline_rounded, color: context.appBrandAccent),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -792,7 +793,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             child: Row(
               children: [
                 Icon(Icons.info_outline_rounded,
-                    color: AppTheme.primaryColor, size: 20),
+                    color: context.appBrandAccent, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

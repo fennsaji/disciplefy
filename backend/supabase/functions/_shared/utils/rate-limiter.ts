@@ -37,9 +37,21 @@ export class RateLimiter {
     this.config = config;
     this.requests = new Map();
 
-    // Clean up old entries every 5 minutes (optional in tests)
-    if (typeof Deno !== 'undefined' && Deno.env.get('DENO_TESTING') !== 'true') {
+    // Clean up old entries every 5 minutes.
+    //
+    // The timer is unref'd so it never keeps the isolate alive on its own: a
+    // periodic timer that outlives its work stops an edge function instance
+    // from shutting down, and made every RateLimiter test fail the leak
+    // detector ("An interval was started in this test, but never completed").
+    // Callers that own a limiter for a bounded lifetime should still call
+    // destroy().
+    // Skipped under `deno test`, where a periodic timer trips the leak
+    // detector even when unref'd.
+    if (typeof Deno === 'undefined' || Deno.env.get('DENO_TESTING') !== 'true') {
       this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+      if (typeof Deno !== 'undefined' && typeof Deno.unrefTimer === 'function') {
+        Deno.unrefTimer(this.cleanupInterval);
+      }
     }
   }
 

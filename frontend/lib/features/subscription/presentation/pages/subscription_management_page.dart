@@ -603,7 +603,7 @@ class _SubscriptionManagementPageState
                   children: [
                     Icon(
                       Icons.warning_amber_rounded,
-                      color: AppTheme.warningColor,
+                      color: context.appWarning,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -868,7 +868,7 @@ class _SubscriptionManagementPageState
         ),
       ),
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppTheme.primaryColor,
+        foregroundColor: context.appBrandAccent,
         side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         shape: RoundedRectangleBorder(
@@ -1109,7 +1109,7 @@ class _SubscriptionManagementPageState
             children: [
               Icon(
                 Icons.pause_circle_outline_rounded,
-                color: AppTheme.warningColor,
+                color: context.appWarning,
                 size: 24,
               ),
               const SizedBox(width: 12),

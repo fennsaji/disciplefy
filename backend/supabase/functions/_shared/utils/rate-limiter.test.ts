@@ -7,6 +7,11 @@
 import { assertEquals, assert } from 'https://deno.land/std@0.208.0/assert/mod.ts';
 import { RateLimiter, getRequestIdentifier } from './rate-limiter.ts';
 
+// Suppresses RateLimiter's periodic cleanup timer. Deno's leak detector fails
+// any test that leaves an interval running, which failed all nine RateLimiter
+// tests here. Must be set before the first RateLimiter is constructed.
+Deno.env.set('DENO_TESTING', 'true');
+
 // ============================================================================
 // Rate Limiter Tests
 // ============================================================================

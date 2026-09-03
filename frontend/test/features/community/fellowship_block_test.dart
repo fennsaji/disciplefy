@@ -16,6 +16,7 @@ import 'package:disciplefy_bible_study/features/community/presentation/bloc/fell
 import 'package:disciplefy_bible_study/features/community/presentation/bloc/fellowship_feed/fellowship_feed_state.dart';
 
 import 'fellowship_block_test.mocks.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 @GenerateMocks([CommunityRepository])
 void main() {
@@ -103,7 +104,14 @@ void main() {
     verify: (bloc) {
       expect(bloc.state.posts.length, 2);
       expect(bloc.state.blockStatus, FellowshipBlockStatus.failure);
-      expect(bloc.state.errorMessage, 'network down');
+      // Sanitized, not the raw failure text: server details must never reach
+      // the UI (a fellowship screen shipped a raw
+      // "TimeoutException ... Future not completed" to users this way).
+      expect(bloc.state.errorMessage, isNot(contains('network down')));
+      expect(
+          bloc.state.errorMessage,
+          ErrorMessageSanitizer.sanitize(
+              const ServerFailure(message: 'network down')));
     },
   );
 }

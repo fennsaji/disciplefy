@@ -12,6 +12,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'learning_paths_reset_test.mocks.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 @GenerateMocks([LearningPathsRepository])
 void main() {
@@ -70,7 +71,12 @@ void main() {
     expect: () => [
       const LearningPathsResetting(),
       isA<LearningPathsResetError>()
-          .having((s) => s.message, 'message', 'Slow down')
+          // Rate-limit messages reach the user through the sanitizer now.
+          .having(
+              (s) => s.message,
+              'message',
+              ErrorMessageSanitizer.sanitize(const RateLimitFailure(
+                  message: 'Slow down', code: 'RATE_LIMIT_EXCEEDED')))
           .having((s) => s.code, 'code', 'RATE_LIMIT_EXCEEDED'),
     ],
     verify: (bloc) {

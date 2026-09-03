@@ -280,10 +280,10 @@ class _GenerateBar extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   error!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
-                    color: AppColors.error,
+                    color: context.appError,
                   ),
                 ),
               ),

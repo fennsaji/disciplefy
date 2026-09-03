@@ -139,7 +139,11 @@ async function handleMemoryVerseNotification(
     config.notificationType,
     DEDUP_LOOKBACK_HOURS
   )
-  const usersToNotify = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+  const dedupedUsers = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+
+  // Space out categories — a user notified by another category within the last
+  // hour is deferred to a later run, still inside this window.
+  const usersToNotify = await notificationHelper.excludeRecentlyNotified(dedupedUsers)
 
   console.log(`[MemoryVerse] ${usersToNotify.length} users need notification (${alreadySentUserIds.size} already received)`)
 

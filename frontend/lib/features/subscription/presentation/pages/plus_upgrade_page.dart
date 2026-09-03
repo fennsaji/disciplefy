@@ -19,7 +19,7 @@ import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/services/platform_payment_provider_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
@@ -649,11 +649,11 @@ class _PlusUpgradePageState extends State<PlusUpgradePage>
     return Card(
       color: AppColors.warning.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: const Padding(
+      child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: AppColors.warning),
+            Icon(Icons.info_outline_rounded, color: context.appWarning),
             SizedBox(width: 12),
             Expanded(
               child: Text(

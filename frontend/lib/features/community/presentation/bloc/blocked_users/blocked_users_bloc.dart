@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/repositories/community_repository.dart';
 import 'blocked_users_event.dart';
 import 'blocked_users_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Manages the Settings → Blocked Users list.
 class BlockedUsersBloc extends Bloc<BlockedUsersEvent, BlockedUsersState> {
@@ -27,7 +28,7 @@ class BlockedUsersBloc extends Bloc<BlockedUsersEvent, BlockedUsersState> {
     result.fold(
       (failure) => emit(state.copyWith(
         status: BlockedUsersStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (users) => emit(state.copyWith(
         status: BlockedUsersStatus.success,
@@ -54,7 +55,7 @@ class BlockedUsersBloc extends Bloc<BlockedUsersEvent, BlockedUsersState> {
       (failure) => emit(state.copyWith(
         users: previous,
         status: BlockedUsersStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(status: BlockedUsersStatus.success)),
     );

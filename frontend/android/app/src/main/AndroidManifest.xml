@@ -114,5 +114,14 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Required for mailto: links to resolve. Android 11+ package
+             visibility hides other apps unless they are declared here, so
+             without this canLaunchUrl() reports false and launchUrl() fails —
+             affecting the error report button, the settings contact and
+             feedback links, and account deletion. -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="mailto"/>
+        </intent>
     </queries>
 </manifest>

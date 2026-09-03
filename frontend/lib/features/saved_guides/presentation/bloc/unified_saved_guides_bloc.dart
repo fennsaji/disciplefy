@@ -10,6 +10,7 @@ import '../../domain/usecases/get_recent_guides_with_sync.dart';
 import '../../domain/usecases/toggle_save_guide_api.dart';
 import 'saved_guides_event.dart';
 import 'saved_guides_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Unified BLoC that follows Clean Architecture principles
 /// Uses use cases to interact with the repository layer
@@ -157,7 +158,8 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
             isForSavedGuides: true,
           ));
         } else {
-          emit(SavedGuidesError(message: failure.message));
+          emit(SavedGuidesError(
+              message: ErrorMessageSanitizer.sanitize(failure)));
         }
       },
       (updatedGuide) {
@@ -441,7 +443,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
         isForSavedGuides: isForSavedGuides,
       ));
     } else {
-      emit(SavedGuidesError(message: failure.message));
+      emit(SavedGuidesError(message: ErrorMessageSanitizer.sanitize(failure)));
     }
   }
 

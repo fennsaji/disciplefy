@@ -15,12 +15,22 @@ import 'max_width_wrapper.dart';
 class NavTab {
   final IconData icon;
   final IconData? activeIcon;
+
+  /// Stable identifier ('home', 'generate', 'topics', 'community').
+  ///
+  /// Layout code branches on which tabs are present; it used to compare the
+  /// English [label], which meant localizing the label would silently change
+  /// behaviour. Compare [id] instead — it never changes with locale.
+  final String id;
+
+  /// English fallback, used only when localization is unavailable.
   final String label;
   final String semanticLabel;
 
   const NavTab({
     required this.icon,
     this.activeIcon,
+    required this.id,
     required this.label,
     required this.semanticLabel,
   });
@@ -53,6 +63,7 @@ class DisciplefyBottomNav extends StatelessWidget {
     NavTab(
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
+      id: 'home',
       label: 'Home',
       semanticLabel:
           'Navigate to Home screen. Shows daily verse and study recommendations.',
@@ -60,6 +71,7 @@ class DisciplefyBottomNav extends StatelessWidget {
     NavTab(
       icon: Icons.auto_awesome_outlined,
       activeIcon: Icons.auto_awesome,
+      id: 'generate',
       label: 'Generate',
       semanticLabel:
           'Navigate to Study Generation screen. Create new Bible study guides.',
@@ -67,6 +79,7 @@ class DisciplefyBottomNav extends StatelessWidget {
     NavTab(
       icon: Icons.menu_book_outlined,
       activeIcon: Icons.menu_book,
+      id: 'topics',
       label: 'Topics',
       semanticLabel:
           'Navigate to Study Topics screen. Browse learning paths and continue your studies.',
@@ -74,6 +87,7 @@ class DisciplefyBottomNav extends StatelessWidget {
     NavTab(
       icon: Icons.people_outline,
       activeIcon: Icons.people,
+      id: 'community',
       label: 'Community',
       semanticLabel:
           'Navigate to Community screen. Join fellowships and connect with other believers.',
@@ -139,7 +153,7 @@ class DisciplefyBottomNav extends StatelessWidget {
 
               // Wrap Generate, Topics, and Community tabs with walkthrough
               // tooltips so the home screen walkthrough highlights each nav item.
-              if (tab.label == 'Generate') {
+              if (tab.id == 'generate') {
                 return Expanded(
                   child: WalkthroughTooltip(
                     showcaseKey: ShowcaseKeys.homeGenerateTab,
@@ -156,7 +170,7 @@ class DisciplefyBottomNav extends StatelessWidget {
                 );
               }
 
-              if (tab.label == 'Topics') {
+              if (tab.id == 'topics') {
                 return Expanded(
                   child: WalkthroughTooltip(
                     showcaseKey: ShowcaseKeys.homeTopicsTab,
@@ -173,7 +187,7 @@ class DisciplefyBottomNav extends StatelessWidget {
                 );
               }
 
-              if (tab.label == 'Community') {
+              if (tab.id == 'community') {
                 return Expanded(
                   child: WalkthroughTooltip(
                     showcaseKey: ShowcaseKeys.homeCommunityTab,
@@ -336,7 +350,8 @@ class _BottomNavItemState extends State<_BottomNavItem>
                     color: widget.isSelected ? activeColor : inactiveColor,
                   ),
                   child: Text(
-                    widget.tab.label,
+                    AppLocalizations.of(context)?.navLabel(widget.tab.id) ??
+                        widget.tab.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,

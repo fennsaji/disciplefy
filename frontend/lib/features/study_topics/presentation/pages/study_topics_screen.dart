@@ -42,6 +42,7 @@ import '../bloc/learning_paths_state.dart';
 import '../widgets/for_you_learning_paths_section.dart';
 import '../widgets/learning_path_card.dart';
 import '../widgets/learning_paths_section.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Screen for browsing study topics with For You and Learning Paths sections.
 ///
@@ -93,7 +94,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       result.fold(
         (failure) {
           Logger.debug(
-              '⚠️ [STUDY_TOPICS] Failed to get subscription: ${failure.message}');
+              '⚠️ [STUDY_TOPICS] Failed to get subscription: ${ErrorMessageSanitizer.sanitize(failure)}');
           _userPlan = 'free'; // Default to free on error
         },
         (subscription) {
@@ -1226,7 +1227,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: sheetContext.appBrandAccent,
                   size: 22,
                 ),
             ],

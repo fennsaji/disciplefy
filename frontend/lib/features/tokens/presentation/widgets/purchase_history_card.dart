@@ -234,7 +234,7 @@ class PurchaseHistoryCard extends StatelessWidget {
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.warning),
+                      side: BorderSide(color: context.appWarning),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

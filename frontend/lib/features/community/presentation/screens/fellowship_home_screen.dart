@@ -260,7 +260,7 @@ class _FellowshipHomeContent extends StatelessWidget {
             },
             child: Text(
               l10n.leaveFellowshipTitle,
-              style: const TextStyle(color: AppColors.error),
+              style: TextStyle(color: context.appError),
             ),
           ),
         ],
@@ -300,7 +300,7 @@ class _FellowshipHomeContent extends StatelessWidget {
             },
             child: Text(
               l10n.deleteFellowshipTitle,
-              style: const TextStyle(color: AppColors.error),
+              style: TextStyle(color: context.appError),
             ),
           ),
         ],
@@ -491,22 +491,22 @@ class _FellowshipHomeContent extends StatelessWidget {
                   PopupMenuItem(
                     value: 'delete',
                     child: Row(children: [
-                      const Icon(Icons.delete_outline,
-                          color: AppColors.error, size: 18),
+                      Icon(Icons.delete_outline,
+                          color: context.appError, size: 18),
                       const SizedBox(width: 10),
                       Text(l10n.deleteFellowshipTitle,
-                          style: const TextStyle(color: AppColors.error)),
+                          style: TextStyle(color: context.appError)),
                     ]),
                   ),
                 if (!isMentor)
                   PopupMenuItem(
                     value: 'leave',
                     child: Row(children: [
-                      const Icon(Icons.exit_to_app,
-                          color: AppColors.error, size: 18),
+                      Icon(Icons.exit_to_app,
+                          color: context.appError, size: 18),
                       const SizedBox(width: 10),
                       Text(l10n.leaveFellowshipTitle,
-                          style: const TextStyle(color: AppColors.error)),
+                          style: TextStyle(color: context.appError)),
                     ]),
                   ),
               ],
@@ -618,7 +618,7 @@ class _HeroHeader extends StatelessWidget {
                         color: Colors.white70, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      '$memberCount members',
+                      '$memberCount ${AppLocalizations.of(context)!.communityMembersCount(memberCount)}',
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13,
@@ -1345,7 +1345,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                   size: 22,
                 ),
             ],
@@ -1442,11 +1442,11 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                   value: 'reset',
                   child: Row(
                     children: [
-                      Icon(Icons.restart_alt, color: AppColors.error),
+                      Icon(Icons.restart_alt, color: context.appError),
                       const SizedBox(width: 12),
                       Text(
                         l10n.lessonsResetProgress,
-                        style: TextStyle(color: AppColors.error),
+                        style: TextStyle(color: context.appError),
                       ),
                     ],
                   ),

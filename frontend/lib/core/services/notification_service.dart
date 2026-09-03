@@ -18,6 +18,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:go_router/go_router.dart';
 import '../utils/logger.dart';
 import '../di/injection_container.dart';
+import '../router/app_routes.dart';
 import '../../features/study_generation/data/services/tts_notification_service.dart';
 
 /// Background message handler (must be top-level function)
@@ -41,6 +42,20 @@ class NotificationService {
   FirebaseMessaging? _firebaseMessaging;
   String? _fcmToken;
   bool _isInitialized = false;
+
+  /// In-flight initialize() call. `_isInitialized` is only set once the awaits
+  /// below finish, so two concurrent callers (app startup in main.dart and the
+  /// post-login call in AuthBloc) could both pass the flag check and each set
+  /// up a second set of FCM listeners — making every notification tap navigate
+  /// twice and stacking a duplicate screen behind the real one.
+  Future<void>? _initializeInFlight;
+
+  /// Held so listener setup can be made idempotent. Logout resets
+  /// `_isInitialized` (see unregisterToken) without tearing these down, so a
+  /// re-login would otherwise add another subscription each time.
+  StreamSubscription<RemoteMessage>? _onMessageSub;
+  StreamSubscription<RemoteMessage>? _onMessageOpenedAppSub;
+  StreamSubscription<String>? _onTokenRefreshSub;
 
   // Stream controllers for notification events
   final _notificationTapController =
@@ -126,12 +141,18 @@ class NotificationService {
 
   /// Initialize notification service
   /// Call this during app startup after Firebase.initializeApp()
-  Future<void> initialize() async {
+  Future<void> initialize() {
     if (_isInitialized) {
       if (kDebugMode) Logger.debug('[NotificationService] Already initialized');
-      return;
+      return Future.value();
     }
+    // Join the in-flight run rather than starting a second one.
+    return _initializeInFlight ??= _initialize().whenComplete(() {
+      _initializeInFlight = null;
+    });
+  }
 
+  Future<void> _initialize() async {
     try {
       if (kDebugMode) Logger.debug('[NotificationService] Initializing...');
 
@@ -382,7 +403,8 @@ class NotificationService {
 
   /// Handle token refresh
   void _setupTokenRefreshListener() {
-    _firebaseMessaging?.onTokenRefresh.listen((newToken) {
+    _onTokenRefreshSub?.cancel();
+    _onTokenRefreshSub = _firebaseMessaging?.onTokenRefresh.listen((newToken) {
       if (kDebugMode) {
         Logger.debug('[NotificationService] Token refreshed: $newToken');
       }
@@ -397,11 +419,18 @@ class NotificationService {
 
   /// Setup notification listeners for all states
   void _setupNotificationListeners() {
+    // Cancel first: this can run again after a logout/login cycle, and a
+    // leftover subscription would deliver every tap twice.
+    _onMessageSub?.cancel();
+    _onMessageOpenedAppSub?.cancel();
+
     // Foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _onMessageSub =
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     // Background message tap (app in background)
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+    _onMessageOpenedAppSub =
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
     // Token refresh
     _setupTokenRefreshListener();
@@ -556,14 +585,21 @@ class NotificationService {
       return;
     }
 
-    // Validate against known notification types
+    // Validate against known notification types.
+    // Must cover every `type` the backend puts in the FCM data payload — an
+    // unlisted type silently dumps the user on the home screen instead of the
+    // page the notification was about.
     const validTypes = {
       'daily_verse',
       'recommended_topic',
       'continue_learning',
       'for_you',
+      'streak_reminder',
       'streak_milestone',
       'streak_lost',
+      'memory_verse_reminder',
+      'memory_verse_overdue',
+      'fellowship_meeting_reminder',
     };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
@@ -579,9 +615,10 @@ class NotificationService {
     // Handle navigation based on validated type
     switch (type) {
       case 'daily_verse':
-        // Navigate to daily verse screen
-        _router.go('/daily-verse');
-        Logger.info('[NotificationService] ✅ Navigating to daily verse');
+        // The daily verse lives on the home screen — there is no /daily-verse
+        // route, and navigating to one produced a "Page not found" error page.
+        _router.go(AppRoutes.home);
+        Logger.info('[NotificationService] ✅ Navigating to daily verse (home)');
         break;
 
       case 'recommended_topic':
@@ -625,20 +662,31 @@ class NotificationService {
         break;
 
       case 'continue_learning':
-        // Continue Learning: Navigate to existing incomplete guide
-        final guideId = data['guide_id'];
+        // Continue Learning points at a guide the user already started.
+        //
+        // It used to navigate to '/study-guide/<id>', but that route takes no
+        // path parameter (it is query-param + `extra` based), so every tap hit
+        // the router's "Page not found" page. Opening the guide directly needs
+        // a fetch-by-id path that does not exist yet — the app only ever opens
+        // an existing guide by handing its full content through `extra`.
+        //
+        // Until then, land somewhere the guide is one tap away: its learning
+        // path when the topic belongs to one, otherwise the Recent list.
+        final pathId = data['path_id'];
         final topicTitle = data['topic_title']; // For debug logging
 
-        if (guideId != null && guideId is String && guideId.isNotEmpty) {
-          // Navigate to the specific incomplete study guide
-          _router.go('/study-guide/$guideId');
+        if (pathId is String && pathId.isNotEmpty) {
+          _router.go('/learning-path/$pathId');
           Logger.info(
-              '[NotificationService] ✅ Navigating to Continue Learning guide: $guideId (${topicTitle ?? 'unknown'})');
+              '[NotificationService] ✅ Navigating to learning path: $pathId (${topicTitle ?? 'unknown'})');
         } else {
-          // Fallback to study topics page if no guide ID provided
-          _router.go('/study-topics');
-          Logger.warning(
-              '[NotificationService] ⚠️  No guide ID provided, navigating to study topics');
+          // ?tab=recent, not the bare route: the guide this notification is
+          // about is unfinished and therefore unsaved, so the default Saved
+          // tab shows "No Saved Studies" — an empty screen in response to
+          // "Continue Your Study". Recent is where the guide actually is.
+          _router.go('${AppRoutes.saved}?tab=recent');
+          Logger.info(
+              '[NotificationService] ✅ No learning path for guide, navigating to Recent (${topicTitle ?? 'unknown'})');
         }
         break;
 
@@ -667,7 +715,7 @@ class NotificationService {
               : '';
 
           _router.go(
-              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=for_you_notification$topicIdParam$descriptionParam');
+              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam$descriptionParam');
           Logger.info(
               '[NotificationService] ✅ Navigating to For You topic: $topicTitle (ID: ${topicId ?? 'none'})');
         } else {
@@ -678,12 +726,35 @@ class NotificationService {
         }
         break;
 
+      case 'streak_reminder':
       case 'streak_milestone':
       case 'streak_lost':
-        // Navigate to daily verse page where streak info is visible
-        _router.go('/daily-verse');
+        // Streak and daily verse both live on the home screen.
+        _router.go(AppRoutes.home);
         Logger.info(
-            '[NotificationService] ✅ Navigating to daily verse (streak notification)');
+            '[NotificationService] ✅ Navigating to home (streak notification)');
+        break;
+
+      case 'memory_verse_reminder':
+      case 'memory_verse_overdue':
+        // Both notifications are a prompt to review verses that are due, so go
+        // straight to the review screen rather than the memory verse list.
+        _router.go(AppRoutes.verseReview);
+        Logger.info(
+            '[NotificationService] ✅ Navigating to memory verse review');
+        break;
+
+      case 'fellowship_meeting_reminder':
+        final fellowshipId = data['fellowship_id'];
+        if (fellowshipId is String && fellowshipId.isNotEmpty) {
+          _router.go('/community/$fellowshipId');
+          Logger.info(
+              '[NotificationService] ✅ Navigating to fellowship: $fellowshipId');
+        } else {
+          _router.go(AppRoutes.community);
+          Logger.warning(
+              '[NotificationService] ⚠️  No fellowship_id provided, navigating to community');
+        }
         break;
     }
   }
@@ -857,6 +928,9 @@ class NotificationService {
   // ============================================================================
 
   void dispose() {
+    _onMessageSub?.cancel();
+    _onMessageOpenedAppSub?.cancel();
+    _onTokenRefreshSub?.cancel();
     _notificationTapController.close();
   }
 }

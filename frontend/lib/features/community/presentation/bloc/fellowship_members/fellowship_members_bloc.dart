@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_members_event.dart';
 import 'fellowship_members_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC that manages the member list for a single fellowship, plus
 /// invite creation, mute/unmute, and leave operations.
@@ -52,7 +53,7 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: FellowshipMembersStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (members) {
         // Re-derive isMentor from the loaded list — this self-corrects when
@@ -88,7 +89,7 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(
         inviteStatus: FellowshipInviteStatus.failure,
-        inviteError: failure.message,
+        inviteError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (data) {
         emit(state.copyWith(
@@ -114,7 +115,8 @@ class FellowshipMembersBloc
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (_) {
         // Update the member's isMuted flag locally.
         final updated = state.members.map((m) {
@@ -136,7 +138,8 @@ class FellowshipMembersBloc
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (_) {
         final updated = state.members.map((m) {
           if (m.userId != event.userId) return m;
@@ -154,7 +157,8 @@ class FellowshipMembersBloc
     final result = await _repository.leaveFellowship(state.fellowshipId);
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (_) => emit(state.copyWith(
         leaveStatus: FellowshipLeaveStatus.success,
         clearErrorMessage: true,
@@ -181,7 +185,7 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(
         editStatus: FellowshipEditStatus.failure,
-        editError: failure.message,
+        editError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(
         editStatus: FellowshipEditStatus.success,
@@ -230,7 +234,7 @@ class FellowshipMembersBloc
         // Restore the original list on failure.
         emit(state.copyWith(
           invitesList: state.invitesList,
-          errorMessage: failure.message,
+          errorMessage: ErrorMessageSanitizer.sanitize(failure),
         ));
       },
       (_) {},
@@ -247,7 +251,8 @@ class FellowshipMembersBloc
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (_) {
         // Optimistically remove member from local list.
         final updated =
@@ -268,7 +273,7 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(
         deleteStatus: FellowshipDeleteStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(
         deleteStatus: FellowshipDeleteStatus.success,
@@ -294,7 +299,7 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(
         transferStatus: FellowshipTransferStatus.failure,
-        transferError: failure.message,
+        transferError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(
         transferStatus: FellowshipTransferStatus.success,

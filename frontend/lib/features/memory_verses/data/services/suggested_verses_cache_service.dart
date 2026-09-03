@@ -12,7 +12,14 @@ class SuggestedVersesCacheService {
   static const String _boxName = 'suggested_verses_cache';
   static const int _cacheDurationDays = 7; // Cache valid for 7 days
 
-  late Box<Map> _cacheBox;
+  // Never hold onto the Box. Logout calls a global `Hive.close()`
+  // (LocalStoreRepositoryImpl.clearAll), which closes every box; a cached
+  // reference then throws "Box has already been closed" on the next access.
+  // Re-resolve (reopening if needed) each time instead.
+  Future<Box<Map>> get _box async => Hive.isBoxOpen(_boxName)
+      ? Hive.box<Map>(_boxName)
+      : await Hive.openBox<Map>(_boxName);
+
   bool _isInitialized = false;
 
   /// Initialize the cache service
@@ -21,11 +28,7 @@ class SuggestedVersesCacheService {
 
     try {
       // Initialize Hive if not already done
-      if (!Hive.isBoxOpen(_boxName)) {
-        _cacheBox = await Hive.openBox<Map>(_boxName);
-      } else {
-        _cacheBox = Hive.box<Map>(_boxName);
-      }
+      await _box;
       _isInitialized = true;
 
       // Clean up old entries
@@ -56,7 +59,7 @@ class SuggestedVersesCacheService {
         'cached_at': DateTime.now().toIso8601String(),
       };
 
-      await _cacheBox.put(cacheKey, cacheData);
+      await (await _box).put(cacheKey, cacheData);
 
       Logger.debug(
           '✅ [CACHE] Cached ${verses.length} suggested verses ($cacheKey)');
@@ -74,7 +77,7 @@ class SuggestedVersesCacheService {
 
     try {
       final cacheKey = _generateCacheKey(language, category);
-      final cacheData = _cacheBox.get(cacheKey);
+      final cacheData = (await _box).get(cacheKey);
 
       if (cacheData == null) {
         Logger.debug('📭 [CACHE] No cached verses found ($cacheKey)');
@@ -88,7 +91,7 @@ class SuggestedVersesCacheService {
       if (cacheAge.inDays > _cacheDurationDays) {
         Logger.debug(
             '⏰ [CACHE] Cache expired (${cacheAge.inDays} days old) ($cacheKey)');
-        await _cacheBox.delete(cacheKey);
+        await (await _box).delete(cacheKey);
         return null;
       }
 
@@ -124,7 +127,7 @@ class SuggestedVersesCacheService {
 
     try {
       final cacheKey = _generateCacheKey(language, category);
-      final cacheData = _cacheBox.get(cacheKey);
+      final cacheData = (await _box).get(cacheKey);
 
       if (cacheData == null) return false;
 
@@ -142,7 +145,7 @@ class SuggestedVersesCacheService {
     await _ensureInitialized();
 
     try {
-      await _cacheBox.clear();
+      await (await _box).clear();
       Logger.debug('🗑️ [CACHE] Cleared all suggested verses cache');
     } catch (e) {
       Logger.debug('❌ [CACHE] Failed to clear cache: $e');
@@ -158,7 +161,7 @@ class SuggestedVersesCacheService {
 
     try {
       final cacheKey = _generateCacheKey(language, category);
-      await _cacheBox.delete(cacheKey);
+      await (await _box).delete(cacheKey);
       Logger.debug('🗑️ [CACHE] Cleared cache for $cacheKey');
     } catch (e) {
       Logger.debug('❌ [CACHE] Failed to clear cache for key: $e');
@@ -170,8 +173,9 @@ class SuggestedVersesCacheService {
     await _ensureInitialized();
 
     return {
-      'total_cache_entries': _cacheBox.length,
-      'cache_size_estimate_bytes': _cacheBox.length * 10000, // ~10KB per entry
+      'total_cache_entries': (await _box).length,
+      'cache_size_estimate_bytes':
+          (await _box).length * 10000, // ~10KB per entry
       'cache_duration_days': _cacheDurationDays,
     };
   }
@@ -222,8 +226,8 @@ class SuggestedVersesCacheService {
           DateTime.now().subtract(Duration(days: _cacheDurationDays));
       final keysToDelete = <String>[];
 
-      for (final key in _cacheBox.keys) {
-        final cacheData = _cacheBox.get(key);
+      for (final key in (await _box).keys) {
+        final cacheData = (await _box).get(key);
         if (cacheData != null && cacheData['cached_at'] != null) {
           final cachedAt = DateTime.parse(cacheData['cached_at'] as String);
           if (cachedAt.isBefore(cutoffDate)) {
@@ -233,7 +237,7 @@ class SuggestedVersesCacheService {
       }
 
       for (final key in keysToDelete) {
-        await _cacheBox.delete(key);
+        await (await _box).delete(key);
       }
 
       if (kDebugMode && keysToDelete.isNotEmpty) {
@@ -254,8 +258,8 @@ class SuggestedVersesCacheService {
 
   /// Dispose resources
   Future<void> dispose() async {
-    if (_isInitialized && _cacheBox.isOpen) {
-      await _cacheBox.close();
+    if (_isInitialized && Hive.isBoxOpen(_boxName)) {
+      await (await _box).close();
       _isInitialized = false;
     }
   }

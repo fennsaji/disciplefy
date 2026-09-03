@@ -145,9 +145,20 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     if (!mounted) return;
 
     final languageCode = context.translationService.currentLanguage.code;
-    await showNotificationEnablePrompt(
+    final reminderPrompted = await showNotificationEnablePrompt(
       context: context,
       type: NotificationPromptType.memoryVerseReminder,
+      languageCode: languageCode,
+    );
+
+    // Only fall through to the overdue prompt when the reminder one did not
+    // appear (already enabled, or previously dismissed) — never stack two
+    // sheets on top of each other.
+    if (reminderPrompted != null || !mounted) return;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.memoryVerseOverdue,
       languageCode: languageCode,
     );
   }
@@ -829,7 +840,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             Row(
               children: [
                 if (isComplete)
-                  Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                  Icon(Icons.check_circle, size: 14, color: context.appSuccess),
                 const SizedBox(width: 4),
                 Text(
                   '$current/$target',
@@ -879,10 +890,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 ),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.auto_stories_outlined,
                 size: 50,
-                color: AppTheme.primaryColor,
+                color: context.appBrandAccent,
               ),
             ),
             const SizedBox(height: 24),
