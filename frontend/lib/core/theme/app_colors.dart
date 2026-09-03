@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'contrast.dart';
 
 /// Centralized color system for the Disciplefy app.
 ///
@@ -77,7 +78,12 @@ class AppColors {
   static const Color lightInputFill = Color(0xFFFFFFFF);
 
   // Splash / loading screen background (light mode)
-  static const Color splashBackgroundLight = Color(0xFFFBEDD9);
+  // Brand black — the splash is gold-on-black in both themes, matching the
+  // native launch screen so there is no colour flash on handover.
+  /// Brand gold — the Disciplefy symbol. See brand/README.md.
+  static const Color brandGold = Color(0xFFE3B154);
+
+  static const Color splashBackgroundLight = Color(0xFF0B0B0B);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DARK THEME PALETTE
@@ -101,7 +107,7 @@ class AppColors {
   static const Color darkHintText = Color(0xFF808080);
 
   // Splash / loading screen background (dark mode)
-  static const Color splashBackgroundDark = Color(0xFF0F1012);
+  static const Color splashBackgroundDark = Color(0xFF0B0B0B);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEMANTIC COLORS (theme-independent)
@@ -321,6 +327,40 @@ extension AppColorsTheme on BuildContext {
       _isDark ? AppColors.darkDivider : AppColors.lightDivider;
   Color get appInputFill =>
       _isDark ? AppColors.darkInputFill : AppColors.lightInputFill;
+
+  /// Semantic accents resolved for the current theme.
+  ///
+  /// The base tokens (success #10B981, warning #F59E0B, brandPrimary #4F46E5)
+  /// are fill colours. Used as text or icons they fail WCAG on one theme:
+  /// warning is 2.2:1 on white, success 2.5:1 on white, brandPrimary 2.6:1 on
+  /// the dark surface. The palette already carries the right variants for each
+  /// theme — these pick them so call sites do not have to.
+  Color get appSuccess =>
+      _isDark ? AppColors.successLighter : AppColors.successDark;
+  Color get appWarning =>
+      _isDark ? AppColors.warningLighter : AppColors.warningDark;
+  Color get appError => _isDark ? AppColors.errorLighter : AppColors.errorDark;
+  Color get appInfo => _isDark ? AppColors.infoLighter : AppColors.infoDark;
+  Color get appBrandAccent =>
+      _isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+
+  /// Adjusts [accent] so it is readable as text on the current theme's
+  /// surface.
+  ///
+  /// The brand and semantic accents are chosen as fills. Used directly as a
+  /// text colour many of them fail WCAG AA on one theme or the other —
+  /// brandPrimary is 2.6:1 on the dark surface variant, success is 2.5:1 on
+  /// white, warning 2.2:1. This keeps the hue and lifts it only as far as
+  /// needed.
+  ///
+  /// Pass [minRatio] `kMinContrastLargeText` for icons and large headings.
+  Color readable(Color accent, {double minRatio = kMinContrastNormalText}) =>
+      ensureContrast(accent, appSurface, minRatio: minRatio);
+
+  /// As [readable], but against the scaffold/background rather than a card.
+  Color readableOnBackground(Color accent,
+          {double minRatio = kMinContrastNormalText}) =>
+      ensureContrast(accent, appBackground, minRatio: minRatio);
 
   /// Theme-aware primary brand color — adapts to light/dark mode automatically.
   Color get appPrimary => Theme.of(this).colorScheme.primary;

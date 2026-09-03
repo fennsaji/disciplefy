@@ -126,41 +126,58 @@ class MemoryVerseListItem extends StatelessWidget {
 
                   const Spacer(),
 
-                  // Next review date or overdue indicator
+                  // Next review date or overdue indicator.
+                  //
+                  // Flexible, not a bare child: the three chips to the left are
+                  // fixed width, so whatever sits here has to absorb the
+                  // remaining space. The overdue label is localized and Malayalam
+                  // ("5 ദിവസം വൈകി") is far wider than English, which overflowed
+                  // this row by 41 pixels.
                   if (verse.daysOverdue > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            size: 16,
-                            color: AppColors.errorDark,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${verse.daysOverdue}${context.tr(TranslationKeys.memoryDaysOverdue)}',
-                            style: theme.textTheme.bodySmall?.copyWith(
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              size: 16,
                               color: AppColors.errorDark,
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '${verse.daysOverdue}${context.tr(TranslationKeys.memoryDaysOverdue)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.errorDark,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   else
-                    Text(
-                      'Next: ${_formatDate(verse.nextReviewDate)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    Flexible(
+                      child: Text(
+                        'Next: ${_formatDate(verse.nextReviewDate)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                 ],
@@ -180,10 +197,10 @@ class MemoryVerseListItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppColors.error),
+              leading: Icon(Icons.delete_outline, color: context.appError),
               title: Text(
                 context.tr(TranslationKeys.memoryDeleteTitle),
-                style: const TextStyle(color: AppColors.error),
+                style: TextStyle(color: context.appError),
               ),
               onTap: () {
                 Navigator.pop(sheetContext);
