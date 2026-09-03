@@ -225,6 +225,23 @@ export class FCMService {
    * Send push notification via FCM to a single device
    */
   async sendNotification(message: FCMMessage): Promise<FCMResponse> {
+    // Never send a notification with nothing to show. FCM accepts an empty
+    // `notification` block and Android then renders a bare app-name card
+    // (seen in the wild on 3 Sept 2026, 03:05 IST). Failing here surfaces
+    // the sender in notification_logs as 'failed' with this message instead.
+    const title = message.notification?.title?.trim() ?? '';
+    const body = message.notification?.body?.trim() ?? '';
+    if (!title || !body) {
+      const type = message.data?.type ?? 'unknown';
+      console.error(
+        `[FCM] Refusing to send blank notification (type=${type}, title=${JSON.stringify(title)}, body=${JSON.stringify(body)})`
+      );
+      return {
+        success: false,
+        error: `EMPTY_NOTIFICATION: blank title or body for type=${type}`,
+      };
+    }
+
     try {
       const accessToken = await this.getAccessToken();
 

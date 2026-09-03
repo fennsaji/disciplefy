@@ -849,3 +849,36 @@ console.log('\n' + '='.repeat(60));
 console.log('✅ All FCM Service hermetic unit tests completed!');
 console.log('   All external dependencies mocked for deterministic testing');
 console.log('='.repeat(60) + '\n');
+
+// ============================================================================
+// Blank-payload guard
+// ============================================================================
+
+for (const [label, notification] of [
+  ['empty title', { title: '', body: 'Some body' }],
+  ['whitespace title', { title: '   ', body: 'Some body' }],
+  ['empty body', { title: 'Some title', body: '' }],
+] as const) {
+  Deno.test({
+    name: `FCMService: refuses to send a notification with ${label}`,
+    fn: async () => {
+      setupTestEnv();
+      const service = new FCMService();
+
+      // Must fail before any token fetch or network call.
+      const result = await service.sendNotification({
+        token: 'test-token',
+        notification,
+        data: { type: 'memory_verse_overdue' },
+      });
+
+      assert(!result.success);
+      assertExists(result.error);
+      assert(result.error!.startsWith('EMPTY_NOTIFICATION'));
+      assert(result.error!.includes('memory_verse_overdue'));
+      cleanupTestEnv();
+    },
+    sanitizeResources: false,
+    sanitizeOps: false,
+  });
+}
