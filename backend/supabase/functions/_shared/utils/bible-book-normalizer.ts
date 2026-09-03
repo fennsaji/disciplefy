@@ -833,6 +833,63 @@ export class BibleBookNormalizer {
    * Validates Bible book names in text and returns detailed results.
    * Does not modify the text, only analyzes it.
    */
+  /**
+   * Longest number of whitespace-separated words any book name spans
+   * ("Song of Solomon", "प्रेरितों के काम"), plus room for a leading ordinal.
+   */
+  private bookReferencePattern: RegExp | null = null
+
+  private static readonly MAX_BOOK_WORDS = 4
+
+  private isKnownBookName(name: string): boolean {
+    const lower = name.toLowerCase()
+    for (const canonical of this.canonicalBooks) {
+      if (canonical.toLowerCase() === lower) return true
+    }
+    for (const incorrect of Object.keys(this.incorrectMapping)) {
+      if (incorrect.toLowerCase() === lower) return true
+    }
+    return false
+  }
+
+  /**
+   * Resolves which trailing words of `candidate` are actually the book name.
+   *
+   * The reference regexes cannot tell where a book name begins — they happily
+   * match any run of words before a chapter number, so "In John 3:16" was read
+   * as the book "In John" and "Also see Romans 8:28" as "Also see Romans". Both
+   * were then reported as invalid books, making perfectly good text fail
+   * validation, and normalization skipped abbreviations for the same reason.
+   *
+   * Book names are a closed vocabulary, so the trailing words are tested
+   * against it longest-first: the longest known suffix wins ("Song of Solomon"
+   * over "Solomon"), and if nothing is known the last word alone is reported as
+   * the offending book.
+   */
+  private resolveBookSuffix(candidate: string): {
+    name: string
+    known: boolean
+    startIndex: number
+    tokens: string[]
+  } {
+    const tokens = candidate.trim().split(/\s+/).filter(Boolean)
+    const earliest = Math.max(0, tokens.length - BibleBookNormalizer.MAX_BOOK_WORDS)
+
+    for (let start = earliest; start < tokens.length; start++) {
+      const name = tokens.slice(start).join(' ')
+      if (this.isKnownBookName(name)) {
+        return { name, known: true, startIndex: start, tokens }
+      }
+    }
+
+    return {
+      name: tokens.length > 0 ? tokens[tokens.length - 1] : '',
+      known: false,
+      startIndex: Math.max(0, tokens.length - 1),
+      tokens
+    }
+  }
+
   validateBibleBooks(text: string): ValidationResult {
     const result: ValidationResult = {
       isValid: true,
@@ -848,7 +905,9 @@ export class BibleBookNormalizer {
 
     let match
     while ((match = referencePattern.exec(text)) !== null) {
-      const bookName = match[1].trim()
+      // Trim the leading words the regex swallowed before the actual book name.
+      const resolved = this.resolveBookSuffix(match[1])
+      const bookName = resolved.name
 
       // Skip very short potential matches that are likely false positives
       if (bookName.length < 2) {
@@ -883,46 +942,70 @@ export class BibleBookNormalizer {
    * Only corrects when book name is followed by chapter:verse pattern.
    */
   normalizeBibleBooks(text: string): string {
-    let correctedText = text
-
-    // Create a map of all potential book names (both incorrect and canonical)
+    // Map every known spelling to its canonical form.
     const allBookNames = new Map<string, string>()
-
-    // Add incorrect mappings
     for (const [incorrect, correct] of Object.entries(this.incorrectMapping)) {
       allBookNames.set(incorrect.toLowerCase(), correct)
     }
-
-    // Add canonical books (for case normalization)
     for (const canonical of this.canonicalBooks) {
       allBookNames.set(canonical.toLowerCase(), canonical)
     }
 
-    // Find and replace Bible references (book name + chapter:verse)
-    // This is more conservative and avoids false positives
-    const referencePattern = /\b([1-3]?\s*[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+){0,4})\s+(\d+)(?::(\d+)(?:-(\d+))?)?/g
+    // Match against the book vocabulary itself rather than "any run of words
+    // before a number".
+    //
+    // The generic pattern could not tell a book name from the prose around it.
+    // In "and 2nd Timothy 3:16" it read the word "and" as the book and the "2"
+    // of "2nd" as the chapter, so "2nd Timothy" was never corrected; it also
+    // consumed the space in "First Corinthians 13 and ..." and emitted
+    // "1 Corinthians 13and". Alternation over the known names, longest first,
+    // removes the guesswork — "Song of Solomon" wins over "Solomon", and
+    // nothing outside the vocabulary is ever treated as a book.
+    const pattern = this.buildBookReferencePattern()
 
-    correctedText = correctedText.replace(referencePattern, (match, bookName, chapter, startVerse, endVerse) => {
-      const normalizedBook = allBookNames.get(bookName.trim().toLowerCase())
+    return text.replace(pattern, (match, bookName, chapter, startVerse, endVerse) => {
+      const normalizedBook = allBookNames.get(String(bookName).toLowerCase())
+      if (!normalizedBook) return match
 
-      if (normalizedBook) {
-        // Reconstruct the reference with corrected book name
-        let result = normalizedBook + ' ' + chapter
-        if (startVerse) {
-          result += ':' + startVerse
-          if (endVerse) {
-            result += '-' + endVerse
-          }
+      let result = normalizedBook + ' ' + chapter
+      if (startVerse) {
+        result += ':' + startVerse
+        if (endVerse) {
+          result += '-' + endVerse
         }
-        return result
       }
-
-      // No correction found, return original
-      return match
+      return result
     })
-
-    return correctedText
   }
+
+  /**
+   * Builds `(book1|book2|...)\s+chapter(:verse(-verse)?)?` over every known
+   * book spelling, longest first so multi-word names win over their own
+   * suffixes. The lookbehind stops a short abbreviation from matching inside a
+   * longer word.
+   */
+  private buildBookReferencePattern(): RegExp {
+    if (!this.bookReferencePattern) {
+      const names = new Set<string>()
+      for (const book of this.canonicalBooks) names.add(book)
+      for (const incorrect of Object.keys(this.incorrectMapping)) names.add(incorrect)
+
+      const alternation = Array.from(names)
+        .sort((a, b) => b.length - a.length)
+        .map(book => this.escapeRegex(book))
+        .join('|')
+
+      this.bookReferencePattern = new RegExp(
+        `(?<![\\p{L}\\p{N}])(${alternation})\\s+(\\d+)(?::(\\d+)(?:-(\\d+))?)?`,
+        'giu'
+      )
+    }
+
+    // Shared instance carries lastIndex between calls with the /g flag.
+    this.bookReferencePattern.lastIndex = 0
+    return this.bookReferencePattern
+  }
+
 
   /**
    * Finds the correct book name for a given incorrect/abbreviated name.

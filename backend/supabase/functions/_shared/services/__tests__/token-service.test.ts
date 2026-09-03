@@ -13,7 +13,7 @@
 import { assertEquals, assertThrows } from 'https://deno.land/std@0.208.0/testing/asserts.ts'
 import { TokenService } from '../token-service.ts'
 import { AppError } from '../../utils/error-handler.ts'
-import { UserPlan, SupportedLanguage } from '../../types/token-types.ts'
+import { UserPlan, SupportedLanguage, TOKEN_COST_MAP } from '../../types/token-types.ts'
 
 // Mock Supabase client for testing
 class MockSupabaseClient {
@@ -56,12 +56,25 @@ function createTokenService(mockClient?: MockSupabaseClient) {
 }
 
 // Test: Token Cost Calculation
-Deno.test('TokenService: calculateTokenCost - returns correct costs for supported languages', () => {
+// Asserted against TOKEN_COST_MAP rather than inline numbers: Hindi and
+// Malayalam stopped costing the same as English when per-language pricing
+// landed, and these literals silently went stale (this test was failing with
+// "Hindi should cost 20 tokens" against an actual cost of 30).
+Deno.test('TokenService: calculateTokenCost - matches the token cost map', () => {
   const tokenService = createTokenService()
 
-  // Test supported languages
-  assertEquals(tokenService.calculateTokenCost('en'), 20, 'English standard should cost 20 tokens')
-  assertEquals(tokenService.calculateTokenCost('en', 'quick'), 10, 'English quick should cost 10 tokens')
-  assertEquals(tokenService.calculateTokenCost('hi'), 20, 'Hindi should cost 20 tokens')
-  assertEquals(tokenService.calculateTokenCost('ml'), 20, 'Malayalam should cost 20 tokens')
+  for (const [language, modes] of Object.entries(TOKEN_COST_MAP)) {
+    for (const [mode, expected] of Object.entries(modes)) {
+      assertEquals(
+        tokenService.calculateTokenCost(language, mode as never),
+        expected,
+        `${language}/${mode} should cost ${expected} tokens`
+      )
+    }
+  }
+
+  // Standard is the default mode when none is given.
+  assertEquals(tokenService.calculateTokenCost('en'), TOKEN_COST_MAP.en.standard)
+  assertEquals(tokenService.calculateTokenCost('hi'), TOKEN_COST_MAP.hi.standard)
+  assertEquals(tokenService.calculateTokenCost('ml'), TOKEN_COST_MAP.ml.standard)
 })
