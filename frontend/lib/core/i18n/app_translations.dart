@@ -2671,7 +2671,7 @@ class AppTranslations {
       'mastered': 'महारत हासिल',
       'fullyMastered': 'पूर्ण महारत',
       'reviewMilestone': 'समीक्षा मील का पत्थर',
-      'perfectRecalls': 'उत्तम',
+      'perfectRecalls': 'पूर्ण स्मरण',
       'masteryProgress': 'महारत की प्रगति',
       'masteryPercentage': '{percentage}%',
       'masteryMessage': {
@@ -4738,7 +4738,7 @@ class AppTranslations {
       'mastered': 'പ്രാവീണ്യം നേടി',
       'fullyMastered': 'പൂർണ്ണ പ്രാവീണ്യം',
       'reviewMilestone': 'അവലോകന നാഴികക്കല്ല്',
-      'perfectRecalls': 'മികച്ചത്',
+      'perfectRecalls': 'മികച്ച സ്മരണ',
       'masteryProgress': 'പ്രാവീണ്യ പുരോഗതി',
       'masteryPercentage': '{percentage}%',
       'masteryMessage': {
