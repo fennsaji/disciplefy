@@ -135,7 +135,11 @@ async function handleDailyVerseNotification(
   // Step 4: Filter out users who already received notification today
   const userIds = authenticatedUsers.map(u => u.user_id)
   const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'daily_verse', DEDUP_LOOKBACK_HOURS)
-  const eligibleUsers = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+  const dedupedUsers = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+
+  // Step 4b: Space out categories — a user notified by another category within
+  // the last hour is deferred to a later run, still inside this window.
+  const eligibleUsers = await notificationHelper.excludeRecentlyNotified(dedupedUsers)
 
   console.log(`[DailyVerse] ${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received)`)
 

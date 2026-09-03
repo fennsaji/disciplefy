@@ -51,6 +51,20 @@ export const DEFAULT_CATCH_UP_WINDOW_MINUTES = 6 * 60
  */
 export const DEDUP_LOOKBACK_HOURS = 20
 
+/**
+ * Minimum gap between two notifications of ANY category for the same user.
+ *
+ * The per-category windows deliberately overlap — around 10-11 AM local, daily
+ * verse, recommended topic, memory verse reminder and streak lost can all be
+ * eligible in the same hourly run, which would arrive as a burst of four. A
+ * user who was notified within this many minutes is skipped and picked up by a
+ * later run, still inside that category's own window, so nothing is lost —
+ * it is just spread out.
+ *
+ * Set to an hour so at most one notification lands per hourly run.
+ */
+export const MIN_MINUTES_BETWEEN_NOTIFICATIONS = 60
+
 // Guard the invariant at module load so widening the catch-up window can never
 // silently break daily delivery or start double-sending.
 {
