@@ -16,6 +16,7 @@ class NotificationPreferencesModel extends NotificationPreferences {
     required super.streakLostEnabled,
     required super.streakReminderTime,
     required super.memoryVerseReminderEnabled,
+    required super.memoryVerseOverdueEnabled,
     required super.memoryVerseReminderTime,
     required super.createdAt,
     required super.updatedAt,
@@ -75,6 +76,10 @@ class NotificationPreferencesModel extends NotificationPreferences {
         json['streak_reminder_time'] as String? ??
             json['streakReminderTime'] as String?,
       ),
+      memoryVerseOverdueEnabled:
+          json['memory_verse_overdue_enabled'] as bool? ??
+              json['memoryVerseOverdueEnabled'] as bool? ??
+              true,
       memoryVerseReminderEnabled:
           json['memory_verse_reminder_enabled'] as bool? ??
               json['memoryVerseReminderEnabled'] as bool? ??
@@ -112,6 +117,7 @@ class NotificationPreferencesModel extends NotificationPreferences {
       'streak_lost_enabled': streakLostEnabled,
       'streak_reminder_time': formatTime(streakReminderTime),
       'memory_verse_reminder_enabled': memoryVerseReminderEnabled,
+      'memory_verse_overdue_enabled': memoryVerseOverdueEnabled,
       'memory_verse_reminder_time': formatTime(memoryVerseReminderTime),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -129,6 +135,7 @@ class NotificationPreferencesModel extends NotificationPreferences {
       streakLostEnabled: entity.streakLostEnabled,
       streakReminderTime: entity.streakReminderTime,
       memoryVerseReminderEnabled: entity.memoryVerseReminderEnabled,
+      memoryVerseOverdueEnabled: entity.memoryVerseOverdueEnabled,
       memoryVerseReminderTime: entity.memoryVerseReminderTime,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
