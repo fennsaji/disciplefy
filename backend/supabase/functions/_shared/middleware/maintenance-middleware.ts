@@ -6,22 +6,21 @@
  * - Health check endpoints
  * - System status endpoints
  *
- * Usage (from Edge Functions):
- * ```typescript
- * import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+ * Usage — import checkMaintenanceMode from this module, then await it at the top
+ * of a handler:
  *
- * async function handler(req, services) {
  *   await checkMaintenanceMode(req, services)
  *   // ... rest of function logic
- * }
- * ```
  *
- * Usage (from within _shared directory):
- * ```typescript
- * import { checkMaintenanceMode } from './middleware/maintenance-middleware.ts'
- * // or from parent _shared:
- * import { checkMaintenanceMode } from '../middleware/maintenance-middleware.ts'
- * ```
+ * Import specifiers are written out here rather than shown as `import`
+ * statements: the Supabase CLI's dependency scanner reads import lines even
+ * inside comments, and a relative example path resolves against THIS file's
+ * directory, producing _shared/middleware/middleware/... and failing the whole
+ * `supabase start` with a missing-file error.
+ *
+ *   from an Edge Function .......  ../_shared/middleware/maintenance-middleware.ts
+ *   from within _shared .........  ./middleware/maintenance-middleware.ts
+ *   from a sibling of middleware   ../middleware/maintenance-middleware.ts
  *
  * When maintenance mode is active, throws 'MAINTENANCE_MODE' error
  * which should be caught by the function factory error handler.
