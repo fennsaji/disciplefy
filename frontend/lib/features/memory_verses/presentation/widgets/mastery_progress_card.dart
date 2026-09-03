@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/mastery_progress_entity.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Extension to add display name to MasteryLevel enum
 extension MasteryLevelDisplay on MasteryLevel {
@@ -157,9 +159,9 @@ class MasteryProgressCard extends StatelessWidget {
                   Expanded(
                     child: _StatisticItem(
                       icon: Icons.star,
-                      label: 'Perfect',
+                      label: context.tr(TranslationKeys.memoryPerfectRecalls),
                       value: '${masteryProgress.perfectRecalls}',
-                      color: AppColors.masteryMaster,
+                      color: context.appStreakAccent,
                     ),
                   ),
                   const SizedBox(width: 12),

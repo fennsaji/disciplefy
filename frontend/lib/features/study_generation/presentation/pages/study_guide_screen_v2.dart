@@ -67,6 +67,7 @@ import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import '../../../../core/utils/share_links.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -2622,21 +2623,28 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange.shade200),
+                // Material orange here was hardcoded light: shade50 stayed a
+                // near-white box on the dark loading screen, and shade800 on
+                // it measured 2.81:1. Theme tokens fix both.
+                color: context.appWarning.withValues(alpha: 0.12),
+                border: Border.all(
+                    color: context.appWarning.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   Icon(Icons.schedule_rounded,
-                      color: Colors.orange.shade700, size: 18),
+                      color: context.appWarning, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Sermon Outline uses 4 AI passes and takes longer than other modes — usually 60–90 seconds. Please wait.',
-                      style: TextStyle(
+                      context
+                          .tr(TranslationKeys.generateStudySermonOutlineNotice),
+                      style: AppFonts.inter(
                         fontSize: 13,
-                        color: Colors.orange.shade800,
+                        // Amber on an amber wash cannot clear AA on light, so
+                        // the icon and border carry the warning colour.
+                        color: context.appTextPrimary,
                         height: 1.4,
                       ),
                     ),
@@ -4427,11 +4435,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Future<void> _shareStudyGuide() async {
     if (_currentStudyGuide == null) return;
 
-    final appLink = kIsWeb
-        ? '🌐 https://app.disciplefy.in/'
-        : Platform.isAndroid
-            ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
-            : '🌐 https://app.disciplefy.in/';
+    const appLink = '📱 ${ShareLinks.appDownloadUrl}';
 
     final passage = _currentStudyGuide!.passage;
     final shareText = '''
@@ -4494,7 +4498,7 @@ $appLink
     final String textToShare;
     if (shareText.length > maxShareChars) {
       textToShare =
-          '${shareText.substring(0, maxShareChars)}\n\n[... content truncated — open Disciplefy to read the full guide]\n📱 Android: https://play.google.com/store/apps/details?id=com.disciplefy.bible_study\n🌐 Web: https://app.disciplefy.in/';
+          '${shareText.substring(0, maxShareChars)}\n\n[... content truncated — open Disciplefy to read the full guide]\n📱 ${ShareLinks.appDownloadUrl}';
     } else {
       textToShare = shareText;
     }

@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
 import { useSearchParams } from "next/navigation";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-links";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 const FEATURES = [
   { icon: "✝", key: "feature1" },
@@ -25,6 +27,9 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
+      {/* Same chrome as every other page: without it there was no way back
+          to the home page except the browser button. */}
+      <Navbar />
       <main className="min-h-screen">
         {/* Hero */}
         <section className="py-24 px-4 sm:px-6 lg:px-8 text-center max-w-3xl mx-auto">
@@ -164,6 +169,7 @@ export function DownloadPageContent({ jsonLd }: { jsonLd: string }) {
           </a>
         </div>
       </main>
+      <Footer />
     </>
   );
 }

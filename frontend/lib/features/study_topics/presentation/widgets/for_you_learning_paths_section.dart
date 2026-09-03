@@ -239,13 +239,14 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.12),
+            color: context.appBrandAccent.withOpacity(0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             Icons.auto_awesome_rounded,
             size: 18,
-            color: isDark ? AppColors.brandPrimaryLight : AppTheme.primaryColor,
+            color:
+                isDark ? AppColors.brandPrimaryLight : context.appBrandAccent,
           ),
         ),
         const SizedBox(width: 10),

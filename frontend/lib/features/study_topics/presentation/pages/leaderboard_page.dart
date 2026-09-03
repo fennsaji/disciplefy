@@ -11,6 +11,7 @@ import '../../domain/entities/leaderboard_entry.dart';
 import '../bloc/leaderboard_bloc.dart';
 import '../bloc/leaderboard_event.dart';
 import '../bloc/leaderboard_state.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
@@ -227,8 +228,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   ) {
     final avatarRadius = rank == 1 ? 34.0 : 27.0;
     final fontSize = rank == 1 ? 26.0 : 20.0;
-    final lightIndigo =
-        isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
+    final lightIndigo = context.appBrandAccent;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -357,22 +357,21 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   Widget _buildLeaderboardRow(
       BuildContext context, LeaderboardEntry entry, bool isDark) {
     final theme = Theme.of(context);
-    final lightIndigo =
-        isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
+    final lightIndigo = context.appBrandAccent;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: entry.isCurrentUser
-            ? AppTheme.primaryColor.withOpacity(isDark ? 0.15 : 0.08)
+            ? context.appBrandAccent.withOpacity(isDark ? 0.15 : 0.08)
             : (isDark
                 ? const Color(0xFF1E293B)
                 : theme.colorScheme.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(14),
         border: entry.isCurrentUser
             ? Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.5), width: 1.5)
+                color: context.appBrandAccent.withOpacity(0.5), width: 1.5)
             : Border.all(
                 color: isDark
                     ? Colors.white.withOpacity(0.06)
@@ -400,7 +399,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           CircleAvatar(
             radius: 17,
             backgroundColor:
-                AppTheme.primaryColor.withOpacity(isDark ? 0.2 : 0.12),
+                context.appBrandAccent.withOpacity(isDark ? 0.2 : 0.12),
             child: Text(
               entry.displayName.isNotEmpty
                   ? entry.displayName[0].toUpperCase()
@@ -452,8 +451,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   Widget _buildUserRankSection(
       BuildContext context, UserXpRank userRank, bool isDark) {
     final theme = Theme.of(context);
-    final lightIndigo =
-        isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
+    final lightIndigo = context.appBrandAccent;
 
     return Container(
       decoration: BoxDecoration(
@@ -472,10 +470,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(isDark ? 0.12 : 0.07),
+            color: context.appBrandAccent.withOpacity(isDark ? 0.12 : 0.07),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.25),
+              color: context.appBrandAccent.withOpacity(0.25),
             ),
           ),
           child: Row(
@@ -483,7 +481,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor:
-                    AppTheme.primaryColor.withOpacity(isDark ? 0.25 : 0.15),
+                    context.appBrandAccent.withOpacity(isDark ? 0.25 : 0.15),
                 child: Icon(Icons.person_rounded, color: lightIndigo, size: 22),
               ),
               const SizedBox(width: 14),
@@ -507,7 +505,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.35),
+                      color: context.appBrandAccent.withOpacity(0.35),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),

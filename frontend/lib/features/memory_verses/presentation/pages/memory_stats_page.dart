@@ -210,7 +210,7 @@ class _MemoryStatsPageState extends State<MemoryStatsPage> {
       context.tr(TranslationKeys.memoryStatsAdvanced):
           AppColors.masteryAdvanced,
       context.tr(TranslationKeys.memoryStatsExpert): AppColors.masteryExpert,
-      context.tr(TranslationKeys.memoryStatsMaster): AppColors.masteryMaster,
+      context.tr(TranslationKeys.memoryStatsMaster): context.appStreakAccent,
     };
 
     return Card(

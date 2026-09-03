@@ -12,6 +12,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/utils/auth_validator.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Email authentication screen with sign-in/sign-up toggle
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
@@ -402,7 +403,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 ? null
                 : [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      color: context.appBrandAccent.withOpacity(0.4),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),

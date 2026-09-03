@@ -69,7 +69,7 @@ class CategoryUtils {
   static Color getColorForCategory(BuildContext context, String category) {
     final englishCategory = _translatedToEnglish[category] ?? category;
     final normalized = englishCategory.trim().toLowerCase();
-    final baseColor = _categoryColors[normalized] ?? AppTheme.primaryColor;
+    final baseColor = _categoryColors[normalized] ?? context.appBrandAccent;
 
     // Use lighter variant for dark theme
     if (Theme.of(context).brightness == Brightness.dark) {

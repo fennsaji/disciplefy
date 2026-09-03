@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/review_statistics_entity.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Widget displaying memory verse statistics.
 ///
@@ -106,9 +107,9 @@ class StatisticsCard extends StatelessWidget {
                   child: _buildStatItem(
                     context: context,
                     icon: Icons.emoji_events,
-                    label: context.tr('memory.fullyMastered'),
+                    label: context.tr(TranslationKeys.memoryFullyMastered),
                     value: statistics.fullyMasteredVerses.toString(),
-                    color: AppColors.masteryMaster,
+                    color: context.appStreakAccent,
                   ),
                 ),
               ],

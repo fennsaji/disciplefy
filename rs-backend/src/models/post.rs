@@ -215,7 +215,13 @@ pub async fn list_posts(pool: &PgPool, q: &ListPostsQuery) -> Result<PaginatedPo
            AND ($2::text IS NULL OR $2 = ANY(tags))
            AND ($3::bool IS NULL OR featured = $3)
            AND ($4::text IS NULL OR source_learning_path_id = (SELECT id FROM learning_paths WHERE slug = $4))
-         ORDER BY published_at DESC NULLS LAST
+         ORDER BY
+           -- The blog index is a feed: newest first. A learning path is a
+           -- course: oldest first, so the reader meets the guides in the order
+           -- they were written.
+           CASE WHEN $4::text IS NULL THEN published_at END DESC NULLS LAST,
+           CASE WHEN $4::text IS NOT NULL THEN published_at END ASC NULLS LAST,
+           slug ASC
          LIMIT $5 OFFSET $6",
     )
     .bind(&q.locale)

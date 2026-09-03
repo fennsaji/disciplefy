@@ -236,6 +236,8 @@ class AppTranslations {
     },
     'generate_study': {
       'title': 'Generate Study Guide',
+      'sermon_outline_notice':
+          'Sermon Outline uses 4 AI passes and takes longer than other modes — usually 60–90 seconds. Please wait.',
       'scripture_mode': 'Scripture Reference',
       'topic_mode': 'Topic',
       'question_mode': 'Question',
@@ -618,6 +620,9 @@ class AppTranslations {
       'dueToday': 'Due Today',
       'reviewedToday': 'Reviewed Today',
       'mastered': 'Mastered',
+      'fullyMastered': 'Fully Mastered',
+      'reviewMilestone': 'Review Milestone',
+      'perfectRecalls': 'Perfect',
       'masteryProgress': 'Mastery Progress',
       'masteryPercentage': '{percentage}%',
       'masteryMessage': {
@@ -2275,6 +2280,8 @@ class AppTranslations {
       'already_in_memory': 'पहले से याद वर्सेज में है',
     },
     'generate_study': {
+      'sermon_outline_notice':
+          'उपदेश रूपरेखा 4 AI चरणों का उपयोग करती है और अन्य मोड की तुलना में अधिक समय लेती है — आमतौर पर 60–90 सेकंड। कृपया प्रतीक्षा करें।',
       'title': 'गाइड बनाएं',
       'scripture_mode': 'आयत',
       'topic_mode': 'विषय',
@@ -2662,6 +2669,9 @@ class AppTranslations {
       'dueToday': 'आज के लिए',
       'reviewedToday': 'आज समीक्षा की',
       'mastered': 'महारत हासिल',
+      'fullyMastered': 'पूर्ण महारत',
+      'reviewMilestone': 'समीक्षा मील का पत्थर',
+      'perfectRecalls': 'पूर्ण स्मरण',
       'masteryProgress': 'महारत की प्रगति',
       'masteryPercentage': '{percentage}%',
       'masteryMessage': {
@@ -4323,6 +4333,8 @@ class AppTranslations {
       'add_to_memory': 'മെമ്മറി വെർസസിലേക്ക് ചേർക്കുക',
       'already_in_memory': 'ഇതിനകം മെമ്മറി വെർസസിലുണ്ട്',
     },
+    'sermon_outline_notice':
+        'പ്രഭാഷണ രൂപരേഖ 4 AI ഘട്ടങ്ങൾ ഉപയോഗിക്കുന്നു, മറ്റ് മോഡുകളേക്കാൾ കൂടുതൽ സമയമെടുക്കും — സാധാരണയായി 60–90 സെക്കൻഡ്. ദയവായി കാത്തിരിക്കുക.',
     'generate_study': {
       'title': 'പഠന ഗൈഡ് സൃഷ്ടിക്കുക',
       'scripture_mode': 'തിരുവെഴുത്ത് റഫറൻസ്',
@@ -4724,6 +4736,9 @@ class AppTranslations {
       'dueToday': 'ഇന്ന് അവലോകനം',
       'reviewedToday': 'ഇന്ന് പരിശോധിച്ചത്',
       'mastered': 'പ്രാവീണ്യം നേടി',
+      'fullyMastered': 'പൂർണ്ണ പ്രാവീണ്യം',
+      'reviewMilestone': 'അവലോകന നാഴികക്കല്ല്',
+      'perfectRecalls': 'മികച്ച സ്മരണ',
       'masteryProgress': 'പ്രാവീണ്യ പുരോഗതി',
       'masteryPercentage': '{percentage}%',
       'masteryMessage': {

@@ -82,7 +82,7 @@ class MilestoneCelebrationDialog extends StatelessWidget {
     }
   }
 
-  Color _getMilestoneColor() {
+  Color _getMilestoneColor(BuildContext context) {
     switch (milestoneDays) {
       case 10:
         return AppColors.info;
@@ -91,7 +91,7 @@ class MilestoneCelebrationDialog extends StatelessWidget {
       case 100:
         return AppColors.warning;
       case 365:
-        return AppColors.masteryMaster;
+        return context.appStreakAccent;
       default:
         return AppColors.success;
     }
@@ -100,7 +100,7 @@ class MilestoneCelebrationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final milestoneColor = _getMilestoneColor();
+    final milestoneColor = _getMilestoneColor(context);
 
     return Dialog(
       shape: RoundedRectangleBorder(

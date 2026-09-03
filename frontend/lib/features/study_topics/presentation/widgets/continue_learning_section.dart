@@ -5,6 +5,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../domain/entities/topic_progress.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// A section widget that displays topics the user has started but not completed.
 ///
@@ -251,7 +252,7 @@ class _ContinueLearningCard extends StatelessWidget {
                 Icon(
                   Icons.star_outline,
                   size: 14,
-                  color: Colors.amber.shade600,
+                  color: context.appGoldMark,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -259,7 +260,7 @@ class _ContinueLearningCard extends StatelessWidget {
                   style: AppFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Colors.amber.shade600,
+                    color: context.appStreakAccent,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

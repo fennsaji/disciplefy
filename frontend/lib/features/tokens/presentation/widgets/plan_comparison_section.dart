@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/plan_colors.dart';
 
 /// Widget that displays a comparison of all available plans
 class PlanComparisonSection extends StatelessWidget {
@@ -93,12 +94,12 @@ class PlanCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isCurrentPlan
-            ? _getPlanColor(plan).withOpacity(0.1)
+            ? planAccent(context, plan).withOpacity(0.1)
             : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCurrentPlan
-              ? _getPlanColor(plan)
+              ? planAccent(context, plan)
               : Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: isCurrentPlan ? 2 : 1,
         ),
@@ -107,7 +108,7 @@ class PlanCard extends StatelessWidget {
         children: [
           Icon(
             _getPlanIcon(plan),
-            color: _getPlanColor(plan),
+            color: planAccent(context, plan),
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -135,7 +136,7 @@ class PlanCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _getPlanColor(plan),
+                          color: planAccent(context, plan),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -155,7 +156,7 @@ class PlanCard extends StatelessWidget {
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: _getPlanColor(plan),
+                    color: planAccent(context, plan),
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2,
@@ -190,19 +191,6 @@ class PlanCard extends StatelessWidget {
         return Icons.workspace_premium;
       case UserPlan.premium:
         return Icons.star;
-    }
-  }
-
-  Color _getPlanColor(UserPlan plan) {
-    switch (plan) {
-      case UserPlan.free:
-        return Colors.grey[600]!;
-      case UserPlan.standard:
-        return AppColors.info;
-      case UserPlan.plus:
-        return Colors.purple[600]!;
-      case UserPlan.premium:
-        return Colors.amber[700]!;
     }
   }
 }

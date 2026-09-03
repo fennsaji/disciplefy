@@ -1,16 +1,18 @@
 // marketing/components/blog/AppDownloadLink.tsx
 // Used as the MDX `a` component.
-// Play Store / app.disciplefy.in links → redirect to /download so the user
-// can choose between the Android app and the web app themselves.
+// Play Store / app.disciplefy.in links in article bodies → links.disciplefy.in,
+// which lists Android, iOS and web. Rewriting at render time means every
+// already-published article picks this up without regeneration.
 "use client";
 import { type ComponentPropsWithoutRef } from "react";
-import { Link } from "@/lib/navigation";
+import { APP_LINKS_URL } from "@/lib/app-links";
 
 function isDownloadHref(href?: string) {
   return (
     (href?.includes("play.google.com") &&
       href.includes("com.disciplefy")) ||
-    href === "https://app.disciplefy.in"
+    href === "https://app.disciplefy.in" ||
+    href === "https://app.disciplefy.in/"
   );
 }
 
@@ -25,12 +27,14 @@ export function AppDownloadLink({
 }: ComponentPropsWithoutRef<"a">) {
   if (isDownloadHref(href)) {
     return (
-      <Link
-        href="/download"
+      <a
+        href={APP_LINKS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
         className="inline-block bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:opacity-90 transition-all no-underline"
       >
         {children}
-      </Link>
+      </a>
     );
   }
 

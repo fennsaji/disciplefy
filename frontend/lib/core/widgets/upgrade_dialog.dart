@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../router/app_routes.dart';
 import '../theme/app_colors.dart';
+import '../theme/plan_colors.dart';
 
 /// Upgrade dialog shown when users tap locked features
 ///
@@ -212,7 +213,7 @@ class UpgradeDialog extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: requiredPlans.map((plan) {
-                        final planColor = _getPlanColor(plan);
+                        final planColor = planAccentFromName(context, plan);
                         final isDark = theme.brightness == Brightness.dark;
                         return Container(
                           padding: const EdgeInsets.symmetric(
@@ -317,21 +318,6 @@ class UpgradeDialog extends StatelessWidget {
 
   String _formatPlanName(String plan) {
     return plan[0].toUpperCase() + plan.substring(1);
-  }
-
-  Color _getPlanColor(String plan) {
-    switch (plan.toLowerCase()) {
-      case 'free':
-        return Colors.grey;
-      case 'standard':
-        return Colors.blue;
-      case 'plus':
-        return Colors.indigo;
-      case 'premium':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
   }
 
   _FeatureInfo _getFeatureInfo(String featureKey) {

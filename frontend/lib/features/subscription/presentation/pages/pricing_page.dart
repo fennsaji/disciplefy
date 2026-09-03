@@ -241,7 +241,7 @@ class _PricingPageState extends State<PricingPage> {
           context.tr(TranslationKeys.pricingTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
         ),
         centerTitle: true,

@@ -21,7 +21,7 @@ class MemoryVerseNavigationBar extends StatelessWidget {
         icon: Icons.emoji_events_outlined,
         label: context.tr(TranslationKeys.champions),
         route: AppRoutes.memoryChampions,
-        color: AppColors.masteryMaster,
+        color: context.appStreakAccent,
       ),
       _NavigationItem(
         icon: Icons.bar_chart,

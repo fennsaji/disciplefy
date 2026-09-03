@@ -216,7 +216,7 @@ extension SelfAssessmentRatingExtension on SelfAssessmentRating {
       case SelfAssessmentRating.knewALittle:
         return AppColors.warning.withAlpha(51);
       case SelfAssessmentRating.knewHalf:
-        return AppColors.masteryMaster.withAlpha(51);
+        return AppColors.brandGold.withAlpha(51);
       case SelfAssessmentRating.knewMost:
         return AppColors.successLight.withAlpha(51);
       case SelfAssessmentRating.knewPerfectly:

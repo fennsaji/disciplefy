@@ -625,7 +625,22 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                               // App Header with Logo
                               _buildAppHeader(),
 
-                              SizedBox(height: isLargeScreen ? 32 : 24),
+                              // Gold hairline. The mark above it is the only
+                              // gold on most screens; resting it on a gold rule
+                              // ties it to the gold used for streaks, XP and
+                              // the selected tab instead of leaving it a lone
+                              // accent in an otherwise indigo UI.
+                              Padding(
+                                padding: EdgeInsets.only(
+                                    top: isLargeScreen ? 14 : 10),
+                                child: Container(
+                                  height: 1,
+                                  color: context.appGoldMark
+                                      .withValues(alpha: 0.38),
+                                ),
+                              ),
+
+                              SizedBox(height: isLargeScreen ? 18 : 14),
 
                               // Welcome Message
                               _buildWelcomeMessage(currentUserName),
@@ -634,12 +649,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
                               // Upcoming meeting banner (today's meetings)
                               const _UpcomingMeetingBanner(),
-
-                              // Email Verification Banner (shown for unverified email users)
-                              BlocProvider.value(
-                                value: context.read<AuthBloc>(),
-                                child: const EmailVerificationBanner(),
-                              ),
 
                               SizedBox(height: isLargeScreen ? 16 : 12),
 
@@ -746,8 +755,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         final dueCount =
             memState is DueVersesLoaded ? memState.verses.length : 0;
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final pillColor =
-            isDark ? AppColors.brandPrimaryLight : AppColors.brandPrimary;
+        // Neutral, not brand indigo: the gold wordmark owns this row, so the
+        // two utility controls beside it (this pill and the settings gear)
+        // stay white on dark and near-black on light.
+        final pillColor = isDark ? Colors.white : AppColors.lightTextSecondary;
         return ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 140),
           child: Stack(
@@ -927,7 +938,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       },
       icon: Icon(
         Icons.settings_outlined,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : AppColors.lightTextSecondary,
         size: 24,
       ),
     );
@@ -1102,7 +1115,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -1184,13 +1197,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   ),
                 ),
                 if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
-                  const SizedBox(
+                  SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          AlwaysStoppedAnimation<Color>(context.appBrandAccent),
                     ),
                   )
                 else if (homeState.activeLearningPath != null ||
@@ -1234,7 +1247,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     fontWeight: FontWeight.w500,
                     color: isDark
                         ? AppColors.brandPrimaryLight.withOpacity(0.85)
-                        : AppTheme.primaryColor,
+                        : context.appBrandAccent,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1247,7 +1260,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       size: 13,
                       color: isDark
                           ? AppColors.brandPrimaryLight.withOpacity(0.85)
-                          : AppTheme.primaryColor,
+                          : context.appBrandAccent,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -1257,7 +1270,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                         fontWeight: FontWeight.w500,
                         color: isDark
                             ? AppColors.brandPrimaryLight.withOpacity(0.85)
-                            : AppTheme.primaryColor,
+                            : context.appBrandAccent,
                       ),
                     ),
                   ],
@@ -1488,7 +1501,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: context.appBrandAccent.withOpacity(0.1),
           ),
         ),
         child: Column(
@@ -1502,17 +1515,17 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: context.appBrandAccent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryColor),
+                            context.appBrandAccent),
                       ),
                     ),
                   ),
@@ -1522,7 +1535,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   height: 20,
                   width: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: context.appBrandAccent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -1536,7 +1549,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               height: 14,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: context.appBrandAccent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -1548,7 +1561,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               height: 11,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: context.appBrandAccent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -1559,7 +1572,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               height: 11,
               width: MediaQuery.of(context).size.width * 0.6,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: context.appBrandAccent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -1573,7 +1586,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   height: 10,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: context.appBrandAccent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -1582,7 +1595,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   height: 10,
                   width: 20,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: context.appBrandAccent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -1598,7 +1611,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.2),
+            color: context.appBrandAccent.withOpacity(0.2),
           ),
         ),
         child: Column(
@@ -1870,7 +1883,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: context.appBrandAccent.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(

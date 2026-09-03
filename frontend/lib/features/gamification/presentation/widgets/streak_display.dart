@@ -58,7 +58,7 @@ class StreakDisplay extends StatelessWidget {
                   label: l10n.progressStudyStreak,
                   value: studyStreak,
                   suffix: l10n.progressDays,
-                  color: AppColors.streakFlame,
+                  color: context.appStreakAccent,
                 ),
               ),
               const SizedBox(width: 16),
@@ -80,7 +80,7 @@ class StreakDisplay extends StatelessWidget {
                 Icon(
                   Icons.emoji_events,
                   size: 16,
-                  color: Colors.amber,
+                  color: context.appStreakAccent,
                 ),
                 const SizedBox(width: 6),
                 Text(

@@ -10,6 +10,7 @@ import '../bloc/auth_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// OAuth callback handler page
 /// Processes authorization codes from OAuth providers (Google, Apple)
@@ -210,11 +211,11 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        color: context.appBrandAccent.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const CircularProgressIndicator(
-                        color: AppTheme.primaryColor,
+                      child: CircularProgressIndicator(
+                        color: context.appBrandAccent,
                         strokeWidth: 3,
                       ),
                     ),
@@ -227,7 +228,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
                       style: AppFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
+                        color: context.appTextPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -288,7 +289,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
           color: AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppTheme.primaryColor.withValues(alpha: 0.2),
+            color: context.appBrandAccent.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -299,7 +300,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
               style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
               ),
             ),
             const SizedBox(height: 8),

@@ -264,7 +264,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           PopupMenuButton<StudyMode?>(
             icon: Icon(
               Icons.filter_list,
-              color: _selectedMode != null ? AppTheme.primaryColor : null,
+              color: _selectedMode != null ? context.appBrandAccent : null,
             ),
             tooltip: context.tr(TranslationKeys.reflectionJournalFilterByMode),
             onSelected: _onModeFilterChanged,
@@ -424,7 +424,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.2),
+            color: context.appBrandAccent.withOpacity(0.2),
           ),
         ),
         child: Column(
@@ -596,7 +596,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: context.appBrandAccent.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

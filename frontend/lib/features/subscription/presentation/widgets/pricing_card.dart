@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Individual pricing card widget for subscription plans
 ///
@@ -56,7 +57,7 @@ class PricingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isHighlighted
-              ? (accentColor ?? AppTheme.primaryColor)
+              ? (accentColor ?? context.appBrandAccent)
               : isPremium
                   ? AppTheme.successColor.withOpacity(0.5)
                   : Theme.of(context).colorScheme.outline.withOpacity(0.2),
@@ -65,7 +66,7 @@ class PricingCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isHighlighted
-                ? (accentColor ?? AppTheme.primaryColor).withOpacity(0.15)
+                ? (accentColor ?? context.appBrandAccent).withOpacity(0.15)
                 : Colors.black.withOpacity(0.05),
             blurRadius: isHighlighted ? 20 : 10,
             offset: const Offset(0, 4),
@@ -95,7 +96,7 @@ class PricingCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: badgeColor ?? AppTheme.primaryColor,
+        color: badgeColor ?? context.appBrandAccent,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(14),
         ),
@@ -243,7 +244,7 @@ class PricingCard extends StatelessWidget {
                   : isPremium
                       ? AppTheme.successColor
                       : isHighlighted
-                          ? (accentColor ?? AppTheme.primaryColor)
+                          ? (accentColor ?? context.appBrandAccent)
                           : Theme.of(context)
                               .colorScheme
                               .outline

@@ -4,6 +4,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/achievement.dart';
 import 'achievement_badge.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Widget to display a grid of achievements
 class AchievementsGrid extends StatelessWidget {

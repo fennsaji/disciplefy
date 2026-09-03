@@ -287,8 +287,8 @@ class NotificationMessageHandlerWeb {
 
       case 'memory_verse_reminder':
       case 'memory_verse_overdue':
-        // Both are a prompt to review verses that are due.
-        _router.go('/memory-verse-review');
+        // Land on the list, not the review screen — see NotificationService.
+        _router.go('/memory-verses');
         Logger.debug('[FCM] ✅ Navigate → memory verse review');
         break;
 

@@ -17,6 +17,7 @@ import '../widgets/xp_progress_bar.dart';
 import '../widgets/streak_display.dart';
 import '../widgets/achievements_grid.dart';
 import '../widgets/achievement_unlock_dialog.dart';
+import '../../../../shared/widgets/gold_marks.dart';
 
 /// Stats Dashboard page showing comprehensive gamification data
 ///
@@ -63,7 +64,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: context.appBrandAccent.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -256,7 +257,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                       Icon(
                         Icons.star,
                         size: 16,
-                        color: Colors.amber,
+                        color: context.appStreakAccent,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -289,17 +290,17 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
+                  color: context.appStreakAccent.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.amber.withOpacity(0.5),
+                    color: context.appStreakAccent.withOpacity(0.5),
                   ),
                 ),
                 child: Column(
                   children: [
                     Icon(
                       Icons.emoji_events,
-                      color: Colors.amber[700],
+                      color: context.appStreakAccent,
                       size: 20,
                     ),
                     const SizedBox(height: 2),
@@ -308,7 +309,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                       style: AppFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.amber[800],
+                        color: context.appTextPrimary,
                       ),
                     ),
                   ],
@@ -408,7 +409,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               Expanded(
                 child: _StatCard(
                   icon: Icons.menu_book,
-                  iconColor: AppTheme.primaryColor,
+                  iconColor: context.appBrandAccent,
                   label: AppLocalizations.of(context)!.progressStudies,
                   value: '${stats.totalStudiesCompleted}',
                 ),
@@ -657,28 +658,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ),
             const SizedBox(height: 16),
             // XP Reward
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    '+${achievement.xpReward} XP',
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.amber[800],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            XpRewardPill(xp: achievement.xpReward),
             const SizedBox(height: 16),
             // Status
             if (achievement.isUnlocked && achievement.unlockedAt != null) ...[

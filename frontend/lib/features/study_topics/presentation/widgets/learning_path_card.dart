@@ -194,7 +194,9 @@ class LearningPathCard extends StatelessWidget {
                       Icon(
                         isCompleted ? Icons.star : Icons.star_outline,
                         size: 16,
-                        color: isCompleted ? AppColors.success : color,
+                        color: isCompleted
+                            ? AppColors.success
+                            : context.appGoldMark,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
@@ -203,7 +205,9 @@ class LearningPathCard extends StatelessWidget {
                           style: AppFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isCompleted ? AppColors.success : color,
+                            color: isCompleted
+                                ? AppColors.success
+                                : context.appStreakAccent,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -356,16 +360,16 @@ class LearningPathCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.amber.withValues(alpha: 0.1),
+          color: context.appGoldMark.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.auto_awesome,
               size: 14,
-              color: Colors.amber,
+              color: context.appGoldMark,
             ),
             const SizedBox(width: 4),
             Text(
@@ -373,7 +377,7 @@ class LearningPathCard extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Colors.amber.shade700,
+                color: context.appStreakAccent,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -410,7 +414,11 @@ class LearningPathCard extends StatelessWidget {
               style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: path.isCompleted ? AppColors.success : color,
+                // Gold: how far along a path you are is progress, which is
+                // what gold marks everywhere else in the app.
+                color: path.isCompleted
+                    ? AppColors.success
+                    : context.appStreakAccent,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

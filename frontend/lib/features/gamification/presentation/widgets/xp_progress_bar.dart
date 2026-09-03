@@ -4,6 +4,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/user_level.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Widget to display XP progress bar with level info
 class XpProgressBar extends StatelessWidget {

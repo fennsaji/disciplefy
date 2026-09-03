@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Soft paywall dialog shown at usage thresholds (80%, 100%)
 class SoftPaywallDialog extends StatelessWidget {
@@ -156,7 +157,10 @@ class SoftPaywallDialog extends StatelessWidget {
                 router.push(AppRoutes.tokenPurchase, extra: tokenStatus);
               },
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppTheme.primaryColor),
+                // AppTheme.primaryColor is a hardcoded brandPrimary and does
+                // not follow the theme: on the dark dialog it measured 2.33:1,
+                // failing for both the label and this border.
+                side: BorderSide(color: context.appBrandAccent),
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -164,7 +168,7 @@ class SoftPaywallDialog extends StatelessWidget {
               child: Text(
                 context.tr(TranslationKeys.tokenSoftPaywallPurchase),
                 style: AppFonts.inter(
-                    color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+                    color: context.appBrandAccent, fontWeight: FontWeight.w600),
               ),
             ),
           ),

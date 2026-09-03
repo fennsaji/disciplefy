@@ -1079,6 +1079,15 @@ class TranslationKeys {
   static const learningPathsError = 'learning_paths.error';
   static const learningPathsErrorMessage = 'learning_paths.error_message';
   static const learningPathsCompleted = 'learning_paths.completed';
+
+  // Memory verse status badges
+  static const memoryFullyMastered = 'memory.fullyMastered';
+  static const memoryReviewMilestone = 'memory.reviewMilestone';
+  static const memoryPerfectRecalls = 'memory.perfectRecalls';
+
+  // Study generation
+  static const generateStudySermonOutlineNotice =
+      'generate_study.sermon_outline_notice';
   static const learningPathsInProgress = 'learning_paths.in_progress';
   static const learningPathsFeatured = 'learning_paths.featured';
   static const learningPathsEnroll = 'learning_paths.enroll';

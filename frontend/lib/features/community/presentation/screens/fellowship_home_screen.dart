@@ -1094,7 +1094,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: context.appBrandAccent.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1143,7 +1143,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
               ),
               const SizedBox(height: 12),
               Divider(
-                  color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+                  color: context.appBrandAccent.withOpacity(0.2), height: 24),
               ...StudyMode.values.map((mode) => Column(
                     children: [
                       _buildLearningPathModeOption(
@@ -1280,7 +1280,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.appBrandAccent : Colors.transparent,
               width: 2,
             ),
           ),
@@ -1291,7 +1291,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                 height: 42,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.primaryColor.withOpacity(0.15)
+                      ? context.appBrandAccent.withOpacity(0.15)
                       : Theme.of(sheetContext)
                           .colorScheme
                           .onSurface
@@ -1302,7 +1302,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                   icon,
                   size: 22,
                   color: isSelected
-                      ? AppTheme.primaryColor
+                      ? context.appBrandAccent
                       : Theme.of(sheetContext)
                           .colorScheme
                           .onSurface
@@ -1320,7 +1320,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : Theme.of(sheetContext).colorScheme.onSurface,
                       ),
                       maxLines: 1,

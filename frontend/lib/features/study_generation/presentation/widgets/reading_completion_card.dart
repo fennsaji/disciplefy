@@ -3,6 +3,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Card shown at the end of all study sections to prompt user to reflect
 class ReadingCompletionCard extends StatelessWidget {
@@ -38,12 +39,12 @@ class ReadingCompletionCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.3),
+          color: context.appBrandAccent.withOpacity(0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: context.appBrandAccent.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

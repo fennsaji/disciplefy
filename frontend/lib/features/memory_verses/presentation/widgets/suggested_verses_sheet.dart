@@ -523,7 +523,7 @@ class _CategoryBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = _getCategoryColor();
+    final color = _getCategoryColor(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -542,7 +542,7 @@ class _CategoryBadge extends StatelessWidget {
     );
   }
 
-  Color _getCategoryColor() {
+  Color _getCategoryColor(BuildContext context) {
     switch (category) {
       case SuggestedVerseCategory.salvation:
         return AppColors.masteryAdvanced;
@@ -553,7 +553,7 @@ class _CategoryBadge extends StatelessWidget {
       case SuggestedVerseCategory.wisdom:
         return AppColors.categorySpiritualDisciplines;
       case SuggestedVerseCategory.promise:
-        return AppColors.masteryMaster;
+        return context.appStreakAccent;
       case SuggestedVerseCategory.guidance:
         return AppColors.brandPrimaryDeep;
       case SuggestedVerseCategory.faith:

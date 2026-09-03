@@ -79,7 +79,7 @@ class TokenActionsSection extends StatelessWidget {
                         : context.tr('tokens.plans.upgrade'),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.streakFlame,
+                    backgroundColor: context.appStreakAccent,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
                   ),

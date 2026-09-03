@@ -654,7 +654,9 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 icon: const Icon(Icons.emoji_events_outlined),
                 tooltip: context.tr(TranslationKeys.leaderboardTooltip),
                 onPressed: () => _handleLeaderboardTap(context),
-                color: Theme.of(context).colorScheme.onSurface,
+                // A trophy is an achievement mark, and this is the one door to
+                // the leaderboard — gold, like XP and streaks.
+                color: context.appGoldMark,
               )
             : null,
         centerTitle: true,
@@ -943,7 +945,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: context.appBrandAccent.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1000,7 +1002,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
               // Divider
               Divider(
-                  color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+                  color: context.appBrandAccent.withOpacity(0.2), height: 24),
 
               // Specific modes (Quick, Standard, Deep, Lectio, Sermon)
               ...StudyMode.values.map((mode) => Column(
@@ -1162,7 +1164,9 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected
+                  ? parentContext.appBrandAccent
+                  : Colors.transparent,
               width: 2,
             ),
           ),
@@ -1173,7 +1177,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.primaryColor.withOpacity(0.15)
+                      ? parentContext.appBrandAccent.withOpacity(0.15)
                       : Theme.of(sheetContext)
                           .colorScheme
                           .onSurface
@@ -1184,7 +1188,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   icon,
                   size: 22,
                   color: isSelected
-                      ? AppTheme.primaryColor
+                      ? parentContext.appBrandAccent
                       : Theme.of(sheetContext)
                           .colorScheme
                           .onSurface
@@ -1202,7 +1206,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? parentContext.appBrandAccent
                             : Theme.of(sheetContext).colorScheme.onSurface,
                       ),
                       maxLines: 1,

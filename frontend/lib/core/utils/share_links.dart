@@ -18,6 +18,11 @@ class ShareLinks {
     defaultValue: 'https://app.disciplefy.in',
   );
 
+  /// The "get the app" link for share text. One page listing Android, iOS
+  /// and web, so the text no longer has to guess the recipient's platform —
+  /// a Play Store link shared from Android was useless to an iPhone reader.
+  static const String appDownloadUrl = 'https://links.disciplefy.in';
+
   /// Link to a learning path detail page.
   ///
   /// [source] is carried through so opens from a shared link can be told apart

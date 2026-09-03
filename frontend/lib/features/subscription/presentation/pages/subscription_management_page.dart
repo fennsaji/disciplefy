@@ -52,7 +52,7 @@ class _SubscriptionManagementPageState
           context.tr(TranslationKeys.subscriptionTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
         ),
         centerTitle: true,
@@ -165,7 +165,7 @@ class _SubscriptionManagementPageState
             Icon(
               Icons.workspace_premium_outlined,
               size: 80,
-              color: AppTheme.primaryColor.withOpacity(0.5),
+              color: context.appBrandAccent.withOpacity(0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -647,7 +647,7 @@ class _SubscriptionManagementPageState
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                color: context.appBrandAccent,
               ),
             ),
             const SizedBox(height: 16),
@@ -737,7 +737,7 @@ class _SubscriptionManagementPageState
         ? Theme.of(context).colorScheme.primary
         : isPlusPlan
             ? plusColor
-            : AppTheme.primaryColor;
+            : context.appBrandAccent;
 
     return Card(
       elevation: 2,
@@ -829,7 +829,7 @@ class _SubscriptionManagementPageState
         Icon(
           icon,
           size: 20,
-          color: AppTheme.primaryColor.withOpacity(0.7),
+          color: context.appBrandAccent.withOpacity(0.7),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -869,7 +869,7 @@ class _SubscriptionManagementPageState
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: context.appBrandAccent,
-        side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
+        side: BorderSide(color: context.appBrandAccent.withOpacity(0.5)),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1188,7 +1188,7 @@ class _SubscriptionManagementPageState
               : context.tr(TranslationKeys.subscriptionCancelEndTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
         ),
         content: Text(

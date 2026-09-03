@@ -41,23 +41,25 @@ export function AdSlot({ id, locale }: { id: string; locale?: string }) {
   if (!ad) return null;
   const adLocale = resolveLocale(locale);
 
+  // The whole card is the link, not just the title: on a phone the title is
+  // one short line and the rest of the card looked tappable but did nothing.
   return (
-    <div className="not-prose flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 my-6">
+    <a
+      href={ad.href}
+      rel={ad.tagLabel ? "noopener noreferrer" : "sponsored noopener noreferrer"}
+      target="_blank"
+      className="not-prose group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 my-6 no-underline hover:border-primary/40 dark:hover:border-indigo-400/40 transition-colors"
+    >
       <AdIcon isHouseAd={ad.tagLabel === "Disciplefy"} gradient={ad.gradient} />
       <div className="min-w-0 flex-1">
-        <a
-          href={ad.href}
-          rel={ad.tagLabel ? "noopener noreferrer" : "sponsored noopener noreferrer"}
-          target="_blank"
-          className="block text-sm font-semibold text-[var(--text)] hover:text-primary dark:hover:text-indigo-300 transition-colors truncate"
-        >
+        <span className="block text-sm font-semibold text-[var(--text)] group-hover:text-primary dark:group-hover:text-indigo-300 transition-colors truncate">
           {ad.title[adLocale]}
-        </a>
-        <p className="text-xs text-[var(--muted)] truncate">{ad.subtitle[adLocale]}</p>
+        </span>
+        <span className="block text-xs text-[var(--muted)] truncate">{ad.subtitle[adLocale]}</span>
       </div>
       <span className="flex-shrink-0 text-[10px] uppercase tracking-wide text-[var(--muted)] border border-[var(--border)] px-2 py-0.5 rounded-full">
         {ad.tagLabel ?? "Sponsored"}
       </span>
-    </div>
+    </a>
   );
 }

@@ -83,6 +83,20 @@ class AppColors {
   /// Brand gold — the Disciplefy symbol. See brand/README.md.
   static const Color brandGold = Color(0xFFE3B154);
 
+  /// Brand gold for light surfaces.
+  ///
+  /// #E3B154 is tuned for the near-black splash and dark theme; on the light
+  /// page it measures 1.85:1 and simply disappears. This deeper gold keeps the
+  /// hue but clears AA on both the page (4.4:1) and white cards (4.7:1).
+  static const Color brandGoldDeep = Color(0xFF9A6B10);
+
+  /// Brand gold for icons, hairlines and washes on light surfaces.
+  /// Same hue and saturation as the logo, darkened only until it clears the
+  /// 3:1 graphics minimum on the page (3.02:1). [brandGoldDeep] has to go
+  /// much darker to reach 4.5:1 for text and stops looking like the logo;
+  /// this one still does. Never use it for text.
+  static const Color brandGoldMark = Color(0xFFBC851F);
+
   static const Color splashBackgroundLight = Color(0xFF0B0B0B);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -148,6 +162,12 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static const Color onGradient = Colors.white;
+
+  /// Amber for warning marks sitting on the indigo brand gradient.
+  /// Amber-200: the darker warning tokens are tuned for light/dark page
+  /// grounds and drop to 3.10:1 on the gradient's light end, so the gradient
+  /// gets its own value. Icons only — see [onGradient] for text.
+  static const Color onGradientWarning = Color(0xFFFFE082);
   static const Color onGradientMuted = Color(0xCCFFFFFF); // white 80%
   static const Color onGradientSubtle = Color(0x99FFFFFF); // white 60%
   static const Color onGradientFaint = Color(0x66FFFFFF); // white 40%
@@ -182,7 +202,16 @@ class AppColors {
   static const Color masteryIntermediate = Color(0xFF3B82F6); // blue
   static const Color masteryAdvanced = Color(0xFF8B5CF6); // purple
   static const Color masteryExpert = Color(0xFFFF5722); // deepOrange
-  static const Color masteryMaster = Color(0xFFF59E0B); // amber
+  /// Master tier — the top of the mastery ramp.
+  ///
+  /// This was #F59E0B, byte-identical to [warning]. "Master" and "needs more
+  /// practice" were therefore the same colour, side by side on the practice
+  /// results and streak screens. It is now brand gold and distinct.
+  ///
+  /// Presentation code should prefer `context.appStreakAccent`, which is
+  /// theme-aware; this const is kept for the domain-layer mastery ramp, which
+  /// has no BuildContext.
+  static const Color masteryMaster = brandGold;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY COLORS
@@ -209,10 +238,16 @@ class AppColors {
   // FEATURE-SPECIFIC COLORS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Streaks & gamification
-  static const Color streakFlame = Color(0xFFFF9800); // orange
-  static const Color streakGlow = Color(0xFFFF5722); // deepOrange
-  static const Color xpGold = Color(0xFFFFC107); // amber
+  // Streaks & gamification — the brand-gold family.
+  //
+  // These were three unrelated warm colours (orange, deep orange, amber) which,
+  // together with the Material amber used on the verse card, meant progress UI
+  // spoke in four different accents and none of them matched the brand gold in
+  // the logo. They now share one hue so streaks, XP and milestones read as a
+  // single system and the gold mark in the header belongs to it.
+  static const Color streakFlame = brandGold;
+  static const Color streakGlow = Color(0xFFC8922F); // deeper gold, for glows
+  static const Color xpGold = brandGold;
 
   // Voice & audio
   static const Color voiceBlue = Color(0xFF2196F3);
@@ -327,6 +362,24 @@ extension AppColorsTheme on BuildContext {
       _isDark ? AppColors.darkDivider : AppColors.lightDivider;
   Color get appInputFill =>
       _isDark ? AppColors.darkInputFill : AppColors.lightInputFill;
+
+  /// Brand gold, for the streak / XP / milestone family.
+  ///
+  /// Gold is the brand colour but appeared only in the header logo, so it read
+  /// as a sticker rather than part of the system. Giving it one recurring job
+  /// — progress and achievement — makes the logo belong, and replaces the
+  /// Material `Colors.amber` that was standing in for it.
+  ///
+  /// On the indigo verse card gold measures 3.05:1, clearing the 3:1 graphics
+  /// threshold; the streak badge it replaces was purple-on-purple at 1.63:1.
+  Color get appStreakAccent =>
+      _isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
+
+  /// Gold for non-text marks: icons, 1px rules, pill washes and borders.
+  /// Closer to the logo than [appStreakAccent] on light, because graphics only
+  /// need 3:1. Text must keep using [appStreakAccent].
+  Color get appGoldMark =>
+      _isDark ? AppColors.brandGold : AppColors.brandGoldMark;
 
   /// Semantic accents resolved for the current theme.
   ///

@@ -735,16 +735,12 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.15),
+                    // Gold: tokens are a balance you spend and earn, the same
+                    // family as XP and streaks.
+                    color: context.appGoldMark.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.4),
+                      color: context.appGoldMark.withValues(alpha: 0.45),
                     ),
                   ),
                   child: Row(
@@ -753,7 +749,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                       Icon(
                         Icons.token,
                         size: 16,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: context.appGoldMark,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -763,7 +759,10 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                         style: AppFonts.inter(
                           fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.primary,
+                          // Gold on a gold wash tops out at 4.08:1 on the light
+                          // page, so the count itself stays in body colour and
+                          // the gold icon and border carry the meaning.
+                          color: context.appTextPrimary,
                         ),
                       ),
                     ],

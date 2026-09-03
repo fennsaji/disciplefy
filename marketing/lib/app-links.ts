@@ -6,6 +6,14 @@ export const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${A
 
 export const WEB_APP_URL = "https://app.disciplefy.in";
 
+/**
+ * The link to hand out whenever someone should "get the app": in-article
+ * CTAs, house ads, share text. One page lists Android, iOS and web, so the
+ * same URL works for every reader — no more platform-specific store links
+ * in shared content.
+ */
+export const APP_LINKS_URL = "https://links.disciplefy.in";
+
 /** iOS App Store URL. Live — app cleared App Review. */
 export const APP_STORE_URL: string | null =
   "https://apps.apple.com/in/app/disciplefy-bible-study-app/id6778309947";

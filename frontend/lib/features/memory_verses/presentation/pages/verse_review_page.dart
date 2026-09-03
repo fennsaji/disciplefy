@@ -25,6 +25,7 @@ import '../../../walkthrough/domain/walkthrough_screen.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
+import '../../../../core/router/app_routes.dart';
 
 class VerseReviewPage extends StatefulWidget {
   final String verseId;
@@ -99,13 +100,18 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
     }
   }
 
-  /// Handle back navigation - go to practice mode selection when can't pop
+  /// Handle back navigation - go to the memory verse list when can't pop.
+  ///
+  /// There is nothing to pop when this page is the root of the stack, which is
+  /// exactly the push-notification case: memory_verse_reminder /
+  /// memory_verse_overdue open it with no extra, so [widget.verseId] is ''.
+  /// The old fallback built '/memory-verses/practice/' from that empty id and
+  /// landed on the router's "Page not found" page (issue report, 3 Sept).
   void _handleBackNavigation() {
     if (context.canPop()) {
       context.pop();
     } else {
-      // Fallback to practice mode selection
-      context.go('/memory-verses/practice/${widget.verseId}');
+      context.go(AppRoutes.memoryVerses);
     }
   }
 

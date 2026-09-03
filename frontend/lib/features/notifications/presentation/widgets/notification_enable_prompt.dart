@@ -361,14 +361,13 @@ class _NotificationEnableSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(isDark ? 0.2 : 0.1),
+                  color: context.appBrandAccent.withOpacity(isDark ? 0.2 : 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   config.icon,
                   size: 40,
-                  color:
-                      isDark ? const Color(0xFFA78BFA) : AppTheme.primaryColor,
+                  color: context.appBrandAccent,
                 ),
               ),
               const SizedBox(height: 20),

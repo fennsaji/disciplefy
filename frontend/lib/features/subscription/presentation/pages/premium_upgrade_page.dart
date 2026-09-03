@@ -162,7 +162,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           context.tr(TranslationKeys.premiumUpgradeTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
         ),
         centerTitle: true,
@@ -337,7 +337,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.3),
+          color: context.appBrandAccent.withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -483,7 +483,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: context.appBrandAccent,
           ),
         ),
         const SizedBox(height: 16),
@@ -502,7 +502,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.15),
+            color: context.appBrandAccent.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(Icons.check_rounded,
@@ -541,7 +541,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                color: context.appBrandAccent,
               ),
             ),
             const SizedBox(height: 8),
@@ -596,7 +596,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                color: context.appBrandAccent,
               ),
               textAlign: TextAlign.center,
             ),
@@ -788,7 +788,8 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             decoration: BoxDecoration(
               color: AppTheme.secondaryColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+              border:
+                  Border.all(color: context.appBrandAccent.withOpacity(0.3)),
             ),
             child: Row(
               children: [
