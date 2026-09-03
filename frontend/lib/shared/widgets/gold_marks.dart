@@ -30,7 +30,7 @@ class XpRewardPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gold = context.appStreakAccent;
+    final gold = context.appGoldMark;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 8 : 16,
@@ -65,7 +65,8 @@ class MilestoneBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gold = context.appStreakAccent;
+    final gold = context.appGoldMark;
+    final goldText = context.appStreakAccent;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -82,7 +83,7 @@ class MilestoneBadge extends StatelessWidget {
             style: AppFonts.inter(
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: gold,
+              color: goldText,
             ),
           ),
         ],

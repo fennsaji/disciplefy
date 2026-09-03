@@ -196,7 +196,7 @@ class LearningPathCard extends StatelessWidget {
                         size: 16,
                         color: isCompleted
                             ? AppColors.success
-                            : context.appStreakAccent,
+                            : context.appGoldMark,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
@@ -360,7 +360,7 @@ class LearningPathCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: context.appStreakAccent.withValues(alpha: 0.12),
+          color: context.appGoldMark.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -369,7 +369,7 @@ class LearningPathCard extends StatelessWidget {
             Icon(
               Icons.auto_awesome,
               size: 14,
-              color: context.appStreakAccent,
+              color: context.appGoldMark,
             ),
             const SizedBox(width: 4),
             Text(

@@ -288,7 +288,8 @@ class _BottomNavItemState extends State<_BottomNavItem>
     // things that mark progress, and using it for the selected tab is what
     // makes the gold mark in the header read as part of the system rather than
     // a lone sticker. Indigo stays the colour of actions and surfaces.
-    final activeColor = context.appStreakAccent;
+    final activeColor = context.appGoldMark; // icon + wash
+    final activeLabelColor = context.appStreakAccent; // text needs 4.5:1
     final inactiveColor =
         Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
 
@@ -352,7 +353,7 @@ class _BottomNavItemState extends State<_BottomNavItem>
                     fontSize: 10,
                     fontWeight:
                         widget.isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: widget.isSelected ? activeColor : inactiveColor,
+                    color: widget.isSelected ? activeLabelColor : inactiveColor,
                   ),
                   child: Text(
                     AppLocalizations.of(context)?.navLabel(widget.tab.id) ??

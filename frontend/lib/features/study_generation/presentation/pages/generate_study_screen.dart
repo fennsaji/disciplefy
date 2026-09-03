@@ -737,10 +737,10 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                   decoration: BoxDecoration(
                     // Gold: tokens are a balance you spend and earn, the same
                     // family as XP and streaks.
-                    color: context.appStreakAccent.withValues(alpha: 0.10),
+                    color: context.appGoldMark.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: context.appStreakAccent.withValues(alpha: 0.45),
+                      color: context.appGoldMark.withValues(alpha: 0.45),
                     ),
                   ),
                   child: Row(
@@ -749,7 +749,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                       Icon(
                         Icons.token,
                         size: 16,
-                        color: context.appStreakAccent,
+                        color: context.appGoldMark,
                       ),
                       const SizedBox(width: 4),
                       Text(

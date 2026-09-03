@@ -252,7 +252,7 @@ class _ContinueLearningCard extends StatelessWidget {
                 Icon(
                   Icons.star_outline,
                   size: 14,
-                  color: context.appStreakAccent,
+                  color: context.appGoldMark,
                 ),
                 const SizedBox(width: 4),
                 Text(

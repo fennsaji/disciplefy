@@ -656,7 +656,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => _handleLeaderboardTap(context),
                 // A trophy is an achievement mark, and this is the one door to
                 // the leaderboard — gold, like XP and streaks.
-                color: context.appStreakAccent,
+                color: context.appGoldMark,
               )
             : null,
         centerTitle: true,

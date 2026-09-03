@@ -635,7 +635,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                                     top: isLargeScreen ? 14 : 10),
                                 child: Container(
                                   height: 1,
-                                  color: context.appStreakAccent
+                                  color: context.appGoldMark
                                       .withValues(alpha: 0.38),
                                 ),
                               ),
@@ -758,7 +758,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         // Neutral, not brand indigo: the gold wordmark owns this row, so the
         // two utility controls beside it (this pill and the settings gear)
         // stay white on dark and near-black on light.
-        final pillColor = isDark ? Colors.white : AppColors.lightTextPrimary;
+        final pillColor = isDark ? Colors.white : AppColors.lightTextSecondary;
         return ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 140),
           child: Stack(
@@ -940,7 +940,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         Icons.settings_outlined,
         color: Theme.of(context).brightness == Brightness.dark
             ? Colors.white
-            : AppColors.lightTextPrimary,
+            : AppColors.lightTextSecondary,
         size: 24,
       ),
     );

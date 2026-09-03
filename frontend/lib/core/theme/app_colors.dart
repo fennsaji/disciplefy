@@ -90,6 +90,13 @@ class AppColors {
   /// hue but clears AA on both the page (4.4:1) and white cards (4.7:1).
   static const Color brandGoldDeep = Color(0xFF9A6B10);
 
+  /// Brand gold for icons, hairlines and washes on light surfaces.
+  /// Same hue and saturation as the logo, darkened only until it clears the
+  /// 3:1 graphics minimum on the page (3.02:1). [brandGoldDeep] has to go
+  /// much darker to reach 4.5:1 for text and stops looking like the logo;
+  /// this one still does. Never use it for text.
+  static const Color brandGoldMark = Color(0xFFBC851F);
+
   static const Color splashBackgroundLight = Color(0xFF0B0B0B);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -367,6 +374,12 @@ extension AppColorsTheme on BuildContext {
   /// threshold; the streak badge it replaces was purple-on-purple at 1.63:1.
   Color get appStreakAccent =>
       _isDark ? AppColors.brandGold : AppColors.brandGoldDeep;
+
+  /// Gold for non-text marks: icons, 1px rules, pill washes and borders.
+  /// Closer to the logo than [appStreakAccent] on light, because graphics only
+  /// need 3:1. Text must keep using [appStreakAccent].
+  Color get appGoldMark =>
+      _isDark ? AppColors.brandGold : AppColors.brandGoldMark;
 
   /// Semantic accents resolved for the current theme.
   ///
