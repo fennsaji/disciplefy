@@ -3,7 +3,7 @@
     "short_name": "Disciplefy",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#FBEDD9",
+    "background_color": "#0B0B0B",
     "theme_color": "#6A4FB6",
     "description": "AI-powered Bible study guide application designed to help you grow in your faith.",
     "orientation": "portrait-primary",
@@ -11,7 +11,11 @@
     "scope": "/",
     "lang": "en",
     "dir": "ltr",
-    "categories": ["education", "lifestyle", "books"],
+    "categories": [
+        "education",
+        "lifestyle",
+        "books"
+    ],
     "screenshots": [
         {
             "src": "splash_screen.png",
@@ -52,7 +56,10 @@
             "purpose": "any"
         }
     ],
-    "display_override": ["window-controls-overlay", "standalone"],
+    "display_override": [
+        "window-controls-overlay",
+        "standalone"
+    ],
     "edge_side_panel": {
         "preferred_width": 400
     },

@@ -51,7 +51,7 @@
   <!-- Android PWA meta tags -->
   <meta name="theme-color" content="#6A4FB6">
   <meta name="msapplication-navbutton-color" content="#6A4FB6">
-  <meta name="msapplication-TileColor" content="#FBEDD9">
+  <meta name="msapplication-TileColor" content="#0B0B0B">
   <meta name="msapplication-starturl" content="/">
   <meta name="msapplication-TileImage" content="icons/Icon-192.png">
   
@@ -111,7 +111,12 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: #FBEDD9 !important;
+      /* Brand black in both themes.
+         The splash artwork is gold on #0B0B0B, so a cream ground rendered the
+         logo as a black tile floating on a light page. Matching the ground to
+         the artwork also matches the native splash on Android and iOS, so
+         there is no colour flash on handover. */
+      background-color: #0B0B0B !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -120,13 +125,7 @@
       overflow: hidden;
     }
     
-    /* Dark theme splash screen */
-    @media (prefers-color-scheme: dark) {
-      #splash-screen {
-        background-color: #0f1012 !important;
-      }
-    }
-    
+
     #splash-screen.fade-out {
       opacity: 0;
       pointer-events: none;
@@ -153,8 +152,8 @@
       transform: translateX(-50%);
       width: 40px;
       height: 40px;
-      border: 3px solid #E0E0E0;
-      border-top: 3px solid #6A4FB6;
+      border: 3px solid rgba(227, 177, 84, 0.25);
+      border-top: 3px solid #E3B154;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
