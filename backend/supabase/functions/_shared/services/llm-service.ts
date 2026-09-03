@@ -994,12 +994,23 @@ Return ONLY the numeric score, nothing else.`
     }
   }
 
-  private getMockStudyGuide(): LLMResponse {
+  /// Returns the single-pass [LLMResponse] shape plus the numbered
+  /// `interpretationPartN` fields the multi-pass generators consume, since the
+  /// same mock is streamed for both paths.
+  private getMockStudyGuide(): LLMResponse & Record<string, unknown> {
     return {
       summary: "This passage reveals God's profound love for humanity and His plan for salvation through Jesus Christ.",
       context: "Written during a period of spiritual awakening, this passage addresses fundamental questions about faith and redemption.",
       passage: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life. For God did not send his Son into the world to condemn the world, but in order that the world might be saved through him. Whoever believes in him is not condemned, but whoever does not believe is condemned already, because he has not believed in the name of the only Son of God. (John 3:16-18)",
       interpretation: "The theological significance of this text lies in its demonstration of God's unconditional love. It teaches us that salvation is available to all who believe.",
+      // The multi-pass generators (standard/deep/lectio/sermon) read the
+      // interpretation in numbered parts and stitch them together. Without
+      // these, every mock-mode multi-pass guide stored the literal string
+      // "undefined" as its interpretation.
+      interpretationPart1: "The theological significance of this text lies in its demonstration of God's unconditional love.",
+      interpretationPart2: "It teaches us that salvation is available to all who believe.",
+      interpretationPart3: "This truth reshapes how we understand grace and our response to it.",
+      interpretationPart4: "Living in that grace is the calling this passage leaves us with.",
       relatedVerses: ["Romans 8:28", "Jeremiah 29:11", "Philippians 4:13"],
       reflectionQuestions: [
         "How does this passage speak to your current situation?",

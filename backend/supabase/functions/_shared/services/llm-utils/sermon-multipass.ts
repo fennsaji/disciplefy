@@ -11,6 +11,7 @@
  * Preachers will expand this core content to 50-60 minutes during live delivery.
  */
 
+import { joinInterpretationParts } from './join-passes.ts'
 import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
   createSharedFoundation,
@@ -459,7 +460,15 @@ export function combineSermonPasses(
 ): Record<string, unknown> {
   return {
     summary: pass1.summary,
-    interpretation: `${pass1.interpretationPart1}\n\n${pass2.interpretationPart2}\n\n${pass3.interpretationPart3}\n\n${pass4.interpretationPart4}`,
+    interpretation: joinInterpretationParts(
+      [
+        pass1.interpretationPart1,
+        pass2.interpretationPart2,
+        pass3.interpretationPart3,
+        pass4.interpretationPart4,
+      ],
+      'sermon-multipass'
+    ),
     context: pass1.context,
     passage: pass1.passage,
     relatedVerses: pass4.relatedVerses,

@@ -10,6 +10,7 @@
  * Hindi standard studies already meet targets with single-pass generation.
  */
 
+import { joinInterpretationParts } from './join-passes.ts'
 import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
   createSharedFoundation,
@@ -294,7 +295,10 @@ export function combineStandardPasses(
 ): Record<string, unknown> {
   return {
     summary: pass1.summary,
-    interpretation: `${pass1.interpretationPart1}\n\n${pass2.interpretationPart2}`,
+    interpretation: joinInterpretationParts(
+      [pass1.interpretationPart1, pass2.interpretationPart2],
+      'standard-multipass'
+    ),
     context: pass1.context,
     passage: pass1.passage,
     relatedVerses: pass2.relatedVerses,
