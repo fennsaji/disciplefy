@@ -9,15 +9,20 @@ class LearningPathsCacheService {
   static const String _boxName = 'learning_paths_cache';
   static const int _cacheDurationHours = 24;
 
-  late Box<Map> _cacheBox;
+  // Never hold onto the Box. Logout calls a global `Hive.close()`
+  // (LocalStoreRepositoryImpl.clearAll), which closes every box; a cached
+  // reference then throws "Box has already been closed" on the next access.
+  // Re-resolve (reopening if needed) each time instead.
+  Future<Box<Map>> get _box async => Hive.isBoxOpen(_boxName)
+      ? Hive.box<Map>(_boxName)
+      : await Hive.openBox<Map>(_boxName);
+
   bool _isInitialized = false;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
     try {
-      _cacheBox = Hive.isBoxOpen(_boxName)
-          ? Hive.box<Map>(_boxName)
-          : await Hive.openBox<Map>(_boxName);
+      await _box;
       _isInitialized = true;
       await _cleanupOldEntries();
     } catch (e) {
@@ -34,7 +39,7 @@ class LearningPathsCacheService {
     await _ensureInitialized();
     try {
       final key = _cacheKey(type, language);
-      await _cacheBox.put(key, {
+      await (await _box).put(key, {
         'response_body': responseBody,
         'cached_at': DateTime.now().toIso8601String(),
       });
@@ -52,12 +57,12 @@ class LearningPathsCacheService {
     await _ensureInitialized();
     try {
       final key = _cacheKey(type, language);
-      final data = _cacheBox.get(key);
+      final data = (await _box).get(key);
       if (data == null) return null;
 
       final cachedAt = DateTime.parse(data['cached_at'] as String);
       if (DateTime.now().difference(cachedAt).inHours >= _cacheDurationHours) {
-        await _cacheBox.delete(key);
+        await (await _box).delete(key);
         Logger.debug('⏰ [LP_CACHE] Expired: $key');
         return null;
       }
@@ -74,7 +79,7 @@ class LearningPathsCacheService {
   Future<void> clearCache() async {
     await _ensureInitialized();
     try {
-      await _cacheBox.clear();
+      await (await _box).clear();
       Logger.debug('🗑️ [LP_CACHE] Cache cleared');
     } catch (e) {
       Logger.debug('❌ [LP_CACHE] Failed to clear cache: $e');
@@ -88,15 +93,15 @@ class LearningPathsCacheService {
       final cutoff =
           DateTime.now().subtract(const Duration(hours: _cacheDurationHours));
       final toDelete = <dynamic>[];
-      for (final key in _cacheBox.keys) {
-        final data = _cacheBox.get(key);
+      for (final key in (await _box).keys) {
+        final data = (await _box).get(key);
         if (data?['cached_at'] != null) {
           final cachedAt = DateTime.parse(data!['cached_at'] as String);
           if (cachedAt.isBefore(cutoff)) toDelete.add(key);
         }
       }
       for (final key in toDelete) {
-        await _cacheBox.delete(key);
+        await (await _box).delete(key);
       }
       if (toDelete.isNotEmpty) {
         Logger.debug(

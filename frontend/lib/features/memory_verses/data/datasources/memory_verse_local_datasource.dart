@@ -48,7 +48,7 @@ class MemoryVerseLocalDataSource {
 
     try {
       _cacheBox = await Hive.openBox<String>(_boxName);
-      Logger.error('✅ [MEMORY VERSES CACHE] Hive box initialized');
+      Logger.debug('✅ [MEMORY VERSES CACHE] Hive box initialized');
     } catch (e) {
       if (kDebugMode) {
         Logger.debug(
@@ -155,7 +155,7 @@ class MemoryVerseLocalDataSource {
       );
       await box.put(_versesKey, versesJson);
 
-      Logger.error('✅ [MEMORY VERSES CACHE] Cached ${verses.length} verses');
+      Logger.debug('✅ [MEMORY VERSES CACHE] Cached ${verses.length} verses');
     } catch (e) {
       Logger.debug('❌ [MEMORY VERSES CACHE] Error caching verses: $e');
       rethrow;
@@ -191,7 +191,7 @@ class MemoryVerseLocalDataSource {
       allVerses.removeWhere((verse) => verse.id == id);
       await cacheVerses(allVerses);
 
-      Logger.error('✅ [MEMORY VERSES CACHE] Removed verse: $id');
+      Logger.debug('✅ [MEMORY VERSES CACHE] Removed verse: $id');
     } catch (e) {
       Logger.debug('❌ [MEMORY VERSES CACHE] Error removing verse: $e');
       rethrow;
@@ -245,7 +245,7 @@ class MemoryVerseLocalDataSource {
 
       await box.put(_syncQueueKey, '[]');
 
-      Logger.error('✅ [MEMORY VERSES CACHE] Sync queue cleared');
+      Logger.debug('✅ [MEMORY VERSES CACHE] Sync queue cleared');
     } catch (e) {
       Logger.debug('❌ [MEMORY VERSES CACHE] Error clearing sync queue: $e');
       rethrow;
@@ -259,7 +259,7 @@ class MemoryVerseLocalDataSource {
 
       await box.put(_lastSyncKey, DateTime.now().toIso8601String());
 
-      Logger.error('✅ [MEMORY VERSES CACHE] Last sync time updated');
+      Logger.debug('✅ [MEMORY VERSES CACHE] Last sync time updated');
     } catch (e) {
       Logger.debug('❌ [MEMORY VERSES CACHE] Error updating last sync time: $e');
     }
