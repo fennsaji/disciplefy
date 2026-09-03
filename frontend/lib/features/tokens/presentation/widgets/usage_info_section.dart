@@ -4,6 +4,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../domain/entities/token_status.dart';
 import '../extensions/duration_extensions.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Widget that displays detailed usage information for user's tokens
 class UsageInfoSection extends StatelessWidget {
@@ -50,7 +51,7 @@ class UsageInfoSection extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.all_inclusive,
-                    color: Colors.amber[700],
+                    color: context.appStreakAccent,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -59,7 +60,7 @@ class UsageInfoSection extends StatelessWidget {
                     style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.amber[700],
+                      color: context.appStreakAccent,
                     ),
                   ),
                 ],

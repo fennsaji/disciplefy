@@ -95,7 +95,7 @@ class UpgradeRequiredDialog extends StatelessWidget {
                   child: Icon(
                     featureIcon,
                     size: 40,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                    color: context.appBrandAccent.withValues(alpha: 0.5),
                   ),
                 ),
                 Positioned(
@@ -154,10 +154,10 @@ class UpgradeRequiredDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: context.appBrandAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  color: context.appBrandAccent.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -167,7 +167,7 @@ class UpgradeRequiredDialog extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: context.appBrandAccent,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(

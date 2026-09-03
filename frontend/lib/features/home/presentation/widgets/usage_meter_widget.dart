@@ -89,7 +89,7 @@ class UsageMeterWidget extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation(
                 isWarning
                     ? (isDark ? AppColors.warning : AppColors.warning)
-                    : AppTheme.primaryColor,
+                    : context.appBrandAccent,
               ),
               minHeight: 6,
             ),

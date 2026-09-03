@@ -174,7 +174,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
-                      color: AppTheme.primaryColor,
+                      color: context.appBrandAccent,
                       width: 2,
                     ),
                   ),
@@ -321,7 +321,7 @@ class _PromoCodeInputState extends State<PromoCodeInput> {
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.primaryColor,
+                    color: context.appBrandAccent,
                     letterSpacing: 1.2,
                   ),
                 ),

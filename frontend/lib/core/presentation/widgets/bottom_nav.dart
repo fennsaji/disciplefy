@@ -10,6 +10,7 @@ import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
 import 'max_width_wrapper.dart';
+import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
 
 /// Navigation tab data model for bottom navigation
 class NavTab {
@@ -283,7 +284,11 @@ class _BottomNavItemState extends State<_BottomNavItem>
   @override
   Widget build(BuildContext context) {
     // Theme-aware colors
-    final activeColor = Theme.of(context).colorScheme.primary;
+    // Brand gold, not the indigo primary: gold is the app's accent for the
+    // things that mark progress, and using it for the selected tab is what
+    // makes the gold mark in the header read as part of the system rather than
+    // a lone sticker. Indigo stays the colour of actions and surfaces.
+    final activeColor = context.appStreakAccent;
     final inactiveColor =
         Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
 

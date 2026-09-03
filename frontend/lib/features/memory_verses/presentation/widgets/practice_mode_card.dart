@@ -97,7 +97,7 @@ class PracticeModeCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.masteryMaster,
+                                  color: context.appStreakAccent,
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: theme.colorScheme.surface,
@@ -380,7 +380,7 @@ class _SuccessBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = _getSuccessColor();
+    final color = _getSuccessColor(context);
     final label = _getLabel(context);
     final icon = _getIcon();
 
@@ -439,10 +439,10 @@ class _SuccessBadge extends StatelessWidget {
     return Icons.circle_outlined;
   }
 
-  Color _getSuccessColor() {
+  Color _getSuccessColor(BuildContext context) {
     // Mastered = gold/amber, Proficient = green, Learning = orange
     if (mode.isMastered) {
-      return AppColors.masteryMaster;
+      return context.appStreakAccent;
     }
     if (mode.isProficient) {
       return AppColors.success;

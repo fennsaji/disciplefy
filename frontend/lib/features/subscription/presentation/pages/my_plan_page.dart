@@ -25,6 +25,7 @@ import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 import '../widgets/premium_trial_banner.dart';
 import '../../../../core/services/system_config_service.dart';
+import '../../../../core/theme/plan_colors.dart';
 
 /// Unified "My Plan" Page
 ///
@@ -180,7 +181,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
             context.tr(TranslationKeys.myPlanTitle),
             style: AppFonts.poppins(
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+              color: context.appBrandAccent,
             ),
           ),
           centerTitle: true,
@@ -396,7 +397,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Get plan colors
-    final planColor = _getPlanColor(userPlan);
+    final planColor = planAccent(context, userPlan);
     final planIcon = _getPlanIcon(userPlan);
 
     // Determine status based on UserSubscriptionStatus if available
@@ -999,7 +1000,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
 
   Widget _buildPlanFeaturesCard(TokenStatus? tokenStatus) {
     final userPlan = tokenStatus?.userPlan ?? UserPlan.free;
-    final planColor = _getPlanColor(userPlan);
+    final planColor = planAccent(context, userPlan);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
@@ -1278,7 +1279,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                       style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
+                        color: context.appBrandAccent,
                       ),
                     ),
                   ),
@@ -1490,8 +1491,8 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       child: OutlinedButton.icon(
         onPressed: () => context.push(AppRoutes.pricing),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: AppTheme.primaryColor),
-          foregroundColor: AppTheme.primaryColor,
+          side: BorderSide(color: context.appBrandAccent),
+          foregroundColor: context.appBrandAccent,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1710,19 +1711,6 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
         ],
       ),
     );
-  }
-
-  Color _getPlanColor(UserPlan plan) {
-    switch (plan) {
-      case UserPlan.free:
-        return Colors.grey[600]!;
-      case UserPlan.standard:
-        return Theme.of(context).colorScheme.primary;
-      case UserPlan.plus:
-        return Colors.purple[600]!;
-      case UserPlan.premium:
-        return Colors.amber[700]!;
-    }
   }
 
   IconData _getPlanIcon(UserPlan plan) {

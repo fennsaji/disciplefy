@@ -34,6 +34,7 @@ import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../bloc/learning_paths_state.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../shared/widgets/gold_marks.dart';
 
 /// Detail page for a learning path showing topics and progress.
 class LearningPathDetailPage extends StatefulWidget {
@@ -981,7 +982,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   Icons.star_outline,
                   '${path.totalXp}',
                   context.tr(TranslationKeys.learningPathsXp),
-                  Colors.amber,
+                  context.appStreakAccent,
                 ),
                 _buildDivider(context),
                 _buildStatItem(
@@ -1356,38 +1357,9 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                             ),
                           ),
                           if (topic.isMilestone)
-                            Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.flag,
-                                    size: 10,
-                                    color: Colors.amber,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    context.tr(
-                                        TranslationKeys.learningPathsMilestone),
-                                    style: AppFonts.inter(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.amber.shade700,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8),
+                              child: MilestoneBadge(),
                             ),
                         ],
                       ),

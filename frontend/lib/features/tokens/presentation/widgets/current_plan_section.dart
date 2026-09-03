@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/theme/plan_colors.dart';
 
 /// Widget that displays the current user plan information
 /// with a unified "My Plan" button for all plan management actions.
@@ -28,7 +29,7 @@ class CurrentPlanSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final planColor = _getPlanColor(tokenStatus.userPlan);
+    final planColor = planAccent(context, tokenStatus.userPlan);
 
     return Card(
       elevation: 2,
@@ -207,19 +208,6 @@ class CurrentPlanSection extends StatelessWidget {
         return Icons.workspace_premium;
       case UserPlan.premium:
         return Icons.star;
-    }
-  }
-
-  Color _getPlanColor(UserPlan plan) {
-    switch (plan) {
-      case UserPlan.free:
-        return Colors.grey[600]!;
-      case UserPlan.standard:
-        return const Color(0xFF6A4FB6);
-      case UserPlan.plus:
-        return Colors.purple[600]!;
-      case UserPlan.premium:
-        return Colors.amber[700]!;
     }
   }
 

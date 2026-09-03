@@ -4,6 +4,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/achievement.dart';
+import '../../../../shared/widgets/gold_marks.dart';
 
 /// Widget to display a single achievement badge
 class AchievementBadge extends StatelessWidget {
@@ -178,21 +179,7 @@ class AchievementBadge extends StatelessWidget {
             // XP reward
             if (achievement.xpReward > 0) ...[
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '+${achievement.xpReward} XP',
-                  style: AppFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.amber.shade700,
-                  ),
-                ),
-              ),
+              XpRewardPill(xp: achievement.xpReward, compact: true),
             ],
           ],
         ),

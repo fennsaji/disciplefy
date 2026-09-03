@@ -173,7 +173,7 @@ class _SavedScreenContent extends StatelessWidget {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: context.appBrandAccent.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -212,11 +212,11 @@ class _SavedScreenContent extends StatelessWidget {
                         border: Border.all(
                           color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.white.withOpacity(0.1)
-                              : AppTheme.primaryColor.withOpacity(0.1),
+                              : context.appBrandAccent.withOpacity(0.1),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.08),
+                            color: context.appBrandAccent.withOpacity(0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -327,8 +327,8 @@ class _SavedScreenContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(context.appBrandAccent),
             ),
             const SizedBox(height: 16),
             Text(
@@ -534,7 +534,7 @@ class _SavedScreenContent extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      color: AppTheme.primaryColor,
+      color: context.appBrandAccent,
       onRefresh: () async {
         context.read<UnifiedSavedGuidesBloc>().add(
               const LoadSavedGuidesFromApi(refresh: true),
@@ -547,12 +547,12 @@ class _SavedScreenContent extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == state.savedGuides.length) {
             // Loading indicator at the bottom
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
                   valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      AlwaysStoppedAnimation<Color>(context.appBrandAccent),
                 ),
               ),
             );
@@ -584,7 +584,7 @@ class _SavedScreenContent extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      color: AppTheme.primaryColor,
+      color: context.appBrandAccent,
       onRefresh: () async {
         context.read<UnifiedSavedGuidesBloc>().add(
               const LoadRecentGuidesFromApi(refresh: true),
@@ -597,12 +597,12 @@ class _SavedScreenContent extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == state.recentGuides.length) {
             // Loading indicator at the bottom
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
                   valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      AlwaysStoppedAnimation<Color>(context.appBrandAccent),
                 ),
               ),
             );

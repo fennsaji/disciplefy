@@ -28,7 +28,7 @@ class StreakDisplayWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final isActive = memoryStreak.isPracticedToday;
     final streakColor =
-        isActive ? AppColors.streakFlame : AppColors.lightTextSecondary;
+        isActive ? context.appStreakAccent : AppColors.lightTextSecondary;
 
     return Card(
       elevation: 2,
@@ -56,7 +56,7 @@ class StreakDisplayWidget extends StatelessWidget {
                           gradient: LinearGradient(
                             colors: isActive
                                 ? [
-                                    AppColors.streakFlame,
+                                    context.appStreakAccent,
                                     AppColors.streakGlow,
                                   ]
                                 : [
@@ -68,7 +68,7 @@ class StreakDisplayWidget extends StatelessWidget {
                           boxShadow: isActive
                               ? [
                                   BoxShadow(
-                                    color: AppColors.streakFlame
+                                    color: context.appStreakAccent
                                         .withAlpha((0.3 * 255).round()),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
@@ -112,23 +112,23 @@ class StreakDisplayWidget extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.masteryMaster
+                        color: context.appStreakAccent
                             .withAlpha((0.1 * 255).round()),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.masteryMaster),
+                        border: Border.all(color: context.appStreakAccent),
                       ),
                       child: Column(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.emoji_events,
-                            color: AppColors.masteryMaster,
+                            color: context.appStreakAccent,
                             size: 20,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${memoryStreak.longestStreak}',
                             style: theme.textTheme.titleSmall?.copyWith(
-                              color: AppColors.masteryMaster,
+                              color: context.appStreakAccent,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

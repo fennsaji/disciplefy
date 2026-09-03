@@ -130,7 +130,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              color: context.appBrandAccent.withOpacity(0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -231,7 +231,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.15),
+          color: context.appBrandAccent.withOpacity(0.15),
         ),
       ),
       child: Column(
@@ -283,7 +283,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: context.appBrandAccent.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: context.appBrandAccent, size: 24),

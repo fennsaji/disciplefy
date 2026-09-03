@@ -141,7 +141,7 @@ class MasteryProgressCard extends StatelessWidget {
     }
   }
 
-  Color get _currentLevelColor {
+  Color _currentLevelColor(BuildContext context) {
     switch (currentLevel) {
       case MasteryLevel.beginner:
         return AppColors.masteryBeginner;
@@ -152,7 +152,7 @@ class MasteryProgressCard extends StatelessWidget {
       case MasteryLevel.expert:
         return AppColors.masteryExpert;
       case MasteryLevel.master:
-        return AppColors.masteryMaster;
+        return context.appStreakAccent;
     }
   }
 
@@ -183,7 +183,7 @@ class MasteryProgressCard extends StatelessWidget {
                     Text(
                       '${progressPercentage.toStringAsFixed(0)}%',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: _currentLevelColor,
+                        color: _currentLevelColor(context),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -199,8 +199,8 @@ class MasteryProgressCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: progressPercentage / 100.0,
                     backgroundColor: AppColors.lightBorder,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(_currentLevelColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        _currentLevelColor(context)),
                     minHeight: 8,
                   ),
                 ),
@@ -243,14 +243,14 @@ class MasteryProgressCard extends StatelessWidget {
                     Icon(
                       Icons.verified,
                       size: 20,
-                      color: _currentLevelColor,
+                      color: _currentLevelColor(context),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Master Level - You\'ve achieved the highest mastery!',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: _currentLevelColor,
+                          color: _currentLevelColor(context),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -286,7 +286,7 @@ class MasteryDistributionWidget extends StatelessWidget {
     return distribution.values.fold(0, (sum, count) => sum + count);
   }
 
-  Color _getLevelColor(MasteryLevel level) {
+  Color _getLevelColor(BuildContext context, MasteryLevel level) {
     switch (level) {
       case MasteryLevel.beginner:
         return AppColors.masteryBeginner;
@@ -297,7 +297,7 @@ class MasteryDistributionWidget extends StatelessWidget {
       case MasteryLevel.expert:
         return AppColors.masteryExpert;
       case MasteryLevel.master:
-        return AppColors.masteryMaster;
+        return context.appStreakAccent;
     }
   }
 
@@ -381,8 +381,8 @@ class MasteryDistributionWidget extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: percentage,
                       backgroundColor: AppColors.lightBorder,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(_getLevelColor(level)),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          _getLevelColor(context, level)),
                       minHeight: 24,
                     ),
                   ),
@@ -394,7 +394,7 @@ class MasteryDistributionWidget extends StatelessWidget {
                     count.toString(),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: _getLevelColor(level),
+                      color: _getLevelColor(context, level),
                     ),
                     textAlign: TextAlign.end,
                   ),

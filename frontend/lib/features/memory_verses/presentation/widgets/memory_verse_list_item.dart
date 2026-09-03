@@ -226,22 +226,22 @@ class MemoryVerseListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.masteryMaster.withOpacity(0.3),
+          color: context.appStreakAccent.withOpacity(0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.emoji_events,
               size: 16,
-              color: AppColors.warningDark,
+              color: context.appStreakAccent,
             ),
             const SizedBox(width: 4),
             Text(
-              'Fully Mastered',
+              context.tr(TranslationKeys.memoryFullyMastered),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.warningDark,
+                color: context.appTextPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -256,25 +256,25 @@ class MemoryVerseListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.masteryMaster.withOpacity(0.15),
+          color: context.appStreakAccent.withOpacity(0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.star,
               size: 16,
-              color: AppColors.masteryMaster,
+              color: context.appStreakAccent,
             ),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                'Review Milestone',
+                context.tr(TranslationKeys.memoryReviewMilestone),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.masteryMaster,
+                  color: context.appTextPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),

@@ -26,6 +26,9 @@ import 'fellowship_guide_detail_screen.dart';
 import '../bloc/fellowship_study/fellowship_study_bloc.dart';
 import '../bloc/fellowship_study/fellowship_study_event.dart';
 import '../bloc/fellowship_study/fellowship_study_state.dart';
+import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../shared/widgets/gold_marks.dart';
 
 /// Lessons tab for a fellowship.
 ///
@@ -346,7 +349,9 @@ class _FellowshipLessonsTabScreenState
             Icon(
               Icons.emoji_events_rounded,
               size: 48,
-              color: Theme.of(context).colorScheme.primary,
+              // Finishing a path together is the biggest achievement moment in
+              // Community — gold, like every other earned mark.
+              color: context.appStreakAccent,
             ),
             const SizedBox(height: 16),
             Text(
@@ -875,31 +880,9 @@ class _GuideCard extends StatelessWidget {
                             ),
                           ),
                           if (topic.isMilestone)
-                            Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.flag,
-                                      size: 10, color: Colors.amber),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    'Milestone',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.amber.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8),
+                              child: MilestoneBadge(),
                             ),
                           if (isNow)
                             Container(
@@ -1744,16 +1727,18 @@ class _PathPickerItem extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.12),
+                                color:
+                                    context.appSuccess.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'Completed',
+                                context
+                                    .tr(TranslationKeys.learningPathsCompleted),
                                 style: TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.green.shade700,
+                                  color: context.appSuccess,
                                 ),
                               ),
                             ),

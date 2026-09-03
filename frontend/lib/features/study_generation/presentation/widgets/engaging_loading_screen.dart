@@ -6,6 +6,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Engaging loading screen with multi-stage progress, rotating historical facts,
 /// and smooth animations to keep users engaged during 30+ second AI generation.
@@ -218,7 +219,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
                   const Color(0xFF2D2D2D),
                 ]
               : [
-                  AppTheme.primaryColor.withOpacity(0.03),
+                  context.appBrandAccent.withOpacity(0.03),
                   Colors.white,
                 ],
         ),
@@ -284,13 +285,13 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      color: context.appBrandAccent.withOpacity(0.2),
                       width: 3,
                     ),
                   ),
                   child: CustomPaint(
                     painter: _ArcPainter(
-                      color: AppTheme.primaryColor,
+                      color: context.appBrandAccent,
                       progress: 0.25,
                     ),
                   ),
@@ -320,7 +321,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withOpacity(0.3),
+                        color: context.appBrandAccent.withOpacity(0.3),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
@@ -347,12 +348,12 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? AppTheme.primaryColor.withOpacity(0.2)
+            ? context.appBrandAccent.withOpacity(0.2)
             : AppTheme.highlightColor.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDarkMode
-              ? AppTheme.primaryColor.withOpacity(0.5)
+              ? context.appBrandAccent.withOpacity(0.5)
               : AppTheme.highlightColor,
           width: isDarkMode ? 1.5 : 1,
         ),
@@ -362,7 +363,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
         children: [
           Icon(
             Icons.menu_book_rounded,
-            color: isDarkMode ? Colors.white : AppTheme.primaryColor,
+            color: isDarkMode ? Colors.white : context.appBrandAccent,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -372,7 +373,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
               style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isDarkMode ? Colors.white : AppTheme.primaryColor,
+                color: isDarkMode ? Colors.white : context.appBrandAccent,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -403,8 +404,8 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
                   color: index == _currentStage
-                      ? AppTheme.primaryColor
-                      : AppTheme.primaryColor.withOpacity(0.2),
+                      ? context.appBrandAccent
+                      : context.appBrandAccent.withOpacity(0.2),
                 ),
               ),
             ),
@@ -477,12 +478,13 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
               : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(isDarkMode ? 0.5 : 0.1),
+            color: context.appBrandAccent.withOpacity(isDarkMode ? 0.5 : 0.1),
             width: isDarkMode ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(isDarkMode ? 0.3 : 0.05),
+              color:
+                  context.appBrandAccent.withOpacity(isDarkMode ? 0.3 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -493,7 +495,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
             // Historical fact icon
             Icon(
               Icons.history_edu_rounded,
-              color: AppTheme.primaryColor.withOpacity(isDarkMode ? 0.7 : 0.4),
+              color: context.appBrandAccent.withOpacity(isDarkMode ? 0.7 : 0.4),
               size: 32,
             ),
 

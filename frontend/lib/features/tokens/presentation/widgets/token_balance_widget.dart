@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/token_status.dart';
 import '../extensions/duration_extensions.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/theme/plan_colors.dart';
 
 /// Widget that displays current token balance with visual indicators.
 class TokenBalanceWidget extends StatelessWidget {
@@ -86,7 +87,7 @@ class _Header extends StatelessWidget {
       children: [
         Icon(
           Icons.token,
-          color: _getStatusColor(tokenStatus),
+          color: _getStatusColor(context, tokenStatus),
           size: 20,
         ),
         const SizedBox(width: 8),
@@ -130,7 +131,7 @@ class _TokenDisplay extends StatelessWidget {
             Text(
               tokenStatus.isPremium ? '∞' : '${tokenStatus.totalTokens}',
               style: textTheme.headlineMedium?.copyWith(
-                color: _getStatusColor(tokenStatus),
+                color: _getStatusColor(context, tokenStatus),
                 fontWeight: FontWeight.bold,
                 fontSize: tokenStatus.isPremium ? 48 : null,
               ),
@@ -161,7 +162,7 @@ class _PlanChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final planColor = _getPlanColor(tokenStatus.userPlan);
+    final planColor = planAccent(context, tokenStatus.userPlan);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -199,12 +200,12 @@ class _ProgressBar extends StatelessWidget {
       return Container(
         height: 6,
         decoration: BoxDecoration(
-          color: Colors.amber.withOpacity(0.3),
+          color: AppColors.brandGold.withOpacity(0.3),
           borderRadius: BorderRadius.circular(3),
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.amber,
+            color: AppColors.brandGold,
             borderRadius: BorderRadius.circular(3),
           ),
         ),
@@ -224,7 +225,7 @@ class _ProgressBar extends StatelessWidget {
             : 0.0,
         child: Container(
           decoration: BoxDecoration(
-            color: _getStatusColor(tokenStatus),
+            color: _getStatusColor(context, tokenStatus),
             borderRadius: BorderRadius.circular(3),
           ),
         ),
@@ -314,13 +315,13 @@ class _Details extends StatelessWidget {
               Icon(
                 Icons.all_inclusive,
                 size: 16,
-                color: Colors.amber[700],
+                color: context.appStreakAccent,
               ),
               const SizedBox(width: 4),
               Text(
                 context.tr('tokens.balance.unlimited_tokens'),
                 style: textTheme.bodySmall?.copyWith(
-                  color: Colors.amber[700],
+                  color: context.appStreakAccent,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -333,9 +334,9 @@ class _Details extends StatelessWidget {
 }
 
 // Utility functions moved to top-level to be shared
-Color _getStatusColor(TokenStatus tokenStatus) {
+Color _getStatusColor(BuildContext context, TokenStatus tokenStatus) {
   if (tokenStatus.isPremium) {
-    return Colors.amber[700]!;
+    return context.appStreakAccent;
   }
 
   final percentage = tokenStatus.dailyLimit > 0
@@ -366,18 +367,5 @@ String _getStatusText(TokenStatus tokenStatus, BuildContext context) {
     return context.tr('tokens.balance.getting_low');
   } else {
     return context.tr('tokens.balance.available');
-  }
-}
-
-Color _getPlanColor(UserPlan plan) {
-  switch (plan) {
-    case UserPlan.free:
-      return Colors.grey[600]!;
-    case UserPlan.standard:
-      return AppColors.info;
-    case UserPlan.plus:
-      return Colors.purple[600]!;
-    case UserPlan.premium:
-      return Colors.amber[700]!;
   }
 }

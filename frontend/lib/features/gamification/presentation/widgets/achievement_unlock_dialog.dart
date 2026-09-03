@@ -5,6 +5,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/achievement.dart';
+import '../../../../shared/widgets/gold_marks.dart';
 
 /// Dialog shown when user unlocks an achievement
 class AchievementUnlockDialog extends StatefulWidget {
@@ -107,7 +108,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: context.appBrandAccent.withOpacity(0.3),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
@@ -146,8 +147,8 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.amber.shade300,
-                        Colors.amber.shade600,
+                        AppColors.brandGold,
+                        AppColors.streakGlow,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -155,7 +156,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.amber.withOpacity(0.4),
+                        color: AppColors.brandGold.withOpacity(0.4),
                         blurRadius: 16,
                         offset: const Offset(0, 8),
                       ),
@@ -185,29 +186,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
 
               // XP reward
               if (widget.achievement.xpReward > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('⭐', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 8),
-                      Text(
-                        '+${widget.achievement.xpReward} XP',
-                        style: AppFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                XpRewardPill(xp: widget.achievement.xpReward),
               const SizedBox(height: 24),
 
               // Dismiss button

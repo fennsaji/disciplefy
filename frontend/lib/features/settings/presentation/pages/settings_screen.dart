@@ -42,6 +42,7 @@ import '../../../../core/services/apple_consumable_purchase_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
+import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and unauthenticated users
@@ -268,6 +269,13 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   title: context.tr(TranslationKeys.settingsAccount),
                   children: [
                     _buildUserProfileTile(context, authProvider),
+                    // Email verification lives here rather than on Home: it is
+                    // rarely relevant, but it is the only way to resend the
+                    // link, so it must stay reachable somewhere.
+                    BlocProvider.value(
+                      value: context.read<AuthBloc>(),
+                      child: const EmailVerificationBanner(),
+                    ),
                     ...[
                       _buildDivider(),
                       // My Progress - gamification stats dashboard
@@ -857,7 +865,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: context.appBrandAccent.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -915,7 +923,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: context.appBrandAccent.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: context.appBrandAccent, size: 22),
@@ -1296,7 +1304,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                         style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       Text(
@@ -1490,7 +1498,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                    color: context.appBrandAccent,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -1502,11 +1510,11 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   border: Border.all(
                     color: isDark
                         ? Colors.white.withOpacity(0.1)
-                        : AppTheme.primaryColor.withOpacity(0.1),
+                        : context.appBrandAccent.withOpacity(0.1),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor
+                      color: context.appBrandAccent
                           .withOpacity(isDark ? 0.1 : 0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
@@ -1615,7 +1623,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         builder: (context) => Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
           height: 1,
-          color: AppTheme.primaryColor.withOpacity(0.08),
+          color: context.appBrandAccent.withOpacity(0.08),
         ),
       );
 
@@ -1674,7 +1682,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: context.appBrandAccent.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1710,7 +1718,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       .withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: context.appBrandAccent.withOpacity(0.2),
                   ),
                 ),
                 child: ListenableBuilder(
@@ -1777,7 +1785,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.appBrandAccent : Colors.transparent,
               width: 2,
             ),
           ),
@@ -1819,7 +1827,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
@@ -1876,7 +1884,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: context.appBrandAccent.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1949,7 +1957,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: context.appBrandAccent.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2001,7 +2009,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: context.appBrandAccent.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2050,7 +2058,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             const SizedBox(height: 12),
             // Divider
-            Divider(color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+            Divider(color: context.appBrandAccent.withOpacity(0.2), height: 24),
             // Study mode options
             ...StudyMode.values.map((mode) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -2097,7 +2105,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: context.appBrandAccent.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2153,7 +2161,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             const SizedBox(height: 12),
 
             // Divider
-            Divider(color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+            Divider(color: context.appBrandAccent.withOpacity(0.2), height: 24),
 
             // Specific modes (Quick, Standard, Deep, Lectio)
             ...StudyMode.values.map((mode) => Column(
@@ -2213,7 +2221,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.appBrandAccent : Colors.transparent,
               width: 2,
             ),
           ),
@@ -2255,7 +2263,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
@@ -2320,7 +2328,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.appBrandAccent : Colors.transparent,
               width: 2,
             ),
           ),
@@ -2358,7 +2366,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                     fontSize: 15,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
-                        ? AppTheme.primaryColor
+                        ? context.appBrandAccent
                         : Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
@@ -2481,7 +2489,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.appBrandAccent : Colors.transparent,
               width: 2,
             ),
           ),
@@ -2523,7 +2531,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : Theme.of(sheetContext).colorScheme.onBackground,
                       ),
                     ),
@@ -2647,7 +2655,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.appBrandAccent : Colors.transparent,
               width: 2,
             ),
           ),
@@ -2689,7 +2697,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : Theme.of(sheetContext).colorScheme.onBackground,
                       ),
                     ),
@@ -2816,7 +2824,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: context.appBrandAccent.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -2875,7 +2883,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                         style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryColor,
+                          color: context.appBrandAccent,
                         ),
                       ),
                       onTap: () {
@@ -2912,7 +2920,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: context.appBrandAccent.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -2963,7 +2971,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.primaryColor),
+                      side: BorderSide(color: context.appBrandAccent),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -2973,7 +2981,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       context.tr(TranslationKeys.settingsClose),
                       style: AppFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
+                        color: context.appBrandAccent,
                       ),
                     ),
                   ),

@@ -223,10 +223,10 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
       height: 64,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppTheme.primaryColor,
+        color: context.appBrandAccent,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: context.appBrandAccent.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -303,11 +303,11 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                 trackHeight: 4,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                activeTrackColor: AppTheme.primaryColor,
+                activeTrackColor: context.appBrandAccent,
                 inactiveTrackColor:
                     isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-                thumbColor: AppTheme.primaryColor,
-                overlayColor: AppTheme.primaryColor.withOpacity(0.2),
+                thumbColor: context.appBrandAccent,
+                overlayColor: context.appBrandAccent.withOpacity(0.2),
               ),
               child: Slider(
                 value: (_isScrubbing ? _scrubValue : sectionProgress)
@@ -380,8 +380,8 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             shape: BoxShape.circle,
             color: isPrimary
                 ? (isEnabled
-                    ? AppTheme.primaryColor
-                    : AppTheme.primaryColor.withOpacity(0.5))
+                    ? context.appBrandAccent
+                    : context.appBrandAccent.withOpacity(0.5))
                 : (isDark
                     ? (isEnabled ? Colors.grey.shade800 : Colors.grey.shade900)
                     : (isEnabled
@@ -390,7 +390,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             boxShadow: isPrimary && isEnabled
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: context.appBrandAccent.withOpacity(0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -424,7 +424,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.primaryColor
+                      ? context.appBrandAccent
                       : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
                   borderRadius: BorderRadius.circular(12),
                   border: isSelected
@@ -489,7 +489,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: isCurrentSection && isPlaying
-                    ? AppTheme.primaryColor.withOpacity(0.1)
+                    ? context.appBrandAccent.withOpacity(0.1)
                     : null,
                 border: index < sectionNames.length - 1
                     ? Border(
@@ -510,13 +510,13 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isCurrentSection && isPlaying
-                          ? AppTheme.primaryColor
+                          ? context.appBrandAccent
                           : (isCurrentSection
-                              ? AppTheme.primaryColor.withOpacity(0.3)
+                              ? context.appBrandAccent.withOpacity(0.3)
                               : Colors.transparent),
                       border: Border.all(
                         color: isCurrentSection
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : (isDark
                                 ? Colors.grey.shade600
                                 : Colors.grey.shade400),
@@ -539,7 +539,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
                       sectionName,
                       style: TextStyle(
                         color: isCurrentSection
-                            ? AppTheme.primaryColor
+                            ? context.appBrandAccent
                             : (isDark ? Colors.white70 : Colors.black87),
                         fontWeight: isCurrentSection
                             ? FontWeight.w600

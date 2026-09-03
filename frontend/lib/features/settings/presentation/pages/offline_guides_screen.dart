@@ -8,6 +8,7 @@ import '../../../study_generation/data/datasources/study_local_data_source.dart'
 import '../../../study_generation/domain/entities/study_guide.dart';
 import '../../../study_topics/data/models/learning_path_download_model.dart';
 import '../../../study_topics/data/services/learning_path_download_service.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class OfflineGuidesScreen extends StatefulWidget {
   const OfflineGuidesScreen({super.key});
@@ -175,7 +176,7 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
                       style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
+                        color: context.appBrandAccent,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -211,11 +212,11 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
             border: Border.all(
               color: isDark
                   ? Colors.white.withOpacity(0.1)
-                  : AppTheme.primaryColor.withOpacity(0.1),
+                  : context.appBrandAccent.withOpacity(0.1),
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(isDark ? 0.1 : 0.08),
+                color: context.appBrandAccent.withOpacity(isDark ? 0.1 : 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -244,7 +245,7 @@ class _OfflineGuidesScreenState extends State<OfflineGuidesScreen> {
                           endIndent: 20,
                           color: isDark
                               ? Colors.white.withOpacity(0.08)
-                              : AppTheme.primaryColor.withOpacity(0.08),
+                              : context.appBrandAccent.withOpacity(0.08),
                         ),
                       _buildGuideTile(
                           completedTopics[i], path.learningPathId, isDark),

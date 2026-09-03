@@ -9,6 +9,7 @@ import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/utils/auth_validator.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Password reset screen for email-based authentication
 /// Allows users to request a password reset link via email
@@ -247,7 +248,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                 ? null
                 : [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      color: context.appBrandAccent.withOpacity(0.4),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),

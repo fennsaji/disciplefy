@@ -28,6 +28,7 @@ import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../../../core/utils/share_links.dart';
 
 /// Daily verse card widget for home screen
 class DailyVerseCard extends StatelessWidget {
@@ -227,14 +228,17 @@ class DailyVerseCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.wifi_off,
-                color: Colors.amber[300],
+                color: AppColors.onGradientWarning,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 context.tr(TranslationKeys.dailyVerseOfflineMode),
                 style: TextStyle(
-                  color: Colors.amber[300],
+                  // Amber-200 at 13px measures 3.45:1 on the gradient's light
+                  // end. The icon carries the warning colour; the label stays
+                  // white at 4.47:1.
+                  color: AppColors.onGradient,
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                 ),
@@ -287,7 +291,7 @@ class DailyVerseCard extends StatelessWidget {
         children: [
           Icon(
             Icons.error_outline,
-            color: Colors.amber[300],
+            color: AppColors.onGradientWarning,
             size: 48,
           ),
           const SizedBox(height: 16),
@@ -405,26 +409,31 @@ class DailyVerseCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        // Dark pill, not a gold tint: gold sits at only 2.62:1
+                        // directly on the indigo card, under the 3:1 minimum
+                        // for graphics. Dropping the ground to near-black
+                        // lifts the same gold well past it and echoes the
+                        // gold-on-black of the app icon.
+                        color: const Color(0xFF0B0B0B).withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.brandGold.withValues(alpha: 0.5),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.bolt,
                             size: 14,
-                            color: Colors.amber,
+                            color: context.appStreakAccent,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${streak.currentStreak}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: textColor,
+                              color: context.appStreakAccent,
                               fontSize: 12,
                             ),
                           ),
@@ -643,11 +652,7 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _shareVerse(DailyVerseLoaded state) {
-    final appLink = kIsWeb
-        ? '🌐 https://app.disciplefy.in/'
-        : Platform.isAndroid
-            ? '📱 https://play.google.com/store/apps/details?id=com.disciplefy.bible_study'
-            : '🌐 https://app.disciplefy.in/';
+    const appLink = '📱 ${ShareLinks.appDownloadUrl}';
     final ref = state.verse.getReferenceText(state.currentLanguage);
     final abbr = _translationAbbr(state.currentLanguage);
     final text =

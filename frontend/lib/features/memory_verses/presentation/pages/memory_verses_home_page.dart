@@ -491,7 +491,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     }
 
     return RefreshIndicator(
-      color: AppTheme.primaryColor,
+      color: context.appBrandAccent,
       onRefresh: () async {
         _loadVerses(forceRefresh: true);
         await Future.delayed(const Duration(milliseconds: 500));
@@ -671,7 +671,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.streakFlame,
+                          context.appStreakAccent,
                           AppColors.streakGlow,
                         ],
                       ),
@@ -710,7 +710,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     Icons.star_outline,
                     '${state.statistics.masteredVerses}',
                     context.tr(TranslationKeys.memoryHomeMastered),
-                    color: AppColors.masteryMaster,
+                    color: context.appStreakAccent,
                   ),
                 ],
               ),
@@ -723,7 +723,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               context.tr(TranslationKeys.memoryHomeDailyReviews),
               _dailyGoal!.completedReviews,
               _dailyGoal!.targetReviews,
-              AppTheme.primaryColor,
+              context.appBrandAccent,
             ),
           ],
           // Action buttons row
@@ -735,7 +735,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   icon: Icons.emoji_events_outlined,
                   label: context.tr(TranslationKeys.memoryHomeChampions),
                   onTap: () => context.push('/memory-verses/champions'),
-                  color: AppColors.masteryMaster,
+                  color: context.appStreakAccent,
                 ),
               ),
               const SizedBox(width: 12),
@@ -927,7 +927,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.35),
+                    color: context.appBrandAccent.withOpacity(0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -1178,12 +1178,12 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 ? Colors.transparent
                 : isDark
                     ? Colors.white.withOpacity(0.1)
-                    : AppTheme.primaryColor.withOpacity(0.2),
+                    : context.appBrandAccent.withOpacity(0.2),
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: context.appBrandAccent.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

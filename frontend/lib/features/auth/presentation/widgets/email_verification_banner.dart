@@ -97,7 +97,12 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
                               .tr(TranslationKeys.emailVerificationDescription),
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.textSecondary,
+                                    // Theme-aware, not AppTheme.textSecondary:
+                                    // that constant is lightTextSecondary
+                                    // (#4B5563) regardless of theme, which on
+                                    // this dark amber banner measured 2.13:1.
+                                    // The dark-theme value gives 7.42:1.
+                                    color: context.appTextSecondary,
                                   ),
                         ),
                       ],
