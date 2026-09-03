@@ -261,6 +261,10 @@ class AppLocalizations {
       'communityMyFellowships': 'My Fellowships',
       'communityDiscover': 'Explore Public Fellowships',
       'communityMembers': 'members',
+      'navHome': 'Home',
+      'navGenerate': 'Generate',
+      'navTopics': 'Topics',
+      'navCommunity': 'Community',
       'communityMemberSingular': 'member',
       'communityGuideLabel': 'Guide',
       'joinFellowshipTitle': 'Join Fellowship',
@@ -849,6 +853,10 @@ class AppLocalizations {
       'communityMyFellowships': 'मेरी संगतियाँ',
       'communityDiscover': 'सार्वजनिक संगतियाँ खोजें',
       'communityMembers': 'सदस्य',
+      'navHome': 'होम',
+      'navGenerate': 'बनाएँ',
+      'navTopics': 'विषय',
+      'navCommunity': 'समुदाय',
       'communityMemberSingular': 'सदस्य',
       'communityGuideLabel': 'पाठ',
       'joinFellowshipTitle': 'संगति में शामिल हों',
@@ -1439,6 +1447,10 @@ class AppLocalizations {
       'communityMyFellowships': 'എന്റെ കൂട്ടായ്മകൾ',
       'communityDiscover': 'പൊതു ഫെല്ലോഷിപ്പുകൾ പര്യവേക്ഷണം ചെയ്യുക',
       'communityMembers': 'അംഗങ്ങൾ',
+      'navHome': 'ഹോം',
+      'navGenerate': 'ഉണ്ടാക്കുക',
+      'navTopics': 'വിഷയങ്ങൾ',
+      'navCommunity': 'കൂട്ടായ്മ',
       'communityMemberSingular': 'അംഗം',
       'communityGuideLabel': 'ഗൈഡ്',
       'joinFellowshipTitle': 'കൂട്ടായ്മയിൽ ചേരുക',
@@ -1991,6 +2003,11 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['communityDiscover']!;
   String get communityMembers =>
       _localizedValues[locale.languageCode]!['communityMembers']!;
+
+  /// Bottom navigation labels. These were hardcoded English strings, so the
+  /// tab bar stayed in English even with the app set to Hindi or Malayalam.
+  String navLabel(String tabId) => _localizedValues[locale.languageCode]!['nav'
+      '${tabId[0].toUpperCase()}${tabId.substring(1)}']!;
 
   /// Member count label, singular or plural.
   ///

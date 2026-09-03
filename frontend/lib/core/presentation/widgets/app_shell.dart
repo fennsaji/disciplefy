@@ -189,8 +189,8 @@ class _AppShellState extends State<AppShell>
     final tabs = _getFilteredTabs();
 
     // Determine which optional tabs are visible
-    final hasGenerate = tabs.any((tab) => tab.label == 'Generate');
-    final hasTopics = tabs.any((tab) => tab.label == 'Topics');
+    final hasGenerate = tabs.any((tab) => tab.id == 'generate');
+    final hasTopics = tabs.any((tab) => tab.id == 'topics');
 
     // Build an ordered list of branch indices for visible tabs.
     // Branches: 0=Home, 1=Generate, 2=Topics, 3=Community (always shown)
@@ -214,8 +214,8 @@ class _AppShellState extends State<AppShell>
     final tabs = _getFilteredTabs();
 
     // Determine which optional tabs are visible
-    final hasGenerate = tabs.any((tab) => tab.label == 'Generate');
-    final hasTopics = tabs.any((tab) => tab.label == 'Topics');
+    final hasGenerate = tabs.any((tab) => tab.id == 'generate');
+    final hasTopics = tabs.any((tab) => tab.id == 'topics');
 
     // Build an ordered list of branch indices for visible tabs.
     final branchOrder = <int>[0]; // Home always first
