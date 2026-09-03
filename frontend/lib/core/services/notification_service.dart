@@ -567,6 +567,12 @@ class NotificationService {
   // ============================================================================
 
   /// Navigate based on notification type
+  /// Test seam for [_navigateFromNotification]: lets a test drive the
+  /// type → route mapping without FCM, local notifications or Supabase.
+  @visibleForTesting
+  void navigateFromNotificationData(Map<String, dynamic> data) =>
+      _navigateFromNotification(data);
+
   void _navigateFromNotification(Map<String, dynamic> data) {
     // Input validation: Ensure data is not null and is a Map
     if (data.isEmpty) {
@@ -737,11 +743,12 @@ class NotificationService {
 
       case 'memory_verse_reminder':
       case 'memory_verse_overdue':
-        // Both notifications are a prompt to review verses that are due, so go
-        // straight to the review screen rather than the memory verse list.
-        _router.go(AppRoutes.verseReview);
-        Logger.info(
-            '[NotificationService] ✅ Navigating to memory verse review');
+        // Land on the memory verse list, not the review screen. The review
+        // screen needs a verse id, which a push cannot carry; opened without
+        // one it had nowhere to go back to and 404'd on
+        // '/memory-verses/practice/' (issue report, 3 Sept).
+        _router.go(AppRoutes.memoryVerses);
+        Logger.info('[NotificationService] ✅ Navigating to memory verse list');
         break;
 
       case 'fellowship_meeting_reminder':
