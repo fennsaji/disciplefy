@@ -29,6 +29,7 @@ import '../../../../core/usecases/usecase.dart';
 import 'token_event.dart';
 import 'token_state.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Token BLoC
 ///
@@ -134,7 +135,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     result.fold(
       (failure) {
         Logger.error(
-            '🪙 [TOKEN_BLOC] ❌ Token fetch failed: ${failure.message}');
+            '🪙 [TOKEN_BLOC] ❌ Token fetch failed: ${ErrorMessageSanitizer.sanitize(failure)}');
         emit(TokenError(
           failure: failure,
           operation: 'fetching',
@@ -574,7 +575,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     result.fold(
       (failure) {
         Logger.debug(
-            '😨 [TOKEN_BLOC] Purchase history fetch failed: ${failure.message}');
+            '😨 [TOKEN_BLOC] Purchase history fetch failed: ${ErrorMessageSanitizer.sanitize(failure)}');
         emit(PurchaseHistoryError(
           failure: failure,
           operation: 'fetch_history',
@@ -719,7 +720,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     result.fold(
       (failure) {
         Logger.debug(
-            '❌ [TOKEN_BLOC] Usage history fetch failed: ${failure.message}');
+            '❌ [TOKEN_BLOC] Usage history fetch failed: ${ErrorMessageSanitizer.sanitize(failure)}');
         emit(UsageHistoryError(
           failure: failure,
           operation: 'fetch_usage_history',

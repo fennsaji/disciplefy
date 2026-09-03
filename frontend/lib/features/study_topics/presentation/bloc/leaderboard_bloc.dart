@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/repositories/leaderboard_repository.dart';
 import 'leaderboard_event.dart';
 import 'leaderboard_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing leaderboard data.
 ///
@@ -33,7 +34,8 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
     final result = await _repository.getLeaderboardWithUserRank();
 
     result.fold(
-      (failure) => emit(LeaderboardError(message: failure.message)),
+      (failure) => emit(
+          LeaderboardError(message: ErrorMessageSanitizer.sanitize(failure))),
       (data) => emit(LeaderboardLoaded(
         entries: data.entries,
         userRank: data.userRank,
@@ -50,7 +52,8 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
     final result = await _repository.getLeaderboardWithUserRank();
 
     result.fold(
-      (failure) => emit(LeaderboardError(message: failure.message)),
+      (failure) => emit(
+          LeaderboardError(message: ErrorMessageSanitizer.sanitize(failure))),
       (data) => emit(LeaderboardLoaded(
         entries: data.entries,
         userRank: data.userRank,

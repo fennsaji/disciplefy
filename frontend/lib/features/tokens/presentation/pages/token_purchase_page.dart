@@ -18,7 +18,7 @@ import '../bloc/token_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/logger.dart';
-import '../../../../core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/services/system_config_service.dart';
 
 /// Token Purchase Page
@@ -448,7 +448,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            Icon(Icons.error_outline, size: 64, color: context.appError),
             SizedBox(height: 16),
             Text(
               _pricingError!,
@@ -483,7 +483,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.shopping_cart_outlined,
-                  size: 64, color: AppColors.warning),
+                  size: 64, color: context.appWarning),
               const SizedBox(height: 16),
               const Text(
                 'Token purchase is temporarily unavailable',
@@ -517,7 +517,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.block, size: 64, color: AppColors.warning),
+              Icon(Icons.block, size: 64, color: context.appWarning),
               SizedBox(height: 16),
               Text(
                 'Premium users have unlimited tokens',
@@ -682,7 +682,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                               padding: EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.warning,
+                                color: context.appWarning,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -715,7 +715,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                             Text(
                               '${package.discount}% OFF',
                               style: TextStyle(
-                                color: AppColors.success,
+                                color: context.appSuccess,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -824,7 +824,7 @@ class _TokenPurchasePageState extends State<TokenPurchasePage>
                   '💡 Tip: Choose a package above for better discounts!',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.warning,
+                    color: context.appWarning,
                     fontStyle: FontStyle.italic,
                   ),
                 ),

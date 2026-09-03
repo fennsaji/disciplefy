@@ -16,6 +16,7 @@ import '../../../study_topics/data/models/learning_path_download_model.dart';
 import '../../../study_topics/data/services/learning_path_download_service.dart';
 import '../../../study_topics/domain/entities/learning_path.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Refactored BLoC for coordinating Home screen concerns.
 ///
@@ -314,7 +315,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       if (result.isLeft()) {
         final failure = result.fold((f) => f, (_) => null)!;
         Logger.error(
-          'Failed to load recommended learning path: ${failure.message}',
+          'Failed to load recommended learning path: ${ErrorMessageSanitizer.sanitize(failure)}',
           tag: 'HOME_BLOC',
         );
 

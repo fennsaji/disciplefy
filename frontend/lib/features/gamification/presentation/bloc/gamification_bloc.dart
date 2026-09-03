@@ -6,6 +6,7 @@ import '../../domain/entities/user_level.dart';
 import '../../domain/repositories/gamification_repository.dart';
 import 'gamification_event.dart';
 import 'gamification_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 class GamificationBloc extends Bloc<GamificationEvent, GamificationState> {
   final GamificationRepository _repository;
@@ -81,13 +82,13 @@ class GamificationBloc extends Bloc<GamificationEvent, GamificationState> {
     statsResult.fold(
       (failure) => emit(state.copyWith(
         status: GamificationStatus.error,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (stats) {
         achievementsResult.fold(
           (failure) => emit(state.copyWith(
             status: GamificationStatus.error,
-            errorMessage: failure.message,
+            errorMessage: ErrorMessageSanitizer.sanitize(failure),
           )),
           (achievements) {
             // Calculate level from XP

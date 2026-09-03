@@ -11,6 +11,7 @@ import '../../../../core/models/app_language.dart';
 import '../../data/services/recommended_guides_service.dart';
 import 'recommended_topics_event.dart';
 import 'recommended_topics_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing recommended topics on the Home screen.
 ///
@@ -204,11 +205,11 @@ class RecommendedTopicsBloc
     result.fold(
       (failure) {
         Logger.error(
-          'Failed to load personalized topics: ${failure.message}',
+          'Failed to load personalized topics: ${ErrorMessageSanitizer.sanitize(failure)}',
           tag: 'RECOMMENDED_TOPICS',
         );
         emit(RecommendedTopicsError(
-          message: failure.message,
+          message: ErrorMessageSanitizer.sanitize(failure),
           errorCode: failure.code,
         ));
       },

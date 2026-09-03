@@ -18,6 +18,7 @@ import '../../domain/repositories/voice_buddy_repository.dart';
 import 'voice_conversation_event.dart';
 import 'voice_conversation_state.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing voice conversations.
 class VoiceConversationBloc
@@ -147,8 +148,8 @@ class VoiceConversationBloc
     // Handle failure case
     if (result.isLeft()) {
       result.fold(
-        (failure) =>
-            Logger.warning('Failed to load preferences: ${failure.message}'),
+        (failure) => Logger.warning(
+            'Failed to load preferences: ${ErrorMessageSanitizer.sanitize(failure)}'),
         (_) {},
       );
       return;
@@ -248,7 +249,7 @@ class VoiceConversationBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: VoiceConversationStatus.error,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (conversation) {
         // Emit ready state immediately so the user can start talking
@@ -287,7 +288,7 @@ class VoiceConversationBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: VoiceConversationStatus.error,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(const VoiceConversationState()),
     );
@@ -1286,7 +1287,8 @@ class VoiceConversationBloc
     final result = await _repository.checkQuota();
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (quota) => emit(state.copyWith(quota: quota)),
     );
   }
@@ -1301,7 +1303,8 @@ class VoiceConversationBloc
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (history) => emit(state.copyWith(conversationHistory: history)),
     );
   }
@@ -1317,7 +1320,7 @@ class VoiceConversationBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: VoiceConversationStatus.error,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (conversation) => emit(state.copyWith(
         status: VoiceConversationStatus.ready,

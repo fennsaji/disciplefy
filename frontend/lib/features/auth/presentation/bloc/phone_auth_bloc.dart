@@ -6,6 +6,7 @@ import '../../domain/repositories/phone_auth_repository.dart';
 import 'phone_auth_event.dart';
 import 'phone_auth_state.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing phone authentication state and operations
 class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
@@ -137,7 +138,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
     if (failure is ValidationFailure) {
       PhoneAuthErrorType errorType = PhoneAuthErrorType.general;
 
-      final message = failure.message.toLowerCase();
+      final message = ErrorMessageSanitizer.sanitize(failure).toLowerCase();
       if (message.contains('invalid phone number')) {
         errorType = PhoneAuthErrorType.invalidPhoneNumber;
       } else if (message.contains('invalid otp') ||
@@ -148,21 +149,21 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
       }
 
       return PhoneAuthErrorState(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
         errorType: errorType,
       );
     }
 
     if (failure is NetworkFailure) {
       return PhoneAuthErrorState(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
         errorType: PhoneAuthErrorType.networkError,
       );
     }
 
     if (failure is RateLimitFailure) {
       return PhoneAuthErrorState(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
         errorType: PhoneAuthErrorType.rateLimitExceeded,
       );
     }
@@ -170,7 +171,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
     if (failure is ServerFailure) {
       PhoneAuthErrorType errorType = PhoneAuthErrorType.general;
 
-      final message = failure.message.toLowerCase();
+      final message = ErrorMessageSanitizer.sanitize(failure).toLowerCase();
       if (message.contains('sms service') ||
           message.contains('provider not configured') ||
           message.contains('unsupported phone provider')) {
@@ -180,7 +181,7 @@ class PhoneAuthBloc extends Bloc<PhoneAuthEvent, PhoneAuthState> {
       }
 
       return PhoneAuthErrorState(
-        message: failure.message,
+        message: ErrorMessageSanitizer.sanitize(failure),
         errorType: errorType,
       );
     }

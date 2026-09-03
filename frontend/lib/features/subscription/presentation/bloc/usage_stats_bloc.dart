@@ -3,6 +3,7 @@ import '../../../../core/utils/logger.dart';
 import '../../domain/repositories/usage_stats_repository.dart';
 import 'usage_stats_event.dart';
 import 'usage_stats_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing usage statistics state
 ///
@@ -40,9 +41,9 @@ class UsageStatsBloc extends Bloc<UsageStatsEvent, UsageStatsState> {
         Logger.error(
           'Failed to fetch usage statistics',
           tag: 'USAGE_STATS_BLOC',
-          error: failure.message,
+          error: ErrorMessageSanitizer.sanitize(failure),
         );
-        emit(UsageStatsError(message: failure.message));
+        emit(UsageStatsError(message: ErrorMessageSanitizer.sanitize(failure)));
       },
       (usageStats) {
         Logger.info(
@@ -78,10 +79,10 @@ class UsageStatsBloc extends Bloc<UsageStatsEvent, UsageStatsState> {
         Logger.error(
           'Failed to refresh usage statistics',
           tag: 'USAGE_STATS_BLOC',
-          error: failure.message,
+          error: ErrorMessageSanitizer.sanitize(failure),
         );
         // On refresh failure, emit error but keep existing state if available
-        emit(UsageStatsError(message: failure.message));
+        emit(UsageStatsError(message: ErrorMessageSanitizer.sanitize(failure)));
       },
       (usageStats) {
         Logger.info(

@@ -6,6 +6,7 @@ import '../../domain/entities/token_usage_history.dart';
 import '../../domain/entities/usage_statistics.dart';
 import '../../../../core/error/failures.dart' as failures;
 import '../../../../core/error/token_failures.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Token BLoC States
 ///
@@ -120,7 +121,7 @@ class TokenError extends TokenState {
       case failures.AuthenticationFailure:
         return 'Authentication error. Please log in and try again.';
       default:
-        return failure.message;
+        return ErrorMessageSanitizer.sanitize(failure);
     }
   }
 
@@ -502,7 +503,7 @@ class PurchaseHistoryError extends TokenState {
       case failures.AuthenticationFailure:
         return 'Authentication error. Please log in and try again.';
       default:
-        return failure.message;
+        return ErrorMessageSanitizer.sanitize(failure);
     }
   }
 }
@@ -630,7 +631,7 @@ class UsageHistoryError extends TokenState {
       case failures.AuthenticationFailure:
         return 'Authentication error. Please log in and try again.';
       default:
-        return failure.message;
+        return ErrorMessageSanitizer.sanitize(failure);
     }
   }
 }

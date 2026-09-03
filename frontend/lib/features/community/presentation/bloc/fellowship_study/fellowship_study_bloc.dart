@@ -5,6 +5,7 @@ import '../../../../../core/services/language_preference_service.dart';
 import '../../../../community/domain/repositories/community_repository.dart';
 import 'fellowship_study_event.dart';
 import 'fellowship_study_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC that manages the active learning-path study for a single fellowship.
 ///
@@ -96,7 +97,7 @@ class FellowshipStudyBloc
     result.fold(
       (failure) => emit(state.copyWith(
         setStatus: FellowshipStudySetStatus.failure,
-        setError: failure.message,
+        setError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (title) => emit(state.copyWith(
         setStatus: FellowshipStudySetStatus.success,
@@ -121,7 +122,7 @@ class FellowshipStudyBloc
     result.fold(
       (failure) => emit(state.copyWith(
         advanceStatus: FellowshipStudyAdvanceStatus.failure,
-        advanceError: failure.message,
+        advanceError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (data) => emit(state.copyWith(
         advanceStatus: FellowshipStudyAdvanceStatus.success,
@@ -147,7 +148,7 @@ class FellowshipStudyBloc
     result.fold(
       (failure) => emit(state.copyWith(
         resetStatus: FellowshipStudyResetStatus.failure,
-        resetError: failure.message,
+        resetError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(
         resetStatus: FellowshipStudyResetStatus.success,

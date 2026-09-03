@@ -38,6 +38,7 @@ import '../../data/services/suggested_verses_cache_service.dart';
 import 'memory_verse_event.dart';
 import 'memory_verse_state.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing Memory Verse feature state.
 ///
@@ -227,11 +228,12 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Load due verses failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Load due verses failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           // Only show error if we have no cached data to display
           if (state is! DueVersesLoaded) {
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
               isNetworkError: failure is NetworkFailure,
             ));
@@ -292,7 +294,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Load more verses failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Load more verses failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(currentState.copyWith(isLoadingMore: false));
         },
         (data) {
@@ -332,7 +335,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       await result.fold(
         (failure) async {
           Logger.error(
-              '❌ [BLOC] Add verse from daily failed: ${failure.message}');
+              '❌ [BLOC] Add verse from daily failed: ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -342,7 +345,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           } else {
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
               isNetworkError: failure is NetworkFailure,
             ));
@@ -393,7 +396,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Add manual verse failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Add manual verse failed: ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -403,7 +407,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           } else {
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
               isNetworkError: failure is NetworkFailure,
             ));
@@ -448,7 +452,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Submit review failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Submit review failed: ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -458,7 +463,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           } else {
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
               isNetworkError: failure is NetworkFailure,
             ));
@@ -504,9 +509,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Load statistics failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Load statistics failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -558,9 +564,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Sync failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Sync failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -632,9 +639,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Fetch verse text failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Fetch verse text failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(FetchVerseTextError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
           ));
         },
@@ -669,7 +677,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Delete verse failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Delete verse failed: ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -679,7 +688,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           } else {
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
               isNetworkError: failure is NetworkFailure,
             ));
@@ -716,7 +725,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       (failure) {
         Logger.error('Memory progress reset failed: ${failure.code}');
         emit(MemoryProgressResetError(
-          message: failure.message,
+          message: ErrorMessageSanitizer.sanitize(failure),
           code: failure.code,
           isNetworkError: failure is NetworkFailure,
         ));
@@ -752,9 +761,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Select practice mode failed: ${failure.message}');
+              '❌ [BLOC] Select practice mode failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -809,7 +818,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Submit practice session failed: ${failure.message}');
+              '❌ [BLOC] Submit practice session failed: ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // Check for practice mode restriction errors
           if (failure.code == 'PRACTICE_MODE_TIER_LOCKED') {
@@ -820,7 +829,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             // Emit tier-locked state - UI will show upgrade dialog
             // Note: We need error details from the API response
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
             ));
             return;
@@ -833,7 +842,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
                 '⚠️ [BLOC] Daily unlock limit exceeded: ${failure.code}');
             // Emit unlock-limit state - UI will show upgrade dialog
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
             ));
             return;
@@ -843,7 +852,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             Logger.debug(
                 '⏰ [BLOC] Daily review limit reached: ${failure.code}');
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
             ));
             return;
@@ -851,7 +860,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
           // Generic error for other failures
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -896,9 +905,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Load practice mode stats failed: ${failure.message}');
+              '❌ [BLOC] Load practice mode stats failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -988,9 +997,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Load memory streak failed: ${failure.message}');
+              '❌ [BLOC] Load memory streak failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1035,9 +1044,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Use streak freeze failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Use streak freeze failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1077,9 +1087,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Check streak milestone failed: ${failure.message}');
+              '❌ [BLOC] Check streak milestone failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1137,9 +1147,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Load mastery progress failed: ${failure.message}');
+              '❌ [BLOC] Load mastery progress failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1189,9 +1199,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Update mastery level failed: ${failure.message}');
+              '❌ [BLOC] Update mastery level failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1232,9 +1242,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Load daily goal failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Load daily goal failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1278,9 +1289,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Update daily goal progress failed: ${failure.message}');
+              '❌ [BLOC] Update daily goal progress failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1338,9 +1349,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Set daily goal targets failed: ${failure.message}');
+              '❌ [BLOC] Set daily goal targets failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1381,9 +1392,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Load active challenges failed: ${failure.message}');
+              '❌ [BLOC] Load active challenges failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1435,9 +1446,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Claim challenge reward failed: ${failure.message}');
+              '❌ [BLOC] Claim challenge reward failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1488,9 +1499,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       result.fold(
         (failure) {
-          Logger.error('❌ [BLOC] Load leaderboard failed: ${failure.message}');
+          Logger.error(
+              '❌ [BLOC] Load leaderboard failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1533,9 +1545,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Load memory statistics failed: ${failure.message}');
+              '❌ [BLOC] Load memory statistics failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(MemoryVerseError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
             isNetworkError: failure is NetworkFailure,
           ));
@@ -1589,9 +1601,9 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       result.fold(
         (failure) {
           Logger.error(
-              '❌ [BLOC] Load suggested verses failed: ${failure.message}');
+              '❌ [BLOC] Load suggested verses failed: ${ErrorMessageSanitizer.sanitize(failure)}');
           emit(SuggestedVersesError(
-            message: failure.message,
+            message: ErrorMessageSanitizer.sanitize(failure),
             code: failure.code,
           ));
         },
@@ -1637,7 +1649,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       await result.fold(
         (failure) async {
           Logger.error(
-              '❌ [BLOC] Add suggested verse failed: ${failure.message}');
+              '❌ [BLOC] Add suggested verse failed: ${ErrorMessageSanitizer.sanitize(failure)}');
 
           // Check if operation was queued for offline sync
           if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
@@ -1647,7 +1659,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           } else {
             emit(MemoryVerseError(
-              message: failure.message,
+              message: ErrorMessageSanitizer.sanitize(failure),
               code: failure.code,
               isNetworkError: failure is NetworkFailure,
             ));

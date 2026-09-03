@@ -4,6 +4,7 @@ import '../../domain/entities/voice_preferences_entity.dart';
 import '../../domain/repositories/voice_buddy_repository.dart';
 import 'voice_preferences_event.dart';
 import 'voice_preferences_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing voice preferences.
 class VoicePreferencesBloc
@@ -29,7 +30,8 @@ class VoicePreferencesBloc
     final result = await _repository.getPreferences();
 
     result.fold(
-      (failure) => emit(VoicePreferencesError(message: failure.message)),
+      (failure) => emit(VoicePreferencesError(
+          message: ErrorMessageSanitizer.sanitize(failure))),
       (preferences) => emit(VoicePreferencesLoaded(preferences: preferences)),
     );
   }
@@ -46,7 +48,7 @@ class VoicePreferencesBloc
 
       result.fold(
         (failure) => emit(VoicePreferencesError(
-          message: failure.message,
+          message: ErrorMessageSanitizer.sanitize(failure),
           previousPreferences: currentState.preferences,
         )),
         (preferences) {
@@ -69,7 +71,7 @@ class VoicePreferencesBloc
 
       result.fold(
         (failure) => emit(VoicePreferencesError(
-          message: failure.message,
+          message: ErrorMessageSanitizer.sanitize(failure),
           previousPreferences: currentState.preferences,
         )),
         (preferences) {

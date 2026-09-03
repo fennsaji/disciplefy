@@ -14,6 +14,7 @@ import '../../domain/usecases/update_notification_preferences.dart'
 import '../utils/time_of_day_extensions.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final GetNotificationPreferences getPreferences;
@@ -46,7 +47,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       // Use fold to extract values and emit state synchronously
       preferencesResult.fold(
         (failure) {
-          emit(NotificationError(message: failure.message));
+          emit(NotificationError(
+              message: ErrorMessageSanitizer.sanitize(failure)));
         },
         (preferences) {
           final permissionsGranted = permissionResult.fold(
@@ -84,12 +86,14 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         streakLostEnabled: event.streakLostEnabled,
         streakReminderTime: domainStreakReminderTime,
         memoryVerseReminderEnabled: event.memoryVerseReminderEnabled,
+        memoryVerseOverdueEnabled: event.memoryVerseOverdueEnabled,
         memoryVerseReminderTime: domainMemoryVerseReminderTime,
       ),
     );
 
     result.fold(
-      (failure) => emit(NotificationError(message: failure.message)),
+      (failure) => emit(
+          NotificationError(message: ErrorMessageSanitizer.sanitize(failure))),
       (preferences) => emit(NotificationPreferencesUpdated(
         preferences: preferences,
       )),
@@ -105,7 +109,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     final result = await requestPermissions(NoParams());
 
     result.fold(
-      (failure) => emit(NotificationError(message: failure.message)),
+      (failure) => emit(
+          NotificationError(message: ErrorMessageSanitizer.sanitize(failure))),
       (granted) => emit(NotificationPermissionResult(granted: granted)),
     );
   }
@@ -119,7 +124,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     final result = await requestPermissions(NoParams());
 
     result.fold(
-      (failure) => emit(NotificationError(message: failure.message)),
+      (failure) => emit(
+          NotificationError(message: ErrorMessageSanitizer.sanitize(failure))),
       (granted) => emit(NotificationPermissionResult(granted: granted)),
     );
   }

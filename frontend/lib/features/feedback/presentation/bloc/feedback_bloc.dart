@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/submit_feedback_usecase.dart';
 import 'feedback_event.dart';
 import 'feedback_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing feedback submission state
 class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
@@ -27,7 +28,8 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     );
 
     result.fold(
-      (failure) => emit(FeedbackSubmitFailure(message: failure.message)),
+      (failure) => emit(FeedbackSubmitFailure(
+          message: ErrorMessageSanitizer.sanitize(failure))),
       (_) => emit(const FeedbackSubmitSuccess()),
     );
   }
@@ -48,7 +50,8 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     final result = await submitFeedbackUseCase(params);
 
     result.fold(
-      (failure) => emit(FeedbackSubmitFailure(message: failure.message)),
+      (failure) => emit(FeedbackSubmitFailure(
+          message: ErrorMessageSanitizer.sanitize(failure))),
       (_) => emit(const FeedbackSubmitSuccess()),
     );
   }
@@ -67,7 +70,8 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     final result = await submitFeedbackUseCase(params);
 
     result.fold(
-      (failure) => emit(FeedbackSubmitFailure(message: failure.message)),
+      (failure) => emit(FeedbackSubmitFailure(
+          message: ErrorMessageSanitizer.sanitize(failure))),
       (_) => emit(const FeedbackSubmitSuccess(
         message:
             'Bug report submitted successfully. Thank you for helping us improve!',

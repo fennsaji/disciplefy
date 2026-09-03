@@ -7,6 +7,7 @@ import '../../../../../features/community/domain/entities/fellowship_post_entity
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_feed_event.dart';
 import 'fellowship_feed_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// Page size used for all paginated feed requests.
 const int _kPageLimit = 20;
@@ -103,7 +104,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: FellowshipFeedStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (posts) => emit(state.copyWith(
         status: FellowshipFeedStatus.success,
@@ -131,7 +132,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: FellowshipFeedStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (newPosts) {
         final appended = [...state.posts, ...newPosts];
@@ -169,7 +170,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         submitting: false,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (newPost) => emit(state.copyWith(
         submitting: false,
@@ -199,7 +200,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         submitting: false,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(
         submitting: false,
@@ -220,7 +221,8 @@ class FellowshipFeedBloc
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (updatedCounts) {
         final updatedPosts = state.posts.map((post) {
           if (post.id != event.postId) return post;
@@ -278,7 +280,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         commentsStatus: FellowshipCommentsStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (comments) => emit(state.copyWith(
         commentsStatus: FellowshipCommentsStatus.success,
@@ -303,7 +305,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         commentSubmitting: false,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (newComment) {
         // Increment commentCount on the matching post.
@@ -340,7 +342,8 @@ class FellowshipFeedBloc
     final result = await _repository.deleteComment(event.commentId);
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
       (_) {
         // Remove comment from local list and decrement post count.
         final updatedComments =
@@ -386,7 +389,7 @@ class FellowshipFeedBloc
     result.fold(
       (failure) => emit(state.copyWith(
         reportStatus: FellowshipReportStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(reportStatus: FellowshipReportStatus.success)),
     );
@@ -427,7 +430,7 @@ class FellowshipFeedBloc
         blockStatus: FellowshipBlockStatus.failure,
         posts: previousPosts,
         comments: previousComments,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) => emit(state.copyWith(blockStatus: FellowshipBlockStatus.success)),
     );

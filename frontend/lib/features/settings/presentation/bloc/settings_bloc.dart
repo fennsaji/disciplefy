@@ -13,6 +13,7 @@ import '../../domain/repositories/settings_repository.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final GetSettings getSettings;
@@ -71,7 +72,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final result = await getSettings(NoParams());
 
       await result.fold(
-        (failure) async => emit(SettingsError(message: failure.message)),
+        (failure) async => emit(
+            SettingsError(message: ErrorMessageSanitizer.sanitize(failure))),
         (settings) async {
           // Check if we need to sync language preference from LanguagePreferenceService
           try {
@@ -161,7 +163,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         final result = await settingsRepository.updateLanguage(event.language);
 
         await result.fold(
-          (failure) => throw Exception(failure.message),
+          (failure) => throw Exception(ErrorMessageSanitizer.sanitize(failure)),
           (_) async {
             // Convert language code to AppLanguage and sync with unified service
             final appLanguage = AppLanguage.fromCode(event.language);

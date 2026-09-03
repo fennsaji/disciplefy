@@ -4,6 +4,7 @@ import '../../../../../features/community/domain/entities/sync_calendar_result.d
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_meetings_event.dart';
 import 'fellowship_meetings_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC that manages the scheduled meetings list for a single fellowship,
 /// along with create, cancel, and calendar-sync operations.
@@ -42,7 +43,7 @@ class FellowshipMeetingsBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: FellowshipMeetingsStatus.failure,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (meetings) {
         // Use meetLink as proxy for "has Google Calendar event" because the API
@@ -93,7 +94,7 @@ class FellowshipMeetingsBloc
     result.fold(
       (failure) => emit(state.copyWith(
         submitting: false,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (newMeeting) {
         final updated = [newMeeting, ...state.meetings]
@@ -126,7 +127,7 @@ class FellowshipMeetingsBloc
     result.fold(
       (failure) => emit(state.copyWith(
         submitting: false,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) {
         final updated =
@@ -160,7 +161,7 @@ class FellowshipMeetingsBloc
     result.fold(
       (failure) => emit(state.copyWith(
         isSyncingCalendar: false,
-        errorMessage: () => failure.message,
+        errorMessage: () => ErrorMessageSanitizer.sanitize(failure),
       )),
       (syncResult) {
         if (syncResult.requiresReconnect) {

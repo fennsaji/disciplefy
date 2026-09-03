@@ -4,6 +4,7 @@ import '../../domain/entities/purchase_issue_entity.dart';
 import '../../domain/usecases/submit_purchase_issue_usecase.dart';
 import 'purchase_issue_event.dart';
 import 'purchase_issue_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC for managing purchase issue report state
 class PurchaseIssueBloc extends Bloc<PurchaseIssueEvent, PurchaseIssueState> {
@@ -85,7 +86,7 @@ class PurchaseIssueBloc extends Bloc<PurchaseIssueEvent, PurchaseIssueState> {
       (failure) {
         emit(currentState.copyWith(
           isUploadingScreenshot: false,
-          uploadError: failure.message,
+          uploadError: ErrorMessageSanitizer.sanitize(failure),
         ));
       },
       (response) {
@@ -155,7 +156,7 @@ class PurchaseIssueBloc extends Bloc<PurchaseIssueEvent, PurchaseIssueState> {
     result.fold(
       (failure) {
         emit(PurchaseIssueSubmitFailure(
-          message: failure.message,
+          message: ErrorMessageSanitizer.sanitize(failure),
           previousState: currentState,
         ));
       },

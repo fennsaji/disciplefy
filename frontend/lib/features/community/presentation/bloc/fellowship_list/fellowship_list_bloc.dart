@@ -5,6 +5,7 @@ import '../../../../../core/services/language_preference_service.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_list_event.dart';
 import 'fellowship_list_state.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC that manages the list of fellowships the current user belongs to,
 /// and the join-via-invite-token flow.
@@ -43,7 +44,7 @@ class FellowshipListBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: FellowshipListStatus.failure,
-        errorMessage: failure.message,
+        errorMessage: ErrorMessageSanitizer.sanitize(failure),
       )),
       (fellowships) => emit(state.copyWith(
         status: FellowshipListStatus.success,
@@ -76,7 +77,7 @@ class FellowshipListBloc
     await result.fold(
       (failure) async => emit(state.copyWith(
         createStatus: FellowshipCreateStatus.failure,
-        createError: failure.message,
+        createError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) async {
         emit(state.copyWith(createStatus: FellowshipCreateStatus.success));
@@ -101,7 +102,7 @@ class FellowshipListBloc
     await result.fold(
       (failure) async => emit(state.copyWith(
         joinStatus: FellowshipJoinStatus.failure,
-        joinError: failure.message,
+        joinError: ErrorMessageSanitizer.sanitize(failure),
       )),
       (_) async {
         emit(state.copyWith(joinStatus: FellowshipJoinStatus.success));
