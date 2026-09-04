@@ -18,6 +18,10 @@ import '../../../../core/utils/logger.dart';
 
 /// BLoC for managing follow-up chat conversations with streaming support
 class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
+  /// How long the non-streaming (mobile) request may wait for the answer.
+  @visibleForTesting
+  static const followUpRequestTimeout = Duration(seconds: 90);
+
   final HttpService _httpService;
   final ConversationService _conversationService;
   final Uuid _uuid = const Uuid();
@@ -334,6 +338,10 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
           'study_guide_id': studyGuideId,
           'question': question,
         }),
+        // The backend generates the whole answer before replying on this
+        // path. HttpService's 10s default is shorter than a typical LLM
+        // completion, and the credits are already spent by then.
+        timeout: followUpRequestTimeout,
       );
 
       if (response.statusCode == 200) {
@@ -529,17 +537,20 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
       return;
     }
 
+    // Build the final state from ONE base. This used to emit the failed
+    // message and then re-emit from the stale `currentState`, whose copy of
+    // the placeholder was still `streaming` — so after a backend 500 the
+    // bubble showed "Responding..." forever (seen 4 Sept 2026).
+    var next = currentState;
     final streamingMessage = currentState.currentStreamingMessage;
     if (streamingMessage != null) {
-      // Mark message as failed
-      final updatedMessage = streamingMessage.copyWith(
-        status: ChatMessageStatus.failed,
+      next = next.updateMessage(
+        streamingMessage.id,
+        streamingMessage.copyWith(status: ChatMessageStatus.failed),
       );
-
-      emit(currentState.updateMessage(streamingMessage.id, updatedMessage));
     }
 
-    emit(currentState.copyWith(
+    emit(next.copyWith(
       isProcessing: false,
       error: event.error,
       clearStreamingMessage: true,
