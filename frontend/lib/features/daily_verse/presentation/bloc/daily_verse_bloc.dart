@@ -49,7 +49,20 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     on<GetCacheStatsEvent>(_onGetCacheStats);
     on<ClearVerseCacheEvent>(_onClearVerseCache);
     on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
-    on<MarkVerseAsViewed>(_onMarkVerseAsViewed);
+    // `on<Event>` defaults to handling every event concurrently — if
+    // MarkVerseAsViewed fires more than once for the same app open (e.g.
+    // _loadAndEmitVerse running more than once), each concurrent handler
+    // reads the SAME pre-update `state.streak` before any sibling's emit
+    // lands, so each one independently sees the streak "cross" a milestone
+    // and sends its own push. Same trigger, multiple identical notifications
+    // (issue report, 5 Sept 2026: three "Week Warrior!" pushes at once).
+    // `asyncExpand` processes one event fully before starting the next, so a
+    // second MarkVerseAsViewed always sees the first one's already-emitted
+    // state and correctly finds nothing new to cross.
+    on<MarkVerseAsViewed>(
+      _onMarkVerseAsViewed,
+      transformer: (events, mapper) => events.asyncExpand(mapper),
+    );
 
     // Listen for language preference changes
     _setupLanguageChangeListener();
