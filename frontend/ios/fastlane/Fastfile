@@ -7,6 +7,15 @@
 #
 # Auth is via the App Store Connect API key (no Apple ID / 2FA needed in CI).
 
+# `xcodebuild -showBuildSettings` (run internally by build_app/gym before the
+# archive) has timed out on GitHub-hosted macOS runners under load — a runner
+# resource-contention flake, not a project config problem (seen 4 Sept 2026:
+# match succeeded, update_code_signing_settings succeeded, build_app died here
+# at the very first xcodebuild call). fastlane exposes exactly these two env
+# vars for it; raise both rather than accept the 3s/4-retry default on CI.
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] ||= "10"
+ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] ||= "6"
+
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.disciplefy.biblestudy"
