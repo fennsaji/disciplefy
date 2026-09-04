@@ -7,6 +7,15 @@
 #
 # Auth is via the App Store Connect API key (no Apple ID / 2FA needed in CI).
 
+# `xcodebuild -showBuildSettings` (run internally by build_app/gym before the
+# archive) has timed out on GitHub-hosted macOS runners under load — a runner
+# resource-contention flake, not a project config problem (seen 4 Sept 2026:
+# match succeeded, update_code_signing_settings succeeded, build_app died here
+# at the very first xcodebuild call). fastlane exposes exactly these two env
+# vars for it; raise both rather than accept the 3s/4-retry default on CI.
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] ||= "10"
+ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] ||= "6"
+
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.disciplefy.biblestudy"
@@ -94,12 +103,32 @@ platform :ios do
   end
 
   def install_signing(api_key)
-    match(
-      type: "appstore",
-      readonly: true,
-      api_key: api_key,
-      app_identifier: APP_IDENTIFIER
-    )
+    # GitHub-hosted macOS runners hit a known fastlane-match race here: right
+    # after `security import`, the runner's `security set-key-partition-list`
+    # step sometimes can't find the identity it just imported yet
+    # ("SecItemCopyMatching: The specified item could not be found in the
+    # keychain") and match aborts with "no local code signing identities
+    # found" — even though the cert really is in the keychain a moment later.
+    # Not a signing/credentials problem: both times this hit in CI (3 and
+    # 4 Sept 2026), a bare manual rerun of the same job succeeded immediately.
+    # Retry in-process instead of needing a human to notice and rerun.
+    attempts = 0
+    begin
+      attempts += 1
+      match(
+        type: "appstore",
+        readonly: true,
+        api_key: api_key,
+        app_identifier: APP_IDENTIFIER
+      )
+    rescue => e
+      if attempts < 3
+        UI.important("match failed (attempt #{attempts}/3), likely the keychain-import race — retrying: #{e.message}")
+        sleep(5)
+        retry
+      end
+      raise
+    end
   end
 
   def build_ios

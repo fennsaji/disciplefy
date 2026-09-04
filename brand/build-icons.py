@@ -79,8 +79,8 @@ def write(rel, content):
     return path
 
 
-def render(svg_rel, out_rel, size, transparent=True):
-    src, dst = os.path.join(BRAND, svg_rel), os.path.join(BRAND, out_rel)
+def render(svg_rel, out_rel, size, transparent=True, dst_root=BRAND):
+    src, dst = os.path.join(BRAND, svg_rel), os.path.join(dst_root, out_rel)
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     cmd = ["rsvg-convert", "-w", str(size), "-h", str(size)]
     if transparent:
@@ -107,6 +107,25 @@ def main():
     # apple-touch-icon stays opaque: iOS composites transparency onto black and
     # expects a solid tile.
     render("app-icon/gold-on-black.svg", "web/apple-touch-icon.png", 180, transparent=False)
+
+    # Android status-bar notification icon. The OS renders this as a flat
+    # silhouette (any color is discarded, alpha shape is all that matters),
+    # so it comes straight from the plain white symbol master, not the
+    # gold-on-black app icon — no square canvas or inset math involved.
+    # There is no iOS or web equivalent to regenerate here: iOS shows the app
+    # icon itself in Notification Center, and the web push icon is the PWA
+    # icon under web/icons/, both already covered above.
+    FRONTEND = os.path.join(ROOT, "frontend")
+    for density, size in (
+        ("mdpi", 24), ("hdpi", 36), ("xhdpi", 48),
+        ("xxhdpi", 72), ("xxxhdpi", 96),
+    ):
+        render(
+            "symbol/white.svg",
+            "android/app/src/main/res/drawable-%s/ic_notification.png" % density,
+            size,
+            dst_root=FRONTEND,
+        )
 
     print("brand icons rebuilt:")
     for k, v in FILL.items():
