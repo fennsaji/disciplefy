@@ -245,4 +245,42 @@ class SavedGuideEntity extends Equatable {
         reflectionQuestion,
         prayerQuestion,
       ];
+
+  /// The `extra` map the study-guide route expects to open this guide
+  /// directly, without a separate fetch. Shared by every place that opens a
+  /// guide from an entity already in hand — the Saved/Recent list and a
+  /// push notification that fetched one by id — so the route's expected
+  /// shape lives in one place instead of being hand-copied at each call site.
+  ///
+  /// The route reads its `source` (saved/recent/...) from the URL query
+  /// string, not from `extra` — pass it there, not into this map.
+  Map<String, dynamic> toRouteExtra() => {
+        'study_guide': {
+          'id': id,
+          'title': displayTitle,
+          'content': content,
+          'type': type.name,
+          'study_mode': studyMode,
+          'verse_reference': verseReference,
+          'topic_name': topicName,
+          'is_saved': isSaved,
+          'created_at': createdAt.toIso8601String(),
+          'last_accessed_at': lastAccessedAt.toIso8601String(),
+          'summary': summary,
+          'interpretation': interpretation,
+          'context': context,
+          'related_verses': relatedVerses,
+          'reflection_questions': reflectionQuestions,
+          'prayer_points': prayerPoints,
+          'passage': passage,
+          'interpretation_insights': interpretationInsights,
+          'summary_insights': summaryInsights,
+          'reflection_answers': reflectionAnswers,
+          'context_question': contextQuestion,
+          'summary_question': summaryQuestion,
+          'related_verses_question': relatedVersesQuestion,
+          'reflection_question': reflectionQuestion,
+          'prayer_question': prayerQuestion,
+        },
+      };
 }

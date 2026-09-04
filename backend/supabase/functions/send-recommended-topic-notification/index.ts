@@ -9,7 +9,6 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { FCMService, logNotification } from '../_shared/fcm-service.ts'
 import {
   selectNotificationForUser,
-  recordContinueLearningReminder,
 } from '../_shared/unified-notification-selector.ts'
 import {
   createNotificationHelper,
@@ -125,28 +124,21 @@ async function computeUsersToNotify(
 }
 
 function buildNotificationData(
-  notification: { type: string; topicId: string; topicTitle: string; topicDescription: string; guideId?: string; timeSpent?: number; pathId?: string },
+  notification: { type: string; topicId: string; topicTitle: string; topicDescription: string },
   language: string
 ): Record<string, string> {
-  const data: Record<string, string> = {
+  // topic_id alone is enough for correctness even for 'continue_learning':
+  // completing the generated guide's topic is what advances
+  // user_learning_path_progress (a DB trigger keyed on topic_id), not which
+  // screen the guide was opened from — so no path_id needs to travel with
+  // the push.
+  return {
     type: notification.type,
     topic_id: notification.topicId,
     topic_title: notification.topicTitle,
     topic_description: notification.topicDescription,
     language,
   }
-
-  if (notification.type === 'continue_learning' && notification.guideId) {
-    data.guide_id = notification.guideId
-    data.time_spent = notification.timeSpent?.toString() || '0'
-    // Lets the app open the topic's learning path on tap; it cannot open the
-    // guide itself, as the study guide route has no fetch-by-id path.
-    if (notification.pathId) {
-      data.path_id = notification.pathId
-    }
-  }
-
-  return data
 }
 
 async function sendSingleNotification(
@@ -177,13 +169,6 @@ async function sendSingleNotification(
         payload: { aps: { sound: 'default', badge: 1 } },
       },
     })
-
-    // Record the reminder so this guide's repeat cap advances and the next run
-    // rotates to a different one. Only on success — a failed send shouldn't
-    // burn one of the guide's limited reminders.
-    if (result.success && notification.type === 'continue_learning' && notification.guideId) {
-      await recordContinueLearningReminder(supabaseUrl, serviceRoleKey, notification.guideId)
-    }
 
     await logNotification(supabaseUrl, serviceRoleKey, {
       userId: user.user_id,

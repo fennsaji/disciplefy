@@ -627,77 +627,17 @@ class NotificationService {
         Logger.info('[NotificationService] ✅ Navigating to daily verse (home)');
         break;
 
+      // All three name a topic to open — 'recommended_topic' and 'for_you' a
+      // fresh personalized pick, 'continue_learning' the next topic in the
+      // user's most recently active learning path (backend selector picks
+      // one of these two families; the client side has always been
+      // identical). Generating a guide on tap, not fetching one that
+      // already exists — a rethink from the old "reopen an unfinished
+      // guide" behavior, whose fetch-by-id fallback chain this replaces
+      // (product decision, 4 Sept 2026).
       case 'recommended_topic':
-        // Extract topic information from notification data
-        // Priority: topic_id (for tracking) + topic_title + topic_description (for generation)
-        final topicId = data['topic_id'];
-        final topicTitle = data['topic_title'];
-        final topicDescription = data['topic_description'];
-        final language = data['language'] ?? 'en';
-
-        if (topicTitle != null &&
-            topicTitle is String &&
-            topicTitle.isNotEmpty) {
-          // Navigate to study guide V2 with topic information
-          // This will dynamically generate the study guide content
-          final encodedTitle = Uri.encodeComponent(topicTitle);
-
-          // Include topic_id if available for tracking/future features
-          final topicIdParam =
-              (topicId != null && topicId is String && topicId.isNotEmpty)
-                  ? '&topic_id=$topicId'
-                  : '';
-
-          // Include topic_description if available for richer context in study guide generation
-          final descriptionParam = (topicDescription != null &&
-                  topicDescription is String &&
-                  topicDescription.isNotEmpty)
-              ? '&description=${Uri.encodeComponent(topicDescription)}'
-              : '';
-
-          _router.go(
-              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam$descriptionParam');
-          Logger.info(
-              '[NotificationService] ✅ Navigating to study guide for topic: $topicTitle (ID: ${topicId ?? 'none'})');
-        } else {
-          // Fallback to study topics page if no topic title provided
-          _router.go('/study-topics');
-          Logger.warning(
-              '[NotificationService] ⚠️  No topic title provided, navigating to study topics');
-        }
-        break;
-
-      case 'continue_learning':
-        // Continue Learning points at a guide the user already started.
-        //
-        // It used to navigate to '/study-guide/<id>', but that route takes no
-        // path parameter (it is query-param + `extra` based), so every tap hit
-        // the router's "Page not found" page. Opening the guide directly needs
-        // a fetch-by-id path that does not exist yet — the app only ever opens
-        // an existing guide by handing its full content through `extra`.
-        //
-        // Until then, land somewhere the guide is one tap away: its learning
-        // path when the topic belongs to one, otherwise the Recent list.
-        final pathId = data['path_id'];
-        final topicTitle = data['topic_title']; // For debug logging
-
-        if (pathId is String && pathId.isNotEmpty) {
-          _router.go('/learning-path/$pathId');
-          Logger.info(
-              '[NotificationService] ✅ Navigating to learning path: $pathId (${topicTitle ?? 'unknown'})');
-        } else {
-          // ?tab=recent, not the bare route: the guide this notification is
-          // about is unfinished and therefore unsaved, so the default Saved
-          // tab shows "No Saved Studies" — an empty screen in response to
-          // "Continue Your Study". Recent is where the guide actually is.
-          _router.go('${AppRoutes.saved}?tab=recent');
-          Logger.info(
-              '[NotificationService] ✅ No learning path for guide, navigating to Recent (${topicTitle ?? 'unknown'})');
-        }
-        break;
-
       case 'for_you':
-        // For You: Same as recommended_topic, personalized topic recommendation
+      case 'continue_learning':
         final topicId = data['topic_id'];
         final topicTitle = data['topic_title'];
         final topicDescription = data['topic_description'];
@@ -706,7 +646,8 @@ class NotificationService {
         if (topicTitle != null &&
             topicTitle is String &&
             topicTitle.isNotEmpty) {
-          // Navigate to study guide V2 with topic information
+          // Navigate to study guide V2 with topic information.
+          // This will dynamically generate the study guide content.
           final encodedTitle = Uri.encodeComponent(topicTitle);
 
           final topicIdParam =
@@ -723,12 +664,11 @@ class NotificationService {
           _router.go(
               '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam$descriptionParam');
           Logger.info(
-              '[NotificationService] ✅ Navigating to For You topic: $topicTitle (ID: ${topicId ?? 'none'})');
+              '[NotificationService] ✅ Navigating to study guide for topic ($type): $topicTitle (ID: ${topicId ?? 'none'})');
         } else {
-          // Fallback to study topics page if no topic title provided
           _router.go('/study-topics');
           Logger.warning(
-              '[NotificationService] ⚠️  No For You topic title provided, navigating to study topics');
+              '[NotificationService] ⚠️  No topic title provided ($type), navigating to study topics');
         }
         break;
 

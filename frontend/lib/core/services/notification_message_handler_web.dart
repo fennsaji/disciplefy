@@ -205,49 +205,14 @@ class NotificationMessageHandlerWeb {
         Logger.debug('[FCM] ✅ Navigate → daily verse (home)');
         break;
 
+      // All three name a topic to open — 'recommended_topic'/'for_you' a fresh
+      // personalized pick, 'continue_learning' the next topic in the user's
+      // most recently active learning path. All generate a guide on tap, not
+      // reopen one — see NotificationService's mobile handler for the same
+      // consolidation and why (product decision, 4 Sept 2026).
       case 'recommended_topic':
-        final topicId = data['topic_id'];
-        final topicTitle = data['topic_title'];
-        final language = data['language'] ?? 'en';
-
-        if (topicTitle != null &&
-            topicTitle is String &&
-            topicTitle.isNotEmpty) {
-          final encodedTitle = Uri.encodeComponent(topicTitle);
-          final topicIdParam =
-              (topicId != null && topicId is String && topicId.isNotEmpty)
-                  ? '&topic_id=$topicId'
-                  : '';
-
-          _router.go(
-              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam');
-          Logger.debug('[FCM] ✅ Navigate → recommended topic: $topicTitle');
-        } else {
-          _router.go('/study-topics');
-          Logger.warning('[FCM] ⚠️ No topic title, navigating to study topics');
-        }
-        break;
-
-      case 'continue_learning':
-        // '/study-guide/<id>' is not a route — that path takes no parameter, so
-        // every tap hit the router's "Page not found" page. Opening the guide
-        // itself needs a fetch-by-id path the app does not have yet, so land on
-        // its learning path when there is one, else the Recent list.
-        final pathId = data['path_id'];
-        final topicTitle = data['topic_title'];
-
-        if (pathId is String && pathId.isNotEmpty) {
-          _router.go('/learning-path/$pathId');
-          Logger.debug(
-              '[FCM] ✅ Navigate → learning path: $pathId (${topicTitle ?? 'unknown'})');
-        } else {
-          _router.go('/saved');
-          Logger.debug(
-              '[FCM] ✅ No learning path, navigating to Saved/Recent (${topicTitle ?? 'unknown'})');
-        }
-        break;
-
       case 'for_you':
+      case 'continue_learning':
         final topicId = data['topic_id'];
         final topicTitle = data['topic_title'];
         final topicDescription = data['topic_description'];
@@ -268,12 +233,13 @@ class NotificationMessageHandlerWeb {
               : '';
 
           _router.go(
-              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=for_you_notification$topicIdParam$descriptionParam');
-          Logger.debug('[FCM] ✅ Navigate → for_you topic: $topicTitle');
+              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam$descriptionParam');
+          Logger.debug(
+              '[FCM] ✅ Navigate → study guide for topic ($type): $topicTitle');
         } else {
           _router.go('/study-topics');
           Logger.warning(
-              '[FCM] ⚠️ No for_you topic title, navigating to study topics');
+              '[FCM] ⚠️ No topic title ($type), navigating to study topics');
         }
         break;
 

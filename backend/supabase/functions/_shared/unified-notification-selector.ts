@@ -2,8 +2,10 @@
 // Unified Notification Selector Service
 // ============================================================================
 // Intelligently selects the best notification for each user:
-// 1. PRIORITY: Continue Learning (incomplete guides)
-// 2. FALLBACK: Personalized For You recommendations
+// 1. PRIORITY: Continue Learning (next topic in the user's most recently
+//    active learning path)
+// 2. FALLBACK: Personalized For You recommendations, rotating through
+//    candidate paths so an ignored push doesn't repeat forever
 //
 // This aligns push notifications with the "For You" section in the app
 
@@ -22,16 +24,6 @@ interface NotificationContent {
   topicId: string;
   topicTitle: string;
   topicDescription: string;
-  // Additional data for Continue Learning
-  guideId?: string;
-  progress?: number;
-  timeSpent?: number;
-  /**
-   * Learning path the topic belongs to, when it belongs to one. The app taps
-   * through to this page: it cannot open the guide itself from a push, because
-   * the study guide route has no fetch-by-id path.
-   */
-  pathId?: string;
 }
 
 interface UnifiedNotificationResult {
@@ -40,14 +32,12 @@ interface UnifiedNotificationResult {
   error?: string;
 }
 
-interface IncompleteGuide {
-  id: string;
-  topic_id: string | null;
+interface NextPathTopic {
+  topic_id: string;
   topic_title: string;
   topic_description: string;
   topic_category: string;
-  time_spent_seconds: number;
-  created_at: string;
+  learning_path_id: string;
 }
 
 // ============================================================================
@@ -84,11 +74,8 @@ const FOR_YOU_INTROS: Record<string, string> = {
 
 /**
  * Selects the best notification for a user based on:
- * 1. PRIORITY: Incomplete study guides (Continue Learning)
+ * 1. PRIORITY: Next topic in an active learning path (Continue Learning)
  * 2. FALLBACK: Personalized topic recommendations (For You)
- *
- * This ensures push notifications align with the "For You" section,
- * which prioritizes incomplete guides before showing new recommendations.
  */
 export async function selectNotificationForUser(
   supabaseUrl: string,
@@ -101,22 +88,38 @@ export async function selectNotificationForUser(
   try {
     console.log(`[UnifiedSelector] Selecting notification for user ${userId} (language: ${language})`);
 
-    // Step 1: Check for incomplete guides (Continue Learning priority)
-    const incompleteGuide = await selectGuideToRemindAbout(supabase, userId);
+    // Step 1: Continue Learning priority — the next topic in whichever
+    // active learning path the user read most recently.
+    const nextTopic = await selectNextPathTopic(supabase, userId);
 
-    if (incompleteGuide) {
-      console.log(`[UnifiedSelector] Found incomplete guide: ${incompleteGuide.topic_title}`);
-      return await createContinueLearningNotification(
+    if (nextTopic) {
+      console.log(`[UnifiedSelector] Next topic in an active path: ${nextTopic.topic_title}`);
+      return await createContinuePathNotification(
         supabaseUrl,
         supabaseServiceKey,
-        incompleteGuide,
+        nextTopic,
         language
       );
     }
 
-    console.log('[UnifiedSelector] No incomplete guides, fetching personalized For You topic...');
+    console.log('[UnifiedSelector] No active learning path, fetching personalized For You topic...');
 
-    // Step 2: Fallback to personalized For You recommendations
+    // Step 2: Fallback to personalized For You recommendations. Rotate
+    // through the user's ranked candidate paths rather than always the top
+    // match — otherwise a user who never starts anything gets the identical
+    // notification forever (product decision, 4 Sept 2026).
+    const rotatingTopic = await selectRotatingForYouTopic(supabase, userId);
+    if (rotatingTopic) {
+      return await createForYouNotificationFromTopic(
+        supabaseUrl,
+        supabaseServiceKey,
+        rotatingTopic,
+        language
+      );
+    }
+
+    // No scoring data to rotate through (e.g. onboarding questionnaire never
+    // completed) — same single-best-match selection as before.
     return await createForYouNotification(
       supabaseUrl,
       supabaseServiceKey,
@@ -136,186 +139,125 @@ export async function selectNotificationForUser(
 // ============================================================================
 
 /**
- * How many times a single incomplete guide may be reminded about before it is
- * given up on. Without a cap, one guide the user never finishes pins the
- * notification to that topic forever and starves the "For You" fallback.
- */
-const MAX_CONTINUE_REMINDERS = 3;
-
-/**
- * Ignore incomplete guides older than this. A guide abandoned months ago is not
- * something the user intends to come back to.
- */
-const MAX_GUIDE_AGE_DAYS = 30;
-
-/**
- * Picks the incomplete study guide to remind the user about.
+ * Picks the next topic to suggest from the learning path the user is most
+ * actively working through — three cases, per the product decision on
+ * 4 Sept 2026:
  *
- * Guides are only eligible once they are a day old (so a guide started today
- * isn't nagged about) and until they are MAX_GUIDE_AGE_DAYS old or have been
- * reminded about MAX_CONTINUE_REMINDERS times.
+ *  1. No active (enrolled, uncompleted) path at all -> null, caller falls
+ *     back to a personalized "For You" topic.
+ *  2. One active path -> its next topic (user_learning_path_progress.
+ *     current_topic_position, advanced by the app's own completion trigger
+ *     each time a topic in the path is finished).
+ *  3. Several active paths -> the one with the most recent last_activity_at
+ *     ("the path the user read most recently"), not a rotation or a cap —
+ *     the position naturally advances once they act on the suggestion, so
+ *     there is nothing to rate-limit the way the old "incomplete guide"
+ *     reminder needed to be.
  *
- * Selection prefers the LEAST RECENTLY reminded guide — never-reminded first —
- * so a user with several unfinished guides sees them rotate instead of
- * receiving the same one every day.
+ * Mirrors the `next_in_path` CTE inside the get_in_progress_topics() SQL
+ * function (20260721000003_update_learning_path_functions_for_visibility.sql)
+ * — same is_active filters on both path and topic, same raw-position cursor
+ * match against current_topic_position. That function returns several
+ * candidates for the app's own "in progress" UI and is *not* ordered by
+ * recency in its final result (DISTINCT ON collapses to topic_id order), so
+ * it is not reused directly here; this is the narrower, single-path query
+ * scenario 3 actually needs.
  */
-async function selectGuideToRemindAbout(
+async function selectNextPathTopic(
   supabase: SupabaseClient,
   userId: string
-): Promise<IncompleteGuide | null> {
-  // Only consider guides created more than 1 day ago
-  const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-  const oldestAllowed = new Date();
-  oldestAllowed.setDate(oldestAllowed.getDate() - MAX_GUIDE_AGE_DAYS);
-
-  const { data: guides, error } = await supabase
-    .from('user_study_guides')
-    .select(`
-      id,
-      time_spent_seconds,
-      created_at,
-      continue_reminder_count,
-      last_continue_reminder_at,
-      study_guides!inner(
-        topic_id,
-        input_type,
-        input_value
-      )
-    `)
+): Promise<NextPathTopic | null> {
+  const { data: progress, error: progressError } = await supabase
+    .from('user_learning_path_progress')
+    .select('learning_path_id, current_topic_position, learning_paths!inner(is_active)')
     .eq('user_id', userId)
     .is('completed_at', null)
-    .lte('created_at', oneDayAgo.toISOString())
-    .gte('created_at', oldestAllowed.toISOString())
-    .lt('continue_reminder_count', MAX_CONTINUE_REMINDERS)
-    // Filter to topic guides in the query, not after LIMIT — otherwise a
-    // scripture guide at the front of the queue would abort the whole
-    // selection and skip an eligible topic guide behind it.
-    .eq('study_guides.input_type', 'topic')
-    // Least recently reminded first; never-reminded guides sort ahead of all.
-    .order('last_continue_reminder_at', { ascending: true, nullsFirst: true })
-    .order('created_at', { ascending: true }) // Tie-break: oldest first
-    .limit(1);
+    .eq('learning_paths.is_active', true)
+    .order('last_activity_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (error) {
-    console.error('[UnifiedSelector] Error fetching incomplete guides:', error);
+  if (progressError) {
+    console.error('[UnifiedSelector] Error fetching active learning path progress:', progressError);
     return null;
   }
 
-  if (!guides || guides.length === 0) {
+  if (!progress) {
     return null;
   }
 
-  const guide = guides[0];
-  const studyGuide = guide.study_guides as any;
+  const { data: nextTopic, error: topicError } = await supabase
+    .from('learning_path_topics')
+    .select('topic_id, recommended_topics!inner(title, description, category, is_active)')
+    .eq('learning_path_id', progress.learning_path_id)
+    .eq('position', progress.current_topic_position)
+    .eq('is_active', true)
+    .eq('recommended_topics.is_active', true)
+    .maybeSingle();
 
-  if (!studyGuide) {
+  if (topicError) {
+    console.error('[UnifiedSelector] Error fetching next path topic:', topicError);
     return null;
   }
 
-  // If we have a topic_id, fetch the recommended_topics data for title/description
-  let topicTitle = studyGuide.input_value; // Default to user's input
-  let topicDescription = '';
-  let topicCategory = '';
-
-  if (studyGuide.topic_id) {
-    const { data: topicData } = await supabase
-      .from('recommended_topics')
-      .select('title, description, category')
-      .eq('id', studyGuide.topic_id)
-      .single();
-
-    if (topicData) {
-      topicTitle = topicData.title || topicTitle;
-      topicDescription = topicData.description || '';
-      topicCategory = topicData.category || '';
-    }
+  if (!nextTopic) {
+    // Path exhausted or the cursor's topic was hidden since — nothing valid
+    // to suggest from this path.
+    return null;
   }
+
+  const topic = nextTopic.recommended_topics as unknown as {
+    title: string;
+    description: string;
+    category: string;
+  };
 
   return {
-    id: guide.id,
-    topic_id: studyGuide.topic_id,
-    topic_title: topicTitle,
-    topic_description: topicDescription,
-    topic_category: topicCategory,
-    time_spent_seconds: guide.time_spent_seconds || 0,
-    created_at: guide.created_at,
+    topic_id: nextTopic.topic_id,
+    topic_title: topic.title,
+    topic_description: topic.description,
+    topic_category: topic.category,
+    learning_path_id: progress.learning_path_id,
   };
 }
 
 /**
- * Records that a "Continue Your Study" reminder was sent for a guide.
- *
- * MUST be called after a successful send: the selector's repeat cap and
- * least-recently-reminded rotation both read these columns, so without this the
- * same guide would keep being chosen every day.
- *
- * Best-effort — a failure here must not fail the notification that was already
- * delivered.
+ * Creates a Continue Learning notification for the next topic in an active
+ * learning path.
  */
-export async function recordContinueLearningReminder(
+async function createContinuePathNotification(
   supabaseUrl: string,
   supabaseServiceKey: string,
-  guideId: string
-): Promise<void> {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  const { error } = await supabase.rpc('increment_continue_reminder', {
-    p_guide_id: guideId,
-  });
-
-  if (error) {
-    console.error(
-      `[UnifiedSelector] Failed to record continue reminder for guide ${guideId}:`,
-      error.message
-    );
-  }
-}
-
-/**
- * Creates a Continue Learning notification for an incomplete guide
- */
-async function createContinueLearningNotification(
-  supabaseUrl: string,
-  supabaseServiceKey: string,
-  guide: IncompleteGuide,
+  nextTopic: NextPathTopic,
   language: string
 ): Promise<UnifiedNotificationResult> {
-  // Get localized topic content if we have a topic_id
-  let topicTitle = guide.topic_title;
-  let topicDescription = guide.topic_description;
+  let topicTitle = nextTopic.topic_title;
+  let topicDescription = nextTopic.topic_description;
 
-  if (guide.topic_id) {
-    try {
-      const localizedContent = await getLocalizedTopicContent(
-        supabaseUrl,
-        supabaseServiceKey,
-        {
-          id: guide.topic_id,
-          title: guide.topic_title,
-          description: guide.topic_description,
-          category: guide.topic_category,
-          display_order: 0,
-          is_active: true,
-        },
-        language
-      );
-      topicTitle = localizedContent.title;
-      topicDescription = localizedContent.description;
-    } catch (error) {
-      console.error('[UnifiedSelector] Error fetching localized content:', error);
-      // Continue with original title/description
-    }
+  try {
+    const localizedContent = await getLocalizedTopicContent(
+      supabaseUrl,
+      supabaseServiceKey,
+      {
+        id: nextTopic.topic_id,
+        title: nextTopic.topic_title,
+        description: nextTopic.topic_description,
+        category: nextTopic.topic_category,
+        display_order: 0,
+        is_active: true,
+      },
+      language
+    );
+    topicTitle = localizedContent.title;
+    topicDescription = localizedContent.description;
+  } catch (error) {
+    console.error('[UnifiedSelector] Error fetching localized content:', error);
+    // Continue with original title/description
   }
 
   const title = CONTINUE_LEARNING_TITLES[language] || CONTINUE_LEARNING_TITLES.en;
   const bodyIntro = CONTINUE_LEARNING_BODIES[language] || CONTINUE_LEARNING_BODIES.en;
   const body = `${bodyIntro} ${topicTitle}`;
-
-  const pathId = guide.topic_id
-    ? await getLearningPathIdForTopic(supabaseUrl, supabaseServiceKey, guide.topic_id)
-    : null;
 
   return {
     success: true,
@@ -323,48 +265,11 @@ async function createContinueLearningNotification(
       type: 'continue_learning',
       title,
       body,
-      topicId: guide.topic_id || '',
+      topicId: nextTopic.topic_id,
       topicTitle,
       topicDescription,
-      guideId: guide.id,
-      timeSpent: guide.time_spent_seconds,
-      ...(pathId ? { pathId } : {}),
     },
   };
-}
-
-/**
- * Finds the learning path a topic belongs to, if any.
- *
- * Used so a "Continue Your Study" tap can land on that path's page. Returns
- * null when the topic is standalone or the lookup fails — the app then falls
- * back to the Saved/Recent list rather than failing the notification.
- */
-async function getLearningPathIdForTopic(
-  supabaseUrl: string,
-  supabaseServiceKey: string,
-  topicId: string
-): Promise<string | null> {
-  try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data, error } = await supabase
-      .from('learning_path_topics')
-      .select('learning_path_id')
-      .eq('topic_id', topicId)
-      .order('position', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error('[UnifiedSelector] Learning path lookup failed:', error.message);
-      return null;
-    }
-
-    return data?.learning_path_id ?? null;
-  } catch (error) {
-    console.error('[UnifiedSelector] Learning path lookup threw:', formatError(error));
-    return null;
-  }
 }
 
 // ============================================================================
@@ -417,6 +322,173 @@ async function createForYouNotification(
       title,
       body,
       topicId: topic.id,
+      topicTitle: localizedContent.title,
+      topicDescription: localizedContent.description,
+    },
+  };
+}
+
+// ============================================================================
+// Rotating For You Fallback
+// ============================================================================
+
+interface RotatingTopicCandidate {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+}
+
+/**
+ * Picks a personalized "For You" topic that rotates through the user's
+ * ranked candidate paths, instead of the single best match every time.
+ *
+ * Without this, `selectTopicsForYouWithLearningPath`'s priority-2 logic
+ * always returns `scoring_results.allScores[0]` — deterministic, so a user
+ * who never starts a path gets the identical push forever if they ignore it
+ * (product decision, 4 Sept 2026).
+ *
+ * Walks the ranked candidates (best first), skipping any path whose first
+ * topic has already been sent as a for_you/recommended_topic push. Once
+ * every candidate has been tried, the cycle restarts from the top rather
+ * than falling silent.
+ *
+ * Returns null when there's nothing to rotate through — no completed
+ * questionnaire, or `scoring_results.allScores` missing/empty — so the
+ * caller can fall back to the existing single-best-match selection
+ * unchanged. That fallback also covers the (very unlikely) case of a
+ * candidate path with no active topics.
+ */
+async function selectRotatingForYouTopic(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<RotatingTopicCandidate | null> {
+  const { data: personalization, error: persError } = await supabase
+    .from('user_personalization')
+    .select('scoring_results')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (persError) {
+    console.error('[UnifiedSelector] Error fetching personalization for rotation:', persError);
+    return null;
+  }
+
+  const allScores = (personalization?.scoring_results as { allScores?: { pathSlug: string }[] } | null)
+    ?.allScores;
+  if (!allScores || allScores.length === 0) {
+    return null;
+  }
+
+  const [{ data: completedPaths }, { data: sentLogs }] = await Promise.all([
+    supabase
+      .from('user_learning_path_progress')
+      .select('learning_path_id, learning_paths!inner(slug)')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null),
+    supabase
+      .from('notification_logs')
+      .select('topic_id')
+      .eq('user_id', userId)
+      .in('notification_type', ['for_you', 'recommended_topic'])
+      .not('topic_id', 'is', null),
+  ]);
+
+  const completedSlugs = new Set<string>(
+    (completedPaths || []).map((p: any) => p.learning_paths?.slug).filter(Boolean)
+  );
+  const alreadySentTopicIds = new Set<string>(
+    (sentLogs || []).map((l: any) => l.topic_id).filter(Boolean)
+  );
+
+  const candidateSlugs = allScores
+    .map((s) => s.pathSlug)
+    .filter((slug) => slug && !completedSlugs.has(slug));
+
+  if (candidateSlugs.length === 0) {
+    return null;
+  }
+
+  let firstCandidateTopic: RotatingTopicCandidate | null = null;
+
+  for (const slug of candidateSlugs) {
+    const { data: path } = await supabase
+      .from('learning_paths')
+      .select('id')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!path) continue;
+
+    const { data: firstTopic } = await supabase
+      .from('learning_path_topics')
+      .select('topic_id, recommended_topics!inner(title, description, category, is_active)')
+      .eq('learning_path_id', path.id)
+      .eq('position', 0)
+      .eq('is_active', true)
+      .eq('recommended_topics.is_active', true)
+      .maybeSingle();
+    if (!firstTopic) continue;
+
+    const rt = firstTopic.recommended_topics as unknown as {
+      title: string;
+      description: string;
+      category: string;
+    };
+    const candidate: RotatingTopicCandidate = {
+      id: firstTopic.topic_id,
+      title: rt.title,
+      description: rt.description,
+      category: rt.category,
+    };
+
+    if (!firstCandidateTopic) {
+      // Kept as the reset target if the whole cycle has already been sent.
+      firstCandidateTopic = candidate;
+    }
+
+    if (!alreadySentTopicIds.has(candidate.id)) {
+      return candidate;
+    }
+  }
+
+  // Every candidate in this cycle has already been sent — restart from the
+  // top rather than returning null (which would fall through to the
+  // single-best-match path and re-send the exact same thing anyway).
+  return firstCandidateTopic;
+}
+
+async function createForYouNotificationFromTopic(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  candidate: RotatingTopicCandidate,
+  language: string
+): Promise<UnifiedNotificationResult> {
+  const localizedContent = await getLocalizedTopicContent(
+    supabaseUrl,
+    supabaseServiceKey,
+    {
+      id: candidate.id,
+      title: candidate.title,
+      description: candidate.description,
+      category: candidate.category,
+      display_order: 0,
+      is_active: true,
+    },
+    language
+  );
+
+  const title = FOR_YOU_TITLES[language] || FOR_YOU_TITLES.en;
+  const intro = FOR_YOU_INTROS[language] || FOR_YOU_INTROS.en;
+  const body = `${intro} ${localizedContent.title}`;
+
+  return {
+    success: true,
+    notification: {
+      type: 'for_you',
+      title,
+      body,
+      topicId: candidate.id,
       topicTitle: localizedContent.title,
       topicDescription: localizedContent.description,
     },

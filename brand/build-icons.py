@@ -98,6 +98,9 @@ def main():
     write("web/favicon.svg", square(GOLD, None, FILL["favicon"]))
 
     render("app-icon/gold-on-black.svg", "app-icon/icon-1024.png", 1024, transparent=False)
+    # Mono variants for print, press and partner use — same square, no gold.
+    render("app-icon/black-on-white.svg", "app-icon/black-on-white-1024.png", 1024, transparent=False)
+    render("app-icon/white-on-black.svg", "app-icon/white-on-black-1024.png", 1024, transparent=False)
     render("app-icon/adaptive-foreground.svg", "app-icon/adaptive-foreground-1024.png", 1024)
     for s in (16, 32, 48, 192, 512):
         render("web/favicon.svg", "web/favicon-%d.png" % s, s)
