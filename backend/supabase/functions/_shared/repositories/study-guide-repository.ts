@@ -663,6 +663,35 @@ export class StudyGuideRepository {
   // Removed duplicate private userHasContent method - using public version instead
 
   /**
+   * Fetch a single study guide the given user owns (has a `user_study_guides`
+   * row for), by the guide's own id. Used to open a guide directly from a
+   * push notification — 'continue_learning' previously could only send the
+   * user to the Recent list, where the referenced guide (deliberately >1 day
+   * old, see the notification selector) sorts below everything created
+   * since, making it look missing (issue report, 4 Sept 2026).
+   *
+   * Returns null, not a thrown error, when the guide does not exist or
+   * belongs to someone else — both are "nothing to show", not a server
+   * failure, and the caller can fall back to the list.
+   */
+  async getUserStudyGuideById(
+    guideId: string,
+    userContext: UserContext
+  ): Promise<StudyGuideResponse | null> {
+    if (userContext.type !== 'authenticated' || !userContext.userId) {
+      return null
+    }
+    try {
+      return await this.getUserContentRelation(guideId, userContext)
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'NOT_FOUND') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
    * Get user's relationship to content
    */
   private async getUserContentRelation(
@@ -711,6 +740,9 @@ export class StudyGuideRepository {
         .single()
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          throw new AppError('NOT_FOUND', 'Study guide not found', 404)
+        }
         throw new AppError(
           'DATABASE_ERROR',
           `Failed to get user content relation: ${error.message}`,

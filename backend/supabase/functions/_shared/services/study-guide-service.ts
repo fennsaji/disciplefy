@@ -155,6 +155,17 @@ export class StudyGuideService {
   }
 
   /**
+   * Get a single study guide the user owns, by the guide's own id.
+   * Returns null if it does not exist or belongs to someone else.
+   */
+  async getUserStudyGuideById(
+    guideId: string,
+    userContext: UserContext
+  ): Promise<StudyGuideResponse | null> {
+    return await this.repository.getUserStudyGuideById(guideId, userContext)
+  }
+
+  /**
    * Updates save status of a study guide
    * 
    * @param studyGuideId - Study guide ID

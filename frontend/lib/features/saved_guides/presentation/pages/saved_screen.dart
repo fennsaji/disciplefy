@@ -630,37 +630,7 @@ class _SavedScreenContent extends StatelessWidget {
     final source = tabController.index == 0 ? 'saved' : 'recent';
 
     // Navigate to study guide screen with source parameter
-    context.go('/study-guide?source=$source', extra: {
-      'study_guide': {
-        'id': guide.id,
-        'title': guide.displayTitle,
-        'content': guide.content,
-        'type': guide.type.name,
-        'study_mode': guide.studyMode,
-        'verse_reference': guide.verseReference,
-        'topic_name': guide.topicName,
-        'is_saved': guide.isSaved,
-        'created_at': guide.createdAt.toIso8601String(),
-        'last_accessed_at': guide.lastAccessedAt.toIso8601String(),
-        // Include structured content fields for proper display
-        'summary': guide.summary,
-        'interpretation': guide.interpretation,
-        'context': guide.context,
-        'related_verses': guide.relatedVerses,
-        'reflection_questions': guide.reflectionQuestions,
-        'prayer_points': guide.prayerPoints,
-        'passage': guide.passage,
-        // Include reflection enhancement fields
-        'interpretation_insights': guide.interpretationInsights,
-        'summary_insights': guide.summaryInsights,
-        'reflection_answers': guide.reflectionAnswers,
-        'context_question': guide.contextQuestion,
-        'summary_question': guide.summaryQuestion,
-        'related_verses_question': guide.relatedVersesQuestion,
-        'reflection_question': guide.reflectionQuestion,
-        'prayer_question': guide.prayerQuestion,
-      }
-    });
+    context.go('/study-guide?source=$source', extra: guide.toRouteExtra());
   }
 
   void _toggleSaveStatus(

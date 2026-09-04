@@ -69,6 +69,14 @@ async function handleStudyGuides(req: Request, services: ServiceContainer, userC
 async function handleGetStudyGuides(req: Request, services: ServiceContainer, userContext: UserContext): Promise<Response> {
   // Parse query parameters
   const url = new URL(req.url)
+  const guideId = url.searchParams.get('id')
+
+  // Fetching a single guide by id (e.g. opening it directly from a push
+  // notification) — separate response shape, so branch before the list path.
+  if (guideId) {
+    return await handleGetStudyGuideById(guideId, services, userContext, req)
+  }
+
   const savedOnly = url.searchParams.get('saved') === 'true'
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100)
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0)
@@ -97,6 +105,43 @@ async function handleGetStudyGuides(req: Request, services: ServiceContainer, us
       total: result.total,
       hasMore: result.hasMore
     }
+  }
+
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
+/**
+ * Handles GET requests for a single study guide by id.
+ *
+ * Used to open a guide directly from a push notification. 404s (rather than
+ * a generic error) when the guide does not exist or belongs to someone else,
+ * so the caller can fall back to the guide list instead of showing an error.
+ */
+async function handleGetStudyGuideById(
+  guideId: string,
+  services: ServiceContainer,
+  userContext: UserContext,
+  req: Request
+): Promise<Response> {
+  const guide = await services.studyGuideService.getUserStudyGuideById(guideId, userContext)
+
+  if (!guide) {
+    throw new AppError('NOT_FOUND', 'Study guide not found', 404)
+  }
+
+  await services.analyticsLogger.logEvent('study_guide_retrieved_by_id', {
+    guide_id: guideId,
+    user_type: userContext.type,
+    user_id: userContext.userId,
+    session_id: userContext.sessionId
+  }, req.headers.get('x-forwarded-for'))
+
+  const response: StudyGuideManagementApiResponse = {
+    success: true,
+    data: { guide }
   }
 
   return new Response(JSON.stringify(response), {
