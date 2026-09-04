@@ -58,11 +58,13 @@ export const mdxComponents: MDXComponents = {
   ),
   a: (props) => <AppDownloadLink {...props} />,
   AdSlot,
-  // Scripture / quote block — amber accent to feel like a Bible verse callout
+  // Scripture / quote block — brand gold, not a generic Tailwind amber, so
+  // it reads as the same accent as the rest of the site rather than a
+  // one-off callout color.
   blockquote: (props) => (
     <blockquote
-      className="relative border-l-4 border-amber-400 pl-5 pr-4 py-3 my-7 rounded-r-lg
-                 bg-amber-50 dark:bg-amber-500/15 italic
+      className="relative border-l-4 border-gold pl-5 pr-4 py-3 my-7 rounded-r-lg
+                 bg-gold-light/50 dark:bg-gold/15 italic
                  text-gray-800 dark:text-amber-50 text-[18px] leading-[2.0]"
       {...props}
     />

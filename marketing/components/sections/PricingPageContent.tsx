@@ -66,7 +66,7 @@ export function PricingPageContent({ jsonLd }: { jsonLd: string }) {
                 }`}
               >
                 {plan.is_highlighted && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold text-[#1E1E1E] text-xs font-bold px-3 py-1 rounded-full">
                     {t("mostPopular")}
                   </span>
                 )}

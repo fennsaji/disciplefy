@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Link } from "@/lib/navigation"; // locale-aware — preserves /hi/ /ml/ prefix
 import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
 import { SOCIAL_LINKS } from "@/lib/social-links";
+import Image from "next/image";
 
 export function Footer() {
   const t = useTranslations("footer");
@@ -21,7 +22,25 @@ export function Footer() {
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.5, delay: 0 }}
           >
-            <p className="font-display font-bold text-xl text-primary mb-2">Disciplefy</p>
+            {/* The actual wordmark asset, not styled text — matches the mark
+                used in the navbar (logo-light/dark.png) exactly, including
+                its gold-on-light vs gold-on-dark variants. A logotype is
+                exempt from body-text contrast rules, so raw brand gold on
+                the light surface is the same deliberate choice made there. */}
+            <Image
+              src="/wordmark-light.png"
+              alt="Disciplefy"
+              width={169}
+              height={24}
+              className="h-6 w-auto mb-3 dark:hidden"
+            />
+            <Image
+              src="/wordmark-dark.png"
+              alt="Disciplefy"
+              width={169}
+              height={24}
+              className="h-6 w-auto mb-3 hidden dark:block"
+            />
             <p className="text-sm text-[var(--muted)] mb-4">{t("tagline")}</p>
             <div className="flex gap-3">
               {SOCIAL_LINKS.map((s) => (
