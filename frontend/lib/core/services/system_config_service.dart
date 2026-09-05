@@ -26,7 +26,12 @@ class SystemConfigService extends ChangeNotifier {
   static const String _cacheUserKey = 'system_config_cache_user';
   static const Duration _cacheDuration = Duration(minutes: 5);
 
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  /// [client] defaults to the app-wide Supabase client; tests inject one with
+  /// a mock HTTP layer so the startup path can be exercised without a backend.
+  SystemConfigService({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   bool _isLoading = false;
   bool _isInitialized = false;
@@ -70,11 +75,19 @@ class SystemConfigService extends ChangeNotifier {
       // Load from cache first
       await _loadFromCache();
 
-      // Fetch fresh data in background (if cache is stale)
-      if (_shouldRefresh()) {
+      // This runs before runApp(), so anything awaited here is native splash
+      // time. Only a first launch has nothing to fall back on and must wait
+      // for the network; otherwise serve the cache (stale is fine — the old
+      // fallback path already accepted that) and refresh behind the first
+      // frame.
+      if (_config == null) {
         Logger.debug(
-            '🔄 [SystemConfigService] Cache is stale, fetching fresh data...');
+            '🔄 [SystemConfigService] No cached config, fetching before first frame...');
         await fetchSystemConfig(forceRefresh: true);
+      } else if (_shouldRefresh()) {
+        Logger.debug(
+            '🔄 [SystemConfigService] Cache is stale, refreshing in background...');
+        unawaited(fetchSystemConfig(forceRefresh: true));
       } else {
         Logger.debug('✅ [SystemConfigService] Using cached config (fresh)');
       }
@@ -324,9 +337,18 @@ class SystemConfigService extends ChangeNotifier {
       // Discard a cache produced by a different identity — serving another
       // user's tester-resolved flags (even briefly) is wrong. Leaving _config
       // null makes _shouldRefresh() true so initialize() refetches immediately.
+      //
+      // A null currentUser is not a different identity, it is an unknown one:
+      // Supabase.initialize() does not await session recovery, and recovering
+      // an expired access token needs a network round-trip, so on a cold start
+      // after >1h idle the user is still null here. Logout clears this cache,
+      // so a user-tagged cache seen with no user is the same person mid-
+      // restore — keep it as the fallback and let the refresh re-resolve.
       final cachedUserId = prefs.getString(_cacheUserKey);
       final currentUserId = _supabase.auth.currentUser?.id;
-      if (cachedJson != null && cachedUserId != currentUserId) {
+      if (cachedJson != null &&
+          currentUserId != null &&
+          cachedUserId != currentUserId) {
         Logger.debug(
             'ℹ️ [SystemConfigService] Cached config belongs to a different user — discarding, will refetch');
         return;

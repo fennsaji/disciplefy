@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
@@ -15,8 +16,15 @@ class PricingService {
   static const String _cacheTimestampKey = 'subscription_pricing_timestamp';
   static const Duration _cacheDuration = Duration(minutes: 5);
 
+  final SupabaseClient _supabase;
+
   SubscriptionPricing? _pricing;
   DateTime? _lastFetch;
+
+  /// [client] defaults to the app-wide Supabase client; tests inject one with
+  /// a mock HTTP layer so the startup path can be exercised without a backend.
+  PricingService({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   /// Get current pricing (uses cache if valid)
   SubscriptionPricing get pricing => _pricing ?? SubscriptionPricing.empty();
@@ -27,8 +35,14 @@ class PricingService {
       // Try to load from cache first
       await _loadFromCache();
 
-      // Fetch fresh data from API
-      await fetchPricing();
+      // Runs before runApp(). Pricing is only read on upgrade/limit screens,
+      // never by the first frame, so only a first launch (nothing cached)
+      // waits for the network; otherwise refresh behind the first frame.
+      if (_pricing == null) {
+        await fetchPricing();
+      } else {
+        unawaited(fetchPricing());
+      }
     } catch (e) {
       Logger.debug('⚠️ [PricingService] Error initializing: $e');
       // Use fallback pricing if initialization fails
@@ -47,7 +61,7 @@ class PricingService {
 
       Logger.debug('🔄 [PricingService] Fetching fresh pricing from API...');
 
-      final response = await Supabase.instance.client.functions.invoke(
+      final response = await _supabase.functions.invoke(
         'subscription-pricing',
         method: HttpMethod.get,
       );
