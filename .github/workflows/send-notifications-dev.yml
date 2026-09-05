@@ -75,13 +75,20 @@ jobs:
         run: |
           echo "Triggering Daily Verse notification Edge Function (Development)..."
 
+          curl_exit=0
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-daily-verse-notification" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
-            -s)
+            -s \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 300) || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "❌ curl exited with code $curl_exit — no HTTP response after retries"
+            exit 1
+          fi
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -126,13 +133,20 @@ jobs:
         run: |
           echo "Triggering Recommended Topic notification Edge Function (Development)..."
 
+          curl_exit=0
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-recommended-topic-notification" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
-            -s)
+            -s \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 300) || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "❌ curl exited with code $curl_exit — no HTTP response after retries"
+            exit 1
+          fi
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -176,13 +190,20 @@ jobs:
         run: |
           echo "Triggering Streak Reminder notification Edge Function (Development)..."
 
+          curl_exit=0
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-streak-reminder-notification" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
-            -s)
+            -s \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 300) || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "❌ curl exited with code $curl_exit — no HTTP response after retries"
+            exit 1
+          fi
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -227,13 +248,20 @@ jobs:
         run: |
           echo "Triggering Memory Verse Reminder notification Edge Function (Development)..."
 
+          curl_exit=0
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=reminder" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
-            -s)
+            -s \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 300) || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "❌ curl exited with code $curl_exit — no HTTP response after retries"
+            exit 1
+          fi
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -282,13 +310,20 @@ jobs:
         run: |
           echo "Triggering Memory Verse Overdue notification Edge Function (Development)..."
 
+          curl_exit=0
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=overdue" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
-            -s)
+            -s \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 300) || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "❌ curl exited with code $curl_exit — no HTTP response after retries"
+            exit 1
+          fi
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -333,6 +368,7 @@ jobs:
         run: |
           echo "Triggering fellowship-meetings/reminder Edge Function (Development)..."
 
+          curl_exit=0
           response=$(curl -X POST \
             "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/fellowship-meetings/reminder" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_ANON_KEY }}"
@@ -340,7 +376,13 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}' \
             -w "\n%{http_code}" \
-            -s)
+            -s \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 300) || curl_exit=$?
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "❌ curl exited with code $curl_exit — no HTTP response after retries"
+            exit 1
+          fi
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
