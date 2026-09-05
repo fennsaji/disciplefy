@@ -192,28 +192,42 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
     authorUser?.user_metadata?.display_name ?? authorUser?.email ?? 'Unknown Member'
   const authorAvatarUrl: string | null = authorUser?.user_metadata?.avatar_url ?? null
 
-  // Notify post author about the new comment (fire-and-forget, skip self-comments
-  // and skip if commenter and post author are in a mutual block)
-  if (post.author_user_id !== user.id) {
-    ;(async () => {
-      try {
-        const { data: blockedRows } = await db.rpc('blocked_user_ids', { p_user_id: user.id })
-        const blockedIds = new Set((blockedRows ?? []).map((r: { user_id: string }) => r.user_id))
-        if (blockedIds.has(post.author_user_id)) return
-        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', post.author_user_id)
-        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-        if (tokens.length > 0) {
-          const fcm = new FCMService()
-          const preview = trimmedContent.length > 80 ? trimmedContent.substring(0, 80) + '…' : trimmedContent
-          await fcm.sendBatchNotifications(
-            tokens,
-            { title: `💬 ${authorDisplayName} commented`, body: preview },
-            { type: 'fellowship_new_comment', fellowship_id: post.fellowship_id, post_id: body.post_id, comment_id: comment.id }
-          )
-        }
-      } catch (err) { console.error('[fellowship-comments/create] FCM error (non-fatal):', err) }
-    })()
-  }
+  // Notify post author + other thread commenters about the new comment
+  // (fire-and-forget, skip self and anyone in a mutual block with the commenter)
+  ;(async () => {
+    try {
+      const { data: priorCommentRows } = await db
+        .from('fellowship_comments')
+        .select('author_user_id')
+        .eq('post_id', body.post_id)
+        .eq('is_deleted', false)
+      const priorCommenterIds = new Set(
+        (priorCommentRows ?? []).map((r: { author_user_id: string }) => r.author_user_id)
+      )
+
+      const recipientIds = new Set<string>(priorCommenterIds)
+      recipientIds.add(post.author_user_id)
+      recipientIds.delete(user.id)
+      if (recipientIds.size === 0) return
+
+      const { data: blockedRows } = await db.rpc('blocked_user_ids', { p_user_id: user.id })
+      const blockedIds = new Set<string>((blockedRows ?? []).map((r: { user_id: string }) => r.user_id))
+      for (const id of blockedIds) recipientIds.delete(id)
+      if (recipientIds.size === 0) return
+
+      const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', [...recipientIds])
+      const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+      if (tokens.length > 0) {
+        const fcm = new FCMService()
+        const preview = trimmedContent.length > 80 ? trimmedContent.substring(0, 80) + '…' : trimmedContent
+        await fcm.sendBatchNotifications(
+          tokens,
+          { title: `💬 ${authorDisplayName} commented`, body: preview },
+          { type: 'fellowship_new_comment', fellowship_id: post.fellowship_id, post_id: body.post_id, comment_id: comment.id }
+        )
+      }
+    } catch (err) { console.error('[fellowship-comments/create] FCM error (non-fatal):', err) }
+  })()
 
   return new Response(
     JSON.stringify({

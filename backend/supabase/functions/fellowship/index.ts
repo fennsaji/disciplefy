@@ -14,6 +14,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { FCMService } from '../_shared/fcm-service.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const VALID_LANGUAGES = ['en', 'hi', 'ml'] as const
@@ -629,7 +630,7 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
 
   const { data: fellowship, error: fellowshipError } = await db
     .from('fellowships')
-    .select('id, name, is_active, is_public, max_members')
+    .select('id, name, is_active, is_public, max_members, mentor_user_id')
     .eq('id', body.fellowship_id)
     .maybeSingle()
 
@@ -703,6 +704,24 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
     post_type: 'system'
   })
   if (postError) console.warn('[fellowship/join] Failed to create system post — non-fatal:', postError)
+
+  // Notify mentor only (fire-and-forget), skip if the mentor is the one joining
+  if (fellowship.mentor_user_id && fellowship.mentor_user_id !== user.id) {
+    ;(async () => {
+      try {
+        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', fellowship.mentor_user_id)
+        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+        if (tokens.length > 0) {
+          const fcm = new FCMService()
+          await fcm.sendBatchNotifications(
+            tokens,
+            { title: `👋 ${displayName} joined the fellowship`, body: `${displayName} joined ${fellowship.name}` },
+            { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id }
+          )
+        }
+      } catch (err) { console.error('[fellowship/join] FCM error (non-fatal):', err) }
+    })()
+  }
 
   // Fire-and-forget: notify new member of upcoming meetings (non-blocking)
   const invitePromise = fetch(

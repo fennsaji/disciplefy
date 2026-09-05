@@ -236,7 +236,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   // (the group admin) may create posts. 'all_members' lets any member post.
   const { data: fellowshipRow, error: permError } = await db
     .from('fellowships')
-    .select('posting_permission')
+    .select('posting_permission, mentor_user_id')
     .eq('id', body.fellowship_id)
     .maybeSingle()
   if (permError) {
@@ -314,6 +314,26 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
           { type: 'fellowship_new_post', fellowship_id: body.fellowship_id, post_id: post.id, post_type: postType }
         )
       } catch (err) { console.error('[fellowship-posts/create] FCM error (non-fatal):', err) }
+    })()
+  }
+
+  // Question posts: additionally notify the mentor directly (skip if the mentor asked it)
+  const mentorUserId = fellowshipRow?.mentor_user_id
+  if (postType === 'question' && mentorUserId && mentorUserId !== user.id) {
+    ;(async () => {
+      try {
+        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', mentorUserId)
+        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+        if (tokens.length > 0) {
+          const fcm = new FCMService()
+          const preview = post.content.length > 80 ? post.content.substring(0, 80) + '…' : post.content
+          await fcm.sendBatchNotifications(
+            tokens,
+            { title: `❓ ${authorDisplayName} asked a question`, body: preview },
+            { type: 'fellowship_question', fellowship_id: body.fellowship_id, post_id: post.id }
+          )
+        }
+      } catch (err) { console.error('[fellowship-posts/create] mentor question FCM error (non-fatal):', err) }
     })()
   }
 
