@@ -36,28 +36,52 @@ class AndroidDownloadNotificationService {
     return state == null || state == AppLifecycleState.resumed;
   }
 
-  /// Call once after Hive init in main.dart.
+  static bool _isConfigured = false;
+  static Future<void>? _configureInFlight;
+
+  /// Configures on first actual use.
+  ///
+  /// This used to be awaited in main() before runApp(), to set up a
+  /// notification channel and background service that nothing on the first
+  /// frame needs. Both entry points below are user-initiated (starting a
+  /// download, starting TTS), so the cost is paid then rather than on every
+  /// cold start.
+  static Future<void> _ensureConfigured() {
+    if (_isConfigured) return Future.value();
+    // Join an in-flight run rather than configuring twice concurrently.
+    return _configureInFlight ??= configure().whenComplete(() {
+      _configureInFlight = null;
+    });
+  }
+
+  /// Idempotent — safe to call more than once.
+  ///
+  /// The whole body is guarded: now that this runs lazily from the download and
+  /// TTS entry points rather than only from main(), it is reachable from tests
+  /// and from any context where the notification plugin is unavailable, where
+  /// initialize() throws a LateInitializationError.
   static Future<void> configure() async {
     if (!_isAndroid) return;
+    if (_isConfigured) return;
 
-    const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    );
-    await _notifications.initialize(initSettings);
-
-    const channel = AndroidNotificationChannel(
-      _channelId,
-      _channelName,
-      description: 'Shows during downloads and audio playback',
-      importance: Importance.low,
-    );
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
-
-    final service = FlutterBackgroundService();
     try {
+      const initSettings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      );
+      await _notifications.initialize(initSettings);
+
+      const channel = AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: 'Shows during downloads and audio playback',
+        importance: Importance.low,
+      );
+      await _notifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel);
+
+      final service = FlutterBackgroundService();
       await service.configure(
         androidConfiguration: AndroidConfiguration(
           onStart: _onBackgroundServiceStart,
@@ -80,6 +104,7 @@ class AndroidDownloadNotificationService {
         ),
         iosConfiguration: IosConfiguration(autoStart: false),
       );
+      _isConfigured = true;
     } catch (_) {
       // Platform channel not available in test environments.
     }
@@ -89,6 +114,7 @@ class AndroidDownloadNotificationService {
 
   static Future<void> startForeground(String pathTitle) async {
     if (!_isAndroid || !_isAppInForeground) return;
+    await _ensureConfigured();
     _downloadActive = true;
     try {
       final service = FlutterBackgroundService();
@@ -119,6 +145,9 @@ class AndroidDownloadNotificationService {
 
   static Future<void> completeDownload(String pathTitle, int total) async {
     if (!_isAndroid) return;
+    // Shows a notification directly, so the plugin must be initialized even if
+    // the download somehow completed without a start.
+    await _ensureConfigured();
     _downloadActive = false;
     try {
       FlutterBackgroundService().invoke('stopDownload', {});
@@ -150,6 +179,7 @@ class AndroidDownloadNotificationService {
   /// Start foreground service for TTS audio playback.
   static Future<void> startTtsForeground(String sectionName) async {
     if (!_isAndroid || !_isAppInForeground) return;
+    await _ensureConfigured();
     _ttsActive = true;
     try {
       final service = FlutterBackgroundService();
