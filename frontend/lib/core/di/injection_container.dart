@@ -1034,6 +1034,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<GamificationRepository>(
     () => GamificationRepositoryImpl(
       remoteDataSource: sl(),
+      leaderboardDataSource: sl(),
     ),
   );
 

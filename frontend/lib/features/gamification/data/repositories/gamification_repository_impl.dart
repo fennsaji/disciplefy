@@ -5,61 +5,39 @@ import '../../domain/entities/achievement.dart';
 import '../../domain/entities/study_streak.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/gamification_repository.dart';
+import '../../../study_topics/data/datasources/leaderboard_remote_datasource.dart';
+import '../../../study_topics/domain/leaderboard_ranking.dart';
 import '../datasources/gamification_remote_datasource.dart';
 
 /// Implementation of GamificationRepository
 class GamificationRepositoryImpl implements GamificationRepository {
   final GamificationRemoteDataSource _remoteDataSource;
-
-  /// Placeholder XP values for leaderboard (same as LeaderboardRemoteDataSource)
-  /// These give the appearance of an active community while the app grows
-  static const List<int> _placeholderXpValues = [
-    600,
-    550,
-    500,
-    450,
-    400,
-    350,
-    300,
-    300,
-    250,
-    250
-  ];
+  final LeaderboardRemoteDataSource _leaderboardDataSource;
 
   GamificationRepositoryImpl({
     required GamificationRemoteDataSource remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource;
-
-  /// Calculate the user's rank considering placeholder accounts
-  /// This ensures consistency between the leaderboard page and My Progress page
-  int _calculateRankWithPlaceholders(int userXp) {
-    if (userXp < 200) {
-      // User not eligible for leaderboard (< 200 XP)
-      return 0;
-    }
-
-    // Count how many placeholders have more XP than the user
-    int rank = 1;
-    for (final placeholderXp in _placeholderXpValues) {
-      if (placeholderXp > userXp) {
-        rank++;
-      }
-    }
-    return rank;
-  }
+    required LeaderboardRemoteDataSource leaderboardDataSource,
+  })  : _remoteDataSource = remoteDataSource,
+        _leaderboardDataSource = leaderboardDataSource;
 
   @override
   Future<Either<Failure, UserStats>> getUserStats(String userId) async {
     try {
-      final result = await _remoteDataSource.getUserStats(userId);
-      final stats = result.toEntity();
-
-      // Recalculate rank considering placeholder accounts
-      // This ensures My Progress shows the same rank as the Leaderboard page
-      final adjustedRank = _calculateRankWithPlaceholders(stats.totalXp);
+      // The database rank counts real users only; My Progress must show the
+      // same number as the Leaderboard page, which pads the board with
+      // placeholders while fewer than ten real users are ranked. Both go
+      // through LeaderboardRanking so they cannot drift apart again.
+      final statsFuture = _remoteDataSource.getUserStats(userId);
+      final countFuture = _leaderboardDataSource.getRealRankedUserCount();
+      final stats = (await statsFuture).toEntity();
+      final realRankedUserCount = await countFuture;
 
       return Right(stats.copyWith(
-        leaderboardRank: adjustedRank > 0 ? adjustedRank : null,
+        leaderboardRank: LeaderboardRanking.rankWithPlaceholders(
+          dbRank: stats.leaderboardRank,
+          userXp: stats.totalXp,
+          realRankedUserCount: realRankedUserCount,
+        ),
       ));
     } catch (e) {
       return Left(ServerFailure(message: 'Failed to load user stats: $e'));
