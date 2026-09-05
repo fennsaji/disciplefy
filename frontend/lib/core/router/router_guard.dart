@@ -1430,22 +1430,16 @@ class RouterGuard {
           }
         }
         return SessionRefreshResult.refreshed;
-      } on AuthException catch (e) {
-        // Supabase answered and rejected the token — a genuine sign-out.
-        Logger.warning(
-          'Session refresh rejected by Supabase',
-          tag: 'AUTH_SECURITY',
-          context: {'error': e.message},
-        );
-        return SessionRefreshResult.failed;
       } catch (e) {
-        // Timeout, socket error, anything else we could not reach a verdict on.
+        final result = classifyRefreshError(e);
         Logger.warning(
-          'Session refresh attempt could not complete',
+          result == SessionRefreshResult.failed
+              ? 'Session refresh rejected by Supabase'
+              : 'Session refresh attempt could not complete',
           tag: 'AUTH_SECURITY',
           context: {'error': e.toString()},
         );
-        return SessionRefreshResult.inconclusive;
+        return result;
       }
     }();
 
@@ -1453,6 +1447,21 @@ class RouterGuard {
     attempt.whenComplete(() => _refreshInFlight = null);
     return attempt;
   }
+
+  /// Decides whether a failed refresh means the session is really gone.
+  ///
+  /// An [AuthException] is Supabase answering and rejecting the refresh token,
+  /// so the user is genuinely signed out. Everything else — a timeout, a dead
+  /// socket, a DNS failure — means we never got an answer, and assuming the
+  /// worst there would log out valid users on any network blip.
+  ///
+  /// Visible for testing so the two branches can be exercised without a live
+  /// Supabase, following [debugTermsGateRedirect]'s precedent in this class.
+  @visibleForTesting
+  static SessionRefreshResult classifyRefreshError(Object error) =>
+      error is AuthException
+          ? SessionRefreshResult.failed
+          : SessionRefreshResult.inconclusive;
 
   /// SECURITY FIX: Check if the session has expired
   static bool _isSessionExpired() {
