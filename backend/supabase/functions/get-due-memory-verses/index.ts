@@ -81,69 +81,86 @@ async function getReviewStatistics(
   const now = new Date().toISOString()
   const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
 
-  // Get total verses count
-  const { count: totalCount } = await supabaseClient
-    .from('memory_verses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-
-  // Get due verses count (next_review_date <= now)
-  const { count: dueCount } = await supabaseClient
-    .from('memory_verses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .lte('next_review_date', now)
-
-  // Get reviewed today count from review_sessions
-  const { count: reviewedTodayCount } = await supabaseClient
-    .from('review_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('review_date', `${today}T00:00:00.000Z`)
-    .lte('review_date', `${today}T23:59:59.999Z`)
-
-  // Get upcoming reviews count (next_review_date > now AND next_review_date <= now + 7 days)
   const nextWeek = new Date()
   nextWeek.setDate(nextWeek.getDate() + 7)
   const nextWeekStr = nextWeek.toISOString()
 
-  const { count: upcomingCount } = await supabaseClient
-    .from('memory_verses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gt('next_review_date', now)
-    .lte('next_review_date', nextWeekStr)
+  // These queries are all independent — run them concurrently instead of
+  // serializing 7 network round-trips, which is what made this endpoint slow
+  // (and occasionally timeout) under normal DB latency.
+  const [
+    { count: totalCount },
+    { count: dueCount },
+    { count: reviewedTodayCount },
+    { count: upcomingCount },
+    { count: masteredCount },
+    { count: fullyMasteredCount },
+    dailyReviewLimit,
+    { data: distinctReviewed },
+  ] = await Promise.all([
+    // Get total verses count
+    supabaseClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId),
 
-  // Get mastered verses count (mastery_level IN ('expert', 'master'))
-  const { count: masteredCount } = await supabaseClient
-    .from('memory_verses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .in('mastery_level', ['expert', 'master'])
+    // Get due verses count (next_review_date <= now)
+    supabaseClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .lte('next_review_date', now),
 
-  // Get fully mastered verses count (mastery_level == 'master')
-  const { count: fullyMasteredCount } = await supabaseClient
-    .from('memory_verses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('mastery_level', 'master')
+    // Get reviewed today count from review_sessions
+    supabaseClient
+      .from('review_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('review_date', `${today}T00:00:00.000Z`)
+      .lte('review_date', `${today}T23:59:59.999Z`),
 
-  // Get daily review limit from config
-  let dailyReviewLimit = -1
-  try {
-    const userPlan = await services.authService.getUserPlan(req)
-    dailyReviewLimit = await services.memoryVerseConfigService.getDailyReviewLimits(userPlan)
-  } catch (err) {
-    console.error('[GetDueVerses] Failed to get daily review limit:', err)
-  }
+    // Get upcoming reviews count (next_review_date > now AND next_review_date <= now + 7 days)
+    supabaseClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gt('next_review_date', now)
+      .lte('next_review_date', nextWeekStr),
 
-  // Count distinct verses reviewed today
-  const { data: distinctReviewed } = await supabaseClient
-    .from('review_sessions')
-    .select('memory_verse_id')
-    .eq('user_id', userId)
-    .gte('review_date', `${today}T00:00:00.000Z`)
-    .lte('review_date', `${today}T23:59:59.999Z`)
+    // Get mastered verses count (mastery_level IN ('expert', 'master'))
+    supabaseClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .in('mastery_level', ['expert', 'master']),
+
+    // Get fully mastered verses count (mastery_level == 'master')
+    supabaseClient
+      .from('memory_verses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('mastery_level', 'master'),
+
+    // Get daily review limit from config
+    (async () => {
+      try {
+        const userPlan = await services.authService.getUserPlan(req)
+        return await services.memoryVerseConfigService.getDailyReviewLimits(userPlan)
+      } catch (err) {
+        console.error('[GetDueVerses] Failed to get daily review limit:', err)
+        return -1
+      }
+    })(),
+
+    // Count distinct verses reviewed today
+    supabaseClient
+      .from('review_sessions')
+      .select('memory_verse_id')
+      .eq('user_id', userId)
+      .gte('review_date', `${today}T00:00:00.000Z`)
+      .lte('review_date', `${today}T23:59:59.999Z`),
+  ])
+
   const distinctCount = new Set(distinctReviewed?.map(r => r.memory_verse_id) || []).size
 
   return {
@@ -232,14 +249,6 @@ async function handleGetDueMemoryVerses(
   // Apply pagination
   query = query.range(offset, offset + limit - 1)
 
-  // Execute query
-  const { data: verses, error: fetchError } = await query
-
-  if (fetchError) {
-    console.error('[GetDueVerses] Fetch error:', fetchError)
-    throw new AppError('DATABASE_ERROR', 'Failed to fetch due verses', 500)
-  }
-
   // Check if there are more verses beyond the current page
   let countQuery = services.supabaseServiceClient
     .from('memory_verses')
@@ -256,16 +265,24 @@ async function handleGetDueMemoryVerses(
     countQuery = countQuery.eq('language', languageParam)
   }
 
-  const { count: totalCount } = await countQuery
-  const hasMore = (offset + limit) < (totalCount || 0)
+  // verses, the total-count, and the statistics are all independent reads —
+  // run them concurrently instead of one after another.
+  const [
+    { data: verses, error: fetchError },
+    { count: totalCount },
+    statistics,
+  ] = await Promise.all([
+    query,
+    countQuery,
+    getReviewStatistics(services.supabaseServiceClient, userContext.userId, req, services),
+  ])
 
-  // Get review statistics
-  const statistics = await getReviewStatistics(
-    services.supabaseServiceClient,
-    userContext.userId,
-    req,
-    services
-  )
+  if (fetchError) {
+    console.error('[GetDueVerses] Fetch error:', fetchError)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch due verses', 500)
+  }
+
+  const hasMore = (offset + limit) < (totalCount || 0)
 
   // Log analytics event
   await services.analyticsLogger.logEvent('memory_verses_due_fetched', {

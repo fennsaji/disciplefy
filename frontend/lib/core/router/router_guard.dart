@@ -154,10 +154,31 @@ class RouterGuard {
         // With default Supabase settings sessions never expire, so an
         // expired access token after long idle is normal — refresh it
         // instead of forcing the user back to login.
-        final refreshed = await _tryRefreshExpiredSession();
-        if (refreshed) {
+        final refresh = await _tryRefreshExpiredSession();
+        if (refresh == SessionRefreshResult.refreshed) {
           Logger.info(
             'Access token expired but session refreshed successfully',
+            tag: 'AUTH_SECURITY',
+            context: {'user_id': user.id, 'user_type': 'supabase'},
+          );
+          return AuthenticationState(
+            isAuthenticated: true,
+            userType: 'supabase',
+            userId: user.id,
+            userEmail: user.email,
+          );
+        }
+
+        // A refresh that timed out or died on the network says nothing about
+        // whether the session is still valid — only that we could not reach
+        // Supabase right now (typical when the app wakes from background and
+        // the radio has not reconnected). Keep the user signed in: the stored
+        // expiry tracks the 1h access token, not the session, and the backend
+        // re-verifies every request anyway. Logging out here would strand a
+        // perfectly valid user on the login screen for a transient blip.
+        if (refresh == SessionRefreshResult.inconclusive) {
+          Logger.warning(
+            'Session refresh inconclusive (network/timeout) — keeping user signed in',
             tag: 'AUTH_SECURITY',
             context: {'user_id': user.id, 'user_type': 'supabase'},
           );
@@ -1365,21 +1386,34 @@ class RouterGuard {
 
   // Serializes refresh attempts so concurrent guard evaluations don't fire
   // parallel refreshSession() calls (refresh tokens are single-use).
-  static Future<bool>? _refreshInFlight;
+  static Future<SessionRefreshResult>? _refreshInFlight;
 
   /// Attempt to refresh an expired access token using the refresh token.
-  /// Returns true when a valid session was obtained. On success the new
-  /// expiry is written to Hive immediately (the tokenRefreshed event from
-  /// AuthNotifier also syncs it, but may arrive after the guard re-runs).
-  static Future<bool> _tryRefreshExpiredSession() {
+  ///
+  /// The three outcomes are deliberately distinct, because only one of them
+  /// may log the user out:
+  ///  - [SessionRefreshResult.refreshed]: a valid session was obtained. The new
+  ///    expiry is written to Hive immediately (the tokenRefreshed event from
+  ///    AuthNotifier also syncs it, but may arrive after the guard re-runs).
+  ///  - [SessionRefreshResult.failed]: Supabase answered and rejected the
+  ///    refresh token — it is revoked or invalid, so the session is really gone.
+  ///  - [SessionRefreshResult.inconclusive]: we never got an answer (timeout,
+  ///    offline, transport error). The session may well still be valid, so the
+  ///    caller must NOT treat this as a logout.
+  static Future<SessionRefreshResult> _tryRefreshExpiredSession() {
     final inFlight = _refreshInFlight;
     if (inFlight != null) return inFlight;
 
     final attempt = () async {
       try {
-        final response = await Supabase.instance.client.auth.refreshSession();
+        // Bounded so a stalled request cannot hang the router's redirect
+        // callback forever — that left the app stuck on the black
+        // AppLoadingScreen when a push was tapped after a long background.
+        final response = await Supabase.instance.client.auth
+            .refreshSession()
+            .timeout(const Duration(seconds: 5));
         final session = response.session;
-        if (session == null) return false;
+        if (session == null) return SessionRefreshResult.failed;
 
         final expiresAt = session.expiresAt;
         if (expiresAt != null) {
@@ -1388,21 +1422,24 @@ class RouterGuard {
           if (DateTime.now().isAfter(expiryTime)) {
             // Refresh "succeeded" but returned an expired session —
             // the refresh token itself is no longer valid.
-            return false;
+            return SessionRefreshResult.failed;
           }
           if (Hive.isBoxOpen(_hiveBboxName)) {
             await Hive.box(_hiveBboxName).put(
                 _sessionExpiresAtKey, expiryTime.toUtc().toIso8601String());
           }
         }
-        return true;
+        return SessionRefreshResult.refreshed;
       } catch (e) {
+        final result = classifyRefreshError(e);
         Logger.warning(
-          'Session refresh attempt failed',
+          result == SessionRefreshResult.failed
+              ? 'Session refresh rejected by Supabase'
+              : 'Session refresh attempt could not complete',
           tag: 'AUTH_SECURITY',
           context: {'error': e.toString()},
         );
-        return false;
+        return result;
       }
     }();
 
@@ -1410,6 +1447,21 @@ class RouterGuard {
     attempt.whenComplete(() => _refreshInFlight = null);
     return attempt;
   }
+
+  /// Decides whether a failed refresh means the session is really gone.
+  ///
+  /// An [AuthException] is Supabase answering and rejecting the refresh token,
+  /// so the user is genuinely signed out. Everything else — a timeout, a dead
+  /// socket, a DNS failure — means we never got an answer, and assuming the
+  /// worst there would log out valid users on any network blip.
+  ///
+  /// Visible for testing so the two branches can be exercised without a live
+  /// Supabase, following [debugTermsGateRedirect]'s precedent in this class.
+  @visibleForTesting
+  static SessionRefreshResult classifyRefreshError(Object error) =>
+      error is AuthException
+          ? SessionRefreshResult.failed
+          : SessionRefreshResult.inconclusive;
 
   /// SECURITY FIX: Check if the session has expired
   static bool _isSessionExpired() {
@@ -1498,6 +1550,14 @@ class RouterGuard {
     }
   }
 }
+
+/// Outcome of an access-token refresh attempt.
+///
+/// [failed] and [inconclusive] are kept apart on purpose: only [failed] means
+/// the session is genuinely gone and the user should be signed out. Treating a
+/// timeout or an offline radio as [failed] would log out valid users whenever
+/// the network hiccups.
+enum SessionRefreshResult { refreshed, failed, inconclusive }
 
 /// Data class for authentication state
 class AuthenticationState {

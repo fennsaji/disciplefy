@@ -11,6 +11,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { FCMService } from '../_shared/fcm-service.ts'
 
 // ---------------------------------------------------------------------------
 // List invites  GET /fellowship-invites?fellowship_id=UUID
@@ -178,7 +179,7 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
 
   const { data: invite } = await db
     .from('fellowship_invites')
-    .select('*, fellowships(id, name, max_members)')
+    .select('*, fellowships(id, name, max_members, mentor_user_id)')
     .eq('token', body.token)
     .eq('is_revoked', false)
     .gt('expires_at', new Date().toISOString())
@@ -241,6 +242,35 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     .eq('id', invite.id)
   if (usageError) {
     console.error('[fellowship-invites/join] Failed to increment use_count:', invite.id, usageError)
+  }
+
+  // Notify mentor only (fire-and-forget), skip if the mentor is the one joining
+  if (fellowship.mentor_user_id && fellowship.mentor_user_id !== user.id) {
+    const notifyPromise = (async () => {
+      try {
+        let displayName = 'A new member'
+        const { data: userData } = await db.auth.admin.getUserById(user.id)
+        if (userData?.user) {
+          const u = userData.user
+          displayName = u.user_metadata?.full_name ?? u.user_metadata?.name ??
+            u.user_metadata?.display_name ?? 'A new member'
+        }
+        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', fellowship.mentor_user_id)
+        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
+        if (tokens.length > 0) {
+          const fcm = new FCMService()
+          await fcm.sendBatchNotifications(
+            tokens,
+            { title: `👋 ${displayName} joined the fellowship`, body: `${displayName} joined ${fellowship.name}` },
+            { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id }
+          )
+        }
+      } catch (err) { console.error('[fellowship-invites/join] FCM error (non-fatal):', err) }
+    })()
+    // Keep the isolate alive past the response so the push actually sends.
+    if (typeof EdgeRuntime !== 'undefined') {
+      EdgeRuntime.waitUntil(notifyPromise)
+    }
   }
 
   // Fire-and-forget: notify new member of upcoming meetings (non-blocking)

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -126,8 +127,16 @@ void main() async {
     // Initialize Hive for local storage
     await Hive.initFlutter();
 
-    // Initialize download notification service (Android only — no-ops on other platforms)
-    await AndroidDownloadNotificationService.configure();
+    // AndroidDownloadNotificationService is NOT configured here on purpose: it
+    // set up a notification channel and a background service that only
+    // downloads and TTS playback use, none of which the first frame needs. It
+    // now configures itself lazily on first use.
+    //
+    // It measured ~740ms here, but most of that was the one-time
+    // platform-channel warmup the first plugin call pays for — after removing
+    // it that cost simply moved to the next plugin call. Deferring this plus
+    // the IAP init below measured ~300ms (~12%) off cold start in an emulator
+    // A/B, not the ~825ms the raw step timings suggested.
 
     // Register Hive adapters
     if (!Hive.isAdapterRegistered(1)) {
@@ -293,18 +302,9 @@ void main() async {
     await sl<BibleBooksService>().initialize();
     if (kDebugMode) Logger.debug('✅ [MAIN] Bible books service completed');
 
-    // Initialize IAP service (mobile only - sets up Google Play / App Store purchase stream)
-    if (!kIsWeb) {
-      if (kDebugMode) Logger.debug('🛒 [MAIN] Initializing IAP service...');
-      await sl<IAPService>().initialize();
-      // Bind the consumable purchase handler at startup so restored/unfinished
-      // token & tip transactions are confirmed and finished even before the
-      // user opens the purchase screens (otherwise they redeliver forever).
-      if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS)) {
-        sl<AppleConsumablePurchaseService>().bind();
-      }
-      if (kDebugMode) Logger.debug('✅ [MAIN] IAP service completed');
-    }
+    // IAP is initialized after runApp() (see _initializeStoreInBackground): the
+    // store connection is not needed to draw the first frame, and awaiting it
+    // here delayed startup for every user on every launch.
 
     // Check app version requirements
     if (kDebugMode) Logger.debug('🔧 [MAIN] Checking app version...');
@@ -335,6 +335,15 @@ void main() async {
 
     Logger.debug('🎉 [MAIN] All initialization completed, starting app...');
     runApp(const DisciplefyBibleStudyApp());
+
+    // Store setup still happens at startup — just after the first frame, so it
+    // no longer delays it. Keeping it here (rather than on a purchase screen)
+    // preserves the original intent: restored/unfinished token & tip
+    // transactions get confirmed and finished even if the user never opens the
+    // purchase screens, which otherwise makes them redeliver forever.
+    if (!kIsWeb) {
+      unawaited(_initializeStoreInBackground());
+    }
   } catch (e, stackTrace) {
     if (kDebugMode) {
       Logger.error('🚨 [MAIN] Initialization error: $e');
@@ -359,6 +368,22 @@ void main() async {
     }
 
     runApp(const ErrorApp());
+  }
+}
+
+/// Connects to the store and binds the consumable purchase handler.
+///
+/// Runs after the first frame; a store hiccup must never block or crash
+/// startup, so failures are logged and swallowed.
+Future<void> _initializeStoreInBackground() async {
+  try {
+    await sl<IAPService>().initialize();
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      sl<AppleConsumablePurchaseService>().bind();
+    }
+    if (kDebugMode) Logger.debug('✅ [MAIN] IAP service completed');
+  } catch (e) {
+    Logger.error('⚠️  [MAIN] IAP initialization failed', error: e);
   }
 }
 
