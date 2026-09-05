@@ -707,7 +707,7 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
 
   // Notify mentor only (fire-and-forget), skip if the mentor is the one joining
   if (fellowship.mentor_user_id && fellowship.mentor_user_id !== user.id) {
-    ;(async () => {
+    const notifyPromise = (async () => {
       try {
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', fellowship.mentor_user_id)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
@@ -721,6 +721,10 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
         }
       } catch (err) { console.error('[fellowship/join] FCM error (non-fatal):', err) }
     })()
+    // Keep the isolate alive past the response so the push actually sends.
+    if (typeof EdgeRuntime !== 'undefined') {
+      EdgeRuntime.waitUntil(notifyPromise)
+    }
   }
 
   // Fire-and-forget: notify new member of upcoming meetings (non-blocking)

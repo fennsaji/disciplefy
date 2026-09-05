@@ -194,7 +194,7 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
 
   // Notify post author + other thread commenters about the new comment
   // (fire-and-forget, skip self and anyone in a mutual block with the commenter)
-  ;(async () => {
+  const commentNotifyPromise = (async () => {
     try {
       const { data: priorCommentRows } = await db
         .from('fellowship_comments')
@@ -228,6 +228,10 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
       }
     } catch (err) { console.error('[fellowship-comments/create] FCM error (non-fatal):', err) }
   })()
+  // Keep the isolate alive past the response so the push actually sends.
+  if (typeof EdgeRuntime !== 'undefined') {
+    EdgeRuntime.waitUntil(commentNotifyPromise)
+  }
 
   return new Response(
     JSON.stringify({

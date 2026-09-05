@@ -291,6 +291,13 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   if (membersResult.error) console.error('[fellowship-posts/create] Members fetch error:', membersResult.error)
   const members = membersResult.data ?? []
 
+  // Question posts get a dedicated push to the mentor below. The mentor is
+  // also an active member, so they must be dropped from the broadcast here or
+  // they receive two notifications for the same post.
+  const mentorUserId = fellowshipRow?.mentor_user_id
+  const mentorGetsQuestionPush =
+    postType === 'question' && !!mentorUserId && mentorUserId !== user.id
+
   // Send FCM to all other active members (fire-and-forget), excluding anyone
   // in a mutual block with the author so blocked users don't get notified of
   // (or leak notifications to) each other.
@@ -302,6 +309,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         const memberIds = members
           .map((m: { user_id: string }) => m.user_id)
           .filter((id: string) => !blockedIds.has(id))
+          .filter((id: string) => !(mentorGetsQuestionPush && id === mentorUserId))
         if (memberIds.length === 0) return
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
@@ -317,10 +325,10 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
     })()
   }
 
-  // Question posts: additionally notify the mentor directly (skip if the mentor asked it)
-  const mentorUserId = fellowshipRow?.mentor_user_id
-  if (postType === 'question' && mentorUserId && mentorUserId !== user.id) {
-    ;(async () => {
+  // Question posts: notify the mentor directly instead of via the broadcast
+  // above (skip if the mentor asked it themselves).
+  if (mentorGetsQuestionPush) {
+    const questionNotifyPromise = (async () => {
       try {
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', mentorUserId)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
@@ -335,6 +343,10 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         }
       } catch (err) { console.error('[fellowship-posts/create] mentor question FCM error (non-fatal):', err) }
     })()
+    // Keep the isolate alive past the response so the push actually sends.
+    if (typeof EdgeRuntime !== 'undefined') {
+      EdgeRuntime.waitUntil(questionNotifyPromise)
+    }
   }
 
   return new Response(
