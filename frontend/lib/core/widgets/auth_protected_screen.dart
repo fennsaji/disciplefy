@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
 import '../utils/logger.dart';
 import '../router/app_routes.dart';
 import '../services/auth_aware_navigation_service.dart';
@@ -105,7 +107,7 @@ class _AuthProtectedScreenState extends State<AuthProtectedScreen> {
 
     // Handle exit confirmation
     if (widget.showExitConfirmation && !_isExiting) {
-      _showExitConfirmation();
+      _showExitConfirmation(message: widget.exitConfirmationMessage);
       return;
     }
 
@@ -139,7 +141,7 @@ class _AuthProtectedScreenState extends State<AuthProtectedScreen> {
 
     if (_isRootScreen(currentRoute)) {
       // Show exit app confirmation for root screens
-      _showExitAppConfirmation();
+      _showExitConfirmation();
     } else {
       // For non-root screens, navigate to home
       AuthAwareNavigationService.navigateWithContext(
@@ -150,50 +152,27 @@ class _AuthProtectedScreenState extends State<AuthProtectedScreen> {
     }
   }
 
-  /// Shows exit confirmation dialog
-  Future<void> _showExitConfirmation() async {
+  /// Shows the exit confirmation dialog.
+  ///
+  /// [message] overrides the default localized copy — used by callers that
+  /// want screen-specific wording.
+  Future<void> _showExitConfirmation({String? message}) async {
     final shouldExit = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Exit App'),
-          content: Text(widget.exitConfirmationMessage ??
-              'Are you sure you want to exit the app?'),
+          title: Text(dialogContext.tr(TranslationKeys.commonExitTitle)),
+          content: Text(
+            message ?? dialogContext.tr(TranslationKeys.commonExitMessage),
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(dialogContext.tr(TranslationKeys.commonCancel)),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Exit'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldExit == true && mounted) {
-      _exitApp();
-    }
-  }
-
-  /// Shows exit app confirmation for root screens
-  Future<void> _showExitAppConfirmation() async {
-    final shouldExit = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Exit App'),
-          content: const Text('Are you sure you want to exit the app?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Exit'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(dialogContext.tr(TranslationKeys.commonExitConfirm)),
             ),
           ],
         );
@@ -252,7 +231,6 @@ class HomeScreenProtection extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthProtectedScreen(
       showExitConfirmation: true,
-      exitConfirmationMessage: 'Are you sure you want to exit Disciplefy?',
       enableLogging: enableLogging,
       child: child,
     );
