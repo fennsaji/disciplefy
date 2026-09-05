@@ -3,10 +3,55 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/i18n/app_translations.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
+import 'package:disciplefy_bible_study/core/models/app_language.dart';
 import 'package:disciplefy_bible_study/core/widgets/auth_protected_screen.dart';
 import 'package:disciplefy_bible_study/core/router/app_routes.dart';
 
+/// Resolves keys against the real English translation map so dialog copy in
+/// these tests stays in sync with `AppTranslations`.
+class _EnglishTranslationService implements TranslationService {
+  @override
+  AppLanguage get currentLanguage => AppLanguage.english;
+
+  @override
+  Stream<AppLanguage> get languageChanges => const Stream.empty();
+
+  @override
+  String getTranslation(String key, [Map<String, dynamic>? args]) {
+    dynamic value = AppTranslations.translations[AppLanguage.english];
+    for (final part in key.split('.')) {
+      if (value is Map<String, dynamic> && value.containsKey(part)) {
+        value = value[part];
+      } else {
+        return key;
+      }
+    }
+    return value is String ? value : key;
+  }
+
+  @override
+  List<String> getTranslationList(String key) => const [];
+
+  @override
+  void dispose() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+String _tr(String key) => sl<TranslationService>().getTranslation(key);
+
 void main() {
+  setUpAll(() {
+    sl.registerLazySingleton<TranslationService>(
+        _EnglishTranslationService.new);
+  });
+
+  tearDownAll(sl.reset);
+
   group('AuthProtectedScreen', () {
     testWidgets('should allow navigation when canPop is true', (tester) async {
       await tester.pumpWidget(
@@ -92,10 +137,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Should show exit confirmation dialog
-      expect(find.text('Exit App'), findsOneWidget);
-      expect(
-          find.text('Are you sure you want to exit the app?'), findsOneWidget);
+      // Should show exit confirmation dialog with localized copy
+      expect(find.text(_tr('common.exit.title')), findsOneWidget);
+      expect(find.text(_tr('common.exit.message')), findsOneWidget);
     });
   });
 
@@ -131,11 +175,11 @@ void main() {
       );
 
       expect(authProtectedScreen.showExitConfirmation, isTrue);
-      expect(authProtectedScreen.exitConfirmationMessage,
-          'Are you sure you want to exit Disciplefy?');
+      // No hardcoded override — the dialog uses the localized default.
+      expect(authProtectedScreen.exitConfirmationMessage, isNull);
     });
 
-    testWidgets('should show custom exit message on back press',
+    testWidgets('should show localized exit message on back press',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -153,10 +197,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Should show custom exit confirmation
-      expect(find.text('Exit App'), findsOneWidget);
-      expect(find.text('Are you sure you want to exit Disciplefy?'),
-          findsOneWidget);
+      // Should show the localized exit confirmation
+      expect(find.text(_tr('common.exit.title')), findsOneWidget);
+      expect(find.text(_tr('common.exit.message')), findsOneWidget);
     });
   });
 

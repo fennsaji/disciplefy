@@ -64,6 +64,11 @@ class TranslationKeys {
   static const commonError = 'common.messages.error';
   static const commonSuccess = 'common.messages.success';
 
+  // App Exit Confirmation
+  static const commonExitTitle = 'common.exit.title';
+  static const commonExitMessage = 'common.exit.message';
+  static const commonExitConfirm = 'common.exit.confirm';
+
   // Follow-up Chat
   static const followUpChatTitle = 'follow_up_chat.title';
   static const followUpChatExpandTooltip = 'follow_up_chat.expand_tooltip';

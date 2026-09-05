@@ -137,6 +137,11 @@ class AppTranslations {
         'error': 'An error occurred',
         'success': 'Success',
       },
+      'exit': {
+        'title': 'Exit App',
+        'message': 'Are you sure you want to exit Disciplefy?',
+        'confirm': 'Exit',
+      },
     },
     'follow_up_chat': {
       'title': 'Follow-up Questions',
@@ -2184,6 +2189,11 @@ class AppTranslations {
       'messages': {
         'error': 'कुछ गड़बड़ हुई',
         'success': 'हो गया',
+      },
+      'exit': {
+        'title': 'ऐप बंद करें',
+        'message': 'क्या आप वाकई Disciplefy बंद करना चाहते हैं?',
+        'confirm': 'बंद करें',
       },
     },
     'follow_up_chat': {
@@ -4238,6 +4248,11 @@ class AppTranslations {
       'messages': {
         'error': 'എന്തോ തെറ്റി',
         'success': 'ആയി',
+      },
+      'exit': {
+        'title': 'ആപ്പ് അടയ്ക്കണോ',
+        'message': 'Disciplefy അടയ്ക്കാൻ ഉറപ്പാണോ?',
+        'confirm': 'അടയ്ക്കൂ',
       },
     },
     'follow_up_chat': {

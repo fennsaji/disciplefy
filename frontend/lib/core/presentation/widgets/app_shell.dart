@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:showcaseview/showcaseview.dart';
 
@@ -307,7 +306,7 @@ class _AppShellState extends State<AppShell>
           ShowcaseKeys.registerAppShell(ShowCaseWidget.of(context));
           return PopScope(
             canPop: false,
-            onPopInvoked: (didPop) {
+            onPopInvokedWithResult: (didPop, result) {
               if (!didPop) {
                 _handleBackNavigation();
               }
@@ -378,10 +377,10 @@ class _AppShellState extends State<AppShell>
     if (widget.navigationShell.currentIndex > 0) {
       // Go back to home tab if not already there
       widget.navigationShell.goBranch(0);
-    } else {
-      // Exit the app if already on home tab
-      SystemNavigator.pop();
     }
+    // On the home tab, HomeScreenProtection's PopScope owns the back press and
+    // shows the exit confirmation. Flutter invokes every registered PopEntry on
+    // a route, so exiting here too would close the app behind that dialog.
   }
 
   /// Get filtered tabs list based on feature flags
