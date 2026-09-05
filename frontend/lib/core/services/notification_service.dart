@@ -606,6 +606,14 @@ class NotificationService {
       'memory_verse_reminder',
       'memory_verse_overdue',
       'fellowship_meeting_reminder',
+      'fellowship_meeting',
+      'fellowship_meeting_cancelled',
+      'fellowship_meeting_invite',
+      'fellowship_new_post',
+      'fellowship_new_comment',
+      'fellowship_reaction',
+      'fellowship_question',
+      'fellowship_member_joined',
     };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
@@ -691,18 +699,43 @@ class NotificationService {
         Logger.info('[NotificationService] ✅ Navigating to memory verse list');
         break;
 
+      // Meetings live on the fellowship home tab. Note the invite sends
+      // 'fellowship_meeting_invite'; 'meeting_invite' is only what it writes to
+      // notification_logs, and is never an FCM data type.
       case 'fellowship_meeting_reminder':
-        final fellowshipId = data['fellowship_id'];
-        if (fellowshipId is String && fellowshipId.isNotEmpty) {
-          _router.go('/community/$fellowshipId');
-          Logger.info(
-              '[NotificationService] ✅ Navigating to fellowship: $fellowshipId');
-        } else {
-          _router.go(AppRoutes.community);
-          Logger.warning(
-              '[NotificationService] ⚠️  No fellowship_id provided, navigating to community');
-        }
+      case 'fellowship_meeting':
+      case 'fellowship_meeting_cancelled':
+      case 'fellowship_meeting_invite':
+        _goToFellowship(data, suffix: '');
         break;
+
+      // Post activity — open the feed, where the post and its comments are.
+      case 'fellowship_new_post':
+      case 'fellowship_new_comment':
+      case 'fellowship_reaction':
+      case 'fellowship_question':
+        _goToFellowship(data, suffix: '/feed');
+        break;
+
+      // Sent to the mentor when someone joins; the member list is the point.
+      case 'fellowship_member_joined':
+        _goToFellowship(data, suffix: '/members');
+        break;
+    }
+  }
+
+  /// Navigates to a fellowship sub-route, falling back to the community list
+  /// when the push carries no usable fellowship_id.
+  void _goToFellowship(Map<String, dynamic> data, {required String suffix}) {
+    final fellowshipId = data['fellowship_id'];
+    if (fellowshipId is String && fellowshipId.isNotEmpty) {
+      _router.go('/community/$fellowshipId$suffix');
+      Logger.info(
+          '[NotificationService] ✅ Navigating to fellowship: $fellowshipId$suffix');
+    } else {
+      _router.go(AppRoutes.community);
+      Logger.warning(
+          '[NotificationService] ⚠️  No fellowship_id provided, navigating to community');
     }
   }
 
