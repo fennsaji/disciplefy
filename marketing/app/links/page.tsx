@@ -81,6 +81,14 @@ export default function LinksPage() {
           ))}
         </div>
 
+        <p className={SECTION_LABEL}>Learn more</p>
+        <LinkRow
+          label="disciplefy.in"
+          href="https://www.disciplefy.in"
+          chipClass={GOLD_CHIP}
+          icon={<GlobeIcon className="h-[17px] w-[17px]" />}
+        />
+
         <p className={SECTION_LABEL}>Say hello</p>
         <LinkRow
           label="hello@disciplefy.in"
@@ -88,12 +96,6 @@ export default function LinksPage() {
           chipClass={GOLD_CHIP}
           icon={<MailIcon className="h-[17px] w-[17px]" />}
         />
-
-        <p className="mt-6 border-t border-white/10 pt-4 text-center text-[11px] text-[#94A3B8]">
-          <a href="https://www.disciplefy.in" className="hover:text-slate-300">
-            disciplefy.in
-          </a>
-        </p>
       </div>
     </main>
   );
