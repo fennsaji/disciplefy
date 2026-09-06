@@ -115,3 +115,23 @@ class FellowshipTransferMentorRequested extends FellowshipMembersEvent {
   @override
   List<Object?> get props => [newMentorUserId];
 }
+
+/// Promotes [userId] from member to mentor (mentor/admin only).
+class FellowshipMemberPromoteRequested extends FellowshipMembersEvent {
+  final String userId;
+
+  const FellowshipMemberPromoteRequested({required this.userId});
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+/// Demotes [userId] from mentor to member (mentor/admin only).
+class FellowshipMemberDemoteRequested extends FellowshipMembersEvent {
+  final String userId;
+
+  const FellowshipMemberDemoteRequested({required this.userId});
+
+  @override
+  List<Object?> get props => [userId];
+}

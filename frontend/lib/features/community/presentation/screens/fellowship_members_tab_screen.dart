@@ -12,6 +12,7 @@ import '../bloc/fellowship_members/fellowship_members_bloc.dart';
 import '../bloc/fellowship_members/fellowship_members_event.dart';
 import '../bloc/fellowship_members/fellowship_members_state.dart';
 import '../widgets/block_user_dialog.dart';
+import '../widgets/discipler_badges.dart';
 import 'fellowship_invites_screen.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
@@ -24,9 +25,19 @@ class FellowshipMembersTabScreen extends StatelessWidget {
   final String fellowshipId;
   final String? fellowshipName;
 
+  /// Whether the Discipler AI helper is enabled for this fellowship — shows
+  /// the Helpers section when true.
+  final bool disciplerAllowed;
+
+  /// Whether the current viewer is a global admin — admins may promote and
+  /// demote members the same as a mentor.
+  final bool isAdmin;
+
   const FellowshipMembersTabScreen({
     required this.fellowshipId,
     this.fellowshipName,
+    this.disciplerAllowed = false,
+    this.isAdmin = false,
     super.key,
   });
 
@@ -82,9 +93,11 @@ class FellowshipMembersTabScreen extends StatelessWidget {
                   return _MemberList(
                     members: state.members,
                     isMentor: state.isMentor,
+                    isAdmin: isAdmin,
                     currentUserId: state.currentUserId,
                     fellowshipId: fellowshipId,
                     totalTopics: totalTopics,
+                    disciplerAllowed: disciplerAllowed,
                   );
                 },
               );
@@ -117,33 +130,144 @@ class FellowshipMembersTabScreen extends StatelessWidget {
 class _MemberList extends StatelessWidget {
   final List<FellowshipMemberEntity> members;
   final bool isMentor;
+  final bool isAdmin;
   final String? currentUserId;
   final String fellowshipId;
   final int? totalTopics;
+  final bool disciplerAllowed;
 
   const _MemberList({
     required this.members,
     required this.isMentor,
     required this.currentUserId,
     required this.fellowshipId,
+    this.isAdmin = false,
     this.totalTopics,
+    this.disciplerAllowed = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final mentors = members.where((m) => m.role == 'mentor').toList()
+      ..sort((a, b) => (a.isOwner == b.isOwner) ? 0 : (a.isOwner ? -1 : 1));
+    final regularMembers = members.where((m) => m.role != 'mentor').toList();
+
+    final rows = <Widget>[
+      if (mentors.isNotEmpty) _SectionHeader(title: l10n.mentorsSection),
+      for (final m in mentors)
+        _MemberCard(
+          member: m,
+          isMentor: isMentor,
+          isAdmin: isAdmin,
+          currentUserId: currentUserId,
+          fellowshipId: fellowshipId,
+          totalTopics: totalTopics,
+        ),
+      if (disciplerAllowed) ...[
+        _SectionHeader(title: l10n.helpersSection),
+        const _DisciplerHelperRow(),
+      ],
+      if (regularMembers.isNotEmpty)
+        for (final m in regularMembers)
+          _MemberCard(
+            member: m,
+            isMentor: isMentor,
+            isAdmin: isAdmin,
+            currentUserId: currentUserId,
+            fellowshipId: fellowshipId,
+            totalTopics: totalTopics,
+          ),
+    ];
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: members.length,
+      itemCount: rows.length,
       separatorBuilder: (_, __) => Divider(
         height: 1,
         color: context.appDivider,
       ),
-      itemBuilder: (context, index) => _MemberCard(
-        member: members[index],
-        isMentor: isMentor,
-        currentUserId: currentUserId,
-        fellowshipId: fellowshipId,
-        totalTopics: totalTopics,
+      itemBuilder: (context, index) => rows[index],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Section header
+// ---------------------------------------------------------------------------
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+          color: context.appTextTertiary,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Discipler AI helper row (no menu — the helper cannot be muted/removed)
+// ---------------------------------------------------------------------------
+
+class _DisciplerHelperRow extends StatelessWidget {
+  const _DisciplerHelperRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const DisciplerAvatar(radius: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      l10n.disciplerName,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: context.appTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const DisciplerAiChip(),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.disciplerHelperSubtitle,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -158,6 +282,10 @@ class _MemberCard extends StatelessWidget {
 
   /// True when the current viewer is the mentor of this fellowship.
   final bool isMentor;
+
+  /// True when the current viewer is a global admin — treated the same as
+  /// a mentor for promote/demote actions.
+  final bool isAdmin;
   final String? currentUserId;
   final String fellowshipId;
   final int? totalTopics;
@@ -167,6 +295,7 @@ class _MemberCard extends StatelessWidget {
     required this.isMentor,
     required this.currentUserId,
     required this.fellowshipId,
+    this.isAdmin = false,
     this.totalTopics,
   });
 
@@ -290,11 +419,16 @@ class _MemberCard extends StatelessWidget {
     final initials = _initials(member.displayName);
     final joinDate = _formatJoinDate(member.joinedAt);
 
-    // Mentor may act on any non-mentor member (not on themselves/mentor card)
-    final canAct = isMentor && !isMemberMentor;
+    final viewerCanManage = isMentor || isAdmin;
+    // Mentor/admin may act on any non-mentor member (not on themselves/mentor card)
+    final canAct = viewerCanManage && !isMemberMentor;
     // Any viewer may block any other member, mentor or not.
     final canBlock = currentUserId != null && member.userId != currentUserId;
-    final showMenu = canAct || canBlock;
+    // Promote a regular member to mentor.
+    final canPromote = viewerCanManage && !isMemberMentor;
+    // Demote a non-owner mentor back to member.
+    final canDemote = viewerCanManage && isMemberMentor && !member.isOwner;
+    final showMenu = canAct || canBlock || canPromote || canDemote;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -340,7 +474,8 @@ class _MemberCard extends StatelessWidget {
                 // Role badge + join date
                 Row(
                   children: [
-                    _RoleBadge(isMentor: isMemberMentor),
+                    _RoleBadge(
+                        isMentor: isMemberMentor, isOwner: member.isOwner),
                     const SizedBox(width: 8),
                     Icon(Icons.calendar_today_outlined,
                         size: 11, color: context.appTextTertiary),
@@ -394,6 +529,16 @@ class _MemberCard extends StatelessWidget {
                     _showRemoveConfirm(context);
                   case _MemberAction.block:
                     _handleBlock(context);
+                  case _MemberAction.promote:
+                    context.read<FellowshipMembersBloc>().add(
+                          FellowshipMemberPromoteRequested(
+                              userId: member.userId),
+                        );
+                  case _MemberAction.demote:
+                    context.read<FellowshipMembersBloc>().add(
+                          FellowshipMemberDemoteRequested(
+                              userId: member.userId),
+                        );
                 }
               },
               itemBuilder: (_) => [
@@ -422,6 +567,26 @@ class _MemberCard extends StatelessWidget {
                       color: context.appTextPrimary,
                     ),
                   ),
+                ],
+                if (canPromote)
+                  PopupMenuItem(
+                    value: _MemberAction.promote,
+                    child: _PopupItem(
+                      icon: Icons.arrow_upward_rounded,
+                      label: l10n.promoteToMentor,
+                      color: context.appTextPrimary,
+                    ),
+                  ),
+                if (canDemote)
+                  PopupMenuItem(
+                    value: _MemberAction.demote,
+                    child: _PopupItem(
+                      icon: Icons.arrow_downward_rounded,
+                      label: l10n.demoteToMember,
+                      color: context.appTextPrimary,
+                    ),
+                  ),
+                if (canAct)
                   // Remove — destructive, shown in error red
                   PopupMenuItem(
                     value: _MemberAction.remove,
@@ -431,7 +596,6 @@ class _MemberCard extends StatelessWidget {
                       color: AppColors.error,
                     ),
                   ),
-                ],
                 if (canBlock)
                   PopupMenuItem(
                     value: _MemberAction.block,
@@ -455,7 +619,7 @@ class _MemberCard extends StatelessWidget {
 
 // ── Popup menu helpers ──────────────────────────────────────────────────────
 
-enum _MemberAction { mute, unmute, transfer, remove, block }
+enum _MemberAction { mute, unmute, transfer, remove, block, promote, demote }
 
 class _PopupItem extends StatelessWidget {
   final IconData icon;
@@ -515,12 +679,16 @@ class _MutedChip extends StatelessWidget {
 
 class _RoleBadge extends StatelessWidget {
   final bool isMentor;
+  final bool isOwner;
 
-  const _RoleBadge({required this.isMentor});
+  const _RoleBadge({required this.isMentor, this.isOwner = false});
 
   @override
   Widget build(BuildContext context) {
-    final label = isMentor ? 'Mentor' : 'Member';
+    final l10n = AppLocalizations.of(context)!;
+    final label = isOwner
+        ? l10n.ownerLabel
+        : (isMentor ? l10n.mentorLabel : l10n.memberLabel);
     final backgroundColor =
         isMentor ? AppColors.warningLight : context.appSurfaceVariant;
     final textColor =

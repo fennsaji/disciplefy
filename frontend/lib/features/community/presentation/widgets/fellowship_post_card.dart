@@ -3,16 +3,72 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/constants/discipler.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/study_topics/domain/entities/learning_path.dart';
+import '../../data/services/saved_guide_fetcher.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../screens/fellowship_guide_detail_screen.dart';
+import 'daily_post_card.dart';
+import 'discipler_badges.dart';
+import 'reaction_button.dart';
+
+/// Regex matching a mention token like `@Discipler` or `@Jane.Doe` in post
+/// or comment content.
+final RegExp _mentionRegex = RegExp(r'(@[A-Za-z][\w.]*)');
+
+/// Splits [text] into [TextSpan]s, styling `@mention` tokens with
+/// [mentionStyle] and everything else with [baseStyle].
+List<TextSpan> mentionSpans(
+  String text,
+  TextStyle baseStyle,
+  TextStyle mentionStyle,
+) {
+  final spans = <TextSpan>[];
+  var lastEnd = 0;
+  for (final match in _mentionRegex.allMatches(text)) {
+    if (match.start > lastEnd) {
+      spans.add(TextSpan(
+        text: text.substring(lastEnd, match.start),
+        style: baseStyle,
+      ));
+    }
+    spans.add(TextSpan(text: match.group(0), style: mentionStyle));
+    lastEnd = match.end;
+  }
+  if (lastEnd < text.length) {
+    spans.add(TextSpan(text: text.substring(lastEnd), style: baseStyle));
+  }
+  return spans;
+}
+
+/// Returns the popup menu item keys to show for [post], in display order.
+///
+/// - `'share'` is always present.
+/// - `'delete'` is shown for mentors, admins, or the post's own author.
+/// - Discipler-authored (system) posts never show `'report'`/`'block'`.
+/// - `'report'` is shown for non-mentors viewing someone else's post.
+/// - `'block'` is shown for any post that isn't the viewer's own.
+List<String> postMenuItems(
+  FellowshipPostEntity post, {
+  required bool isMentor,
+  required bool isAdmin,
+  String? currentUserId,
+}) {
+  final items = <String>['share'];
+  final own = post.authorUserId == currentUserId;
+  if (isMentor || isAdmin || own) items.add('delete');
+  if (post.authorIsSystem) return items;
+  if (!isMentor && !own) items.add('report');
+  if (!own) items.add('block');
+  return items;
+}
 
 // ---------------------------------------------------------------------------
 // Public shared post card
@@ -51,6 +107,13 @@ class FellowshipPostCard extends StatelessWidget {
   /// Called when the "Block" menu item is tapped (interactive mode only).
   final VoidCallback? onBlockTap;
 
+  /// Whether the current viewer is a global admin. Admins may delete any
+  /// Discipler-authored post even when not a fellowship mentor.
+  final bool isAdmin;
+
+  /// Called when the "Share" menu item / footer share icon is tapped.
+  final VoidCallback? onShareTap;
+
   const FellowshipPostCard({
     required this.post,
     required this.fellowshipId,
@@ -61,17 +124,32 @@ class FellowshipPostCard extends StatelessWidget {
     this.onCommentTap,
     this.onReportTap,
     this.onBlockTap,
+    this.isAdmin = false,
+    this.onShareTap,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (post.isDaily) {
+      return DailyPostCard(
+        post: post,
+        fellowshipId: fellowshipId,
+        onCommentTap: onCommentTap,
+        onShareTap: onShareTap,
+      );
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = postTypeAccentColor(post.postType, isDark: isDark);
+    final isSystem = post.authorIsSystem;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       decoration: BoxDecoration(
-        color: context.appSurface,
+        color: isSystem
+            ? context.appPrimary.withAlpha(isDark ? 40 : 18)
+            : context.appSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: context.appBorder.withAlpha(50),
@@ -87,26 +165,40 @@ class FellowshipPostCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _PostAvatar(
-                  displayName: post.authorDisplayName,
-                  accentColor: accentColor,
-                  avatarUrl: post.authorAvatarUrl,
-                ),
+                isSystem
+                    ? const DisciplerAvatar()
+                    : _PostAvatar(
+                        displayName: post.authorDisplayName,
+                        accentColor: accentColor,
+                        avatarUrl: post.authorAvatarUrl,
+                      ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        post.authorDisplayName,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              isSystem
+                                  ? l10n.disciplerName
+                                  : post.authorDisplayName,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: context.appTextPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isSystem) ...[
+                            const SizedBox(width: 6),
+                            const DisciplerAiChip(),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 3),
                       Row(
@@ -125,6 +217,10 @@ class FellowshipPostCard extends StatelessWidget {
                               ),
                             ),
                             _PostTypeLabel(postType: post.postType),
+                          ],
+                          if (post.toMentors) ...[
+                            const SizedBox(width: 6),
+                            _ToMentorsChip(),
                           ],
                         ],
                       ),
@@ -148,52 +244,75 @@ class FellowshipPostCard extends StatelessWidget {
                         onReportTap?.call();
                       } else if (value == 'block') {
                         onBlockTap?.call();
+                      } else if (value == 'share') {
+                        onShareTap?.call();
                       }
                     },
                     itemBuilder: (_) => [
-                      if (isMentor || post.authorUserId == currentUserId)
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete_outline_rounded,
-                                  color: context.appError, size: 20),
-                              const SizedBox(width: 8),
-                              Text('Delete',
-                                  style: TextStyle(color: context.appError)),
-                            ],
+                      for (final item in postMenuItems(
+                        post,
+                        isMentor: isMentor,
+                        isAdmin: isAdmin,
+                        currentUserId: currentUserId,
+                      ))
+                        if (item == 'share')
+                          PopupMenuItem<String>(
+                            value: 'share',
+                            child: Row(
+                              children: [
+                                Icon(Icons.share_outlined,
+                                    color: context.appTextSecondary, size: 20),
+                                const SizedBox(width: 8),
+                                Text(l10n.sharePost,
+                                    style: TextStyle(
+                                        color: context.appTextPrimary)),
+                              ],
+                            ),
+                          )
+                        else if (item == 'delete')
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_outline_rounded,
+                                    color: context.appError, size: 20),
+                                const SizedBox(width: 8),
+                                Text(l10n.deleteAction,
+                                    style: TextStyle(color: context.appError)),
+                              ],
+                            ),
+                          )
+                        else if (item == 'report')
+                          PopupMenuItem<String>(
+                            value: 'report',
+                            child: Row(
+                              children: [
+                                Icon(Icons.flag_outlined,
+                                    color: context.appTextSecondary, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  l10n.reportTitle,
+                                  style:
+                                      TextStyle(color: context.appTextPrimary),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (item == 'block')
+                          PopupMenuItem<String>(
+                            value: 'block',
+                            child: Row(
+                              children: [
+                                Icon(Icons.block,
+                                    color: context.appError, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  l10n.blockUserTitle,
+                                  style: TextStyle(color: context.appError),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      if (!isMentor && post.authorUserId != currentUserId)
-                        PopupMenuItem<String>(
-                          value: 'report',
-                          child: Row(
-                            children: [
-                              Icon(Icons.flag_outlined,
-                                  color: context.appTextSecondary, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)!.reportTitle,
-                                style: TextStyle(color: context.appTextPrimary),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (post.authorUserId != currentUserId)
-                        PopupMenuItem<String>(
-                          value: 'block',
-                          child: Row(
-                            children: [
-                              Icon(Icons.block,
-                                  color: context.appError, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)!.blockUserTitle,
-                                style: TextStyle(color: context.appError),
-                              ),
-                            ],
-                          ),
-                        ),
                     ],
                   ),
               ],
@@ -204,13 +323,24 @@ class FellowshipPostCard extends StatelessWidget {
             if (post.content.isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(right: interactive ? 8 : 0),
-                child: Text(
-                  post.content,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14.5,
-                    color: context.appTextPrimary,
-                    height: 1.65,
+                child: Text.rich(
+                  TextSpan(
+                    children: mentionSpans(
+                      post.content,
+                      TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14.5,
+                        color: context.appTextPrimary,
+                        height: 1.65,
+                      ),
+                      TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: context.appPrimary,
+                        height: 1.65,
+                      ),
+                    ),
                   ),
                   maxLines: maxContentLines,
                   overflow: maxContentLines != null
@@ -244,6 +374,14 @@ class FellowshipPostCard extends StatelessWidget {
               ),
             ],
 
+            if (isSystem) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: EdgeInsets.only(right: interactive ? 8 : 0),
+                child: const DisciplerFooterNote(),
+              ),
+            ],
+
             const SizedBox(height: 14),
 
             // ── Footer ─────────────────────────────────────────────────────
@@ -254,6 +392,7 @@ class FellowshipPostCard extends StatelessWidget {
                       post: post,
                       accentColor: accentColor,
                       onCommentTap: onCommentTap,
+                      onShareTap: onShareTap,
                     )
                   : _PreviewFooter(post: post),
             ),
@@ -281,6 +420,8 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
         return const Color(0xFFFFCC02);
       case 'shared_guide':
         return const Color(0xFF4DD0E1);
+      case 'daily':
+        return AppColors.brandHighlightDark;
       default:
         return AppColors.brandPrimaryLight;
     }
@@ -296,8 +437,37 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
       return const Color(0xFF8B6914);
     case 'shared_guide':
       return const Color(0xFF1B7A7A);
+    case 'daily':
+      return AppColors.brandHighlightDark;
     default:
       return AppColors.brandPrimary;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// "To mentors" chip
+// ---------------------------------------------------------------------------
+
+class _ToMentorsChip extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: AppColors.brandHighlight.withAlpha(isDark ? 60 : 255),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        AppLocalizations.of(context)!.toMentorsChip,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: AppColors.brandHighlightDark,
+        ),
+      ),
+    );
   }
 }
 
@@ -407,6 +577,10 @@ class _PostTypeLabel extends StatelessWidget {
       'shared_guide': (
         label: l10n.postTypeSharedGuide,
         color: isDark ? const Color(0xFF4DD0E1) : const Color(0xFF1B7A7A),
+      ),
+      'daily': (
+        label: l10n.postTypeDaily,
+        color: AppColors.brandHighlightDark,
       ),
     };
 
@@ -639,31 +813,22 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
     // Attempt to fetch the existing saved guide by ID.
     if (guideId != null && guideId.isNotEmpty) {
       setState(() => _loading = true);
-      try {
-        final data = await Supabase.instance.client
-            .from('study_guides')
-            .select()
-            .eq('id', guideId)
-            .maybeSingle();
+      final data = await fetchSavedGuide(guideId);
 
-        if (!mounted) return;
-        setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
 
-        if (data != null) {
-          // Full guide data available — load directly, no regeneration.
-          context.push(
-            '/study-guide'
-            '?input=${Uri.encodeComponent(title)}'
-            '&type=${Uri.encodeComponent(inputType)}'
-            '&language=${Uri.encodeComponent(language)}'
-            '&source=fellowship_feed',
-            extra: {'study_guide': data},
-          );
-          return;
-        }
-      } catch (_) {
-        if (mounted) setState(() => _loading = false);
-        // Fall through to param-based navigation below.
+      if (data != null) {
+        // Full guide data available — load directly, no regeneration.
+        context.push(
+          '/study-guide'
+          '?input=${Uri.encodeComponent(title)}'
+          '&type=${Uri.encodeComponent(inputType)}'
+          '&language=${Uri.encodeComponent(language)}'
+          '&source=fellowship_feed',
+          extra: {'study_guide': data},
+        );
+        return;
       }
     }
 
@@ -768,18 +933,21 @@ class _InteractiveFooter extends StatelessWidget {
   final FellowshipPostEntity post;
   final Color accentColor;
   final VoidCallback? onCommentTap;
+  final VoidCallback? onShareTap;
 
   const _InteractiveFooter({
     required this.post,
     required this.accentColor,
     required this.onCommentTap,
+    this.onShareTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
-        _ReactionButton(post: post, accentColor: accentColor),
+        FellowshipReactionButton(post: post, accentColor: accentColor),
         const SizedBox(width: 8),
         if (onCommentTap != null)
           GestureDetector(
@@ -800,7 +968,9 @@ class _InteractiveFooter extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    post.commentCount > 0 ? '${post.commentCount}' : 'Reply',
+                    post.commentCount > 0
+                        ? '${post.commentCount}'
+                        : l10n.replyAction,
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
@@ -811,6 +981,16 @@ class _InteractiveFooter extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        const Spacer(),
+        if (onShareTap != null)
+          IconButton(
+            onPressed: onShareTap,
+            icon: Icon(Icons.share_outlined,
+                size: 18, color: context.appTextSecondary),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
           ),
       ],
     );
@@ -858,268 +1038,6 @@ class _PreviewFooter extends StatelessWidget {
             ),
           ),
         ],
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Reaction button (tap = toggle amen, long-press = emoji picker)
-// ---------------------------------------------------------------------------
-
-class _ReactionButton extends StatefulWidget {
-  final FellowshipPostEntity post;
-  final Color accentColor;
-
-  const _ReactionButton({
-    required this.post,
-    required this.accentColor,
-  });
-
-  @override
-  State<_ReactionButton> createState() => _ReactionButtonState();
-}
-
-class _ReactionButtonState extends State<_ReactionButton> {
-  OverlayEntry? _pickerOverlay;
-
-  static const _kReactions = [
-    (type: 'amen', emoji: '🙏'),
-    (type: 'i_prayed', emoji: '🕊️'),
-    (type: 'heart', emoji: '❤️'),
-    (type: 'fire', emoji: '🔥'),
-    (type: 'hands', emoji: '👐'),
-  ];
-
-  /// Default reaction (emoji + type + label) based on post type.
-  static ({String type, String emoji, String label}) _defaultForType(
-      String postType) {
-    switch (postType) {
-      case 'praise':
-        return (type: 'amen', emoji: '🙏', label: 'Amen');
-      case 'prayer':
-        return (type: 'i_prayed', emoji: '🕊️', label: 'I Prayed');
-      case 'question':
-        return (type: 'heart', emoji: '❤️', label: 'Love');
-      case 'study_note':
-      case 'shared_guide':
-        return (type: 'fire', emoji: '🔥', label: 'Fire');
-      default: // general
-        return (type: 'amen', emoji: '🙏', label: 'Amen');
-    }
-  }
-
-  int get _totalCount =>
-      widget.post.reactionCounts.values.fold(0, (s, c) => s + c);
-
-  String get _activeEmoji {
-    final active = widget.post.userReaction;
-    if (active == null) return _defaultForType(widget.post.postType).emoji;
-    return _kReactions
-        .firstWhere((r) => r.type == active, orElse: () => _kReactions.first)
-        .emoji;
-  }
-
-  void _onTap() {
-    final type =
-        widget.post.userReaction ?? _defaultForType(widget.post.postType).type;
-    context.read<FellowshipFeedBloc>().add(
-          FellowshipReactionToggleRequested(
-            postId: widget.post.id,
-            reactionType: type,
-          ),
-        );
-  }
-
-  void _showPicker(Offset globalPosition) {
-    final bloc = context.read<FellowshipFeedBloc>();
-    _pickerOverlay = OverlayEntry(
-      builder: (_) => _ReactionPickerOverlay(
-        postId: widget.post.id,
-        bloc: bloc,
-        reactions: _kReactions,
-        tapPosition: globalPosition,
-        userReaction: widget.post.userReaction,
-        onDismiss: _removePicker,
-      ),
-    );
-    Overlay.of(context).insert(_pickerOverlay!);
-  }
-
-  void _removePicker() {
-    _pickerOverlay?.remove();
-    _pickerOverlay = null;
-  }
-
-  @override
-  void dispose() {
-    _removePicker();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final total = _totalCount;
-    final isActive = widget.post.userReaction != null;
-    return GestureDetector(
-      onTap: _onTap,
-      onLongPressStart: (d) => _showPicker(d.globalPosition),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive
-              ? widget.accentColor.withAlpha(26)
-              : context.appSurfaceVariant,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive
-                ? widget.accentColor.withAlpha(102)
-                : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_activeEmoji, style: const TextStyle(fontSize: 15)),
-            const SizedBox(width: 5),
-            Text(
-              total > 0
-                  ? '$total'
-                  : _defaultForType(widget.post.postType).label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isActive ? widget.accentColor : context.appTextSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Reaction picker overlay (long-press, Facebook-style)
-// ---------------------------------------------------------------------------
-
-class _ReactionPickerOverlay extends StatefulWidget {
-  final String postId;
-  final FellowshipFeedBloc bloc;
-  final List<({String type, String emoji})> reactions;
-  final Offset tapPosition;
-  final String? userReaction;
-  final VoidCallback onDismiss;
-
-  const _ReactionPickerOverlay({
-    required this.postId,
-    required this.bloc,
-    required this.reactions,
-    required this.tapPosition,
-    required this.userReaction,
-    required this.onDismiss,
-  });
-
-  @override
-  State<_ReactionPickerOverlay> createState() => _ReactionPickerOverlayState();
-}
-
-class _ReactionPickerOverlayState extends State<_ReactionPickerOverlay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    );
-    _scale = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack);
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _select(String type) {
-    widget.bloc.add(FellowshipReactionToggleRequested(
-      postId: widget.postId,
-      reactionType: type,
-    ));
-    widget.onDismiss();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const pickerWidth = 5 * 48.0 + 16.0;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final left = (widget.tapPosition.dx - pickerWidth / 2)
-        .clamp(8.0, screenWidth - pickerWidth - 8);
-    final top = (widget.tapPosition.dy - 72).clamp(
-      MediaQuery.of(context).padding.top + 8,
-      double.infinity,
-    );
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: widget.onDismiss,
-            behavior: HitTestBehavior.opaque,
-            child: const ColoredBox(color: Colors.transparent),
-          ),
-        ),
-        Positioned(
-          left: left,
-          top: top,
-          child: ScaleTransition(
-            scale: _scale,
-            alignment: Alignment.bottomCenter,
-            child: Material(
-              elevation: 10,
-              borderRadius: BorderRadius.circular(32),
-              color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-              shadowColor: Colors.black38,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: widget.reactions.map((r) {
-                    final isActive = widget.userReaction == r.type;
-                    return GestureDetector(
-                      onTap: () => _select(r.type),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 120),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 4),
-                        decoration: isActive
-                            ? BoxDecoration(
-                                color: AppColors.brandPrimary.withAlpha(30),
-                                borderRadius: BorderRadius.circular(20),
-                              )
-                            : null,
-                        child: Text(
-                          r.emoji,
-                          style: TextStyle(
-                            fontSize: isActive ? 26 : 22,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }

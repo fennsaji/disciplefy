@@ -37,6 +37,9 @@ class _CreateFellowshipScreenState extends State<CreateFellowshipScreen> {
   String _language = 'en';
   String _postingPermission = 'all_members';
   bool _unlimitedMembers = false;
+  bool _isOfficial = false;
+  bool _disciplerAllowed = false;
+  bool _dailyPostAllowed = false;
 
   @override
   void initState() {
@@ -72,6 +75,9 @@ class _CreateFellowshipScreenState extends State<CreateFellowshipScreen> {
             language: _language,
             postingPermission: _postingPermission,
             unlimitedMembers: _unlimitedMembers,
+            isOfficial: _isOfficial,
+            disciplerAllowed: _isOfficial && _disciplerAllowed,
+            dailyPostAllowed: _isOfficial && _dailyPostAllowed,
           ),
         );
   }
@@ -90,11 +96,17 @@ class _CreateFellowshipScreenState extends State<CreateFellowshipScreen> {
         language: _language,
         postingPermission: _postingPermission,
         unlimitedMembers: _unlimitedMembers,
+        isOfficial: _isOfficial,
+        disciplerAllowed: _disciplerAllowed,
+        dailyPostAllowed: _dailyPostAllowed,
         onIsPublicChanged: (v) => setState(() => _isPublic = v),
         onLanguageChanged: (v) => setState(() => _language = v),
         onPostingPermissionChanged: (v) =>
             setState(() => _postingPermission = v),
         onUnlimitedChanged: (v) => setState(() => _unlimitedMembers = v),
+        onIsOfficialChanged: (v) => setState(() => _isOfficial = v),
+        onDisciplerAllowedChanged: (v) => setState(() => _disciplerAllowed = v),
+        onDailyPostAllowedChanged: (v) => setState(() => _dailyPostAllowed = v),
         onCreatePressed: _onCreatePressed,
       ),
     );
@@ -115,10 +127,16 @@ class _CreateFellowshipConsumer extends StatelessWidget {
   final String language;
   final String postingPermission;
   final bool unlimitedMembers;
+  final bool isOfficial;
+  final bool disciplerAllowed;
+  final bool dailyPostAllowed;
   final ValueChanged<bool> onIsPublicChanged;
   final ValueChanged<String> onLanguageChanged;
   final ValueChanged<String> onPostingPermissionChanged;
   final ValueChanged<bool> onUnlimitedChanged;
+  final ValueChanged<bool> onIsOfficialChanged;
+  final ValueChanged<bool> onDisciplerAllowedChanged;
+  final ValueChanged<bool> onDailyPostAllowedChanged;
   final void Function(BuildContext) onCreatePressed;
 
   const _CreateFellowshipConsumer({
@@ -131,10 +149,16 @@ class _CreateFellowshipConsumer extends StatelessWidget {
     required this.language,
     required this.postingPermission,
     required this.unlimitedMembers,
+    required this.isOfficial,
+    required this.disciplerAllowed,
+    required this.dailyPostAllowed,
     required this.onIsPublicChanged,
     required this.onLanguageChanged,
     required this.onPostingPermissionChanged,
     required this.onUnlimitedChanged,
+    required this.onIsOfficialChanged,
+    required this.onDisciplerAllowedChanged,
+    required this.onDailyPostAllowedChanged,
     required this.onCreatePressed,
   });
 
@@ -179,10 +203,16 @@ class _CreateFellowshipConsumer extends StatelessWidget {
               language: language,
               postingPermission: postingPermission,
               unlimitedMembers: unlimitedMembers,
+              isOfficial: isOfficial,
+              disciplerAllowed: disciplerAllowed,
+              dailyPostAllowed: dailyPostAllowed,
               onIsPublicChanged: onIsPublicChanged,
               onLanguageChanged: onLanguageChanged,
               onPostingPermissionChanged: onPostingPermissionChanged,
               onUnlimitedChanged: onUnlimitedChanged,
+              onIsOfficialChanged: onIsOfficialChanged,
+              onDisciplerAllowedChanged: onDisciplerAllowedChanged,
+              onDailyPostAllowedChanged: onDailyPostAllowedChanged,
               onCreatePressed: () => onCreatePressed(context),
             ),
             if (isLoading) const _LoadingOverlay(),
@@ -208,10 +238,16 @@ class _CreateFellowshipBody extends StatelessWidget {
   final String language;
   final String postingPermission;
   final bool unlimitedMembers;
+  final bool isOfficial;
+  final bool disciplerAllowed;
+  final bool dailyPostAllowed;
   final ValueChanged<bool> onIsPublicChanged;
   final ValueChanged<String> onLanguageChanged;
   final ValueChanged<String> onPostingPermissionChanged;
   final ValueChanged<bool> onUnlimitedChanged;
+  final ValueChanged<bool> onIsOfficialChanged;
+  final ValueChanged<bool> onDisciplerAllowedChanged;
+  final ValueChanged<bool> onDailyPostAllowedChanged;
   final VoidCallback onCreatePressed;
 
   const _CreateFellowshipBody({
@@ -225,10 +261,16 @@ class _CreateFellowshipBody extends StatelessWidget {
     required this.language,
     required this.postingPermission,
     required this.unlimitedMembers,
+    required this.isOfficial,
+    required this.disciplerAllowed,
+    required this.dailyPostAllowed,
     required this.onIsPublicChanged,
     required this.onLanguageChanged,
     required this.onPostingPermissionChanged,
     required this.onUnlimitedChanged,
+    required this.onIsOfficialChanged,
+    required this.onDisciplerAllowedChanged,
+    required this.onDailyPostAllowedChanged,
     required this.onCreatePressed,
   });
 
@@ -588,6 +630,63 @@ class _CreateFellowshipBody extends StatelessWidget {
                               onChanged: isLoading ? null : onIsPublicChanged,
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          l10n.adminOptionsLabel,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.appTextPrimary,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            l10n.createFellowshipOfficial,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 14,
+                              color: context.appTextPrimary,
+                            ),
+                          ),
+                          value: isOfficial,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                          onChanged: isLoading ? null : onIsOfficialChanged,
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            l10n.createFellowshipDisciplerAllowed,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 14,
+                              color: context.appTextPrimary,
+                            ),
+                          ),
+                          value: disciplerAllowed,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                          onChanged: (isLoading || !isOfficial)
+                              ? null
+                              : onDisciplerAllowedChanged,
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            l10n.createFellowshipDailyAllowed,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 14,
+                              color: context.appTextPrimary,
+                            ),
+                          ),
+                          value: dailyPostAllowed,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                          onChanged: (isLoading || !isOfficial)
+                              ? null
+                              : onDailyPostAllowedChanged,
                         ),
                       ],
                     );

@@ -31,6 +31,10 @@ class FellowshipMemberEntity extends Equatable {
   /// learning path. Null when the fellowship has no active study.
   final int? topicsCompleted;
 
+  /// True when this member is the fellowship's original owner (not just a
+  /// promoted mentor).
+  final bool isOwner;
+
   const FellowshipMemberEntity({
     required this.userId,
     required this.displayName,
@@ -39,17 +43,23 @@ class FellowshipMemberEntity extends Equatable {
     required this.joinedAt,
     required this.isMuted,
     this.topicsCompleted,
+    this.isOwner = false,
   });
 
-  FellowshipMemberEntity copyWith({bool? isMuted, int? topicsCompleted}) {
+  FellowshipMemberEntity copyWith({
+    bool? isMuted,
+    int? topicsCompleted,
+    String? role,
+  }) {
     return FellowshipMemberEntity(
       userId: userId,
       displayName: displayName,
       avatarUrl: avatarUrl,
-      role: role,
+      role: role ?? this.role,
       joinedAt: joinedAt,
       isMuted: isMuted ?? this.isMuted,
       topicsCompleted: topicsCompleted ?? this.topicsCompleted,
+      isOwner: isOwner,
     );
   }
 
@@ -62,5 +72,6 @@ class FellowshipMemberEntity extends Equatable {
         joinedAt,
         isMuted,
         topicsCompleted,
+        isOwner,
       ];
 }

@@ -20,7 +20,11 @@ const APP_ID = `${TEAM_ID}.${BUNDLE_ID}`;
 
 // Paths that should open the app. Keep in sync with the Android intent filters
 // in android/app/src/main/AndroidManifest.xml.
-const DEEP_LINK_PATHS = ['/learning-path/*', '/fellowship/join/*'];
+const DEEP_LINK_PATHS = [
+  '/learning-path/*',
+  '/fellowship/join/*',
+  '/fellowship/*/post/*',
+];
 
 module.exports = (req, res) => {
   const association = {

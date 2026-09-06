@@ -239,12 +239,14 @@ import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
 import '../../features/community/data/datasources/community_remote_datasource.dart';
 import '../../features/community/data/repositories/community_repository_impl.dart';
 import '../../features/community/domain/repositories/community_repository.dart';
+import '../../features/community/presentation/bloc/discipler_activity/discipler_activity_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_list/fellowship_list_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_members/fellowship_members_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_study/fellowship_study_bloc.dart';
 import '../../features/community/presentation/bloc/discover/discover_bloc.dart';
 import '../../features/community/presentation/bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_settings/fellowship_settings_bloc.dart';
 import '../../features/community/presentation/bloc/blocked_users/blocked_users_bloc.dart';
 import '../../features/walkthrough/domain/walkthrough_repository.dart';
 import '../../features/walkthrough/data/walkthrough_repository_impl.dart';
@@ -1085,6 +1087,14 @@ Future<void> initializeDependencies() async {
 
   sl.registerFactory<FellowshipMeetingsBloc>(
     () => FellowshipMeetingsBloc(repository: sl()),
+  );
+
+  sl.registerFactory<FellowshipSettingsBloc>(
+    () => FellowshipSettingsBloc(repository: sl()),
+  );
+
+  sl.registerFactory<DisciplerActivityBloc>(
+    () => DisciplerActivityBloc(repository: sl()),
   );
 
   //! Walkthrough

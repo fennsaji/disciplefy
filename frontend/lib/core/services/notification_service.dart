@@ -614,6 +614,9 @@ class NotificationService {
       'fellowship_reaction',
       'fellowship_question',
       'fellowship_member_joined',
+      'fellowship_daily_post',
+      'fellowship_discipler_reply',
+      'fellowship_discipler_activity',
     };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
@@ -720,6 +723,28 @@ class NotificationService {
       // Sent to the mentor when someone joins; the member list is the point.
       case 'fellowship_member_joined':
         _goToFellowship(data, suffix: '/members');
+        break;
+
+      // The Discipler AI helper's daily study post lands in the feed.
+      case 'fellowship_daily_post':
+        _goToFellowship(data, suffix: '/feed');
+        break;
+
+      // A Discipler reply — deep-link straight to the thread when we have a
+      // post id, else fall back to the feed.
+      case 'fellowship_discipler_reply':
+        final postId = data['post_id'];
+        if (postId is String && postId.isNotEmpty) {
+          _goToFellowship(data, suffix: '/post/$postId');
+        } else {
+          _goToFellowship(data, suffix: '/feed');
+        }
+        break;
+
+      // Mentor-facing digest of Discipler drafts/replies/reactions awaiting
+      // review.
+      case 'fellowship_discipler_activity':
+        _goToFellowship(data, suffix: '/discipler-activity');
         break;
     }
   }

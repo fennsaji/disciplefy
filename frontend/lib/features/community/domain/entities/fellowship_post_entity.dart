@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/constants/discipler.dart';
+
 /// Domain entity representing a post within a fellowship feed.
 ///
 /// A post is a piece of content shared by a fellowship member. It may be a
@@ -72,6 +74,12 @@ class FellowshipPostEntity extends Equatable {
   /// (`'en'`, `'hi'`, or `'ml'`).
   final String? guideLanguage;
 
+  /// True when this post was addressed to mentors only (ask-a-mentor).
+  final bool toMentors;
+
+  /// True when the post content mentions the Discipler AI helper.
+  final bool mentionsDiscipler;
+
   const FellowshipPostEntity({
     required this.id,
     required this.fellowshipId,
@@ -92,7 +100,52 @@ class FellowshipPostEntity extends Equatable {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
+    this.toMentors = false,
+    this.mentionsDiscipler = false,
   });
+
+  /// True when this post's author is the Discipler AI helper.
+  bool get authorIsSystem => authorUserId == kDisciplerUserId;
+
+  /// True when this is a system-generated daily study post.
+  bool get isDaily => postType == 'daily';
+
+  /// Returns a copy of this post with select fields replaced.
+  ///
+  /// Intended for the reaction-toggle flow where only [reactionCounts] and
+  /// [userReaction] change; pass [clearUserReaction] to explicitly null out
+  /// the current user's reaction.
+  FellowshipPostEntity copyWith({
+    Map<String, int>? reactionCounts,
+    String? userReaction,
+    bool clearUserReaction = false,
+    int? commentCount,
+  }) {
+    return FellowshipPostEntity(
+      id: id,
+      fellowshipId: fellowshipId,
+      authorUserId: authorUserId,
+      content: content,
+      postType: postType,
+      reactionCounts: reactionCounts ?? this.reactionCounts,
+      isDeleted: isDeleted,
+      createdAt: createdAt,
+      authorDisplayName: authorDisplayName,
+      authorAvatarUrl: authorAvatarUrl,
+      userReaction:
+          clearUserReaction ? null : (userReaction ?? this.userReaction),
+      commentCount: commentCount ?? this.commentCount,
+      topicId: topicId,
+      topicTitle: topicTitle,
+      guideTitle: guideTitle,
+      lessonIndex: lessonIndex,
+      studyGuideId: studyGuideId,
+      guideInputType: guideInputType,
+      guideLanguage: guideLanguage,
+      toMentors: toMentors,
+      mentionsDiscipler: mentionsDiscipler,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -115,5 +168,7 @@ class FellowshipPostEntity extends Equatable {
         studyGuideId,
         guideInputType,
         guideLanguage,
+        toMentors,
+        mentionsDiscipler,
       ];
 }

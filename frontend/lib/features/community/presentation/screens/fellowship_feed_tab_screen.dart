@@ -4,12 +4,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/fellowship_comment_entity.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../bloc/fellowship_feed/fellowship_feed_state.dart';
+import '../utils/auth_helpers.dart';
+import '../utils/feed_sort.dart';
+import '../utils/mention_text.dart';
+import '../utils/share_helpers.dart';
 import '../widgets/block_user_dialog.dart';
+import '../widgets/discipler_badges.dart';
 import '../widgets/fellowship_post_card.dart';
+import '../widgets/mention_sheet.dart';
+import '../widgets/study_guide_chip.dart';
 import 'package:disciplefy_bible_study/core/theme/contrast.dart';
 
 /// Real implementation of the Fellowship Feed tab.
@@ -20,14 +28,21 @@ class FellowshipFeedTabScreen extends StatelessWidget {
   /// The ID of the fellowship whose feed is displayed.
   final String fellowshipId;
 
+  /// Display name of the fellowship, used for the share text.
+  final String? fellowshipName;
+
   const FellowshipFeedTabScreen({
     required this.fellowshipId,
+    this.fellowshipName,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _FellowshipFeedView(fellowshipId: fellowshipId);
+    return _FellowshipFeedView(
+      fellowshipId: fellowshipId,
+      fellowshipName: fellowshipName,
+    );
   }
 }
 
@@ -37,8 +52,9 @@ class FellowshipFeedTabScreen extends StatelessWidget {
 
 class _FellowshipFeedView extends StatefulWidget {
   final String fellowshipId;
+  final String? fellowshipName;
 
-  const _FellowshipFeedView({required this.fellowshipId});
+  const _FellowshipFeedView({required this.fellowshipId, this.fellowshipName});
 
   @override
   State<_FellowshipFeedView> createState() => _FellowshipFeedViewState();
@@ -254,6 +270,8 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
             }
 
             // ── List state ────────────────────────────────────────────────
+            final sortedPosts = sortFeed(state.posts);
+            final isAdmin = isViewerAdmin(context);
             return RefreshIndicator(
               color: Theme.of(context).colorScheme.primary,
               onRefresh: _onRefresh,
@@ -264,9 +282,9 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                   top: 12,
                   bottom: 100, // space above FAB
                 ),
-                itemCount: state.posts.length + (state.hasMore ? 1 : 0),
+                itemCount: sortedPosts.length + (state.hasMore ? 1 : 0),
                 itemBuilder: (context, index) {
-                  if (index == state.posts.length) {
+                  if (index == sortedPosts.length) {
                     // Pagination loading indicator at the bottom.
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: 20),
@@ -278,7 +296,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       ),
                     );
                   }
-                  final post = state.posts[index];
+                  final post = sortedPosts[index];
                   return Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -287,6 +305,9 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       fellowshipId: widget.fellowshipId,
                       isMentor: state.isMentor,
                       currentUserId: state.currentUserId,
+                      isAdmin: isAdmin,
+                      onShareTap: () =>
+                          sharePost(context, post, widget.fellowshipName),
                       onCommentTap: () {
                         context.read<FellowshipFeedBloc>().add(
                               FellowshipCommentsOpenRequested(postId: post.id),
@@ -383,6 +404,36 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         );
   }
 
+  /// Watches for `'@'` typed at the start of a word and opens the mention
+  /// picker automatically.
+  void _handleCommentChanged(String text) {
+    final cursor = _controller.selection.baseOffset;
+    if (cursor < 0) return;
+    if (shouldOpenMentionSheet(text, cursor)) {
+      _openMentionSheet(cursorOverride: cursor);
+    }
+  }
+
+  /// Opens the `@mention` picker and, on selection, inserts the handle at the
+  /// current cursor position (replacing a trailing partial `@word`).
+  Future<void> _openMentionSheet({int? cursorOverride}) async {
+    final feedState = context.read<FellowshipFeedBloc>().state;
+    final candidate = await showMentionSheet(
+      context,
+      disciplerAllowed: feedState.disciplerAllowed,
+      mentors: feedState.mentors,
+    );
+    if (candidate == null || !mounted) return;
+    final selectionOffset = _controller.selection.baseOffset;
+    final cursor = cursorOverride ??
+        (selectionOffset >= 0 ? selectionOffset : _controller.text.length);
+    final result = insertMention(_controller.text, cursor, candidate.handle);
+    _controller.value = TextEditingValue(
+      text: result.text,
+      selection: TextSelection.collapsed(offset: result.cursor),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -455,140 +506,12 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                           Divider(color: context.appDivider, height: 1),
                       itemBuilder: (context, index) {
                         final comment = state.comments[index];
-                        final canDelete = widget.isMentor ||
-                            comment.authorUserId == widget.currentUserId;
-                        final canReport = !widget.isMentor &&
-                            comment.authorUserId != widget.currentUserId;
-                        final canBlock =
-                            comment.authorUserId != widget.currentUserId;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withAlpha(26),
-                                child: Text(
-                                  comment.authorDisplayName.isNotEmpty
-                                      ? comment.authorDisplayName[0]
-                                          .toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          comment.authorDisplayName,
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: context.appTextPrimary,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        if (canDelete)
-                                          GestureDetector(
-                                            onTap: () => context
-                                                .read<FellowshipFeedBloc>()
-                                                .add(
-                                                  FellowshipCommentDeleteRequested(
-                                                    commentId: comment.id,
-                                                    postId: widget.postId,
-                                                  ),
-                                                ),
-                                            child: Icon(
-                                              Icons.close,
-                                              size: 16,
-                                              color: context.appTextTertiary,
-                                            ),
-                                          ),
-                                        if (canReport)
-                                          GestureDetector(
-                                            onTap: () {
-                                              showModalBottomSheet<void>(
-                                                context: context,
-                                                isScrollControlled: true,
-                                                backgroundColor:
-                                                    Colors.transparent,
-                                                builder: (_) =>
-                                                    BlocProvider.value(
-                                                  value: context.read<
-                                                      FellowshipFeedBloc>(),
-                                                  child: _ReportSheet(
-                                                    fellowshipId:
-                                                        widget.fellowshipId,
-                                                    contentType: 'comment',
-                                                    contentId: comment.id,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: Icon(
-                                              Icons.flag_outlined,
-                                              size: 16,
-                                              color: context.appTextTertiary,
-                                            ),
-                                          ),
-                                        if (canBlock) ...[
-                                          const SizedBox(width: 10),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final bloc = context
-                                                  .read<FellowshipFeedBloc>();
-                                              if (await showBlockUserConfirmation(
-                                                  context)) {
-                                                bloc.add(
-                                                    FellowshipBlockUserRequested(
-                                                  blockedUserId:
-                                                      comment.authorUserId,
-                                                  fellowshipId:
-                                                      widget.fellowshipId,
-                                                  contentType: 'comment',
-                                                  contentId: comment.id,
-                                                ));
-                                              }
-                                            },
-                                            child: Icon(
-                                              Icons.block,
-                                              size: 16,
-                                              color: context.appTextTertiary,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      comment.content,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 13,
-                                        color: context.appTextPrimary,
-                                        height: 1.45,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                        return _CommentTile(
+                          comment: comment,
+                          postId: widget.postId,
+                          fellowshipId: widget.fellowshipId,
+                          isMentor: widget.isMentor,
+                          currentUserId: widget.currentUserId,
                         );
                       },
                     );
@@ -605,6 +528,11 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   builder: (context, state) {
                     return Row(
                       children: [
+                        IconButton(
+                          onPressed: () => _openMentionSheet(),
+                          icon: Icon(Icons.alternate_email_rounded,
+                              size: 20, color: context.appTextSecondary),
+                        ),
                         Expanded(
                           child: TextField(
                             controller: _controller,
@@ -647,6 +575,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                 ),
                               ),
                             ),
+                            onChanged: _handleCommentChanged,
                             onSubmitted: (_) => _submit(),
                           ),
                         ),
@@ -688,13 +617,283 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 }
 
 // ---------------------------------------------------------------------------
+// _CommentTile
+// ---------------------------------------------------------------------------
+
+/// A single comment row in the comments sheet.
+///
+/// Renders Discipler-authored comments with the AI avatar, chip, tint, and
+/// disclosure footer; shows a study guide link when [FellowshipCommentEntity
+/// .hasGuide]; and shows an approve/discard review pill for pending-review
+/// Discipler drafts (mentors only).
+class _CommentTile extends StatelessWidget {
+  final FellowshipCommentEntity comment;
+  final String postId;
+  final String fellowshipId;
+  final bool isMentor;
+  final String? currentUserId;
+
+  const _CommentTile({
+    required this.comment,
+    required this.postId,
+    required this.fellowshipId,
+    required this.isMentor,
+    required this.currentUserId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isSystem = comment.authorIsSystem;
+    final canDelete = isMentor || comment.authorUserId == currentUserId;
+    final canReport =
+        !isSystem && !isMentor && comment.authorUserId != currentUserId;
+    final canBlock = !isSystem && comment.authorUserId != currentUserId;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: isSystem
+          ? BoxDecoration(
+              color: context.appPrimary.withAlpha(
+                  Theme.of(context).brightness == Brightness.dark ? 40 : 18),
+              borderRadius: BorderRadius.circular(12),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              isSystem
+                  ? const DisciplerAvatar(radius: 16)
+                  : CircleAvatar(
+                      radius: 16,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primary.withAlpha(26),
+                      child: Text(
+                        comment.authorDisplayName.isNotEmpty
+                            ? comment.authorDisplayName[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            isSystem
+                                ? l10n.disciplerName
+                                : comment.authorDisplayName,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: context.appTextPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isSystem) ...[
+                          const SizedBox(width: 6),
+                          const DisciplerAiChip(),
+                        ],
+                        const Spacer(),
+                        if (canDelete)
+                          GestureDetector(
+                            onTap: () => context.read<FellowshipFeedBloc>().add(
+                                  FellowshipCommentDeleteRequested(
+                                    commentId: comment.id,
+                                    postId: postId,
+                                  ),
+                                ),
+                            child: Icon(
+                              Icons.close,
+                              size: 16,
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                        if (canReport)
+                          GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet<void>(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => BlocProvider.value(
+                                  value: context.read<FellowshipFeedBloc>(),
+                                  child: _ReportSheet(
+                                    fellowshipId: fellowshipId,
+                                    contentType: 'comment',
+                                    contentId: comment.id,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Icon(
+                              Icons.flag_outlined,
+                              size: 16,
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                        if (canBlock) ...[
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () async {
+                              final bloc = context.read<FellowshipFeedBloc>();
+                              if (await showBlockUserConfirmation(context)) {
+                                bloc.add(FellowshipBlockUserRequested(
+                                  blockedUserId: comment.authorUserId,
+                                  fellowshipId: fellowshipId,
+                                  contentType: 'comment',
+                                  contentId: comment.id,
+                                ));
+                              }
+                            },
+                            child: Icon(
+                              Icons.block,
+                              size: 16,
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text.rich(
+                      TextSpan(
+                        children: mentionSpans(
+                          comment.content,
+                          TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            color: context.appTextPrimary,
+                            height: 1.45,
+                          ),
+                          TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.appPrimary,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (comment.hasGuide) ...[
+                      const SizedBox(height: 8),
+                      StudyGuideChip(
+                        studyGuideId: comment.studyGuideId,
+                        title: comment.guideTitle ?? l10n.openStudyGuide,
+                        inputType: comment.guideInputType,
+                        inputValue: comment.guideInputValue,
+                        language: comment.guideLanguage,
+                      ),
+                    ],
+                    if (isSystem) ...[
+                      const SizedBox(height: 8),
+                      const DisciplerFooterNote(),
+                    ],
+                    if (comment.isPendingReview) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withAlpha(30),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              l10n.disciplerDraftBadge,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.warningDark,
+                              ),
+                            ),
+                          ),
+                          if (isMentor) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => context
+                                  .read<FellowshipFeedBloc>()
+                                  .add(FellowshipDisciplerCommentReviewed(
+                                    commentId: comment.id,
+                                    approve: true,
+                                  )),
+                              child: Text(
+                                l10n.approve,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.appSuccess,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            GestureDetector(
+                              onTap: () => context
+                                  .read<FellowshipFeedBloc>()
+                                  .add(FellowshipDisciplerCommentReviewed(
+                                    commentId: comment.id,
+                                    approve: false,
+                                  )),
+                              child: Text(
+                                l10n.discard,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.appError,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // FellowshipCreatePostSheet (public — shared with home screen)
 // ---------------------------------------------------------------------------
 
 class FellowshipCreatePostSheet extends StatefulWidget {
   final String fellowshipId;
+  final bool initialToMentors;
+  final String initialType;
 
-  const FellowshipCreatePostSheet({required this.fellowshipId, super.key});
+  const FellowshipCreatePostSheet({
+    required this.fellowshipId,
+    this.initialToMentors = false,
+    this.initialType = 'general',
+    super.key,
+  });
 
   @override
   State<FellowshipCreatePostSheet> createState() =>
@@ -703,7 +902,8 @@ class FellowshipCreatePostSheet extends StatefulWidget {
 
 class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   final TextEditingController _contentController = TextEditingController();
-  String _selectedType = 'general';
+  late String _selectedType = widget.initialType;
+  late bool _toMentors = widget.initialToMentors;
 
   /// Returns contextual placeholder text based on the selected post type.
   String _hintForType(String type) {
@@ -732,9 +932,43 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
           FellowshipPostCreateRequested(
             fellowshipId: widget.fellowshipId,
             content: content,
-            postType: _selectedType,
+            postType: _toMentors ? 'question' : _selectedType,
+            toMentors: _toMentors,
           ),
         );
+  }
+
+  /// Watches for `'@'` typed at the start of a word and opens the mention
+  /// picker automatically.
+  void _handleContentChanged(String text) {
+    final cursor = _contentController.selection.baseOffset;
+    if (cursor < 0) return;
+    if (shouldOpenMentionSheet(text, cursor)) {
+      _openMentionSheet(cursorOverride: cursor);
+    }
+  }
+
+  /// Opens the `@mention` picker and, on selection, inserts the handle at the
+  /// current cursor position (replacing a trailing partial `@word`).
+  Future<void> _openMentionSheet({int? cursorOverride}) async {
+    final feedState = context.read<FellowshipFeedBloc>().state;
+    final candidate = await showMentionSheet(
+      context,
+      disciplerAllowed: feedState.disciplerAllowed,
+      mentors: feedState.mentors,
+    );
+    if (candidate == null || !mounted) return;
+    final selectionOffset = _contentController.selection.baseOffset;
+    final cursor = cursorOverride ??
+        (selectionOffset >= 0
+            ? selectionOffset
+            : _contentController.text.length);
+    final result =
+        insertMention(_contentController.text, cursor, candidate.handle);
+    _contentController.value = TextEditingValue(
+      text: result.text,
+      selection: TextSelection.collapsed(offset: result.cursor),
+    );
   }
 
   @override
@@ -794,240 +1028,302 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
           color: context.appSurface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomInset),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Handle ────────────────────────────────────────────────
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBorder,
-                  borderRadius: BorderRadius.circular(2),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: 24 + bottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Handle ────────────────────────────────────────────────
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.appBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // ── Title ─────────────────────────────────────────────────
-            Text(
-              l10n.feedCreateTitle,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: context.appTextPrimary,
+              // ── Title ─────────────────────────────────────────────────
+              Text(
+                l10n.feedCreateTitle,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: context.appTextPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // ── Post type selector ────────────────────────────────────
-            Text(
-              l10n.feedCreateTypeLabel,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: context.appTextSecondary,
+              // ── Post type selector ────────────────────────────────────
+              Text(
+                l10n.feedCreateTypeLabel,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: context.appTextSecondary,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            // 2×2 grid of type cards
-            for (int row = 0; row < 2; row++) ...[
-              if (row > 0) const SizedBox(height: 8),
-              Row(
-                children: [
-                  for (int col = 0; col < 2; col++) ...[
-                    if (col > 0) const SizedBox(width: 8),
-                    Expanded(
-                      child: Builder(builder: (context) {
-                        final t = postTypes[row * 2 + col];
-                        final isSelected = _selectedType == t.value;
-                        // The raw accent is tuned as a fill, not as text: on
-                        // the dark card #4F46E5 measures 2.6:1, well under the
-                        // 4.5:1 minimum. Lift it against the surface it is
-                        // actually drawn on; fills and borders keep the
-                        // original.
-                        final accent = t.accent;
-                        final accentText =
-                            ensureContrast(accent, context.appSurfaceVariant);
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedType = t.value),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? accent.withAlpha(26)
-                                  : context.appSurfaceVariant,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected ? accent : Colors.transparent,
-                                width: 1.5,
+              const SizedBox(height: 8),
+              // 2×2 grid of type cards
+              for (int row = 0; row < 2; row++) ...[
+                if (row > 0) const SizedBox(height: 8),
+                Row(
+                  children: [
+                    for (int col = 0; col < 2; col++) ...[
+                      if (col > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: Builder(builder: (context) {
+                          final t = postTypes[row * 2 + col];
+                          final isSelected = _selectedType == t.value;
+                          // The raw accent is tuned as a fill, not as text: on
+                          // the dark card #4F46E5 measures 2.6:1, well under the
+                          // 4.5:1 minimum. Lift it against the surface it is
+                          // actually drawn on; fills and borders keep the
+                          // original.
+                          final accent = t.accent;
+                          final accentText =
+                              ensureContrast(accent, context.appSurfaceVariant);
+                          return GestureDetector(
+                            onTap: () =>
+                                setState(() => _selectedType = t.value),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? accent.withAlpha(26)
+                                    : context.appSurfaceVariant,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color:
+                                      isSelected ? accent : Colors.transparent,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? accent.withAlpha(51)
+                                          : context.appSurface,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      t.icon,
+                                      size: 18,
+                                      // Same corrected colour as the label: the
+                                      // icon sits on `accent.withAlpha(51)` over
+                                      // the card, so the raw accent nearly
+                                      // matches its own background.
+                                      color: isSelected
+                                          ? accentText
+                                          : context.appTextTertiary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          t.label,
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: isSelected
+                                                ? accentText
+                                                : context.appTextPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          t.description,
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 10,
+                                            color: context.appTextTertiary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? accent.withAlpha(51)
-                                        : context.appSurface,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    t.icon,
-                                    size: 18,
-                                    // Same corrected colour as the label: the
-                                    // icon sits on `accent.withAlpha(51)` over
-                                    // the card, so the raw accent nearly
-                                    // matches its own background.
-                                    color: isSelected
-                                        ? accentText
-                                        : context.appTextTertiary,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        t.label,
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: isSelected
-                                              ? accentText
-                                              : context.appTextPrimary,
-                                        ),
-                                      ),
-                                      Text(
-                                        t.description,
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 10,
-                                          color: context.appTextTertiary,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
+                          );
+                        }),
+                      ),
+                    ],
                   ],
+                ),
+              ],
+              const SizedBox(height: 8),
+
+              // ── Ask the mentors toggle ─────────────────────────────────
+              InkWell(
+                onTap: () => setState(() => _toMentors = !_toMentors),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.askMentorsToggle,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: context.appTextPrimary,
+                              ),
+                            ),
+                            Text(
+                              l10n.askMentorsHint,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _toMentors,
+                        onChanged: (v) => setState(() => _toMentors = v),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // ── Content field ─────────────────────────────────────────
+              Row(
+                children: [
+                  Text(
+                    l10n.feedCreateContentLabel,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: context.appTextSecondary,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => _openMentionSheet(),
+                    icon: Icon(Icons.alternate_email_rounded,
+                        size: 18, color: context.appTextSecondary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ],
               ),
-            ],
-            const SizedBox(height: 16),
-
-            // ── Content field ─────────────────────────────────────────
-            Text(
-              l10n.feedCreateContentLabel,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: context.appTextSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _contentController,
-              maxLines: 5,
-              maxLength: 256,
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                color: context.appTextPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: _hintForType(_selectedType),
-                hintStyle: TextStyle(
+              const SizedBox(height: 8),
+              TextField(
+                controller: _contentController,
+                maxLines: 5,
+                maxLength: 256,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+                scrollPadding: const EdgeInsets.only(bottom: 120),
+                onChanged: _handleContentChanged,
+                style: TextStyle(
                   fontFamily: 'Inter',
-                  color: context.appTextTertiary,
+                  fontSize: 14,
+                  color: context.appTextPrimary,
                 ),
-                filled: true,
-                fillColor: context.appScaffold,
-                contentPadding: const EdgeInsets.all(14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: context.appBorder),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: context.appBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 1.5,
+                decoration: InputDecoration(
+                  hintText: _hintForType(_selectedType),
+                  hintStyle: TextStyle(
+                    fontFamily: 'Inter',
+                    color: context.appTextTertiary,
+                  ),
+                  filled: true,
+                  fillColor: context.appScaffold,
+                  contentPadding: const EdgeInsets.all(14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: context.appBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: context.appBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // ── Submit button ─────────────────────────────────────────
-            BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-              buildWhen: (prev, curr) => prev.submitting != curr.submitting,
-              builder: (context, state) {
-                final submitting = state.submitting;
-                return SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: submitting ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.appInteractive,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor:
-                          context.appInteractive.withAlpha(128),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              // ── Submit button ─────────────────────────────────────────
+              BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+                buildWhen: (prev, curr) => prev.submitting != curr.submitting,
+                builder: (context, state) {
+                  final submitting = state.submitting;
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: submitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.appInteractive,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            context.appInteractive.withAlpha(128),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      child: submitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              l10n.feedCreatePost,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
-                    child: submitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : Text(
-                            l10n.feedCreatePost,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

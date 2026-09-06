@@ -36,6 +36,7 @@ class FellowshipFeedBloc
     on<FellowshipReportRequested>(_onReportRequested);
     on<FellowshipBlockUserRequested>(_onBlockUserRequested);
     on<FellowshipTopicCountsRequested>(_onTopicCountsRequested);
+    on<FellowshipDisciplerCommentReviewed>(_onDisciplerCommentReviewed);
   }
 
   Future<void> _onInitialized(
@@ -47,6 +48,8 @@ class FellowshipFeedBloc
       currentUserId: event.currentUserId,
       postingPermission: event.postingPermission,
       postingContextResolved: event.postingContextResolved,
+      disciplerAllowed: event.disciplerAllowed,
+      mentors: event.mentors,
     ));
   }
 
@@ -165,6 +168,7 @@ class FellowshipFeedBloc
       studyGuideId: event.studyGuideId,
       guideInputType: event.guideInputType,
       guideLanguage: event.guideLanguage,
+      toMentors: event.toMentors,
     );
 
     result.fold(
@@ -226,30 +230,15 @@ class FellowshipFeedBloc
       (updatedCounts) {
         final updatedPosts = state.posts.map((post) {
           if (post.id != event.postId) return post;
-          return FellowshipPostEntity(
-            id: post.id,
-            fellowshipId: post.fellowshipId,
-            authorUserId: post.authorUserId,
-            content: post.content,
-            postType: post.postType,
+          final resolvedReaction = _resolveUserReaction(
+            previous: post.userReaction,
+            toggled: event.reactionType,
+            updatedCounts: updatedCounts,
+          );
+          return post.copyWith(
             reactionCounts: updatedCounts,
-            isDeleted: post.isDeleted,
-            createdAt: post.createdAt,
-            authorDisplayName: post.authorDisplayName,
-            authorAvatarUrl: post.authorAvatarUrl,
-            userReaction: _resolveUserReaction(
-              previous: post.userReaction,
-              toggled: event.reactionType,
-              updatedCounts: updatedCounts,
-            ),
-            commentCount: post.commentCount,
-            topicId: post.topicId,
-            topicTitle: post.topicTitle,
-            guideTitle: post.guideTitle,
-            lessonIndex: post.lessonIndex,
-            studyGuideId: post.studyGuideId,
-            guideInputType: post.guideInputType,
-            guideLanguage: post.guideLanguage,
+            userReaction: resolvedReaction,
+            clearUserReaction: resolvedReaction == null,
           );
         }).toList();
 
@@ -311,20 +300,7 @@ class FellowshipFeedBloc
         // Increment commentCount on the matching post.
         final updatedPosts = state.posts.map((p) {
           if (p.id != postId) return p;
-          return FellowshipPostEntity(
-            id: p.id,
-            fellowshipId: p.fellowshipId,
-            authorUserId: p.authorUserId,
-            content: p.content,
-            postType: p.postType,
-            reactionCounts: p.reactionCounts,
-            isDeleted: p.isDeleted,
-            createdAt: p.createdAt,
-            authorDisplayName: p.authorDisplayName,
-            authorAvatarUrl: p.authorAvatarUrl,
-            userReaction: p.userReaction,
-            commentCount: p.commentCount + 1,
-          );
+          return p.copyWith(commentCount: p.commentCount + 1);
         }).toList();
         emit(state.copyWith(
           commentSubmitting: false,
@@ -350,20 +326,8 @@ class FellowshipFeedBloc
             state.comments.where((c) => c.id != event.commentId).toList();
         final updatedPosts = state.posts.map((p) {
           if (p.id != event.postId) return p;
-          return FellowshipPostEntity(
-            id: p.id,
-            fellowshipId: p.fellowshipId,
-            authorUserId: p.authorUserId,
-            content: p.content,
-            postType: p.postType,
-            reactionCounts: p.reactionCounts,
-            isDeleted: p.isDeleted,
-            createdAt: p.createdAt,
-            authorDisplayName: p.authorDisplayName,
-            authorAvatarUrl: p.authorAvatarUrl,
-            userReaction: p.userReaction,
-            commentCount: (p.commentCount - 1).clamp(0, p.commentCount),
-          );
+          return p.copyWith(
+              commentCount: (p.commentCount - 1).clamp(0, p.commentCount));
         }).toList();
         emit(state.copyWith(
           comments: updatedComments,
@@ -472,6 +436,33 @@ class FellowshipFeedBloc
     result.fold(
       (_) {},
       (counts) => emit(state.copyWith(topicPostCounts: counts)),
+    );
+  }
+
+  /// Approves or discards a Discipler-authored draft comment. On approval
+  /// the comment's [FellowshipCommentEntity.isPendingReview] flag is cleared
+  /// in place; on discard the comment is removed from the local list.
+  Future<void> _onDisciplerCommentReviewed(
+    FellowshipDisciplerCommentReviewed event,
+    Emitter<FellowshipFeedState> emit,
+  ) async {
+    final result = event.approve
+        ? await _repository.approveDisciplerComment(event.commentId)
+        : await _repository.discardDisciplerComment(event.commentId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
+      (_) {
+        final updated = event.approve
+            ? state.comments
+                .map((c) => c.id == event.commentId
+                    ? c.copyWith(isPendingReview: false)
+                    : c)
+                .toList()
+            : state.comments.where((c) => c.id != event.commentId).toList();
+        emit(state.copyWith(comments: updated, clearErrorMessage: true));
+      },
     );
   }
 }

@@ -93,6 +93,11 @@ import '../../features/community/presentation/screens/community_tab_screen.dart'
 import '../../features/community/presentation/screens/join_fellowship_screen.dart';
 import '../../features/community/presentation/screens/create_fellowship_screen.dart';
 import '../../features/community/presentation/screens/fellowship_home_screen.dart';
+import '../../features/community/presentation/screens/fellowship_settings_screen.dart';
+import '../../features/community/presentation/bloc/fellowship_settings/fellowship_settings_bloc.dart';
+import '../../features/community/presentation/bloc/fellowship_settings/fellowship_settings_event.dart';
+import '../../features/community/presentation/bloc/discipler_activity/discipler_activity_bloc.dart';
+import '../../features/community/presentation/screens/discipler_activity_screen.dart';
 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
@@ -306,6 +311,78 @@ class AppRouter {
                               fellowshipId: fellowshipId,
                               fellowshipName: fellowship?.name,
                               fellowship: fellowship,
+                            ),
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'post/:postId',
+                        name: 'fellowship_post',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          final postId = state.pathParameters['postId'];
+                          final fellowship = state.extra is FellowshipEntity
+                              ? state.extra as FellowshipEntity
+                              : null;
+                          return MaxWidthWrapper(
+                            child: FellowshipHomeScreen(
+                              fellowshipId: fellowshipId,
+                              fellowshipName: fellowship?.name,
+                              fellowship: fellowship,
+                              initialPostId: postId,
+                            ),
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'discipler-activity',
+                        name: 'fellowship_discipler_activity',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          return MaxWidthWrapper(
+                            child: BlocProvider(
+                              create: (_) => sl<DisciplerActivityBloc>(),
+                              child: DisciplerActivityScreen(
+                                fellowshipId: fellowshipId,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: 'settings',
+                        name: 'fellowship_settings',
+                        builder: (context, state) {
+                          final fellowshipId =
+                              state.pathParameters['fellowshipId'] ?? '';
+                          final fellowship = state.extra is FellowshipEntity
+                              ? state.extra as FellowshipEntity
+                              : null;
+                          if (fellowship == null) {
+                            // No entity was passed via `extra` — navigate
+                            // back rather than crash on a null fellowship.
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(const SnackBar(
+                                      content:
+                                          Text('Could not open settings.')));
+                                context.pop();
+                              }
+                            });
+                            return const SizedBox.shrink();
+                          }
+                          return MaxWidthWrapper(
+                            child: BlocProvider(
+                              create: (_) => sl<FellowshipSettingsBloc>()
+                                ..add(FellowshipSettingsLoaded(fellowship)),
+                              child: FellowshipSettingsScreen(
+                                fellowshipId: fellowshipId,
+                                fellowship: fellowship,
+                              ),
                             ),
                           );
                         },

@@ -37,6 +37,9 @@ import 'schedule_meeting_sheet.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_event.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_state.dart';
+import '../utils/auth_helpers.dart';
+import '../utils/feed_sort.dart';
+import '../utils/share_helpers.dart';
 import '../widgets/fellowship_post_card.dart';
 
 // ============================================================================
@@ -56,10 +59,15 @@ class FellowshipHomeScreen extends StatefulWidget {
   final String? fellowshipName;
   final FellowshipEntity? fellowship;
 
+  /// When set (post deep link), the full feed is pushed and this post's
+  /// comments are opened once the first feed load succeeds.
+  final String? initialPostId;
+
   const FellowshipHomeScreen({
     required this.fellowshipId,
     this.fellowshipName,
     this.fellowship,
+    this.initialPostId,
     super.key,
   });
 
@@ -68,6 +76,29 @@ class FellowshipHomeScreen extends StatefulWidget {
 }
 
 class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
+  bool _handledInitialPost = false;
+
+  void _handleFeedStateChange(BuildContext context, FellowshipFeedState state) {
+    if (widget.initialPostId == null || _handledInitialPost) return;
+    if (state.status != FellowshipFeedStatus.success) return;
+    _handledInitialPost = true;
+    final feedBloc = context.read<FellowshipFeedBloc>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BlocProvider.value(
+          value: feedBloc,
+          child: _FellowshipFullFeedPage(
+            fellowshipId: widget.fellowshipId,
+            fellowshipName: widget.fellowshipName,
+          ),
+        ),
+      ),
+    );
+    feedBloc.add(
+      FellowshipCommentsOpenRequested(postId: widget.initialPostId!),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fellowship = widget.fellowship;
@@ -84,6 +115,8 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
               // Known immediately when the entity was passed; otherwise wait
               // for the server (avoids flashing the post button on refresh).
               postingContextResolved: fellowship != null,
+              disciplerAllowed: fellowship?.disciplerAllowed ?? false,
+              mentors: fellowship?.mentors ?? const [],
             ))
             // Authoritative posting context — corrects FAB/empty-state gating
             // when the entity wasn't passed (deep link / web refresh).
@@ -125,11 +158,15 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
             ..add(FellowshipMeetingsLoadRequested(widget.fellowshipId)),
         ),
       ],
-      child: _FellowshipHomeContent(
-        fellowshipId: widget.fellowshipId,
-        fellowshipName: widget.fellowshipName,
-        fellowship: widget.fellowship,
-        isMentor: isMentor,
+      child: BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
+        listenWhen: (prev, curr) => prev.status != curr.status,
+        listener: _handleFeedStateChange,
+        child: _FellowshipHomeContent(
+          fellowshipId: widget.fellowshipId,
+          fellowshipName: widget.fellowshipName,
+          fellowship: widget.fellowship,
+          isMentor: isMentor,
+        ),
       ),
     );
   }
@@ -168,6 +205,7 @@ class _FellowshipHomeContent extends StatelessWidget {
             fellowshipId: fellowshipId,
             isMentor: isMentor,
             fellowshipName: fellowshipName,
+            disciplerAllowed: fellowship?.disciplerAllowed ?? false,
           ),
         ),
       ),
@@ -180,7 +218,10 @@ class _FellowshipHomeContent extends StatelessWidget {
       MaterialPageRoute<void>(
         builder: (_) => BlocProvider.value(
           value: feedBloc,
-          child: _FellowshipFullFeedPage(fellowshipId: fellowshipId),
+          child: _FellowshipFullFeedPage(
+            fellowshipId: fellowshipId,
+            fellowshipName: fellowshipName,
+          ),
         ),
       ),
     );
@@ -304,21 +345,6 @@ class _FellowshipHomeContent extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showEditSheet(BuildContext context) {
-    final bloc = context.read<FellowshipMembersBloc>();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => BlocProvider.value(
-        value: bloc,
-        child: _EditFellowshipSheet(initialName: fellowshipName ?? ''),
       ),
     );
   }
@@ -467,23 +493,40 @@ class _FellowshipHomeContent extends StatelessWidget {
               tooltip: l10n.fellowshipTabMembers,
               onPressed: () => _openMembers(context),
             ),
-            // Overflow menu (edit / leave)
+            // Overflow menu (settings / activity / delete / leave)
             PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, color: context.appTextPrimary),
               onSelected: (value) {
                 if (value == 'leave') _showLeaveConfirm(context);
-                if (value == 'edit') _showEditSheet(context);
+                if (value == 'settings') {
+                  context.push('/community/$fellowshipId/settings',
+                      extra: fellowship);
+                }
+                if (value == 'discipler_activity') {
+                  context.push('/community/$fellowshipId/discipler-activity');
+                }
                 if (value == 'delete') _showDeleteConfirm(context);
               },
               itemBuilder: (_) => [
                 if (isMentor)
                   PopupMenuItem(
-                    value: 'edit',
+                    value: 'settings',
                     child: Row(children: [
-                      Icon(Icons.edit_outlined,
+                      Icon(Icons.settings_outlined,
                           color: context.appTextPrimary, size: 18),
                       const SizedBox(width: 10),
-                      Text(l10n.editFellowshipTitle,
+                      Text(l10n.fellowshipSettingsTitle,
+                          style: TextStyle(color: context.appTextPrimary)),
+                    ]),
+                  ),
+                if (isMentor && (fellowship?.disciplerAllowed ?? false))
+                  PopupMenuItem(
+                    value: 'discipler_activity',
+                    child: Row(children: [
+                      Icon(Icons.auto_awesome_rounded,
+                          color: context.appTextPrimary, size: 18),
+                      const SizedBox(width: 10),
+                      Text(l10n.disciplerActivityTitle,
                           style: TextStyle(color: context.appTextPrimary)),
                     ]),
                   ),
@@ -518,6 +561,8 @@ class _FellowshipHomeContent extends StatelessWidget {
             // Gradient hero header
             SliverToBoxAdapter(
               child: _HeroHeader(
+                fellowshipId: fellowshipId,
+                fellowshipName: fellowshipName,
                 fellowship: fellowship,
                 isMentor: isMentor,
                 onLessonTap: () => _openLessons(context),
@@ -548,6 +593,7 @@ class _FellowshipHomeContent extends StatelessWidget {
             SliverToBoxAdapter(
               child: _FeedPreviewSection(
                 fellowshipId: fellowshipId,
+                fellowshipName: fellowshipName,
                 onViewAll: () => _openFullFeed(context),
               ),
             ),
@@ -564,15 +610,36 @@ class _FellowshipHomeContent extends StatelessWidget {
 // ============================================================================
 
 class _HeroHeader extends StatelessWidget {
+  final String fellowshipId;
+  final String? fellowshipName;
   final FellowshipEntity? fellowship;
   final bool isMentor;
   final VoidCallback onLessonTap;
 
   const _HeroHeader({
+    required this.fellowshipId,
     required this.isMentor,
     required this.onLessonTap,
+    this.fellowshipName,
     this.fellowship,
   });
+
+  void _openAskMentor(BuildContext context) {
+    final feedBloc = context.read<FellowshipFeedBloc>();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BlocProvider.value(
+        value: feedBloc,
+        child: FellowshipCreatePostSheet(
+          fellowshipId: fellowshipId,
+          initialToMentors: true,
+          initialType: 'question',
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -583,32 +650,40 @@ class _HeroHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Mentor name + member count (from members BLoC) ────────────
+          // ── Mentors strip + member count (from members BLoC) ────────────
           BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
             buildWhen: (prev, curr) => prev.members != curr.members,
             builder: (ctx, membersState) {
-              final mentor = membersState.members
+              final l10n = AppLocalizations.of(context)!;
+              final mentorMembers = membersState.members
                   .where((m) => m.role == 'mentor')
-                  .firstOrNull;
+                  .toList();
+              final mentorNames = mentorMembers.isNotEmpty
+                  ? mentorMembers.map((m) => m.displayName).join(', ')
+                  : fellowship?.mentors.map((m) => m.displayName).join(', ');
               final memberCount = membersState.members.isNotEmpty
                   ? membersState.members.length
                   : (fellowship?.memberCount ?? 0);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (mentor != null)
+                  if (mentorNames != null && mentorNames.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(children: [
                         const Icon(Icons.person_rounded,
                             color: Colors.white70, size: 14),
                         const SizedBox(width: 4),
-                        Text(
-                          'Mentor: ${mentor.displayName}',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Colors.white70,
+                        Flexible(
+                          child: Text(
+                            '${l10n.mentorsSection}: $mentorNames',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ]),
@@ -618,11 +693,67 @@ class _HeroHeader extends StatelessWidget {
                         color: Colors.white70, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      '$memberCount ${AppLocalizations.of(context)!.communityMembersCount(memberCount)}',
+                      '$memberCount ${l10n.communityMembersCount(memberCount)}',
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13,
                         color: Colors.white70,
+                      ),
+                    ),
+                    if (fellowship?.isOfficial == true) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.20),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          l10n.officialBadge.toUpperCase(),
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ]),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _openAskMentor(context),
+                      icon: const Icon(Icons.forum_outlined, size: 16),
+                      label: Text(l10n.askAMentor),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => shareFellowshipInvite(
+                          context, fellowshipId, fellowshipName),
+                      icon: const Icon(Icons.share_outlined,
+                          size: 16, color: Colors.white),
+                      label: Text(l10n.sharePost,
+                          style: const TextStyle(color: Colors.white)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white70),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ]),
@@ -791,11 +922,13 @@ class _HeroHeader extends StatelessWidget {
 
 class _FeedPreviewSection extends StatelessWidget {
   final String fellowshipId;
+  final String? fellowshipName;
   final VoidCallback onViewAll;
 
   const _FeedPreviewSection({
     required this.fellowshipId,
     required this.onViewAll,
+    this.fellowshipName,
   });
 
   @override
@@ -908,8 +1041,9 @@ class _FeedPreviewSection extends StatelessWidget {
                 );
               }
 
-              // Posts
-              final preview = state.posts.take(5).toList();
+              // Posts — sorted so today's daily study leads the preview.
+              final preview = sortFeed(state.posts).take(5).toList();
+              final isAdmin = isViewerAdmin(context);
               return Column(children: [
                 for (final post in preview)
                   Padding(
@@ -919,6 +1053,9 @@ class _FeedPreviewSection extends StatelessWidget {
                       fellowshipId: fellowshipId,
                       interactive: false,
                       maxContentLines: 3,
+                      isAdmin: isAdmin,
+                      onShareTap: () =>
+                          sharePost(context, post, fellowshipName),
                     ),
                   ),
                 // "View all" button when there are more
@@ -953,8 +1090,12 @@ class _FeedPreviewSection extends StatelessWidget {
 
 class _FellowshipFullFeedPage extends StatelessWidget {
   final String fellowshipId;
+  final String? fellowshipName;
 
-  const _FellowshipFullFeedPage({required this.fellowshipId});
+  const _FellowshipFullFeedPage({
+    required this.fellowshipId,
+    this.fellowshipName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -976,7 +1117,10 @@ class _FellowshipFullFeedPage extends StatelessWidget {
           ),
         ),
       ),
-      body: FellowshipFeedTabScreen(fellowshipId: fellowshipId),
+      body: FellowshipFeedTabScreen(
+        fellowshipId: fellowshipId,
+        fellowshipName: fellowshipName,
+      ),
     );
   }
 }
@@ -1467,11 +1611,13 @@ class _FellowshipMembersPage extends StatelessWidget {
   final String fellowshipId;
   final bool isMentor;
   final String? fellowshipName;
+  final bool disciplerAllowed;
 
   const _FellowshipMembersPage({
     required this.fellowshipId,
     required this.isMentor,
     this.fellowshipName,
+    this.disciplerAllowed = false,
   });
 
   @override
@@ -1497,6 +1643,8 @@ class _FellowshipMembersPage extends StatelessWidget {
       body: FellowshipMembersTabScreen(
         fellowshipId: fellowshipId,
         fellowshipName: fellowshipName,
+        disciplerAllowed: disciplerAllowed,
+        isAdmin: isViewerAdmin(context),
       ),
     );
   }
@@ -1670,183 +1818,6 @@ class _MeetingsSectionTile extends StatelessWidget {
                 ],
               );
             },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// Edit Fellowship bottom sheet (unchanged from previous implementation)
-// ============================================================================
-
-class _EditFellowshipSheet extends StatefulWidget {
-  final String initialName;
-
-  const _EditFellowshipSheet({required this.initialName});
-
-  @override
-  State<_EditFellowshipSheet> createState() => _EditFellowshipSheetState();
-}
-
-class _EditFellowshipSheetState extends State<_EditFellowshipSheet> {
-  late final TextEditingController _nameCtrl;
-  final TextEditingController _descCtrl = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.initialName);
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _descCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return BlocListener<FellowshipMembersBloc, FellowshipMembersState>(
-      listenWhen: (prev, curr) => prev.editStatus != curr.editStatus,
-      listener: (context, state) {
-        if (state.editStatus == FellowshipEditStatus.success) {
-          Navigator.of(context).pop();
-        }
-      },
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.appBorder,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    l10n.editFellowshipTitle,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: context.appTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Name field
-                  TextFormField(
-                    controller: _nameCtrl,
-                    maxLength: 60,
-                    decoration: InputDecoration(
-                      labelText: l10n.createFellowshipNameLabel,
-                      filled: true,
-                      fillColor: context.appInputFill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().length < 3) {
-                        return l10n.createFellowshipNameError;
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  // Description field
-                  TextFormField(
-                    controller: _descCtrl,
-                    maxLength: 500,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: l10n.createFellowshipDescLabel,
-                      filled: true,
-                      fillColor: context.appInputFill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Save button
-                  BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
-                    buildWhen: (prev, curr) =>
-                        prev.editStatus != curr.editStatus,
-                    builder: (context, state) {
-                      final loading =
-                          state.editStatus == FellowshipEditStatus.loading;
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: loading
-                              ? null
-                              : () {
-                                  if (!_formKey.currentState!.validate()) {
-                                    return;
-                                  }
-                                  context
-                                      .read<FellowshipMembersBloc>()
-                                      .add(FellowshipEditRequested(
-                                        name: _nameCtrl.text.trim(),
-                                        description:
-                                            _descCtrl.text.trim().isNotEmpty
-                                                ? _descCtrl.text.trim()
-                                                : null,
-                                      ));
-                                },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor: AppColors.onGradient,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: loading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.onGradient,
-                                  ),
-                                )
-                              : Text(
-                                  l10n.editFellowshipSave,
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),

@@ -617,6 +617,71 @@ class AppLocalizations {
       'walkthrough.practice_type_it_out.title': 'Type It from Memory',
       'walkthrough.practice_type_it_out.desc':
           'Type the complete verse from memory — word for word.',
+      // Discipler, mentors, sharing and fellowship settings
+      'disciplerName': 'Discipler',
+      'disciplerAiChip': 'AI',
+      'disciplerFooter':
+          'Discipler is an AI helper. Mentors review its answers.',
+      'disciplerDraftBadge': 'Draft · mentors only',
+      'approve': 'Approve',
+      'discard': 'Discard',
+      'openStudyGuide': 'Open Study Guide',
+      'postTypeDaily': "Today's study",
+      'openFullStudy': 'Open the full study',
+      'askAMentor': 'Ask a Mentor',
+      'toMentorsChip': 'To mentors',
+      'askMentorsToggle': 'Ask the mentors directly',
+      'askMentorsHint':
+          'Mentors get notified. Discipler stays out of this one.',
+      'mentionSheetTitle': 'Mention',
+      'disciplerMentionSubtitle': 'AI helper · answers in your language',
+      'mentorLabel': 'Mentor',
+      'ownerLabel': 'Owner',
+      'helpersSection': 'Helpers',
+      'mentorsSection': 'Mentors',
+      'promoteToMentor': 'Promote to Mentor',
+      'demoteToMember': 'Demote to Member',
+      'officialBadge': 'Official',
+      'unlimitedMembers': 'Unlimited',
+      'sharePost': 'Share Post',
+      'sharePostSuffix': 'on Disciplefy',
+      'fellowshipSettingsTitle': 'Fellowship Settings',
+      'disciplerSettingsSection': 'Discipler',
+      'disciplerAllowedByAdmin': 'Allowed by admin',
+      'disciplerAnswerQuestions': 'Answer questions',
+      'disciplerModeOff': 'Off',
+      'disciplerModeAuto': 'Answer automatically',
+      'disciplerModeReview': 'Draft for my review',
+      'disciplerWhichQuestions': 'Which questions',
+      'disciplerScopeAll': 'All questions',
+      'disciplerScopeLessons': 'Lesson discussions only',
+      'disciplerWaitFirst': 'Wait for a mentor first',
+      'disciplerDelayNow': 'Immediately',
+      'disciplerDelay30': '30 min',
+      'disciplerDelay120': '2 h',
+      'disciplerDelay720': '12 h',
+      'disciplerReactToggle': 'React to posts',
+      'disciplerDailyToggle': 'Post a daily study',
+      'disciplerNotifyToggle': 'Notify me about Discipler activity',
+      'disciplerActivityTitle': 'Discipler activity',
+      'activityTabAll': 'All',
+      'activityTabReview': 'Review',
+      'activityTabReplies': 'Replies',
+      'activityTabReactions': 'Reactions',
+      'activityTabDaily': 'Daily',
+      'activityKindDraft': 'DRAFT',
+      'activityKindReplied': 'REPLIED',
+      'activityKindReacted': 'REACTED',
+      'activityKindDaily': 'DAILY STUDY',
+      'activityEmpty': 'Nothing from Discipler yet.',
+      'deleteAction': 'Delete',
+      'createFellowshipOfficial': 'Official Disciplefy fellowship',
+      'createFellowshipDisciplerAllowed': 'Allow Discipler replies',
+      'createFellowshipDailyAllowed': 'Allow daily study post',
+      'adminOptionsLabel': 'Admin options',
+      'disciplerHelperSubtitle': 'AI helper',
+      'replyAction': 'Reply',
+      'memberLabel': 'Member',
     },
     'hi': {
       // Common
@@ -1208,6 +1273,71 @@ class AppLocalizations {
       'walkthrough.practice_type_it_out.title': 'याद करके टाइप करें',
       'walkthrough.practice_type_it_out.desc':
           'पूरा वचन याद करके शब्द-दर-शब्द टाइप करें।',
+      // Discipler, mentors, sharing and fellowship settings
+      'disciplerName': 'डिसाइपलर',
+      'disciplerAiChip': 'AI',
+      'disciplerFooter':
+          'डिसाइपलर एक AI सहायक है। मेंटर इसके उत्तरों की समीक्षा करते हैं।',
+      'disciplerDraftBadge': 'ड्राफ्ट · केवल मेंटर के लिए',
+      'approve': 'स्वीकृत करें',
+      'discard': 'हटाएं',
+      'openStudyGuide': 'अध्ययन गाइड खोलें',
+      'postTypeDaily': 'आज का अध्ययन',
+      'openFullStudy': 'पूरा अध्ययन खोलें',
+      'askAMentor': 'मेंटर से पूछें',
+      'toMentorsChip': 'मेंटर्स के लिए',
+      'askMentorsToggle': 'सीधे मेंटर्स से पूछें',
+      'askMentorsHint':
+          'मेंटर्स को सूचना मिलेगी। डिसाइपलर इसमें भाग नहीं लेगा।',
+      'mentionSheetTitle': 'मेंशन करें',
+      'disciplerMentionSubtitle': 'AI सहायक · आपकी भाषा में उत्तर देता है',
+      'mentorLabel': 'मेंटर',
+      'ownerLabel': 'स्वामी',
+      'helpersSection': 'सहायक',
+      'mentorsSection': 'मेंटर्स',
+      'promoteToMentor': 'मेंटर बनाएं',
+      'demoteToMember': 'सदस्य बनाएं',
+      'officialBadge': 'आधिकारिक',
+      'unlimitedMembers': 'असीमित',
+      'sharePost': 'पोस्ट साझा करें',
+      'sharePostSuffix': 'Disciplefy पर',
+      'fellowshipSettingsTitle': 'फेलोशिप सेटिंग्स',
+      'disciplerSettingsSection': 'डिसाइपलर',
+      'disciplerAllowedByAdmin': 'एडमिन द्वारा अनुमत',
+      'disciplerAnswerQuestions': 'प्रश्नों के उत्तर दें',
+      'disciplerModeOff': 'बंद',
+      'disciplerModeAuto': 'स्वचालित उत्तर दें',
+      'disciplerModeReview': 'मेरी समीक्षा के लिए ड्राफ्ट करें',
+      'disciplerWhichQuestions': 'कौन से प्रश्न',
+      'disciplerScopeAll': 'सभी प्रश्न',
+      'disciplerScopeLessons': 'केवल पाठ चर्चाएं',
+      'disciplerWaitFirst': 'पहले किसी मेंटर की प्रतीक्षा करें',
+      'disciplerDelayNow': 'तुरंत',
+      'disciplerDelay30': '30 मिनट',
+      'disciplerDelay120': '2 घंटे',
+      'disciplerDelay720': '12 घंटे',
+      'disciplerReactToggle': 'पोस्ट पर प्रतिक्रिया दें',
+      'disciplerDailyToggle': 'दैनिक अध्ययन पोस्ट करें',
+      'disciplerNotifyToggle': 'डिसाइपलर गतिविधि की सूचना दें',
+      'disciplerActivityTitle': 'डिसाइपलर गतिविधि',
+      'activityTabAll': 'सभी',
+      'activityTabReview': 'समीक्षा',
+      'activityTabReplies': 'उत्तर',
+      'activityTabReactions': 'प्रतिक्रियाएं',
+      'activityTabDaily': 'दैनिक',
+      'activityKindDraft': 'ड्राफ़्ट',
+      'activityKindReplied': 'उत्तर दिया',
+      'activityKindReacted': 'प्रतिक्रिया दी',
+      'activityKindDaily': 'दैनिक अध्ययन',
+      'activityEmpty': 'डिसाइपलर की ओर से अभी तक कुछ नहीं।',
+      'deleteAction': 'हटाएं',
+      'createFellowshipOfficial': 'आधिकारिक Disciplefy फेलोशिप',
+      'createFellowshipDisciplerAllowed': 'डिसाइपलर के उत्तरों की अनुमति दें',
+      'createFellowshipDailyAllowed': 'दैनिक अध्ययन पोस्ट की अनुमति दें',
+      'adminOptionsLabel': 'एडमिन विकल्प',
+      'disciplerHelperSubtitle': 'AI सहायक',
+      'replyAction': 'उत्तर दें',
+      'memberLabel': 'सदस्य',
     },
     'ml': {
       // Common
@@ -1808,6 +1938,71 @@ class AppLocalizations {
       'walkthrough.practice_type_it_out.title': 'ഓർമ്മിച്ച് ടൈപ്പ് ചെയ്യുക',
       'walkthrough.practice_type_it_out.desc':
           'മുഴുവൻ വചനം ഓർമ്മിച്ച് വാക്ക്-വഴി-വാക്ക് ടൈപ്പ് ചെയ്യുക.',
+      // Discipler, mentors, sharing and fellowship settings
+      'disciplerName': 'ഡിസൈപ്ലർ',
+      'disciplerAiChip': 'AI',
+      'disciplerFooter':
+          'ഡിസൈപ്ലർ ഒരു AI സഹായിയാണ്. മെന്റർമാർ ഇതിന്റെ ഉത്തരങ്ങൾ പരിശോധിക്കും.',
+      'disciplerDraftBadge': 'ഡ്രാഫ്റ്റ് · മെന്റർമാർക്ക് മാത്രം',
+      'approve': 'അംഗീകരിക്കുക',
+      'discard': 'നിരസിക്കുക',
+      'openStudyGuide': 'പഠന ഗൈഡ് തുറക്കുക',
+      'postTypeDaily': 'ഇന്നത്തെ പഠനം',
+      'openFullStudy': 'പൂർണ്ണ പഠനം തുറക്കുക',
+      'askAMentor': 'ഒരു മെന്ററോട് ചോദിക്കുക',
+      'toMentorsChip': 'മെന്റർമാർക്ക്',
+      'askMentorsToggle': 'മെന്റർമാരോട് നേരിട്ട് ചോദിക്കുക',
+      'askMentorsHint':
+          'മെന്റർമാർക്ക് അറിയിപ്പ് ലഭിക്കും. ഡിസൈപ്ലർ ഇതിൽ ഇടപെടില്ല.',
+      'mentionSheetTitle': 'മെൻഷൻ',
+      'disciplerMentionSubtitle': 'AI സഹായി · നിങ്ങളുടെ ഭാഷയിൽ മറുപടി നൽകുന്നു',
+      'mentorLabel': 'മെന്റർ',
+      'ownerLabel': 'ഉടമ',
+      'helpersSection': 'സഹായികൾ',
+      'mentorsSection': 'മെന്റർമാർ',
+      'promoteToMentor': 'മെന്ററാക്കുക',
+      'demoteToMember': 'അംഗമാക്കുക',
+      'officialBadge': 'ഔദ്യോഗികം',
+      'unlimitedMembers': 'പരിധിയില്ലാത്തത്',
+      'sharePost': 'പോസ്റ്റ് പങ്കിടുക',
+      'sharePostSuffix': 'Disciplefy-യിൽ',
+      'fellowshipSettingsTitle': 'ഫെലോഷിപ്പ് സെറ്റിംഗ്സ്',
+      'disciplerSettingsSection': 'ഡിസൈപ്ലർ',
+      'disciplerAllowedByAdmin': 'അഡ്മിൻ അനുവദിച്ചത്',
+      'disciplerAnswerQuestions': 'ചോദ്യങ്ങൾക്ക് ഉത്തരം നൽകുക',
+      'disciplerModeOff': 'ഓഫ്',
+      'disciplerModeAuto': 'സ്വയമേവ ഉത്തരം നൽകുക',
+      'disciplerModeReview': 'എന്റെ പരിശോധനയ്ക്കായി ഡ്രാഫ്റ്റ് ചെയ്യുക',
+      'disciplerWhichQuestions': 'ഏത് ചോദ്യങ്ങൾ',
+      'disciplerScopeAll': 'എല്ലാ ചോദ്യങ്ങളും',
+      'disciplerScopeLessons': 'പാഠ ചർച്ചകൾ മാത്രം',
+      'disciplerWaitFirst': 'ആദ്യം ഒരു മെന്ററെ കാത്തിരിക്കുക',
+      'disciplerDelayNow': 'ഉടനടി',
+      'disciplerDelay30': '30 മിനിറ്റ്',
+      'disciplerDelay120': '2 മണിക്കൂർ',
+      'disciplerDelay720': '12 മണിക്കൂർ',
+      'disciplerReactToggle': 'പോസ്റ്റുകളോട് പ്രതികരിക്കുക',
+      'disciplerDailyToggle': 'ദിവസേനയുള്ള പഠനം പോസ്റ്റ് ചെയ്യുക',
+      'disciplerNotifyToggle': 'ഡിസൈപ്ലർ പ്രവർത്തനത്തെക്കുറിച്ച് അറിയിക്കുക',
+      'disciplerActivityTitle': 'ഡിസൈപ്ലർ പ്രവർത്തനം',
+      'activityTabAll': 'എല്ലാം',
+      'activityTabReview': 'പരിശോധന',
+      'activityTabReplies': 'മറുപടികൾ',
+      'activityTabReactions': 'പ്രതികരണങ്ങൾ',
+      'activityTabDaily': 'ദിവസേന',
+      'activityKindDraft': 'ഡ്രാഫ്റ്റ്',
+      'activityKindReplied': 'മറുപടി നൽകി',
+      'activityKindReacted': 'പ്രതികരിച്ചു',
+      'activityKindDaily': 'ദൈനംദിന പഠനം',
+      'activityEmpty': 'ഡിസൈപ്ലറിൽ നിന്ന് ഇതുവരെ ഒന്നുമില്ല.',
+      'deleteAction': 'ഇല്ലാതാക്കുക',
+      'createFellowshipOfficial': 'ഔദ്യോഗിക Disciplefy ഫെലോഷിപ്പ്',
+      'createFellowshipDisciplerAllowed': 'ഡിസൈപ്ലർ മറുപടികൾ അനുവദിക്കുക',
+      'createFellowshipDailyAllowed': 'ദിവസേനയുള്ള പഠന പോസ്റ്റ് അനുവദിക്കുക',
+      'adminOptionsLabel': 'അഡ്മിൻ ഓപ്ഷനുകൾ',
+      'disciplerHelperSubtitle': 'AI സഹായി',
+      'replyAction': 'മറുപടി നൽകുക',
+      'memberLabel': 'അംഗം',
     },
   };
 
@@ -2590,6 +2785,129 @@ class AppLocalizations {
       locale.languageCode]!['walkthrough.practice_type_it_out.title']!;
   String get walkthroughPracticeTypeItOutDesc => _localizedValues[
       locale.languageCode]!['walkthrough.practice_type_it_out.desc']!;
+
+  // Discipler, mentors, sharing and fellowship settings
+  String get disciplerName =>
+      _localizedValues[locale.languageCode]!['disciplerName']!;
+  String get disciplerAiChip =>
+      _localizedValues[locale.languageCode]!['disciplerAiChip']!;
+  String get disciplerFooter =>
+      _localizedValues[locale.languageCode]!['disciplerFooter']!;
+  String get disciplerDraftBadge =>
+      _localizedValues[locale.languageCode]!['disciplerDraftBadge']!;
+  String get approve => _localizedValues[locale.languageCode]!['approve']!;
+  String get discard => _localizedValues[locale.languageCode]!['discard']!;
+  String get openStudyGuide =>
+      _localizedValues[locale.languageCode]!['openStudyGuide']!;
+  String get postTypeDaily =>
+      _localizedValues[locale.languageCode]!['postTypeDaily']!;
+  String get openFullStudy =>
+      _localizedValues[locale.languageCode]!['openFullStudy']!;
+  String get askAMentor =>
+      _localizedValues[locale.languageCode]!['askAMentor']!;
+  String get toMentorsChip =>
+      _localizedValues[locale.languageCode]!['toMentorsChip']!;
+  String get askMentorsToggle =>
+      _localizedValues[locale.languageCode]!['askMentorsToggle']!;
+  String get askMentorsHint =>
+      _localizedValues[locale.languageCode]!['askMentorsHint']!;
+  String get mentionSheetTitle =>
+      _localizedValues[locale.languageCode]!['mentionSheetTitle']!;
+  String get disciplerMentionSubtitle =>
+      _localizedValues[locale.languageCode]!['disciplerMentionSubtitle']!;
+  String get mentorLabel =>
+      _localizedValues[locale.languageCode]!['mentorLabel']!;
+  String get ownerLabel =>
+      _localizedValues[locale.languageCode]!['ownerLabel']!;
+  String get helpersSection =>
+      _localizedValues[locale.languageCode]!['helpersSection']!;
+  String get mentorsSection =>
+      _localizedValues[locale.languageCode]!['mentorsSection']!;
+  String get promoteToMentor =>
+      _localizedValues[locale.languageCode]!['promoteToMentor']!;
+  String get demoteToMember =>
+      _localizedValues[locale.languageCode]!['demoteToMember']!;
+  String get officialBadge =>
+      _localizedValues[locale.languageCode]!['officialBadge']!;
+  String get unlimitedMembers =>
+      _localizedValues[locale.languageCode]!['unlimitedMembers']!;
+  String get sharePost => _localizedValues[locale.languageCode]!['sharePost']!;
+  String get sharePostSuffix =>
+      _localizedValues[locale.languageCode]!['sharePostSuffix']!;
+  String get fellowshipSettingsTitle =>
+      _localizedValues[locale.languageCode]!['fellowshipSettingsTitle']!;
+  String get disciplerSettingsSection =>
+      _localizedValues[locale.languageCode]!['disciplerSettingsSection']!;
+  String get disciplerAllowedByAdmin =>
+      _localizedValues[locale.languageCode]!['disciplerAllowedByAdmin']!;
+  String get disciplerAnswerQuestions =>
+      _localizedValues[locale.languageCode]!['disciplerAnswerQuestions']!;
+  String get disciplerModeOff =>
+      _localizedValues[locale.languageCode]!['disciplerModeOff']!;
+  String get disciplerModeAuto =>
+      _localizedValues[locale.languageCode]!['disciplerModeAuto']!;
+  String get disciplerModeReview =>
+      _localizedValues[locale.languageCode]!['disciplerModeReview']!;
+  String get disciplerWhichQuestions =>
+      _localizedValues[locale.languageCode]!['disciplerWhichQuestions']!;
+  String get disciplerScopeAll =>
+      _localizedValues[locale.languageCode]!['disciplerScopeAll']!;
+  String get disciplerScopeLessons =>
+      _localizedValues[locale.languageCode]!['disciplerScopeLessons']!;
+  String get disciplerWaitFirst =>
+      _localizedValues[locale.languageCode]!['disciplerWaitFirst']!;
+  String get disciplerDelayNow =>
+      _localizedValues[locale.languageCode]!['disciplerDelayNow']!;
+  String get disciplerDelay30 =>
+      _localizedValues[locale.languageCode]!['disciplerDelay30']!;
+  String get disciplerDelay120 =>
+      _localizedValues[locale.languageCode]!['disciplerDelay120']!;
+  String get disciplerDelay720 =>
+      _localizedValues[locale.languageCode]!['disciplerDelay720']!;
+  String get disciplerReactToggle =>
+      _localizedValues[locale.languageCode]!['disciplerReactToggle']!;
+  String get disciplerDailyToggle =>
+      _localizedValues[locale.languageCode]!['disciplerDailyToggle']!;
+  String get disciplerNotifyToggle =>
+      _localizedValues[locale.languageCode]!['disciplerNotifyToggle']!;
+  String get disciplerActivityTitle =>
+      _localizedValues[locale.languageCode]!['disciplerActivityTitle']!;
+  String get activityTabAll =>
+      _localizedValues[locale.languageCode]!['activityTabAll']!;
+  String get activityTabReview =>
+      _localizedValues[locale.languageCode]!['activityTabReview']!;
+  String get activityTabReplies =>
+      _localizedValues[locale.languageCode]!['activityTabReplies']!;
+  String get activityTabReactions =>
+      _localizedValues[locale.languageCode]!['activityTabReactions']!;
+  String get activityTabDaily =>
+      _localizedValues[locale.languageCode]!['activityTabDaily']!;
+  String get activityKindDraft =>
+      _localizedValues[locale.languageCode]!['activityKindDraft']!;
+  String get activityKindReplied =>
+      _localizedValues[locale.languageCode]!['activityKindReplied']!;
+  String get activityKindReacted =>
+      _localizedValues[locale.languageCode]!['activityKindReacted']!;
+  String get activityKindDaily =>
+      _localizedValues[locale.languageCode]!['activityKindDaily']!;
+  String get activityEmpty =>
+      _localizedValues[locale.languageCode]!['activityEmpty']!;
+  String get deleteAction =>
+      _localizedValues[locale.languageCode]!['deleteAction']!;
+  String get createFellowshipOfficial =>
+      _localizedValues[locale.languageCode]!['createFellowshipOfficial']!;
+  String get createFellowshipDisciplerAllowed => _localizedValues[
+      locale.languageCode]!['createFellowshipDisciplerAllowed']!;
+  String get createFellowshipDailyAllowed =>
+      _localizedValues[locale.languageCode]!['createFellowshipDailyAllowed']!;
+  String get adminOptionsLabel =>
+      _localizedValues[locale.languageCode]!['adminOptionsLabel']!;
+  String get disciplerHelperSubtitle =>
+      _localizedValues[locale.languageCode]!['disciplerHelperSubtitle']!;
+  String get replyAction =>
+      _localizedValues[locale.languageCode]!['replyAction']!;
+  String get memberLabel =>
+      _localizedValues[locale.languageCode]!['memberLabel']!;
 
   // First Century Christian Facts for Loading Screen
   String getLoadingFact(int index) {

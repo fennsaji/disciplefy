@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/blocked_user_entity.dart';
+import '../../domain/entities/discipler_activity_entity.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
 import '../../domain/entities/fellowship_entity.dart';
 import '../../domain/entities/fellowship_meeting_entity.dart';
@@ -109,6 +110,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    bool toMentors = false,
   }) async {
     try {
       final model = await _datasource.createPost(
@@ -122,6 +124,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         studyGuideId: studyGuideId,
         guideInputType: guideInputType,
         guideLanguage: guideLanguage,
+        toMentors: toMentors,
       );
       return Right(model.toEntity());
     } on NetworkException catch (e) {
@@ -267,6 +270,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
     String language = 'en',
     String postingPermission = 'all_members',
     bool unlimitedMembers = false,
+    bool isOfficial = false,
+    bool disciplerAllowed = false,
+    bool dailyPostAllowed = false,
   }) async {
     try {
       await _datasource.createFellowship(
@@ -277,6 +283,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
         language: language,
         postingPermission: postingPermission,
         unlimitedMembers: unlimitedMembers,
+        isOfficial: isOfficial,
+        disciplerAllowed: disciplerAllowed,
+        dailyPostAllowed: dailyPostAllowed,
       );
       return const Right(null);
     } on NetworkException catch (e) {
@@ -486,6 +495,16 @@ class CommunityRepositoryImpl implements CommunityRepository {
     String? name,
     String? description,
     int? maxMembers,
+    String? postingPermission,
+    bool? isOfficial,
+    bool? disciplerAllowed,
+    bool? dailyPostAllowed,
+    String? disciplerReplyMode,
+    String? disciplerReplyScope,
+    int? disciplerReplyDelayMin,
+    bool? disciplerReactEnabled,
+    bool? dailyPostOn,
+    bool? disciplerActivityPush,
   }) async {
     try {
       await _datasource.updateFellowship(
@@ -493,6 +512,16 @@ class CommunityRepositoryImpl implements CommunityRepository {
         name: name,
         description: description,
         maxMembers: maxMembers,
+        postingPermission: postingPermission,
+        isOfficial: isOfficial,
+        disciplerAllowed: disciplerAllowed,
+        dailyPostAllowed: dailyPostAllowed,
+        disciplerReplyMode: disciplerReplyMode,
+        disciplerReplyScope: disciplerReplyScope,
+        disciplerReplyDelayMin: disciplerReplyDelayMin,
+        disciplerReactEnabled: disciplerReactEnabled,
+        dailyPostOn: dailyPostOn,
+        disciplerActivityPush: disciplerActivityPush,
       );
       return const Right(null);
     } on NetworkException catch (e) {
@@ -501,6 +530,113 @@ class CommunityRepositoryImpl implements CommunityRepository {
       return Left(ServerFailure(message: e.message));
     } catch (e) {
       return Left(ServerFailure(message: 'Failed to update fellowship: $e'));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fellowship members — promote / demote
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Either<Failure, void>> promoteMember({
+    required String fellowshipId,
+    required String userId,
+  }) async {
+    try {
+      await _datasource.promoteMember(
+          fellowshipId: fellowshipId, userId: userId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to promote member: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> demoteMember({
+    required String fellowshipId,
+    required String userId,
+  }) async {
+    try {
+      await _datasource.demoteMember(
+          fellowshipId: fellowshipId, userId: userId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to demote member: $e'));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Discipler comments — approve / discard
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Either<Failure, void>> approveDisciplerComment(
+      String commentId) async {
+    try {
+      await _datasource.approveDisciplerComment(commentId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to approve reply: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> discardDisciplerComment(
+      String commentId) async {
+    try {
+      await _datasource.discardDisciplerComment(commentId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to discard reply: $e'));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Discipler activity — list
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Either<Failure, DisciplerActivityPage>> getDisciplerActivity({
+    required String fellowshipId,
+    String? kind,
+    String? cursor,
+    int limit = 30,
+  }) async {
+    try {
+      final result = await _datasource.getDisciplerActivity(
+        fellowshipId: fellowshipId,
+        kind: kind,
+        cursor: cursor,
+        limit: limit,
+      );
+      return Right(DisciplerActivityPage(
+        items: result.items.map((m) => m.toEntity()).toList(),
+        hasMore: result.hasMore,
+        nextCursor: result.nextCursor,
+      ));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(
+          ServerFailure(message: 'Failed to fetch Discipler activity: $e'));
     }
   }
 

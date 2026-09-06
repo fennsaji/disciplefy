@@ -64,6 +64,10 @@
                 <data android:scheme="https"
                       android:host="app.disciplefy.in"
                       android:pathPrefix="/fellowship/join" />
+                <!-- Fellowship post deep links (shared posts). -->
+                <data android:scheme="https"
+                      android:host="app.disciplefy.in"
+                      android:pathPrefix="/fellowship" />
                 <!-- Shareable learning path links.
                      Keep in sync with DEEP_LINK_PATHS in
                      api/apple-app-site-association.js so both platforms

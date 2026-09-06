@@ -27,6 +27,10 @@ class FellowshipMemberModel {
   /// Null when the fellowship has no active study.
   final int? topicsCompleted;
 
+  /// True when this member is the fellowship's original owner (not just a
+  /// promoted mentor).
+  final bool isOwner;
+
   const FellowshipMemberModel({
     required this.userId,
     required this.displayName,
@@ -35,6 +39,7 @@ class FellowshipMemberModel {
     required this.joinedAt,
     required this.isMuted,
     this.topicsCompleted,
+    this.isOwner = false,
   });
 
   /// Creates a [FellowshipMemberModel] from a JSON map (API response).
@@ -47,6 +52,7 @@ class FellowshipMemberModel {
       joinedAt: json['joined_at'] as String,
       isMuted: json['is_muted'] as bool,
       topicsCompleted: json['topics_completed'] as int?,
+      isOwner: json['is_owner'] as bool? ?? false,
     );
   }
 
@@ -59,5 +65,6 @@ class FellowshipMemberModel {
         joinedAt: joinedAt,
         isMuted: isMuted,
         topicsCompleted: topicsCompleted,
+        isOwner: isOwner,
       );
 }

@@ -69,6 +69,24 @@ class DeepLinkService {
       _router.go('/fellowship/join/$token');
       return;
     }
+    // Match /fellowship/<fellowshipId>/post/<postId>
+    if (segments.length >= 4 &&
+        segments[0] == 'fellowship' &&
+        segments[2] == 'post') {
+      final fellowshipId = segments[1];
+      final postId = segments[3];
+      final uuidPattern = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+      if (!uuidPattern.hasMatch(fellowshipId) ||
+          !uuidPattern.hasMatch(postId)) {
+        Logger.warning('Invalid fellowship/post id in deep link: ${uri.path}',
+            tag: _tag);
+        return;
+      }
+      _router.go('/community/$fellowshipId/post/$postId');
+      return;
+    }
     // Match /learning-path/<pathId>
     //
     // This path is advertised as an App Link in AndroidManifest.xml and in
