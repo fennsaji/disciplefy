@@ -195,6 +195,8 @@ abstract class CommunityRepository {
     int? disciplerReplyDelayMin,
     bool? disciplerReactEnabled,
     bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
   });
 

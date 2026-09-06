@@ -621,6 +621,8 @@ class MockCommunityRepository extends _i1.Mock
     int? disciplerReplyDelayMin,
     bool? disciplerReactEnabled,
     bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
   }) =>
       (super.noSuchMethod(
@@ -641,6 +643,8 @@ class MockCommunityRepository extends _i1.Mock
             #disciplerReplyDelayMin: disciplerReplyDelayMin,
             #disciplerReactEnabled: disciplerReactEnabled,
             #dailyPostOn: dailyPostOn,
+            #dailyPostFrequencyDays: dailyPostFrequencyDays,
+            #dailyPostAutoAdvance: dailyPostAutoAdvance,
             #disciplerActivityPush: disciplerActivityPush,
           },
         ),
@@ -664,6 +668,8 @@ class MockCommunityRepository extends _i1.Mock
               #disciplerReplyDelayMin: disciplerReplyDelayMin,
               #disciplerReactEnabled: disciplerReactEnabled,
               #dailyPostOn: dailyPostOn,
+              #dailyPostFrequencyDays: dailyPostFrequencyDays,
+              #dailyPostAutoAdvance: dailyPostAutoAdvance,
               #disciplerActivityPush: disciplerActivityPush,
             },
           ),

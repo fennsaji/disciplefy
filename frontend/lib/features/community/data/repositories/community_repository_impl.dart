@@ -504,6 +504,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
     int? disciplerReplyDelayMin,
     bool? disciplerReactEnabled,
     bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
   }) async {
     try {
@@ -521,6 +523,8 @@ class CommunityRepositoryImpl implements CommunityRepository {
         disciplerReplyDelayMin: disciplerReplyDelayMin,
         disciplerReactEnabled: disciplerReactEnabled,
         dailyPostOn: dailyPostOn,
+        dailyPostFrequencyDays: dailyPostFrequencyDays,
+        dailyPostAutoAdvance: dailyPostAutoAdvance,
         disciplerActivityPush: disciplerActivityPush,
       );
       return const Right(null);

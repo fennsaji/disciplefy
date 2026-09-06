@@ -163,6 +163,8 @@ abstract class CommunityRemoteDatasource {
     int? disciplerReplyDelayMin,
     bool? disciplerReactEnabled,
     bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
   });
 
@@ -1354,6 +1356,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     int? disciplerReplyDelayMin,
     bool? disciplerReactEnabled,
     bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
     bool? disciplerActivityPush,
   }) async {
     try {
@@ -1385,6 +1389,12 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         bodyMap['discipler_react_enabled'] = disciplerReactEnabled;
       }
       if (dailyPostOn != null) bodyMap['daily_post_on'] = dailyPostOn;
+      if (dailyPostFrequencyDays != null) {
+        bodyMap['daily_post_frequency_days'] = dailyPostFrequencyDays;
+      }
+      if (dailyPostAutoAdvance != null) {
+        bodyMap['daily_post_auto_advance'] = dailyPostAutoAdvance;
+      }
       if (disciplerActivityPush != null) {
         bodyMap['discipler_activity_push'] = disciplerActivityPush;
       }

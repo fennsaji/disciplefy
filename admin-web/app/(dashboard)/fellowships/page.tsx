@@ -9,6 +9,8 @@ import CreateFellowshipDialog from '@/components/dialogs/create-fellowship-dialo
 
 const PAGE_SIZE = 50
 
+const FREQUENCY_LABELS: Record<number, string> = { 1: 'Daily', 2: 'every 2 days', 7: 'weekly' }
+
 type TabType = 'fellowships' | 'activity'
 
 const TABS = [
@@ -35,6 +37,8 @@ interface FellowshipRow {
   discipler_reply_delay_min: number
   discipler_react_enabled: boolean
   daily_post_on: boolean
+  daily_post_frequency_days: number
+  daily_post_auto_advance: boolean
   max_members: number | null
   member_count: number
   mentors: Mentor[]
@@ -339,7 +343,11 @@ function FellowshipsTab() {
                       </td>
                       <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
                         {f.discipler_reply_mode} / {f.discipler_reply_scope} / {f.discipler_reply_delay_min}min /{' '}
-                        react {f.discipler_react_enabled ? 'on' : 'off'} / daily {f.daily_post_on ? 'on' : 'off'}
+                        react {f.discipler_react_enabled ? 'on' : 'off'} / daily {f.daily_post_on ? 'on' : 'off'} ·{' '}
+                        {FREQUENCY_LABELS[f.daily_post_frequency_days] ?? `every ${f.daily_post_frequency_days}d`}
+                        {f.daily_post_auto_advance && (
+                          <span className="ml-1 inline-block rounded bg-primary/10 px-1 py-0.5 text-primary">auto-advance</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         {f.replies_today} · ${f.cost_today_usd.toFixed(4)}

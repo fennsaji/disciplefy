@@ -35,6 +35,8 @@ class FellowshipSettingsBloc
           disciplerReplyDelayMin: e.disciplerReplyDelayMin,
           disciplerReactEnabled: e.disciplerReactEnabled,
           dailyPostOn: e.dailyPostOn,
+          dailyPostFrequencyDays: e.dailyPostFrequencyDays,
+          dailyPostAutoAdvance: e.dailyPostAutoAdvance,
           myDisciplerActivityPush: e.disciplerActivityPush,
         ),
       ));
@@ -64,6 +66,10 @@ class FellowshipSettingsBloc
       disciplerReactEnabled:
           diff(o.disciplerReactEnabled, d.disciplerReactEnabled),
       dailyPostOn: diff(o.dailyPostOn, d.dailyPostOn),
+      dailyPostFrequencyDays:
+          diff(o.dailyPostFrequencyDays, d.dailyPostFrequencyDays),
+      dailyPostAutoAdvance:
+          diff(o.dailyPostAutoAdvance, d.dailyPostAutoAdvance),
       disciplerActivityPush:
           diff(o.myDisciplerActivityPush, d.myDisciplerActivityPush),
     );

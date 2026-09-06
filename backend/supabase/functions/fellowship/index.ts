@@ -60,7 +60,9 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         discipler_reply_scope,
         discipler_reply_delay_min,
         discipler_react_enabled,
-        daily_post_on
+        daily_post_on,
+        daily_post_frequency_days,
+        daily_post_auto_advance
       )
     `)
     .eq('user_id', user.id)
@@ -165,6 +167,8 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         discipler_reply_delay_min: fellowship.discipler_reply_delay_min ?? 0,
         discipler_react_enabled: fellowship.discipler_react_enabled ?? true,
         daily_post_on: fellowship.daily_post_on ?? true,
+        daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
+        daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
         my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
         current_study: study
           ? {
@@ -634,6 +638,22 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
     throw new AppError('DATABASE_ERROR', 'Failed to initialize fellowship membership', 500)
   }
 
+  // Every fellowship gets a default study path (non-fatal — a fellowship without one just
+  // shows no active study until a mentor sets one via fellowship-study).
+  const { data: defaultPathId, error: defaultPathError } = await db.rpc('default_learning_path_id')
+  if (defaultPathError) {
+    console.error('[fellowship] default study insert failed', { fellowshipId: fellowship.id, error: defaultPathError })
+  } else if (defaultPathId) {
+    const { error: studyError } = await db.from('fellowship_study').insert({
+      fellowship_id: fellowship.id,
+      learning_path_id: defaultPathId,
+      current_guide_index: 0
+    })
+    if (studyError) {
+      console.error('[fellowship] default study insert failed', { fellowshipId: fellowship.id, error: studyError })
+    }
+  }
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -908,6 +928,7 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     is_official?: boolean; discipler_allowed?: boolean; daily_post_allowed?: boolean
     discipler_reply_mode?: string; discipler_reply_scope?: string; discipler_reply_delay_min?: number
     discipler_react_enabled?: boolean; daily_post_on?: boolean; discipler_activity_push?: boolean
+    daily_post_frequency_days?: number; daily_post_auto_advance?: boolean
   }
   try {
     body = await req.json()
@@ -1009,6 +1030,11 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
   }
   if (typeof body.discipler_react_enabled === 'boolean') updates.discipler_react_enabled = body.discipler_react_enabled
   if (typeof body.daily_post_on === 'boolean') updates.daily_post_on = body.daily_post_on
+  if (body.daily_post_frequency_days !== undefined) {
+    if (![1, 2, 7].includes(body.daily_post_frequency_days)) throw new AppError('VALIDATION_ERROR', 'daily_post_frequency_days must be 1, 2 or 7', 400)
+    updates.daily_post_frequency_days = body.daily_post_frequency_days
+  }
+  if (typeof body.daily_post_auto_advance === 'boolean') updates.daily_post_auto_advance = body.daily_post_auto_advance
   if (typeof body.discipler_activity_push === 'boolean') {
     await db.from('fellowship_members').update({ discipler_activity_push: body.discipler_activity_push })
       .eq('fellowship_id', body.fellowship_id).eq('user_id', user.id)
@@ -1062,6 +1088,8 @@ function fellowshipSettingsPayload(fellowship: any) {
     discipler_reply_delay_min: fellowship.discipler_reply_delay_min ?? 0,
     discipler_react_enabled: fellowship.discipler_react_enabled ?? true,
     daily_post_on: fellowship.daily_post_on ?? true,
+    daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
+    daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
     updated_at: fellowship.updated_at,
   }
 }

@@ -31,6 +31,8 @@ class FellowshipSettingsChanged extends FellowshipSettingsEvent {
   final int? disciplerReplyDelayMin;
   final bool? disciplerReactEnabled;
   final bool? dailyPostOn;
+  final int? dailyPostFrequencyDays;
+  final bool? dailyPostAutoAdvance;
   final bool? disciplerActivityPush;
 
   const FellowshipSettingsChanged({
@@ -42,6 +44,8 @@ class FellowshipSettingsChanged extends FellowshipSettingsEvent {
     this.disciplerReplyDelayMin,
     this.disciplerReactEnabled,
     this.dailyPostOn,
+    this.dailyPostFrequencyDays,
+    this.dailyPostAutoAdvance,
     this.disciplerActivityPush,
   });
 
@@ -55,6 +59,8 @@ class FellowshipSettingsChanged extends FellowshipSettingsEvent {
         disciplerReplyDelayMin,
         disciplerReactEnabled,
         dailyPostOn,
+        dailyPostFrequencyDays,
+        dailyPostAutoAdvance,
         disciplerActivityPush,
       ];
 }

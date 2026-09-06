@@ -93,6 +93,14 @@ class FellowshipEntity extends Equatable {
   /// True when the fellowship has daily study posts turned on.
   final bool dailyPostOn;
 
+  /// How often the daily study post runs, in days: `1` (daily), `2`
+  /// (every 2 days), or `7` (weekly).
+  final int dailyPostFrequencyDays;
+
+  /// True when the Discipler advances the fellowship's current lesson
+  /// automatically after each daily post.
+  final bool dailyPostAutoAdvance;
+
   /// True when the current user wants push notifications for Discipler
   /// activity in this fellowship.
   final bool myDisciplerActivityPush;
@@ -118,6 +126,8 @@ class FellowshipEntity extends Equatable {
     this.disciplerReplyDelayMin = 0,
     this.disciplerReactEnabled = true,
     this.dailyPostOn = true,
+    this.dailyPostFrequencyDays = 1,
+    this.dailyPostAutoAdvance = true,
     this.myDisciplerActivityPush = true,
   });
 
@@ -136,6 +146,8 @@ class FellowshipEntity extends Equatable {
     int? disciplerReplyDelayMin,
     bool? disciplerReactEnabled,
     bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
     bool? myDisciplerActivityPush,
   }) {
     return FellowshipEntity(
@@ -161,6 +173,9 @@ class FellowshipEntity extends Equatable {
       disciplerReactEnabled:
           disciplerReactEnabled ?? this.disciplerReactEnabled,
       dailyPostOn: dailyPostOn ?? this.dailyPostOn,
+      dailyPostFrequencyDays:
+          dailyPostFrequencyDays ?? this.dailyPostFrequencyDays,
+      dailyPostAutoAdvance: dailyPostAutoAdvance ?? this.dailyPostAutoAdvance,
       myDisciplerActivityPush:
           myDisciplerActivityPush ?? this.myDisciplerActivityPush,
     );
@@ -188,6 +203,8 @@ class FellowshipEntity extends Equatable {
         disciplerReplyDelayMin,
         disciplerReactEnabled,
         dailyPostOn,
+        dailyPostFrequencyDays,
+        dailyPostAutoAdvance,
         myDisciplerActivityPush,
       ];
 }

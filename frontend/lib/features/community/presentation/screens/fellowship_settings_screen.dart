@@ -290,7 +290,7 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
                       .read<FellowshipSettingsBloc>()
                       .add(FellowshipSettingsChanged(disciplerReactEnabled: v)),
                 ),
-                if (widget.fellowship.dailyPostAllowed)
+                if (widget.fellowship.dailyPostAllowed) ...[
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.disciplerDailyToggle),
@@ -299,6 +299,45 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
                         .read<FellowshipSettingsBloc>()
                         .add(FellowshipSettingsChanged(dailyPostOn: v)),
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.dailyPostFrequency,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: context.appTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<int>(
+                    segments: [
+                      ButtonSegment(value: 1, label: Text(l10n.frequencyDaily)),
+                      ButtonSegment(
+                          value: 2, label: Text(l10n.frequencyEveryTwoDays)),
+                      ButtonSegment(
+                          value: 7, label: Text(l10n.frequencyWeekly)),
+                    ],
+                    selected: {draft.dailyPostFrequencyDays},
+                    showSelectedIcon: false,
+                    onSelectionChanged: draft.dailyPostOn
+                        ? (s) => context.read<FellowshipSettingsBloc>().add(
+                            FellowshipSettingsChanged(
+                                dailyPostFrequencyDays: s.first))
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.disciplerAdvancesLessons),
+                    subtitle: Text(l10n.disciplerAdvancesLessonsSubtitle),
+                    value: draft.dailyPostAutoAdvance,
+                    onChanged: draft.dailyPostOn
+                        ? (v) => context.read<FellowshipSettingsBloc>().add(
+                            FellowshipSettingsChanged(dailyPostAutoAdvance: v))
+                        : null,
+                  ),
+                ],
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(l10n.disciplerNotifyToggle),

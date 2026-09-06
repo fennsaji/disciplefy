@@ -101,12 +101,29 @@ void main() {
       'discipler_reply_delay_min': 30,
       'discipler_react_enabled': false,
       'daily_post_on': true,
+      'daily_post_frequency_days': 2,
+      'daily_post_auto_advance': false,
       'my_discipler_activity_push': false,
     }).toEntity();
     expect(f.mentors.single.displayName, 'Anna');
     expect(f.disciplerReplyMode, 'review');
     expect(f.disciplerReplyDelayMin, 30);
     expect(f.myDisciplerActivityPush, false);
+    expect(f.dailyPostFrequencyDays, 2);
+    expect(f.dailyPostAutoAdvance, false);
+  });
+
+  test('fellowship model defaults daily post prefs when absent', () {
+    final f = FellowshipModel.fromJson({
+      'id': 'f',
+      'name': 'n',
+      'member_count': 1,
+      'user_role': 'member',
+      'joined_at': 'j',
+      'created_at': 'c',
+    }).toEntity();
+    expect(f.dailyPostFrequencyDays, 1);
+    expect(f.dailyPostAutoAdvance, true);
   });
 
   test('activity model joins post and comment', () {

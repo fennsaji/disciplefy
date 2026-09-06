@@ -1,13 +1,20 @@
-//! Discipler daily post: next learning-path topic per fellowship, generated in the
-//! fellowship's language through study-generate-v2, posted as Discipler.
+//! Discipler daily post: each fellowship's *current lesson* from its own
+//! `fellowship_study` row, generated in the fellowship's language through
+//! study-generate-v2, posted as Discipler. See spec §4 (run order) and §5
+//! (advance/switch rules).
+//!
+//! The advance/switch decision is resolved by
+//! `fellowship_daily::resolve_post_plan` before any generation happens, and
+//! only committed (alongside the post) in `fellowship_daily::insert_daily_post`
+//! — so a failed generation never leaves the study cursor ahead of what was
+//! actually posted.
 use chrono::Utc;
 use reqwest::Client;
 use sqlx::PgPool;
 
 use crate::config::Config;
-use crate::cron::blog_generator::LearningPathTopic;
 use crate::error::AppError;
-use crate::models::fellowship_daily::{self, DailyFellowship, DailyPostInsert};
+use crate::models::fellowship_daily::{self, DailyFellowship, DailyPostInsert, Lesson};
 use crate::services::{content_formatter, study_api};
 
 pub(crate) struct Localized<'a> {
@@ -18,7 +25,7 @@ pub(crate) struct Localized<'a> {
 }
 
 /// Pick localized fields with English fallback, exactly like blog generation.
-pub(crate) fn localize<'a>(topic: &'a LearningPathTopic, locale: &str) -> Localized<'a> {
+pub(crate) fn localize<'a>(lesson: &'a Lesson, locale: &str) -> Localized<'a> {
     let pick = |l: &'a Option<String>, en: &'a str| {
         l.as_deref().filter(|s| !s.trim().is_empty()).unwrap_or(en)
     };
@@ -29,22 +36,22 @@ pub(crate) fn localize<'a>(topic: &'a LearningPathTopic, locale: &str) -> Locali
     };
     match locale {
         "hi" => Localized {
-            title: pick(&topic.hi_title, &topic.title),
-            description: pick_opt(&topic.hi_description, &topic.description),
-            path_title: pick(&topic.hi_path_title, &topic.path_title),
-            path_description: pick(&topic.hi_path_description, &topic.path_description),
+            title: pick(&lesson.hi_title, &lesson.title),
+            description: pick_opt(&lesson.hi_description, &lesson.description),
+            path_title: pick(&lesson.hi_path_title, &lesson.path_title),
+            path_description: pick(&lesson.hi_path_description, &lesson.path_description),
         },
         "ml" => Localized {
-            title: pick(&topic.ml_title, &topic.title),
-            description: pick_opt(&topic.ml_description, &topic.description),
-            path_title: pick(&topic.ml_path_title, &topic.path_title),
-            path_description: pick(&topic.ml_path_description, &topic.path_description),
+            title: pick(&lesson.ml_title, &lesson.title),
+            description: pick_opt(&lesson.ml_description, &lesson.description),
+            path_title: pick(&lesson.ml_path_title, &lesson.path_title),
+            path_description: pick(&lesson.ml_path_description, &lesson.path_description),
         },
         _ => Localized {
-            title: &topic.title,
-            description: topic.description.as_deref(),
-            path_title: &topic.path_title,
-            path_description: &topic.path_description,
+            title: &lesson.title,
+            description: lesson.description.as_deref(),
+            path_title: &lesson.path_title,
+            path_description: &lesson.path_description,
         },
     }
 }
@@ -83,61 +90,96 @@ async fn notify(config: &Config, http: &Client, post_id: uuid::Uuid) -> Result<(
     Ok(())
 }
 
+/// Outcome of a single fellowship's run, so the finish line can report
+/// `posted`/`skipped`/`failed` separately instead of lumping every non-error
+/// outcome into a meaningless "ok" count.
+enum Outcome {
+    Posted,
+    Skipped,
+}
+
 async fn post_for_fellowship(
     pool: &PgPool,
     config: &Config,
     http: &Client,
     f: &DailyFellowship,
-) -> Result<(), AppError> {
+) -> Result<Outcome, AppError> {
     let today = Utc::now().date_naive();
-    let mut topic = fellowship_daily::find_next_topic_for_fellowship(pool, f.id).await?;
-    if topic.is_none() {
-        tracing::info!(fellowship = %f.name, "All topics used — wrapping cursor");
-        fellowship_daily::reset_topic_cursor(pool, f.id).await?;
-        topic = fellowship_daily::find_next_topic_for_fellowship(pool, f.id).await?;
+
+    // Spec §4 step 1: skip when the fellowship isn't due yet at its own cadence.
+    let last = fellowship_daily::last_daily_post(pool, f.id).await?;
+    let last_date = last.as_ref().map(|l| l.post_date);
+    if !fellowship_daily::should_post_today(last_date, today, f.daily_post_frequency_days) {
+        return Ok(Outcome::Skipped);
     }
-    let Some(topic) = topic else {
-        tracing::warn!(fellowship = %f.name, "No active learning-path topics — skipping");
-        return Ok(());
+
+    // Spec §4 step 2 + §5: resolved entirely in memory, nothing written yet.
+    let Some(plan) =
+        fellowship_daily::resolve_post_plan(pool, f.id, last.as_ref(), f.daily_post_auto_advance)
+            .await?
+    else {
+        tracing::info!(fellowship = %f.name, "No lesson to post today — skipping");
+        return Ok(Outcome::Skipped);
     };
-    let l = localize(&topic, &f.language);
+
+    let l = localize(&plan.lesson, &f.language);
 
     let guide = study_api::generate_study_guide(
         http,
         config,
-        &topic.input_type,
+        &plan.lesson.input_type,
         l.title,
         l.description,
         Some(l.path_title),
         Some(l.path_description),
-        Some(&topic.disciple_level),
+        Some(&plan.lesson.disciple_level),
         &f.language,
-        batch_mode(&topic.study_mode),
+        batch_mode(&plan.lesson.study_mode),
     )
     .await?;
 
     let daily = content_formatter::format_daily_post(l.title, &guide, &f.language);
-    let post_id = fellowship_daily::insert_daily_post(
+    let outcome = fellowship_daily::insert_daily_post(
         pool,
         DailyPostInsert {
             fellowship_id: f.id,
             content: &daily.content,
-            topic_id: topic.topic_id,
+            topic_id: plan.lesson.topic_id,
             topic_title: l.title,
             guide_title: l.title,
             study_guide_id: guide.study_guide_id,
             language: &f.language,
-            learning_path_topic_id: topic.id,
+            learning_path_topic_id: plan.lesson.id,
             post_date: today,
+            study_write: plan.write,
         },
     )
     .await?;
+
+    let post_id = match outcome {
+        fellowship_daily::InsertOutcome::Posted(id) => id,
+        fellowship_daily::InsertOutcome::StaleStudy => {
+            // A mentor `/advance`, `/set`, or `/reset` landed while generation
+            // was in flight — the guarded UPDATE matched zero rows and the
+            // whole transaction rolled back. Nothing was persisted; the next
+            // eligible run recomputes the plan from the fresh state.
+            tracing::warn!(fellowship = %f.name, "study changed during generation, skipping");
+            return Ok(Outcome::Skipped);
+        }
+        fellowship_daily::InsertOutcome::AlreadyPosted => {
+            // Raced another trigger of the same job for the same (fellowship, day)
+            // — the whole transaction (advance/switch included) rolled back.
+            tracing::info!(fellowship = %f.name, "Daily post already exists for today — skipping");
+            return Ok(Outcome::Skipped);
+        }
+    };
+
     tracing::info!(fellowship = %f.name, topic = %l.title, %post_id, from_cache = guide.from_cache, "Daily post created");
 
     if let Err(e) = notify(config, http, post_id).await {
         tracing::error!(%post_id, "Daily post notify failed (post kept): {}", e);
     }
-    Ok(())
+    Ok(Outcome::Posted)
 }
 
 pub async fn run_fellowship_daily_post(
@@ -146,23 +188,23 @@ pub async fn run_fellowship_daily_post(
     http: &Client,
 ) -> Result<(), AppError> {
     tracing::info!("Starting Discipler daily post CRON job");
-    let today = Utc::now().date_naive();
-    let fellowships = fellowship_daily::list_daily_fellowships(pool, today).await?;
+    let fellowships = fellowship_daily::list_daily_fellowships(pool).await?;
     if fellowships.is_empty() {
         tracing::info!("No fellowships due for a daily post");
         return Ok(());
     }
-    let (mut ok, mut failed) = (0usize, 0usize);
+    let (mut posted, mut skipped, mut failed) = (0usize, 0usize, 0usize);
     for f in &fellowships {
         match post_for_fellowship(pool, config, http, f).await {
-            Ok(()) => ok += 1,
+            Ok(Outcome::Posted) => posted += 1,
+            Ok(Outcome::Skipped) => skipped += 1,
             Err(e) => {
                 failed += 1;
                 tracing::error!(fellowship = %f.name, "Daily post failed: {}", e);
             }
         }
     }
-    tracing::info!(ok, failed, "Discipler daily post CRON job finished");
+    tracing::info!(posted, skipped, failed, "Discipler daily post CRON job finished");
     Ok(())
 }
 
@@ -170,18 +212,17 @@ pub async fn run_fellowship_daily_post(
 mod tests {
     use super::*;
 
-    fn topic() -> LearningPathTopic {
-        LearningPathTopic {
+    fn lesson() -> Lesson {
+        Lesson {
             id: uuid::Uuid::nil(),
             topic_id: uuid::Uuid::nil(),
             title: "Faith".into(),
             description: Some("d".into()),
             input_type: "topic".into(),
-            path_id: uuid::Uuid::nil(),
+            position: 0,
             path_title: "Path".into(),
             path_description: "pd".into(),
             disciple_level: "new".into(),
-            category: None,
             hi_title: Some("विश्वास".into()),
             ml_title: None,
             hi_description: None,
@@ -196,7 +237,7 @@ mod tests {
 
     #[test]
     fn localize_falls_back_to_english() {
-        let t = topic();
+        let t = lesson();
         let hi = localize(&t, "hi");
         assert_eq!(hi.title, "विश्वास");
         assert_eq!(hi.description, Some("d"));

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
   }
 
   let q = supabaseAdmin.from('fellowships')
-    .select('id, name, language, is_public, is_active, is_official, discipler_allowed, daily_post_allowed, discipler_reply_mode, discipler_reply_scope, discipler_reply_delay_min, discipler_react_enabled, daily_post_on, max_members, created_at', { count: 'exact' })
+    .select('id, name, language, is_public, is_active, is_official, discipler_allowed, daily_post_allowed, discipler_reply_mode, discipler_reply_scope, discipler_reply_delay_min, discipler_react_enabled, daily_post_on, daily_post_frequency_days, daily_post_auto_advance, max_members, created_at', { count: 'exact' })
     .order('created_at', { ascending: false }).order('id', { ascending: true }).range(offset, offset + limit - 1)
   if (search) q = q.ilike('name', `%${search}%`)
   const { data: rows, count, error } = await q
@@ -134,6 +134,18 @@ export async function POST(request: NextRequest) {
     await supabaseAdmin.from('fellowships').delete().eq('id', f.id)
     return NextResponse.json({ error: 'Failed to add mentor' }, { status: 500 })
   }
+
+  // Every fellowship gets a default study path (non-fatal on failure).
+  const { data: defaultPathId, error: defaultPathError } = await supabaseAdmin.rpc('default_learning_path_id')
+  if (defaultPathError) {
+    console.error('[admin/fellowships] default study insert failed', { fellowshipId: f.id, error: defaultPathError })
+  } else if (defaultPathId) {
+    const { error: studyError } = await supabaseAdmin.from('fellowship_study').insert({
+      fellowship_id: f.id, learning_path_id: defaultPathId, current_guide_index: 0,
+    })
+    if (studyError) console.error('[admin/fellowships] default study insert failed', { fellowshipId: f.id, error: studyError })
+  }
+
   return NextResponse.json({ data: { id: f.id } }, { status: 201 })
 }
 

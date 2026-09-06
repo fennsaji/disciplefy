@@ -66,6 +66,14 @@ class FellowshipModel {
   /// True when the fellowship has daily study posts turned on.
   final bool dailyPostOn;
 
+  /// How often the daily study post runs, in days: `1` (daily), `2`
+  /// (every 2 days), or `7` (weekly).
+  final int dailyPostFrequencyDays;
+
+  /// True when the Discipler advances the fellowship's current lesson
+  /// automatically after each daily post.
+  final bool dailyPostAutoAdvance;
+
   /// True when the current user wants push notifications for Discipler
   /// activity in this fellowship.
   final bool myDisciplerActivityPush;
@@ -91,6 +99,8 @@ class FellowshipModel {
     this.disciplerReplyDelayMin = 0,
     this.disciplerReactEnabled = true,
     this.dailyPostOn = true,
+    this.dailyPostFrequencyDays = 1,
+    this.dailyPostAutoAdvance = true,
     this.myDisciplerActivityPush = true,
   });
 
@@ -129,6 +139,9 @@ class FellowshipModel {
           (json['discipler_reply_delay_min'] as num?)?.toInt() ?? 0,
       disciplerReactEnabled: json['discipler_react_enabled'] as bool? ?? true,
       dailyPostOn: json['daily_post_on'] as bool? ?? true,
+      dailyPostFrequencyDays:
+          (json['daily_post_frequency_days'] as num?)?.toInt() ?? 1,
+      dailyPostAutoAdvance: json['daily_post_auto_advance'] as bool? ?? true,
       myDisciplerActivityPush:
           json['my_discipler_activity_push'] as bool? ?? true,
     );
@@ -156,6 +169,8 @@ class FellowshipModel {
         disciplerReplyDelayMin: disciplerReplyDelayMin,
         disciplerReactEnabled: disciplerReactEnabled,
         dailyPostOn: dailyPostOn,
+        dailyPostFrequencyDays: dailyPostFrequencyDays,
+        dailyPostAutoAdvance: dailyPostAutoAdvance,
         myDisciplerActivityPush: myDisciplerActivityPush,
       );
 }

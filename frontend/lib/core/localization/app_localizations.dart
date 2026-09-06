@@ -662,6 +662,13 @@ class AppLocalizations {
       'disciplerDelay720': '12 h',
       'disciplerReactToggle': 'React to posts',
       'disciplerDailyToggle': 'Post a daily study',
+      'dailyPostFrequency': 'Post frequency',
+      'frequencyDaily': 'Daily',
+      'frequencyEveryTwoDays': 'Every 2 days',
+      'frequencyWeekly': 'Weekly',
+      'disciplerAdvancesLessons': 'Discipler advances lessons',
+      'disciplerAdvancesLessonsSubtitle':
+          'Moves the group to the next lesson after each post',
       'disciplerNotifyToggle': 'Notify me about Discipler activity',
       'disciplerActivityTitle': 'Discipler activity',
       'activityTabAll': 'All',
@@ -1318,6 +1325,13 @@ class AppLocalizations {
       'disciplerDelay720': '12 घंटे',
       'disciplerReactToggle': 'पोस्ट पर प्रतिक्रिया दें',
       'disciplerDailyToggle': 'दैनिक अध्ययन पोस्ट करें',
+      'dailyPostFrequency': 'पोस्ट आवृत्ति',
+      'frequencyDaily': 'रोज़',
+      'frequencyEveryTwoDays': 'हर 2 दिन',
+      'frequencyWeekly': 'साप्ताहिक',
+      'disciplerAdvancesLessons': 'डिसाइपलर पाठ आगे बढ़ाए',
+      'disciplerAdvancesLessonsSubtitle':
+          'हर पोस्ट के बाद समूह को अगले पाठ पर ले जाता है',
       'disciplerNotifyToggle': 'डिसाइपलर गतिविधि की सूचना दें',
       'disciplerActivityTitle': 'डिसाइपलर गतिविधि',
       'activityTabAll': 'सभी',
@@ -1983,6 +1997,13 @@ class AppLocalizations {
       'disciplerDelay720': '12 മണിക്കൂർ',
       'disciplerReactToggle': 'പോസ്റ്റുകളോട് പ്രതികരിക്കുക',
       'disciplerDailyToggle': 'ദിവസേനയുള്ള പഠനം പോസ്റ്റ് ചെയ്യുക',
+      'dailyPostFrequency': 'പോസ്റ്റ് ആവൃത്തി',
+      'frequencyDaily': 'ദിവസവും',
+      'frequencyEveryTwoDays': '2 ദിവസത്തിലൊരിക്കൽ',
+      'frequencyWeekly': 'ആഴ്ചതോറും',
+      'disciplerAdvancesLessons': 'ഡിസൈപ്ലർ പാഠങ്ങൾ മുന്നോട്ട് നീക്കും',
+      'disciplerAdvancesLessonsSubtitle':
+          'ഓരോ പോസ്റ്റിനു ശേഷവും ഗ്രൂപ്പിനെ അടുത്ത പാഠത്തിലേക്ക് നീക്കുന്നു',
       'disciplerNotifyToggle': 'ഡിസൈപ്ലർ പ്രവർത്തനത്തെക്കുറിച്ച് അറിയിക്കുക',
       'disciplerActivityTitle': 'ഡിസൈപ്ലർ പ്രവർത്തനം',
       'activityTabAll': 'എല്ലാം',
@@ -2868,6 +2889,18 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['disciplerReactToggle']!;
   String get disciplerDailyToggle =>
       _localizedValues[locale.languageCode]!['disciplerDailyToggle']!;
+  String get dailyPostFrequency =>
+      _localizedValues[locale.languageCode]!['dailyPostFrequency']!;
+  String get frequencyDaily =>
+      _localizedValues[locale.languageCode]!['frequencyDaily']!;
+  String get frequencyEveryTwoDays =>
+      _localizedValues[locale.languageCode]!['frequencyEveryTwoDays']!;
+  String get frequencyWeekly =>
+      _localizedValues[locale.languageCode]!['frequencyWeekly']!;
+  String get disciplerAdvancesLessons =>
+      _localizedValues[locale.languageCode]!['disciplerAdvancesLessons']!;
+  String get disciplerAdvancesLessonsSubtitle => _localizedValues[
+      locale.languageCode]!['disciplerAdvancesLessonsSubtitle']!;
   String get disciplerNotifyToggle =>
       _localizedValues[locale.languageCode]!['disciplerNotifyToggle']!;
   String get disciplerActivityTitle =>

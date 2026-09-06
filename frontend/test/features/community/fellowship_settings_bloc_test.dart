@@ -44,4 +44,27 @@ void main() {
       expect(b.state.original!.disciplerReplyMode, 'review');
     },
   );
+
+  blocTest<FellowshipSettingsBloc, FellowshipSettingsState>(
+    'saves changed daily post frequency and auto-advance prefs',
+    build: () {
+      when(repo.updateFellowship(
+        fellowshipId: 'f',
+        dailyPostFrequencyDays: 7,
+        dailyPostAutoAdvance: false,
+      )).thenAnswer((_) async => const Right(null));
+      return FellowshipSettingsBloc(repository: repo);
+    },
+    act: (b) => b
+      ..add(const FellowshipSettingsLoaded(f))
+      ..add(const FellowshipSettingsChanged(
+          dailyPostFrequencyDays: 7, dailyPostAutoAdvance: false))
+      ..add(const FellowshipSettingsSaveRequested()),
+    verify: (b) {
+      expect(b.state.status, FellowshipSettingsStatus.saved);
+      expect(b.state.isDirty, false);
+      expect(b.state.original!.dailyPostFrequencyDays, 7);
+      expect(b.state.original!.dailyPostAutoAdvance, false);
+    },
+  );
 }
