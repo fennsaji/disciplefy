@@ -36,15 +36,25 @@ class DisciplerAvatar extends StatelessWidget {
   const DisciplerAvatar({this.radius = 20, super.key});
 
   @override
-  Widget build(BuildContext context) => CircleAvatar(
-        radius: radius,
-        backgroundColor: context.appPrimary,
-        child: Icon(
-          Icons.auto_awesome_rounded,
-          color: Colors.white,
-          size: radius,
+  Widget build(BuildContext context) {
+    final size = radius * 2;
+
+    // The Discipler mark is a fixed brand asset — the Disciplefy symbol in gold
+    // on ink, with the AI spark and its glow held inside the disc — so it is
+    // rendered as-is rather than recoloured per theme.
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipOval(
+        child: Image.asset(
+          'assets/brand/discipler-avatar.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// Small disclosure note shown under Discipler-authored content.
