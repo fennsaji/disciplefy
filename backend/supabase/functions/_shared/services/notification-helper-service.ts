@@ -25,6 +25,9 @@ export type NotificationType =
   | 'streak_lost'
   | 'memory_verse_reminder'
   | 'memory_verse_overdue'
+  | 'fellowship_daily_post'
+  | 'fellowship_discipler_reply'
+  | 'fellowship_discipler_activity'
 
 /**
  * Configuration for notification helper
