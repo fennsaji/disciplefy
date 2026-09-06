@@ -577,6 +577,30 @@ class CommunityRepositoryImpl implements CommunityRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, ({String? whatsapp, String? email})>>
+      updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  }) async {
+    try {
+      final result = await _datasource.updateMentorContact(
+        fellowshipId: fellowshipId,
+        whatsapp: whatsapp,
+        email: email,
+      );
+      return Right(result);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(
+          ServerFailure(message: 'Failed to update mentor contact: $e'));
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Discipler comments — approve / discard
   // ---------------------------------------------------------------------------

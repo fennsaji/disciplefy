@@ -180,6 +180,16 @@ abstract class CommunityRemoteDatasource {
     required String userId,
   });
 
+  /// Sets the caller's own mentor contact info for [fellowshipId] (mentor
+  /// only). Both [whatsapp] and [email] are always sent — pass `null` for
+  /// either to clear that channel. Returns the confirmed `(whatsapp,
+  /// email)` from the server.
+  Future<({String? whatsapp, String? email})> updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  });
+
   /// Approves a Discipler-authored draft comment, publishing it.
   Future<void> approveDisciplerComment(String commentId);
 
@@ -341,6 +351,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       '/functions/v1/fellowship-members/promote';
   static const String _fellowshipMembersDemoteEndpoint =
       '/functions/v1/fellowship-members/demote';
+  static const String _fellowshipMembersContactEndpoint =
+      '/functions/v1/fellowship-members/contact';
   static const String _fellowshipCommentsApproveEndpoint =
       '/functions/v1/fellowship-comments/approve';
   static const String _fellowshipCommentsDiscardEndpoint =
@@ -1990,6 +2002,56 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         'FELLOWSHIP_DEMOTE_ERROR',
         'Failed to demote member',
       );
+
+  @override
+  Future<({String? whatsapp, String? email})> updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  }) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.post(
+        '$_baseUrl$_fellowshipMembersContactEndpoint',
+        headers: headers,
+        body: jsonEncode({
+          'fellowship_id': fellowshipId,
+          'whatsapp': whatsapp,
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode >= 400) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final err = json['error'];
+        throw ServerException(
+          message: err is String
+              ? err
+              : (err is Map ? err['message'] as String? : null) ??
+                  'Failed to update mentor contact',
+          code: 'FELLOWSHIP_CONTACT_ERROR',
+        );
+      }
+
+      final data = _parseResponseBody(
+        response.body,
+        'FELLOWSHIP_CONTACT_ERROR',
+        'Failed to update mentor contact',
+      );
+
+      return (
+        whatsapp: data['mentor_whatsapp'] as String?,
+        email: data['mentor_email'] as String?,
+      );
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to update mentor contact: $e',
+        code: 'FELLOWSHIP_CONTACT_ERROR',
+      );
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Discipler comments — approve / discard

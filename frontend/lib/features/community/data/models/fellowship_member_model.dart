@@ -31,6 +31,14 @@ class FellowshipMemberModel {
   /// promoted mentor).
   final bool isOwner;
 
+  /// The mentor's WhatsApp number: digits only (no `+`), or null when not
+  /// set. Only ever non-null for mentors.
+  final String? mentorWhatsapp;
+
+  /// The mentor's email address (lowercase), or null when not set. Only
+  /// ever non-null for mentors.
+  final String? mentorEmail;
+
   const FellowshipMemberModel({
     required this.userId,
     required this.displayName,
@@ -40,6 +48,8 @@ class FellowshipMemberModel {
     required this.isMuted,
     this.topicsCompleted,
     this.isOwner = false,
+    this.mentorWhatsapp,
+    this.mentorEmail,
   });
 
   /// Creates a [FellowshipMemberModel] from a JSON map (API response).
@@ -53,6 +63,8 @@ class FellowshipMemberModel {
       isMuted: json['is_muted'] as bool,
       topicsCompleted: json['topics_completed'] as int?,
       isOwner: json['is_owner'] as bool? ?? false,
+      mentorWhatsapp: json['mentor_whatsapp'] as String?,
+      mentorEmail: json['mentor_email'] as String?,
     );
   }
 
@@ -66,5 +78,7 @@ class FellowshipMemberModel {
         isMuted: isMuted,
         topicsCompleted: topicsCompleted,
         isOwner: isOwner,
+        mentorWhatsapp: mentorWhatsapp,
+        mentorEmail: mentorEmail,
       );
 }

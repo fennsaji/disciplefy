@@ -1,12 +1,17 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_entity.dart';
+import '../../domain/repositories/community_repository.dart';
 import '../bloc/fellowship_settings/fellowship_settings_bloc.dart';
 import '../bloc/fellowship_settings/fellowship_settings_event.dart';
 import '../bloc/fellowship_settings/fellowship_settings_state.dart';
+import '../utils/mentor_contact_helpers.dart';
 import '../widgets/discipler_badges.dart';
 
 /// Fellowship settings screen: name/description/posting permission, plus
@@ -32,11 +37,96 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
       TextEditingController(text: widget.fellowship.name);
   late final TextEditingController _descController =
       TextEditingController(text: widget.fellowship.description ?? '');
+  final TextEditingController _mentorWhatsappController =
+      TextEditingController();
+  final TextEditingController _mentorEmailController = TextEditingController();
+
+  bool _mentorContactLoading = true;
+  bool _mentorContactSaving = false;
+
+  bool get _isMentor => widget.fellowship.userRole == 'mentor';
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isMentor) {
+      _loadMentorContact();
+    } else {
+      _mentorContactLoading = false;
+    }
+  }
+
+  Future<void> _loadMentorContact() async {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final result = await sl<CommunityRepository>()
+        .getFellowshipMembers(widget.fellowshipId);
+    if (!mounted) return;
+    result.fold(
+      (_) => setState(() => _mentorContactLoading = false),
+      (members) {
+        final me = members.firstWhereOrNull((m) => m.userId == currentUserId);
+        setState(() {
+          _mentorWhatsappController.text = me?.mentorWhatsapp ?? '';
+          _mentorEmailController.text = me?.mentorEmail ?? '';
+          _mentorContactLoading = false;
+        });
+      },
+    );
+  }
+
+  Future<void> _saveMentorContact() async {
+    final l10n = AppLocalizations.of(context)!;
+    final rawWhatsapp = _mentorWhatsappController.text.trim();
+    final rawEmail = _mentorEmailController.text.trim();
+
+    if (rawWhatsapp.isNotEmpty && !isValidWhatsAppValue(rawWhatsapp)) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+            SnackBar(content: Text(l10n.mentorContactInvalidWhatsapp)));
+      return;
+    }
+    if (rawEmail.isNotEmpty && !isValidEmailValue(rawEmail)) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.mentorContactInvalidEmail)));
+      return;
+    }
+
+    final normalizedWhatsapp =
+        rawWhatsapp.isEmpty ? null : normalizeWhatsAppDigits(rawWhatsapp);
+    final normalizedEmail = rawEmail.isEmpty ? null : rawEmail;
+
+    setState(() => _mentorContactSaving = true);
+    final result = await sl<CommunityRepository>().updateMentorContact(
+      fellowshipId: widget.fellowshipId,
+      whatsapp: normalizedWhatsapp,
+      email: normalizedEmail,
+    );
+    if (!mounted) return;
+    setState(() => _mentorContactSaving = false);
+    result.fold(
+      (failure) => ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(failure.message))),
+      (confirmed) {
+        setState(() {
+          _mentorWhatsappController.text = confirmed.whatsapp ?? '';
+          _mentorEmailController.text = confirmed.email ?? '';
+        });
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.editFellowshipSuccess)));
+      },
+    );
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
+    _mentorWhatsappController.dispose();
+    _mentorEmailController.dispose();
     super.dispose();
   }
 
@@ -346,6 +436,70 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
                       .read<FellowshipSettingsBloc>()
                       .add(FellowshipSettingsChanged(disciplerActivityPush: v)),
                 ),
+              ],
+              if (_isMentor) ...[
+                const SizedBox(height: 28),
+                Text(
+                  l10n.mentorContactTitle,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: context.appTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.mentorContactSubtitle,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: context.appTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_mentorContactLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else ...[
+                  TextFormField(
+                    controller: _mentorWhatsappController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: l10n.contactWhatsapp,
+                      helperText: l10n.mentorContactBlankHint,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _mentorEmailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: l10n.contactEmail,
+                      helperText: l10n.mentorContactBlankHint,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton(
+                      onPressed:
+                          _mentorContactSaving ? null : _saveMentorContact,
+                      child: _mentorContactSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(l10n.editFellowshipSave),
+                    ),
+                  ),
+                ],
               ],
             ],
           ),

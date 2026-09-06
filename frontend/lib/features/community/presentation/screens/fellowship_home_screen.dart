@@ -41,6 +41,7 @@ import '../utils/auth_helpers.dart';
 import '../utils/feed_sort.dart';
 import '../utils/share_helpers.dart';
 import '../widgets/fellowship_post_card.dart';
+import '../widgets/mentor_contact_sheet.dart';
 
 // ============================================================================
 // Root widget — provides BLoCs, delegates to _FellowshipHomeContent
@@ -496,11 +497,16 @@ class _FellowshipHomeContent extends StatelessWidget {
             // Overflow menu (settings / activity / delete / leave)
             PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, color: context.appTextPrimary),
-              onSelected: (value) {
+              onSelected: (value) async {
                 if (value == 'leave') _showLeaveConfirm(context);
                 if (value == 'settings') {
-                  context.push('/community/$fellowshipId/settings',
+                  final membersBloc = context.read<FellowshipMembersBloc>();
+                  await context.push<void>('/community/$fellowshipId/settings',
                       extra: fellowship);
+                  if (context.mounted) {
+                    membersBloc.add(FellowshipMembersLoadRequested(
+                        fellowshipId: fellowshipId));
+                  }
                 }
                 if (value == 'discipler_activity') {
                   context.push('/community/$fellowshipId/discipler-activity');
@@ -624,23 +630,6 @@ class _HeroHeader extends StatelessWidget {
     this.fellowship,
   });
 
-  void _openAskMentor(BuildContext context) {
-    final feedBloc = context.read<FellowshipFeedBloc>();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: feedBloc,
-        child: FellowshipCreatePostSheet(
-          fellowshipId: fellowshipId,
-          initialToMentors: true,
-          initialType: 'question',
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -657,6 +646,11 @@ class _HeroHeader extends StatelessWidget {
               final l10n = AppLocalizations.of(context)!;
               final mentorMembers = membersState.members
                   .where((m) => m.role == 'mentor')
+                  .toList();
+              final mentorsWithContact = mentorMembers
+                  .where((m) =>
+                      (m.mentorWhatsapp?.isNotEmpty ?? false) ||
+                      (m.mentorEmail?.isNotEmpty ?? false))
                   .toList();
               final mentorNames = mentorMembers.isNotEmpty
                   ? mentorMembers.map((m) => m.displayName).join(', ')
@@ -724,28 +718,72 @@ class _HeroHeader extends StatelessWidget {
                   ]),
                   const SizedBox(height: 14),
                   Row(children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _openAskMentor(context),
-                      icon: const Icon(Icons.forum_outlined, size: 16),
-                      label: Text(l10n.askAMentor),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Theme.of(context).colorScheme.primary,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    // A mentor who has not opened the private channel yet gets
+                    // a quiet prompt in place of the member-facing button:
+                    // without it the setting is only discoverable by scrolling
+                    // through fellowship settings, so existing groups would
+                    // never adopt it. Members never see this.
+                    if (mentorsWithContact.isEmpty && isMentor) ...[
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final membersBloc =
+                              context.read<FellowshipMembersBloc>();
+                          await context.push<void>(
+                            '/community/$fellowshipId/settings',
+                            extra: fellowship,
+                          );
+                          if (context.mounted) {
+                            membersBloc.add(FellowshipMembersLoadRequested(
+                                fellowshipId: fellowshipId));
+                          }
+                        },
+                        icon: const Icon(Icons.alternate_email_rounded,
+                            size: 16, color: Colors.white),
+                        label: Text(l10n.mentorContactPrompt,
+                            style: const TextStyle(color: Colors.white)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white70),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
+                      const SizedBox(width: 10),
+                    ],
+                    if (mentorsWithContact.isNotEmpty) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => showMentorContactSheet(
+                          context,
+                          mentorsWithContact: mentorsWithContact,
+                          fellowshipName: (fellowshipName != null &&
+                                  fellowshipName!.isNotEmpty)
+                              ? fellowshipName!
+                              : l10n.fellowshipDefaultTitle,
+                        ),
+                        icon: const Icon(Icons.forum_outlined, size: 16),
+                        label: Text(l10n.messageMentor),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
                     OutlinedButton.icon(
                       onPressed: () => shareFellowshipInvite(
                           context, fellowshipId, fellowshipName),
-                      icon: const Icon(Icons.share_outlined,
+                      icon: const Icon(Icons.person_add_alt_1_outlined,
                           size: 16, color: Colors.white),
-                      label: Text(l10n.sharePost,
+                      label: Text(l10n.fellowshipInviteMembers,
                           style: const TextStyle(color: Colors.white)),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white70),

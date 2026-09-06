@@ -335,6 +335,7 @@ class AppLocalizations {
       'cancel': 'Cancel',
       'muteSuccess': 'Member muted',
       'unmuteSuccess': 'Member unmuted',
+      'fellowshipInviteMembers': 'Invite',
       'inviteGenerating': 'Generating invite...',
       'inviteShareCode': 'Share this code',
       'inviteExpires': 'Expires in 7 days',
@@ -633,6 +634,21 @@ class AppLocalizations {
       'postTypeDaily': "Today's study",
       'openFullStudy': 'Open the full study',
       'askAMentor': 'Ask a Mentor',
+      'messageMentor': 'Message mentor',
+      'mentorContactPrompt': 'Let members reach you',
+      'messageMentorTitle': 'Reach a mentor',
+      'messageMentorFailed': "Couldn't open that app. Try again.",
+      'contactWhatsapp': 'WhatsApp',
+      'contactEmail': 'Email',
+      'mentorContactTitle': 'Contact for members',
+      'mentorContactSubtitle':
+          'Members can reach you directly. Only this fellowship sees it.',
+      'mentorContactBlankHint': 'Leave blank to hide that option.',
+      'mentorContactInvalidWhatsapp': 'Enter a valid WhatsApp number.',
+      'mentorContactInvalidEmail': 'Enter a valid email address.',
+      'mentorMessageBody':
+          "Hi, I'm from {fellowship} on Disciplefy and I had a question.",
+      'mentorMessageSubject': 'Question from my fellowship',
       'toMentorsChip': 'To mentors',
       'askMentorsToggle': 'Ask the mentors directly',
       'askMentorsHint':
@@ -1005,6 +1021,7 @@ class AppLocalizations {
       'cancel': 'रद्द करें',
       'muteSuccess': 'सदस्य म्यूट किया गया',
       'unmuteSuccess': 'सदस्य अनम्यूट किया गया',
+      'fellowshipInviteMembers': 'आमंत्रित करें',
       'inviteGenerating': 'आमंत्रण बना रहे हैं...',
       'inviteShareCode': 'यह कोड साझा करें',
       'inviteExpires': '7 दिनों में समाप्त',
@@ -1300,6 +1317,21 @@ class AppLocalizations {
       'postTypeDaily': 'आज का अध्ययन',
       'openFullStudy': 'पूरा अध्ययन खोलें',
       'askAMentor': 'मेंटर से पूछें',
+      'messageMentor': 'मेंटर को संदेश भेजें',
+      'mentorContactPrompt': 'सदस्यों को अपने तक पहुँचने दें',
+      'messageMentorTitle': 'मेंटर से संपर्क करें',
+      'messageMentorFailed': 'वह ऐप नहीं खुल सका। फिर कोशिश करें।',
+      'contactWhatsapp': 'WhatsApp',
+      'contactEmail': 'ईमेल',
+      'mentorContactTitle': 'सदस्यों के लिए संपर्क',
+      'mentorContactSubtitle':
+          'सदस्य आपसे सीधे संपर्क कर सकते हैं। इसे केवल यह फ़ेलोशिप देखती है।',
+      'mentorContactBlankHint': 'उस विकल्प को छिपाने के लिए खाली छोड़ें।',
+      'mentorContactInvalidWhatsapp': 'मान्य WhatsApp नंबर दर्ज करें।',
+      'mentorContactInvalidEmail': 'मान्य ईमेल पता दर्ज करें।',
+      'mentorMessageBody':
+          'नमस्ते, मैं Disciplefy पर {fellowship} से हूँ और मेरा एक सवाल है।',
+      'mentorMessageSubject': 'मेरी फ़ेलोशिप से सवाल',
       'toMentorsChip': 'मेंटर्स के लिए',
       'askMentorsToggle': 'सीधे मेंटर्स से पूछें',
       'askMentorsHint':
@@ -1676,6 +1708,7 @@ class AppLocalizations {
       'cancel': 'റദ്ദാക്കുക',
       'muteSuccess': 'അംഗം നിശ്ശബ്ദമാക്കി',
       'unmuteSuccess': 'അംഗം നിശ്ശബ്ദം മാറ്റി',
+      'fellowshipInviteMembers': 'ക്ഷണിക്കുക',
       'inviteGenerating': 'ക്ഷണം സൃഷ്ടിക്കുന്നു...',
       'inviteShareCode': 'ഈ കോഡ് പങ്കിടുക',
       'inviteExpires': '7 ദിവസത്തിൽ കാലഹരണം',
@@ -1976,6 +2009,21 @@ class AppLocalizations {
       'postTypeDaily': 'ഇന്നത്തെ പഠനം',
       'openFullStudy': 'പൂർണ്ണ പഠനം തുറക്കുക',
       'askAMentor': 'ഒരു മെന്ററോട് ചോദിക്കുക',
+      'messageMentor': 'മെന്ററിന് സന്ദേശം അയയ്ക്കുക',
+      'mentorContactPrompt': 'അംഗങ്ങൾക്ക് നിങ്ങളെ ബന്ധപ്പെടാൻ അനുവദിക്കുക',
+      'messageMentorTitle': 'ഒരു മെന്ററെ ബന്ധപ്പെടുക',
+      'messageMentorFailed': 'ആ ആപ്പ് തുറക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'contactWhatsapp': 'WhatsApp',
+      'contactEmail': 'ഇമെയിൽ',
+      'mentorContactTitle': 'അംഗങ്ങൾക്കുള്ള ബന്ധപ്പെടൽ',
+      'mentorContactSubtitle':
+          'അംഗങ്ങൾക്ക് നിങ്ങളെ നേരിട്ട് ബന്ധപ്പെടാം. ഈ ഫെലോഷിപ്പ് മാത്രമേ ഇത് കാണൂ.',
+      'mentorContactBlankHint': 'ആ ഓപ്ഷൻ മറയ്ക്കാൻ ശൂന്യമായി വിടുക.',
+      'mentorContactInvalidWhatsapp': 'സാധുവായ WhatsApp നമ്പർ നൽകുക.',
+      'mentorContactInvalidEmail': 'സാധുവായ ഇമെയിൽ വിലാസം നൽകുക.',
+      'mentorMessageBody':
+          'നമസ്കാരം, ഞാൻ Disciplefy-ൽ {fellowship}-ൽ നിന്നാണ്, എനിക്ക് ഒരു ചോദ്യമുണ്ട്.',
+      'mentorMessageSubject': 'എന്റെ ഫെലോഷിപ്പിൽ നിന്നുള്ള ചോദ്യം',
       'toMentorsChip': 'മെന്റർമാർക്ക്',
       'askMentorsToggle': 'മെന്റർമാരോട് നേരിട്ട് ചോദിക്കുക',
       'askMentorsHint':
@@ -2391,6 +2439,8 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['muteSuccess']!;
   String get unmuteSuccess =>
       _localizedValues[locale.languageCode]!['unmuteSuccess']!;
+  String get fellowshipInviteMembers =>
+      _localizedValues[locale.languageCode]!['fellowshipInviteMembers']!;
   String get inviteGenerating =>
       _localizedValues[locale.languageCode]!['inviteGenerating']!;
   String get inviteShareCode =>
@@ -2846,6 +2896,32 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['openFullStudy']!;
   String get askAMentor =>
       _localizedValues[locale.languageCode]!['askAMentor']!;
+  String get mentorContactPrompt =>
+      _localizedValues[locale.languageCode]!['mentorContactPrompt']!;
+  String get messageMentor =>
+      _localizedValues[locale.languageCode]!['messageMentor']!;
+  String get messageMentorTitle =>
+      _localizedValues[locale.languageCode]!['messageMentorTitle']!;
+  String get messageMentorFailed =>
+      _localizedValues[locale.languageCode]!['messageMentorFailed']!;
+  String get contactWhatsapp =>
+      _localizedValues[locale.languageCode]!['contactWhatsapp']!;
+  String get contactEmail =>
+      _localizedValues[locale.languageCode]!['contactEmail']!;
+  String get mentorContactTitle =>
+      _localizedValues[locale.languageCode]!['mentorContactTitle']!;
+  String get mentorContactSubtitle =>
+      _localizedValues[locale.languageCode]!['mentorContactSubtitle']!;
+  String get mentorContactBlankHint =>
+      _localizedValues[locale.languageCode]!['mentorContactBlankHint']!;
+  String get mentorContactInvalidWhatsapp =>
+      _localizedValues[locale.languageCode]!['mentorContactInvalidWhatsapp']!;
+  String get mentorContactInvalidEmail =>
+      _localizedValues[locale.languageCode]!['mentorContactInvalidEmail']!;
+  String get mentorMessageBody =>
+      _localizedValues[locale.languageCode]!['mentorMessageBody']!;
+  String get mentorMessageSubject =>
+      _localizedValues[locale.languageCode]!['mentorMessageSubject']!;
   String get toMentorsChip =>
       _localizedValues[locale.languageCode]!['toMentorsChip']!;
   String get askMentorsToggle =>

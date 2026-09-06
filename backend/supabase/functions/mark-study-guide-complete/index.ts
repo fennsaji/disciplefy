@@ -282,6 +282,18 @@ async function recordTopicProgress(
       return;
     }
     console.log(`📋 [MARK_COMPLETE] Topic progress recorded for topic ${topicId}`);
+
+    const { data: pathId, error: pathError } = await supabase.rpc(
+      'ensure_learning_path_started',
+      { p_user_id: userId, p_topic_id: topicId }
+    );
+    if (pathError) {
+      console.warn('📋 [MARK_COMPLETE] ensure_learning_path_started failed:', pathError.message);
+      return;
+    }
+    if (pathId) {
+      console.log(`📋 [MARK_COMPLETE] Learning path ${pathId} ensured started for user`);
+    }
   } catch (err) {
     console.warn(
       '📋 [MARK_COMPLETE] Topic progress skipped:',

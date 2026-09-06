@@ -212,6 +212,17 @@ abstract class CommunityRepository {
     required String userId,
   });
 
+  /// Sets the caller's own mentor contact info for [fellowshipId] (mentor
+  /// only). Both [whatsapp] and [email] are always sent — pass `null` for
+  /// either to clear that channel. Returns the confirmed `(whatsapp,
+  /// email)` from the server.
+  Future<Either<Failure, ({String? whatsapp, String? email})>>
+      updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  });
+
   /// Approves a Discipler-authored draft comment, publishing it.
   Future<Either<Failure, void>> approveDisciplerComment(String commentId);
 

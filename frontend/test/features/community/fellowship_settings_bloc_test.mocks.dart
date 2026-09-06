@@ -733,6 +733,41 @@ class MockCommunityRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
 
   @override
+  _i4.Future<_i2.Either<_i5.Failure, ({String? email, String? whatsapp})>>
+      updateMentorContact({
+    required String? fellowshipId,
+    String? whatsapp,
+    String? email,
+  }) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #updateMentorContact,
+              [],
+              {
+                #fellowshipId: fellowshipId,
+                #whatsapp: whatsapp,
+                #email: email,
+              },
+            ),
+            returnValue: _i4.Future<
+                    _i2.Either<_i5.Failure,
+                        ({String? email, String? whatsapp})>>.value(
+                _FakeEither_0<_i5.Failure, ({String? email, String? whatsapp})>(
+              this,
+              Invocation.method(
+                #updateMentorContact,
+                [],
+                {
+                  #fellowshipId: fellowshipId,
+                  #whatsapp: whatsapp,
+                  #email: email,
+                },
+              ),
+            )),
+          ) as _i4.Future<
+              _i2.Either<_i5.Failure, ({String? email, String? whatsapp})>>);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, void>> approveDisciplerComment(
           String? commentId) =>
       (super.noSuchMethod(
