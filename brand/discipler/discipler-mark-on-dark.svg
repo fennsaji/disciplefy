@@ -7,22 +7,22 @@
       <stop offset="1" stop-color="#312E81"/>
     </linearGradient>
     <clipPath id="clip-b">
-      <circle cx="256" cy="256" r="200"/>
+      <circle cx="256" cy="256" r="256"/>
     </clipPath>
     <filter id="halo-b" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="16"/>
+      <feGaussianBlur stdDeviation="18"/>
     </filter>
     <filter id="spark-halo-b" x="-90%" y="-90%" width="280%" height="280%">
-      <feGaussianBlur stdDeviation="9"/>
+      <feGaussianBlur stdDeviation="11"/>
     </filter>
   </defs>
 
-  <circle cx="256" cy="256" r="200" fill="url(#disc-b)"/>
+  <!-- The disc fills the canvas so the mark matches the diameter of the plain
+       avatars it sits beside; padding here would render it visibly smaller. -->
+  <circle cx="256" cy="256" r="256" fill="url(#disc-b)"/>
 
-  <!-- Everything glowing is clipped to the disc, so the light gathers around
-       the logo itself instead of bleeding outside the circle. -->
   <g clip-path="url(#clip-b)">
-    <g transform="translate(238,272) scale(0.215) translate(-518,-671)">
+    <g transform="translate(233,276) scale(0.275) translate(-518,-671)">
       <g transform="translate(0,1119) scale(0.1,-0.1)" fill="#A5B4FC" stroke="none" opacity="0.85" filter="url(#halo-b)">
         <path d="M3310 10772 c-49 -27 -207 -115 -255 -142 -22 -12 -49 -30 -60 -40
 -11 -9 -57 -39 -103 -66 -78 -46 -134 -79 -334 -198 -46 -27 -117 -71 -158
@@ -99,14 +99,14 @@ c-10 31 -35 71 -58 97 -35 37 -232 168 -581 387 -44 27 -96 60 -115 72 -35 22
       </g>
     </g>
 
-    <g transform="translate(350,166) scale(0.86) translate(-50,-50)">
+    <g transform="translate(376,141) scale(1.10) translate(-50,-50)">
       <path d="M50 4 C54 30 70 46 96 50 C70 54 54 70 50 96 C46 70 30 54 4 50 C30 46 46 30 50 4 Z" fill="#E3B154" opacity="0.75" filter="url(#spark-halo-b)"/>
       <path d="M50 4 C54 30 70 46 96 50 C70 54 54 70 50 96 C46 70 30 54 4 50 C30 46 46 30 50 4 Z" fill="#E3B154"/>
     </g>
-    <g transform="translate(392,222) scale(0.34) translate(-50,-50)">
+    <g transform="translate(428,212) scale(0.43) translate(-50,-50)">
       <path d="M50 4 C54 30 70 46 96 50 C70 54 54 70 50 96 C46 70 30 54 4 50 C30 46 46 30 50 4 Z" fill="#E3B154" opacity="0.9"/>
     </g>
-  </g>
 
-  <circle cx="256" cy="256" r="200" fill="none" stroke="#A5B4FC" stroke-opacity="0.30" stroke-width="3"/>
+    <circle cx="256" cy="256" r="253" fill="none" stroke="#A5B4FC" stroke-opacity="0.30" stroke-width="5"/>
+  </g>
 </svg>
