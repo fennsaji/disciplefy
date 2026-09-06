@@ -126,7 +126,8 @@ pub struct Lesson {
 /// AND `rt.is_active` (the topic itself is live) — see migration
 /// `20260721000005_renumber_positions_and_remap_fellowships.sql`. `rt.is_active`
 /// is nullable, so the test is `IS TRUE`, never a bare `rt.is_active`.
-const VISIBLE_WHERE: &str = "lpt.learning_path_id = $1 AND lpt.is_active = true AND rt.is_active IS TRUE";
+const VISIBLE_WHERE: &str =
+    "lpt.learning_path_id = $1 AND lpt.is_active = true AND rt.is_active IS TRUE";
 
 /// The lesson at `index`, or the next higher-position active lesson if that
 /// slot is inactive/hidden. `None` when the path has no more active lessons
@@ -314,10 +315,11 @@ async fn resolve_switch_plan(
     .bind(&completed_path_ids)
     .fetch_all(pool)
     .await?;
-    let all_active: Vec<Uuid> =
-        sqlx::query_scalar("SELECT id FROM learning_paths WHERE is_active = true ORDER BY display_order")
-            .fetch_all(pool)
-            .await?;
+    let all_active: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM learning_paths WHERE is_active = true ORDER BY display_order",
+    )
+    .fetch_all(pool)
+    .await?;
 
     let mut candidates = not_completed;
     for id in &all_active {
@@ -390,7 +392,8 @@ pub async fn resolve_post_plan(
         return resolve_switch_plan(pool, &study).await;
     }
 
-    let Some(lesson) = current_lesson(pool, study.learning_path_id, study.current_guide_index).await?
+    let Some(lesson) =
+        current_lesson(pool, study.learning_path_id, study.current_guide_index).await?
     else {
         return resolve_switch_plan(pool, &study).await;
     };
@@ -591,7 +594,10 @@ pub async fn insert_daily_post(
     }
 
     if let StudyWrite::Switch { plan, .. } = &input.study_write {
-        let summary = format!("Path completed: {} → started {}", plan.from_title, plan.to_title);
+        let summary = format!(
+            "Path completed: {} → started {}",
+            plan.from_title, plan.to_title
+        );
         sqlx::query(
             "INSERT INTO discipler_activity (fellowship_id, kind, summary) VALUES ($1, 'daily_post', $2)",
         )

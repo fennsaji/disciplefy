@@ -155,8 +155,7 @@ async fn post_for_fellowship(
     )
     .await;
 
-    let daily =
-        content_formatter::format_daily_post(l.title, &guide, &f.language, teaser.as_ref());
+    let daily = content_formatter::format_daily_post(l.title, &guide, &f.language, teaser.as_ref());
     let outcome = fellowship_daily::insert_daily_post(
         pool,
         DailyPostInsert {
@@ -222,7 +221,12 @@ pub async fn run_fellowship_daily_post(
             }
         }
     }
-    tracing::info!(posted, skipped, failed, "Discipler daily post CRON job finished");
+    tracing::info!(
+        posted,
+        skipped,
+        failed,
+        "Discipler daily post CRON job finished"
+    );
     Ok(())
 }
 

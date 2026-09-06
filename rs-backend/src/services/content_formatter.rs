@@ -300,12 +300,7 @@ pub fn format_daily_post(
     let (summary, question, verse) = extract_daily_fields(guide);
 
     let mut content = match teaser {
-        Some(t) => format!(
-            "📖 {}\n\n✨ {}\n\n{}",
-            topic_title.trim(),
-            t.hook,
-            t.body
-        ),
+        Some(t) => format!("📖 {}\n\n✨ {}\n\n{}", topic_title.trim(), t.hook, t.body),
         None => format!("📖 {}\n\n{}", topic_title.trim(), summary),
     };
     if let Some(v) = &verse {
@@ -412,9 +407,9 @@ mod daily_tests {
         let d = format_daily_post("T", &g, "en", Some(&t));
         assert_eq!(d.verse, None);
         assert_eq!(d.question, None);
-        assert!(d.content.ends_with(
-            "It's trust anchored in what God has already shown to be true."
-        ));
+        assert!(d
+            .content
+            .ends_with("It's trust anchored in what God has already shown to be true."));
     }
 
     #[test]
