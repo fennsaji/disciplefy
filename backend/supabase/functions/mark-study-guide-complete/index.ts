@@ -134,7 +134,7 @@ async function handleMarkStudyGuideComplete(
   // Verify user owns this study guide
   const { data: userGuide, error: ownershipError } = await supabase
     .from('user_study_guides')
-    .select('id, study_guide_id, completed_at')
+    .select('id, study_guide_id, completed_at, study_guides(input_value, language)')
     .eq('user_id', userId)
     .eq('study_guide_id', study_guide_id)
     .maybeSingle();
@@ -203,6 +203,23 @@ async function handleMarkStudyGuideComplete(
     `✅ [MARK_COMPLETE] Successfully marked guide as complete at ${now}`
   );
 
+  // Record learning-path topic progress for this completion.
+  //
+  // The client only reports topic progress when the guide was opened through a
+  // route that carries `topic_id` (learning path, fellowship lesson,
+  // notification). Guides finished from Saved, Recent, Continue, the generate
+  // flow or a shared link used to leave `user_topic_progress` untouched, so a
+  // finished lesson still counted as zero in fellowship and path progress.
+  // Resolving the topic here makes the record entry-point independent. The
+  // RPC only awards XP on the first completion, so it is safe alongside the
+  // client's own call.
+  await recordTopicProgress(
+    supabase,
+    userId,
+    (userGuide as unknown as GuideWithSource).study_guides,
+    time_spent_seconds
+  );
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -217,6 +234,60 @@ async function handleMarkStudyGuideComplete(
       headers: { 'Content-Type': 'application/json' },
     }
   );
+}
+
+
+// ============================================================================
+// Topic progress
+// ============================================================================
+
+interface GuideWithSource {
+  study_guides?: { input_value?: string | null; language?: string | null } | null;
+}
+
+/**
+ * Best-effort: map the completed guide back to the recommended topic it was
+ * generated from and mark that topic complete. Never fails the request — the
+ * guide is already marked complete by the time this runs.
+ */
+async function recordTopicProgress(
+  supabase: ServiceContainer['supabaseServiceClient'],
+  userId: string,
+  guide: GuideWithSource['study_guides'],
+  timeSpentSeconds: number
+): Promise<void> {
+  try {
+    const inputValue = guide?.input_value;
+    if (!inputValue) return;
+
+    const { data: topicId, error: resolveError } = await supabase.rpc(
+      'resolve_topic_id_for_guide',
+      { p_input_value: inputValue, p_language: guide?.language ?? 'en' }
+    );
+
+    if (resolveError) {
+      console.warn('📋 [MARK_COMPLETE] Topic resolve failed:', resolveError.message);
+      return;
+    }
+    if (!topicId) return;
+
+    const { error: progressError } = await supabase.rpc('complete_topic_progress', {
+      p_user_id: userId,
+      p_topic_id: topicId,
+      p_time_spent_seconds: timeSpentSeconds ?? 0,
+    });
+
+    if (progressError) {
+      console.warn('📋 [MARK_COMPLETE] Topic progress failed:', progressError.message);
+      return;
+    }
+    console.log(`📋 [MARK_COMPLETE] Topic progress recorded for topic ${topicId}`);
+  } catch (err) {
+    console.warn(
+      '📋 [MARK_COMPLETE] Topic progress skipped:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+  }
 }
 
 // ============================================================================

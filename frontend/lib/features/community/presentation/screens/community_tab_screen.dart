@@ -634,11 +634,6 @@ class _FellowshipCard extends StatelessWidget {
                       ],
                     ),
 
-                    if (fellowship.mentors.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      _MentorsAvatarStack(mentors: fellowship.mentors),
-                    ],
-
                     // Mentor name
                     if (fellowship.mentorName != null) ...[
                       const SizedBox(height: 4),
@@ -791,52 +786,6 @@ class _OfficialBadge extends StatelessWidget {
           color: AppColors.brandHighlightDark,
           letterSpacing: 0.3,
         ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Mentors avatar stack
-// ---------------------------------------------------------------------------
-
-class _MentorsAvatarStack extends StatelessWidget {
-  final List<FellowshipMentorEntity> mentors;
-
-  const _MentorsAvatarStack({required this.mentors});
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = mentors.take(3).toList();
-    return SizedBox(
-      height: 22,
-      child: Stack(
-        children: [
-          for (int i = 0; i < shown.length; i++)
-            Positioned(
-              left: i * 12.0,
-              child: CircleAvatar(
-                radius: 11,
-                backgroundColor: context.appSurface,
-                child: CircleAvatar(
-                  radius: 10,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primary.withAlpha(36),
-                  child: Text(
-                    shown[i].displayName.isNotEmpty
-                        ? shown[i].displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
