@@ -663,6 +663,24 @@ class AppLocalizations {
       'demoteToMember': 'Demote to Member',
       'officialBadge': 'Official',
       'unlimitedMembers': 'Unlimited',
+      // Home — closing community section
+      'homeRecentActivityTitle': 'Recent activity',
+      'homeRecentActivitySubtitle': 'The latest from your fellowships',
+      'homeCommunityViewAll': 'View all',
+      'homeCommunityBrowse': 'Browse',
+      'homeActivityPosted': 'Posted',
+      'homeJoinFellowshipTitle': 'Find your fellowship',
+      'homeJoinFellowshipSubtitle':
+          'A mentor guides the group, and a fresh study lands every day.',
+      'homeJoinFellowshipCta': 'Join',
+      'homeJoinedFellowship': 'You joined {name}',
+      'homeJoinFailed': "Couldn't join that group. Please try again.",
+      'homeMembersCount': '{count} members',
+      'homeMembersCountOne': '1 member',
+      'timeAgoJustNow': 'just now',
+      'timeAgoMinutes': '{count}m ago',
+      'timeAgoHours': '{count}h ago',
+      'timeAgoDays': '{count}d ago',
       'sharePost': 'Share Post',
       'sharePostSuffix': 'on Disciplefy',
       'fellowshipSettingsTitle': 'Fellowship Settings',
@@ -1346,6 +1364,24 @@ class AppLocalizations {
       'demoteToMember': 'सदस्य बनाएं',
       'officialBadge': 'आधिकारिक',
       'unlimitedMembers': 'असीमित',
+      // Home — closing community section
+      'homeRecentActivityTitle': 'हाल की गतिविधि',
+      'homeRecentActivitySubtitle': 'आपकी संगतियों से नवीनतम',
+      'homeCommunityViewAll': 'सभी देखें',
+      'homeCommunityBrowse': 'देखें',
+      'homeActivityPosted': 'पोस्ट किया',
+      'homeJoinFellowshipTitle': 'अपनी संगति खोजें',
+      'homeJoinFellowshipSubtitle':
+          'मेंटर समूह का मार्गदर्शन करते हैं, और हर दिन नया अध्ययन मिलता है।',
+      'homeJoinFellowshipCta': 'शामिल हों',
+      'homeJoinedFellowship': 'आप {name} में शामिल हो गए',
+      'homeJoinFailed': 'उस समूह में शामिल नहीं हो सके। कृपया फिर कोशिश करें।',
+      'homeMembersCount': '{count} सदस्य',
+      'homeMembersCountOne': '1 सदस्य',
+      'timeAgoJustNow': 'अभी',
+      'timeAgoMinutes': '{count} मि पहले',
+      'timeAgoHours': '{count} घं पहले',
+      'timeAgoDays': '{count} दि पहले',
       'sharePost': 'पोस्ट साझा करें',
       'sharePostSuffix': 'Disciplefy पर',
       'fellowshipSettingsTitle': 'फेलोशिप सेटिंग्स',
@@ -2038,6 +2074,24 @@ class AppLocalizations {
       'demoteToMember': 'അംഗമാക്കുക',
       'officialBadge': 'ഔദ്യോഗികം',
       'unlimitedMembers': 'പരിധിയില്ലാത്തത്',
+      // Home — closing community section
+      'homeRecentActivityTitle': 'സമീപകാല പ്രവർത്തനം',
+      'homeRecentActivitySubtitle': 'നിങ്ങളുടെ കൂട്ടായ്മകളിൽ നിന്നുള്ള പുതിയവ',
+      'homeCommunityViewAll': 'എല്ലാം കാണുക',
+      'homeCommunityBrowse': 'കാണുക',
+      'homeActivityPosted': 'പോസ്റ്റ് ചെയ്തു',
+      'homeJoinFellowshipTitle': 'നിങ്ങളുടെ കൂട്ടായ്മ കണ്ടെത്തുക',
+      'homeJoinFellowshipSubtitle':
+          'മെന്റർ സംഘത്തെ നയിക്കും, ഓരോ ദിവസവും പുതിയ പഠനം ലഭിക്കും.',
+      'homeJoinFellowshipCta': 'ചേരുക',
+      'homeJoinedFellowship': 'നിങ്ങൾ {name}-ൽ ചേർന്നു',
+      'homeJoinFailed': 'ആ സംഘത്തിൽ ചേരാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'homeMembersCount': '{count} അംഗങ്ങൾ',
+      'homeMembersCountOne': '1 അംഗം',
+      'timeAgoJustNow': 'ഇപ്പോൾ',
+      'timeAgoMinutes': '{count} മി മുമ്പ്',
+      'timeAgoHours': '{count} മ മുമ്പ്',
+      'timeAgoDays': '{count} ദി മുമ്പ്',
       'sharePost': 'പോസ്റ്റ് പങ്കിടുക',
       'sharePostSuffix': 'Disciplefy-യിൽ',
       'fellowshipSettingsTitle': 'ഫെലോഷിപ്പ് സെറ്റിംഗ്സ്',
@@ -2336,6 +2390,44 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['postTypeStudyNote']!;
   String get postTypeSharedGuide =>
       _localizedValues[locale.languageCode]!['postTypeSharedGuide']!;
+
+  // Home — closing community section
+  String get homeRecentActivityTitle =>
+      _localizedValues[locale.languageCode]!['homeRecentActivityTitle']!;
+  String get homeRecentActivitySubtitle =>
+      _localizedValues[locale.languageCode]!['homeRecentActivitySubtitle']!;
+  String get homeCommunityViewAll =>
+      _localizedValues[locale.languageCode]!['homeCommunityViewAll']!;
+  String get homeCommunityBrowse =>
+      _localizedValues[locale.languageCode]!['homeCommunityBrowse']!;
+  String get homeActivityPosted =>
+      _localizedValues[locale.languageCode]!['homeActivityPosted']!;
+  String get homeJoinFellowshipTitle =>
+      _localizedValues[locale.languageCode]!['homeJoinFellowshipTitle']!;
+  String get homeJoinFellowshipSubtitle =>
+      _localizedValues[locale.languageCode]!['homeJoinFellowshipSubtitle']!;
+  String get homeJoinFellowshipCta =>
+      _localizedValues[locale.languageCode]!['homeJoinFellowshipCta']!;
+  String get homeJoinFailed =>
+      _localizedValues[locale.languageCode]!['homeJoinFailed']!;
+  String homeJoinedFellowship(String name) =>
+      _localizedValues[locale.languageCode]!['homeJoinedFellowship']!
+          .replaceAll('{name}', name);
+  String homeMembersCount(int count) => count == 1
+      ? _localizedValues[locale.languageCode]!['homeMembersCountOne']!
+      : _localizedValues[locale.languageCode]!['homeMembersCount']!
+          .replaceAll('{count}', '$count');
+  String get timeAgoJustNow =>
+      _localizedValues[locale.languageCode]!['timeAgoJustNow']!;
+  String timeAgoMinutes(int count) =>
+      _localizedValues[locale.languageCode]!['timeAgoMinutes']!
+          .replaceAll('{count}', '$count');
+  String timeAgoHours(int count) =>
+      _localizedValues[locale.languageCode]!['timeAgoHours']!
+          .replaceAll('{count}', '$count');
+  String timeAgoDays(int count) =>
+      _localizedValues[locale.languageCode]!['timeAgoDays']!
+          .replaceAll('{count}', '$count');
   String get studyNoteLesson =>
       _localizedValues[locale.languageCode]!['studyNoteLesson']!;
   String get sharedGuideCta =>

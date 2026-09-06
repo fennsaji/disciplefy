@@ -52,6 +52,7 @@ import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
+import '../widgets/home_community_section.dart';
 import '../widgets/usage_meter_widget.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -690,6 +691,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
                               // Recommended Study Topics
                               _buildRecommendedTopics(),
+
+                              SizedBox(height: isLargeScreen ? 32 : 24),
+
+                              // Closing note: what's happening in the user's
+                              // fellowships, or an invitation to join one.
+                              // Collapses to nothing while loading or on error.
+                              const HomeCommunitySection(),
 
                               SizedBox(height: isLargeScreen ? 32 : 24),
                             ],
