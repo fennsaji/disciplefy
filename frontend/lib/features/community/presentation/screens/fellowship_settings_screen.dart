@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import '../../../../core/utils/error_message_sanitizer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -108,7 +109,8 @@ class _FellowshipSettingsScreenState extends State<FellowshipSettingsScreen> {
     result.fold(
       (failure) => ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(failure.message))),
+        ..showSnackBar(
+            SnackBar(content: Text(ErrorMessageSanitizer.sanitize(failure)))),
       (confirmed) {
         setState(() {
           _mentorWhatsappController.text = confirmed.whatsapp ?? '';
