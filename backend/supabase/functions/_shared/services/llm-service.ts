@@ -684,6 +684,30 @@ Return ONLY the numeric score, nothing else.`
   }
 
   /**
+   * Short JSON completion for Discipler fellowship replies.
+   * Cheapest models on both providers; Anthropic preferred when available.
+   */
+  async generateDisciplerReply(prompt: { systemMessage: string; userMessage: string }): Promise<{
+    content: string; usage: LLMUsageMetadata; model: string; provider: LLMProvider
+  }> {
+    const provider: LLMProvider = this.availableProviders.has('anthropic') ? 'anthropic' : this.getAnyAvailableProvider()
+    if (provider === 'anthropic') {
+      const model = 'claude-haiku-4-5-20251001'
+      const result = await this.getAnthropicClient().call({
+        systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
+        temperature: 0.3, maxTokens: 350, model,
+      })
+      return { content: result.content, usage: result.usage, model, provider }
+    }
+    const model = 'gpt-4o-mini-2024-07-18'
+    const result = await this.getOpenAIClient().call({
+      systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
+      temperature: 0.3, maxTokens: 350,
+    })
+    return { content: result.content, usage: result.usage, model, provider }
+  }
+
+  /**
    * Generates a daily Bible verse with translations.
    */
   async generateDailyVerse(

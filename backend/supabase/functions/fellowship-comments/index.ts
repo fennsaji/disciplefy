@@ -12,6 +12,8 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { FCMService } from '../_shared/fcm-service.ts'
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
+import { classifyComment, mentionsDiscipler, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
+import { enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, pushUsers } from '../_shared/services/discipler-service.ts'
 
 // ---------------------------------------------------------------------------
 // List comments  GET /fellowship-comments?post_id=UUID
@@ -56,12 +58,16 @@ async function handleListComments(req: Request, services: ServiceContainer): Pro
 
   const hiddenIds = await hiddenAuthorIds(db as unknown as SupabaseLike, user.id, post.fellowship_id)
 
+  const { data: viewerIsMentor } = await db.rpc('is_fellowship_mentor', { p_fellowship_id: post.fellowship_id, p_user_id: user.id })
+
   let commentsQuery = db
     .from('fellowship_comments')
-    .select('id, post_id, content, author_user_id, is_deleted, created_at')
+    .select('id, post_id, content, author_user_id, is_deleted, created_at, is_pending_review, mentions_discipler, study_guide_id, guide_title, guide_input_type, guide_input_value, guide_language')
     .eq('post_id', postId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true })
+
+  if (!viewerIsMentor) commentsQuery = commentsQuery.eq('is_pending_review', false)
 
   if (hiddenIds.length > 0) {
     commentsQuery = commentsQuery.not('author_user_id', 'in', `(${hiddenIds.join(',')})`)
@@ -108,7 +114,15 @@ async function handleListComments(req: Request, services: ServiceContainer): Pro
       is_deleted: c.is_deleted,
       created_at: c.created_at,
       author_display_name: author?.displayName ?? 'Unknown Member',
-      author_avatar_url: author?.avatarUrl ?? null
+      author_avatar_url: author?.avatarUrl ?? null,
+      author_is_system: c.author_user_id === DISCIPLER_USER_ID,
+      is_pending_review: c.is_pending_review ?? false,
+      mentions_discipler: c.mentions_discipler ?? false,
+      study_guide_id: c.study_guide_id ?? null,
+      guide_title: c.guide_title ?? null,
+      guide_input_type: c.guide_input_type ?? null,
+      guide_input_value: c.guide_input_value ?? null,
+      guide_language: c.guide_language ?? null
     }
   })
 
@@ -172,7 +186,8 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
       post_id: body.post_id,
       fellowship_id: post.fellowship_id,
       author_user_id: user.id,
-      content: trimmedContent
+      content: trimmedContent,
+      mentions_discipler: mentionsDiscipler(trimmedContent)
     })
     .select()
     .single()
@@ -233,6 +248,21 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
     EdgeRuntime.waitUntil(commentNotifyPromise)
   }
 
+  const disciplerPromise = (async () => {
+    try {
+      const [settings, globalEnabled] = await Promise.all([
+        loadFellowshipDiscipler(db, post.fellowship_id), isDisciplerGloballyEnabled(db),
+      ])
+      if (!settings) return
+      const decision = classifyComment({ content: trimmedContent, authorUserId: user.id, settings, globalEnabled })
+      if (!decision) return
+      await enqueueReply(db, { postId: body.post_id, commentId: comment.id, fellowshipId: post.fellowship_id, trigger: 'mention', runAfter: new Date().toISOString() })
+    } catch (err) {
+      console.error('[fellowship-comments/create] Discipler hook error (non-fatal):', err)
+    }
+  })()
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(disciplerPromise)
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -249,6 +279,41 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
     }),
     { status: 201, headers: { 'Content-Type': 'application/json' } }
   )
+}
+
+// ---------------------------------------------------------------------------
+// Approve / discard a Discipler draft  POST /fellowship-comments/approve|discard
+// ---------------------------------------------------------------------------
+
+async function handleReviewComment(req: Request, services: ServiceContainer, decision: 'approve' | 'discard'): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+  let body: { comment_id: string }
+  try { body = await req.json() } catch { throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400) }
+  if (!body.comment_id) throw new AppError('VALIDATION_ERROR', 'comment_id is required', 400)
+  const db = services.supabaseServiceClient
+  const { data: comment } = await db.from('fellowship_comments').select('id, post_id, fellowship_id, content, is_pending_review, author_user_id').eq('id', body.comment_id).eq('is_deleted', false).maybeSingle()
+  if (!comment) throw new AppError('NOT_FOUND', 'Comment not found', 404)
+  if (!comment.is_pending_review || comment.author_user_id !== DISCIPLER_USER_ID) throw new AppError('VALIDATION_ERROR', 'Comment is not a Discipler draft', 400)
+  const { data: isMentor } = await db.rpc('is_fellowship_mentor', { p_fellowship_id: comment.fellowship_id, p_user_id: user.id })
+  if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
+
+  const now = new Date().toISOString()
+  if (decision === 'approve') {
+    await db.from('fellowship_comments').update({ is_pending_review: false }).eq('id', comment.id)
+    const { data: post } = await db.from('fellowship_posts').select('author_user_id').eq('id', comment.post_id).maybeSingle()
+    if (post?.author_user_id) {
+      const p = pushUsers(db, [post.author_user_id], { title: '✨ Discipler replied to your question', body: comment.content.slice(0, 80) },
+        { type: 'fellowship_discipler_reply', fellowship_id: comment.fellowship_id, post_id: comment.post_id, comment_id: comment.id })
+      if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(p)
+    }
+  } else {
+    await db.from('fellowship_comments').update({ is_deleted: true }).eq('id', comment.id)
+  }
+  await db.from('discipler_activity').update({ reviewed_by: user.id, reviewed_at: now, kind: decision === 'approve' ? 'reply' : 'draft' }).eq('comment_id', comment.id)
+  return new Response(JSON.stringify({ success: true, data: { comment_id: comment.id, decision } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
 
 // ---------------------------------------------------------------------------
@@ -296,7 +361,10 @@ async function handleDeleteComment(req: Request, services: ServiceContainer): Pr
       console.error('[fellowship-comments/delete] RPC error:', rpcError)
       throw new AppError('DATABASE_ERROR', 'Failed to verify permissions', 500)
     }
-    if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Cannot delete this comment', 403)
+    if (!isMentor) {
+      const { data: profile } = await db.from('user_profiles').select('is_admin').eq('id', user.id).maybeSingle()
+      if (profile?.is_admin !== true) throw new AppError('PERMISSION_DENIED', 'Cannot delete this comment', 403)
+    }
   }
 
   const { error } = await db
@@ -307,6 +375,10 @@ async function handleDeleteComment(req: Request, services: ServiceContainer): Pr
   if (error) {
     console.error('[fellowship-comments/delete] Update error:', error)
     throw new AppError('DATABASE_ERROR', 'Failed to delete comment', 500)
+  }
+
+  if (comment.author_user_id === DISCIPLER_USER_ID) {
+    await db.from('discipler_activity').update({ reviewed_by: user.id, reviewed_at: new Date().toISOString() }).eq('comment_id', body.comment_id)
   }
 
   return new Response(
@@ -322,8 +394,14 @@ async function handleDeleteComment(req: Request, services: ServiceContainer): Pr
 async function handleComments(req: Request, services: ServiceContainer): Promise<Response> {
   await checkMaintenanceMode(req, services)
 
+  const pathname = new URL(req.url).pathname
+
   if (req.method === 'GET') return handleListComments(req, services)
-  if (req.method === 'POST') return handleCreateComment(req, services)
+  if (req.method === 'POST') {
+    if (pathname.endsWith('/approve')) return handleReviewComment(req, services, 'approve')
+    if (pathname.endsWith('/discard')) return handleReviewComment(req, services, 'discard')
+    return handleCreateComment(req, services)
+  }
   if (req.method === 'DELETE') return handleDeleteComment(req, services)
 
   throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)

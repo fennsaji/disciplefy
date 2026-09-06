@@ -14,6 +14,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -52,6 +53,7 @@ async function handleBlock(req: Request, services: ServiceContainer): Promise<Re
 
   if (!body.blocked_user_id) throw new AppError('VALIDATION_ERROR', 'blocked_user_id is required', 400)
   if (!UUID_RE.test(body.blocked_user_id)) throw new AppError('VALIDATION_ERROR', 'blocked_user_id must be a valid UUID', 400)
+  if (body.blocked_user_id === DISCIPLER_USER_ID) throw new AppError('VALIDATION_ERROR', 'Discipler cannot be blocked; mentors can turn it off in fellowship settings', 400)
   if (body.blocked_user_id === user.id) throw new AppError('VALIDATION_ERROR', 'Cannot block yourself', 400)
 
   // Empty string is treated as "not provided" for these optional fields —

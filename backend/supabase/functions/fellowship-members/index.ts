@@ -24,6 +24,7 @@ interface MemberResponse {
   role: 'mentor' | 'member'
   joined_at: string
   is_muted: boolean
+  is_owner: boolean
   display_name: string
   avatar_url: string | null
   topics_completed: number | null
@@ -57,13 +58,15 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
   if (rpcError) throw new AppError('DATABASE_ERROR', 'Failed to verify membership', 500)
   if (!isMember) throw new AppError('PERMISSION_DENIED', 'You are not a member of this fellowship', 403)
 
-  const [membersResult, mutesResult, studyResult] = await Promise.all([
+  const [membersResult, mutesResult, studyResult, fellowshipResult] = await Promise.all([
     db.from('fellowship_members').select('user_id, role, joined_at')
       .eq('fellowship_id', fellowshipId).eq('is_active', true).order('joined_at', { ascending: true }),
     db.from('fellowship_mutes').select('muted_user_id').eq('fellowship_id', fellowshipId),
     db.from('fellowship_study').select('learning_path_id, current_guide_index')
-      .eq('fellowship_id', fellowshipId).is('completed_at', null).maybeSingle()
+      .eq('fellowship_id', fellowshipId).is('completed_at', null).maybeSingle(),
+    db.from('fellowships').select('mentor_user_id').eq('id', fellowshipId).maybeSingle()
   ])
+  const ownerId: string | null = fellowshipResult.data?.mentor_user_id ?? null
 
   if (membersResult.error) {
     console.error('[fellowship-members/list] Members query error:', membersResult.error)
@@ -125,21 +128,22 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
         : (activeLearningPathId ? 0 : null)
       const topics_completed = personallyCompleted
 
+      const is_owner = row.user_id === ownerId
       try {
         const { data: userData, error: userError } =
           await services.supabaseServiceClient.auth.admin.getUserById(row.user_id)
         if (userError || !userData?.user) {
-          return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, display_name: 'Unknown Member', avatar_url: null, topics_completed }
+          return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name: 'Unknown Member', avatar_url: null, topics_completed }
         }
         const u = userData.user
         const display_name: string =
           u.user_metadata?.full_name ?? u.user_metadata?.name ??
           u.user_metadata?.display_name ?? u.email ?? 'Unknown Member'
         const avatar_url: string | null = u.user_metadata?.avatar_url ?? null
-        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, display_name, avatar_url, topics_completed }
+        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name, avatar_url, topics_completed }
       } catch (err) {
         console.error('[fellowship-members/list] Unexpected error fetching user:', row.user_id, err)
-        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, display_name: 'Unknown Member', avatar_url: null, topics_completed }
+        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name: 'Unknown Member', avatar_url: null, topics_completed }
       }
     })
   )
@@ -326,6 +330,39 @@ async function handleTransferMentor(req: Request, services: ServiceContainer): P
 }
 
 // ---------------------------------------------------------------------------
+// Promote / demote mentor  POST /fellowship-members/promote|demote
+// ---------------------------------------------------------------------------
+
+async function handleChangeMentorRole(req: Request, services: ServiceContainer, to: 'mentor' | 'member'): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+  let body: { fellowship_id: string; user_id: string }
+  try { body = await req.json() } catch { throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400) }
+  if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+  if (!body.user_id) throw new AppError('VALIDATION_ERROR', 'user_id is required', 400)
+  const db = services.supabaseServiceClient
+
+  const [{ data: isMentor }, { data: profile }, { data: fellowship }] = await Promise.all([
+    db.rpc('is_fellowship_mentor', { p_fellowship_id: body.fellowship_id, p_user_id: user.id }),
+    db.from('user_profiles').select('is_admin').eq('id', user.id).maybeSingle(),
+    db.from('fellowships').select('mentor_user_id').eq('id', body.fellowship_id).maybeSingle(),
+  ])
+  if (!isMentor && profile?.is_admin !== true) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
+  if (!fellowship) throw new AppError('NOT_FOUND', 'Fellowship not found', 404)
+  if (to === 'member' && body.user_id === fellowship.mentor_user_id) throw new AppError('VALIDATION_ERROR', 'The owner cannot be demoted — transfer ownership first', 400)
+
+  const { data: target } = await db.from('fellowship_members').select('role').eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id).eq('is_active', true).maybeSingle()
+  if (!target) throw new AppError('NOT_FOUND', 'Target user is not an active member', 404)
+  if (target.role === to) return new Response(JSON.stringify({ success: true, message: 'No change' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+
+  const { error } = await db.from('fellowship_members').update({ role: to }).eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id)
+  if (error) { console.error('[fellowship-members/role] Update error:', error); throw new AppError('DATABASE_ERROR', 'Failed to change role', 500) }
+  return new Response(JSON.stringify({ success: true, data: { user_id: body.user_id, role: to } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -341,6 +378,8 @@ async function handleMembers(req: Request, services: ServiceContainer): Promise<
     if (pathname.endsWith('/unmute')) return handleUnmuteMember(req, services)
     if (pathname.endsWith('/remove')) return handleRemoveMember(req, services)
     if (pathname.endsWith('/transfer')) return handleTransferMentor(req, services)
+    if (pathname.endsWith('/promote')) return handleChangeMentorRole(req, services, 'mentor')
+    if (pathname.endsWith('/demote')) return handleChangeMentorRole(req, services, 'member')
   }
 
   throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)
