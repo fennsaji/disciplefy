@@ -79,7 +79,7 @@ Admin routes call `verify_admin()` → extracts Bearer token → validates again
 | `blog_retry` | Every 4h (partial failures) | — |
 | `blog_publish_scheduled` | Every minute | — |
 | `subscription_reconcile` | Hourly | — |
-| `fellowship_daily_post` | 01:00 UTC (06:30 IST) daily — posts each fellowship's *current lesson* from its own `fellowship_study` row (not the global topic catalog); mentor-controlled cadence (`daily_post_frequency_days`) and auto-advance (`daily_post_auto_advance`); auto-switches to the next active learning path on completion | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` (calls `fellowship-posts/notify`) |
+| `fellowship_daily_post` | 01:00 UTC (06:30 IST) daily — posts each fellowship's *current lesson* from its own `fellowship_study` row (not the global topic catalog); mentor-controlled cadence (`daily_post_frequency_days`) and auto-advance (`daily_post_auto_advance`); auto-switches to the next active learning path on completion; before inserting, calls `fellowship-posts/daily-teaser` (`services::fellowship_teaser`) for an LLM-written hook/body to replace the plain summary lead — any failure (timeout, non-200, bad/oversized fields) falls back to the plain template, never fails the post | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` (calls `fellowship-posts/notify`), `INTERNAL_API_KEY` (calls `fellowship-posts/daily-teaser`) |
 | `discipler_reply_worker` | Every minute (drains reply queue; flushes hourly activity digests on minute 0) | `INTERNAL_API_KEY`, `SUPABASE_ANON_KEY` (calls `fellowship-posts/discipler-reply`), `SUPABASE_SERVICE_ROLE_KEY` (calls `fellowship-posts/notify` for digests) |
 
 - Schedules stored in `cron_config` DB table, with hardcoded fallbacks

@@ -1,3 +1,4 @@
+use crate::services::fellowship_teaser::Teaser;
 use crate::services::study_api::StudyGuideResult;
 
 pub struct BlogContent {
@@ -242,20 +243,12 @@ fn first_sentences(text: &str, n: usize) -> String {
     out.trim().to_string()
 }
 
-fn open_study_label(locale: &str) -> &'static str {
-    match locale {
-        "hi" => "पूरा अध्ययन खोलें →",
-        "ml" => "മുഴുവൻ പഠനം തുറക്കുക →",
-        _ => "Open the full study →",
-    }
-}
-
-/// Plain-text daily post body for fellowship feeds (no markdown headings).
-pub fn format_daily_post(
-    topic_title: &str,
+/// First 2 sentences of the summary section, the reflection question, and the
+/// first related verse reference — the fields shared by the plain-template
+/// daily post and the teaser request built from the same guide.
+pub(crate) fn extract_daily_fields(
     guide: &StudyGuideResult,
-    locale: &str,
-) -> DailyPostContent {
+) -> (String, Option<String>, Option<String>) {
     let summary = guide
         .sections
         .get("summary")
@@ -289,14 +282,38 @@ pub fn format_daily_post(
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let mut content = format!("📖 {}\n\n{}", topic_title.trim(), summary);
+    (summary, question, verse)
+}
+
+/// Plain-text daily post body for fellowship feeds (no markdown headings).
+///
+/// With a teaser, the LLM-written hook/body replace the plain summary for a
+/// more compelling lead; without one (teaser unavailable, or the call
+/// failed), the plain summary is used as-is — the card already shows a guide
+/// chip, so there's no trailing "Open the full study" line either way.
+pub fn format_daily_post(
+    topic_title: &str,
+    guide: &StudyGuideResult,
+    _locale: &str,
+    teaser: Option<&Teaser>,
+) -> DailyPostContent {
+    let (summary, question, verse) = extract_daily_fields(guide);
+
+    let mut content = match teaser {
+        Some(t) => format!(
+            "📖 {}\n\n✨ {}\n\n{}",
+            topic_title.trim(),
+            t.hook,
+            t.body
+        ),
+        None => format!("📖 {}\n\n{}", topic_title.trim(), summary),
+    };
     if let Some(v) = &verse {
         content.push_str(&format!("\n\n✝️ {}", v));
     }
     if let Some(q) = &question {
         content.push_str(&format!("\n\n💬 {}", q));
     }
-    content.push_str(&format!("\n\n{}", open_study_label(locale)));
 
     let content: String = content.chars().take(1900).collect();
     DailyPostContent {
@@ -329,9 +346,16 @@ mod daily_tests {
         }
     }
 
+    fn teaser() -> Teaser {
+        Teaser {
+            hook: "Faith isn't a leap in the dark.".to_string(),
+            body: "It's trust anchored in what God has already shown to be true.".to_string(),
+        }
+    }
+
     #[test]
-    fn builds_english_daily_post() {
-        let d = format_daily_post("Walking by Faith", &guide(), "en");
+    fn builds_english_daily_post_without_teaser() {
+        let d = format_daily_post("Walking by Faith", &guide(), "en", None);
         assert!(d.content.starts_with("📖 Walking by Faith\n\n"));
         assert!(d.content.contains(
             "Paul reminds the Corinthians that trust outlasts sight. Faith is sight fixed on the eternal."
@@ -342,7 +366,25 @@ mod daily_tests {
             d.question.as_deref(),
             Some("When has faith carried you past what you could see?")
         );
-        assert!(d.content.ends_with("Open the full study →"));
+        assert!(!d.content.contains("Open the full study"));
+        assert!(d
+            .content
+            .ends_with("When has faith carried you past what you could see?"));
+    }
+
+    #[test]
+    fn builds_english_daily_post_with_teaser() {
+        let t = teaser();
+        let d = format_daily_post("Walking by Faith", &guide(), "en", Some(&t));
+        assert!(d.content.starts_with(
+            "📖 Walking by Faith\n\n✨ Faith isn't a leap in the dark.\n\nIt's trust anchored in what God has already shown to be true."
+        ));
+        assert!(!d.content.contains("Paul reminds the Corinthians"));
+        assert_eq!(d.verse.as_deref(), Some("2 Corinthians 5:7"));
+        assert_eq!(
+            d.question.as_deref(),
+            Some("When has faith carried you past what you could see?")
+        );
     }
 
     #[test]
@@ -352,11 +394,27 @@ mod daily_tests {
             study_guide_id: None,
             from_cache: false,
         };
-        let d = format_daily_post("T", &g, "ml");
+        let d = format_daily_post("T", &g, "ml", None);
         assert_eq!(d.verse, None);
         assert_eq!(d.question, None);
         assert!(d.content.contains("Only one."));
-        assert!(d.content.ends_with("മുഴുവൻ പഠനം തുറക്കുക →"));
+        assert!(d.content.ends_with("Only one."));
+    }
+
+    #[test]
+    fn teaser_without_verse_or_question() {
+        let g = StudyGuideResult {
+            sections: HashMap::from([("summary".to_string(), "Only one.".to_string())]),
+            study_guide_id: None,
+            from_cache: false,
+        };
+        let t = teaser();
+        let d = format_daily_post("T", &g, "en", Some(&t));
+        assert_eq!(d.verse, None);
+        assert_eq!(d.question, None);
+        assert!(d.content.ends_with(
+            "It's trust anchored in what God has already shown to be true."
+        ));
     }
 
     #[test]
@@ -370,7 +428,7 @@ mod daily_tests {
             from_cache: false,
         };
         assert_eq!(
-            format_daily_post("T", &g, "hi").verse.as_deref(),
+            format_daily_post("T", &g, "hi", None).verse.as_deref(),
             Some("John 3:16")
         );
     }

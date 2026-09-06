@@ -708,6 +708,30 @@ Return ONLY the numeric score, nothing else.`
   }
 
   /**
+   * Short JSON completion for a fellowship's daily-post teaser.
+   * Cheapest models on both providers; Anthropic preferred when available.
+   */
+  async generateDailyTeaser(prompt: { systemMessage: string; userMessage: string }): Promise<{
+    content: string; usage: LLMUsageMetadata; model: string; provider: LLMProvider
+  }> {
+    const provider: LLMProvider = this.availableProviders.has('anthropic') ? 'anthropic' : this.getAnyAvailableProvider()
+    if (provider === 'anthropic') {
+      const model = 'claude-haiku-4-5-20251001'
+      const result = await this.getAnthropicClient().call({
+        systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
+        temperature: 0.7, maxTokens: 220, model,
+      })
+      return { content: result.content, usage: result.usage, model, provider }
+    }
+    const model = 'gpt-4o-mini-2024-07-18'
+    const result = await this.getOpenAIClient().call({
+      systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
+      temperature: 0.7, maxTokens: 220,
+    })
+    return { content: result.content, usage: result.usage, model, provider }
+  }
+
+  /**
    * Generates a daily Bible verse with translations.
    */
   async generateDailyVerse(

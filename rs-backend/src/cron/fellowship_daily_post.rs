@@ -15,6 +15,7 @@ use sqlx::PgPool;
 use crate::config::Config;
 use crate::error::AppError;
 use crate::models::fellowship_daily::{self, DailyFellowship, DailyPostInsert, Lesson};
+use crate::services::fellowship_teaser::{self, TeaserRequest};
 use crate::services::{content_formatter, study_api};
 
 pub(crate) struct Localized<'a> {
@@ -138,7 +139,24 @@ async fn post_for_fellowship(
     )
     .await?;
 
-    let daily = content_formatter::format_daily_post(l.title, &guide, &f.language);
+    let (summary, question, verse) = content_formatter::extract_daily_fields(&guide);
+    let teaser = fellowship_teaser::fetch_daily_teaser(
+        config,
+        http,
+        TeaserRequest {
+            fellowship_id: f.id,
+            topic_title: l.title,
+            path_title: l.path_title,
+            language: &f.language,
+            summary: &summary,
+            verse: verse.as_deref(),
+            question: question.as_deref(),
+        },
+    )
+    .await;
+
+    let daily =
+        content_formatter::format_daily_post(l.title, &guide, &f.language, teaser.as_ref());
     let outcome = fellowship_daily::insert_daily_post(
         pool,
         DailyPostInsert {

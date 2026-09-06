@@ -312,6 +312,9 @@ class AppLocalizations {
       'searchNoResults': 'No paths match your search',
       'lessonsGuide': 'Guide',
       'lessonsTitle': 'Lessons',
+      'lessonsCurrentLesson': 'Current lesson',
+      'lessonsAllLessons': 'All lessons',
+      'lessonsGroupMovedOn': 'Group moved on',
       'lessonsMemberProgress': 'Member Progress',
       'lessonsMembersCompleted': 'completed',
       'membersInvite': 'Invite',
@@ -420,7 +423,8 @@ class AppLocalizations {
       'createFellowshipMaxLabel': 'Max Members (2–50)',
       'createFellowshipWhoCanPostLabel': 'Who can post',
       'createFellowshipPostEveryone': 'Everyone',
-      'createFellowshipPostAdminsOnly': 'Only admins',
+      'fellowshipViewLessons': 'View lessons',
+      'createFellowshipPostAdminsOnly': 'Only mentors',
       'createFellowshipUnlimitedLabel': 'Unlimited members',
       'createFellowshipUnlimitedHint': 'No cap on how many people can join',
       'createFellowshipButton': 'Create Fellowship',
@@ -978,6 +982,9 @@ class AppLocalizations {
       'searchNoResults': 'कोई पथ मेल नहीं खाता',
       'lessonsGuide': 'मार्गदर्शिका',
       'lessonsTitle': 'पाठ',
+      'lessonsCurrentLesson': 'वर्तमान पाठ',
+      'lessonsAllLessons': 'सभी पाठ',
+      'lessonsGroupMovedOn': 'समूह आगे बढ़ गया',
       'lessonsMemberProgress': 'सदस्य प्रगति',
       'lessonsMembersCompleted': 'पूर्ण',
       'membersInvite': 'आमंत्रित करें',
@@ -1085,7 +1092,8 @@ class AppLocalizations {
       'createFellowshipMaxLabel': 'अधिकतम सदस्य (2–50)',
       'createFellowshipWhoCanPostLabel': 'कौन पोस्ट कर सकता है',
       'createFellowshipPostEveryone': 'सभी',
-      'createFellowshipPostAdminsOnly': 'केवल एडमिन',
+      'fellowshipViewLessons': 'पाठ देखें',
+      'createFellowshipPostAdminsOnly': 'केवल मेंटर',
       'createFellowshipUnlimitedLabel': 'असीमित सदस्य',
       'createFellowshipUnlimitedHint': 'शामिल होने वालों की कोई सीमा नहीं',
       'createFellowshipButton': 'संगति बनाएं',
@@ -1645,6 +1653,9 @@ class AppLocalizations {
       'searchNoResults': 'തിരയലുമായി പൊരുത്തപ്പെടുന്ന പാത്തുകൾ ഇല്ല',
       'lessonsGuide': 'ഗൈഡ്',
       'lessonsTitle': 'പാഠങ്ങൾ',
+      'lessonsCurrentLesson': 'നിലവിലെ പാഠം',
+      'lessonsAllLessons': 'എല്ലാ പാഠങ്ങളും',
+      'lessonsGroupMovedOn': 'ഗ്രൂപ്പ് മുന്നോട്ട് പോയി',
       'lessonsMemberProgress': 'അംഗ പുരോഗതി',
       'lessonsMembersCompleted': 'പൂർത്തിയാക്കി',
       'membersInvite': 'ക്ഷണിക്കുക',
@@ -1754,7 +1765,8 @@ class AppLocalizations {
       'createFellowshipMaxLabel': 'പരമാവധി അംഗങ്ങൾ (2–50)',
       'createFellowshipWhoCanPostLabel': 'ആർക്ക് പോസ്റ്റ് ചെയ്യാം',
       'createFellowshipPostEveryone': 'എല്ലാവരും',
-      'createFellowshipPostAdminsOnly': 'അഡ്മിൻ മാത്രം',
+      'fellowshipViewLessons': 'പാഠങ്ങൾ കാണുക',
+      'createFellowshipPostAdminsOnly': 'മെന്റർ മാത്രം',
       'createFellowshipUnlimitedLabel': 'പരിധിയില്ലാത്ത അംഗങ്ങൾ',
       'createFellowshipUnlimitedHint': 'ചേരാനാകുന്നവരുടെ എണ്ണത്തിന് പരിധിയില്ല',
       'createFellowshipButton': 'കൂട്ടായ്മ ഉണ്ടാക്കുക',
@@ -2316,6 +2328,12 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['lessonsGuide']!;
   String get lessonsTitle =>
       _localizedValues[locale.languageCode]!['lessonsTitle']!;
+  String get lessonsCurrentLesson =>
+      _localizedValues[locale.languageCode]!['lessonsCurrentLesson']!;
+  String get lessonsAllLessons =>
+      _localizedValues[locale.languageCode]!['lessonsAllLessons']!;
+  String get lessonsGroupMovedOn =>
+      _localizedValues[locale.languageCode]!['lessonsGroupMovedOn']!;
   String get lessonsMemberProgress =>
       _localizedValues[locale.languageCode]!['lessonsMemberProgress']!;
   String get lessonsMembersCompleted =>
@@ -2504,6 +2522,8 @@ class AppLocalizations {
       locale.languageCode]!['createFellowshipWhoCanPostLabel']!;
   String get createFellowshipPostEveryone =>
       _localizedValues[locale.languageCode]!['createFellowshipPostEveryone']!;
+  String get fellowshipViewLessons =>
+      _localizedValues[locale.languageCode]!['fellowshipViewLessons']!;
   String get createFellowshipPostAdminsOnly =>
       _localizedValues[locale.languageCode]!['createFellowshipPostAdminsOnly']!;
   String get createFellowshipUnlimitedLabel =>

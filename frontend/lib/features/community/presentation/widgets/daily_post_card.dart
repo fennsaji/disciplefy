@@ -12,13 +12,13 @@ import 'study_guide_chip.dart';
 ///
 /// The body is the Rust formatter's plain text output. Lines are rendered
 /// with light styling based on their leading emoji:
-/// - `📖` → bold reference line
-/// - `✝️` → verse text in a pill
+/// - `📖` → small eyebrow with the lesson title
+/// - `✨` → the headline hook (largest text in the card)
+/// - `✝️` → verse reference in a pill
 /// - `💬` → semibold reflection prompt
 /// - anything else → plain body text
 ///
-/// The final line is always rendered as an [openFullStudy] link that
-/// navigates to the full study guide.
+/// The guide itself opens through the [StudyGuideChip] under the body.
 class DailyPostCard extends StatelessWidget {
   final FellowshipPostEntity post;
   final String fellowshipId;
@@ -178,8 +178,24 @@ class _DailyLine extends StatelessWidget {
           line,
           style: TextStyle(
             fontFamily: 'Inter',
-            fontSize: 16,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+            color: context.appTextSecondary,
+          ),
+        ),
+      );
+    }
+    if (line.startsWith('✨')) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          line.substring(1).trim(),
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 18,
             fontWeight: FontWeight.w700,
+            height: 1.3,
             color: context.appTextPrimary,
           ),
         ),

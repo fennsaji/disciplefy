@@ -113,3 +113,77 @@ export function parseDisciplerOutput(raw: string, trigger: 'mention' | 'question
     guide_request,
   }
 }
+
+// ---------------------------------------------------------------------------
+// Daily teaser
+// ---------------------------------------------------------------------------
+
+export interface DailyTeaserPromptInput {
+  topicTitle: string
+  pathTitle: string
+  language: 'en' | 'hi' | 'ml'
+  summary: string
+  verse?: string
+  question?: string
+}
+
+export interface DailyTeaserOutput {
+  hook: string
+  body: string
+}
+
+const TEASER_LANGUAGE_NAMES: Record<DailyTeaserPromptInput['language'], string> = {
+  en: 'English',
+  hi: 'Hindi (Devanagari script)',
+  ml: 'Malayalam (Malayalam script)',
+}
+
+export function buildDailyTeaserSystemPrompt(): string {
+  return `${THEOLOGICAL_FOUNDATION}
+
+You are Discipler, an AI helper inside a Disciplefy fellowship group. You are not a human and never claim to be.
+
+TASK: Write a short teaser that makes a member want to open today's study post. Return ONE JSON object:
+{
+  "hook": string,
+  "body": string
+}
+
+AUDIENCE & TONE: A small church WhatsApp-style group reading on a phone. Warm, direct — like a friend who just read something that moved them. Write in second person.
+
+RULES:
+- "hook": ONE sentence, at most 90 characters. No emoji, no quotation marks, no exclamation-mark spam. Do not restate the topic title. Name a tension or a felt need that the lesson answers (e.g. "You're not what your worst day says you are.").
+- "body": 1–2 sentences, at most 220 characters. Tie it to ordinary life — work, family, worry, a daily habit. Do NOT summarise the study guide. Do NOT quote the verse text (copyright) — you may name the Bible reference. No promises of health, wealth, or outcomes. No unbiblical claims.
+- Write entirely in the requested language's native script. Never mix languages within the response.
+- Output strictly the JSON object above and nothing else — no markdown fences, no commentary.`
+}
+
+export function buildDailyTeaserUserMessage(input: DailyTeaserPromptInput): string {
+  const lines = [
+    `Language: ${TEASER_LANGUAGE_NAMES[input.language]} (write hook and body in this language)`,
+    `Learning path: ${input.pathTitle}`,
+    `Today's topic: ${input.topicTitle}`,
+    `Summary (for grounding only — do not quote or summarise it back):\n${input.summary}`,
+  ]
+  if (input.verse) lines.push(`Reference (name only, never quote the text): ${input.verse}`)
+  if (input.question) lines.push(`Reflection question (for grounding only): ${input.question}`)
+  return lines.join('\n\n')
+}
+
+export function parseDailyTeaserOutput(raw: string): DailyTeaserOutput {
+  let parsed: Record<string, unknown>
+  try {
+    parsed = JSON.parse(cleanJSONResponse(raw)) as Record<string, unknown>
+  } catch {
+    throw new Error('TEASER_PARSE: not JSON')
+  }
+  const hook = parsed.hook
+  const body = parsed.body
+  if (typeof hook !== 'string' || hook.trim().length === 0 || hook.trim().length > 120) {
+    throw new Error('TEASER_PARSE: bad hook')
+  }
+  if (typeof body !== 'string' || body.trim().length === 0 || body.trim().length > 300) {
+    throw new Error('TEASER_PARSE: bad body')
+  }
+  return { hook: hook.trim(), body: body.trim() }
+}

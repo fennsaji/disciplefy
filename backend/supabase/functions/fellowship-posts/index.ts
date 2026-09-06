@@ -19,6 +19,7 @@ import {
   enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, pushMentors, reactAsDiscipler, recordActivity,
 } from '../_shared/services/discipler-service.ts'
 import { handleDisciplerReply } from './discipler-reply.ts'
+import { handleDailyTeaser } from './daily-teaser.ts'
 import { handleNotify } from './notify.ts'
 
 // ---------------------------------------------------------------------------
@@ -681,6 +682,7 @@ async function handlePosts(req: Request, services: ServiceContainer): Promise<Re
 
   if (req.method === 'POST') {
     if (pathname.endsWith('/discipler-reply')) return handleDisciplerReply(req, services)
+    if (pathname.endsWith('/daily-teaser')) return handleDailyTeaser(req, services)
     if (pathname.endsWith('/notify')) return handleNotify(req, services)
   }
 

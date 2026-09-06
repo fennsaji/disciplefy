@@ -470,12 +470,40 @@ class _StudyContent extends StatelessWidget {
             ),
           ),
 
+        // ── Pinned current lesson ──────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: BlocBuilder<LearningPathsBloc, LearningPathsState>(
+            builder: (ctx, pathsState) {
+              final pathTitle = pathsState is LearningPathDetailLoaded
+                  ? pathsState.pathDetail.title
+                  : state.currentPathTitle ?? '';
+              final pathDescription = pathsState is LearningPathDetailLoaded
+                  ? pathsState.pathDetail.description
+                  : '';
+              final pathDiscipleLevel = pathsState is LearningPathDetailLoaded
+                  ? pathsState.pathDetail.discipleLevel
+                  : '';
+              return _PinnedCurrentLesson(
+                currentGuideIndex: state.studyCompleted
+                    ? (state.totalGuides ?? 0) + 1
+                    : (state.currentGuideIndex ?? 0),
+                fellowshipId: fellowshipId,
+                pathTitle: pathTitle,
+                pathDescription: pathDescription,
+                pathDiscipleLevel: pathDiscipleLevel,
+                contentLanguage: contentLanguage,
+                isMentor: isMentor,
+              );
+            },
+          ),
+        ),
+
         // ── Guide list ───────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Text(
-              l10n.lessonsTitle,
+              l10n.lessonsAllLessons,
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 16,
@@ -575,6 +603,127 @@ class _NoStudyContent extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// _findNowTopic — finds the fellowship's "Now" guide: the first accessible,
+// not-yet-done topic. Shared by _GuideList and _PinnedCurrentLesson so both
+// agree on which topic is "now".
+// ---------------------------------------------------------------------------
+
+class _NowTopic {
+  final int position;
+  final LearningPathTopic topic;
+  const _NowTopic(this.position, this.topic);
+}
+
+_NowTopic? _findNowTopic(
+  List<LearningPathTopic> topics,
+  int currentGuideIndex,
+  bool allowNonSequentialAccess,
+) {
+  for (int i = 0; i < topics.length; i++) {
+    final t = topics[i];
+    final done = t.isCompleted || t.position < currentGuideIndex;
+    if (done) continue;
+    final accessible = allowNonSequentialAccess ||
+        i == 0 ||
+        t.isCompleted ||
+        (i > 0 && topics[i - 1].isCompleted) ||
+        t.position <= currentGuideIndex;
+    if (accessible) return _NowTopic(t.position, t);
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// _PinnedCurrentLesson — pins the fellowship's "Now" guide above the full
+// list, under its own "Current lesson" header.
+// ---------------------------------------------------------------------------
+
+class _PinnedCurrentLesson extends StatelessWidget {
+  final int currentGuideIndex;
+  final String fellowshipId;
+  final String pathTitle;
+  final String pathDescription;
+  final String pathDiscipleLevel;
+  final String contentLanguage;
+  final bool isMentor;
+
+  const _PinnedCurrentLesson({
+    required this.currentGuideIndex,
+    required this.fellowshipId,
+    required this.pathTitle,
+    required this.pathDescription,
+    required this.pathDiscipleLevel,
+    required this.contentLanguage,
+    required this.isMentor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+      buildWhen: (prev, curr) => prev.topicPostCounts != curr.topicPostCounts,
+      builder: (context, _) =>
+          BlocBuilder<LearningPathsBloc, LearningPathsState>(
+        builder: (context, state) {
+          if (state is! LearningPathDetailLoaded) {
+            return const SizedBox.shrink();
+          }
+          final pathDetail = state.pathDetail;
+          final topics = pathDetail.topics;
+          if (topics.isEmpty) return const SizedBox.shrink();
+
+          final now = _findNowTopic(
+            topics,
+            currentGuideIndex,
+            pathDetail.allowNonSequentialAccess,
+          );
+          if (now == null) return const SizedBox.shrink();
+
+          final feedBloc = context.read<FellowshipFeedBloc>();
+          final discussionCount =
+              feedBloc.state.topicPostCounts[now.topic.topicId] ?? 0;
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.lessonsCurrentLesson,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: context.appTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _GuideCard(
+                  topic: now.topic,
+                  isCurrent: true,
+                  isNow: true,
+                  isDone: false,
+                  isPersonallyDone: false,
+                  isGroupPast: false,
+                  discussionCount: discussionCount,
+                  pathId: pathDetail.id,
+                  fellowshipId: fellowshipId,
+                  pathTitle: pathTitle,
+                  pathDescription: pathDescription,
+                  pathDiscipleLevel: pathDiscipleLevel,
+                  contentLanguage: contentLanguage,
+                  isMentor: isMentor,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // _GuideList — renders topics from LearningPathsBloc as guide cards
 // ---------------------------------------------------------------------------
 
@@ -636,30 +785,25 @@ class _GuideList extends StatelessWidget {
 
                   // Find the position of the first accessible non-done topic — that is
                   // the fellowship's "Now" guide (shown with the Now badge).
-                  int? nowPosition;
-                  for (int i = 0; i < topics.length; i++) {
-                    final t = topics[i];
-                    final done =
-                        t.isCompleted || t.position < currentGuideIndex;
-                    if (done) continue;
-                    final accessible = pathDetail.allowNonSequentialAccess ||
-                        i == 0 ||
-                        t.isCompleted ||
-                        (i > 0 && topics[i - 1].isCompleted) ||
-                        t.position <= currentGuideIndex;
-                    if (accessible) {
-                      nowPosition = t.position;
-                      break;
-                    }
-                  }
+                  final nowPosition = _findNowTopic(
+                    topics,
+                    currentGuideIndex,
+                    pathDetail.allowNonSequentialAccess,
+                  )?.position;
 
                   return Column(
                     children: List.generate(topics.length, (i) {
                       final topic = topics[i];
 
                       // A guide is done if personally completed OR the fellowship
-                      // has advanced past it.
+                      // has advanced past it. isDone drives unlock/accessibility
+                      // logic; isPersonallyDone vs. isGroupPast let the card
+                      // distinguish "you completed this" from "the group moved
+                      // on without you".
                       final isDone = topic.isCompleted ||
+                          topic.position < currentGuideIndex;
+                      final isPersonallyDone = topic.isCompleted;
+                      final isGroupPast = !topic.isCompleted &&
                           topic.position < currentGuideIndex;
 
                       // Unlock logic mirrors LearningPathDetailPage._buildTopicItem:
@@ -692,6 +836,8 @@ class _GuideList extends StatelessWidget {
                         isCurrent: isCurrent,
                         isNow: isNow,
                         isDone: isDone,
+                        isPersonallyDone: isPersonallyDone,
+                        isGroupPast: isGroupPast,
                         discussionCount: discussionCount,
                         pathId: state.pathDetail.id,
                         fellowshipId: fellowshipId,
@@ -720,6 +866,8 @@ class _GuideCard extends StatelessWidget {
   final bool isCurrent;
   final bool isNow;
   final bool isDone;
+  final bool isPersonallyDone;
+  final bool isGroupPast;
   final int discussionCount;
   final String pathId;
   final String fellowshipId;
@@ -734,6 +882,8 @@ class _GuideCard extends StatelessWidget {
     required this.isCurrent,
     required this.isNow,
     required this.isDone,
+    required this.isPersonallyDone,
+    required this.isGroupPast,
     required this.discussionCount,
     required this.pathId,
     required this.fellowshipId,
@@ -747,45 +897,63 @@ class _GuideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isLocked = !isCurrent && !isDone;
     final categoryColor =
         CategoryUtils.getColorForCategory(context, topic.category);
 
-    // Position badge
+    // Position badge — personal completion gets the filled green check;
+    // the group having moved past a topic you haven't finished gets a
+    // muted outline check instead, so the two states read differently.
     final Widget badge = Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: isDone
+        color: isPersonallyDone
             ? AppColors.success
-            : isNow
-                ? context.appInteractive.withAlpha(30)
-                : theme.colorScheme.outline.withValues(alpha: 0.2),
+            : isGroupPast
+                ? Colors.transparent
+                : isNow
+                    ? context.appInteractive.withAlpha(30)
+                    : theme.colorScheme.outline.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(18),
-        border: isNow
-            ? Border.all(color: context.appInteractive, width: 1.5)
-            : null,
+        border: isGroupPast
+            ? Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.6),
+                width: 1.5,
+              )
+            : isNow
+                ? Border.all(color: context.appInteractive, width: 1.5)
+                : null,
       ),
       child: Center(
-        child: isDone
+        child: isPersonallyDone
             ? const Icon(Icons.check, color: Colors.white, size: 18)
-            : isLocked
+            : isGroupPast
                 ? Icon(
-                    Icons.lock,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    size: 16,
+                    Icons.check,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                    size: 18,
                   )
-                : Text(
-                    '${topic.position}',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isNow
-                          ? context.appInteractive
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
+                : isLocked
+                    ? Icon(
+                        Icons.lock,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        size: 16,
+                      )
+                    : Text(
+                        '${topic.position + 1}',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isNow
+                              ? context.appInteractive
+                              : theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
+                        ),
+                      ),
       ),
     );
 
@@ -848,7 +1016,7 @@ class _GuideCard extends StatelessWidget {
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDone
+                color: isPersonallyDone
                     ? AppColors.success.withOpacity(0.4)
                     : isNow
                         ? context.appInteractive.withValues(alpha: 0.4)
@@ -930,6 +1098,30 @@ class _GuideCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (isGroupPast) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                l10n.lessonsGroupMovedOn,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                           const SizedBox(width: 8),
                           Text(
                             '+${topic.xpValue} XP',
@@ -970,7 +1162,7 @@ class _GuideCard extends StatelessWidget {
                     child: Icon(
                       Icons.arrow_forward_ios,
                       size: 14,
-                      color: isDone
+                      color: isPersonallyDone
                           ? AppColors.success
                           : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),

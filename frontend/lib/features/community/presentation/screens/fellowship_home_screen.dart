@@ -774,44 +774,75 @@ class _HeroHeader extends StatelessWidget {
                 prev.currentGuideIndex != curr.currentGuideIndex ||
                 prev.totalGuides != curr.totalGuides,
             builder: (ctx, studyState) {
+              final l10n = AppLocalizations.of(context)!;
               if (studyState.currentLearningPathId != null) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tappable chip → opens lessons
-                    GestureDetector(
-                      onTap: onLessonTap,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.menu_book_rounded,
-                                color: Colors.white, size: 16),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                '${studyState.currentPathTitle ?? 'Study'} · Lesson ${(studyState.currentGuideIndex ?? 0) + 1}',
-                                style: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                    // Tappable row → opens lessons. Styled as a raised card
+                    // with an explicit action label so it reads as a control
+                    // rather than a progress readout.
+                    Material(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        onTap: onLessonTap,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.55)),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.menu_book_rounded,
+                                  color: Colors.white, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${studyState.currentPathTitle ?? 'Study'} · Lesson ${(studyState.currentGuideIndex ?? 0) + 1}',
+                                      style: const TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      l10n.fellowshipViewLessons,
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white.withOpacity(0.85),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.arrow_forward_ios_rounded,
-                                color: Colors.white70, size: 12),
-                          ],
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.22),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    color: Colors.white,
+                                    size: 13),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
