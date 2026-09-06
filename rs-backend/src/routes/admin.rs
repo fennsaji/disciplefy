@@ -9,11 +9,75 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::auth;
-use crate::cron::{BLOG_GENERATION_RUNNING, BLOG_RETRY_RUNNING};
+use crate::config::Config;
+use crate::cron::{
+    BLOG_GENERATION_RUNNING, BLOG_RETRY_RUNNING, DISCIPLER_REPLY_WORKER_RUNNING,
+    FELLOWSHIP_DAILY_POST_RUNNING,
+};
 use crate::error::AppError;
 use crate::models::{cron_config, post};
 use crate::services::content_formatter;
 use crate::AppState;
+
+/// Which guard flag a job name uses. None = unknown job.
+pub(crate) fn guard_for(name: &str) -> Option<&'static std::sync::atomic::AtomicBool> {
+    use crate::cron::*;
+    Some(match name {
+        "blog_generation" => &BLOG_GENERATION_RUNNING,
+        "blog_retry" => &BLOG_RETRY_RUNNING,
+        "blog_publish_scheduled" => &BLOG_PUBLISH_SCHEDULED_RUNNING,
+        "subscription_reconcile" => &SUBSCRIPTION_RECONCILE_RUNNING,
+        "fellowship_daily_post" => &FELLOWSHIP_DAILY_POST_RUNNING,
+        "discipler_reply_worker" => &DISCIPLER_REPLY_WORKER_RUNNING,
+        _ => return None,
+    })
+}
+
+async fn run_job(name: &str, pool: sqlx::PgPool, config: Config, http: reqwest::Client) {
+    let r = match name {
+        "blog_generation" => {
+            crate::cron::blog_generator::run_blog_generation(&pool, &config, &http).await
+        }
+        "blog_retry" => crate::cron::blog_generator::run_blog_retry(&pool, &config, &http).await,
+        "blog_publish_scheduled" => crate::models::post::publish_due_scheduled(&pool)
+            .await
+            .map(|_| ()),
+        "subscription_reconcile" => {
+            crate::cron::subscription_reconciler::run_subscription_reconcile(&config, &http).await
+        }
+        "fellowship_daily_post" => {
+            crate::cron::fellowship_daily_post::run_fellowship_daily_post(&pool, &config, &http)
+                .await
+        }
+        "discipler_reply_worker" => {
+            crate::cron::discipler_reply_worker::run_discipler_reply_worker(&pool, &config, &http)
+                .await
+        }
+        other => Err(AppError::BadRequest(format!("Unknown cron '{other}'"))),
+    };
+    if let Err(e) = r {
+        tracing::error!(job = name, "CRON failed: {}", e);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::guard_for;
+    #[test]
+    fn known_jobs_have_guards() {
+        for n in [
+            "blog_generation",
+            "blog_retry",
+            "blog_publish_scheduled",
+            "subscription_reconcile",
+            "fellowship_daily_post",
+            "discipler_reply_worker",
+        ] {
+            assert!(guard_for(n).is_some(), "{n}");
+        }
+        assert!(guard_for("nope").is_none());
+    }
+}
 
 async fn verify_admin(headers: &HeaderMap, state: &AppState) -> Result<auth::AdminUser, AppError> {
     auth::require_admin(headers, &state.config, &state.pool, &state.http).await
@@ -74,26 +138,33 @@ pub async fn trigger_cron(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, AppError> {
+    trigger_cron_named(State(state), headers, Path("blog_generation".to_string())).await
+}
+
+pub async fn trigger_cron_named(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(name): Path<String>,
+) -> Result<Json<Value>, AppError> {
     verify_admin(&headers, &state).await?;
 
-    let _guard = crate::cron::CronGuard::try_acquire(&BLOG_GENERATION_RUNNING)
-        .ok_or_else(|| AppError::BadRequest("Blog generation is already running".to_string()))?;
+    let flag =
+        guard_for(&name).ok_or_else(|| AppError::NotFound(format!("Cron '{name}' not found")))?;
+    let guard = crate::cron::CronGuard::try_acquire(flag)
+        .ok_or_else(|| AppError::BadRequest(format!("{name} is already running")))?;
 
     let pool = state.pool.clone();
     let config = state.config.clone();
     let http = state.http.clone();
+    let job_name = name.clone();
     tokio::spawn(async move {
-        // _guard is moved into the spawned task so it releases when done
-        let _g = _guard;
-        if let Err(e) =
-            crate::cron::blog_generator::run_blog_generation(&pool, &config, &http).await
-        {
-            tracing::error!("Manual CRON trigger failed: {}", e);
-        }
+        // guard is moved into the spawned task so it releases when done
+        let _g = guard;
+        run_job(&job_name, pool, config, http).await;
     });
 
     Ok(Json(
-        json!({ "success": true, "message": "Blog generation triggered" }),
+        json!({ "success": true, "message": format!("{name} triggered") }),
     ))
 }
 
@@ -105,10 +176,14 @@ pub async fn cron_status(
     let crons = cron_config::list(&state.pool).await?;
     let generation_running = BLOG_GENERATION_RUNNING.load(Ordering::SeqCst);
     let retry_running = BLOG_RETRY_RUNNING.load(Ordering::SeqCst);
+    let fellowship_daily_post_running = FELLOWSHIP_DAILY_POST_RUNNING.load(Ordering::SeqCst);
+    let discipler_reply_worker_running = DISCIPLER_REPLY_WORKER_RUNNING.load(Ordering::SeqCst);
     Ok(Json(json!({
-        "is_running": generation_running || retry_running,
+        "is_running": generation_running || retry_running || fellowship_daily_post_running || discipler_reply_worker_running,
         "blog_generation_running": generation_running,
         "blog_retry_running": retry_running,
+        "fellowship_daily_post_running": fellowship_daily_post_running,
+        "discipler_reply_worker_running": discipler_reply_worker_running,
         "crons": crons.iter().map(|c| json!({
             "name": c.name,
             "enabled": c.enabled,
@@ -218,54 +293,18 @@ pub async fn cron_update_schedule(
                             ),
                             _ => {}
                         }
-                        match n.as_str() {
-                            "blog_publish_scheduled" => {
-                                let _guard = match crate::cron::CronGuard::try_acquire(
-                                    &crate::cron::BLOG_PUBLISH_SCHEDULED_RUNNING,
-                                ) {
-                                    Some(g) => g,
-                                    None => {
-                                        tracing::warn!(
-                                            "CRON skipped: previous run still in progress"
-                                        );
-                                        return;
-                                    }
-                                };
-                                match crate::models::post::publish_due_scheduled(&p).await {
-                                    Ok(published) if !published.is_empty() => tracing::info!(
-                                        count = published.len(),
-                                        "Auto-published scheduled posts"
-                                    ),
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        tracing::error!("Scheduled-publish CRON failed: {}", e)
-                                    }
-                                }
+                        let Some(flag) = guard_for(&n) else {
+                            tracing::error!(job = %n, "Unknown cron, not rescheduled");
+                            return;
+                        };
+                        let _guard = match crate::cron::CronGuard::try_acquire(flag) {
+                            Some(g) => g,
+                            None => {
+                                tracing::warn!(job = %n, "CRON skipped: previous run still in progress");
+                                return;
                             }
-                            other => {
-                                // blog_generation or blog_retry — both run generation
-                                let flag = if other == "blog_retry" {
-                                    &crate::cron::BLOG_RETRY_RUNNING
-                                } else {
-                                    &crate::cron::BLOG_GENERATION_RUNNING
-                                };
-                                let _guard = match crate::cron::CronGuard::try_acquire(flag) {
-                                    Some(g) => g,
-                                    None => {
-                                        tracing::warn!(
-                                            "CRON skipped: previous run still in progress"
-                                        );
-                                        return;
-                                    }
-                                };
-                                if let Err(e) =
-                                    crate::cron::blog_generator::run_blog_generation(&p, &c, &h)
-                                        .await
-                                {
-                                    tracing::error!("CRON failed: {}", e);
-                                }
-                            }
-                        }
+                        };
+                        run_job(&n, p, (*c).clone(), h).await;
                     })
                 })
                 .map_err(|e| AppError::Internal(format!("Failed to create new job: {}", e)))?;
@@ -338,7 +377,11 @@ pub async fn generate_blog_from_study_guide(
         sections.insert("interpretationInsights".to_string(), v);
     }
 
-    let guide_result = crate::services::study_api::StudyGuideResult { sections };
+    let guide_result = crate::services::study_api::StudyGuideResult {
+        sections,
+        study_guide_id: None,
+        from_cache: false,
+    };
 
     // 4. Format into blog content
     let category = guide.category.as_deref().unwrap_or("");

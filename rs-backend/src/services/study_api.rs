@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use crate::config::Config;
 use crate::error::AppError;
@@ -18,6 +19,64 @@ fn truncate_chars(s: &str, max_chars: usize) -> String {
 #[derive(Debug, Clone)]
 pub struct StudyGuideResult {
     pub sections: HashMap<String, String>,
+    /// From the `complete` event; None if the stream ended without one.
+    pub study_guide_id: Option<Uuid>,
+    pub from_cache: bool,
+}
+
+pub(crate) fn parse_sse_body(body: &str) -> Result<StudyGuideResult, AppError> {
+    let mut sections = HashMap::new();
+    let mut study_guide_id: Option<Uuid> = None;
+    let mut from_cache = false;
+
+    for line in body.lines() {
+        let Some(data) = line.strip_prefix("data: ") else {
+            continue;
+        };
+        let Ok(parsed) = serde_json::from_str::<Value>(data) else {
+            continue;
+        };
+
+        if parsed.get("code").is_some() && parsed.get("message").is_some() {
+            return Err(AppError::Internal(format!(
+                "Study API error: {} - {}",
+                parsed["code"].as_str().unwrap_or("unknown"),
+                parsed["message"].as_str().unwrap_or("unknown")
+            )));
+        }
+
+        if let Some(id) = parsed.get("studyGuideId").and_then(Value::as_str) {
+            study_guide_id = Uuid::parse_str(id).ok();
+            from_cache = parsed
+                .get("fromCache")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            continue;
+        }
+
+        if let (Some(section_type), Some(content)) = (parsed.get("type"), parsed.get("content")) {
+            let key = section_type.as_str().unwrap_or("").to_string();
+            let val = match content {
+                Value::String(s) => s.clone(),
+                Value::Array(arr) => serde_json::to_string(arr).unwrap_or_default(),
+                other => other.to_string(),
+            };
+            if !key.is_empty() {
+                sections.insert(key, val);
+            }
+        }
+    }
+
+    if sections.is_empty() {
+        return Err(AppError::Internal(
+            "No sections received from study-generate-v2".to_string(),
+        ));
+    }
+    Ok(StudyGuideResult {
+        sections,
+        study_guide_id,
+        from_cache,
+    })
 }
 
 /// Call study-generate-v2 Edge Function via SSE and collect all sections.
@@ -103,44 +162,40 @@ pub async fn generate_study_guide(
         .await
         .map_err(|e| AppError::Internal(format!("Failed to read SSE body: {}", e)))?;
     let body = String::from_utf8_lossy(&raw).into_owned();
-    let mut sections = HashMap::new();
 
-    for line in body.lines() {
-        if let Some(data) = line.strip_prefix("data: ") {
-            if let Ok(parsed) = serde_json::from_str::<Value>(data) {
-                // Check for error event
-                if parsed.get("code").is_some() && parsed.get("message").is_some() {
-                    return Err(AppError::Internal(format!(
-                        "Study API error: {} - {}",
-                        parsed["code"].as_str().unwrap_or("unknown"),
-                        parsed["message"].as_str().unwrap_or("unknown")
-                    )));
-                }
+    let result = parse_sse_body(&body)?;
+    tracing::info!(
+        section_count = result.sections.len(),
+        from_cache = result.from_cache,
+        "Study guide received"
+    );
+    Ok(result)
+}
 
-                // Parse section events
-                if let (Some(section_type), Some(content)) =
-                    (parsed.get("type"), parsed.get("content"))
-                {
-                    let key = section_type.as_str().unwrap_or("").to_string();
-                    let val = match content {
-                        Value::String(s) => s.clone(),
-                        Value::Array(arr) => serde_json::to_string(arr).unwrap_or_default(),
-                        other => other.to_string(),
-                    };
-                    if !key.is_empty() {
-                        sections.insert(key, val);
-                    }
-                }
-            }
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_sections_and_complete_event() {
+        let body = "event: section\ndata: {\"type\":\"summary\",\"content\":\"Hello\"}\n\nevent: complete\ndata: {\"studyGuideId\":\"6f1c0d2e-4a6b-4c1d-9e2f-0123456789ab\",\"tokensConsumed\":0,\"fromCache\":true}\n";
+        let r = parse_sse_body(body).unwrap();
+        assert_eq!(r.sections.get("summary").map(String::as_str), Some("Hello"));
+        assert_eq!(
+            r.study_guide_id.map(|u| u.to_string()).as_deref(),
+            Some("6f1c0d2e-4a6b-4c1d-9e2f-0123456789ab")
+        );
+        assert!(r.from_cache);
     }
 
-    if sections.is_empty() {
-        return Err(AppError::Internal(
-            "No sections received from study-generate-v2".to_string(),
-        ));
+    #[test]
+    fn error_event_is_an_error() {
+        let body = "data: {\"code\":\"RATE_LIMIT\",\"message\":\"slow down\"}\n";
+        assert!(parse_sse_body(body).is_err());
     }
 
-    tracing::info!(section_count = sections.len(), "Study guide received");
-    Ok(StudyGuideResult { sections })
+    #[test]
+    fn empty_sections_is_an_error() {
+        assert!(parse_sse_body("data: {\"studyGuideId\":\"x\"}\n").is_err());
+    }
 }

@@ -14,3 +14,9 @@ pub const BLOG_PUBLISH_SCHEDULED: &str = "0 * * * * *";
 /// Expires ended subscriptions, activates paid ones whose webhook was missed,
 /// and clears abandoned checkouts.
 pub const SUBSCRIPTION_RECONCILE: &str = "0 0 * * * *";
+
+/// Discipler daily fellowship post — 01:00 UTC (06:30 IST).
+pub const FELLOWSHIP_DAILY_POST: &str = "0 0 1 * * *";
+
+/// Discipler reply worker — every minute; drains the reply queue and, on minute 0, flushes activity digests.
+pub const DISCIPLER_REPLY_WORKER: &str = "0 * * * * *";

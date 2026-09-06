@@ -29,6 +29,10 @@ pub fn create_router() -> Router<AppState> {
             post(admin::unpublish_post),
         )
         .route("/api/v1/admin/cron/trigger", post(admin::trigger_cron))
+        .route(
+            "/api/v1/admin/cron/trigger/:name",
+            post(admin::trigger_cron_named),
+        )
         // Cron control — status before :name routes (explicit beats dynamic at same depth)
         .route("/api/v1/admin/cron/status", get(admin::cron_status))
         .route("/api/v1/admin/cron/:name/enable", post(admin::cron_enable))

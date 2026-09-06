@@ -25,7 +25,7 @@ docker build -t rs-backend:local .
 docker compose -f docker-compose.yml -f docker-compose.local.yml up
 ```
 
-There are no tests in this codebase currently.
+Unit tests live inline (`#[cfg(test)] mod tests`) in the modules they cover; run with `cargo test`.
 
 ## Architecture
 
@@ -73,11 +73,20 @@ Admin routes call `verify_admin()` → extracts Bearer token → validates again
 
 ### CRON System
 
-- Two jobs: `blog_generation` (daily midnight UTC) and `blog_retry` (every 4h for partial failures)
+| Job | Schedule | Env vars needed |
+| --- | --- | --- |
+| `blog_generation` | Daily midnight UTC | — |
+| `blog_retry` | Every 4h (partial failures) | — |
+| `blog_publish_scheduled` | Every minute | — |
+| `subscription_reconcile` | Hourly | — |
+| `fellowship_daily_post` | 01:00 UTC (06:30 IST) daily | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` (calls `fellowship-posts/notify`) |
+| `discipler_reply_worker` | Every minute (drains reply queue; flushes hourly activity digests on minute 0) | `INTERNAL_API_KEY`, `SUPABASE_ANON_KEY` (calls `fellowship-posts/discipler-reply`), `SUPABASE_SERVICE_ROLE_KEY` (calls `fellowship-posts/notify` for digests) |
+
 - Schedules stored in `cron_config` DB table, with hardcoded fallbacks
 - `CronGuard` uses `AtomicBool` + `compare_exchange` to prevent concurrent runs of the same job
-- Admin can hot-reload schedules via PUT endpoint (removes old job, adds new one to scheduler)
+- Admin can trigger any job on demand via `POST /api/v1/admin/cron/trigger/:name`, hot-reload schedules via PUT endpoint (removes old job, adds new one to scheduler), and check status via `GET /api/v1/admin/cron/status`
 - Cron expressions validated with `croner` crate (6-field format: sec min hour dom month dow)
+- Every registered job's resolved schedule is logged at startup (`CRON registered` per job, then `CRON scheduler started`)
 
 ### API Response Convention
 

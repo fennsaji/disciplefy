@@ -221,3 +221,157 @@ pub fn format_blog_post(
         tags,
     }
 }
+
+#[allow(dead_code)]
+pub struct DailyPostContent {
+    pub content: String,
+    pub question: Option<String>,
+    pub verse: Option<String>,
+}
+
+fn first_sentences(text: &str, n: usize) -> String {
+    let mut out = String::new();
+    let mut count = 0;
+    for piece in text.split_inclusive(['.', '।', '?', '!']) {
+        out.push_str(piece);
+        count += 1;
+        if count == n {
+            break;
+        }
+    }
+    out.trim().to_string()
+}
+
+fn open_study_label(locale: &str) -> &'static str {
+    match locale {
+        "hi" => "पूरा अध्ययन खोलें →",
+        "ml" => "മുഴുവൻ പഠനം തുറക്കുക →",
+        _ => "Open the full study →",
+    }
+}
+
+/// Plain-text daily post body for fellowship feeds (no markdown headings).
+pub fn format_daily_post(
+    topic_title: &str,
+    guide: &StudyGuideResult,
+    locale: &str,
+) -> DailyPostContent {
+    let summary = guide
+        .sections
+        .get("summary")
+        .map(|s| first_sentences(s, 2))
+        .unwrap_or_default();
+
+    let question = guide
+        .sections
+        .get("reflectionQuestions")
+        .and_then(|raw| serde_json::from_str::<Vec<String>>(raw).ok())
+        .and_then(|v| v.into_iter().next())
+        .map(|q| q.trim().to_string())
+        .filter(|q| !q.is_empty());
+
+    let verse = guide
+        .sections
+        .get("relatedVerses")
+        .and_then(|raw| {
+            if let Ok(v) = serde_json::from_str::<Vec<String>>(raw) {
+                return v.into_iter().next();
+            }
+            serde_json::from_str::<Vec<serde_json::Value>>(raw)
+                .ok()
+                .and_then(|v| v.into_iter().next())
+                .and_then(|o| {
+                    o.get("reference")
+                        .and_then(|r| r.as_str())
+                        .map(String::from)
+                })
+        })
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    let mut content = format!("📖 {}\n\n{}", topic_title.trim(), summary);
+    if let Some(v) = &verse {
+        content.push_str(&format!("\n\n✝️ {}", v));
+    }
+    if let Some(q) = &question {
+        content.push_str(&format!("\n\n💬 {}", q));
+    }
+    content.push_str(&format!("\n\n{}", open_study_label(locale)));
+
+    let content: String = content.chars().take(1900).collect();
+    DailyPostContent {
+        content,
+        question,
+        verse,
+    }
+}
+
+#[cfg(test)]
+mod daily_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn guide() -> StudyGuideResult {
+        let mut s = HashMap::new();
+        s.insert("summary".into(), "Paul reminds the Corinthians that trust outlasts sight. Faith is sight fixed on the eternal. A third sentence.".into());
+        s.insert(
+            "reflectionQuestions".into(),
+            "[\"When has faith carried you past what you could see?\",\"Second?\"]".into(),
+        );
+        s.insert(
+            "relatedVerses".into(),
+            "[{\"reference\":\"2 Corinthians 5:7\",\"text\":\"For we walk by faith\"}]".into(),
+        );
+        StudyGuideResult {
+            sections: s,
+            study_guide_id: None,
+            from_cache: false,
+        }
+    }
+
+    #[test]
+    fn builds_english_daily_post() {
+        let d = format_daily_post("Walking by Faith", &guide(), "en");
+        assert!(d.content.starts_with("📖 Walking by Faith\n\n"));
+        assert!(d.content.contains(
+            "Paul reminds the Corinthians that trust outlasts sight. Faith is sight fixed on the eternal."
+        ));
+        assert!(!d.content.contains("A third sentence"));
+        assert_eq!(d.verse.as_deref(), Some("2 Corinthians 5:7"));
+        assert_eq!(
+            d.question.as_deref(),
+            Some("When has faith carried you past what you could see?")
+        );
+        assert!(d.content.ends_with("Open the full study →"));
+    }
+
+    #[test]
+    fn falls_back_when_sections_missing() {
+        let g = StudyGuideResult {
+            sections: HashMap::from([("summary".to_string(), "Only one.".to_string())]),
+            study_guide_id: None,
+            from_cache: false,
+        };
+        let d = format_daily_post("T", &g, "ml");
+        assert_eq!(d.verse, None);
+        assert_eq!(d.question, None);
+        assert!(d.content.contains("Only one."));
+        assert!(d.content.ends_with("മുഴുവൻ പഠനം തുറക്കുക →"));
+    }
+
+    #[test]
+    fn related_verses_as_plain_strings() {
+        let g = StudyGuideResult {
+            sections: HashMap::from([
+                ("summary".to_string(), "S.".to_string()),
+                ("relatedVerses".to_string(), "[\"John 3:16\"]".to_string()),
+            ]),
+            study_guide_id: None,
+            from_cache: false,
+        };
+        assert_eq!(
+            format_daily_post("T", &g, "hi").verse.as_deref(),
+            Some("John 3:16")
+        );
+    }
+}
