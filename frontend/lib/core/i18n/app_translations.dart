@@ -335,7 +335,7 @@ class AppTranslations {
       'feature_daily_verse': 'Daily Verse & Insights',
       'feature_daily_verse_subtitle':
           'Start each day with inspiring scripture and instant study guides',
-      'feature_voice_discipler': 'Voice Discipler',
+      'feature_voice_discipler': 'Talk to Discipler',
       'feature_voice_discipler_subtitle': 'Talk with your Bible companion',
       'feature_memory_verse': 'Memory Verses',
       'feature_memory_verse_subtitle':
@@ -1476,7 +1476,7 @@ class AppTranslations {
       },
       'premium': {
         'feature1': 'Unlimited study credits',
-        'feature2': 'Discipler - Voice Assistant',
+        'feature2': 'Talk to Discipler',
         'feature3': 'All Standard features',
         'feature4': 'Unlimited follow-up questions',
         'feature5': 'Advanced study engine',

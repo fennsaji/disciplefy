@@ -819,7 +819,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Checks if Generate Study Guide button should be hidden
-  /// Returns true if ALL study modes AND AI Discipler are disabled
+  /// Returns true if ALL study modes AND Talk to Discipler are disabled
   bool _shouldHideGenerateButton() {
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
@@ -845,11 +845,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       (mode) => systemConfigService.shouldHideFeature(mode, userPlan),
     );
 
-    // Check if AI Discipler should be hidden (respects display_mode)
+    // Check if Talk to Discipler should be hidden (respects display_mode)
     final aiDisciplerDisabled =
         systemConfigService.shouldHideFeature('ai_discipler', userPlan);
 
-    // Hide if both ALL study modes should be hidden AND AI Discipler should be hidden
+    // Hide if both ALL study modes should be hidden AND Talk to Discipler should be hidden
     return allStudyModesDisabled && aiDisciplerDisabled;
   }
 

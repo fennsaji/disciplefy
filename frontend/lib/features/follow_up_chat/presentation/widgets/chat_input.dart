@@ -326,9 +326,11 @@ class _ChatInputState extends State<ChatInput>
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          // Indigo ramp: blending into colorScheme.secondary (the brand's
+          // pale gold) produced an off-palette purple-to-peach wash.
           colors: [
-            theme.colorScheme.primary.withOpacity(0.1),
-            theme.colorScheme.secondary.withOpacity(0.1),
+            AppColors.brandPrimary.withOpacity(0.1),
+            AppColors.brandPrimaryDeep.withOpacity(0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(AppConstants.BORDER_RADIUS),
@@ -348,10 +350,10 @@ class _ChatInputState extends State<ChatInput>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
+                        AppColors.brandPrimary,
+                        AppColors.brandPrimaryDeep,
                       ],
                     ),
                     shape: BoxShape.circle,
@@ -469,10 +471,7 @@ class _ChatInputState extends State<ChatInput>
               ? LinearGradient(
                   colors: isActive
                       ? [AppColors.error, AppColors.errorDark]
-                      : [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.secondary
-                        ],
+                      : [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )

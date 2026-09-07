@@ -1323,7 +1323,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                                 size: 16,
                               )
                             : Text(
-                                '${topic.position}',
+                                // `position` is 0-based in the database and is
+                                // used as a cursor (fellowship_study.current_
+                                // guide_index), so only the label is shifted.
+                                '${topic.position + 1}',
                                 style: AppFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
