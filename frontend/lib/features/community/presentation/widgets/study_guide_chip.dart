@@ -52,8 +52,13 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
         context.push(
           '${AppRoutes.studyGuide}?source=fellowship',
           extra: {
+            // Forward the whole fetched row: the viewer reads summary,
+            // context, interpretation and the rest straight off this map, so
+            // a hand-built stub renders every section blank. `title` is added
+            // because the row stores it as `input_value`, which the viewer
+            // does not look for.
             'study_guide': {
-              'id': id,
+              ...data,
               'title': widget.title,
               'type': inputType,
               'input_value': inputValue,

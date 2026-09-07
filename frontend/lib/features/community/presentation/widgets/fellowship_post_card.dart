@@ -795,7 +795,11 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
           '&type=${Uri.encodeComponent(inputType)}'
           '&language=${Uri.encodeComponent(language)}'
           '&source=fellowship_feed',
-          extra: {'study_guide': data},
+          // The row stores the name in `input_value`; the viewer looks for
+          // `title`, so without this the heading reads "Study Guide".
+          extra: {
+            'study_guide': {...data, 'title': title, 'type': inputType},
+          },
         );
         return;
       }
