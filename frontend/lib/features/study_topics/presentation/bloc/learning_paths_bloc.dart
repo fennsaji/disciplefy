@@ -38,6 +38,25 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     on<ResetLearningProgressRequested>(_onResetLearningProgress);
   }
 
+  /// Latest personalized paths, held outside the state.
+  ///
+  /// LoadPersonalizedPaths and LoadLearningPaths are dispatched together on
+  /// first open, and the personalized fetch is the lighter of the two, so its
+  /// result usually arrives while the state is still LearningPathsLoading.
+  /// Emitting only into an existing LearningPathsLoaded therefore dropped it,
+  /// and the For You section fell back to featured paths — including ones the
+  /// user had already completed — until a manual refresh. Holding the result
+  /// here lets whichever request finishes last present both.
+  List<LearningPath> _personalizedPaths = const [];
+
+  /// Content language [_personalizedPaths] was fetched for. Personalized paths
+  /// are language-specific, so they are only reused for a matching language.
+  String? _personalizedLanguage;
+
+  /// The personalized paths to emit alongside a listing in [language].
+  List<LearningPath> _personalizedFor(String? language) =>
+      _personalizedLanguage == language ? _personalizedPaths : const [];
+
   Future<void> _onLoadLearningPaths(
     LoadLearningPaths event,
     Emitter<LearningPathsState> emit,
@@ -54,11 +73,9 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       forceRefresh: event.forceRefresh,
     );
 
-    // Preserve personalizedPaths from prior state (if any) so they survive
-    // the LoadLearningPaths re-emission.
-    final priorPersonalizedPaths = state is LearningPathsLoaded
-        ? (state as LearningPathsLoaded).personalizedPaths
-        : <LearningPath>[];
+    // Personalized paths are held on the bloc, so they survive this
+    // re-emission whether they arrived before or after the listing.
+    final priorPersonalizedPaths = _personalizedFor(event.language);
 
     result.fold(
       (failure) => emit(
@@ -148,15 +165,15 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
               .expand((c) => c.paths)
               .where((p) => p.isEnrolled)
               .toList();
-          // Intentionally omit personalizedPaths (defaults to []) so the
-          // For You section uses fresh language-correct paths immediately.
-          // LoadPersonalizedPaths (dispatched alongside RefreshLearningPaths)
-          // will repopulate it once the language-aware fetch completes.
+          // Only personalized paths fetched for this same language are
+          // carried over; a language switch drops them until the matching
+          // LoadPersonalizedPaths (dispatched alongside this refresh) lands.
           emit(LearningPathsLoaded(
             categories: categoriesResult.categories,
             enrolledPaths: enrolledPaths,
             hasMoreCategories: categoriesResult.hasMoreCategories,
             nextCategoryOffset: categoriesResult.nextCategoryOffset,
+            personalizedPaths: _personalizedFor(event.language),
           ));
         }
       },
@@ -330,10 +347,13 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
     result.fold(
       (_) => null, // Personalization is supplementary — never block the UI
       (paths) {
+        _personalizedPaths = paths;
+        _personalizedLanguage = event.language;
         final current = state;
         if (current is LearningPathsLoaded) {
           emit(current.copyWith(personalizedPaths: paths));
         }
+        // Otherwise the listing is still loading; its emit picks these up.
       },
     );
   }
