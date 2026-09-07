@@ -4,6 +4,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 /// Dialog shown when user exceeds their monthly voice conversation limit.
 /// Displays current usage, upgrade options, and navigation to pricing page.
@@ -143,7 +144,13 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop();
-            Navigator.pushNamed(context, AppRoutes.pricing);
+            // go_router owns navigation here; Navigator.pushNamed has no
+            // named-route table to resolve against, so this CTA did nothing.
+            // Targets the next tier up from the exhausted one.
+            context.push(
+              AppRoutes.pricing,
+              extra: {'preselectedPlan': tier == 'plus' ? 'premium' : 'plus'},
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: context.appInteractive,
