@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../community/presentation/widgets/discipler_badges.dart';
 
 /// A chat bubble widget for displaying conversation messages.
 ///
@@ -54,11 +55,7 @@ class ConversationBubble extends StatelessWidget {
           children: [
             // Assistant avatar (left side)
             if (!isUser) ...[
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Color(0xFFFAF8F5),
-                backgroundImage: AssetImage('assets/images/AIDiscipler.png'),
-              ),
+              const DisciplerAvatar(radius: 16),
               const SizedBox(width: 8),
             ],
 
@@ -243,11 +240,7 @@ class ThinkingBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircleAvatar(
-              radius: 16,
-              backgroundColor: Color(0xFFFAF8F5),
-              backgroundImage: AssetImage('assets/images/AIDiscipler.png'),
-            ),
+            const DisciplerAvatar(radius: 16),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

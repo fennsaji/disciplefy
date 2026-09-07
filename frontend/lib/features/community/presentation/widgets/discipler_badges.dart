@@ -30,6 +30,27 @@ class DisciplerAiChip extends StatelessWidget {
 
 /// Avatar used for the Discipler AI helper wherever a post/comment author
 /// avatar would normally appear.
+/// The Discipler mark as a flat white glyph on a transparent background.
+///
+/// For placing directly on a coloured surface — a filled button, a coloured
+/// header — where [DisciplerAvatar]'s ink disc would read as a sticker pasted
+/// onto the button rather than as an icon belonging to it.
+class DisciplerGlyph extends StatelessWidget {
+  final double size;
+
+  const DisciplerGlyph({this.size = 22, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/brand/discipler-glyph-white.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+    );
+  }
+}
+
 class DisciplerAvatar extends StatelessWidget {
   final double radius;
 

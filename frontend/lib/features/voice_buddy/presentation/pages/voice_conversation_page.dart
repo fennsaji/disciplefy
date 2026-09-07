@@ -18,8 +18,10 @@ import '../widgets/voice_button.dart';
 import '../widgets/monthly_limit_exceeded_dialog.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../../community/presentation/widgets/discipler_badges.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 
-/// Main page for voice conversations with the AI Discipler.
+/// Main page for voice conversations with the Talk to Discipler.
 class VoiceConversationPage extends StatelessWidget {
   /// Optional study guide ID for contextual conversations.
   final String? studyGuideId;
@@ -338,19 +340,23 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
+          // Hero treatment: the white Discipler glyph on the brand indigo, so
+          // the screen resolves around one accent (title, CTA) instead of the
+          // avatar's ink navy, which appears nowhere else here. The gold-on-ink
+          // [DisciplerAvatar] stays the author mark beside individual replies.
           Container(
-            width: 120,
-            height: 120,
+            width: 112,
+            height: 112,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFFAF8F5),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
+              ),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.asset(
-              'assets/images/AIDiscipler.png',
-              fit: BoxFit.cover,
-            ),
+            alignment: Alignment.center,
+            child: const DisciplerGlyph(size: 84),
           ),
           const SizedBox(height: 32),
 
@@ -403,6 +409,21 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
   void _startConversationWithState(VoiceConversationState state) {
     final quota = state.quota;
+    // A plan with no voice allowance at all (free is 0/month) has not "used up"
+    // anything, so the monthly-limit dialog would be wrong. Upsell instead.
+    if (quota != null && !quota.canStart && quota.quotaLimit <= 0) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) => UpgradeDialog(
+          featureKey: 'ai_discipler',
+          currentPlan: quota.tier,
+          requiredPlans: const ['standard', 'plus', 'premium'],
+        ),
+      );
+      return;
+    }
     if (quota != null && !quota.canStart) {
       final now = DateTime.now();
       final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
