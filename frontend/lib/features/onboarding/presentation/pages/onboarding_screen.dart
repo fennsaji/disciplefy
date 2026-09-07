@@ -63,7 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
     ),
     OnboardingSlide(
-      title: 'Voice Discipler',
+      title: 'Talk to Discipler',
       subtitle: 'Talk with your Bible companion',
       description:
           'Have natural voice conversations about Scripture. Ask questions, get answers, and deepen your understanding through guided dialogue.',

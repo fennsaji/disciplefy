@@ -67,7 +67,7 @@ class ShowcaseKeys {
   static final GlobalKey topicsPathCard =
       GlobalKey(debugLabel: 'topicsPathCard');
 
-  // AI Discipler screen
+  // Talk to Discipler screen
   static final GlobalKey disciplerInput =
       GlobalKey(debugLabel: 'disciplerInput');
   static final GlobalKey disciplerSend = GlobalKey(debugLabel: 'disciplerSend');
