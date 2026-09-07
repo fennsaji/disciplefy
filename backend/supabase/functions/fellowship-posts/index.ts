@@ -6,21 +6,22 @@
  *   DELETE /fellowship-posts                      → soft-delete post (author or mentor)
  *   POST   /fellowship-posts/react               → toggle reaction on post (member)
  *   POST   /fellowship-posts/report              → report post or comment (member)
+ *   POST   /fellowship-posts/flush-pushes        → deliver due quiet-hours pushes (internal)
  */
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { FCMService } from '../_shared/fcm-service.ts'
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
 import { classifyPost, mentionsDiscipler, runAfterFor, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
 import {
-  enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, reactAsDiscipler, recordActivity,
+  deliverOrQueue, enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, reactAsDiscipler, recordActivity,
 } from '../_shared/services/discipler-service.ts'
 import { handleDisciplerReply } from './discipler-reply.ts'
 import { handleDailyTeaser } from './daily-teaser.ts'
 import { handleNotify } from './notify.ts'
+import { handleFlushPushes } from './flush-pushes.ts'
 
 // ---------------------------------------------------------------------------
 // List posts  GET /fellowship-posts
@@ -317,7 +318,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   // in a mutual block with the author so blocked users don't get notified of
   // (or leak notifications to) each other.
   if (members.length > 0) {
-    ;(async () => {
+    const notifyPromise = (async () => {
       try {
         const { data: blockedRows } = await db.rpc('blocked_user_ids', { p_user_id: user.id })
         const blockedIds = new Set((blockedRows ?? []).map((r: { user_id: string }) => r.user_id))
@@ -325,18 +326,19 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
           .map((m: { user_id: string }) => m.user_id)
           .filter((id: string) => !blockedIds.has(id))
         if (memberIds.length === 0) return
-        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
-        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-        if (tokens.length === 0) return
-        const fcm = new FCMService()
         const preview = post.content.length > 80 ? post.content.substring(0, 80) + '…' : post.content
-        await fcm.sendBatchNotifications(
-          tokens,
+        // Decided per recipient: the same post is daytime for one member and
+        // the middle of the night for another in a different timezone.
+        await deliverOrQueue(db, memberIds,
           { title: `✍️ ${authorDisplayName} posted`, body: preview },
-          { type: 'fellowship_new_post', fellowship_id: body.fellowship_id, post_id: post.id, post_type: postType }
-        )
+          { type: 'fellowship_new_post', fellowship_id: body.fellowship_id, post_id: post.id, post_type: postType },
+          { kind: 'fellowship_new_post' })
       } catch (err) { console.error('[fellowship-posts/create] FCM error (non-fatal):', err) }
     })()
+    // Keep the isolate alive past the response. Without this the notification
+    // log write — and, on a slow FCM call, the push itself — is cut off when
+    // the response returns.
+    if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(notifyPromise)
   }
 
   // ── Discipler ────────────────────────────────────────────────────────
@@ -565,16 +567,12 @@ async function handleToggleReaction(req: Request, services: ServiceContainer): P
   if (action === 'added' && post.author_user_id !== user.id) {
     ;(async () => {
       try {
-        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', post.author_user_id)
-        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-        if (tokens.length > 0) {
-          const fcm = new FCMService()
-          await fcm.sendBatchNotifications(
-            tokens,
-            { title: `${reactionType} Someone reacted to your post`, body: 'A fellowship member reacted to your post' },
-            { type: 'fellowship_reaction', fellowship_id: post.fellowship_id, post_id: body.post_id, reaction_type: reactionType }
-          )
-        }
+        // A reaction is the least urgent push there is — it always waits for
+        // the author's morning if it would land in their night.
+        await deliverOrQueue(db, [post.author_user_id],
+          { title: `${reactionType} Someone reacted to your post`, body: 'A fellowship member reacted to your post' },
+          { type: 'fellowship_reaction', fellowship_id: post.fellowship_id, post_id: body.post_id, reaction_type: reactionType },
+          { kind: 'fellowship_reaction' })
       } catch (err) { console.error('[fellowship-posts/react] FCM error (non-fatal):', err) }
     })()
   }
@@ -667,6 +665,7 @@ async function handlePosts(req: Request, services: ServiceContainer): Promise<Re
     if (pathname.endsWith('/discipler-reply')) return handleDisciplerReply(req, services)
     if (pathname.endsWith('/daily-teaser')) return handleDailyTeaser(req, services)
     if (pathname.endsWith('/notify')) return handleNotify(req, services)
+    if (pathname.endsWith('/flush-pushes')) return handleFlushPushes(req, services)
   }
 
   // Background/internal routes must still run during maintenance mode.

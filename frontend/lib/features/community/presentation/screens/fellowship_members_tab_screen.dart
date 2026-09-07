@@ -169,7 +169,10 @@ class _MemberList extends StatelessWidget {
         _SectionHeader(title: l10n.helpersSection),
         const _DisciplerHelperRow(),
       ],
-      if (regularMembers.isNotEmpty)
+      if (regularMembers.isNotEmpty) ...[
+        // Members get their own heading: without it they read as a continuation
+        // of the Helpers list, which is Discipler only.
+        _SectionHeader(title: l10n.membersSection),
         for (final m in regularMembers)
           _MemberCard(
             member: m,
@@ -179,6 +182,7 @@ class _MemberList extends StatelessWidget {
             fellowshipId: fellowshipId,
             totalTopics: totalTopics,
           ),
+      ],
     ];
 
     return ListView.separated(

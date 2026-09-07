@@ -2030,15 +2030,22 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         );
       }
 
-      final data = _parseResponseBody(
-        response.body,
-        'FELLOWSHIP_CONTACT_ERROR',
-        'Failed to update mentor contact',
-      );
+      // This route answers with the fields at the top level rather than under
+      // a `data` envelope, so it cannot go through _parseResponseBody: that
+      // returns json['data'] and would throw on a perfectly good save, showing
+      // the user an error after the write had already landed.
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      if (json['success'] != true) {
+        throw ServerException(
+          message:
+              (json['error'] as String?) ?? 'Failed to update mentor contact',
+          code: 'FELLOWSHIP_CONTACT_ERROR',
+        );
+      }
 
       return (
-        whatsapp: data['mentor_whatsapp'] as String?,
-        email: data['mentor_email'] as String?,
+        whatsapp: json['mentor_whatsapp'] as String?,
+        email: json['mentor_email'] as String?,
       );
     } on ServerException {
       rethrow;

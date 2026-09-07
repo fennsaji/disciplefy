@@ -10,10 +10,9 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { FCMService } from '../_shared/fcm-service.ts'
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
 import { classifyComment, mentionsDiscipler, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
-import { enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, pushUsers } from '../_shared/services/discipler-service.ts'
+import { deliverOrQueue, enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler } from '../_shared/services/discipler-service.ts'
 
 // ---------------------------------------------------------------------------
 // List comments  GET /fellowship-comments?post_id=UUID
@@ -230,17 +229,13 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
       for (const id of blockedIds) recipientIds.delete(id)
       if (recipientIds.size === 0) return
 
-      const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', [...recipientIds])
-      const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-      if (tokens.length > 0) {
-        const fcm = new FCMService()
-        const preview = trimmedContent.length > 80 ? trimmedContent.substring(0, 80) + '…' : trimmedContent
-        await fcm.sendBatchNotifications(
-          tokens,
-          { title: `💬 ${authorDisplayName} commented`, body: preview },
-          { type: 'fellowship_new_comment', fellowship_id: post.fellowship_id, post_id: body.post_id, comment_id: comment.id }
-        )
-      }
+      const preview = trimmedContent.length > 80 ? trimmedContent.substring(0, 80) + '…' : trimmedContent
+      // Per-recipient: a comment at 3 AM for one member is mid-afternoon for
+      // another in the same fellowship.
+      await deliverOrQueue(db, [...recipientIds],
+        { title: `💬 ${authorDisplayName} commented`, body: preview },
+        { type: 'fellowship_new_comment', fellowship_id: post.fellowship_id, post_id: body.post_id, comment_id: comment.id },
+        { kind: 'fellowship_new_comment' })
     } catch (err) { console.error('[fellowship-comments/create] FCM error (non-fatal):', err) }
   })()
   // Keep the isolate alive past the response so the push actually sends.
@@ -305,8 +300,9 @@ async function handleReviewComment(req: Request, services: ServiceContainer, dec
     await db.from('fellowship_comments').update({ is_pending_review: false }).eq('id', comment.id)
     const { data: post } = await db.from('fellowship_posts').select('author_user_id').eq('id', comment.post_id).maybeSingle()
     if (post?.author_user_id) {
-      const p = pushUsers(db, [post.author_user_id], { title: '✨ Discipler replied to your question', body: comment.content.slice(0, 80) },
-        { type: 'fellowship_discipler_reply', fellowship_id: comment.fellowship_id, post_id: comment.post_id, comment_id: comment.id })
+      const p = deliverOrQueue(db, [post.author_user_id], { title: '✨ Discipler replied to your question', body: comment.content.slice(0, 80) },
+        { type: 'fellowship_discipler_reply', fellowship_id: comment.fellowship_id, post_id: comment.post_id, comment_id: comment.id },
+        { kind: 'fellowship_discipler_reply' })
       if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(p)
     }
   } else {

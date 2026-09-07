@@ -955,7 +955,9 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
           targetValue: challenge['target_value'] as int,
           currentProgress: challenge['current_progress'] as int,
           xpReward: challenge['xp_reward'] as int,
-          badgeIcon: challenge['badge_icon'] as String,
+          // `badge_icon` is nullable server-side (string | null); a plain cast
+          // to String threw for challenges without an icon.
+          badgeIcon: (challenge['badge_icon'] as String?) ?? '',
           startDate: DateTime.parse(challenge['start_date'] as String),
           endDate: DateTime.parse(challenge['end_date'] as String),
           isCompleted: challenge['is_completed'] as bool,

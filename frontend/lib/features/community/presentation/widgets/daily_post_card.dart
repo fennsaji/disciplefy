@@ -7,18 +7,55 @@ import 'discipler_badges.dart';
 import 'reaction_button.dart';
 import 'study_guide_chip.dart';
 
-/// Card rendering for a system-generated daily study post (`postType ==
-/// 'daily'`).
+/// Accent colour used by daily study post rendering, in both the feed card and
+/// the guide discussion thread.
+Color dailyPostAccent(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? AppColors.brandHighlightDark
+        : const Color(0xFF8B6914);
+
+/// Renders the body of a daily study post.
 ///
-/// The body is the Rust formatter's plain text output. Lines are rendered
-/// with light styling based on their leading emoji:
+/// The content is the formatter's plain text output. Lines are rendered with
+/// light styling based on their leading emoji:
 /// - `📖` → small eyebrow with the lesson title
-/// - `✨` → the headline hook (largest text in the card)
+/// - `✨` → the headline hook (largest text, emoji stripped)
 /// - `✝️` → verse reference in a pill
 /// - `💬` → semibold reflection prompt
 /// - anything else → plain body text
 ///
-/// The guide itself opens through the [StudyGuideChip] under the body.
+/// Older daily posts without a `✨` line simply read as body text.
+class DailyPostBody extends StatelessWidget {
+  /// Raw post content (`FellowshipPostEntity.content`).
+  final String content;
+
+  /// Accent used for the verse pill tint — see [dailyPostAccent].
+  final Color accent;
+
+  const DailyPostBody({
+    required this.content,
+    required this.accent,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = content.split('\n').where((l) => l.trim().isNotEmpty);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final line in lines) _DailyLine(line: line, accent: accent),
+      ],
+    );
+  }
+}
+
+/// Card rendering for a system-generated daily study post (`postType ==
+/// 'daily'`).
+///
+/// The body is laid out by [DailyPostBody]; the guide itself opens through the
+/// [StudyGuideChip] under it.
 class DailyPostCard extends StatelessWidget {
   final FellowshipPostEntity post;
   final String fellowshipId;
@@ -38,10 +75,7 @@ class DailyPostCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF3A3018) : AppColors.brandHighlight;
-    final accent =
-        isDark ? AppColors.brandHighlightDark : const Color(0xFF8B6914);
-
-    final lines = post.content.split('\n').where((l) => l.trim().isNotEmpty);
+    final accent = dailyPostAccent(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -97,7 +131,7 @@ class DailyPostCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // ── Body ───────────────────────────────────────────────────
-          for (final line in lines) _DailyLine(line: line, accent: accent),
+          DailyPostBody(content: post.content, accent: accent),
 
           const SizedBox(height: 10),
           StudyGuideChip(

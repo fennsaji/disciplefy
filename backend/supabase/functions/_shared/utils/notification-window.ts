@@ -65,6 +65,29 @@ export const DEDUP_LOOKBACK_HOURS = 20
  */
 export const MIN_MINUTES_BETWEEN_NOTIFICATIONS = 60
 
+/**
+ * Notification types that participate in cross-category spacing.
+ *
+ * Only the locally-scheduled devotional senders should space each other out —
+ * they are the ones with overlapping local-time delivery windows that could
+ * otherwise burst. Fellowship and Discipler pushes are event-driven, are
+ * logged to notification_logs for observability and dedup, but must NOT
+ * suppress — or be suppressed by — a scheduled notification: a chatty
+ * fellowship thread 20 minutes before the daily verse must never cause that
+ * verse to be skipped, and the daily verse must never delay a fellowship
+ * reply either.
+ */
+export const SCHEDULED_NOTIFICATION_TYPES_FOR_SPACING = [
+  'daily_verse',
+  'recommended_topic',
+  'continue_learning',
+  'streak_reminder',
+  'streak_lost',
+  'streak_milestone',
+  'memory_verse_reminder',
+  'memory_verse_overdue',
+] as const
+
 // Guard the invariant at module load so widening the catch-up window can never
 // silently break daily delivery or start double-sending.
 {
@@ -117,4 +140,75 @@ export function isWithinDeliveryWindow(
   const localMinutes = localMinutesFromMidnight(timezoneOffsetMinutes, now)
   const windowEnd = Math.min(targetLocalMinutes + windowMinutes, MINUTES_PER_DAY)
   return localMinutes >= targetLocalMinutes && localMinutes < windowEnd
+}
+
+// ============================================================================
+// Quiet Hours
+// ============================================================================
+// Event-driven pushes (a post, a comment, a reaction, a Discipler reply) fire
+// the instant the event happens. Without this, a 3 AM reaction wakes the
+// recipient up. The product rule: send when the event happens, unless that
+// lands inside the recipient's night, in which case hold until their morning.
+
+/** Local minutes-from-midnight at which the night starts (22:00). */
+export const QUIET_HOURS_START_MINUTES = 22 * 60
+
+/** Local minutes-from-midnight at which the night ends and held pushes go out (07:00). */
+export const QUIET_HOURS_END_MINUTES = 7 * 60
+
+/**
+ * Whether the recipient's local clock is currently inside quiet hours.
+ *
+ * The window wraps midnight, so it is a union rather than a range: local time
+ * at or after 22:00, OR before 07:00. 21:59 and 07:00 are both outside it.
+ *
+ * A null offset means we have never learned this user's timezone. Returning
+ * false is deliberate and load-bearing: unknown must mean "send now", never
+ * "guess UTC and hold" — holding a push on the wrong clock delays it by up to
+ * nine hours for a user who was wide awake.
+ *
+ * @param offsetMinutes - User's UTC offset in minutes (IST = +330), or null if unknown
+ * @param now - Instant to evaluate
+ */
+export function isQuietHours(offsetMinutes: number | null, now: Date): boolean {
+  if (offsetMinutes === null || offsetMinutes === undefined || !Number.isFinite(offsetMinutes)) return false
+  const localMinutes = localMinutesFromMidnight(offsetMinutes, now)
+  return localMinutes >= QUIET_HOURS_START_MINUTES || localMinutes < QUIET_HOURS_END_MINUTES
+}
+
+/**
+ * The next UTC instant at which the recipient's local clock reads
+ * `targetLocalMinutes`.
+ *
+ * The returned instant is truncated to the exact target minute (zero seconds),
+ * so a queued row's `not_before` reads as a clean 07:00 local rather than
+ * inheriting the seconds of whatever event triggered it.
+ *
+ * When the recipient's local clock is already AT the target, the target is due
+ * now, so `now` is returned rather than the same time tomorrow — a caller
+ * asking for a time that has just arrived must not be pushed a day forward.
+ * Once the target has passed today locally, it resolves to tomorrow.
+ *
+ * @param offsetMinutes - User's UTC offset in minutes (IST = +330)
+ * @param targetLocalMinutes - Local time wanted, in minutes from midnight (07:00 = 420)
+ * @param now - Instant to measure from
+ */
+export function nextLocalTimeUtc(
+  offsetMinutes: number,
+  targetLocalMinutes: number,
+  now: Date
+): Date {
+  const localMinutes = localMinutesFromMidnight(offsetMinutes, now)
+  const minutesAhead = localMinutes <= targetLocalMinutes
+    ? targetLocalMinutes - localMinutes
+    : MINUTES_PER_DAY - localMinutes + targetLocalMinutes
+
+  // Drop the seconds already elapsed in the current minute so the result lands
+  // exactly on the target minute boundary.
+  const partialMinuteMs = now.getUTCSeconds() * 1000 + now.getUTCMilliseconds()
+  const candidate = new Date(now.getTime() + minutesAhead * 60_000 - partialMinuteMs)
+
+  // Truncation can pull the "already due" case (minutesAhead === 0) a few
+  // seconds into the past; never hand back an instant before now.
+  return candidate.getTime() < now.getTime() ? now : candidate
 }

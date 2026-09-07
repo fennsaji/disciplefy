@@ -14,7 +14,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { createCalendarEvent, cancelCalendarEvent, refreshGoogleAccessToken } from '../_shared/utils/google-calendar.ts'
-import { FCMService } from '../_shared/fcm-service.ts'
+import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
 
 // ---------------------------------------------------------------------------
 // List meetings  GET /fellowship-meetings?fellowship_id=UUID
@@ -305,15 +305,12 @@ async function handleCreateMeeting(req: Request, services: ServiceContainer): Pr
       const addToCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meeting.title)}&dates=${gcalDateFmt(startsAtDate)}/${gcalDateFmt(endsAtDate)}&details=${gcalDetails}&location=${encodeURIComponent(gcalLocation)}`
 
       try {
-        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', allMemberIds)
-        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-        if (tokens.length > 0) {
-          const fcm = new FCMService()
-          await fcm.sendBatchNotifications(tokens,
-            { title: `📅 New Meeting: ${meeting.title}`, body: `${dateStr} at ${timeStr} · ${durationLabel}` },
-            { type: 'fellowship_meeting', fellowship_id: body.fellowship_id, meeting_id: meeting.id, meet_link: meeting.meet_link }
-          )
-        }
+        // An announcement of a future meeting can wait for the morning — the
+        // reminders that actually matter (below) are urgent and never deferred.
+        await deliverOrQueue(db, allMemberIds,
+          { title: `📅 New Meeting: ${meeting.title}`, body: `${dateStr} at ${timeStr} · ${durationLabel}` },
+          { type: 'fellowship_meeting', fellowship_id: body.fellowship_id, meeting_id: meeting.id, meet_link: meeting.meet_link ?? '' },
+          { kind: 'fellowship_meeting' })
       } catch (fcmErr) { console.error('[fellowship-meetings/create] FCM error (non-fatal):', fcmErr) }
 
       const resendApiKey = Deno.env.get('RESEND_API_KEY')
@@ -414,16 +411,12 @@ async function handleCancelMeeting(req: Request, services: ServiceContainer): Pr
         .eq('fellowship_id', meeting.fellowship_id).eq('is_active', true)
       const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id)
       if (memberIds.length === 0) return
-      const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
-      const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-      if (tokens.length > 0) {
-        const fcm = new FCMService()
-        await fcm.sendBatchNotifications(
-          tokens,
-          { title: `❌ Meeting Cancelled`, body: `"${meeting.title}" has been cancelled.` },
-          { type: 'fellowship_meeting_cancelled', fellowship_id: meeting.fellowship_id, meeting_id: body.meeting_id }
-        )
-      }
+      // URGENT: a cancellation delivered after the slot has passed is worse
+      // than useless — the member already showed up to an empty call.
+      await deliverOrQueue(db, memberIds,
+        { title: `❌ Meeting Cancelled`, body: `"${meeting.title}" has been cancelled.` },
+        { type: 'fellowship_meeting_cancelled', fellowship_id: meeting.fellowship_id, meeting_id: body.meeting_id },
+        { kind: 'fellowship_meeting_cancelled', urgent: true })
     } catch (err) { console.error('[fellowship-meetings/cancel] FCM error (non-fatal):', err) }
   })()
 
@@ -461,7 +454,6 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
     return new Response('ok — no reminders due', { status: 200 })
   }
 
-  const fcm = new FCMService()
   let sent = 0
 
   for (const reminder of reminders) {
@@ -484,19 +476,17 @@ async function handleReminder(req: Request, services: ServiceContainer): Promise
     const memberIds = (memberRows ?? []).map((m: { user_id: string }) => m.user_id)
 
     if (memberIds.length > 0) {
-      const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
-      const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-      if (tokens.length > 0) {
-        try {
-          await fcm.sendBatchNotifications(tokens, notif, {
-            type: 'fellowship_meeting_reminder',
-            fellowship_id: meeting.fellowship_id,
-            meeting_id: reminder.meeting_id,
-            offset_label: reminder.offset_label,
-          })
-        } catch (fcmErr) {
-          console.error('[fellowship-meetings/reminder] FCM error for meeting', reminder.meeting_id, fcmErr)
-        }
+      try {
+        // URGENT: "starts in 10 minutes" is meaningless once held until 07:00,
+        // and a meeting genuinely scheduled for 6 AM must still be announced.
+        await deliverOrQueue(db, memberIds, notif, {
+          type: 'fellowship_meeting_reminder',
+          fellowship_id: meeting.fellowship_id,
+          meeting_id: reminder.meeting_id,
+          offset_label: reminder.offset_label,
+        }, { kind: 'fellowship_meeting_reminder', urgent: true })
+      } catch (fcmErr) {
+        console.error('[fellowship-meetings/reminder] FCM error for meeting', reminder.meeting_id, fcmErr)
       }
     }
 
@@ -679,25 +669,15 @@ async function handleInviteMember(req: Request, services: ServiceContainer): Pro
 
   // Send FCM push if member has a token
   try {
-    const { data: tokenRow } = await db
-      .from('user_notification_tokens')
-      .select('fcm_token')
-      .eq('user_id', memberId)
-      .maybeSingle()
-
-    if (tokenRow?.fcm_token) {
-      const fcm = new FCMService()
-      await fcm.sendNotification({
-        token: tokenRow.fcm_token,
-        notification: {
-          title: "You've been added to a fellowship",
-          body: `There are ${meetings.length} upcoming meeting${meetings.length > 1 ? 's' : ''}. Check your email for details.`,
-        },
-        data: { type: 'fellowship_meeting_invite', fellowship_id: fellowshipId },
-        android: { priority: 'high' },
-        apns: { headers: { 'apns-priority': '10' }, payload: { aps: { sound: 'default' } } },
-      })
-    }
+    // URGENT: the invite lists meetings that may be happening today, so it is
+    // not held overnight.
+    await deliverOrQueue(db, [memberId],
+      {
+        title: "You've been added to a fellowship",
+        body: `There are ${meetings.length} upcoming meeting${meetings.length > 1 ? 's' : ''}. Check your email for details.`,
+      },
+      { type: 'fellowship_meeting_invite', fellowship_id: fellowshipId },
+      { kind: 'fellowship_meeting_invite', urgent: true })
   } catch (fcmErr) {
     console.error('[invite-member] FCM send failed (non-fatal):', fcmErr)
   }

@@ -121,8 +121,10 @@ async function handleRegisterToken(
 
   console.log(`[Register Token] User: ${userId}, Platform: ${requestData.platform}`)
 
-  // Detect timezone offset
-  const timezoneOffset = requestData.timezoneOffsetMinutes ?? 0
+  // Device UTC offset. Deliberately NOT defaulted to 0: a client that did not
+  // report one is unknown, not London. Quiet hours treat NULL as "send now",
+  // whereas a fabricated 0 would hold an Indian user's push on London's clock.
+  const timezoneOffset = requestData.timezoneOffsetMinutes ?? null
 
   // Fetch existing preferences to preserve user's notification toggles
   // Use maybeSingle() to handle case where user doesn't have preferences yet
@@ -178,7 +180,9 @@ async function handleRegisterToken(
     .from('user_notification_preferences')
     .upsert({
       user_id: userId,
-      timezone_offset_minutes: timezoneOffset,
+      // Omitted entirely when unknown so an upsert never overwrites a good
+      // stored offset with a null from a client that failed to report one.
+      ...(timezoneOffset !== null ? { timezone_offset_minutes: timezoneOffset } : {}),
       daily_verse_enabled: dailyVerseEnabled,
       recommended_topic_enabled: recommendedTopicEnabled,
       updated_at: new Date().toISOString(),

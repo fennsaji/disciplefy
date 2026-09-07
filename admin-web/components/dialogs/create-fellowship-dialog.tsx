@@ -124,15 +124,7 @@ export default function CreateFellowshipDialog({ isOpen, onClose, onCreated }: C
             <input
               type="checkbox"
               checked={form.is_official}
-              onChange={(e) => {
-                const isOfficial = e.target.checked
-                setForm({
-                  ...form,
-                  is_official: isOfficial,
-                  discipler_allowed: isOfficial ? form.discipler_allowed : false,
-                  daily_post_allowed: isOfficial ? form.daily_post_allowed : false,
-                })
-              }}
+              onChange={(e) => setForm({ ...form, is_official: e.target.checked })}
               className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
             />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Official</span>
@@ -142,9 +134,8 @@ export default function CreateFellowshipDialog({ isOpen, onClose, onCreated }: C
             <input
               type="checkbox"
               checked={form.discipler_allowed}
-              disabled={!form.is_official}
               onChange={(e) => setForm({ ...form, discipler_allowed: e.target.checked })}
-              className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
             />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Allow Discipler replies</span>
           </label>
@@ -153,9 +144,8 @@ export default function CreateFellowshipDialog({ isOpen, onClose, onCreated }: C
             <input
               type="checkbox"
               checked={form.daily_post_allowed}
-              disabled={!form.is_official}
               onChange={(e) => setForm({ ...form, daily_post_allowed: e.target.checked })}
-              className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
             />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Allow daily study post</span>
           </label>
@@ -182,7 +172,7 @@ export default function CreateFellowshipDialog({ isOpen, onClose, onCreated }: C
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
             >
               {isSubmitting ? 'Creating...' : 'Create'}
             </button>

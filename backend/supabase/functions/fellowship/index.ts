@@ -600,9 +600,6 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   if ((wantsOfficial || wantsDiscipler || wantsDaily) && !isAdmin) {
     throw new AppError('PERMISSION_DENIED', 'Only admins can set official or Discipler flags', 403)
   }
-  if ((wantsDiscipler || wantsDaily) && !wantsOfficial) {
-    throw new AppError('VALIDATION_ERROR', 'Discipler and daily post require an official fellowship', 400)
-  }
 
   const { data: fellowship, error: createError } = await db
     .from('fellowships')
@@ -1002,19 +999,16 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
 
     const { data: currentRow, error: currentRowError } = await db
       .from('fellowships')
-      .select('is_official, discipler_allowed, daily_post_allowed')
+      .select('id')
       .eq('id', body.fellowship_id)
       .single()
     if (currentRowError || !currentRow) throw new AppError('NOT_FOUND', 'Fellowship not found', 404)
 
     for (const k of adminFlagKeys) if (typeof body[k] === 'boolean') updates[k] = body[k]
 
-    const mergedIsOfficial = (updates.is_official as boolean | undefined) ?? currentRow.is_official ?? false
-    const mergedDisciplerAllowed = (updates.discipler_allowed as boolean | undefined) ?? currentRow.discipler_allowed ?? false
-    const mergedDailyPostAllowed = (updates.daily_post_allowed as boolean | undefined) ?? currentRow.daily_post_allowed ?? false
-    if ((mergedDisciplerAllowed || mergedDailyPostAllowed) && !mergedIsOfficial) {
-      throw new AppError('VALIDATION_ERROR', 'Discipler and daily post require an official fellowship', 400)
-    }
+    // Discipler and the daily post are independent of the official badge: an
+    // admin may switch them on for any fellowship. "Official" only marks a
+    // group as run by Disciplefy.
   }
   if (body.discipler_reply_mode !== undefined) {
     if (!['off', 'auto', 'review'].includes(body.discipler_reply_mode)) throw new AppError('VALIDATION_ERROR', "discipler_reply_mode must be 'off', 'auto' or 'review'", 400)
