@@ -18,12 +18,29 @@ enum StudyStreamSectionType {
   reflectionQuestion,
   prayerQuestion;
 
+  /// Returns null for a section type this client build does not know.
+  ///
+  /// The generator streams a section per field it produces, including internal
+  /// ones (`interpretationPart1`…) that no client consumes. Throwing here
+  /// aborted the whole stream and surfaced as "Generation interrupted", so an
+  /// unknown type is now something the caller skips rather than an error.
   static StudyStreamSectionType? fromString(String value) {
-    return StudyStreamSectionType.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => throw ArgumentError('Unknown section type: $value'),
-    );
+    for (final type in StudyStreamSectionType.values) {
+      if (type.name == value) return type;
+    }
+    return null;
   }
+}
+
+/// Thrown when a `section` event names a type this build does not know.
+/// Callers skip these; they are not stream failures.
+class UnknownStudySectionException implements Exception {
+  final String sectionType;
+
+  const UnknownStudySectionException(this.sectionType);
+
+  @override
+  String toString() => 'Unknown study section type: $sectionType';
 }
 
 /// Base sealed class for all study stream events
@@ -96,6 +113,7 @@ class StudyStreamSectionEvent extends StudyStreamEvent {
   factory StudyStreamSectionEvent.fromJson(Map<String, dynamic> json) {
     final typeStr = json['type'] as String;
     final type = StudyStreamSectionType.fromString(typeStr);
+    if (type == null) throw UnknownStudySectionException(typeStr);
 
     // Content can be string or list
     final rawContent = json['content'];
@@ -108,7 +126,7 @@ class StudyStreamSectionEvent extends StudyStreamEvent {
     }
 
     return StudyStreamSectionEvent(
-      type: type!,
+      type: type,
       content: content,
       index: json['index'] as int? ?? 0,
       total: json['total'] as int? ?? 6,

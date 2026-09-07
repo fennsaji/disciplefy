@@ -122,6 +122,12 @@ class StudyStreamService {
             event is StudyStreamCompleteEvent) {
           break;
         }
+      } on UnknownStudySectionException catch (e) {
+        // A section this build does not model (e.g. the generator's internal
+        // interpretationPartN fields). Skip it and keep reading the stream —
+        // aborting here ended generation with "Generation interrupted".
+        Logger.debug('🌊 [STUDY_STREAM] Skipping unknown section: $e');
+        continue;
       } catch (e) {
         Logger.debug('🌊 [STUDY_STREAM] Parse error: $e');
         yield StudyStreamErrorEvent(
