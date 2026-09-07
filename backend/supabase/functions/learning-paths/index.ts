@@ -169,14 +169,34 @@ async function getActualTopicsCompleted(
   learningPathId: string,
   userId: string
 ): Promise<number> {
-  const { data } = await supabaseClient
+  // There is no FK between learning_path_topics and user_topic_progress, so an
+  // embedded join fails with PGRST200 and silently yields 0. Query separately.
+  const { data: pathTopics, error: topicsError } = await supabaseClient
     .from('learning_path_topics')
-    .select('topic_id, user_topic_progress!inner(completed_at)')
+    .select('topic_id')
     .eq('learning_path_id', learningPathId)
-    .eq('is_active', true)
-    .eq('user_topic_progress.user_id', userId)
-    .not('user_topic_progress.completed_at', 'is', null);
-  return data?.length || 0;
+    .eq('is_active', true);
+
+  if (topicsError) {
+    console.error('[LEARNING_PATHS] Failed to load path topics:', topicsError);
+    return 0;
+  }
+  const topicIds = (pathTopics || []).map((t: { topic_id: string }) => t.topic_id);
+  if (topicIds.length === 0) return 0;
+
+  const { data: completed, error: progressError } = await supabaseClient
+    .from('user_topic_progress')
+    .select('topic_id')
+    .eq('user_id', userId)
+    .in('topic_id', topicIds)
+    .not('completed_at', 'is', null);
+
+  if (progressError) {
+    console.error('[LEARNING_PATHS] Failed to load topic progress:', progressError);
+    return 0;
+  }
+  // Distinct, in case a topic ever has more than one progress row.
+  return new Set((completed || []).map((r: { topic_id: string }) => r.topic_id)).size;
 }
 
 /**

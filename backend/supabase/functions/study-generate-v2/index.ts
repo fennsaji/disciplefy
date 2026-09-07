@@ -1650,6 +1650,13 @@ async function handleStudyGenerateV2(
 
               // Emit any newly complete sections
               for (const section of newSections) {
+                // `interpretationPartN` are internal: the multi-pass generators
+                // stitch them into `interpretation` server-side and no client
+                // renders them. Streaming them as sections made older clients
+                // abort the whole stream on an unknown section type.
+                if (/^interpretationPart\d+$/.test(section.type)) {
+                  continue
+                }
                 console.log(`📤 [STUDY-V2] Emitting section: ${section.type}`)
                 emit(createSectionEvent(section, parser.getTotalSections()))
 

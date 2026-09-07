@@ -298,7 +298,7 @@ distribution/
 
 ✨ What's New:
 • AI-powered Bible study guides
-• Voice Discipler conversations
+• Talk to Discipler conversations
 • Memory verse memorization
 • Multi-language support
 

@@ -939,6 +939,69 @@ class TranslationKeys {
   static const notificationsSettingsMemoryVerseReminderTimeLabel =
       'notifications.settings.memory_verse_reminder_time_label';
 
+  // Push types added to notification settings
+  static const notificationsSettingsStudySectionTitle =
+      'notifications.settings.study_section_title';
+  static const notificationsSettingsCommunitySectionTitle =
+      'notifications.settings.community_section_title';
+  static const notificationsSettingsDisciplerSectionTitle =
+      'notifications.settings.discipler_section_title';
+  static const notificationsSettingsMeetingsSectionTitle =
+      'notifications.settings.meetings_section_title';
+  static const notificationsSettingsContinueLearningTitle =
+      'notifications.settings.continue_learning_title';
+  static const notificationsSettingsContinueLearningDescription =
+      'notifications.settings.continue_learning_description';
+  static const notificationsSettingsAchievementTitle =
+      'notifications.settings.achievement_title';
+  static const notificationsSettingsAchievementDescription =
+      'notifications.settings.achievement_description';
+  static const notificationsSettingsFellowshipDailyPostTitle =
+      'notifications.settings.fellowship_daily_post_title';
+  static const notificationsSettingsFellowshipDailyPostDescription =
+      'notifications.settings.fellowship_daily_post_description';
+  static const notificationsSettingsFellowshipNewPostTitle =
+      'notifications.settings.fellowship_new_post_title';
+  static const notificationsSettingsFellowshipNewPostDescription =
+      'notifications.settings.fellowship_new_post_description';
+  static const notificationsSettingsFellowshipCommentTitle =
+      'notifications.settings.fellowship_comment_title';
+  static const notificationsSettingsFellowshipCommentDescription =
+      'notifications.settings.fellowship_comment_description';
+  static const notificationsSettingsFellowshipReactionTitle =
+      'notifications.settings.fellowship_reaction_title';
+  static const notificationsSettingsFellowshipReactionDescription =
+      'notifications.settings.fellowship_reaction_description';
+  static const notificationsSettingsDisciplerReplyTitle =
+      'notifications.settings.discipler_reply_title';
+  static const notificationsSettingsDisciplerReplyDescription =
+      'notifications.settings.discipler_reply_description';
+  static const notificationsSettingsDisciplerActivityTitle =
+      'notifications.settings.discipler_activity_title';
+  static const notificationsSettingsDisciplerActivityDescription =
+      'notifications.settings.discipler_activity_description';
+  static const notificationsSettingsMeetingNewTitle =
+      'notifications.settings.meeting_new_title';
+  static const notificationsSettingsMeetingNewDescription =
+      'notifications.settings.meeting_new_description';
+  static const notificationsSettingsMeetingInviteTitle =
+      'notifications.settings.meeting_invite_title';
+  static const notificationsSettingsMeetingInviteDescription =
+      'notifications.settings.meeting_invite_description';
+  static const notificationsSettingsMeetingReminderTitle =
+      'notifications.settings.meeting_reminder_title';
+  static const notificationsSettingsMeetingReminderDescription =
+      'notifications.settings.meeting_reminder_description';
+  static const notificationsSettingsMeetingCancelledTitle =
+      'notifications.settings.meeting_cancelled_title';
+  static const notificationsSettingsMeetingCancelledDescription =
+      'notifications.settings.meeting_cancelled_description';
+
+  static const notificationsSettingsMentorPromotedTitle =
+      'notifications.settings.mentor_promoted_title';
+  static const notificationsSettingsMentorPromotedDescription =
+      'notifications.settings.mentor_promoted_description';
+
   // Memory Verses
   static const memoryFilterByLanguage = 'memory.filterByLanguage';
   static const memoryAll = 'memory.all';

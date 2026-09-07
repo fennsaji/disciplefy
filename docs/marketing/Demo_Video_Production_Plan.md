@@ -29,7 +29,7 @@
 1. Open the app for the first time — splash screen → onboarding carousel loads
 2. **Slide 1** visible — "Daily Inspiration & Study" — pause 3s
 3. Swipe to **Slide 2** — "AI-Powered Study Guides" — pause 3s
-4. Swipe to **Slide 3** — "Voice Discipler" — pause 3s
+4. Swipe to **Slide 3** — "Talk to Discipler" — pause 3s
 5. Swipe to **Slide 4** — "Memory Verses" — pause 3s
 6. Tap **"Start Free"** button
 7. Language selection screen — show all 3 options, select Hindi
@@ -49,8 +49,8 @@
 > **[Swipe to Slide 2: "AI-Powered Study Guides"]**
 > "Ever wanted to go deeper into a verse or topic but didn't know where to start? Type anything — a scripture, a theme, a question — and the app builds you a complete Bible study. Context, meaning, how to apply it to your life. All of it, in seconds."
 >
-> **[Swipe to Slide 3: "Voice Discipler"]**
-> "Got a question about something you read? Or one of those big faith questions you've never had a good answer for? Just ask the AI Discipler. It goes through Scripture with you and gives you real, grounded answers. Like having a Bible teacher available any time. 'Call to me and I will answer you' — Jeremiah 33:3."
+> **[Swipe to Slide 3: "Talk to Discipler"]**
+> "Got a question about something you read? Or one of those big faith questions you've never had a good answer for? Just ask the Talk to Discipler. It goes through Scripture with you and gives you real, grounded answers. Like having a Bible teacher available any time. 'Call to me and I will answer you' — Jeremiah 33:3."
 >
 > **[Swipe to Slide 4: "Memory Verses"]**
 > "And then there's memorising scripture — which most of us want to do but never quite stick with. Disciplefy has eight different practice modes to help you actually get there. Not just reading the verse, but really knowing it. Psalm 119:11 — 'I have hidden your word in my heart.' That's the goal."
@@ -167,7 +167,7 @@
 3. Type `Anxiety`
 4. Tap **Generate Study Guide**
 5. Study guide appears — scroll through sections
-6. Show **AI Discipler follow-up chat** — type `How do I apply this when I feel overwhelmed?`
+6. Show **Talk to Discipler follow-up chat** — type `How do I apply this when I feel overwhelmed?`
 7. Show AI response
 
 ### Voiceover
@@ -181,8 +181,8 @@
 > **[Study guide loads]**
 > "See what it did? It found the most relevant scriptures on anxiety — Philippians 4:6, Matthew 6:25 — and built the whole study around them. You didn't have to search for anything. It just knows."
 >
-> **[Scrolling to AI Discipler]**
-> "And then at the bottom — the AI Discipler. If something in the study guide sparked a question, just ask. Like — 'How do I apply this when I feel overwhelmed?' And it gives you a real, scripture-grounded answer. It's like having a Bible teacher on call, honestly."
+> **[Scrolling to Talk to Discipler]**
+> "And then at the bottom — the Talk to Discipler. If something in the study guide sparked a question, just ask. Like — 'How do I apply this when I feel overwhelmed?' And it gives you a real, scripture-grounded answer. It's like having a Bible teacher on call, honestly."
 
 ---
 
@@ -198,7 +198,7 @@
 3. Type `Why does God allow suffering?`
 4. Tap **Generate Study Guide**
 5. Study guide loads
-6. Scroll to **AI Discipler** section
+6. Scroll to **Talk to Discipler** section
 7. Type `What does the Bible say about Job's suffering?`
 8. Show AI response
 
@@ -213,8 +213,8 @@
 > **[Study guide loads]**
 > "Wow, look at that. A full study — what the Bible actually says about suffering, how to understand it, and how people of faith have held onto God through pain. Not just a list of verses, but a real study."
 >
-> **[AI Discipler follow-up]**
-> "And you can go even deeper. Type a follow-up — like, what about Job specifically? The AI Discipler goes there with you. Always from Scripture, never just opinion. It's genuinely helpful for the tough stuff."
+> **[Talk to Discipler follow-up]**
+> "And you can go even deeper. Type a follow-up — like, what about Job specifically? The Talk to Discipler goes there with you. Always from Scripture, never just opinion. It's genuinely helpful for the tough stuff."
 
 ---
 

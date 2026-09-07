@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/follow_up_chat_state.dart';
+import '../../../community/presentation/widgets/discipler_badges.dart';
 
 /// A chat bubble widget for displaying messages in the follow-up chat
 class ChatBubble extends StatelessWidget {
@@ -45,21 +46,10 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  /// Builds the assistant avatar
+  /// Builds the assistant avatar — the Discipler brand mark, matching the
+  /// avatar used on Discipler posts and replies in fellowships.
   Widget _buildAvatar(ThemeData theme) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Icon(
-        Icons.auto_awesome,
-        color: theme.colorScheme.onPrimary,
-        size: 18,
-      ),
-    );
+    return const DisciplerAvatar(radius: 16);
   }
 
   /// Builds the user avatar

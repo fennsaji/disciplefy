@@ -87,7 +87,7 @@ dependencies:
   permission_handler: ^11.3.1
   timezone: ^0.9.4
 
-  # Voice & Audio (AI Study Buddy Voice)
+  # Voice & Audio (Talk to Discipler)
   speech_to_text: ^7.0.0
   flutter_tts: ^4.2.0
   # Google Cloud TTS integrated via REST API using dio (see cloud_tts_service.dart)

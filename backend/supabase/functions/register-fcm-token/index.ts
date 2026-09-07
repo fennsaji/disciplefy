@@ -35,6 +35,20 @@ interface UpdatePreferencesRequest {
   memoryVerseReminderEnabled?: boolean
   memoryVerseReminderTime?: string
   memoryVerseOverdueEnabled?: boolean
+  continueLearningEnabled?: boolean
+  achievementUnlockedEnabled?: boolean
+  fellowshipDailyPostEnabled?: boolean
+  fellowshipNewPostEnabled?: boolean
+  fellowshipNewCommentEnabled?: boolean
+  fellowshipReactionEnabled?: boolean
+  fellowshipDisciplerReplyEnabled?: boolean
+  fellowshipDisciplerActivityEnabled?: boolean
+  fellowshipMeetingEnabled?: boolean
+  fellowshipMeetingReminderEnabled?: boolean
+  fellowshipMeetingCancelledEnabled?: boolean
+  fellowshipMeetingInviteEnabled?: boolean
+  meetingInviteEnabled?: boolean
+  fellowshipMentorPromotedEnabled?: boolean
   timezoneOffsetMinutes?: number
 }
 
@@ -48,6 +62,20 @@ interface PreferencesUpdate {
   memory_verse_reminder_enabled?: boolean
   memory_verse_reminder_time?: string
   memory_verse_overdue_enabled?: boolean
+  continue_learning_enabled?: boolean
+  achievement_unlocked_enabled?: boolean
+  fellowship_daily_post_enabled?: boolean
+  fellowship_new_post_enabled?: boolean
+  fellowship_new_comment_enabled?: boolean
+  fellowship_reaction_enabled?: boolean
+  fellowship_discipler_reply_enabled?: boolean
+  fellowship_discipler_activity_enabled?: boolean
+  fellowship_meeting_enabled?: boolean
+  fellowship_meeting_reminder_enabled?: boolean
+  fellowship_meeting_cancelled_enabled?: boolean
+  fellowship_meeting_invite_enabled?: boolean
+  meeting_invite_enabled?: boolean
+  fellowship_mentor_promoted_enabled?: boolean
   timezone_offset_minutes?: number
   updated_at?: string
 }
@@ -213,6 +241,20 @@ async function handleRegisterToken(
         memoryVerseReminderEnabled: prefsData.memory_verse_reminder_enabled,
         memoryVerseReminderTime: prefsData.memory_verse_reminder_time,
         memoryVerseOverdueEnabled: prefsData.memory_verse_overdue_enabled,
+        continueLearningEnabled: prefsData.continue_learning_enabled,
+        achievementUnlockedEnabled: prefsData.achievement_unlocked_enabled,
+        fellowshipDailyPostEnabled: prefsData.fellowship_daily_post_enabled,
+        fellowshipNewPostEnabled: prefsData.fellowship_new_post_enabled,
+        fellowshipNewCommentEnabled: prefsData.fellowship_new_comment_enabled,
+        fellowshipReactionEnabled: prefsData.fellowship_reaction_enabled,
+        fellowshipDisciplerReplyEnabled: prefsData.fellowship_discipler_reply_enabled,
+        fellowshipDisciplerActivityEnabled: prefsData.fellowship_discipler_activity_enabled,
+        fellowshipMeetingEnabled: prefsData.fellowship_meeting_enabled,
+        fellowshipMeetingReminderEnabled: prefsData.fellowship_meeting_reminder_enabled,
+        fellowshipMeetingCancelledEnabled: prefsData.fellowship_meeting_cancelled_enabled,
+        fellowshipMeetingInviteEnabled: prefsData.fellowship_meeting_invite_enabled,
+        meetingInviteEnabled: prefsData.meeting_invite_enabled,
+        fellowshipMentorPromotedEnabled: prefsData.fellowship_mentor_promoted_enabled,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
     }),
@@ -262,6 +304,48 @@ async function handleUpdatePreferences(
   }
   if (requestData.memoryVerseOverdueEnabled !== undefined) {
     updateData.memory_verse_overdue_enabled = requestData.memoryVerseOverdueEnabled
+  }
+  if (requestData.continueLearningEnabled !== undefined) {
+    updateData.continue_learning_enabled = requestData.continueLearningEnabled
+  }
+  if (requestData.achievementUnlockedEnabled !== undefined) {
+    updateData.achievement_unlocked_enabled = requestData.achievementUnlockedEnabled
+  }
+  if (requestData.fellowshipDailyPostEnabled !== undefined) {
+    updateData.fellowship_daily_post_enabled = requestData.fellowshipDailyPostEnabled
+  }
+  if (requestData.fellowshipNewPostEnabled !== undefined) {
+    updateData.fellowship_new_post_enabled = requestData.fellowshipNewPostEnabled
+  }
+  if (requestData.fellowshipNewCommentEnabled !== undefined) {
+    updateData.fellowship_new_comment_enabled = requestData.fellowshipNewCommentEnabled
+  }
+  if (requestData.fellowshipReactionEnabled !== undefined) {
+    updateData.fellowship_reaction_enabled = requestData.fellowshipReactionEnabled
+  }
+  if (requestData.fellowshipDisciplerReplyEnabled !== undefined) {
+    updateData.fellowship_discipler_reply_enabled = requestData.fellowshipDisciplerReplyEnabled
+  }
+  if (requestData.fellowshipDisciplerActivityEnabled !== undefined) {
+    updateData.fellowship_discipler_activity_enabled = requestData.fellowshipDisciplerActivityEnabled
+  }
+  if (requestData.fellowshipMeetingEnabled !== undefined) {
+    updateData.fellowship_meeting_enabled = requestData.fellowshipMeetingEnabled
+  }
+  if (requestData.fellowshipMeetingReminderEnabled !== undefined) {
+    updateData.fellowship_meeting_reminder_enabled = requestData.fellowshipMeetingReminderEnabled
+  }
+  if (requestData.fellowshipMeetingCancelledEnabled !== undefined) {
+    updateData.fellowship_meeting_cancelled_enabled = requestData.fellowshipMeetingCancelledEnabled
+  }
+  if (requestData.fellowshipMeetingInviteEnabled !== undefined) {
+    updateData.fellowship_meeting_invite_enabled = requestData.fellowshipMeetingInviteEnabled
+  }
+  if (requestData.meetingInviteEnabled !== undefined) {
+    updateData.meeting_invite_enabled = requestData.meetingInviteEnabled
+  }
+  if (requestData.fellowshipMentorPromotedEnabled !== undefined) {
+    updateData.fellowship_mentor_promoted_enabled = requestData.fellowshipMentorPromotedEnabled
   }
   if (requestData.timezoneOffsetMinutes !== undefined) {
     updateData.timezone_offset_minutes = requestData.timezoneOffsetMinutes

@@ -23,7 +23,7 @@
 1. Open the app for the first time — splash screen → onboarding carousel loads
 2. Slide 1 visible — "Daily Inspiration & Study" — pause 3s
 3. Swipe to Slide 2 — "AI-Powered Study Guides" — pause 3s
-4. Swipe to Slide 3 — "Voice Discipler" — pause 3s
+4. Swipe to Slide 3 — "Talk to Discipler" — pause 3s
 5. Swipe to Slide 4 — "Memory Verses" — pause 3s
 6. Tap "Start Free" button
 7. Language selection screen — show all 3 options, select Hindi
@@ -43,8 +43,8 @@
 > **[Swipe to Slide 2: "AI-Powered Study Guides"]**
 > "कभी किसी verse या topic में और गहराई से जाना चाहा पर समझ नहीं आया कहाँ से शुरू करें? कुछ भी type करें — कोई scripture, कोई theme, कोई सवाल — और app आपके लिए एक पूरा Bible study तैयार कर देता है। Context, मतलब, और इसे अपनी ज़िंदगी में कैसे लागू करें — सब कुछ, बस कुछ सेकंड में।"
 >
-> **[Swipe to Slide 3: "Voice Discipler"]**
-> "जो पढ़ा उसके बारे में कोई सवाल है? या कोई बड़ा faith question जिसका कभी सही जवाब नहीं मिला? बस AI Discipler से पूछ लीजिए। वो Scripture के ज़रिए आपके साथ चलता है और असली, ज़मीनी जवाब देता है। जैसे कोई Bible teacher हर वक़्त available हो। Jeremiah 33:3 में कहा है — 'मुझे पुकार और मैं तुझे जवाब दूँगा।'"
+> **[Swipe to Slide 3: "Talk to Discipler"]**
+> "जो पढ़ा उसके बारे में कोई सवाल है? या कोई बड़ा faith question जिसका कभी सही जवाब नहीं मिला? बस Talk to Discipler से पूछ लीजिए। वो Scripture के ज़रिए आपके साथ चलता है और असली, ज़मीनी जवाब देता है। जैसे कोई Bible teacher हर वक़्त available हो। Jeremiah 33:3 में कहा है — 'मुझे पुकार और मैं तुझे जवाब दूँगा।'"
 >
 > **[Swipe to Slide 4: "Memory Verses"]**
 > "और फिर है scripture याद करना — जो हम में से ज़्यादातर लोग करना तो चाहते हैं पर टिक नहीं पाते। Disciplefy में आठ अलग-अलग practice modes हैं जो आपको सच में वहाँ पहुँचाने में मदद करते हैं। सिर्फ verse पढ़ना नहीं, बल्कि उसे दिल में उतारना। Psalm 119:11 — 'मैंने तेरा वचन अपने दिल में रख छोड़ा है।' यही तो goal है।"
@@ -164,7 +164,7 @@
 3. Type Anxiety
 4. Tap Generate Study Guide
 5. Study guide appears — scroll
-6. Show AI Discipler follow-up — type "How do I apply this when I feel overwhelmed?"
+6. Show Talk to Discipler follow-up — type "How do I apply this when I feel overwhelmed?"
 7. Show AI response
 
 ### Voiceover
@@ -178,8 +178,8 @@
 > **[Study guide loads]**
 > "देखिए इसने क्या किया? Anxiety पर सबसे relevant scriptures ढूँढे — Philippians 4:6, Matthew 6:25 — और पूरी study उन्हीं के इर्द-गिर्द बनाई। आपको कुछ search नहीं करना पड़ा। ये खुद जानता है।"
 >
-> **[Scrolling to AI Discipler]**
-> "और नीचे — AI Discipler। Study guide में कुछ था जिसने सवाल जगाया, तो बस पूछ लीजिए। जैसे — 'How do I apply this when I feel overwhelmed?' और ये scripture-grounded असली जवाब देता है। सच में ऐसा लगता है जैसे कोई Bible teacher हर वक़्त available है।"
+> **[Scrolling to Talk to Discipler]**
+> "और नीचे — Talk to Discipler। Study guide में कुछ था जिसने सवाल जगाया, तो बस पूछ लीजिए। जैसे — 'How do I apply this when I feel overwhelmed?' और ये scripture-grounded असली जवाब देता है। सच में ऐसा लगता है जैसे कोई Bible teacher हर वक़्त available है।"
 
 ---
 
@@ -196,7 +196,7 @@
 3. Type "Why does God allow suffering?"
 4. Tap Generate Study Guide
 5. Study guide loads
-6. Scroll to AI Discipler section
+6. Scroll to Talk to Discipler section
 7. Type "What does the Bible say about Job's suffering?"
 8. Show AI response
 
@@ -211,8 +211,8 @@
 > **[Study guide loads]**
 > "वाह, देखिए तो। एक पूरी study — Bible actually दुख के बारे में क्या कहता है, इसे कैसे समझें, और विश्वास के लोगों ने दर्द में भगवान को कैसे थामे रखा। सिर्फ verses की list नहीं, बल्कि एक असली study।"
 >
-> **[AI Discipler follow-up]**
-> "और आप और गहरे जा सकते हैं। एक follow-up type करें — जैसे Job के बारे में खासकर क्या? AI Discipler वहाँ भी आपके साथ जाता है। हमेशा Scripture से, कभी सिर्फ opinion नहीं। मुश्किल चीज़ों के लिए genuinely helpful है।"
+> **[Talk to Discipler follow-up]**
+> "और आप और गहरे जा सकते हैं। एक follow-up type करें — जैसे Job के बारे में खासकर क्या? Talk to Discipler वहाँ भी आपके साथ जाता है। हमेशा Scripture से, कभी सिर्फ opinion नहीं। मुश्किल चीज़ों के लिए genuinely helpful है।"
 
 ---
 

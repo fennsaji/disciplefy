@@ -20,11 +20,11 @@ the four core how-to guides. Follow the Brand Bible voice and the Brand Visual S
 | 1 — Hook | **Want to understand the Bible — not just read it?** *(+ Swipe →)* | Curiosity hook — the scroll-stopper. |
 | 2 — Reveal | **The wait is over. Disciplefy is LIVE.** *(+ Hindi)* | "LIVE" in gold. Subline: "Your companion from believer to disciple." |
 | 3 | **Now available on:** 🌐 Web · 🤖 Android | **📱 iOS — coming soon.** *(key slide — keep clean)* |
-| 4 | **What's inside** | 4 icons + labels: Study Guides · Learning Paths · Memory Verses · Voice Discipler |
+| 4 | **What's inside** | 4 icons + labels: Study Guides · Learning Paths · Memory Verses · Talk to Discipler |
 | 5 | **Free to start** | "In English, हिन्दी & മലയാളം." |
 | 6 — CTA | **Start your journey today →** | "Web + Play Store link in bio. iOS — stay tuned." |
 
-**Caption:** It's here. 🎉 Disciplefy is now live on Web and Android — your companion from believer to disciple. Understand Scripture, grow with guided paths, memorize the Word, and talk it through with your Voice Discipler. iOS coming soon. Start free — link in bio. 🙏
+**Caption:** It's here. 🎉 Disciplefy is now live on Web and Android — your companion from believer to disciple. Understand Scripture, grow with guided paths, memorize the Word, and talk it through with your Talk to Discipler. iOS coming soon. Start free — link in bio. 🙏
 **Hashtags:** #Disciplefy #BibleStudy #Discipleship #ChristianApp #FaithJourney #BibleApp #IndianChristians
 
 ---
@@ -77,28 +77,28 @@ the four core how-to guides. Follow the Brand Bible voice and the Brand Visual S
 
 ---
 
-## POST 5 — How to: Voice Discipler
+## POST 5 — How to: Talk to Discipler
 
 | Slide | Big text | Support line / visual |
 |---|---|---|
 | 1 — Cover | **A faith question at midnight — and no one to ask?** | "Just ask out loud." |
-| 2 | **Meet your Voice Discipler** | "Ask anything about faith or Scripture, anytime." |
+| 2 | **Meet your Talk to Discipler** | "Ask anything about faith or Scripture, anytime." |
 | 3 | **Step 1 — Open the Discipler** | screenshot |
 | 4 | **Step 2 — Tap the mic & ask** | "'How do I forgive someone who hurt me?'" (screenshot) |
 | 5 | **It answers — with Scripture** | "Grounded in the Word. A companion, not a replacement for your pastor or church." |
 | 6 — CTA | **Real questions. Biblical answers. Anytime.** | "Free → link in bio." |
 
-**Caption:** Some questions can't wait for Sunday. Your Voice Discipler listens and responds — always pointing you back to Scripture. 🙏 A companion for your walk, not a replacement for your church.
+**Caption:** Some questions can't wait for Sunday. Your Talk to Discipler listens and responds — always pointing you back to Scripture. 🙏 A companion for your walk, not a replacement for your church.
 **Hashtags:** #Disciplefy #Discipleship #VoiceDiscipler #FaithQuestions
 
 ---
 
 ## Rollout & consistency
 1. **Post 1 (Launch)** first — the big moment / payoff to "Coming Soon."
-2. Then one how-to per week: **Generate Study → Learning Paths → Memory Verses → Voice Discipler** (mirrors the app's core loop).
+2. Then one how-to per week: **Generate Study → Learning Paths → Memory Verses → Talk to Discipler** (mirrors the app's core loop).
 3. **Same cover template + gold accent + device-framed screenshots** across all five → one recognizable branded series.
 4. **Every last slide is the identical CTA card** ("Start free → link in bio").
 5. Amplify each carousel in **Stories** (English-led, with a Hindi sticker/teaser to seed the Saturday Hindi audience).
 
 ## Theology-safe note
-Voice Discipler copy must always frame it as a **companion that points back to Scripture and community — never a replacement** for pastor, church, or the Bible.
+Talk to Discipler copy must always frame it as a **companion that points back to Scripture and community — never a replacement** for pastor, church, or the Bible.

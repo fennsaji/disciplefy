@@ -236,56 +236,66 @@ class PricingCard extends StatelessWidget {
 
           // CTA button
           const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: isCurrentPlan ? null : onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentPlan
-                  ? Theme.of(context).colorScheme.outline.withOpacity(0.15)
-                  : isPremium
-                      ? AppTheme.successColor
-                      : isHighlighted
-                          ? (accentColor ?? context.appBrandAccent)
-                          : Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withOpacity(0.2),
-              foregroundColor: isCurrentPlan
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
-                  : isPremium || isHighlighted
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
-              disabledBackgroundColor:
-                  Theme.of(context).colorScheme.outline.withOpacity(0.15),
-              disabledForegroundColor:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isCurrentPlan) ...[
-                  Icon(Icons.check_circle_rounded,
-                      size: 16,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.5)),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  isCurrentPlan ? 'Current Plan' : buttonText,
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+          Builder(builder: (context) {
+            final buttonBackground = isCurrentPlan
+                ? Theme.of(context).colorScheme.outline.withOpacity(0.15)
+                : isPremium
+                    ? AppTheme.successColor
+                    : isHighlighted
+                        ? (accentColor ?? context.appBrandAccent)
+                        : Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.2);
+            return ElevatedButton(
+              onPressed: isCurrentPlan ? null : onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonBackground,
+                // Pick the label colour from the fill rather than assuming white.
+                // The highlighted card's accent is a pale lavender in dark mode,
+                // where white text sat barely above the background.
+                foregroundColor: isCurrentPlan
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                    : isPremium || isHighlighted
+                        ? (ThemeData.estimateBrightnessForColor(
+                                    buttonBackground) ==
+                                Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF1E1E1E))
+                        : Theme.of(context).colorScheme.onSurface,
+                disabledBackgroundColor:
+                    Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                disabledForegroundColor:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
-          ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isCurrentPlan) ...[
+                    Icon(Icons.check_circle_rounded,
+                        size: 16,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.5)),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    isCurrentPlan ? 'Current Plan' : buttonText,
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );

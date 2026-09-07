@@ -59,6 +59,10 @@ pub async fn fetch_daily_teaser(
 
     let resp = match http
         .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", config.supabase_service_role_key),
+        )
         .header("apikey", &config.supabase_anon_key)
         .header("X-Internal-Api-Key", &config.internal_api_key)
         .header("Content-Type", "application/json")

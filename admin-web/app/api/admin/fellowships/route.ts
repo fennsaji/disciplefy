@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
   const isOfficial = body.is_official === true
   const disciplerAllowed = body.discipler_allowed === true
   const dailyAllowed = body.daily_post_allowed === true
-  if ((disciplerAllowed || dailyAllowed) && !isOfficial) return NextResponse.json({ error: 'Discipler and daily post require an official fellowship' }, { status: 400 })
   const mentorEmail = String(body.mentor_email ?? '').trim().toLowerCase()
   if (!mentorEmail) return NextResponse.json({ error: 'mentor_email is required' }, { status: 400 })
 
@@ -159,12 +158,10 @@ export async function PATCH(request: NextRequest) {
   for (const k of ['is_official', 'discipler_allowed', 'daily_post_allowed', 'is_public', 'is_active'] as const) {
     if (typeof body[k] === 'boolean') updates[k] = body[k]
   }
-  const { data: current } = await supabaseAdmin.from('fellowships').select('is_official, discipler_allowed, daily_post_allowed').eq('id', body.fellowship_id).single()
+  // Discipler is granted per fellowship and is deliberately independent of
+  // is_official: an admin may enable it for any group.
+  const { data: current } = await supabaseAdmin.from('fellowships').select('id').eq('id', body.fellowship_id).single()
   if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  const next = { ...current, ...updates }
-  if ((next.discipler_allowed || next.daily_post_allowed) && !next.is_official) {
-    return NextResponse.json({ error: 'Discipler and daily post require an official fellowship' }, { status: 400 })
-  }
   const { error } = await supabaseAdmin.from('fellowships').update(updates).eq('id', body.fellowship_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })

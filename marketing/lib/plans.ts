@@ -38,7 +38,7 @@ export const PLANS: PlanConfig[] = [
     marketing_features: [
       "Daily Bible Verse",
       "40 Study Credits/Day",
-      "Voice Discipler — 3 Sessions/Month",
+      "Talk to Discipler — 3 Sessions/Month",
       "Study Modes (excl. Sermon Outline)",
       "5 Follow-Up per Study Guide",
       "Memorize up to 5 Verses",
@@ -55,7 +55,7 @@ export const PLANS: PlanConfig[] = [
     marketing_features: [
       "Daily Bible Verse",
       "60 Study Credits/Day",
-      "Voice Discipler — 10 Sessions/Month",
+      "Talk to Discipler — 10 Sessions/Month",
       "All Study Modes incl. Sermon Outline",
       "10 Follow-Up per Study Guide",
       "Memorize up to 10 Verses",
@@ -72,7 +72,7 @@ export const PLANS: PlanConfig[] = [
     marketing_features: [
       "Daily Bible Verse",
       "Unlimited Study Credits",
-      "Voice Discipler — Unlimited",
+      "Talk to Discipler — Unlimited",
       "All Study Modes incl. Sermon Outline",
       "Unlimited Follow-Up per Study Guide",
       "Memorize Unlimited Verses",

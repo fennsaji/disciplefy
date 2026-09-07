@@ -315,6 +315,249 @@ class _NotificationSettingsView extends StatelessWidget {
           ),
 
           const SizedBox(height: 28),
+
+          // Study Section
+          _buildSectionHeader(
+              context,
+              context
+                  .tr(TranslationKeys.notificationsSettingsStudySectionTitle)),
+          const SizedBox(height: 12),
+
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsContinueLearningTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsContinueLearningDescription),
+            icon: Icons.play_lesson_rounded,
+            enabled: state.preferences.continueLearningEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        continueLearningEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsAchievementTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsAchievementDescription),
+            icon: Icons.emoji_events_rounded,
+            enabled: state.preferences.achievementUnlockedEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        achievementUnlockedEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          const SizedBox(height: 28),
+
+          // Community Section
+          _buildSectionHeader(
+              context,
+              context.tr(
+                  TranslationKeys.notificationsSettingsCommunitySectionTitle)),
+          const SizedBox(height: 12),
+
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsFellowshipDailyPostTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsFellowshipDailyPostDescription),
+            icon: Icons.auto_stories_rounded,
+            enabled: state.preferences.fellowshipDailyPostEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipDailyPostEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsFellowshipNewPostTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsFellowshipNewPostDescription),
+            icon: Icons.forum_rounded,
+            enabled: state.preferences.fellowshipNewPostEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipNewPostEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsFellowshipCommentTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsFellowshipCommentDescription),
+            icon: Icons.mode_comment_outlined,
+            enabled: state.preferences.fellowshipNewCommentEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipNewCommentEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsFellowshipReactionTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsFellowshipReactionDescription),
+            icon: Icons.favorite_outline_rounded,
+            enabled: state.preferences.fellowshipReactionEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipReactionEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          const SizedBox(height: 28),
+
+          // Discipler Section
+          _buildSectionHeader(
+              context,
+              context.tr(
+                  TranslationKeys.notificationsSettingsDisciplerSectionTitle)),
+          const SizedBox(height: 12),
+
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsDisciplerReplyTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsDisciplerReplyDescription),
+            icon: Icons.chat_bubble_outline_rounded,
+            enabled: state.preferences.fellowshipDisciplerReplyEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipDisciplerReplyEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsDisciplerActivityTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsDisciplerActivityDescription),
+            icon: Icons.insights_rounded,
+            enabled: state.preferences.fellowshipDisciplerActivityEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipDisciplerActivityEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsMentorPromotedTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsMentorPromotedDescription),
+            icon: Icons.workspace_premium_rounded,
+            enabled: state.preferences.fellowshipMentorPromotedEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipMentorPromotedEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 28),
+
+          // Meetings Section
+          _buildSectionHeader(
+              context,
+              context.tr(
+                  TranslationKeys.notificationsSettingsMeetingsSectionTitle)),
+          const SizedBox(height: 12),
+
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsMeetingNewTitle),
+            description: context
+                .tr(TranslationKeys.notificationsSettingsMeetingNewDescription),
+            icon: Icons.event_available_rounded,
+            enabled: state.preferences.fellowshipMeetingEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipMeetingEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsMeetingInviteTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsMeetingInviteDescription),
+            icon: Icons.mail_outline_rounded,
+            enabled: state.preferences.fellowshipMeetingInviteEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipMeetingInviteEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsMeetingReminderTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsMeetingReminderDescription),
+            icon: Icons.alarm_rounded,
+            enabled: state.preferences.fellowshipMeetingReminderEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipMeetingReminderEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsMeetingCancelledTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsMeetingCancelledDescription),
+            icon: Icons.event_busy_rounded,
+            enabled: state.preferences.fellowshipMeetingCancelledEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipMeetingCancelledEnabled: value),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+          const SizedBox(height: 28),
           _buildInfoSection(context),
         ],
       ),

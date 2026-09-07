@@ -25,7 +25,7 @@
     "title": "Everything You Need to Grow",
     "aiGuides": { "title": "Study Guides", "desc": "Type any verse or topic — get instant guides with context, interpretation, and prayer points" },
     "dailyVerse": { "title": "Daily Verse", "desc": "Fresh verse every day with devotional content in your language" },
-    "voiceBuddy": { "title": "Voice Buddy", "desc": "Speak and listen — have conversations about Scripture" },
+    "voiceBuddy": { "title": "Talk to Discipler", "desc": "Speak and listen — have conversations about Scripture" },
     "memory": { "title": "Memory Verses", "desc": "Spaced repetition flashcards to actually memorize God's Word" },
     "paths": { "title": "Learning Paths", "desc": "Structured journeys: Grace, Discipleship, Prayer & more" },
     "chat": { "title": "Follow-Up Chat", "desc": "Ask deeper questions about any study guide, keep the context" },
@@ -35,7 +35,7 @@
     "title": "How It Works",
     "step1": { "title": "Choose a verse or topic", "desc": "Enter any Bible reference like \"John 3:16\" or ask a spiritual question like \"What does the Bible say about anxiety?\" — Disciplefy understands both and gets you started instantly.", "imageAlt": "Disciplefy app — Bible verse search screen, type John 3:16 or a spiritual question to begin" },
     "step2": { "title": "Get an instant study guide", "desc": "A complete study guide is ready in seconds — a clear summary, historical and cultural context, verse-by-verse interpretation, practical life application, and related scripture references, all grounded in sound theology.", "imageAlt": "Bible study guide showing historical context, verse-by-verse interpretation and life application" },
-    "step3": { "title": "Talk to your Voice Discipler", "desc": "Have a real voice conversation about any Bible passage or spiritual question. Your Voice Discipler listens, responds naturally in your language, and walks you through Scripture like a personal Bible study companion — anytime, anywhere.", "imageAlt": "Voice Discipler conversation screen — speak your Bible question and hear a response in your language" },
+    "step3": { "title": "Talk to Discipler", "desc": "Have a real voice conversation about any Bible passage or spiritual question. Discipler listens, responds naturally in your language, and walks you through Scripture like a personal Bible study companion — anytime, anywhere.", "imageAlt": "Talk to Discipler conversation screen — speak your Bible question and hear a response in your language" },
     "step4": { "title": "Follow a learning path", "desc": "Go deeper with structured discipleship journeys on Grace, Prayer, Faith, and more. Each path walks you through a curated sequence of lessons — so you're not just studying random verses, you're growing with purpose and direction.", "imageAlt": "Discipleship learning path screen showing structured journeys on Grace, Prayer and Faith" },
     "step5": { "title": "Memorize & grow", "desc": "Build lasting habits with daily verse reminders, spaced-repetition memorization practice with audio and fill-in-the-blank modes, streak tracking to stay consistent, and a growing library of your saved study guides.", "imageAlt": "Daily verse reminder and memorization practice screen with streak tracking and saved study guides" },
     "step6": { "title": "Study Together in Fellowship", "desc": "Join or create a fellowship group to study the Bible with others. Share prayer requests, praise reports, and insights. Schedule Google Meet sessions and grow together as a community of believers.", "imageAlt": "Fellowship group screen — members, prayer requests, and meeting schedule" }
@@ -64,7 +64,7 @@
     "webAppCta": "Open Web App →",
     "faqTitle": "Frequently Asked Questions",
     "feature1": { "title": "Study Guides", "desc": "Type any verse or topic — instant guides with context and life application" },
-    "feature2": { "title": "Voice Discipler", "desc": "Have real voice conversations about Scripture in your language" },
+    "feature2": { "title": "Talk to Discipler", "desc": "Have real voice conversations about Scripture in your language" },
     "feature3": { "title": "Daily Verse", "desc": "A fresh verse every morning with devotional content" },
     "feature4": { "title": "3 Languages", "desc": "English, हिन्दी & മലയാളം — native quality, not a translation" },
     "q1": { "q": "Is Disciplefy free?", "a": "Yes — the core app is completely free. Premium plans with more daily tokens are available starting at ₹79/month." },
@@ -93,7 +93,7 @@
     "dailyVerse": "Daily Verse",
     "studyGuides": "Study Guides",
     "fellowship": "Fellowship",
-    "voiceBuddy": "Voice Buddy",
+    "voiceBuddy": "Talk to Discipler",
     "memoryVerses": "Memory Verses",
     "learningPaths": "Learning Paths",
     "followUpChat": "Follow-Up Chat",
@@ -166,7 +166,7 @@
       },
       {
         "q": "What languages are supported?",
-        "a": "English, Hindi, and Malayalam. All features including study guides and Voice Buddy work in all three languages."
+        "a": "English, Hindi, and Malayalam. All features including study guides and Talk to Discipler work in all three languages."
       }
     ]
   },

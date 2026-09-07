@@ -855,6 +855,22 @@ export class StudyGuideRepository {
    * @param userContext - User context
    * @returns Whether user has access to the content
    */
+  /// Whether a study guide row exists at all, regardless of who owns it.
+  ///
+  /// Per-user features (follow-up conversations, personal notes) key their own
+  /// rows by user_id, so they only need the guide to exist — requiring
+  /// ownership stopped a fellowship member from asking their own question
+  /// about a guide the Discipler shared with the group.
+  async contentExists(contentId: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('study_guides')
+      .select('id')
+      .eq('id', contentId)
+      .maybeSingle()
+
+    return !error && !!data
+  }
+
   async userHasContent(
     contentId: string,
     userContext: UserContext

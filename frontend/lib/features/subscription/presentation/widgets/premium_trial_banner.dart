@@ -432,7 +432,7 @@ class PremiumTrialCard extends StatelessWidget {
                 _buildFeatureRow(
                   context,
                   Icons.record_voice_over,
-                  'Voice Buddy conversations',
+                  'Talk to Discipler conversations',
                 ),
                 const SizedBox(height: 8),
                 _buildFeatureRow(

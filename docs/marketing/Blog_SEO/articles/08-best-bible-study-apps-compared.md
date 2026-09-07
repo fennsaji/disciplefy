@@ -109,12 +109,12 @@ Disciplefy takes a different approach: instead of a reading-plan library or a re
 - Study Guide generator: enter a reference, topic, or question, pick a study mode, and get a structured guide for that need
 - Five study modes — a two-minute Quick Read, a Saturday Deep Dive, or a Sermon Outline for teaching
 - Learning Paths for structured growth over weeks; Memory Verses for spaced-repetition retention
-- Voice Discipler — ask a faith question out loud, get a Scripture-grounded answer outside a formal study time
+- Talk to Discipler — ask a faith question out loud, get a Scripture-grounded answer outside a formal study time
 - Available in English, Hindi, and Malayalam
 
 **Pricing:** Free to use, with generous limits for casual study; built to stay accessible rather than gate core study behind a paywall.
 
-**Who it's really for:** Someone who doesn't want to build a reading plan or hunt through commentaries themselves, but wants a study shaped around their specific question or passage. It fits devotional time, small-group prep, or anyone newer to structured study who wants scaffolding rather than a blank page. Being honest: Disciplefy is newer and smaller than YouVersion or Logos, and isn't trying to replace a full research library or a decades-deep commentary archive. Its lane is guided, personalized study generation, extended by Learning Paths and Voice Discipler.
+**Who it's really for:** Someone who doesn't want to build a reading plan or hunt through commentaries themselves, but wants a study shaped around their specific question or passage. It fits devotional time, small-group prep, or anyone newer to structured study who wants scaffolding rather than a blank page. Being honest: Disciplefy is newer and smaller than YouVersion or Logos, and isn't trying to replace a full research library or a decades-deep commentary archive. Its lane is guided, personalized study generation, extended by Learning Paths and Talk to Discipler.
 
 For the methodology behind Disciplefy's guides, see [Best Bible Study Methods Compared](/blog/best-bible-study-methods-compared) and [The SOAP Bible Study Method Explained](/blog/soap-bible-study-method).
 
@@ -128,7 +128,7 @@ Rather than crowning one "winner," here's a decision framework:
 - **"See what respected commentators say about a verse, fast."** → BibleHub.
 - **"Turn a verse, topic, or question into a structured study."** → Disciplefy.
 - **"Memorize Scripture long-term, not just read it once."** → Disciplefy's Memory Verses.
-- **"Get a grounded answer to a mid-day faith question."** → Disciplefy's Voice Discipler.
+- **"Get a grounded answer to a mid-day faith question."** → Disciplefy's Talk to Discipler.
 
 Most mature students use two or three together — YouVersion for daily rhythm, Disciplefy or Blue Letter Bible for going deeper, BibleHub or Logos when teaching. There's no rule saying you have to pick just one. [How to Build a Daily Bible Study Habit](/blog/how-to-build-a-daily-bible-study-habit) is a good place to start.
 
@@ -176,12 +176,12 @@ It varies — YouVersion, BibleHub, and Blue Letter Bible offer dozens, includin
 | **Logos** | Academic/pastoral deep study | Free–$$$$ (library-based) | Original-language & commentary depth |
 | **Blue Letter Bible** | Free word studies | Free | Strong's Concordance & interlinear tools |
 | **BibleHub** | Fast commentary/cross-reference lookup | Free | Dozens of commentaries aggregated per verse |
-| **Disciplefy** | Guided, personalized study guides | Free | Study Guide generator + Learning Paths + Memory Verses + Voice Discipler |
+| **Disciplefy** | Guided, personalized study guides | Free | Study Guide generator + Learning Paths + Memory Verses + Talk to Discipler |
 
 ## Try Disciplefy
 
 If you want a study built around *your* actual verse, topic, or question — not a plan to browse for, or a library to learn to navigate — that's what Disciplefy's Study Guide generator is for. Pick a reference, topic, or question, choose a study mode (Quick Read, Standard Study, Deep Dive, Lectio Divina, or Sermon Outline), and tap Generate.
 
-From there, Learning Paths guide structured growth, Memory Verses help what you study stick, and Voice Discipler is there for questions outside a formal study time.
+From there, Learning Paths guide structured growth, Memory Verses help what you study stick, and Talk to Discipler is there for questions outside a formal study time.
 
 **[Try Disciplefy free at disciplefy.in](https://disciplefy.in)**

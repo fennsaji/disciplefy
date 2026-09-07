@@ -18,8 +18,10 @@ import '../widgets/voice_button.dart';
 import '../widgets/monthly_limit_exceeded_dialog.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../../community/presentation/widgets/discipler_badges.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 
-/// Main page for voice conversations with the AI Discipler.
+/// Main page for voice conversations with the Talk to Discipler.
 class VoiceConversationPage extends StatelessWidget {
   /// Optional study guide ID for contextual conversations.
   final String? studyGuideId;
@@ -163,28 +165,12 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           listener: (context, state) {
             // Show monthly limit exceeded dialog (mid-conversation server rejection)
             if (state is VoiceConversationMonthlyLimitExceeded) {
-              MonthlyLimitExceededDialog.show(
-                context,
-                conversationsUsed: state.conversationsUsed,
-                limit: state.limit,
-                tier: state.tier,
-                month: state.month,
-              );
+              _showVoiceUpsell(state.tier);
             }
 
             // Show limit dialog when server rejects start (quota was unknown or stale)
             if (state.status == VoiceConversationStatus.quotaExceeded) {
-              final quota = state.quota;
-              final now = DateTime.now();
-              final month =
-                  '${now.year}-${now.month.toString().padLeft(2, '0')}';
-              MonthlyLimitExceededDialog.show(
-                context,
-                conversationsUsed: quota?.quotaUsed ?? 0,
-                limit: quota?.quotaLimit ?? 0,
-                tier: quota?.tier ?? 'free',
-                month: month,
-              );
+              _showVoiceUpsell(state.quota?.tier ?? 'free');
             }
 
             // Show error snackbar
@@ -338,19 +324,23 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
+          // Hero treatment: the white Discipler glyph on the brand indigo, so
+          // the screen resolves around one accent (title, CTA) instead of the
+          // avatar's ink navy, which appears nowhere else here. The gold-on-ink
+          // [DisciplerAvatar] stays the author mark beside individual replies.
           Container(
-            width: 120,
-            height: 120,
+            width: 112,
+            height: 112,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFFAF8F5),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
+              ),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.asset(
-              'assets/images/AIDiscipler.png',
-              fit: BoxFit.cover,
-            ),
+            alignment: Alignment.center,
+            child: const DisciplerGlyph(size: 84),
           ),
           const SizedBox(height: 32),
 
@@ -401,18 +391,30 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     );
   }
 
+  /// The single upgrade sheet for every case where Talk to Discipler is
+  /// unavailable — no allowance on this plan, allowance spent, or the server
+  /// rejecting a start. The user's next step is the same in all of them.
+  void _showVoiceUpsell(String tier) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => UpgradeDialog(
+        featureKey: 'ai_discipler',
+        currentPlan: tier,
+        requiredPlans: const ['standard', 'plus', 'premium'],
+      ),
+    );
+  }
+
   void _startConversationWithState(VoiceConversationState state) {
     final quota = state.quota;
+    // Anyone who cannot start gets the same upgrade sheet, whether their plan
+    // never included Talk to Discipler (free is 0/month) or they used up this
+    // month's allowance. Two different dialogs for "you cannot start" was a
+    // distinction that mattered to the code, not to the person reading it.
     if (quota != null && !quota.canStart) {
-      final now = DateTime.now();
-      final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-      MonthlyLimitExceededDialog.show(
-        context,
-        conversationsUsed: quota.quotaUsed,
-        limit: quota.quotaLimit,
-        tier: quota.tier,
-        month: month,
-      );
+      _showVoiceUpsell(quota.tier);
       return;
     }
     context.read<VoiceConversationBloc>().add(StartConversation(

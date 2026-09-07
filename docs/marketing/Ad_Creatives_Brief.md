@@ -62,7 +62,7 @@ Disciplefy നിങ്ങൾക്കായി!
 ✨ മലയാളത്തിൽ ദിവസവചനം
 ✨ AI Study Guides - ഏത് ചോദ്യവും ചോദിക്കൂ
 ✨ Learning Paths - ക്രമമായ പഠനം
-✨ Voice Discipler - സംസാരിച്ച് പഠിക്കൂ
+✨ Talk to Discipler - സംസാരിച്ച് പഠിക്കൂ
 
 🆓 സൗജന്യം! ഇപ്പോൾ ഡൗൺലോഡ് ചെയ്യൂ!
 ```
@@ -194,7 +194,7 @@ Disciplefy के Premium Features अभी FREE में आज़माए�
 
 ✨ Unlimited AI Study Guides
 ✨ All Learning Paths
-✨ Voice Discipler
+✨ Talk to Discipler
 ✨ Ad-free experience
 
 ⏰ यह offer जल्द खत्म हो जाएगा!
@@ -267,7 +267,7 @@ Unlock the FULL experience with Premium:
 
 🌟 Unlimited AI study guides
 🌟 All learning paths
-🌟 Voice Discipler conversations
+🌟 Talk to Discipler conversations
 🌟 No ads
 🌟 Priority support
 

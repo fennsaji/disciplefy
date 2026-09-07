@@ -29,6 +29,22 @@ class UpdateNotificationPreferences
       memoryVerseReminderEnabled: params.memoryVerseReminderEnabled,
       memoryVerseOverdueEnabled: params.memoryVerseOverdueEnabled,
       memoryVerseReminderTime: params.memoryVerseReminderTime,
+      continueLearningEnabled: params.continueLearningEnabled,
+      achievementUnlockedEnabled: params.achievementUnlockedEnabled,
+      fellowshipDailyPostEnabled: params.fellowshipDailyPostEnabled,
+      fellowshipNewPostEnabled: params.fellowshipNewPostEnabled,
+      fellowshipNewCommentEnabled: params.fellowshipNewCommentEnabled,
+      fellowshipReactionEnabled: params.fellowshipReactionEnabled,
+      fellowshipDisciplerReplyEnabled: params.fellowshipDisciplerReplyEnabled,
+      fellowshipDisciplerActivityEnabled:
+          params.fellowshipDisciplerActivityEnabled,
+      fellowshipMeetingEnabled: params.fellowshipMeetingEnabled,
+      fellowshipMeetingReminderEnabled: params.fellowshipMeetingReminderEnabled,
+      fellowshipMeetingCancelledEnabled:
+          params.fellowshipMeetingCancelledEnabled,
+      fellowshipMeetingInviteEnabled: params.fellowshipMeetingInviteEnabled,
+      meetingInviteEnabled: params.meetingInviteEnabled,
+      fellowshipMentorPromotedEnabled: params.fellowshipMentorPromotedEnabled,
     );
   }
 }
@@ -42,6 +58,20 @@ class UpdatePreferencesParams extends Equatable {
   final TimeOfDayVO? streakReminderTime;
   final bool? memoryVerseReminderEnabled;
   final bool? memoryVerseOverdueEnabled;
+  final bool? continueLearningEnabled;
+  final bool? achievementUnlockedEnabled;
+  final bool? fellowshipDailyPostEnabled;
+  final bool? fellowshipNewPostEnabled;
+  final bool? fellowshipNewCommentEnabled;
+  final bool? fellowshipReactionEnabled;
+  final bool? fellowshipDisciplerReplyEnabled;
+  final bool? fellowshipDisciplerActivityEnabled;
+  final bool? fellowshipMeetingEnabled;
+  final bool? fellowshipMeetingReminderEnabled;
+  final bool? fellowshipMeetingCancelledEnabled;
+  final bool? fellowshipMeetingInviteEnabled;
+  final bool? meetingInviteEnabled;
+  final bool? fellowshipMentorPromotedEnabled;
   final TimeOfDayVO? memoryVerseReminderTime;
 
   const UpdatePreferencesParams({
@@ -54,6 +84,20 @@ class UpdatePreferencesParams extends Equatable {
     this.memoryVerseReminderEnabled,
     this.memoryVerseOverdueEnabled,
     this.memoryVerseReminderTime,
+    this.continueLearningEnabled,
+    this.achievementUnlockedEnabled,
+    this.fellowshipDailyPostEnabled,
+    this.fellowshipNewPostEnabled,
+    this.fellowshipNewCommentEnabled,
+    this.fellowshipReactionEnabled,
+    this.fellowshipDisciplerReplyEnabled,
+    this.fellowshipDisciplerActivityEnabled,
+    this.fellowshipMeetingEnabled,
+    this.fellowshipMeetingReminderEnabled,
+    this.fellowshipMeetingCancelledEnabled,
+    this.fellowshipMeetingInviteEnabled,
+    this.meetingInviteEnabled,
+    this.fellowshipMentorPromotedEnabled,
   });
 
   @override
@@ -67,5 +111,19 @@ class UpdatePreferencesParams extends Equatable {
         memoryVerseReminderEnabled,
         memoryVerseOverdueEnabled,
         memoryVerseReminderTime,
+        continueLearningEnabled,
+        achievementUnlockedEnabled,
+        fellowshipDailyPostEnabled,
+        fellowshipNewPostEnabled,
+        fellowshipNewCommentEnabled,
+        fellowshipReactionEnabled,
+        fellowshipDisciplerReplyEnabled,
+        fellowshipDisciplerActivityEnabled,
+        fellowshipMeetingEnabled,
+        fellowshipMeetingReminderEnabled,
+        fellowshipMeetingCancelledEnabled,
+        fellowshipMeetingInviteEnabled,
+        meetingInviteEnabled,
+        fellowshipMentorPromotedEnabled,
       ];
 }

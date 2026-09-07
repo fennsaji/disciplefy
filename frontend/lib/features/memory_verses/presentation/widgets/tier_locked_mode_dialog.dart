@@ -6,6 +6,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/services/pricing_service.dart';
 import '../../models/memory_verse_config.dart';
+import 'package:go_router/go_router.dart';
 
 /// Dialog shown when user attempts to use a practice mode not available in their tier.
 /// Displays tier restriction info and upgrade options.
@@ -187,7 +188,13 @@ class TierLockedModeDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop();
-            Navigator.pushNamed(context, AppRoutes.pricing);
+            // go_router owns navigation here; Navigator.pushNamed has no
+            // named-route table to resolve against, so this CTA did nothing.
+            // Standard is the cheapest tier that unlocks the locked modes.
+            context.push(
+              AppRoutes.pricing,
+              extra: {'preselectedPlan': 'standard'},
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: context.appInteractive,

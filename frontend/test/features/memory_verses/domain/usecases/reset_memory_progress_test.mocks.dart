@@ -10,15 +10,13 @@ import 'package:disciplefy_bible_study/core/error/failures.dart' as _i5;
 import 'package:disciplefy_bible_study/core/models/reset_progress_result.dart'
     as _i8;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/daily_goal_entity.dart'
-    as _i15;
+    as _i14;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/fetched_verse_entity.dart'
     as _i10;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/mastery_progress_entity.dart'
-    as _i14;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_challenge_entity.dart'
-    as _i16;
+    as _i15;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_champion_entry.dart'
-    as _i17;
+    as _i16;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_streak_entity.dart'
     as _i13;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart'
@@ -30,7 +28,7 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/re
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/review_statistics_entity.dart'
     as _i7;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/suggested_verse_entity.dart'
-    as _i18;
+    as _i17;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/repositories/memory_verse_repository.dart'
     as _i3;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/submit_practice_session.dart'
@@ -526,143 +524,25 @@ class MockMemoryVerseRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, _i13.MemoryStreakEntity>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>> checkStreakMilestone() =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #checkStreakMilestone,
-          [],
-        ),
-        returnValue: _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>>.value(
-            _FakeEither_0<_i5.Failure, (bool, int?)>(
-          this,
-          Invocation.method(
-            #checkStreakMilestone,
-            [],
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>
-      getMasteryProgress({required String? verseId}) => (super.noSuchMethod(
-            Invocation.method(
-              #getMasteryProgress,
-              [],
-              {#verseId: verseId},
-            ),
-            returnValue: _i4.Future<
-                    _i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-              this,
-              Invocation.method(
-                #getMasteryProgress,
-                [],
-                {#verseId: verseId},
-              ),
-            )),
-          ) as _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>
-      updateMasteryLevel({
-    required String? verseId,
-    required _i14.MasteryLevel? newMasteryLevel,
-  }) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #updateMasteryLevel,
-              [],
-              {
-                #verseId: verseId,
-                #newMasteryLevel: newMasteryLevel,
-              },
-            ),
-            returnValue: _i4.Future<
-                    _i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-              this,
-              Invocation.method(
-                #updateMasteryLevel,
-                [],
-                {
-                  #verseId: verseId,
-                  #newMasteryLevel: newMasteryLevel,
-                },
-              ),
-            )),
-          ) as _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>> getDailyGoal() =>
+  _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>> getDailyGoal() =>
       (super.noSuchMethod(
         Invocation.method(
           #getDailyGoal,
           [],
         ),
         returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
+            _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i14.DailyGoalEntity>(
           this,
           Invocation.method(
             #getDailyGoal,
             [],
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>
-      updateDailyGoalProgress({required bool? isNewVerse}) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #updateDailyGoalProgress,
-              [],
-              {#isNewVerse: isNewVerse},
-            ),
-            returnValue:
-                _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                    _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-              this,
-              Invocation.method(
-                #updateDailyGoalProgress,
-                [],
-                {#isNewVerse: isNewVerse},
-              ),
-            )),
-          ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>
-      setDailyGoalTargets({
-    required int? targetReviews,
-    required int? targetNewVerses,
-  }) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #setDailyGoalTargets,
-              [],
-              {
-                #targetReviews: targetReviews,
-                #targetNewVerses: targetNewVerses,
-              },
-            ),
-            returnValue:
-                _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                    _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-              this,
-              Invocation.method(
-                #setDailyGoalTargets,
-                [],
-                {
-                  #targetReviews: targetReviews,
-                  #targetNewVerses: targetNewVerses,
-                },
-              ),
-            )),
-          ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>
+  _i4.Future<_i2.Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>
       getActiveChallenges() => (super.noSuchMethod(
             Invocation.method(
               #getActiveChallenges,
@@ -670,8 +550,8 @@ class MockMemoryVerseRepository extends _i1.Mock
             ),
             returnValue: _i4.Future<
                     _i2.Either<_i5.Failure,
-                        List<_i16.MemoryChallengeEntity>>>.value(
-                _FakeEither_0<_i5.Failure, List<_i16.MemoryChallengeEntity>>(
+                        List<_i15.MemoryChallengeEntity>>>.value(
+                _FakeEither_0<_i5.Failure, List<_i15.MemoryChallengeEntity>>(
               this,
               Invocation.method(
                 #getActiveChallenges,
@@ -679,35 +559,12 @@ class MockMemoryVerseRepository extends _i1.Mock
               ),
             )),
           ) as _i4.Future<
-              _i2.Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>
-      claimChallengeReward({required String? challengeId}) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #claimChallengeReward,
-              [],
-              {#challengeId: challengeId},
-            ),
-            returnValue: _i4.Future<
-                    _i2.Either<_i5.Failure,
-                        (_i16.MemoryChallengeEntity, int)>>.value(
-                _FakeEither_0<_i5.Failure, (_i16.MemoryChallengeEntity, int)>(
-              this,
-              Invocation.method(
-                #claimChallengeReward,
-                [],
-                {#challengeId: challengeId},
-              ),
-            )),
-          ) as _i4.Future<
-              _i2.Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>);
+              _i2.Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>);
 
   @override
   _i4.Future<
           _i2.Either<_i5.Failure,
-              (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>>
+              (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>>
       getMemoryChampionsLeaderboard({
     required String? period,
     int? limit = 100,
@@ -725,10 +582,10 @@ class MockMemoryVerseRepository extends _i1.Mock
                 _i2.Either<
                     _i5.Failure,
                     (
-                      List<_i17.MemoryChampionEntry>,
-                      _i17.UserMemoryStats
+                      List<_i16.MemoryChampionEntry>,
+                      _i16.UserMemoryStats
                     )>>.value(_FakeEither_0<_i5.Failure,
-                (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>(
+                (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>(
               this,
               Invocation.method(
                 #getMemoryChampionsLeaderboard,
@@ -741,7 +598,7 @@ class MockMemoryVerseRepository extends _i1.Mock
             )),
           ) as _i4.Future<
               _i2.Either<_i5.Failure,
-                  (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>>);
+                  (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, Map<String, dynamic>>>
@@ -762,9 +619,9 @@ class MockMemoryVerseRepository extends _i1.Mock
           ) as _i4.Future<_i2.Either<_i5.Failure, Map<String, dynamic>>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>
+  _i4.Future<_i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>
       getSuggestedVerses({
-    _i18.SuggestedVerseCategory? category,
+    _i17.SuggestedVerseCategory? category,
     String? language = 'en',
   }) =>
           (super.noSuchMethod(
@@ -778,8 +635,8 @@ class MockMemoryVerseRepository extends _i1.Mock
             ),
             returnValue: _i4.Future<
                     _i2
-                    .Either<_i5.Failure, _i18.SuggestedVersesResponse>>.value(
-                _FakeEither_0<_i5.Failure, _i18.SuggestedVersesResponse>(
+                    .Either<_i5.Failure, _i17.SuggestedVersesResponse>>.value(
+                _FakeEither_0<_i5.Failure, _i17.SuggestedVersesResponse>(
               this,
               Invocation.method(
                 #getSuggestedVerses,
@@ -791,5 +648,5 @@ class MockMemoryVerseRepository extends _i1.Mock
               ),
             )),
           ) as _i4
-              .Future<_i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>);
+              .Future<_i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>);
 }

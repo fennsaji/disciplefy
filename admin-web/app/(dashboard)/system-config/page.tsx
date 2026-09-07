@@ -356,6 +356,44 @@ export default function SystemConfigPage() {
           </div>
         </div>
 
+        {/* Discipler kill switch */}
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              🕊️ Discipler (Fellowship)
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Key <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">discipler_global_enabled</code> in the{' '}
+              <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">system_config</code> table. Separate from the{' '}
+              <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">ai_discipler</code> feature flag, which gates the paid voice feature.
+            </p>
+          </div>
+          <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div>
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Replies, reactions & daily posts</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Master switch. While off, no Discipler reply is ever queued, whatever a fellowship&apos;s own settings say.
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`px-4 py-2 rounded-lg font-semibold ${
+                config.discipler?.global_enabled
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+              }`}>
+                {config.discipler?.global_enabled ? '✅ Enabled' : '🔴 Disabled'}
+              </span>
+              <button
+                onClick={() => updateSystemConfig.mutate({ discipler: { global_enabled: !config.discipler?.global_enabled } })}
+                disabled={updateSystemConfig.isPending}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {updateSystemConfig.isPending ? '…' : config.discipler?.global_enabled ? 'Disable' : 'Enable'}
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Maintenance Mode */}
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">

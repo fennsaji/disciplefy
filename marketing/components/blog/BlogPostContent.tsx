@@ -70,7 +70,7 @@ export async function BlogPostContent({
   const affiliateKeywords = await getActiveAffiliateKeywords();
   // Linkify first so the ad-marker paragraph can never be linkified.
   const { content: linkedContent } = linkifyAffiliate(post.content, affiliateKeywords);
-  const contentWithAd = insertAd(linkedContent, ADS, post.slug, postLocale);
+  const contentWithAd = insertAd(linkedContent, ADS, post.slug, postLocale, post.tags?.[0]);
   // Disclosure must cover any amazon.in link in the final rendered content —
   // not just ones linkifyAffiliate auto-inserted — since AppDownloadLink also
   // applies affiliate styling/rel to any hand-written amazon.in href in markdown.

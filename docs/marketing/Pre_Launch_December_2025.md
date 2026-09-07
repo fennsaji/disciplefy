@@ -515,16 +515,16 @@ No more confusion. Just growth!
 
 ### Friday, December 12 - Feature Reveal #4
 
-**Instagram Post (Voice Discipler):**
+**Instagram Post (Talk to Discipler):**
 ```
 🎙️ FEATURE REVEAL #4
 
-Voice Discipler
+Talk to Discipler
 
 Sometimes you don't want to type.
 Sometimes you just want to TALK.
 
-With Voice Discipler, you can:
+With Talk to Discipler, you can:
 🗣️ Ask questions by speaking
 🎧 Listen to explanations
 💬 Have natural conversations about Scripture
@@ -561,7 +561,7 @@ Everything you're getting on January 1st:
 📚 Learning Paths
    Structured journeys for growth
 
-🎙️ Voice Discipler
+🎙️ Talk to Discipler
    Speak & listen - hands-free study
 
 🔥 Streaks & Progress
@@ -738,7 +738,7 @@ Disciplefy में आपको मिलेगा:
 ✨ हिंदी में दैनिक वचन - हर सुबह एक नया वचन
 ✨ AI Study Guides - हिंदी में कोई भी सवाल पूछें
 ✨ Learning Paths - व्यवस्थित अध्ययन पथ
-✨ Voice Discipler - बोलकर सीखें
+✨ Talk to Discipler - बोलकर सीखें
 
 अब बाइबिल समझना आसान!
 
@@ -779,7 +779,7 @@ Disciplefy-യിൽ നിങ്ങൾക്ക് ലഭിക്കുന്�
 ✨ മലയാളത്തിൽ ദിവസവചനം
 ✨ AI Study Guides - ഏത് ചോദ്യവും ചോദിക്കൂ
 ✨ Learning Paths - ക്രമമായ പഠനം
-✨ Voice Discipler - സംസാരിച്ച് പഠിക്കൂ
+✨ Talk to Discipler - സംസാരിച്ച് പഠിക്കൂ
 
 ഇനി ബൈബിൾ മനസ്സിലാക്കൽ എളുപ്പം!
 
@@ -875,7 +875,7 @@ Here's what's waiting for you:
 ✨ Daily verses (Hindi, English, Malayalam)
 ✨ AI Study Guides
 ✨ Learning Paths
-✨ Voice Discipler
+✨ Talk to Discipler
 ✨ Streak tracking
 
 All FREE.
@@ -1134,7 +1134,7 @@ What you're getting on January 1st:
 🌅 Daily Verses - Hindi, English, Malayalam
 🤖 AI Study Guides - Ask anything!
 📚 Learning Paths - Structured growth
-🎙️ Voice Discipler - Talk about Scripture
+🎙️ Talk to Discipler - Talk about Scripture
 🔥 Streaks - Build consistency
 🆓 FREE - No cost to start!
 

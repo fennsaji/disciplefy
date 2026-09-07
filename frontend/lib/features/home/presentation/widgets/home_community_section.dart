@@ -476,11 +476,13 @@ class _RowDivider extends StatelessWidget {
       );
 }
 
-/// Circular initials avatar for a human poster.
+/// Circular avatar for a human poster: their picture when they have one,
+/// coloured initials otherwise.
 class _MemberAvatar extends StatelessWidget {
   final String name;
+  final String? avatarUrl;
 
-  const _MemberAvatar({required this.name});
+  const _MemberAvatar({required this.name, this.avatarUrl});
 
   static const List<Color> _palette = [
     Color(0xFF6A4FB6),
@@ -507,6 +509,24 @@ class _MemberAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hash = name.codeUnits.fold<int>(0, (a, b) => a + b);
+    final url = avatarUrl;
+    if (url != null && url.isNotEmpty) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundColor: _palette[hash % _palette.length],
+        foregroundImage: NetworkImage(url),
+        // Shown while the image loads and if it fails, so the row never
+        // collapses to an empty disc.
+        child: Text(
+          _initials,
+          style: AppFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
     return CircleAvatar(
       radius: 16,
       backgroundColor: _palette[hash % _palette.length],
@@ -577,7 +597,10 @@ class _ActivityRow extends StatelessWidget {
               // this size.
               isDiscipler
                   ? const DisciplerAvatar(radius: 15)
-                  : _MemberAvatar(name: authorName),
+                  : _MemberAvatar(
+                      name: authorName,
+                      avatarUrl: post.authorAvatarUrl,
+                    ),
               const SizedBox(width: 11),
               Expanded(
                 child: Column(

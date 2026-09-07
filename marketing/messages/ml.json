@@ -32,7 +32,7 @@
       "desc": "നിങ്ങളുടെ ഭാഷയിൽ ഭക്തി ഉള്ളടക്കത്തോടൊപ്പം ദിവസവും പുതിയ വചനം"
     },
     "voiceBuddy": {
-      "title": "വോയ്‌സ് ബഡ്ഡി",
+      "title": "Talk to Discipler",
       "desc": "സംസാരിക്കുകയും കേൾക്കുകയും ചെയ്യൂ — തിരുവചനത്തെക്കുറിച്ച് സംഭാഷണം ചെയ്യൂ"
     },
     "memory": {
@@ -162,7 +162,7 @@
     "dailyVerse": "ദൈനിക വചനം",
     "studyGuides": "പഠന ഗൈഡുകൾ",
     "fellowship": "ഫെല്ലോഷിപ്പ്",
-    "voiceBuddy": "വോയ്സ് ബഡി",
+    "voiceBuddy": "Talk to Discipler",
     "memoryVerses": "മെമ്മറി വാക്യങ്ങൾ",
     "learningPaths": "ലേണിംഗ് പാത്ത്സ്",
     "followUpChat": "ഫോളോ-അപ്പ് ചാറ്റ്",

@@ -291,7 +291,7 @@ Premium, warm thumbnail frame for a Disciplefy Instagram Reel. Portrait 9:16 (10
 Headline: "Can I Ask a Question?" Scene: a smartphone resting upright beside an open Bible, a soft gold soundwave glow on the phone screen implying a spoken question, warm evening lamp light — bright and warm, not moody.
 ```
 
-**Caption:** Stuck on a hard passage? Disciplefy's Voice Discipler doesn't give you a shortcut answer — it guides you back to the passage, its context, and related Scripture. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
+**Caption:** Stuck on a hard passage? Disciplefy's Talk to Discipler doesn't give you a shortcut answer — it guides you back to the passage, its context, and related Scripture. Free — link in bio. Follow along — a new feature walkthrough every Saturday.
 **Hashtags:** #Disciplefy #VoiceDiscipler #BibleQuestions #Discipleship #Scripture
 
 **Theology-safe note:** Discipler copy must always frame it as a companion that points back to Scripture and community — never a replacement for pastor, church, or the Bible itself.

@@ -35,6 +35,7 @@ export type NotificationType =
   | 'fellowship_meeting_reminder'
   | 'fellowship_meeting_cancelled'
   | 'fellowship_meeting_invite'
+  | 'fellowship_mentor_promoted'
 
 /**
  * Configuration for notification helper

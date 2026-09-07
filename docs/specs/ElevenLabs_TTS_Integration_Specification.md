@@ -9,10 +9,10 @@
 
 ## Executive Summary
 
-This specification outlines the integration of ElevenLabs Flash v2.5 Text-to-Speech API for the **AI Discipler voice conversation feature only**. The implementation provides a cost-effective premium differentiator while maintaining budget constraints through strategic usage limits.
+This specification outlines the integration of ElevenLabs Flash v2.5 Text-to-Speech API for the **Talk to Discipler conversation feature only**. The implementation provides a cost-effective premium differentiator while maintaining budget constraints through strategic usage limits.
 
 ### Key Features:
-- **Premium Users**: Unlimited ElevenLabs TTS for AI Discipler conversations
+- **Premium Users**: Unlimited ElevenLabs TTS for Talk to Discipler conversations
 - **Free Users**: 1-minute trial to experience superior voice quality
 - **Fallback**: Automatic transition to Google Cloud TTS after trial expires
 - **Cost Control**: Estimated $4,800/month (88% cheaper than full hybrid approach)
@@ -23,7 +23,7 @@ This specification outlines the integration of ElevenLabs Flash v2.5 Text-to-Spe
 
 ### 1.1 Problem Statement
 
-Current Google Cloud TTS implementation for AI Discipler has the following limitations:
+Current Google Cloud TTS implementation for Talk to Discipler has the following limitations:
 - **High Latency**: 200-500ms response time creates "robotic" conversation feel
 - **Voice Quality**: Neural2 voices lack emotional depth and naturalness
 - **User Engagement**: Delayed responses reduce conversational immersion
@@ -31,11 +31,11 @@ Current Google Cloud TTS implementation for AI Discipler has the following limit
 
 ### 1.2 Solution
 
-Integrate ElevenLabs Flash v2.5 model for AI Discipler conversations:
+Integrate ElevenLabs Flash v2.5 model for Talk to Discipler conversations:
 - **Ultra-Low Latency**: 75ms (3-6x faster than Google Cloud TTS)
 - **Superior Voice Quality**: Natural prosody, emotional expression, conversational tone
 - **Strategic Trial**: 1-minute free trial converts users to premium
-- **Focused Scope**: AI Discipler only (not Study Guide Listening)
+- **Focused Scope**: Talk to Discipler only (not Study Guide Listening)
 
 ### 1.3 Success Metrics
 
@@ -43,7 +43,7 @@ Integrate ElevenLabs Flash v2.5 model for AI Discipler conversations:
 |--------|----------------------|---------------------|
 | **Voice Response Latency** | 200-500ms | <100ms |
 | **User Satisfaction** | 4.2/5 | >4.7/5 |
-| **AI Discipler Engagement** | 3.5 exchanges/session | >5 exchanges/session |
+| **Talk to Discipler Engagement** | 3.5 exchanges/session | >5 exchanges/session |
 | **Premium Conversion** | 30% | >40% |
 | **Monthly TTS Cost** | $5,000 | <$5,000 |
 
@@ -61,7 +61,7 @@ Integrate ElevenLabs Flash v2.5 model for AI Discipler conversations:
 | Pro | 500,000 | $99 | $0.20/1k |
 | Scale | 2,000,000 | $330 | $0.12/1k |
 
-### 2.2 Projected Usage (AI Discipler Only)
+### 2.2 Projected Usage (Talk to Discipler Only)
 
 **Assumptions** (for 10,000 active users):
 - Average conversation: 1,000 characters (5 exchanges × 200 chars/response)
@@ -86,7 +86,7 @@ Total ElevenLabs Usage: 1.4M + 30M = 31.4M characters/month
 |-----------|--------|------|-------|
 | **Scale Tier Base** | 2M chars included | $330 | Base subscription |
 | **Overage** | 29.4M chars × $0.12 | $3,528 | Additional usage |
-| **Total ElevenLabs** | 31.4M chars | **$3,858/month** | AI Discipler only |
+| **Total ElevenLabs** | 31.4M chars | **$3,858/month** | Talk to Discipler only |
 | **Google Cloud TTS** | 19.6M chars × $0.016 | $314/month | Free users fallback |
 | **Grand Total** | | **$4,172/month** | Combined TTS costs |
 
@@ -100,7 +100,7 @@ Total ElevenLabs Usage: 1.4M + 30M = 31.4M characters/month
 
 ```
 ┌────────────────────────────────────────────────────┐
-│           AI Discipler Voice Flow                   │
+│           Talk to Discipler Flow                   │
 └────────────────────────────────────────────────────┘
                       │
                       ▼
@@ -455,7 +455,7 @@ Future<void> _onProcessVoiceInput(
     // Check if trial expired (for free users)
     if (response.trialExpired == true && response.userPlan == 'free') {
       emit(VoiceBuddyTrialExpired(
-        message: 'Your 1-minute AI Discipler trial has ended. Upgrade to Premium for unlimited conversations with enhanced voice quality!',
+        message: 'Your 1-minute Talk to Discipler trial has ended. Upgrade to Premium for unlimited conversations with enhanced voice quality!',
         remainingFreeConversations: response.remainingFreeConversations ?? 0,
       ));
     } else {
@@ -520,7 +520,7 @@ if (state is VoiceBuddyTrialExpired) {
 ### 5.1 Free User Journey
 
 **First Conversation (Trial Active)**:
-1. User opens AI Discipler
+1. User opens Talk to Discipler
 2. Speaks to AI: "Tell me about John 3:16"
 3. Backend checks: User is free → Trial quota = 60 seconds remaining
 4. Response generated with **ElevenLabs TTS** (ultra-low latency, natural voice)
@@ -538,7 +538,7 @@ if (state is VoiceBuddyTrialExpired) {
 2. Backend checks: Trial quota = 33 seconds remaining
 3. Response generated with **ElevenLabs TTS** (uses remaining 33 seconds)
 4. **Trial Expired Banner** displayed:
-   > "Your 1-minute AI Discipler trial has ended. Upgrade to Premium for unlimited conversations with enhanced voice quality!"
+   > "Your 1-minute Talk to Discipler trial has ended. Upgrade to Premium for unlimited conversations with enhanced voice quality!"
 5. User can:
    - **Upgrade to Premium** (button)
    - **Continue with Standard Voice** (free, uses Google Cloud TTS)
@@ -552,7 +552,7 @@ if (state is VoiceBuddyTrialExpired) {
 ### 5.2 Premium User Journey
 
 **All Conversations**:
-1. User opens AI Discipler
+1. User opens Talk to Discipler
 2. Backend checks: User is premium → **Unlimited ElevenLabs TTS** ✅
 3. All responses use ultra-low latency, natural voice
 4. No trial limits, no degradation
@@ -563,7 +563,7 @@ if (state is VoiceBuddyTrialExpired) {
 **Conversion Points**:
 1. **Trial Expiry Banner** (in-conversation)
 2. **Settings Page**: Show trial usage (e.g., "38/60 seconds used")
-3. **Premium Page**: Highlight "Unlimited AI Discipler with enhanced voice" feature
+3. **Premium Page**: Highlight "Unlimited Talk to Discipler with enhanced voice" feature
 
 **Expected Conversion Rate**: 40-50% (based on 1-minute trial quality difference)
 
@@ -684,7 +684,7 @@ describe('Voice Conversation with ElevenLabs', () => {
 
 ### 7.3 Load Testing
 
-**Scenario**: 1,000 concurrent AI Discipler conversations
+**Scenario**: 1,000 concurrent Talk to Discipler conversations
 - Measure ElevenLabs API response time under load
 - Verify fallback to Google Cloud TTS on ElevenLabs rate limit
 - Ensure quota tracking doesn't create database bottlenecks
@@ -798,7 +798,7 @@ WHERE
 ### Post-Launch Review (30 Days)
 
 - [ ] Monthly TTS cost <$5,000
-- [ ] AI Discipler engagement increased >20%
+- [ ] Talk to Discipler engagement increased >20%
 - [ ] Premium conversion rate >40%
 - [ ] User satisfaction score >4.7/5
 - [ ] Zero P0/P1 incidents related to TTS
@@ -809,7 +809,7 @@ WHERE
 
 ### Quarter 2 Optimizations
 
-1. **Voice Cloning**: Allow premium users to clone their own voice for personalized AI Discipler
+1. **Voice Cloning**: Allow premium users to clone their own voice for personalized Talk to Discipler
 2. **Emotion Control**: Adjust voice emotion based on conversation context (joyful, contemplative, urgent)
 3. **Multi-Voice Conversations**: Different voices for Bible characters in narrative readings
 4. **Voice Preferences**: User-selectable voice profiles (male/female, accent, age)
@@ -849,7 +849,7 @@ WHERE
 - [ElevenLabs API Documentation](https://elevenlabs.io/docs/api-reference/text-to-speech)
 - [ElevenLabs Pricing](https://elevenlabs.io/pricing/api)
 - [ElevenLabs Language Support](https://help.elevenlabs.io/hc/en-us/articles/13313366263441-What-languages-do-you-support)
-- [Existing AI Discipler Voice Specification](./AI_Study_Buddy_Voice_Specification.md)
+- [Existing Talk to Discipler Specification](./AI_Study_Buddy_Voice_Specification.md)
 
 ---
 

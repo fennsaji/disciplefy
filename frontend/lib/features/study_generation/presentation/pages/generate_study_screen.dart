@@ -994,7 +994,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                     if (!isKeyboardVisible) ...[
                       const SizedBox(height: 24),
 
-                      // Compact AI Discipler option - only show if ai_discipler feature is visible (respects display_mode)
+                      // Compact Talk to Discipler option - only show if ai_discipler feature is visible (respects display_mode)
                       if (_isAiDisciplerFeatureEnabled()) ...[
                         WalkthroughTooltip(
                           showcaseKey: ShowcaseKeys.disciplerHint,
@@ -1296,7 +1296,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Compact AI Discipler button
+  /// Compact Talk to Discipler button
   Widget _buildCompactAiDisciplerButton(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1883,7 +1883,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     );
   }
 
-  /// Builds the AI Discipler button - a premium feature highlight
+  /// Builds the Talk to Discipler button - a premium feature highlight
   Widget _buildAiStudyBuddyButton(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -1946,27 +1946,6 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                                 letterSpacing: -0.3,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // "NEW" badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'NEW',
-                              style: AppFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
@@ -2042,7 +2021,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
   // ---------------------------------------------------------------------------
 
-  /// Checks if AI Discipler feature should be visible (respects display_mode)
+  /// Checks if Talk to Discipler feature should be visible (respects display_mode)
   /// Returns true if feature should be shown (either with access or with lock overlay)
   bool _isAiDisciplerFeatureEnabled() {
     // Get user's current plan
@@ -2060,7 +2039,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
     return shouldShow;
   }
 
-  /// Handles tap on AI Discipler button
+  /// Handles tap on Talk to Discipler button
   /// Button is wrapped with LockedFeatureWrapper which handles access control
   void _handleAiDisciplerTap(BuildContext context) {
     // LockedFeatureWrapper handles access control and shows upgrade dialog if needed

@@ -39,10 +39,24 @@ class VoiceConversationBloc
   String _currentTranscription = '';
   double _currentConfidence = 0.0;
 
-  /// Best (longest) transcription seen in the current listening session.
-  /// Prevents the last word being cut off when stop() triggers a finalResult
-  /// that is shorter than the last partial result.
+  /// Most recent transcription seen in the current listening session.
+  ///
+  /// This deliberately takes the LATEST result rather than the longest: the
+  /// recognizer revises as it goes ("…sin means" → "…sin mean"), and a
+  /// longest-wins rule kept the earlier, wrong text. Truncation is handled by
+  /// waiting for the final result (see [_pendingSendTimer]) instead.
   String _bestTranscription = '';
+
+  /// Grace period before falling back to the last partial result.
+  ///
+  /// Android reports status `notListening` BEFORE delivering the final result,
+  /// so sending immediately on that status shipped the last partial and lost
+  /// the trailing word. This timer gives the engine a moment to finish; a
+  /// final result cancels it.
+  Timer? _pendingSendTimer;
+
+  /// How long to wait after `notListening` for the engine's final result.
+  static const Duration _finalResultGrace = Duration(milliseconds: 700);
 
   /// Timer for detecting silence after speech (3 seconds)
   Timer? _silenceAfterSpeechTimer;
@@ -113,7 +127,7 @@ class VoiceConversationBloc
     Logger.debug('  - Confidence: ${(confidence * 100).toStringAsFixed(1)}%');
 
     // Just stop listening - let finalResult handler send the complete message
-    add(const StopListening());
+    _safeAdd(const StopListening());
     // Message will be sent by finalResult handler or _onSpeechStatusChanged
   }
 
@@ -261,7 +275,7 @@ class VoiceConversationBloc
           quota: quota,
         ));
         // Refresh quota from DB so the display reflects the post-increment value
-        add(const CheckQuota());
+        _safeAdd(const CheckQuota());
       },
     );
   }
@@ -355,25 +369,23 @@ class VoiceConversationBloc
     try {
       await _speechService.startListening(
         languageCode: state.languageCode,
-        onError: (error) => add(SpeechRecognitionErrorOccurred(error.errorMsg)),
-        // Defaults: listenFor=60s, pauseFor=60s
-        // 3-second silence detection is handled by _silenceAfterSpeechTimer
+        onError: (error) =>
+            _safeAdd(SpeechRecognitionErrorOccurred(error.errorMsg)),
+        // pauseFor lets the recognizer end the utterance itself and emit a
+        // complete final result. The old 60s value meant the only thing that
+        // ever stopped it was a manual stop(), which truncates the tail.
+        pauseFor: const Duration(seconds: 3),
         onResult: (result) {
           final text = result.recognizedWords;
           final confidence = result.confidence;
 
-          // Update tracking variables.
-          // _bestTranscription only grows — never downgrade to a shorter result.
-          // When stop() is called prematurely the finalResult from the speech
-          // engine can be shorter than the last partial result (last word cut
-          // off). Keeping the longest seen prevents that regression.
-          if (text.length >= _bestTranscription.length) {
-            _bestTranscription = text;
-          }
-          _currentTranscription = _bestTranscription;
+          // Always take the latest result: the recognizer refines earlier
+          // guesses, so the newest text is the most accurate one.
+          _bestTranscription = text;
+          _currentTranscription = text;
           _currentConfidence = confidence;
 
-          add(ProcessSpeechText(
+          _safeAdd(ProcessSpeechText(
               text: _bestTranscription, confidence: confidence));
 
           // Feed transcription to VAD for debounced silence detection
@@ -397,7 +409,7 @@ class VoiceConversationBloc
                     '🎙️ [VOICE] 3-second silence detected - stopping to get final result');
                 Logger.debug(
                     '  - Current text: "${_currentTranscription.length > 50 ? '${_currentTranscription.substring(0, 50)}...' : _currentTranscription}"');
-                add(const StopListening());
+                _safeAdd(const StopListening());
                 // Message will be sent by finalResult handler or _onSpeechStatusChanged
               }
             });
@@ -407,6 +419,10 @@ class VoiceConversationBloc
           // Use _bestTranscription (not `text`) to avoid sending a truncated
           // result when stop() caused the engine to return fewer words.
           if (result.finalResult && _bestTranscription.isNotEmpty) {
+            // The final result beat the grace timer — cancel the fallback so
+            // the partial is not sent as well.
+            _pendingSendTimer?.cancel();
+            _pendingSendTimer = null;
             // A successful result proves the recognizer started fine — reset the
             // failure counter so a future hiccup gets the full retry budget again.
             _consecutiveListenFailures = 0;
@@ -429,12 +445,12 @@ class VoiceConversationBloc
               _bestTranscription = '';
               _currentConfidence = 0.0;
 
-              add(SendTextMessage(textToSend));
+              _safeAdd(SendTextMessage(textToSend));
             } else {
               // In normal mode, stop listening and send
               _bestTranscription = '';
-              add(const StopListening());
-              add(SendTextMessage(textToSend));
+              _safeAdd(const StopListening());
+              _safeAdd(SendTextMessage(textToSend));
             }
           }
         },
@@ -446,12 +462,13 @@ class VoiceConversationBloc
         },
         onStatusChange: (status) {
           // Handle speech recognition status changes
-          add(SpeechStatusChanged(status));
+          _safeAdd(SpeechStatusChanged(status));
         },
       );
     } catch (e) {
       Logger.error('Failed to start listening', error: e);
-      add(const StreamError('Failed to start listening. Please try again.'));
+      _safeAdd(
+          const StreamError('Failed to start listening. Please try again.'));
     }
   }
 
@@ -575,7 +592,7 @@ class VoiceConversationBloc
       }
     } catch (e) {
       Logger.error('Failed to send message', error: e);
-      add(const StreamError('Failed to send message. Please try again.'));
+      _safeAdd(const StreamError('Failed to send message. Please try again.'));
     }
   }
 
@@ -625,13 +642,14 @@ class VoiceConversationBloc
           Logger.debug('🎙️ [VOICE] EventSource error: $error');
 
           if (error.toString().contains('QUOTA_EXCEEDED')) {
-            add(const StreamError('Daily voice conversation quota exceeded'));
+            _safeAdd(
+                const StreamError('Daily voice conversation quota exceeded'));
           } else if (error.toString().contains('CONVERSATION_LIMIT_EXCEEDED')) {
-            add(const StreamError(
+            _safeAdd(const StreamError(
                 'Conversation message limit reached. Please start a new conversation.'));
           } else {
             Logger.error('Streaming connection error', error: error);
-            add(const StreamError(
+            _safeAdd(const StreamError(
                 'Streaming connection error. Please try again.'));
           }
         },
@@ -641,7 +659,8 @@ class VoiceConversationBloc
       );
     } catch (e) {
       Logger.error('Failed to start streaming', error: e);
-      add(const StreamError('Failed to start streaming. Please try again.'));
+      _safeAdd(
+          const StreamError('Failed to start streaming. Please try again.'));
     }
   }
 
@@ -656,10 +675,10 @@ class VoiceConversationBloc
       final message = data['message'] as String? ?? 'Unknown error';
 
       if (code == 'UNAUTHORIZED') {
-        add(StreamError('Authentication required: $message'));
+        _safeAdd(StreamError('Authentication required: $message'));
         return;
       } else if (code == 'SERVER_ERROR') {
-        add(StreamError(message));
+        _safeAdd(StreamError(message));
         return;
       }
     }
@@ -669,7 +688,7 @@ class VoiceConversationBloc
         data.containsKey('tier') &&
         !data.containsKey('remaining')) {
       final message = data['message'] as String? ?? 'Quota exceeded';
-      add(StreamError(message));
+      _safeAdd(StreamError(message));
       return;
     }
 
@@ -677,7 +696,7 @@ class VoiceConversationBloc
     if (data.containsKey('text')) {
       final text = data['text'] as String? ?? '';
       if (text.isNotEmpty) {
-        add(ReceiveStreamChunk(text));
+        _safeAdd(ReceiveStreamChunk(text));
       }
       return;
     }
@@ -688,7 +707,7 @@ class VoiceConversationBloc
               ?.map((e) => e.toString())
               .toList() ??
           [];
-      add(StreamCompleted(scriptureReferences: refs));
+      _safeAdd(StreamCompleted(scriptureReferences: refs));
       _cleanupStream();
       return;
     }
@@ -711,7 +730,7 @@ class VoiceConversationBloc
     if (data.containsKey('messageCount') && data.containsKey('limit')) {
       final message =
           data['message'] as String? ?? 'Conversation message limit reached';
-      add(StreamError(message));
+      _safeAdd(StreamError(message));
       return;
     }
   }
@@ -781,12 +800,12 @@ class VoiceConversationBloc
               case 'error':
                 final errorMsg =
                     jsonData['message'] as String? ?? 'Unknown error';
-                add(StreamError(errorMsg));
+                _safeAdd(StreamError(errorMsg));
                 return;
               case 'quota_exceeded':
                 final errorMsg =
                     jsonData['message'] as String? ?? 'Quota exceeded';
-                add(StreamError(errorMsg));
+                _safeAdd(StreamError(errorMsg));
                 return;
               case 'monthly_conversation_limit_exceeded':
                 // Handle monthly conversation limit exceeded
@@ -803,7 +822,7 @@ class VoiceConversationBloc
                     '🎙️ [VOICE] Monthly limit exceeded: $conversationsUsed/$limit for $tier tier in $month');
 
                 // Dispatch MonthlyLimitExceeded event
-                add(MonthlyLimitExceeded(
+                _safeAdd(MonthlyLimitExceeded(
                   conversationsUsed: conversationsUsed,
                   limit: limit,
                   remaining: remaining,
@@ -821,14 +840,14 @@ class VoiceConversationBloc
 
       // Send the full content as a single chunk
       if (fullContent.isNotEmpty) {
-        add(ReceiveStreamChunk(fullContent));
-        add(StreamCompleted(scriptureReferences: scriptureRefs));
+        _safeAdd(ReceiveStreamChunk(fullContent));
+        _safeAdd(StreamCompleted(scriptureReferences: scriptureRefs));
       } else {
-        add(StreamError('No response received'));
+        _safeAdd(StreamError('No response received'));
       }
     } catch (e) {
       Logger.error('Streaming request failed', error: e);
-      add(const StreamError('Request failed. Please try again.'));
+      _safeAdd(const StreamError('Request failed. Please try again.'));
     }
   }
 
@@ -897,7 +916,7 @@ class VoiceConversationBloc
       onComplete: () {
         Logger.debug(
             '🎙️ [VOICE] Streaming TTS complete, shouldContinueListening: $shouldContinueListening');
-        add(PlaybackCompleted(
+        _safeAdd(PlaybackCompleted(
             shouldContinueListening: shouldContinueListening));
       },
     )
@@ -986,7 +1005,7 @@ class VoiceConversationBloc
 
       // Auto-play response only if preference is enabled and streaming TTS wasn't used
       if (state.autoPlayResponse) {
-        add(const PlayResponse());
+        _safeAdd(const PlayResponse());
       }
     }
   }
@@ -1133,7 +1152,7 @@ class VoiceConversationBloc
         Logger.debug(
             '🎙️ [VOICE] Continuous mode - starting listening (no TTS)');
         await Future.delayed(const Duration(milliseconds: 500));
-        add(const StartListening());
+        _safeAdd(const StartListening());
       }
       return;
     }
@@ -1162,7 +1181,7 @@ class VoiceConversationBloc
       onComplete: () {
         Logger.debug(
             '🎙️ [VOICE] TTS completed, shouldContinueListening: $shouldContinueListening');
-        add(PlaybackCompleted(
+        _safeAdd(PlaybackCompleted(
             shouldContinueListening: shouldContinueListening));
       },
     );
@@ -1213,7 +1232,7 @@ class VoiceConversationBloc
       if (state.isPlaying) {
         Logger.error(
             '🎙️ [VOICE] Fallback timer fired - TTS completion may have failed');
-        add(PlaybackCompleted(
+        _safeAdd(PlaybackCompleted(
             shouldContinueListening: shouldContinueListening));
       }
     });
@@ -1251,7 +1270,7 @@ class VoiceConversationBloc
       Logger.debug('🎙️ [VOICE] Continuous mode - starting listening again');
       // Small delay before starting to listen again
       await Future.delayed(const Duration(milliseconds: 500));
-      add(const StartListening());
+      _safeAdd(const StartListening());
     }
   }
 
@@ -1393,21 +1412,33 @@ class VoiceConversationBloc
         state.isListening) {
       Logger.debug('🎙️ [VOICE] Speech recognition stopped - updating UI');
 
-      // Before stopping, check if we have unsent transcription
-      // Send it if we're not already processing a message
+      // Do NOT send here straight away. Android reports `notListening` before
+      // the engine delivers its final result, so sending now ships the last
+      // partial and drops the trailing word. Wait briefly: a final result
+      // cancels this timer and sends the complete text itself.
       if (_currentTranscription.isNotEmpty &&
           state.status != VoiceConversationStatus.processing &&
           state.status != VoiceConversationStatus.streaming) {
         Logger.debug(
-            '🎙️ [VOICE] Speech stopped with pending text - sending: $_currentTranscription');
+            '🎙️ [VOICE] Speech stopped with pending text - waiting for final result');
 
-        // Clear transcription before sending to prevent any future duplicates
-        final textToSend = _currentTranscription;
-        _currentTranscription = '';
-        _bestTranscription = '';
-        _currentConfidence = 0.0;
+        _pendingSendTimer?.cancel();
+        _pendingSendTimer = Timer(_finalResultGrace, () {
+          if (isClosed) return;
+          // The final result won the race and already sent.
+          if (_currentTranscription.isEmpty) {
+            return;
+          }
+          Logger.debug(
+              '🎙️ [VOICE] No final result within grace - sending last partial');
 
-        add(SendTextMessage(textToSend));
+          final textToSend = _currentTranscription;
+          _currentTranscription = '';
+          _bestTranscription = '';
+          _currentConfidence = 0.0;
+
+          _safeAdd(SendTextMessage(textToSend));
+        });
       } else if (_currentTranscription.isEmpty) {
         Logger.debug(
             '🎙️ [VOICE] Speech stopped but no pending text (already sent or empty)');
@@ -1426,10 +1457,21 @@ class VoiceConversationBloc
     }
   }
 
+  /// Dispatches an event unless this bloc has been closed.
+  ///
+  /// Speech callbacks, TTS completion handlers and the silence/grace timers can
+  /// all fire after the user leaves the screen; add() would then throw
+  /// "Cannot add new events after calling close".
+  void _safeAdd(VoiceConversationEvent event) {
+    if (isClosed) return;
+    add(event);
+  }
+
   @override
   Future<void> close() {
     _playbackFallbackTimer?.cancel();
     _silenceAfterSpeechTimer?.cancel();
+    _pendingSendTimer?.cancel();
     _vadService.dispose();
     _speechSubscription?.cancel();
     _cleanupStream();

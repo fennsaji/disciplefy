@@ -122,7 +122,7 @@ class AppLocalizations {
       'achievement_category_study': 'Study Guides',
       'achievement_category_streak': 'Study Streaks',
       'achievement_category_memory': 'Memory Verses',
-      'achievement_category_voice': 'Voice Discipler',
+      'achievement_category_voice': 'Talk to Discipler',
       'achievement_category_saved': 'Saved Guides',
 
       // First Century Christian Facts for Loading Screen (60 facts)
@@ -630,6 +630,8 @@ class AppLocalizations {
       'disciplerDraftBadge': 'Draft · mentors only',
       'approve': 'Approve',
       'discard': 'Discard',
+      'unsavedChangesTitle': 'Save your changes?',
+      'unsavedChangesMessage': 'You have edits that have not been saved yet.',
       'openStudyGuide': 'Open Study Guide',
       'postTypeDaily': "Today's study",
       'openFullStudy': 'Open the full study',
@@ -644,6 +646,8 @@ class AppLocalizations {
       'mentorContactSubtitle':
           'Members can reach you directly. Only this fellowship sees it.',
       'mentorContactBlankHint': 'Leave blank to hide that option.',
+      'saveContactDetails': 'Save contact details',
+      'navDiscipler': 'Discipler',
       'mentorContactInvalidWhatsapp': 'Enter a valid WhatsApp number.',
       'mentorContactInvalidEmail': 'Enter a valid email address.',
       'mentorMessageBody':
@@ -1328,6 +1332,8 @@ class AppLocalizations {
       'disciplerDraftBadge': 'ड्राफ्ट · केवल मेंटर के लिए',
       'approve': 'स्वीकृत करें',
       'discard': 'हटाएं',
+      'unsavedChangesTitle': 'अपने बदलाव सहेजें?',
+      'unsavedChangesMessage': 'आपके कुछ बदलाव अभी तक सहेजे नहीं गए हैं।',
       'openStudyGuide': 'अध्ययन गाइड खोलें',
       'postTypeDaily': 'आज का अध्ययन',
       'openFullStudy': 'पूरा अध्ययन खोलें',
@@ -1342,6 +1348,8 @@ class AppLocalizations {
       'mentorContactSubtitle':
           'सदस्य आपसे सीधे संपर्क कर सकते हैं। इसे केवल यह फ़ेलोशिप देखती है।',
       'mentorContactBlankHint': 'उस विकल्प को छिपाने के लिए खाली छोड़ें।',
+      'saveContactDetails': 'संपर्क विवरण सहेजें',
+      'navDiscipler': 'Discipler',
       'mentorContactInvalidWhatsapp': 'मान्य WhatsApp नंबर दर्ज करें।',
       'mentorContactInvalidEmail': 'मान्य ईमेल पता दर्ज करें।',
       'mentorMessageBody':
@@ -2035,6 +2043,8 @@ class AppLocalizations {
       'disciplerDraftBadge': 'ഡ്രാഫ്റ്റ് · മെന്റർമാർക്ക് മാത്രം',
       'approve': 'അംഗീകരിക്കുക',
       'discard': 'നിരസിക്കുക',
+      'unsavedChangesTitle': 'മാറ്റങ്ങൾ സേവ് ചെയ്യണോ?',
+      'unsavedChangesMessage': 'സേവ് ചെയ്യാത്ത മാറ്റങ്ങൾ ഉണ്ട്.',
       'openStudyGuide': 'പഠന ഗൈഡ് തുറക്കുക',
       'postTypeDaily': 'ഇന്നത്തെ പഠനം',
       'openFullStudy': 'പൂർണ്ണ പഠനം തുറക്കുക',
@@ -2049,6 +2059,8 @@ class AppLocalizations {
       'mentorContactSubtitle':
           'അംഗങ്ങൾക്ക് നിങ്ങളെ നേരിട്ട് ബന്ധപ്പെടാം. ഈ ഫെലോഷിപ്പ് മാത്രമേ ഇത് കാണൂ.',
       'mentorContactBlankHint': 'ആ ഓപ്ഷൻ മറയ്ക്കാൻ ശൂന്യമായി വിടുക.',
+      'saveContactDetails': 'ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ സേവ് ചെയ്യുക',
+      'navDiscipler': 'Discipler',
       'mentorContactInvalidWhatsapp': 'സാധുവായ WhatsApp നമ്പർ നൽകുക.',
       'mentorContactInvalidEmail': 'സാധുവായ ഇമെയിൽ വിലാസം നൽകുക.',
       'mentorMessageBody':
@@ -2997,6 +3009,18 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['mentorContactSubtitle']!;
   String get mentorContactBlankHint =>
       _localizedValues[locale.languageCode]!['mentorContactBlankHint']!;
+
+  String get saveContactDetails =>
+      _localizedValues[locale.languageCode]!['saveContactDetails']!;
+
+  String get navDiscipler =>
+      _localizedValues[locale.languageCode]!['navDiscipler']!;
+
+  String get unsavedChangesTitle =>
+      _localizedValues[locale.languageCode]!['unsavedChangesTitle']!;
+
+  String get unsavedChangesMessage =>
+      _localizedValues[locale.languageCode]!['unsavedChangesMessage']!;
   String get mentorContactInvalidWhatsapp =>
       _localizedValues[locale.languageCode]!['mentorContactInvalidWhatsapp']!;
   String get mentorContactInvalidEmail =>

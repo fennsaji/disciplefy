@@ -192,6 +192,20 @@ class NotificationRepositoryImpl implements NotificationRepository {
     bool? memoryVerseReminderEnabled,
     bool? memoryVerseOverdueEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
+    bool? continueLearningEnabled,
+    bool? achievementUnlockedEnabled,
+    bool? fellowshipDailyPostEnabled,
+    bool? fellowshipNewPostEnabled,
+    bool? fellowshipNewCommentEnabled,
+    bool? fellowshipReactionEnabled,
+    bool? fellowshipDisciplerReplyEnabled,
+    bool? fellowshipDisciplerActivityEnabled,
+    bool? fellowshipMeetingEnabled,
+    bool? fellowshipMeetingReminderEnabled,
+    bool? fellowshipMeetingCancelledEnabled,
+    bool? fellowshipMeetingInviteEnabled,
+    bool? meetingInviteEnabled,
+    bool? fellowshipMentorPromotedEnabled,
   }) async {
     try {
       // Check if user is authenticated
@@ -348,6 +362,37 @@ class NotificationRepositoryImpl implements NotificationRepository {
           // that actually fires at the user's 22:00, not London's — and it
           // keeps up with travel and DST for free, since it is re-sent
           // whenever the user touches notification settings.
+          if (continueLearningEnabled != null)
+            'continueLearningEnabled': continueLearningEnabled,
+          if (achievementUnlockedEnabled != null)
+            'achievementUnlockedEnabled': achievementUnlockedEnabled,
+          if (fellowshipDailyPostEnabled != null)
+            'fellowshipDailyPostEnabled': fellowshipDailyPostEnabled,
+          if (fellowshipNewPostEnabled != null)
+            'fellowshipNewPostEnabled': fellowshipNewPostEnabled,
+          if (fellowshipNewCommentEnabled != null)
+            'fellowshipNewCommentEnabled': fellowshipNewCommentEnabled,
+          if (fellowshipReactionEnabled != null)
+            'fellowshipReactionEnabled': fellowshipReactionEnabled,
+          if (fellowshipDisciplerReplyEnabled != null)
+            'fellowshipDisciplerReplyEnabled': fellowshipDisciplerReplyEnabled,
+          if (fellowshipDisciplerActivityEnabled != null)
+            'fellowshipDisciplerActivityEnabled':
+                fellowshipDisciplerActivityEnabled,
+          if (fellowshipMeetingEnabled != null)
+            'fellowshipMeetingEnabled': fellowshipMeetingEnabled,
+          if (fellowshipMeetingReminderEnabled != null)
+            'fellowshipMeetingReminderEnabled':
+                fellowshipMeetingReminderEnabled,
+          if (fellowshipMeetingCancelledEnabled != null)
+            'fellowshipMeetingCancelledEnabled':
+                fellowshipMeetingCancelledEnabled,
+          if (fellowshipMeetingInviteEnabled != null)
+            'fellowshipMeetingInviteEnabled': fellowshipMeetingInviteEnabled,
+          if (meetingInviteEnabled != null)
+            'meetingInviteEnabled': meetingInviteEnabled,
+          if (fellowshipMentorPromotedEnabled != null)
+            'fellowshipMentorPromotedEnabled': fellowshipMentorPromotedEnabled,
           'timezoneOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,
         },
       );

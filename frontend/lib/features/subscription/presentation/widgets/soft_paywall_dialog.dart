@@ -129,7 +129,10 @@ class SoftPaywallDialog extends StatelessWidget {
               onPressed: () {
                 final router = GoRouter.of(context);
                 Navigator.of(context).pop();
-                router.push(AppRoutes.pricing);
+                // Land on the cheapest plan that lifts this limit, not the top of the
+                // page where Free — the plan they already have — sits.
+                router.push(AppRoutes.pricing,
+                    extra: const {'preselectedPlan': 'standard'});
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,

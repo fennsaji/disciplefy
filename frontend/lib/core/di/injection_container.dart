@@ -206,14 +206,8 @@ import '../../features/memory_verses/domain/usecases/get_practice_mode_statistic
 import '../../features/memory_verses/domain/usecases/get_memory_statistics.dart';
 import '../../features/memory_verses/domain/usecases/get_memory_streak.dart';
 import '../../features/memory_verses/domain/usecases/use_streak_freeze.dart';
-import '../../features/memory_verses/domain/usecases/check_streak_milestone.dart';
-import '../../features/memory_verses/domain/usecases/get_mastery_progress.dart';
-import '../../features/memory_verses/domain/usecases/update_mastery_level.dart';
 import '../../features/memory_verses/domain/usecases/get_daily_goal.dart';
-import '../../features/memory_verses/domain/usecases/update_daily_goal_progress.dart';
-import '../../features/memory_verses/domain/usecases/set_daily_goal_targets.dart';
 import '../../features/memory_verses/domain/usecases/get_active_challenges.dart';
-import '../../features/memory_verses/domain/usecases/claim_challenge_reward.dart';
 import '../../features/memory_verses/domain/usecases/get_memory_champions_leaderboard.dart';
 import '../../features/memory_verses/domain/usecases/get_suggested_verses.dart';
 import '../../features/memory_verses/data/services/memory_verse_notification_service.dart';
@@ -592,20 +586,14 @@ Future<void> initializeDependencies() async {
   // Memory Verses Enhancement - Streak Use Cases
   sl.registerLazySingleton(() => GetMemoryStreak(sl()));
   sl.registerLazySingleton(() => UseStreakFreeze(sl()));
-  sl.registerLazySingleton(() => CheckStreakMilestone(sl()));
 
   // Memory Verses Enhancement - Mastery Use Cases
-  sl.registerLazySingleton(() => GetMasteryProgress(sl()));
-  sl.registerLazySingleton(() => UpdateMasteryLevel(sl()));
 
   // Memory Verses Enhancement - Daily Goal Use Cases
   sl.registerLazySingleton(() => GetDailyGoal(sl()));
-  sl.registerLazySingleton(() => UpdateDailyGoalProgress(sl()));
-  sl.registerLazySingleton(() => SetDailyGoalTargets(sl()));
 
   // Memory Verses Enhancement - Challenge Use Cases
   sl.registerLazySingleton(() => GetActiveChallenges(sl()));
-  sl.registerLazySingleton(() => ClaimChallengeReward(sl()));
 
   // Memory Verses Enhancement - Leaderboard & Statistics Use Cases
   sl.registerLazySingleton(() => GetMemoryChampionsLeaderboard(sl()));
@@ -629,13 +617,8 @@ Future<void> initializeDependencies() async {
         getPracticeModeStatistics: sl(),
         getMemoryStreak: sl(),
         useStreakFreeze: sl(),
-        getMasteryProgress: sl(),
-        updateMasteryLevel: sl(),
         getDailyGoal: sl(),
-        updateDailyGoalProgress: sl(),
-        setDailyGoalTargets: sl(),
         getActiveChallenges: sl(),
-        claimChallengeReward: sl(),
         getMemoryChampionsLeaderboard: sl(),
         getMemoryStatistics: sl(),
         getSuggestedVerses: sl(),

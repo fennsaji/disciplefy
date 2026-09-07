@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       ? Math.round(pathCompletions.reduce((sum, p) => sum + (p.progress_percentage || 0), 0) / pathCompletions.length)
       : 0
 
-    // Voice Buddy Feature (paginated past PostgREST's 1000-row cap)
+    // Talk to Discipler (paginated past PostgREST's 1000-row cap)
     const { data: voiceBuddyData } = await fetchAllRows((from, to) =>
       supabaseAdmin
         .from('voice_conversations')
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
         category: 'engagement'
       },
       {
-        name: 'Voice Buddy',
+        name: 'Talk to Discipler',
         users: voiceBuddyUsers || 0,
         usage_count: totalVoiceConversations || 0,
         adoption_rate: totalUsers ? ((voiceBuddyUsers || 0) / totalUsers * 100).toFixed(1) : '0',

@@ -97,6 +97,33 @@ export async function pushMentors(db: SupabaseClient, fellowshipId: string, noti
 // ============================================================================
 
 /** Options for {@link deliverOrQueue}. */
+/// Maps a notification type to the `user_notification_preferences` column that
+/// switches it off. Every type in the notification_logs CHECK constraint has
+/// one; a type missing here is simply never filtered.
+const PREFERENCE_COLUMN: Record<string, string> = {
+  daily_verse: 'daily_verse_enabled',
+  recommended_topic: 'recommended_topic_enabled',
+  continue_learning: 'continue_learning_enabled',
+  streak_reminder: 'streak_reminder_enabled',
+  streak_milestone: 'streak_milestone_enabled',
+  streak_lost: 'streak_lost_enabled',
+  memory_verse_reminder: 'memory_verse_reminder_enabled',
+  memory_verse_overdue: 'memory_verse_overdue_enabled',
+  achievement_unlocked: 'achievement_unlocked_enabled',
+  meeting_invite: 'meeting_invite_enabled',
+  fellowship_daily_post: 'fellowship_daily_post_enabled',
+  fellowship_new_post: 'fellowship_new_post_enabled',
+  fellowship_new_comment: 'fellowship_new_comment_enabled',
+  fellowship_reaction: 'fellowship_reaction_enabled',
+  fellowship_discipler_reply: 'fellowship_discipler_reply_enabled',
+  fellowship_discipler_activity: 'fellowship_discipler_activity_enabled',
+  fellowship_meeting: 'fellowship_meeting_enabled',
+  fellowship_meeting_reminder: 'fellowship_meeting_reminder_enabled',
+  fellowship_meeting_cancelled: 'fellowship_meeting_cancelled_enabled',
+  fellowship_meeting_invite: 'fellowship_meeting_invite_enabled',
+  fellowship_mentor_promoted: 'fellowship_mentor_promoted_enabled',
+}
+
 export interface DeliverOptions {
   /**
    * The notification's type, used both as the queue row's `kind` and as the
@@ -161,26 +188,45 @@ export async function deliverOrQueue(
   // the offset is needed again to compute each row's own not_before.
   let toQueue: Array<{ userId: string; offsetMinutes: number }> = []
 
-  if (!opts.urgent) {
-    // One query for every recipient's offset — never N+1 inside the loop.
-    const { data: prefRows, error } = await db
-      .from('user_notification_preferences')
-      .select('user_id, timezone_offset_minutes')
-      .in('user_id', recipients)
+  // One query for every recipient's preferences — never N+1 inside the loop.
+  // It answers both questions at once: did this person switch this type off,
+  // and what is their local time.
+  const prefColumn = PREFERENCE_COLUMN[opts.kind]
+  const columns = prefColumn
+    ? `user_id, timezone_offset_minutes, ${prefColumn}`
+    : 'user_id, timezone_offset_minutes'
 
-    if (error) {
-      console.error('[deliverOrQueue] Offset lookup failed, sending all now (non-fatal):', error.message)
+  const { data: prefRows, error } = await db
+    .from('user_notification_preferences')
+    .select(columns)
+    .in('user_id', recipients)
+
+  if (error) {
+    // Fail open. A missed push is a worse outcome than one that arrives at an
+    // awkward hour, and silently dropping is never acceptable.
+    console.error('[deliverOrQueue] Preference lookup failed, sending all now (non-fatal):', error.message)
+  } else {
+    const rows = (prefRows ?? []) as unknown as Array<Record<string, unknown>>
+    const byUser = new Map(rows.map((r) => [r.user_id as string, r]))
+
+    // Opt-out applies even to urgent notifications: the user turned this type
+    // off deliberately. A missing row means "never configured" — send.
+    const wanted = recipients.filter((id) => {
+      if (!prefColumn) return true
+      const row = byUser.get(id)
+      if (!row) return true
+      return row[prefColumn] !== false
+    })
+
+    if (opts.urgent) {
+      sendNow = wanted
     } else {
-      const offsets = new Map<string, number | null>(
-        (prefRows ?? []).map((r: { user_id: string; timezone_offset_minutes: number | null }) =>
-          [r.user_id, r.timezone_offset_minutes]),
-      )
       sendNow = []
       toQueue = []
-      for (const id of recipients) {
+      for (const id of wanted) {
         // A missing row and a row with a NULL offset both mean "unknown", and
         // unknown means send now.
-        const offset = offsets.get(id) ?? null
+        const offset = (byUser.get(id)?.timezone_offset_minutes as number | null) ?? null
         if (offset !== null && isQuietHours(offset, now)) toQueue.push({ userId: id, offsetMinutes: offset })
         else sendNow.push(id)
       }

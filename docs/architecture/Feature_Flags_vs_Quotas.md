@@ -43,7 +43,7 @@ feature_flags (
 
 | Feature Key | Feature Name | Free | Standard | Plus | Premium | Category |
 |-------------|--------------|------|----------|------|---------|----------|
-| `ai_discipler` | AI Discipler | ❌ | ❌ | ✅ | ✅ | voice_features |
+| `ai_discipler` | Talk to Discipler | ❌ | ❌ | ✅ | ✅ | voice_features |
 | `voice_buddy` | Voice Buddy (TTS) | ❌ | ✅ | ✅ | ✅ | voice_features |
 | `study_chat` | Follow Up Chat | ❌ | ✅ | ✅ | ✅ | study_features |
 | `memory_verses` | Memory Verses | ✅ | ✅ | ✅ | ✅ | core_features |
@@ -63,7 +63,7 @@ const hasAccess = await isFeatureEnabledForPlan('ai_discipler', userPlan)
 if (!hasAccess) {
   return new Response(JSON.stringify({
     error: 'FEATURE_NOT_AVAILABLE',
-    message: 'AI Discipler is only available for Plus and Premium plans'
+    message: 'Talk to Discipler is only available for Plus and Premium plans'
   }), { status: 403 })
 }
 ```
@@ -75,7 +75,7 @@ final systemConfigService = sl<SystemConfigService>();
 final userPlan = tokenStatus.userPlan.name; // 'free', 'standard', 'plus', 'premium'
 
 if (systemConfigService.isFeatureEnabled('ai_discipler', userPlan)) {
-  // Show AI Discipler button
+  // Show Talk to Discipler button
 }
 ```
 
@@ -139,11 +139,11 @@ if (!limitStatus.canStart) {
 
 ## 🔄 How They Work Together
 
-### Example: AI Discipler Voice Conversation
+### Example: Talk to Discipler Conversation
 
 ```mermaid
 flowchart TD
-    A[User clicks AI Discipler] --> B{Feature Flag Check}
+    A[User clicks Talk to Discipler] --> B{Feature Flag Check}
     B -->|Feature disabled for plan| C[Show Upgrade Dialog]
     B -->|Feature enabled| D{Quota Check}
     D -->|Quota exceeded| E[Show Limit Reached]
@@ -263,7 +263,7 @@ await limitService.incrementMonthlyCounter(userId, tier)
 ```typescript
 // DON'T DO THIS
 if (planConfig.features.ai_discipler > 0) {
-  // Allow AI Discipler
+  // Allow Talk to Discipler
 }
 ```
 **Why**: Confuses quotas (how much) with access (yes/no)

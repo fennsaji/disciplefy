@@ -288,6 +288,10 @@ class CommunityRepositoryImpl implements CommunityRepository {
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
+    } on ValidationException catch (e) {
+      // The API refused for a reason the user can act on; its message is
+      // written for them, and ValidationFailure is shown rather than hidden.
+      return Left(ValidationFailure(message: e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } catch (e) {

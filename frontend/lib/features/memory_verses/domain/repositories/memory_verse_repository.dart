@@ -198,35 +198,9 @@ abstract class MemoryVerseRepository {
     required DateTime freezeDate,
   });
 
-  /// Checks for streak milestone achievement
-  ///
-  /// Returns true if a milestone was reached, along with milestone details.
-  Future<Either<Failure, (bool, int?)>> checkStreakMilestone();
-
   // ==========================================================================
   // MASTERY METHODS (Sprint 2 - Memory Verses Enhancement)
   // ==========================================================================
-
-  /// Fetches mastery progress for a verse
-  ///
-  /// [verseId] - UUID of the verse
-  ///
-  /// Returns mastery level, percentage, modes mastered,
-  /// and perfect recall count.
-  Future<Either<Failure, MasteryProgressEntity>> getMasteryProgress({
-    required String verseId,
-  });
-
-  /// Updates mastery level for a verse
-  ///
-  /// [verseId] - UUID of the verse
-  /// [newMasteryLevel] - New mastery level
-  ///
-  /// Returns updated MasteryProgressEntity on success.
-  Future<Either<Failure, MasteryProgressEntity>> updateMasteryLevel({
-    required String verseId,
-    required MasteryLevel newMasteryLevel,
-  });
 
   // ==========================================================================
   // DAILY GOAL METHODS (Sprint 2 - Memory Verses Enhancement)
@@ -237,26 +211,6 @@ abstract class MemoryVerseRepository {
   /// Returns goal targets and completion status.
   Future<Either<Failure, DailyGoalEntity>> getDailyGoal();
 
-  /// Updates daily goal progress after practice
-  ///
-  /// [isNewVerse] - True if adding a new verse, false if reviewing
-  ///
-  /// Returns updated DailyGoalEntity on success.
-  Future<Either<Failure, DailyGoalEntity>> updateDailyGoalProgress({
-    required bool isNewVerse,
-  });
-
-  /// Sets custom daily goal targets
-  ///
-  /// [targetReviews] - Number of reviews to complete daily
-  /// [targetNewVerses] - Number of new verses to add daily
-  ///
-  /// Returns updated DailyGoalEntity on success.
-  Future<Either<Failure, DailyGoalEntity>> setDailyGoalTargets({
-    required int targetReviews,
-    required int targetNewVerses,
-  });
-
   // ==========================================================================
   // CHALLENGE METHODS (Sprint 2 - Memory Verses Enhancement)
   // ==========================================================================
@@ -266,15 +220,6 @@ abstract class MemoryVerseRepository {
   /// Returns ongoing weekly/monthly challenges with
   /// progress tracking and time remaining.
   Future<Either<Failure, List<MemoryChallengeEntity>>> getActiveChallenges();
-
-  /// Claims challenge reward
-  ///
-  /// [challengeId] - UUID of the challenge to claim
-  ///
-  /// Returns updated challenge and XP bonus on success.
-  Future<Either<Failure, (MemoryChallengeEntity, int)>> claimChallengeReward({
-    required String challengeId,
-  });
 
   /// Fetches Memory Champions Leaderboard
   ///

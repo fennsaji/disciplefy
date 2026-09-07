@@ -13,7 +13,14 @@ export type AdLocale = "en" | "hi" | "ml";
 export interface HouseAd {
   id: string;
   title: Record<AdLocale, string>;
+  /** Contextual headline used when the post has a usable tag. `{topic}` is
+   * replaced with it. Falls back to `title` when the post has no tag, so a
+   * post without tags never renders a dangling template. */
+  titleWithTopic?: Record<AdLocale, string>;
   subtitle: Record<AdLocale, string>;
+  /** Text of the action affordance. Without one the card reads as a note
+   * rather than something to open. */
+  ctaLabel: Record<AdLocale, string>;
   href: string;
   gradient: string;
   /** Overrides the card's badge text (default "Sponsored"). Use for
@@ -29,18 +36,43 @@ export interface HouseAd {
 export const ADS: HouseAd[] = [
   {
     id: "disciplefy-house",
+    // Generic headline, used when the post carries no tag to hook onto.
     title: {
-      en: "Generate your own study guide",
-      hi: "अपनी खुद की अध्ययन गाइड बनाएं",
-      ml: "നിങ്ങളുടെ സ്വന്തം പഠന ഗൈഡ് സൃഷ്ടിക്കുക",
+      en: "Study any passage deeper",
+      hi: "किसी भी अंश का गहरा अध्ययन करें",
+      ml: "ഏതു ഭാഗവും ആഴത്തിൽ പഠിക്കാം",
     },
+    // Contextual headline — continues the thought the reader is already
+    // having instead of interrupting with a different one.
+    titleWithTopic: {
+      en: "Go deeper on {topic}",
+      hi: "{topic} पर और गहराई से जानें",
+      ml: "{topic} കൂടുതൽ ആഴത്തിൽ പഠിക്കാം",
+    },
+    // Written to be wanted, not merely believed. The earlier version listed
+    // what a guide contains, which reassures a sceptic but gives nobody a
+    // reason to tap. This opens on the reader's live question instead.
+    //
+    // The angle differs by locale on purpose. "Not translated" is noise to an
+    // English reader, who was never going to be handed a translation; to a
+    // Hindi or Malayalam reader it is the rarest thing on offer, so it leads.
+    // Claims verified: "in seconds" matches howItWorks.step2, "keep asking"
+    // is the follow-up chat feature, and native generation is real — see
+    // backend llm-config/language-configs.ts, where each language has its own
+    // instructions, examples and cultural context.
     subtitle: {
-      en: "Turn any verse or topic into a full Bible study — free, in your language",
-      hi: "किसी भी वचन या विषय को अपनी भाषा में एक पूर्ण बाइबल अध्ययन में बदलें — मुफ़्त",
-      ml: "ഏതു വാക്യമോ വിഷയമോ നിങ്ങളുടെ ഭാഷയിൽ പൂർണ്ണമായ ബൈബിൾ പഠനമാക്കി മാറ്റുക — സൗജന്യമായി",
+      en: "Whatever you're wondering about this verse, ask it. A full study guide in seconds — then keep asking until it clicks. Free.",
+      hi: "आख़िरकार, हिन्दी में लिखी गई असली बाइबल स्टडी — अनुवाद नहीं। कुछ ही सेकंड में पूरी गाइड, फिर समझ आने तक सवाल पूछते रहें। मुफ़्त।",
+      ml: "ഒടുവിൽ, മലയാളത്തിൽ സ്വാഭാവികമായി തയ്യാറാക്കിയ യഥാർത്ഥ ബൈബിൾ പഠനം — പരിഭാഷയല്ല. നിമിഷങ്ങൾക്കുള്ളിൽ പൂർണ്ണ ഗൈഡ്, പിന്നെ മനസ്സിലാകുന്നത് വരെ ചോദ്യങ്ങൾ ചോദിച്ചുകൊണ്ടിരിക്കാം. സൗജന്യം.",
     },
-    // links.disciplefy.in lists Android, iOS and web in one place.
-    href: APP_LINKS_URL,
+    ctaLabel: {
+      en: "Open free guide",
+      hi: "मुफ़्त गाइड खोलें",
+      ml: "സൗജന്യ ഗൈഡ് തുറക്കുക",
+    },
+    // ?ref=blog-ad mirrors BlogPostCTA's ?ref=blog so the two placements can
+    // be compared; without it every click from this card was unattributed.
+    href: `${APP_LINKS_URL}?ref=blog-ad`,
     gradient: "from-indigo-500 to-violet-500",
     tagLabel: "Disciplefy",
   },

@@ -30,5 +30,17 @@ export default function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|og|_next|_vercel|.*\\..*).*)"],
+  // Narrowed so the middleware only runs where next-intl actually has work to
+  // do. Excluded, in addition to the previous api/og/_next/_vercel/dotted-file
+  // exclusions:
+  //   - links      -> /links is English-only and lives outside app/[locale]/;
+  //                   the in-function bypass below already returned next() for
+  //                   it, so skipping the invocation entirely is equivalent.
+  //                   (The links.* subdomain still works: that rewrite fires on
+  //                   pathname "/", which is still matched.)
+  //   - monitoring/ingest style probes are not present in this app, so nothing
+  //     else can be excluded without risking a locale rewrite: every other
+  //     extension-less path is a real page that next-intl must map to a locale.
+  // robots.txt, sitemap.xml and favicon.ico already fall under `.*\..*`.
+  matcher: ["/((?!api|og|links|_next|_vercel|.*\\..*).*)"],
 };

@@ -20,7 +20,7 @@ Your AI-powered Bible study companion is HERE!
 🤖 AI Study Guides that explain any passage
 📚 Structured Learning Paths
 🔥 Daily streaks to build consistency
-💬 Voice conversations with AI Discipler
+💬 Voice conversations with Talk to Discipler
 
 Whether you're new to faith or a lifelong believer, 
 Disciplefy helps you go deeper in God's Word.
@@ -864,7 +864,7 @@ Day 7: Sunday blessing + weekly summary
 ### Week 2
 ```
 Day 8: Daily verse + tip: Morning devotion routine
-Day 9: Daily verse + feature: Voice Discipler
+Day 9: Daily verse + feature: Talk to Discipler
 Day 10: Daily verse + user testimonial
 Day 11: Daily verse + Bible book overview
 Day 12: Daily verse + tip: How to memorize Scripture

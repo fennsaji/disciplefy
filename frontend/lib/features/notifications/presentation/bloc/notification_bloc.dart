@@ -88,6 +88,23 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         memoryVerseReminderEnabled: event.memoryVerseReminderEnabled,
         memoryVerseOverdueEnabled: event.memoryVerseOverdueEnabled,
         memoryVerseReminderTime: domainMemoryVerseReminderTime,
+        continueLearningEnabled: event.continueLearningEnabled,
+        achievementUnlockedEnabled: event.achievementUnlockedEnabled,
+        fellowshipDailyPostEnabled: event.fellowshipDailyPostEnabled,
+        fellowshipNewPostEnabled: event.fellowshipNewPostEnabled,
+        fellowshipNewCommentEnabled: event.fellowshipNewCommentEnabled,
+        fellowshipReactionEnabled: event.fellowshipReactionEnabled,
+        fellowshipDisciplerReplyEnabled: event.fellowshipDisciplerReplyEnabled,
+        fellowshipDisciplerActivityEnabled:
+            event.fellowshipDisciplerActivityEnabled,
+        fellowshipMeetingEnabled: event.fellowshipMeetingEnabled,
+        fellowshipMeetingReminderEnabled:
+            event.fellowshipMeetingReminderEnabled,
+        fellowshipMeetingCancelledEnabled:
+            event.fellowshipMeetingCancelledEnabled,
+        fellowshipMeetingInviteEnabled: event.fellowshipMeetingInviteEnabled,
+        meetingInviteEnabled: event.meetingInviteEnabled,
+        fellowshipMentorPromotedEnabled: event.fellowshipMentorPromotedEnabled,
       ),
     );
 

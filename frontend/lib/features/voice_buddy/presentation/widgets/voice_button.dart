@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// A circular voice button widget for initiating voice conversations.
 ///
@@ -94,11 +95,10 @@ class _VoiceButtonState extends State<VoiceButton>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    final secondaryColor = theme.colorScheme.secondary;
     final isListening = widget.state == VoiceButtonState.listening;
 
     // Listening color - bright blue/cyan for clear distinction
-    const listeningColor = Color(0xFF2196F3); // Bright blue
+    const listeningColor = AppColors.brandPrimaryDeep;
 
     return GestureDetector(
       // In continuous mode: tap to toggle listening
@@ -184,11 +184,7 @@ class _VoiceButtonState extends State<VoiceButton>
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: _getGradientColors(
-                          primaryColor,
-                          secondaryColor,
-                          listeningColor,
-                        ),
+                        colors: _getGradientColors(),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -216,22 +212,25 @@ class _VoiceButtonState extends State<VoiceButton>
     );
   }
 
-  List<Color> _getGradientColors(
-      Color primary, Color secondary, Color listeningColor) {
+  /// Single-hue brand indigo ramp.
+  ///
+  /// This used to blend `colorScheme.primary` into `colorScheme.secondary` —
+  /// indigo into the brand's pale gold — which read as an off-palette purple
+  /// -to-peach wash. Staying inside the indigo family keeps the control on
+  /// brand; state is conveyed by depth and the pulse, not by a second hue.
+  List<Color> _getGradientColors() {
     switch (widget.state) {
       case VoiceButtonState.listening:
-        // Bright blue gradient for clear visual distinction
-        return [listeningColor, listeningColor.withAlpha((0.8 * 255).round())];
+        // Deepest ramp while recording — reads as "hot" without a new hue.
+        return [AppColors.brandPrimaryDeep, AppColors.brandPrimary];
       case VoiceButtonState.processing:
         return [
-          primary.withAlpha((0.5 * 255).round()),
-          secondary.withAlpha((0.5 * 255).round())
+          AppColors.brandPrimary.withAlpha((0.5 * 255).round()),
+          AppColors.brandPrimaryDeep.withAlpha((0.5 * 255).round())
         ];
       case VoiceButtonState.speaking:
-        // Same indigo/purple as idle state when AI is speaking
-        return [primary, secondary];
       case VoiceButtonState.idle:
-        return [primary, secondary];
+        return [AppColors.brandPrimary, AppColors.brandPrimaryDeep];
     }
   }
 

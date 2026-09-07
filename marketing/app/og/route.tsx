@@ -14,6 +14,27 @@ function isIndicScript(text: string): boolean {
   return /[\u0900-\u097F\u0D00-\u0D7F]/.test(text);
 }
 
+// The font was refetched over HTTP on every invocation, an entire round trip
+// before rasterising could begin — and that wait counts as Fluid Active CPU.
+// Edge isolates are reused, so memoising at module scope means warm requests do
+// no network work at all. Keyed by origin so preview and production can never
+// serve each other's asset; a rejected fetch is evicted so one failure is not
+// cached for the life of the isolate.
+const poppinsByOrigin = new Map<string, Promise<ArrayBuffer>>();
+
+function loadPoppins(origin: string): Promise<ArrayBuffer> {
+  const cached = poppinsByOrigin.get(origin);
+  if (cached) return cached;
+  const pending = fetch(new URL("/fonts/Poppins-ExtraBold.ttf", origin))
+    .then((r) => r.arrayBuffer())
+    .catch((err) => {
+      poppinsByOrigin.delete(origin);
+      throw err;
+    });
+  poppinsByOrigin.set(origin, pending);
+  return pending;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const title = searchParams.get("title") ?? "Disciplefy";
@@ -21,9 +42,7 @@ export async function GET(req: NextRequest) {
 
   const indic = isIndicScript(title);
 
-  const poppinsData = await fetch(
-    new URL("/fonts/Poppins-ExtraBold.ttf", origin)
-  ).then((r) => r.arrayBuffer());
+  const poppinsData = await loadPoppins(origin);
 
   // Shorten long titles so they don't overflow
   const displayTitle = title.length > 50 ? title.slice(0, 48) + "…" : title;
@@ -192,7 +211,7 @@ export async function GET(req: NextRequest) {
       fonts: [{ name: "Poppins", data: poppinsData, weight: 700 }],
       headers: {
         "Cache-Control":
-          "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+          "public, max-age=604800, s-maxage=604800, stale-while-revalidate=2592000",
       },
     }
   );

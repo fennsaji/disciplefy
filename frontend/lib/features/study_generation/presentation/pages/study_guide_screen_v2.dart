@@ -68,6 +68,7 @@ import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/utils/share_links.dart';
+import '../../../community/presentation/widgets/discipler_badges.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -416,7 +417,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         // are laid out before startShowCase accesses their RenderBox.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || _showcaseContext == null) return;
-          // Second+ visit: show AI Discipler cross-promo if button is in tree
+          // Second+ visit: show Talk to Discipler cross-promo if button is in tree
           if (ShowcaseKeys.disciplerHintStudyGuide.currentContext != null) {
             _pendingMarkSeen = WalkthroughScreen.disciplerHint;
             ShowCaseWidget.of(_showcaseContext!)
@@ -1496,7 +1497,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     return (currentScroll / maxScroll) >= 0.97;
   }
 
-  /// Checks if AI Discipler feature is enabled based on feature flags and user's plan
+  /// Checks if Talk to Discipler feature is enabled based on feature flags and user's plan
   bool _isAiDisciplerFeatureEnabled() {
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
@@ -1816,6 +1817,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
           if (hasDiscipler)
             _CompletionAction(
               icon: Icons.psychology_rounded,
+              leading: const DisciplerAvatar(radius: 14),
               label: 'Ask\nDiscipler',
               color: const Color(0xFFF59E0B), // amber
               onTap: () {
@@ -1993,7 +1995,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(action.icon, color: action.color, size: 26),
+            action.leading ?? Icon(action.icon, color: action.color, size: 26),
             const SizedBox(height: 6),
             Text(
               action.label,
@@ -2031,7 +2033,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     }
   }
 
-  /// Scrolls to the AI Discipler / follow-up chat section and opens it.
+  /// Scrolls to the Talk to Discipler / follow-up chat section and opens it.
   void _openDisciplerChat() {
     if (!mounted) return;
     setState(() => _isChatExpanded = true);
@@ -4121,11 +4123,9 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.auto_awesome_rounded,
-                              color: Colors.white,
-                              size: 22,
-                            ),
+                            // White glyph, not the ink-disc avatar: on a
+                            // filled indigo button the disc reads as a sticker.
+                            const DisciplerGlyph(size: 26),
                             const SizedBox(width: 8),
                             Flexible(
                               child: Text(
@@ -5478,10 +5478,15 @@ class _CompletionAction {
     required this.label,
     required this.color,
     required this.onTap,
+    this.leading,
   });
 
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
+
+  /// Optional replacement for [icon] — used by the Discipler action so it
+  /// shows the brand mark rather than a stock psychology glyph.
+  final Widget? leading;
 }

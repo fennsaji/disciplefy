@@ -29,7 +29,7 @@ Build trust, establish Disciplefy as the go-to discipleship platform, and drive 
 | Monday | How To: Generate a Study Guide | Reel, screen recording |
 | Tuesday | How To: Learning Paths | Reel, screen recording |
 | Wednesday | How To: Memory Verses | Reel, screen recording |
-| Thursday | How To: Voice Discipler | Reel, screen recording |
+| Thursday | How To: Talk to Discipler | Reel, screen recording |
 | Friday | (open) | — |
 | Saturday | (open) | — |
 | Sunday | Sunday Reflection — recap all 4 features | Carousel |

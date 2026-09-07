@@ -7,6 +7,7 @@ const AD_A: HouseAd = {
   id: "ad-a",
   title: { en: "Daily Prayer Journal", hi: "", ml: "" },
   subtitle: { en: "90-day guided devotional", hi: "", ml: "" },
+  ctaLabel: { en: "Open", hi: "", ml: "" },
   href: "https://example.com/a",
   gradient: "from-indigo-500 to-violet-500",
 };
@@ -14,6 +15,7 @@ const AD_B: HouseAd = {
   id: "ad-b",
   title: { en: "Study Bible Study Companion", hi: "", ml: "" },
   subtitle: { en: "Notes for every book", hi: "", ml: "" },
+  ctaLabel: { en: "Open", hi: "", ml: "" },
   href: "https://example.com/b",
   gradient: "from-teal-500 to-indigo-500",
 };
@@ -75,5 +77,33 @@ describe("insertAd", () => {
     const hasA = result.includes('<AdSlot id="ad-a" locale="en" />');
     const hasB = result.includes('<AdSlot id="ad-b" locale="en" />');
     expect(hasA !== hasB).toBe(true); // exactly one, never both, never neither
+  });
+});
+
+describe("insertAd topic attribute", () => {
+  it("embeds a sanitised topic when one is given", () => {
+    const out = insertAd(LONG_POST, [AD_A], "slug", "en", "forgiveness");
+    expect(out).toContain('topic="Forgiveness"');
+  });
+
+  it("omits the topic attribute when none is given", () => {
+    const out = insertAd(LONG_POST, [AD_A], "slug", "en");
+    expect(out).toContain('<AdSlot id="ad-a" locale="en" />');
+  });
+
+  it("drops a topic containing JSX-breaking characters", () => {
+    const out = insertAd(LONG_POST, [AD_A], "slug", "en", 'he said "grace"');
+    expect(out).not.toContain('"grace"');
+    expect(out).toContain("topic=");
+  });
+
+  it("turns a slug-shaped tag into readable words", () => {
+    const out = insertAd(LONG_POST, [AD_A], "slug", "en", "bible-study");
+    expect(out).toContain('topic="Bible study"');
+  });
+
+  it("drops an over-long topic rather than stretching the headline", () => {
+    const out = insertAd(LONG_POST, [AD_A], "slug", "en", "x".repeat(60));
+    expect(out).toContain('<AdSlot id="ad-a" locale="en" />');
   });
 });

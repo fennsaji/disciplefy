@@ -13,6 +13,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -374,6 +375,31 @@ async function handleChangeMentorRole(req: Request, services: ServiceContainer, 
       : { role: to }
   const { error } = await db.from('fellowship_members').update(roleUpdate).eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id)
   if (error) { console.error('[fellowship-members/role] Update error:', error); throw new AppError('DATABASE_ERROR', 'Failed to change role', 500) }
+
+  // Being made a mentor changes what the person can do, so tell them. Sent in
+  // the background: a failed push must never fail the promotion itself.
+  if (to === 'mentor') {
+    const notify = (async () => {
+      try {
+        const { data: f } = await db.from('fellowships').select('name').eq('id', body.fellowship_id).maybeSingle()
+        const name = f?.name ?? 'your fellowship'
+        await deliverOrQueue(
+          db,
+          [body.user_id],
+          {
+            title: 'You are now a mentor',
+            body: `You can now guide ${name} — manage members, post as mentor and set how they reach you.`,
+          },
+          { type: 'fellowship_mentor_promoted', fellowship_id: body.fellowship_id },
+          { kind: 'fellowship_mentor_promoted' },
+        )
+      } catch (e) {
+        console.error('[fellowship-members/role] Promotion notify failed (non-fatal):', e)
+      }
+    })()
+    if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(notify)
+  }
+
   return new Response(JSON.stringify({ success: true, data: { user_id: body.user_id, role: to } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
 

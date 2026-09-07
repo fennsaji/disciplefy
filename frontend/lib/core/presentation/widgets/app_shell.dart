@@ -22,6 +22,7 @@ import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import 'bottom_nav.dart' as bottom_nav;
 import 'max_width_wrapper.dart';
 import '../../widgets/offline_banner.dart';
+import '../../router/app_routes.dart';
 
 /// Main App Shell with Bottom Navigation
 ///
@@ -361,6 +362,10 @@ class _AppShellState extends State<AppShell>
                         currentIndex: _mapBranchIndexToTabIndex(currentIndex),
                         tabs: _getFilteredTabs(),
                         onTap: _onTabChange,
+                        // Raised centre action. Pushes the voice route rather
+                        // than switching branches, so tab state is untouched.
+                        onDisciplerTap: () =>
+                            context.push(AppRoutes.voiceConversation),
                       ),
                     ),
                   ),
@@ -384,7 +389,7 @@ class _AppShellState extends State<AppShell>
   }
 
   /// Get filtered tabs list based on feature flags
-  /// - Hides Generate tab if all study modes and AI Discipler are disabled
+  /// - Hides Generate tab if all study modes and Talk to Discipler are disabled
   /// - Hides Topics tab if learning_paths feature is disabled
   List<bottom_nav.NavTab> _getFilteredTabs() {
     final tokenBloc = sl<TokenBloc>();
@@ -411,7 +416,7 @@ class _AppShellState extends State<AppShell>
       (mode) => systemConfigService.shouldHideFeature(mode, userPlan),
     );
 
-    // Check if AI Discipler should be hidden (respects display_mode)
+    // Check if Talk to Discipler should be hidden (respects display_mode)
     final aiDisciplerDisabled =
         systemConfigService.shouldHideFeature('ai_discipler', userPlan);
 
@@ -419,7 +424,7 @@ class _AppShellState extends State<AppShell>
     final learningPathsDisabled =
         systemConfigService.shouldHideFeature('learning_paths', userPlan);
 
-    // Hide Generate tab if both ALL study modes are disabled AND AI Discipler is disabled
+    // Hide Generate tab if both ALL study modes are disabled AND Talk to Discipler is disabled
     final shouldHideGenerate = allStudyModesDisabled && aiDisciplerDisabled;
 
     // Hide Topics tab if learning_paths feature is disabled
