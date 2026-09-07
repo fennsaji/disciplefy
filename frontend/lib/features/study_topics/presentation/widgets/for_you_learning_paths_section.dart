@@ -60,6 +60,9 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
   /// Null if the user has no fellowship with an active study.
   LearningPath? _fellowshipPath;
 
+  /// Paths the user's fellowships have already finished. Never recommended.
+  Set<String> _fellowshipCompletedPathIds = const {};
+
   /// True while the fellowship path fetch is in progress.
   /// Keeps the skeleton visible until both BLoC and fellowship are ready.
   bool _isFellowshipLoading = true;
@@ -90,6 +93,11 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
       fellowshipsResult.fold(
         (_) => null,
         (fellowships) {
+          final completed =
+              fellowships.expand((f) => f.completedPathIds).toSet();
+          if (completed.isNotEmpty && mounted) {
+            setState(() => _fellowshipCompletedPathIds = completed);
+          }
           final active = fellowships
               .where((f) =>
                   f.currentStudy != null && f.currentStudy!.completedAt == null)
@@ -144,58 +152,13 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
 
   // ── Priority list builder ────────────────────────────────────────────────
 
-  List<LearningPath> _buildForYouPaths(LearningPathsLoaded state) {
-    final result = <LearningPath>[];
-
-    // 0. Fellowship active path — resolved in initState (may be from BLoC cache
-    //    or fetched directly if its category hasn't loaded yet).
-    //    Prefer the version from the current BLoC state so it reflects the
-    //    latest language after a language switch.
-    final fellowshipPathId = _fellowshipPath?.id;
-    final fellowshipPath = fellowshipPathId != null
-        ? (state.allPaths.where((p) => p.id == fellowshipPathId).firstOrNull ??
-            _fellowshipPath)
-        : null;
-
-    // 1. In-progress paths — most progressed first
-    final inProgress = state.enrolledPaths.where((p) => p.isInProgress).toList()
-      ..sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
-    result.addAll(inProgress);
-
-    // 2. Fill remaining slots from questionnaire-personalized paths (scored by
-    //    the backend algorithm based on faith_stage, spiritual_goals, etc.).
-    //    Falls back to featured paths when personalizedPaths is empty
-    //    (e.g. not yet loaded, unauthenticated, or questionnaire not completed).
-    final personalizedSource = state.personalizedPaths.isNotEmpty
-        ? state.personalizedPaths
-        : state.allPaths.where((p) => p.isFeatured).toList();
-
-    if (result.length < widget.minCount) {
-      final candidates = personalizedSource
-          .where((p) => !p.isCompleted && !result.any((r) => r.id == p.id))
-          .toList();
-      result.addAll(candidates.take(widget.minCount - result.length));
-    }
-
-    // 3. Final fallback: any non-completed path (edge case)
-    if (result.length < widget.minCount) {
-      final fallback = state.allPaths
-          .where((p) => !p.isCompleted && !result.any((r) => r.id == p.id))
-          .toList();
-      result.addAll(fallback.take(widget.minCount - result.length));
-    }
-
-    // Prepend the fellowship path at position 0 only if it's not already in
-    // the list (deduplication) and not completed. This way the fellowship
-    // commitment is visible without showing completed or duplicate paths.
-    if (fellowshipPath != null &&
-        !fellowshipPath.isCompleted &&
-        !result.any((r) => r.id == fellowshipPath.id)) {
-      result.insert(0, fellowshipPath);
-    }
-
-    return result;
-  }
+  List<LearningPath> _buildForYouPaths(LearningPathsLoaded state) =>
+      buildForYouPaths(
+        state: state,
+        fellowshipCompletedPathIds: _fellowshipCompletedPathIds,
+        fellowshipPath: _fellowshipPath,
+        minCount: widget.minCount,
+      );
 
   // ── Build ────────────────────────────────────────────────────────────────
 
@@ -377,4 +340,80 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
       ],
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Selection logic (pure — unit tested in for_you_path_selection_test.dart)
+// ---------------------------------------------------------------------------
+
+/// A path is "done" if the user finished it themselves or their fellowship
+/// finished it as a group.
+///
+/// Group study records no personal per-topic progress, so a path a fellowship
+/// worked through still reads as 0% for each member and
+/// [LearningPath.isCompleted] alone is not enough to keep it out of the
+/// recommendations.
+bool _isDone(LearningPath path, Set<String> fellowshipCompletedPathIds) =>
+    path.isCompleted || fellowshipCompletedPathIds.contains(path.id);
+
+/// Chooses the paths shown in the For You section, in priority order:
+/// the fellowship's active study, then in-progress paths, then personalized
+/// (or featured) recommendations, then anything left. Nothing already done
+/// appears at any position.
+List<LearningPath> buildForYouPaths({
+  required LearningPathsLoaded state,
+  required Set<String> fellowshipCompletedPathIds,
+  required LearningPath? fellowshipPath,
+  required int minCount,
+}) {
+  final result = <LearningPath>[];
+  bool done(LearningPath p) => _isDone(p, fellowshipCompletedPathIds);
+
+  // 0. Fellowship active path — prefer the version from the current BLoC
+  //    state so it reflects the latest language after a language switch.
+  final fellowshipPathId = fellowshipPath?.id;
+  final resolvedFellowshipPath = fellowshipPathId != null
+      ? (state.allPaths.where((p) => p.id == fellowshipPathId).firstOrNull ??
+          fellowshipPath)
+      : null;
+
+  // 1. In-progress paths — most progressed first
+  final inProgress = state.enrolledPaths
+      .where((p) => p.isInProgress && !done(p))
+      .toList()
+    ..sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
+  result.addAll(inProgress);
+
+  // 2. Fill remaining slots from questionnaire-personalized paths (scored by
+  //    the backend algorithm based on faith_stage, spiritual_goals, etc.).
+  //    Falls back to featured paths when personalizedPaths is empty
+  //    (e.g. not yet loaded, unauthenticated, or questionnaire not completed).
+  final personalizedSource = state.personalizedPaths.isNotEmpty
+      ? state.personalizedPaths
+      : state.allPaths.where((p) => p.isFeatured).toList();
+
+  if (result.length < minCount) {
+    final candidates = personalizedSource
+        .where((p) => !done(p) && !result.any((r) => r.id == p.id))
+        .toList();
+    result.addAll(candidates.take(minCount - result.length));
+  }
+
+  // 3. Final fallback: any path that is neither done nor already listed.
+  if (result.length < minCount) {
+    final fallback = state.allPaths
+        .where((p) => !done(p) && !result.any((r) => r.id == p.id))
+        .toList();
+    result.addAll(fallback.take(minCount - result.length));
+  }
+
+  // The fellowship's active study leads the list, unless it is already there
+  // or already done.
+  if (resolvedFellowshipPath != null &&
+      !done(resolvedFellowshipPath) &&
+      !result.any((r) => r.id == resolvedFellowshipPath.id)) {
+    result.insert(0, resolvedFellowshipPath);
+  }
+
+  return result;
 }

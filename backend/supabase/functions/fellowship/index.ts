@@ -120,6 +120,28 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     mentorsByFellowship.set(row.fellowship_id, list)
   }
 
+  // Paths each fellowship has already finished. The For You section hides
+  // these: a member who worked through a path with their group should not be
+  // recommended it again, even though group study records no personal
+  // per-topic progress and so leaves progress_percentage at 0.
+  const completedPathsByFellowship = new Map<string, string[]>()
+  {
+    const fellowshipIds = activeMemberships
+      .map((m: any) => m.fellowships?.id)
+      .filter((id: string | undefined): id is string => !!id)
+    if (fellowshipIds.length > 0) {
+      const { data: completedRows } = await db.from('fellowship_study')
+        .select('fellowship_id, learning_path_id')
+        .in('fellowship_id', fellowshipIds)
+        .not('completed_at', 'is', null)
+      for (const row of (completedRows ?? []) as { fellowship_id: string; learning_path_id: string }[]) {
+        const list = completedPathsByFellowship.get(row.fellowship_id) ?? []
+        list.push(row.learning_path_id)
+        completedPathsByFellowship.set(row.fellowship_id, list)
+      }
+    }
+  }
+
   const fellowships = await Promise.all(
     activeMemberships.map(async (membership: any) => {
       const fellowship = membership.fellowships as any
@@ -173,6 +195,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
         daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
         my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
+        completed_path_ids: completedPathsByFellowship.get(fellowshipId) ?? [],
         current_study: study
           ? {
               learning_path_id: study.learning_path_id,

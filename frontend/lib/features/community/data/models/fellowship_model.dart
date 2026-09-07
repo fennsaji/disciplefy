@@ -30,6 +30,9 @@ class FellowshipModel {
   /// The learning path the fellowship is currently working through, if any.
   final CurrentStudyModel? currentStudy;
 
+  /// Learning paths this fellowship has finished.
+  final List<String> completedPathIds;
+
   /// Display name of the fellowship's mentor, if available.
   final String? mentorName;
 
@@ -87,6 +90,7 @@ class FellowshipModel {
     required this.joinedAt,
     required this.createdAt,
     this.currentStudy,
+    this.completedPathIds = const [],
     this.mentorName,
     this.isPublic = false,
     this.postingPermission = 'all_members',
@@ -120,6 +124,8 @@ class FellowshipModel {
       currentStudy: currentStudyJson != null
           ? CurrentStudyModel.fromJson(currentStudyJson)
           : null,
+      completedPathIds:
+          ((json['completed_path_ids'] as List<dynamic>?) ?? []).cast<String>(),
       mentorName: json['mentor_name'] as String?,
       isPublic: json['is_public'] as bool? ?? false,
       postingPermission: json['posting_permission'] as String? ?? 'all_members',
@@ -157,6 +163,7 @@ class FellowshipModel {
         joinedAt: joinedAt,
         createdAt: createdAt,
         currentStudy: currentStudy?.toEntity(),
+        completedPathIds: completedPathIds,
         mentorName: mentorName,
         isPublic: isPublic,
         postingPermission: postingPermission,
