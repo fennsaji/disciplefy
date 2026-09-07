@@ -137,6 +137,10 @@ class SpeechService {
   }
 
   /// Stop listening for speech input.
+  ///
+  /// Callbacks stay wired until the engine has delivered its final result and
+  /// status change — clearing them here would drop the very tail this waits
+  /// for. [releaseCallbacks] is what detaches the previous session.
   Future<void> stopListening() async {
     await _speechToText.stop();
   }
@@ -144,6 +148,17 @@ class SpeechService {
   /// Cancel the current listening session without processing.
   Future<void> cancelListening() async {
     await _speechToText.cancel();
+    releaseCallbacks();
+  }
+
+  /// Detach the current session's callbacks.
+  ///
+  /// They are stored on the service but registered once with the plugin at
+  /// initialize(), so without this a disposed bloc's handlers stay wired and
+  /// fire on the next session.
+  void releaseCallbacks() {
+    _onStatusChange = null;
+    _onError = null;
   }
 
   /// Dispose of the service resources.
@@ -151,6 +166,7 @@ class SpeechService {
     if (_speechToText.isListening) {
       _speechToText.cancel();
     }
+    releaseCallbacks();
   }
 }
 
