@@ -419,6 +419,29 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
 
   /// Parses a raw JSON response body into a [Map] and validates the success
   /// flag. Throws [ServerException] when the server reports a failure.
+  /// Pulls the human-readable message out of an API error envelope.
+  ///
+  /// Edge Functions answer `{success:false, error:{code, message}}`; older
+  /// routes answer `{error: "..."}`. Returns null when neither is present, so
+  /// the caller can fall back to its own wording.
+  String? _apiErrorMessage(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) return null;
+      final error = decoded['error'];
+      if (error is Map<String, dynamic>) {
+        final message = error['message'];
+        if (message is String && message.trim().isNotEmpty) return message;
+      }
+      if (error is String && error.trim().isNotEmpty) return error;
+      final message = decoded['message'];
+      if (message is String && message.trim().isNotEmpty) return message;
+    } catch (_) {
+      // Non-JSON body — nothing safe to show.
+    }
+    return null;
+  }
+
   Map<String, dynamic> _parseResponseBody(
     String body,
     String errorCode,
@@ -972,6 +995,21 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
           await _httpService.post(url, headers: headers, body: body);
 
       if (response.statusCode != 200 && response.statusCode != 201) {
+        // 4xx here are decisions the caller can act on — the name is taken,
+        // the fellowship limit is reached, the plan does not allow it. Those
+        // carry a message written for the user, so surface it as a validation
+        // failure. Collapsing every status into ServerException showed
+        // "Server error occurred" for all of them, since server messages are
+        // deliberately hidden by ErrorMessageSanitizer.
+        if (response.statusCode >= 400 &&
+            response.statusCode < 500 &&
+            response.statusCode != 401) {
+          throw ValidationException(
+            message: _apiErrorMessage(response.body) ??
+                'Could not create the fellowship.',
+            code: 'FELLOWSHIP_CREATE_REJECTED',
+          );
+        }
         throw ServerException(
           message: 'Failed to create fellowship: ${response.statusCode}',
           code: 'FELLOWSHIP_CREATE_ERROR',
@@ -983,6 +1021,10 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         'FELLOWSHIP_CREATE_ERROR',
         'Failed to create fellowship',
       );
+    } on ValidationException {
+      // Carries the API's own, user-facing reason — must not be re-wrapped as
+      // a ServerException, whose message the sanitizer hides.
+      rethrow;
     } on ServerException {
       rethrow;
     } catch (e) {
