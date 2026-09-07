@@ -327,7 +327,7 @@ function FellowshipsTab() {
                         <input
                           type="checkbox"
                           checked={f.discipler_allowed}
-                          disabled={!f.is_official || patchMutation.isPending}
+                          disabled={patchMutation.isPending}
                           onChange={(e) => patchMutation.mutate({ fellowship_id: f.id, discipler_allowed: e.target.checked })}
                           className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
                         />
@@ -336,7 +336,7 @@ function FellowshipsTab() {
                         <input
                           type="checkbox"
                           checked={f.daily_post_allowed}
-                          disabled={!f.is_official || patchMutation.isPending}
+                          disabled={patchMutation.isPending}
                           onChange={(e) => patchMutation.mutate({ fellowship_id: f.id, daily_post_allowed: e.target.checked })}
                           className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
                         />
