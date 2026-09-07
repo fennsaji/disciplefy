@@ -206,6 +206,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     bool? fellowshipMeetingInviteEnabled,
     bool? meetingInviteEnabled,
     bool? fellowshipMentorPromotedEnabled,
+    bool? fellowshipMemberJoinedEnabled,
   }) async {
     try {
       // Check if user is authenticated
@@ -393,6 +394,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
             'meetingInviteEnabled': meetingInviteEnabled,
           if (fellowshipMentorPromotedEnabled != null)
             'fellowshipMentorPromotedEnabled': fellowshipMentorPromotedEnabled,
+          if (fellowshipMemberJoinedEnabled != null)
+            'fellowshipMemberJoinedEnabled': fellowshipMemberJoinedEnabled,
           'timezoneOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,
         },
       );

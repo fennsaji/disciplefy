@@ -964,6 +964,9 @@ class AppTranslations {
         'fellowship_new_post_title': 'New posts',
         'fellowship_new_post_description':
             'When a member shares a post in your fellowship',
+        'fellowship_member_joined_title': 'New Members',
+        'fellowship_member_joined_description':
+            'When someone joins a fellowship you mentor',
         'fellowship_comment_title': 'Comments',
         'fellowship_comment_description':
             'When someone comments on a post you follow',
@@ -3062,6 +3065,9 @@ class AppTranslations {
         'fellowship_new_post_title': 'नई पोस्ट',
         'fellowship_new_post_description':
             'जब कोई सदस्य आपके समूह में पोस्ट साझा करे',
+        'fellowship_member_joined_title': 'नए सदस्य',
+        'fellowship_member_joined_description':
+            'जब कोई आपकी फेलोशिप में शामिल हो',
         'fellowship_comment_title': 'टिप्पणियाँ',
         'fellowship_comment_description':
             'जब कोई आपकी अनुसरण की गई पोस्ट पर टिप्पणी करे',
@@ -5180,6 +5186,9 @@ class AppTranslations {
         'fellowship_new_post_title': 'പുതിയ പോസ്റ്റുകൾ',
         'fellowship_new_post_description':
             'ഒരു അംഗം നിങ്ങളുടെ കൂട്ടായ്മയിൽ പോസ്റ്റ് പങ്കിടുമ്പോൾ',
+        'fellowship_member_joined_title': 'പുതിയ അംഗങ്ങൾ',
+        'fellowship_member_joined_description':
+            'നിങ്ങൾ നയിക്കുന്ന ഫെല്ലോഷിപ്പിൽ ആരെങ്കിലും ചേരുമ്പോൾ',
         'fellowship_comment_title': 'അഭിപ്രായങ്ങൾ',
         'fellowship_comment_description':
             'നിങ്ങൾ പിന്തുടരുന്ന പോസ്റ്റിൽ ആരെങ്കിലും അഭിപ്രായം എഴുതുമ്പോൾ',

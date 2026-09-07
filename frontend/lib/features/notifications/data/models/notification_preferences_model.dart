@@ -32,6 +32,7 @@ class NotificationPreferencesModel extends NotificationPreferences {
     super.fellowshipMeetingInviteEnabled,
     super.meetingInviteEnabled,
     super.fellowshipMentorPromotedEnabled,
+    super.fellowshipMemberJoinedEnabled,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -153,6 +154,10 @@ class NotificationPreferencesModel extends NotificationPreferences {
           json['fellowship_mentor_promoted_enabled'] as bool? ??
               json['fellowshipMentorPromotedEnabled'] as bool? ??
               true,
+      fellowshipMemberJoinedEnabled:
+          json['fellowship_member_joined_enabled'] as bool? ??
+              json['fellowshipMemberJoinedEnabled'] as bool? ??
+              true,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : json['createdAt'] != null
@@ -199,6 +204,7 @@ class NotificationPreferencesModel extends NotificationPreferences {
       'fellowship_meeting_invite_enabled': fellowshipMeetingInviteEnabled,
       'meeting_invite_enabled': meetingInviteEnabled,
       'fellowship_mentor_promoted_enabled': fellowshipMentorPromotedEnabled,
+      'fellowship_member_joined_enabled': fellowshipMemberJoinedEnabled,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -233,6 +239,7 @@ class NotificationPreferencesModel extends NotificationPreferences {
       fellowshipMeetingInviteEnabled: entity.fellowshipMeetingInviteEnabled,
       meetingInviteEnabled: entity.meetingInviteEnabled,
       fellowshipMentorPromotedEnabled: entity.fellowshipMentorPromotedEnabled,
+      fellowshipMemberJoinedEnabled: entity.fellowshipMemberJoinedEnabled,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
