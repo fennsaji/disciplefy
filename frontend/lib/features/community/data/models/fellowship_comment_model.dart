@@ -29,6 +29,29 @@ class FellowshipCommentModel {
   /// Avatar URL of the comment author, or null if not set.
   final String? authorAvatarUrl;
 
+  /// True when this is a Discipler-authored draft awaiting mentor review.
+  final bool isPendingReview;
+
+  /// True when the comment content mentions the Discipler AI helper.
+  final bool mentionsDiscipler;
+
+  /// For Discipler replies that reference a generated study guide: the
+  /// foreign-key reference to `study_guides`.
+  final String? studyGuideId;
+
+  /// Title of the referenced study guide, if any.
+  final String? guideTitle;
+
+  /// Input type used to generate the referenced guide (`'scripture'` or
+  /// `'topic'`).
+  final String? guideInputType;
+
+  /// Input value used to generate the referenced guide.
+  final String? guideInputValue;
+
+  /// Language of the referenced guide (`'en'`, `'hi'`, or `'ml'`).
+  final String? guideLanguage;
+
   const FellowshipCommentModel({
     required this.id,
     required this.postId,
@@ -38,6 +61,13 @@ class FellowshipCommentModel {
     required this.createdAt,
     required this.authorDisplayName,
     this.authorAvatarUrl,
+    this.isPendingReview = false,
+    this.mentionsDiscipler = false,
+    this.studyGuideId,
+    this.guideTitle,
+    this.guideInputType,
+    this.guideInputValue,
+    this.guideLanguage,
   });
 
   /// Creates a [FellowshipCommentModel] from a JSON map (API response).
@@ -51,6 +81,13 @@ class FellowshipCommentModel {
       createdAt: json['created_at'] as String,
       authorDisplayName: json['author_display_name'] as String,
       authorAvatarUrl: json['author_avatar_url'] as String?,
+      isPendingReview: json['is_pending_review'] as bool? ?? false,
+      mentionsDiscipler: json['mentions_discipler'] as bool? ?? false,
+      studyGuideId: json['study_guide_id'] as String?,
+      guideTitle: json['guide_title'] as String?,
+      guideInputType: json['guide_input_type'] as String?,
+      guideInputValue: json['guide_input_value'] as String?,
+      guideLanguage: json['guide_language'] as String?,
     );
   }
 
@@ -64,5 +101,12 @@ class FellowshipCommentModel {
         createdAt: createdAt,
         authorDisplayName: authorDisplayName,
         authorAvatarUrl: authorAvatarUrl,
+        isPendingReview: isPendingReview,
+        mentionsDiscipler: mentionsDiscipler,
+        studyGuideId: studyGuideId,
+        guideTitle: guideTitle,
+        guideInputType: guideInputType,
+        guideInputValue: guideInputValue,
+        guideLanguage: guideLanguage,
       );
 }

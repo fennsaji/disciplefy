@@ -5,6 +5,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../../domain/entities/sync_calendar_result.dart';
 import '../models/blocked_user_model.dart';
+import '../models/discipler_activity_model.dart';
 import '../models/fellowship_comment_model.dart';
 import '../models/fellowship_meeting_model.dart';
 import '../models/fellowship_member_model.dart';
@@ -91,6 +92,9 @@ abstract class CommunityRemoteDatasource {
     String language = 'en',
     String postingPermission = 'all_members',
     bool unlimitedMembers = false,
+    bool isOfficial = false,
+    bool disciplerAllowed = false,
+    bool dailyPostAllowed = false,
   });
 
   /// Sets (or replaces) the active learning path for [fellowshipId].
@@ -149,6 +153,60 @@ abstract class CommunityRemoteDatasource {
     String? name,
     String? description,
     int? maxMembers,
+    String? postingPermission,
+    bool? isOfficial,
+    bool? disciplerAllowed,
+    bool? dailyPostAllowed,
+    String? disciplerReplyMode,
+    String? disciplerReplyScope,
+    int? disciplerReplyDelayMin,
+    bool? disciplerReactEnabled,
+    bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
+    bool? disciplerActivityPush,
+  });
+
+  /// Promotes [userId] to mentor in [fellowshipId] (mentor only).
+  Future<void> promoteMember({
+    required String fellowshipId,
+    required String userId,
+  });
+
+  /// Demotes [userId] from mentor to member in [fellowshipId] (mentor only).
+  Future<void> demoteMember({
+    required String fellowshipId,
+    required String userId,
+  });
+
+  /// Sets the caller's own mentor contact info for [fellowshipId] (mentor
+  /// only). Both [whatsapp] and [email] are always sent — pass `null` for
+  /// either to clear that channel. Returns the confirmed `(whatsapp,
+  /// email)` from the server.
+  Future<({String? whatsapp, String? email})> updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  });
+
+  /// Approves a Discipler-authored draft comment, publishing it.
+  Future<void> approveDisciplerComment(String commentId);
+
+  /// Discards a Discipler-authored draft comment.
+  Future<void> discardDisciplerComment(String commentId);
+
+  /// Returns a page of Discipler activity for [fellowshipId], optionally
+  /// filtered by [kind].
+  Future<
+      ({
+        List<DisciplerActivityModel> items,
+        bool hasMore,
+        String? nextCursor
+      })> getDisciplerActivity({
+    required String fellowshipId,
+    String? kind,
+    String? cursor,
+    int limit = 30,
   });
 
   /// Lists active invite links for [fellowshipId] (mentor only).
@@ -288,6 +346,18 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       '/functions/v1/fellowship-members/remove';
   static const String _fellowshipTransferMentorEndpoint =
       '/functions/v1/fellowship-members/transfer';
+  static const String _fellowshipMembersPromoteEndpoint =
+      '/functions/v1/fellowship-members/promote';
+  static const String _fellowshipMembersDemoteEndpoint =
+      '/functions/v1/fellowship-members/demote';
+  static const String _fellowshipMembersContactEndpoint =
+      '/functions/v1/fellowship-members/contact';
+  static const String _fellowshipCommentsApproveEndpoint =
+      '/functions/v1/fellowship-comments/approve';
+  static const String _fellowshipCommentsDiscardEndpoint =
+      '/functions/v1/fellowship-comments/discard';
+  static const String _fellowshipDisciplerActivityEndpoint =
+      '/functions/v1/fellowship/discipler-activity';
 
   // fellowship-blocks (block, unblock, list)
   static const String _fellowshipBlocksEndpoint =
@@ -362,6 +432,38 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       );
     }
     return json['data'] as Map<String, dynamic>;
+  }
+
+  /// Posts [body] to [endpoint] and validates the response, discarding any
+  /// payload. Shared by the simple mentor-role and Discipler-review actions.
+  Future<void> _postAction(
+    String endpoint,
+    Map<String, dynamic> body,
+    String code,
+    String failMsg,
+  ) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.post(
+        '$_baseUrl$endpoint',
+        headers: headers,
+        body: jsonEncode(body),
+      );
+      if (response.statusCode >= 400) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final err = json['error'];
+        throw ServerException(
+          message: err is String
+              ? err
+              : (err is Map ? err['message'] as String? : null) ?? failMsg,
+          code: code,
+        );
+      }
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: '$failMsg: $e', code: code);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -842,6 +944,9 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     String language = 'en',
     String postingPermission = 'all_members',
     bool unlimitedMembers = false,
+    bool isOfficial = false,
+    bool disciplerAllowed = false,
+    bool dailyPostAllowed = false,
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipCreateEndpoint';
@@ -857,6 +962,9 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       bodyMap['is_public'] = isPublic;
       bodyMap['language'] = language;
       bodyMap['posting_permission'] = postingPermission;
+      if (isOfficial) bodyMap['is_official'] = true;
+      if (disciplerAllowed) bodyMap['discipler_allowed'] = true;
+      if (dailyPostAllowed) bodyMap['daily_post_allowed'] = true;
       final body = jsonEncode(bodyMap);
 
       final headers = await _httpService.createHeaders();
@@ -1248,6 +1356,18 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     String? name,
     String? description,
     int? maxMembers,
+    String? postingPermission,
+    bool? isOfficial,
+    bool? disciplerAllowed,
+    bool? dailyPostAllowed,
+    String? disciplerReplyMode,
+    String? disciplerReplyScope,
+    int? disciplerReplyDelayMin,
+    bool? disciplerReactEnabled,
+    bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
+    bool? disciplerActivityPush,
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipUpdateEndpoint';
@@ -1255,6 +1375,38 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       if (name != null) bodyMap['name'] = name;
       if (description != null) bodyMap['description'] = description;
       if (maxMembers != null) bodyMap['max_members'] = maxMembers;
+      if (postingPermission != null) {
+        bodyMap['posting_permission'] = postingPermission;
+      }
+      if (isOfficial != null) bodyMap['is_official'] = isOfficial;
+      if (disciplerAllowed != null) {
+        bodyMap['discipler_allowed'] = disciplerAllowed;
+      }
+      if (dailyPostAllowed != null) {
+        bodyMap['daily_post_allowed'] = dailyPostAllowed;
+      }
+      if (disciplerReplyMode != null) {
+        bodyMap['discipler_reply_mode'] = disciplerReplyMode;
+      }
+      if (disciplerReplyScope != null) {
+        bodyMap['discipler_reply_scope'] = disciplerReplyScope;
+      }
+      if (disciplerReplyDelayMin != null) {
+        bodyMap['discipler_reply_delay_min'] = disciplerReplyDelayMin;
+      }
+      if (disciplerReactEnabled != null) {
+        bodyMap['discipler_react_enabled'] = disciplerReactEnabled;
+      }
+      if (dailyPostOn != null) bodyMap['daily_post_on'] = dailyPostOn;
+      if (dailyPostFrequencyDays != null) {
+        bodyMap['daily_post_frequency_days'] = dailyPostFrequencyDays;
+      }
+      if (dailyPostAutoAdvance != null) {
+        bodyMap['daily_post_auto_advance'] = dailyPostAutoAdvance;
+      }
+      if (disciplerActivityPush != null) {
+        bodyMap['discipler_activity_push'] = disciplerActivityPush;
+      }
       final body = jsonEncode(bodyMap);
 
       final headers = await _httpService.createHeaders();
@@ -1816,6 +1968,173 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       throw ServerException(
         message: 'Failed to sync calendar: $e',
         code: 'CALENDAR_SYNC_ERROR',
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fellowship members — promote / demote
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> promoteMember({
+    required String fellowshipId,
+    required String userId,
+  }) =>
+      _postAction(
+        _fellowshipMembersPromoteEndpoint,
+        {'fellowship_id': fellowshipId, 'user_id': userId},
+        'FELLOWSHIP_PROMOTE_ERROR',
+        'Failed to promote member',
+      );
+
+  @override
+  Future<void> demoteMember({
+    required String fellowshipId,
+    required String userId,
+  }) =>
+      _postAction(
+        _fellowshipMembersDemoteEndpoint,
+        {'fellowship_id': fellowshipId, 'user_id': userId},
+        'FELLOWSHIP_DEMOTE_ERROR',
+        'Failed to demote member',
+      );
+
+  @override
+  Future<({String? whatsapp, String? email})> updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  }) async {
+    try {
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.post(
+        '$_baseUrl$_fellowshipMembersContactEndpoint',
+        headers: headers,
+        body: jsonEncode({
+          'fellowship_id': fellowshipId,
+          'whatsapp': whatsapp,
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode >= 400) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final err = json['error'];
+        throw ServerException(
+          message: err is String
+              ? err
+              : (err is Map ? err['message'] as String? : null) ??
+                  'Failed to update mentor contact',
+          code: 'FELLOWSHIP_CONTACT_ERROR',
+        );
+      }
+
+      final data = _parseResponseBody(
+        response.body,
+        'FELLOWSHIP_CONTACT_ERROR',
+        'Failed to update mentor contact',
+      );
+
+      return (
+        whatsapp: data['mentor_whatsapp'] as String?,
+        email: data['mentor_email'] as String?,
+      );
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to update mentor contact: $e',
+        code: 'FELLOWSHIP_CONTACT_ERROR',
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Discipler comments — approve / discard
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> approveDisciplerComment(String commentId) => _postAction(
+        _fellowshipCommentsApproveEndpoint,
+        {'comment_id': commentId},
+        'DISCIPLER_APPROVE_ERROR',
+        'Failed to approve reply',
+      );
+
+  @override
+  Future<void> discardDisciplerComment(String commentId) => _postAction(
+        _fellowshipCommentsDiscardEndpoint,
+        {'comment_id': commentId},
+        'DISCIPLER_DISCARD_ERROR',
+        'Failed to discard reply',
+      );
+
+  // ---------------------------------------------------------------------------
+  // Discipler activity — list
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<
+      ({
+        List<DisciplerActivityModel> items,
+        bool hasMore,
+        String? nextCursor
+      })> getDisciplerActivity({
+    required String fellowshipId,
+    String? kind,
+    String? cursor,
+    int limit = 30,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'fellowship_id': fellowshipId,
+        'limit': limit.toString(),
+        if (kind != null) 'kind': kind,
+        if (cursor != null) 'cursor': cursor,
+      };
+
+      final uri = Uri.parse('$_baseUrl$_fellowshipDisciplerActivityEndpoint')
+          .replace(queryParameters: queryParams);
+
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.get(uri.toString(), headers: headers);
+
+      if (response.statusCode != 200) {
+        throw ServerException(
+          message: 'Failed to fetch Discipler activity: ${response.statusCode}',
+          code: 'DISCIPLER_ACTIVITY_ERROR',
+        );
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      if (json['success'] != true) {
+        throw ServerException(
+          message:
+              (json['error'] as Map<String, dynamic>?)?['message'] as String? ??
+                  'Failed to fetch Discipler activity',
+          code: 'DISCIPLER_ACTIVITY_ERROR',
+        );
+      }
+
+      final list = json['data'] as List<dynamic>;
+      final pagination = json['pagination'] as Map<String, dynamic>? ?? {};
+      final models = list
+          .map(
+              (j) => DisciplerActivityModel.fromJson(j as Map<String, dynamic>))
+          .toList();
+
+      return (
+        items: models,
+        hasMore: pagination['has_more'] as bool? ?? false,
+        nextCursor: pagination['next_cursor'] as String?,
+      );
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to fetch Discipler activity: $e',
+        code: 'DISCIPLER_ACTIVITY_ERROR',
       );
     }
   }

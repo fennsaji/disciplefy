@@ -14,6 +14,13 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { FCMService } from '../_shared/fcm-service.ts'
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
+import { classifyPost, mentionsDiscipler, runAfterFor, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
+import {
+  enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, reactAsDiscipler, recordActivity,
+} from '../_shared/services/discipler-service.ts'
+import { handleDisciplerReply } from './discipler-reply.ts'
+import { handleDailyTeaser } from './daily-teaser.ts'
+import { handleNotify } from './notify.ts'
 
 // ---------------------------------------------------------------------------
 // List posts  GET /fellowship-posts
@@ -54,6 +61,11 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
   // compared structurally against SupabaseLike. The runtime shape is identical.
   const hiddenIds = await hiddenAuthorIds(db as unknown as SupabaseLike, user.id, fellowshipId)
 
+  const { data: viewerIsMentor } = await db.rpc('is_fellowship_mentor', {
+    p_fellowship_id: fellowshipId,
+    p_user_id: user.id
+  })
+
   if (countByTopic) {
     let topicQuery = db
       .from('fellowship_posts')
@@ -78,7 +90,7 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
 
   let query = db
     .from('fellowship_posts')
-    .select('id, fellowship_id, topic_id, topic_title, guide_title, lesson_index, study_guide_id, guide_input_type, guide_language, content, post_type, reaction_counts, author_user_id, is_deleted, created_at')
+    .select('id, fellowship_id, topic_id, topic_title, guide_title, lesson_index, study_guide_id, guide_input_type, guide_language, content, post_type, reaction_counts, author_user_id, is_deleted, created_at, mentions_discipler')
     .eq('fellowship_id', fellowshipId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
@@ -129,6 +141,7 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
     ),
     (() => {
       let q = db.from('fellowship_comments').select('post_id').in('post_id', postIds).eq('is_deleted', false)
+      if (!viewerIsMentor) q = q.eq('is_pending_review', false)
       if (hiddenIds.length > 0) q = q.not('author_user_id', 'in', `(${hiddenIds.join(',')})`)
       return q
     })(),
@@ -170,7 +183,8 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
       author_display_name: author?.displayName ?? 'Unknown Member',
       author_avatar_url: author?.avatarUrl ?? null,
       comment_count: commentCountMap.get(post.id) ?? 0,
-      user_reaction: reactionMap.get(post.id) ?? null
+      user_reaction: reactionMap.get(post.id) ?? null,
+      mentions_discipler: post.mentions_discipler ?? false
     }
   })
 
@@ -260,6 +274,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       author_user_id: user.id,
       content: body.content.trim(),
       post_type: postType,
+      mentions_discipler: mentionsDiscipler(body.content),
       ...(body.topic_id        ? { topic_id:        body.topic_id }        : {}),
       ...(body.topic_title     ? { topic_title:      body.topic_title }     : {}),
       ...(body.guide_title     ? { guide_title:      body.guide_title }     : {}),
@@ -291,12 +306,12 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   if (membersResult.error) console.error('[fellowship-posts/create] Members fetch error:', membersResult.error)
   const members = membersResult.data ?? []
 
-  // Question posts get a dedicated push to the mentor below. The mentor is
-  // also an active member, so they must be dropped from the broadcast here or
-  // they receive two notifications for the same post.
-  const mentorUserId = fellowshipRow?.mentor_user_id
-  const mentorGetsQuestionPush =
-    postType === 'question' && !!mentorUserId && mentorUserId !== user.id
+  // Every active member — mentors included — gets exactly one push per new
+  // post; private mentor contact covers the "reach a person" case, so there
+  // is no separate mentor-only broadcast to de-duplicate against.
+  const { data: mentorRows } = await db.rpc('fellowship_mentor_ids', { p_fellowship_id: body.fellowship_id })
+  const mentorIds = new Set(((mentorRows ?? []) as { user_id: string }[]).map((r) => r.user_id))
+  const authorIsMentor = mentorIds.has(user.id)
 
   // Send FCM to all other active members (fire-and-forget), excluding anyone
   // in a mutual block with the author so blocked users don't get notified of
@@ -309,7 +324,6 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         const memberIds = members
           .map((m: { user_id: string }) => m.user_id)
           .filter((id: string) => !blockedIds.has(id))
-          .filter((id: string) => !(mentorGetsQuestionPush && id === mentorUserId))
         if (memberIds.length === 0) return
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
@@ -325,29 +339,35 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
     })()
   }
 
-  // Question posts: notify the mentor directly instead of via the broadcast
-  // above (skip if the mentor asked it themselves).
-  if (mentorGetsQuestionPush) {
-    const questionNotifyPromise = (async () => {
-      try {
-        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', mentorUserId)
-        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-        if (tokens.length > 0) {
-          const fcm = new FCMService()
-          const preview = post.content.length > 80 ? post.content.substring(0, 80) + '…' : post.content
-          await fcm.sendBatchNotifications(
-            tokens,
-            { title: `❓ ${authorDisplayName} asked a question`, body: preview },
-            { type: 'fellowship_question', fellowship_id: body.fellowship_id, post_id: post.id }
-          )
-        }
-      } catch (err) { console.error('[fellowship-posts/create] mentor question FCM error (non-fatal):', err) }
-    })()
-    // Keep the isolate alive past the response so the push actually sends.
-    if (typeof EdgeRuntime !== 'undefined') {
-      EdgeRuntime.waitUntil(questionNotifyPromise)
+  // ── Discipler ────────────────────────────────────────────────────────
+  const disciplerPromise = (async () => {
+    try {
+      const [settings, globalEnabled] = await Promise.all([
+        loadFellowshipDiscipler(db, body.fellowship_id), isDisciplerGloballyEnabled(db),
+      ])
+      if (!settings) return
+      const decision = classifyPost({
+        content: post.content, postType, topicId: post.topic_id ?? null,
+        authorIsMentor, authorUserId: user.id, settings, globalEnabled,
+      })
+      if (!decision) return
+      if (decision.trigger === 'react') {
+        await reactAsDiscipler(db, { postId: post.id, fellowshipId: body.fellowship_id, reaction: decision.reaction, currentCounts: {} })
+        await recordActivity(db, {
+          fellowshipId: body.fellowship_id, kind: 'react', postId: post.id, reaction: decision.reaction,
+          summary: `Reacted ${decision.reaction} to ${authorDisplayName}'s ${postType}`, pushNow: false,
+        })
+        return
+      }
+      await enqueueReply(db, {
+        postId: post.id, fellowshipId: body.fellowship_id, trigger: decision.trigger,
+        runAfter: runAfterFor(decision.delayMinutes),
+      })
+    } catch (err) {
+      console.error('[fellowship-posts/create] Discipler hook error (non-fatal):', err)
     }
-  }
+  })()
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(disciplerPromise)
 
   return new Response(
     JSON.stringify({
@@ -371,7 +391,8 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         author_display_name: authorDisplayName,
         author_avatar_url: authorAvatarUrl,
         comment_count: 0,
-        user_reaction: null
+        user_reaction: null,
+        mentions_discipler: post.mentions_discipler ?? false
       }
     }),
     { status: 201, headers: { 'Content-Type': 'application/json' } }
@@ -423,7 +444,10 @@ async function handleDeletePost(req: Request, services: ServiceContainer): Promi
       console.error('[fellowship-posts/delete] RPC error:', rpcError)
       throw new AppError('DATABASE_ERROR', 'Failed to verify permissions', 500)
     }
-    if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Cannot delete this post', 403)
+    if (!isMentor) {
+      const { data: profile } = await db.from('user_profiles').select('is_admin').eq('id', user.id).maybeSingle()
+      if (profile?.is_admin !== true) throw new AppError('PERMISSION_DENIED', 'Cannot delete this post', 403)
+    }
   }
 
   const { error } = await db
@@ -601,6 +625,10 @@ async function handleCreateReport(req: Request, services: ServiceContainer): Pro
   }
   if (!isMember) throw new AppError('PERMISSION_DENIED', 'Must be a fellowship member', 403)
 
+  const table = body.content_type === 'post' ? 'fellowship_posts' : 'fellowship_comments'
+  const { data: target } = await db.from(table).select('author_user_id').eq('id', body.content_id).maybeSingle()
+  if (target?.author_user_id === DISCIPLER_USER_ID) throw new AppError('VALIDATION_ERROR', 'Discipler content cannot be reported; ask a mentor to remove it', 400)
+
   const { data: report, error } = await db
     .from('fellowship_reports')
     .insert({
@@ -633,9 +661,16 @@ async function handleCreateReport(req: Request, services: ServiceContainer): Pro
 // ---------------------------------------------------------------------------
 
 async function handlePosts(req: Request, services: ServiceContainer): Promise<Response> {
-  await checkMaintenanceMode(req, services)
-
   const pathname = new URL(req.url).pathname
+
+  if (req.method === 'POST') {
+    if (pathname.endsWith('/discipler-reply')) return handleDisciplerReply(req, services)
+    if (pathname.endsWith('/daily-teaser')) return handleDailyTeaser(req, services)
+    if (pathname.endsWith('/notify')) return handleNotify(req, services)
+  }
+
+  // Background/internal routes must still run during maintenance mode.
+  await checkMaintenanceMode(req, services)
 
   if (req.method === 'POST') {
     if (pathname.endsWith('/react'))  return handleToggleReaction(req, services)

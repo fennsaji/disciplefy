@@ -330,6 +330,9 @@ class MockCommunityRepository extends _i1.Mock
     String? language = 'en',
     String? postingPermission = 'all_members',
     bool? unlimitedMembers = false,
+    bool? isOfficial = false,
+    bool? disciplerAllowed = false,
+    bool? dailyPostAllowed = false,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -343,6 +346,9 @@ class MockCommunityRepository extends _i1.Mock
             #language: language,
             #postingPermission: postingPermission,
             #unlimitedMembers: unlimitedMembers,
+            #isOfficial: isOfficial,
+            #disciplerAllowed: disciplerAllowed,
+            #dailyPostAllowed: dailyPostAllowed,
           },
         ),
         returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
@@ -359,6 +365,9 @@ class MockCommunityRepository extends _i1.Mock
               #language: language,
               #postingPermission: postingPermission,
               #unlimitedMembers: unlimitedMembers,
+              #isOfficial: isOfficial,
+              #disciplerAllowed: disciplerAllowed,
+              #dailyPostAllowed: dailyPostAllowed,
             },
           ),
         )),
@@ -600,6 +609,18 @@ class MockCommunityRepository extends _i1.Mock
     String? name,
     String? description,
     int? maxMembers,
+    String? postingPermission,
+    bool? isOfficial,
+    bool? disciplerAllowed,
+    bool? dailyPostAllowed,
+    String? disciplerReplyMode,
+    String? disciplerReplyScope,
+    int? disciplerReplyDelayMin,
+    bool? disciplerReactEnabled,
+    bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
+    bool? disciplerActivityPush,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -610,6 +631,18 @@ class MockCommunityRepository extends _i1.Mock
             #name: name,
             #description: description,
             #maxMembers: maxMembers,
+            #postingPermission: postingPermission,
+            #isOfficial: isOfficial,
+            #disciplerAllowed: disciplerAllowed,
+            #dailyPostAllowed: dailyPostAllowed,
+            #disciplerReplyMode: disciplerReplyMode,
+            #disciplerReplyScope: disciplerReplyScope,
+            #disciplerReplyDelayMin: disciplerReplyDelayMin,
+            #disciplerReactEnabled: disciplerReactEnabled,
+            #dailyPostOn: dailyPostOn,
+            #dailyPostFrequencyDays: dailyPostFrequencyDays,
+            #dailyPostAutoAdvance: dailyPostAutoAdvance,
+            #disciplerActivityPush: disciplerActivityPush,
           },
         ),
         returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
@@ -623,10 +656,185 @@ class MockCommunityRepository extends _i1.Mock
               #name: name,
               #description: description,
               #maxMembers: maxMembers,
+              #postingPermission: postingPermission,
+              #isOfficial: isOfficial,
+              #disciplerAllowed: disciplerAllowed,
+              #dailyPostAllowed: dailyPostAllowed,
+              #disciplerReplyMode: disciplerReplyMode,
+              #disciplerReplyScope: disciplerReplyScope,
+              #disciplerReplyDelayMin: disciplerReplyDelayMin,
+              #disciplerReactEnabled: disciplerReactEnabled,
+              #dailyPostOn: dailyPostOn,
+              #dailyPostFrequencyDays: dailyPostFrequencyDays,
+              #dailyPostAutoAdvance: dailyPostAutoAdvance,
+              #disciplerActivityPush: disciplerActivityPush,
             },
           ),
         )),
       ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> promoteMember({
+    required String? fellowshipId,
+    required String? userId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #promoteMember,
+          [],
+          {
+            #fellowshipId: fellowshipId,
+            #userId: userId,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #promoteMember,
+            [],
+            {
+              #fellowshipId: fellowshipId,
+              #userId: userId,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> demoteMember({
+    required String? fellowshipId,
+    required String? userId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #demoteMember,
+          [],
+          {
+            #fellowshipId: fellowshipId,
+            #userId: userId,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #demoteMember,
+            [],
+            {
+              #fellowshipId: fellowshipId,
+              #userId: userId,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, ({String? email, String? whatsapp})>>
+      updateMentorContact({
+    required String? fellowshipId,
+    String? whatsapp,
+    String? email,
+  }) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #updateMentorContact,
+              [],
+              {
+                #fellowshipId: fellowshipId,
+                #whatsapp: whatsapp,
+                #email: email,
+              },
+            ),
+            returnValue: _i4.Future<
+                    _i2.Either<_i5.Failure,
+                        ({String? email, String? whatsapp})>>.value(
+                _FakeEither_0<_i5.Failure, ({String? email, String? whatsapp})>(
+              this,
+              Invocation.method(
+                #updateMentorContact,
+                [],
+                {
+                  #fellowshipId: fellowshipId,
+                  #whatsapp: whatsapp,
+                  #email: email,
+                },
+              ),
+            )),
+          ) as _i4.Future<
+              _i2.Either<_i5.Failure, ({String? email, String? whatsapp})>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> approveDisciplerComment(
+          String? commentId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #approveDisciplerComment,
+          [commentId],
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #approveDisciplerComment,
+            [commentId],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> discardDisciplerComment(
+          String? commentId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #discardDisciplerComment,
+          [commentId],
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+            _FakeEither_0<_i5.Failure, void>(
+          this,
+          Invocation.method(
+            #discardDisciplerComment,
+            [commentId],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i3.DisciplerActivityPage>>
+      getDisciplerActivity({
+    required String? fellowshipId,
+    String? kind,
+    String? cursor,
+    int? limit = 30,
+  }) =>
+          (super.noSuchMethod(
+            Invocation.method(
+              #getDisciplerActivity,
+              [],
+              {
+                #fellowshipId: fellowshipId,
+                #kind: kind,
+                #cursor: cursor,
+                #limit: limit,
+              },
+            ),
+            returnValue: _i4.Future<
+                    _i2.Either<_i5.Failure, _i3.DisciplerActivityPage>>.value(
+                _FakeEither_0<_i5.Failure, _i3.DisciplerActivityPage>(
+              this,
+              Invocation.method(
+                #getDisciplerActivity,
+                [],
+                {
+                  #fellowshipId: fellowshipId,
+                  #kind: kind,
+                  #cursor: cursor,
+                  #limit: limit,
+                },
+              ),
+            )),
+          ) as _i4.Future<_i2.Either<_i5.Failure, _i3.DisciplerActivityPage>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, List<Map<String, dynamic>>>> listInvites(

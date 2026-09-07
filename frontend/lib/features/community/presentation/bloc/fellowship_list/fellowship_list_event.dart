@@ -38,6 +38,17 @@ class FellowshipCreateRequested extends FellowshipListEvent {
   /// When true, sends an unlimited member cap (app-admin only).
   final bool unlimitedMembers;
 
+  /// True when this is an official Disciplefy fellowship (admin only).
+  final bool isOfficial;
+
+  /// True when the Discipler AI helper may participate (admin only, requires
+  /// [isOfficial]).
+  final bool disciplerAllowed;
+
+  /// True when a daily study post is allowed (admin only, requires
+  /// [isOfficial]).
+  final bool dailyPostAllowed;
+
   const FellowshipCreateRequested({
     required this.name,
     this.description,
@@ -46,6 +57,9 @@ class FellowshipCreateRequested extends FellowshipListEvent {
     this.language = 'en',
     this.postingPermission = 'all_members',
     this.unlimitedMembers = false,
+    this.isOfficial = false,
+    this.disciplerAllowed = false,
+    this.dailyPostAllowed = false,
   });
 
   @override
@@ -56,6 +70,9 @@ class FellowshipCreateRequested extends FellowshipListEvent {
         isPublic,
         language,
         postingPermission,
-        unlimitedMembers
+        unlimitedMembers,
+        isOfficial,
+        disciplerAllowed,
+        dailyPostAllowed,
       ];
 }

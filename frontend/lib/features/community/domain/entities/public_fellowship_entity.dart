@@ -26,14 +26,18 @@ class PublicFellowshipEntity extends Equatable {
   /// Total number of members currently in the fellowship.
   final int memberCount;
 
-  /// Maximum number of members the fellowship can accommodate.
-  final int maxMembers;
+  /// Maximum number of members the fellowship can accommodate, or null when
+  /// unlimited.
+  final int? maxMembers;
 
   /// Title of the study the fellowship is currently working through, if any.
   final String? currentStudyTitle;
 
   /// Display name of the fellowship's mentor.
   final String? mentorName;
+
+  /// True when this is an official Disciplefy fellowship.
+  final bool isOfficial;
 
   const PublicFellowshipEntity({
     required this.id,
@@ -44,7 +48,11 @@ class PublicFellowshipEntity extends Equatable {
     required this.maxMembers,
     this.currentStudyTitle,
     this.mentorName,
+    this.isOfficial = false,
   });
+
+  /// True when the fellowship has no member cap.
+  bool get isUnlimited => maxMembers == null;
 
   @override
   List<Object?> get props => [
@@ -56,5 +64,6 @@ class PublicFellowshipEntity extends Equatable {
         maxMembers,
         currentStudyTitle,
         mentorName,
+        isOfficial,
       ];
 }

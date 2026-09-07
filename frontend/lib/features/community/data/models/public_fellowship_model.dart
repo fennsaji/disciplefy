@@ -22,14 +22,18 @@ class PublicFellowshipModel {
   /// Total number of members currently in the fellowship.
   final int memberCount;
 
-  /// Maximum number of members the fellowship can accommodate.
-  final int maxMembers;
+  /// Maximum number of members the fellowship can accommodate, or null when
+  /// unlimited.
+  final int? maxMembers;
 
   /// Title of the study the fellowship is currently working through, if any.
   final String? currentStudyTitle;
 
   /// Display name of the fellowship's mentor.
   final String? mentorName;
+
+  /// True when this is an official Disciplefy fellowship.
+  final bool isOfficial;
 
   const PublicFellowshipModel({
     required this.id,
@@ -40,6 +44,7 @@ class PublicFellowshipModel {
     required this.maxMembers,
     this.currentStudyTitle,
     this.mentorName,
+    this.isOfficial = false,
   });
 
   /// Creates a [PublicFellowshipModel] from a JSON map (API response).
@@ -50,9 +55,10 @@ class PublicFellowshipModel {
       description: json['description'] as String?,
       language: json['language'] as String? ?? 'en',
       memberCount: json['member_count'] as int? ?? 0,
-      maxMembers: json['max_members'] as int? ?? 12,
+      maxMembers: (json['max_members'] as num?)?.toInt(),
       currentStudyTitle: json['current_study_title'] as String?,
       mentorName: json['mentor_name'] as String?,
+      isOfficial: json['is_official'] as bool? ?? false,
     );
   }
 
@@ -66,5 +72,6 @@ class PublicFellowshipModel {
         maxMembers: maxMembers,
         currentStudyTitle: currentStudyTitle,
         mentorName: mentorName,
+        isOfficial: isOfficial,
       );
 }

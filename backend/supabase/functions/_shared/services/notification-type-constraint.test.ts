@@ -27,6 +27,9 @@ const APPLICATION_TYPES = [
   'streak_lost',
   'memory_verse_reminder',
   'memory_verse_overdue',
+  'fellowship_daily_post',
+  'fellowship_discipler_reply',
+  'fellowship_discipler_activity',
 ] as const;
 
 const HELPER_PATH = new URL('./notification-helper-service.ts', import.meta.url);

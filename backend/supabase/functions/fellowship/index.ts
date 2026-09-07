@@ -14,7 +14,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { FCMService } from '../_shared/fcm-service.ts'
+import { pushMentors } from '../_shared/services/discipler-service.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const VALID_LANGUAGES = ['en', 'hi', 'ml'] as const
@@ -43,6 +43,7 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     .select(`
       role,
       joined_at,
+      discipler_activity_push,
       fellowships (
         id,
         name,
@@ -51,7 +52,17 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         is_public,
         posting_permission,
         created_at,
-        mentor_user_id
+        mentor_user_id,
+        is_official,
+        discipler_allowed,
+        daily_post_allowed,
+        discipler_reply_mode,
+        discipler_reply_scope,
+        discipler_reply_delay_min,
+        discipler_react_enabled,
+        daily_post_on,
+        daily_post_frequency_days,
+        daily_post_auto_advance
       )
     `)
     .eq('user_id', user.id)
@@ -66,31 +77,44 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
     (m: any) => m.fellowships && m.fellowships.is_active === true
   )
 
-  const mentorIds = [...new Set(
-    activeMemberships
-      .map((m: any) => m.fellowships?.mentor_user_id as string | undefined)
-      .filter((id): id is string => !!id)
-  )]
+  const fellowshipIds = activeMemberships.map((m: any) => m.fellowships.id as string)
 
+  const { data: mentorRows, error: mentorRowsError } = fellowshipIds.length > 0
+    ? await db.from('fellowship_members').select('fellowship_id, user_id')
+        .in('fellowship_id', fellowshipIds).eq('role', 'mentor').eq('is_active', true)
+    : { data: [] as { fellowship_id: string; user_id: string }[], error: null }
+  if (mentorRowsError) {
+    console.error('[fellowship/list] Mentor rows query error:', mentorRowsError)
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch mentors', 500)
+  }
+
+  const mentorUserIds = [...new Set((mentorRows ?? []).map((r: any) => r.user_id as string))]
   const mentorEntries = await Promise.all(
-    mentorIds.map(async (userId: string) => {
+    mentorUserIds.map(async (userId: string): Promise<MentorEntry> => {
       try {
         const { data: userData } = await db.auth.admin.getUserById(userId)
-        if (!userData?.user) return { userId, name: null }
+        if (!userData?.user) return { userId, name: null, avatar: null }
         const u = userData.user
         const name: string | null =
           u.user_metadata?.full_name ?? u.user_metadata?.name ??
           u.user_metadata?.display_name ?? null
-        return { userId, name }
+        const avatar: string | null = u.user_metadata?.avatar_url ?? null
+        return { userId, name, avatar }
       } catch {
-        return { userId, name: null }
+        return { userId, name: null, avatar: null }
       }
     })
   )
 
-  const mentorNameMap = new Map<string, string | null>()
-  for (const entry of mentorEntries) {
-    mentorNameMap.set(entry.userId, entry.name)
+  const mentorInfoMap = new Map<string, { name: string | null; avatar: string | null }>()
+  for (const entry of mentorEntries) mentorInfoMap.set(entry.userId, { name: entry.name, avatar: entry.avatar })
+
+  const mentorsByFellowship = new Map<string, { userId: string; name: string | null; avatar: string | null }[]>()
+  for (const row of (mentorRows ?? []) as { fellowship_id: string; user_id: string }[]) {
+    const info = mentorInfoMap.get(row.user_id) ?? { name: null, avatar: null }
+    const list = mentorsByFellowship.get(row.fellowship_id) ?? []
+    list.push({ userId: row.user_id, name: info.name, avatar: info.avatar })
+    mentorsByFellowship.set(row.fellowship_id, list)
   }
 
   const fellowships = await Promise.all(
@@ -133,7 +157,19 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
         created_at: fellowship.created_at,
         is_public: fellowship.is_public ?? false,
         posting_permission: fellowship.posting_permission ?? 'all_members',
-        mentor_name: mentorNameMap.get(fellowship.mentor_user_id) ?? null,
+        mentors: (mentorsByFellowship.get(fellowship.id) ?? []).map((m) => ({ user_id: m.userId, display_name: m.name, avatar_url: m.avatar })),
+        mentor_name: (mentorsByFellowship.get(fellowship.id) ?? [])[0]?.name ?? null, // kept for older clients
+        is_official: fellowship.is_official ?? false,
+        discipler_allowed: fellowship.discipler_allowed ?? false,
+        daily_post_allowed: fellowship.daily_post_allowed ?? false,
+        discipler_reply_mode: fellowship.discipler_reply_mode ?? 'auto',
+        discipler_reply_scope: fellowship.discipler_reply_scope ?? 'all',
+        discipler_reply_delay_min: fellowship.discipler_reply_delay_min ?? 0,
+        discipler_react_enabled: fellowship.discipler_react_enabled ?? true,
+        daily_post_on: fellowship.daily_post_on ?? true,
+        daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
+        daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+        my_discipler_activity_push: (membership as any).discipler_activity_push ?? true,
         current_study: study
           ? {
               learning_path_id: study.learning_path_id,
@@ -312,8 +348,8 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
 // Discover public fellowships  GET /fellowship/discover
 // ---------------------------------------------------------------------------
 
-interface FellowshipRow { id: string; name: string; description: string | null; language: string; max_members: number; created_at: string; mentor_user_id: string }
-interface MentorEntry { userId: string; name: string | null }
+interface FellowshipRow { id: string; name: string; description: string | null; language: string; max_members: number | null; created_at: string; mentor_user_id: string; is_official?: boolean; discipler_allowed?: boolean }
+interface MentorEntry { userId: string; name: string | null; avatar: string | null }
 interface MemberRow { fellowship_id: string }
 interface StudyRow { fellowship_id: string; learning_paths: { title: string | null }[] | null }
 
@@ -362,7 +398,7 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
 
   let fellowshipsQuery = db
     .from('fellowships')
-    .select('id, name, description, language, max_members, created_at, mentor_user_id')
+    .select('id, name, description, language, max_members, created_at, mentor_user_id, is_official, discipler_allowed')
     .eq('is_public', true)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -414,14 +450,15 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
       mentorIds.map(async (userId): Promise<MentorEntry> => {
         try {
           const { data: userData } = await db.auth.admin.getUserById(userId)
-          if (!userData?.user) return { userId, name: null }
+          if (!userData?.user) return { userId, name: null, avatar: null }
           const u = userData.user
           const name: string | null =
             u.user_metadata?.full_name ?? u.user_metadata?.name ??
             u.user_metadata?.display_name ?? null
-          return { userId, name }
+          const avatar: string | null = u.user_metadata?.avatar_url ?? null
+          return { userId, name, avatar }
         } catch {
-          return { userId, name: null }
+          return { userId, name: null, avatar: null }
         }
       })
     ),
@@ -464,7 +501,9 @@ async function handleDiscoverFellowships(req: Request, services: ServiceContaine
     member_count: memberCountMap.get(f.id) ?? 0,
     max_members: f.max_members,
     current_study_title: studyTitleMap.get(f.id) ?? null,
-    mentor_name: mentorNameMap.get(f.mentor_user_id) ?? null
+    mentor_name: mentorNameMap.get(f.mentor_user_id) ?? null,
+    is_official: f.is_official ?? false,
+    discipler_allowed: f.discipler_allowed ?? false,
   }))
 
   return new Response(
@@ -485,7 +524,10 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
-  let body: { name: string; description?: string; max_members?: number | null; is_public?: boolean; language?: string; posting_permission?: string }
+  let body: {
+    name: string; description?: string; max_members?: number | null; is_public?: boolean; language?: string; posting_permission?: string
+    is_official?: boolean; discipler_allowed?: boolean; daily_post_allowed?: boolean
+  }
   try {
     body = await req.json()
   } catch {
@@ -552,6 +594,16 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
     throw new AppError('PERMISSION_DENIED', 'Only admins can create unlimited-size fellowships', 403)
   }
 
+  const wantsOfficial = body.is_official === true
+  const wantsDiscipler = body.discipler_allowed === true
+  const wantsDaily = body.daily_post_allowed === true
+  if ((wantsOfficial || wantsDiscipler || wantsDaily) && !isAdmin) {
+    throw new AppError('PERMISSION_DENIED', 'Only admins can set official or Discipler flags', 403)
+  }
+  if ((wantsDiscipler || wantsDaily) && !wantsOfficial) {
+    throw new AppError('VALIDATION_ERROR', 'Discipler and daily post require an official fellowship', 400)
+  }
+
   const { data: fellowship, error: createError } = await db
     .from('fellowships')
     .insert({
@@ -563,6 +615,7 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
       is_public: body.is_public ?? false,
       language,
       posting_permission: postingPermission,
+      is_official: wantsOfficial, discipler_allowed: wantsDiscipler, daily_post_allowed: wantsDaily,
     })
     .select()
     .single()
@@ -583,6 +636,22 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
     const { error: cleanupError } = await db.from('fellowships').delete().eq('id', fellowship.id)
     if (cleanupError) console.error('[fellowship/create] Cleanup failed — orphaned fellowship:', fellowship.id, cleanupError)
     throw new AppError('DATABASE_ERROR', 'Failed to initialize fellowship membership', 500)
+  }
+
+  // Every fellowship gets a default study path (non-fatal — a fellowship without one just
+  // shows no active study until a mentor sets one via fellowship-study).
+  const { data: defaultPathId, error: defaultPathError } = await db.rpc('default_learning_path_id')
+  if (defaultPathError) {
+    console.error('[fellowship] default study insert failed', { fellowshipId: fellowship.id, error: defaultPathError })
+  } else if (defaultPathId) {
+    const { error: studyError } = await db.from('fellowship_study').insert({
+      fellowship_id: fellowship.id,
+      learning_path_id: defaultPathId,
+      current_guide_index: 0
+    })
+    if (studyError) {
+      console.error('[fellowship] default study insert failed', { fellowshipId: fellowship.id, error: studyError })
+    }
   }
 
   return new Response(
@@ -697,35 +766,10 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
     }
   } catch { /* non-fatal */ }
 
-  const { error: postError } = await db.from('fellowship_posts').insert({
-    fellowship_id: fellowship.id,
-    author_user_id: user.id,
-    content: `${displayName} has joined the fellowship`,
-    post_type: 'system'
-  })
-  if (postError) console.warn('[fellowship/join] Failed to create system post — non-fatal:', postError)
-
-  // Notify mentor only (fire-and-forget), skip if the mentor is the one joining
-  if (fellowship.mentor_user_id && fellowship.mentor_user_id !== user.id) {
-    const notifyPromise = (async () => {
-      try {
-        const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').eq('user_id', fellowship.mentor_user_id)
-        const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
-        if (tokens.length > 0) {
-          const fcm = new FCMService()
-          await fcm.sendBatchNotifications(
-            tokens,
-            { title: `👋 ${displayName} joined the fellowship`, body: `${displayName} joined ${fellowship.name}` },
-            { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id }
-          )
-        }
-      } catch (err) { console.error('[fellowship/join] FCM error (non-fatal):', err) }
-    })()
-    // Keep the isolate alive past the response so the push actually sends.
-    if (typeof EdgeRuntime !== 'undefined') {
-      EdgeRuntime.waitUntil(notifyPromise)
-    }
-  }
+  const joinPush = pushMentors(db, fellowship.id,
+    { title: `👋 ${displayName} joined the fellowship`, body: `${displayName} joined ${fellowship.name}` },
+    { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id }, { excludeUserId: user.id })
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(joinPush)
 
   // Fire-and-forget: notify new member of upcoming meetings (non-blocking)
   const invitePromise = fetch(
@@ -879,7 +923,13 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
-  let body: { fellowship_id: string; name?: string; description?: string; max_members?: number | null; posting_permission?: string }
+  let body: {
+    fellowship_id: string; name?: string; description?: string; max_members?: number | null; posting_permission?: string
+    is_official?: boolean; discipler_allowed?: boolean; daily_post_allowed?: boolean
+    discipler_reply_mode?: string; discipler_reply_scope?: string; discipler_reply_delay_min?: number
+    discipler_react_enabled?: boolean; daily_post_on?: boolean; discipler_activity_push?: boolean
+    daily_post_frequency_days?: number; daily_post_auto_advance?: boolean
+  }
   try {
     body = await req.json()
   } catch {
@@ -945,8 +995,64 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     updates.posting_permission = body.posting_permission
   }
 
-  const hasUpdate = Object.keys(updates).some(k => k !== 'updated_at')
+  const adminFlagKeys = ['is_official', 'discipler_allowed', 'daily_post_allowed'] as const
+  if (adminFlagKeys.some((k) => body[k] !== undefined)) {
+    const { data: profile } = await db.from('user_profiles').select('is_admin').eq('id', user.id).single()
+    if (profile?.is_admin !== true) throw new AppError('PERMISSION_DENIED', 'Only admins can change official or Discipler flags', 403)
+
+    const { data: currentRow, error: currentRowError } = await db
+      .from('fellowships')
+      .select('is_official, discipler_allowed, daily_post_allowed')
+      .eq('id', body.fellowship_id)
+      .single()
+    if (currentRowError || !currentRow) throw new AppError('NOT_FOUND', 'Fellowship not found', 404)
+
+    for (const k of adminFlagKeys) if (typeof body[k] === 'boolean') updates[k] = body[k]
+
+    const mergedIsOfficial = (updates.is_official as boolean | undefined) ?? currentRow.is_official ?? false
+    const mergedDisciplerAllowed = (updates.discipler_allowed as boolean | undefined) ?? currentRow.discipler_allowed ?? false
+    const mergedDailyPostAllowed = (updates.daily_post_allowed as boolean | undefined) ?? currentRow.daily_post_allowed ?? false
+    if ((mergedDisciplerAllowed || mergedDailyPostAllowed) && !mergedIsOfficial) {
+      throw new AppError('VALIDATION_ERROR', 'Discipler and daily post require an official fellowship', 400)
+    }
+  }
+  if (body.discipler_reply_mode !== undefined) {
+    if (!['off', 'auto', 'review'].includes(body.discipler_reply_mode)) throw new AppError('VALIDATION_ERROR', "discipler_reply_mode must be 'off', 'auto' or 'review'", 400)
+    updates.discipler_reply_mode = body.discipler_reply_mode
+  }
+  if (body.discipler_reply_scope !== undefined) {
+    if (!['all', 'lessons_only'].includes(body.discipler_reply_scope)) throw new AppError('VALIDATION_ERROR', "discipler_reply_scope must be 'all' or 'lessons_only'", 400)
+    updates.discipler_reply_scope = body.discipler_reply_scope
+  }
+  if (body.discipler_reply_delay_min !== undefined) {
+    if (![0, 30, 120, 720].includes(body.discipler_reply_delay_min)) throw new AppError('VALIDATION_ERROR', 'discipler_reply_delay_min must be 0, 30, 120 or 720', 400)
+    updates.discipler_reply_delay_min = body.discipler_reply_delay_min
+  }
+  if (typeof body.discipler_react_enabled === 'boolean') updates.discipler_react_enabled = body.discipler_react_enabled
+  if (typeof body.daily_post_on === 'boolean') updates.daily_post_on = body.daily_post_on
+  if (body.daily_post_frequency_days !== undefined) {
+    if (![1, 2, 7].includes(body.daily_post_frequency_days)) throw new AppError('VALIDATION_ERROR', 'daily_post_frequency_days must be 1, 2 or 7', 400)
+    updates.daily_post_frequency_days = body.daily_post_frequency_days
+  }
+  if (typeof body.daily_post_auto_advance === 'boolean') updates.daily_post_auto_advance = body.daily_post_auto_advance
+  if (typeof body.discipler_activity_push === 'boolean') {
+    await db.from('fellowship_members').update({ discipler_activity_push: body.discipler_activity_push })
+      .eq('fellowship_id', body.fellowship_id).eq('user_id', user.id)
+  }
+
+  const hasUpdate = Object.keys(updates).some(k => k !== 'updated_at') || typeof body.discipler_activity_push === 'boolean'
   if (!hasUpdate) throw new AppError('VALIDATION_ERROR', 'No valid fields provided to update', 400)
+
+  const reload = async () => {
+    const { data, error } = await db.from('fellowships').select('*').eq('id', body.fellowship_id).single()
+    if (error) {
+      console.error('[fellowship/update] Reload error:', error)
+      throw new AppError('DATABASE_ERROR', 'Failed to load updated fellowship', 500)
+    }
+    return data
+  }
+
+  if (Object.keys(updates).length === 1) return ok(fellowshipSettingsPayload(await reload()))
 
   const { data: fellowship, error } = await db
     .from('fellowships')
@@ -960,20 +1066,73 @@ async function handleUpdateFellowship(req: Request, services: ServiceContainer):
     throw new AppError('DATABASE_ERROR', 'Failed to update fellowship', 500)
   }
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      data: {
-        id: fellowship.id,
-        name: fellowship.name,
-        description: fellowship.description,
-        max_members: fellowship.max_members,
-        posting_permission: fellowship.posting_permission,
-        updated_at: fellowship.updated_at
-      }
-    }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  )
+  return ok(fellowshipSettingsPayload(fellowship))
+}
+
+function ok(data: unknown): Response {
+  return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+}
+
+function fellowshipSettingsPayload(fellowship: any) {
+  return {
+    id: fellowship.id,
+    name: fellowship.name,
+    description: fellowship.description,
+    max_members: fellowship.max_members,
+    posting_permission: fellowship.posting_permission,
+    is_official: fellowship.is_official ?? false,
+    discipler_allowed: fellowship.discipler_allowed ?? false,
+    daily_post_allowed: fellowship.daily_post_allowed ?? false,
+    discipler_reply_mode: fellowship.discipler_reply_mode ?? 'auto',
+    discipler_reply_scope: fellowship.discipler_reply_scope ?? 'all',
+    discipler_reply_delay_min: fellowship.discipler_reply_delay_min ?? 0,
+    discipler_react_enabled: fellowship.discipler_react_enabled ?? true,
+    daily_post_on: fellowship.daily_post_on ?? true,
+    daily_post_frequency_days: fellowship.daily_post_frequency_days ?? 1,
+    daily_post_auto_advance: fellowship.daily_post_auto_advance ?? true,
+    updated_at: fellowship.updated_at,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Discipler activity list  GET /fellowship/discipler-activity
+// ---------------------------------------------------------------------------
+
+async function handleDisciplerActivity(req: Request, services: ServiceContainer): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+  const url = new URL(req.url)
+  const fellowshipId = url.searchParams.get('fellowship_id')
+  if (!fellowshipId || !UUID_RE.test(fellowshipId)) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+  const kind = url.searchParams.get('kind')
+  const cursor = url.searchParams.get('cursor')
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '30', 10) || 30, 1), 100)
+  const db = services.supabaseServiceClient
+  const { data: isMentor } = await db.rpc('is_fellowship_mentor', { p_fellowship_id: fellowshipId, p_user_id: user.id })
+  if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
+
+  let q = db.from('discipler_activity')
+    .select('id, kind, post_id, comment_id, reaction, language, summary, reviewed_by, reviewed_at, created_at, fellowship_posts(content, author_user_id, post_type, topic_title), fellowship_comments(content, is_pending_review, is_deleted)')
+    .eq('fellowship_id', fellowshipId).order('created_at', { ascending: false }).limit(limit + 1)
+  if (kind && ['reply', 'react', 'draft', 'daily_post'].includes(kind)) q = q.eq('kind', kind)
+  if (cursor) q = q.lt('created_at', cursor)
+  const { data, error } = await q
+  if (error) { console.error('[fellowship/discipler-activity] query error:', error); throw new AppError('DATABASE_ERROR', 'Failed to load activity', 500) }
+  const rows = data ?? []
+  const hasMore = rows.length > limit
+  const page = hasMore ? rows.slice(0, limit) : rows
+  return new Response(JSON.stringify({
+    success: true,
+    data: page.map((r: any) => ({
+      id: r.id, kind: r.kind, post_id: r.post_id, comment_id: r.comment_id, reaction: r.reaction, language: r.language,
+      summary: r.summary, reviewed_at: r.reviewed_at, created_at: r.created_at,
+      post: r.fellowship_posts ? { content: r.fellowship_posts.content, post_type: r.fellowship_posts.post_type, topic_title: r.fellowship_posts.topic_title } : null,
+      comment: r.fellowship_comments ? { content: r.fellowship_comments.content, is_pending_review: r.fellowship_comments.is_pending_review, is_deleted: r.fellowship_comments.is_deleted } : null,
+    })),
+    pagination: { has_more: hasMore, next_cursor: hasMore ? page[page.length - 1].created_at : null },
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
 
 // ---------------------------------------------------------------------------
@@ -999,6 +1158,7 @@ async function handleFellowship(req: Request, services: ServiceContainer): Promi
   // GET routes
   if (req.method === 'GET') {
     if (pathname.endsWith('/discover')) return handleDiscoverFellowships(req, services)
+    if (pathname.endsWith('/discipler-activity')) return handleDisciplerActivity(req, services)
     const fellowshipId = new URL(req.url).searchParams.get('fellowship_id')
     if (fellowshipId) return handleGetFellowship(req, services)
     return handleListFellowships(req, services)

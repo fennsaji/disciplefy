@@ -26,6 +26,8 @@ class FellowshipMembersBloc
     on<FellowshipMembersRemoveRequested>(_onRemoveRequested);
     on<FellowshipTransferMentorRequested>(_onTransferMentorRequested);
     on<FellowshipDeleteRequested>(_onDeleteRequested);
+    on<FellowshipMemberPromoteRequested>(_onPromoteRequested);
+    on<FellowshipMemberDemoteRequested>(_onDemoteRequested);
   }
 
   Future<void> _onInitialized(
@@ -308,6 +310,50 @@ class FellowshipMembersBloc
         members: const [],
         clearTransferError: true,
       )),
+    );
+  }
+
+  Future<void> _onPromoteRequested(
+    FellowshipMemberPromoteRequested event,
+    Emitter<FellowshipMembersState> emit,
+  ) async {
+    final result = await _repository.promoteMember(
+      fellowshipId: state.fellowshipId,
+      userId: event.userId,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
+      (_) {
+        final updated = state.members.map((m) {
+          if (m.userId != event.userId) return m;
+          return m.copyWith(role: 'mentor');
+        }).toList();
+        emit(state.copyWith(members: updated, clearErrorMessage: true));
+      },
+    );
+  }
+
+  Future<void> _onDemoteRequested(
+    FellowshipMemberDemoteRequested event,
+    Emitter<FellowshipMembersState> emit,
+  ) async {
+    final result = await _repository.demoteMember(
+      fellowshipId: state.fellowshipId,
+      userId: event.userId,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+          errorMessage: ErrorMessageSanitizer.sanitize(failure))),
+      (_) {
+        final updated = state.members.map((m) {
+          if (m.userId != event.userId) return m;
+          return m.copyWith(role: 'member');
+        }).toList();
+        emit(state.copyWith(members: updated, clearErrorMessage: true));
+      },
     );
   }
 }

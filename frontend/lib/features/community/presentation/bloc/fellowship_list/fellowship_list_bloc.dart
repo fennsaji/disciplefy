@@ -72,6 +72,9 @@ class FellowshipListBloc
       language: event.language,
       postingPermission: event.postingPermission,
       unlimitedMembers: event.unlimitedMembers,
+      isOfficial: event.isOfficial,
+      disciplerAllowed: event.disciplerAllowed,
+      dailyPostAllowed: event.dailyPostAllowed,
     );
 
     await result.fold(

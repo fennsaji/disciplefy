@@ -67,6 +67,9 @@ class FellowshipPostModel {
   /// (`'en'`, `'hi'`, or `'ml'`).
   final String? guideLanguage;
 
+  /// True when the post content mentions the Discipler AI helper.
+  final bool mentionsDiscipler;
+
   const FellowshipPostModel({
     required this.id,
     required this.fellowshipId,
@@ -87,6 +90,7 @@ class FellowshipPostModel {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
+    this.mentionsDiscipler = false,
   });
 
   /// Creates a [FellowshipPostModel] from a JSON map (API response).
@@ -95,7 +99,7 @@ class FellowshipPostModel {
   /// as a `Map<String, dynamic>` over the wire; each value is cast to [int].
   factory FellowshipPostModel.fromJson(Map<String, dynamic> json) {
     final rawReactions =
-        (json['reaction_counts'] as Map<String, dynamic>?) ?? {};
+        Map<String, dynamic>.from(json['reaction_counts'] as Map? ?? {});
     final reactionCounts = rawReactions.map(
       (key, value) => MapEntry(key, (value as num).toInt()),
     );
@@ -116,10 +120,11 @@ class FellowshipPostModel {
       topicId: json['topic_id'] as String?,
       topicTitle: json['topic_title'] as String?,
       guideTitle: json['guide_title'] as String?,
-      lessonIndex: json['lesson_index'] as int?,
+      lessonIndex: (json['lesson_index'] as num?)?.toInt(),
       studyGuideId: json['study_guide_id'] as String?,
       guideInputType: json['guide_input_type'] as String?,
       guideLanguage: json['guide_language'] as String?,
+      mentionsDiscipler: json['mentions_discipler'] as bool? ?? false,
     );
   }
 
@@ -144,5 +149,6 @@ class FellowshipPostModel {
         studyGuideId: studyGuideId,
         guideInputType: guideInputType,
         guideLanguage: guideLanguage,
+        mentionsDiscipler: mentionsDiscipler,
       );
 }

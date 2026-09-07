@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../domain/entities/fellowship_entity.dart';
+
 /// Base class for all [FellowshipFeedBloc] events.
 abstract class FellowshipFeedEvent extends Equatable {
   const FellowshipFeedEvent();
@@ -22,16 +24,32 @@ class FellowshipFeedInitialized extends FellowshipFeedEvent {
   /// server. False when they're defaults (deep link / refresh).
   final bool postingContextResolved;
 
+  /// True when the Discipler AI helper is allowed to participate in this
+  /// fellowship — gates whether the Discipler row shows in the `@mention`
+  /// sheet.
+  final bool disciplerAllowed;
+
+  /// All mentors of this fellowship, used to populate the `@mention` sheet.
+  final List<FellowshipMentorEntity> mentors;
+
   const FellowshipFeedInitialized({
     required this.isMentor,
     this.currentUserId,
     this.postingPermission = 'all_members',
     this.postingContextResolved = false,
+    this.disciplerAllowed = false,
+    this.mentors = const [],
   });
 
   @override
-  List<Object?> get props =>
-      [isMentor, currentUserId, postingPermission, postingContextResolved];
+  List<Object?> get props => [
+        isMentor,
+        currentUserId,
+        postingPermission,
+        postingContextResolved,
+        disciplerAllowed,
+        mentors,
+      ];
 }
 
 /// Fetches authoritative posting context (posting_permission + caller role)
@@ -248,4 +266,18 @@ class FellowshipTopicCountsRequested extends FellowshipFeedEvent {
   const FellowshipTopicCountsRequested({required this.fellowshipId});
   @override
   List<Object?> get props => [fellowshipId];
+}
+
+/// Approves or discards a Discipler-authored draft comment.
+class FellowshipDisciplerCommentReviewed extends FellowshipFeedEvent {
+  final String commentId;
+  final bool approve;
+
+  const FellowshipDisciplerCommentReviewed({
+    required this.commentId,
+    required this.approve,
+  });
+
+  @override
+  List<Object?> get props => [commentId, approve];
 }

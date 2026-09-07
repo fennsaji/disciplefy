@@ -1,4 +1,6 @@
 pub mod blog_generator;
+pub mod discipler_reply_worker;
+pub mod fellowship_daily_post;
 pub mod schedules;
 pub mod subscription_reconciler;
 
@@ -20,6 +22,8 @@ pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static FELLOWSHIP_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static DISCIPLER_REPLY_WORKER_RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// Guard that resets its flag to false on drop.
 pub struct CronGuard {
@@ -82,6 +86,20 @@ pub async fn start_scheduler(
                 enabled: true,
                 schedule: schedules::SUBSCRIPTION_RECONCILE.into(),
                 label: "Hourly — reconcile subscriptions with Razorpay".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "fellowship_daily_post".into(),
+                enabled: false,
+                schedule: schedules::FELLOWSHIP_DAILY_POST.into(),
+                label: "Daily 06:30 IST — Discipler learning-path post".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "discipler_reply_worker".into(),
+                enabled: false,
+                schedule: schedules::DISCIPLER_REPLY_WORKER.into(),
+                label: "Every minute — drain Discipler reply queue".into(),
                 updated_at: chrono::Utc::now(),
             },
         ]
@@ -266,12 +284,109 @@ pub async fn start_scheduler(
         .expect("Failed to add subscription reconcile CRON job");
     job_ids.insert("subscription_reconcile".into(), recon_uuid);
 
+    // Discipler daily fellowship post CRON
+    let daily_cfg = configs.iter().find(|c| c.name == "fellowship_daily_post");
+    let daily_schedule = daily_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::FELLOWSHIP_DAILY_POST.into());
+    let daily_pool = pool.clone();
+    let daily_config = Arc::new(config.clone());
+    let daily_http = http.clone();
+
+    let daily_job = Job::new_async(daily_schedule.as_str(), move |_uuid, _lock| {
+        let p = daily_pool.clone();
+        let c = daily_config.clone();
+        let h = daily_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "fellowship_daily_post").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("fellowship_daily_post cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&FELLOWSHIP_DAILY_POST_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Discipler daily post CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            if let Err(e) = fellowship_daily_post::run_fellowship_daily_post(&p, &c, &h).await {
+                tracing::error!("Discipler daily post CRON failed: {}", e);
+            }
+        })
+    })
+    .expect("Failed to create fellowship daily post CRON job");
+
+    let daily_uuid = sched
+        .add(daily_job)
+        .await
+        .expect("Failed to add fellowship daily post CRON job");
+    job_ids.insert("fellowship_daily_post".into(), daily_uuid);
+
+    // Discipler reply worker CRON
+    let worker_cfg = configs.iter().find(|c| c.name == "discipler_reply_worker");
+    let worker_schedule = worker_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::DISCIPLER_REPLY_WORKER.into());
+    let worker_pool = pool.clone();
+    let worker_config = Arc::new(config.clone());
+    let worker_http = http.clone();
+
+    let worker_job = Job::new_async(worker_schedule.as_str(), move |_uuid, _lock| {
+        let p = worker_pool.clone();
+        let c = worker_config.clone();
+        let h = worker_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "discipler_reply_worker").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::debug!("discipler_reply_worker cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&DISCIPLER_REPLY_WORKER_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Discipler reply worker CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            if let Err(e) = discipler_reply_worker::run_discipler_reply_worker(&p, &c, &h).await {
+                tracing::error!("Discipler reply worker CRON failed: {}", e);
+            }
+        })
+    })
+    .expect("Failed to create discipler reply worker CRON job");
+
+    let worker_uuid = sched
+        .add(worker_job)
+        .await
+        .expect("Failed to add discipler reply worker CRON job");
+    job_ids.insert("discipler_reply_worker".into(), worker_uuid);
+
     sched.start().await.expect("Failed to start CRON scheduler");
-    tracing::info!(
-        schedule = blog_schedule.as_str(),
-        retry_schedule = retry_schedule.as_str(),
-        "CRON scheduler started"
-    );
+
+    let schedule_by_name: HashMap<&str, &str> = HashMap::from([
+        ("blog_generation", blog_schedule.as_str()),
+        ("blog_retry", retry_schedule.as_str()),
+        ("blog_publish_scheduled", sched_schedule.as_str()),
+        ("subscription_reconcile", recon_schedule.as_str()),
+        ("fellowship_daily_post", daily_schedule.as_str()),
+        ("discipler_reply_worker", worker_schedule.as_str()),
+    ]);
+    for name in job_ids.keys() {
+        let s = schedule_by_name.get(name.as_str()).copied().unwrap_or("?");
+        tracing::info!(job = %name, schedule = %s, "CRON registered");
+    }
+    tracing::info!("CRON scheduler started");
 
     (sched, job_ids)
 }

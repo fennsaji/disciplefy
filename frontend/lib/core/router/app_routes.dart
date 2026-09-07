@@ -93,4 +93,5 @@ class AppRoutes {
   static const String fellowshipFeed = '/community/:fellowshipId/feed';
   static const String fellowshipLessons = '/community/:fellowshipId/lessons';
   static const String fellowshipMembers = '/community/:fellowshipId/members';
+  static const String fellowshipSettings = '/community/:fellowshipId/settings';
 }

@@ -31,6 +31,18 @@ class FellowshipMemberEntity extends Equatable {
   /// learning path. Null when the fellowship has no active study.
   final int? topicsCompleted;
 
+  /// True when this member is the fellowship's original owner (not just a
+  /// promoted mentor).
+  final bool isOwner;
+
+  /// The mentor's WhatsApp number: digits only (no `+`), or null when not
+  /// set. Only ever non-null for mentors.
+  final String? mentorWhatsapp;
+
+  /// The mentor's email address (lowercase), or null when not set. Only
+  /// ever non-null for mentors.
+  final String? mentorEmail;
+
   const FellowshipMemberEntity({
     required this.userId,
     required this.displayName,
@@ -39,17 +51,29 @@ class FellowshipMemberEntity extends Equatable {
     required this.joinedAt,
     required this.isMuted,
     this.topicsCompleted,
+    this.isOwner = false,
+    this.mentorWhatsapp,
+    this.mentorEmail,
   });
 
-  FellowshipMemberEntity copyWith({bool? isMuted, int? topicsCompleted}) {
+  FellowshipMemberEntity copyWith({
+    bool? isMuted,
+    int? topicsCompleted,
+    String? role,
+    String? mentorWhatsapp,
+    String? mentorEmail,
+  }) {
     return FellowshipMemberEntity(
       userId: userId,
       displayName: displayName,
       avatarUrl: avatarUrl,
-      role: role,
+      role: role ?? this.role,
       joinedAt: joinedAt,
       isMuted: isMuted ?? this.isMuted,
       topicsCompleted: topicsCompleted ?? this.topicsCompleted,
+      isOwner: isOwner,
+      mentorWhatsapp: mentorWhatsapp ?? this.mentorWhatsapp,
+      mentorEmail: mentorEmail ?? this.mentorEmail,
     );
   }
 
@@ -62,5 +86,8 @@ class FellowshipMemberEntity extends Equatable {
         joinedAt,
         isMuted,
         topicsCompleted,
+        isOwner,
+        mentorWhatsapp,
+        mentorEmail,
       ];
 }

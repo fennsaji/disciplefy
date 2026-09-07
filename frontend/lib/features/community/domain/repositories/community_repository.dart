@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import '../entities/blocked_user_entity.dart';
+import '../entities/discipler_activity_entity.dart';
 import '../entities/fellowship_comment_entity.dart';
 import '../entities/fellowship_entity.dart';
 import '../entities/fellowship_meeting_entity.dart';
@@ -22,6 +23,23 @@ class DiscoverPage {
 
   const DiscoverPage({
     required this.fellowships,
+    required this.hasMore,
+    this.nextCursor,
+  });
+}
+
+/// Represents a single page of Discipler activity items.
+///
+/// [hasMore] is true when additional pages exist. Pass [nextCursor] as the
+/// `cursor` parameter to [CommunityRepository.getDisciplerActivity] to load
+/// the next page.
+class DisciplerActivityPage {
+  final List<DisciplerActivityEntity> items;
+  final bool hasMore;
+  final String? nextCursor;
+
+  const DisciplerActivityPage({
+    required this.items,
     required this.hasMore,
     this.nextCursor,
   });
@@ -107,6 +125,9 @@ abstract class CommunityRepository {
     String language = 'en',
     String postingPermission = 'all_members',
     bool unlimitedMembers = false,
+    bool isOfficial = false,
+    bool disciplerAllowed = false,
+    bool dailyPostAllowed = false,
   });
 
   /// Sets (or replaces) the active learning path for [fellowshipId].
@@ -164,6 +185,57 @@ abstract class CommunityRepository {
     String? name,
     String? description,
     int? maxMembers,
+    String? postingPermission,
+    bool? isOfficial,
+    bool? disciplerAllowed,
+    bool? dailyPostAllowed,
+    String? disciplerReplyMode,
+    String? disciplerReplyScope,
+    int? disciplerReplyDelayMin,
+    bool? disciplerReactEnabled,
+    bool? dailyPostOn,
+    int? dailyPostFrequencyDays,
+    bool? dailyPostAutoAdvance,
+    bool? disciplerActivityPush,
+  });
+
+  /// Promotes [userId] to mentor in [fellowshipId] (mentor only).
+  Future<Either<Failure, void>> promoteMember({
+    required String fellowshipId,
+    required String userId,
+  });
+
+  /// Demotes [userId] from mentor to member in [fellowshipId] (mentor only).
+  Future<Either<Failure, void>> demoteMember({
+    required String fellowshipId,
+    required String userId,
+  });
+
+  /// Sets the caller's own mentor contact info for [fellowshipId] (mentor
+  /// only). Both [whatsapp] and [email] are always sent — pass `null` for
+  /// either to clear that channel. Returns the confirmed `(whatsapp,
+  /// email)` from the server.
+  Future<Either<Failure, ({String? whatsapp, String? email})>>
+      updateMentorContact({
+    required String fellowshipId,
+    String? whatsapp,
+    String? email,
+  });
+
+  /// Approves a Discipler-authored draft comment, publishing it.
+  Future<Either<Failure, void>> approveDisciplerComment(String commentId);
+
+  /// Discards a Discipler-authored draft comment.
+  Future<Either<Failure, void>> discardDisciplerComment(String commentId);
+
+  /// Returns a page of Discipler activity for [fellowshipId], optionally
+  /// filtered by [kind]. Pass the previous [DisciplerActivityPage.nextCursor]
+  /// to load subsequent pages. [limit] defaults to 30.
+  Future<Either<Failure, DisciplerActivityPage>> getDisciplerActivity({
+    required String fellowshipId,
+    String? kind,
+    String? cursor,
+    int limit = 30,
   });
 
   /// Lists active, non-expired invite links for [fellowshipId] (mentor only).

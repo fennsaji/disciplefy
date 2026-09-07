@@ -335,6 +335,42 @@ async function maybeTriggerScoreRecalculation(
 }
 
 // ============================================================================
+// Learning Path Auto-Start
+// ============================================================================
+
+/**
+ * Best-effort: ensure the learning path containing this topic is marked
+ * "started" for the user (user_learning_path_progress row exists). Prefers
+ * a path an active fellowship of this user is currently studying, since a
+ * fellowship member never individually enrolls. Never fails the request.
+ */
+async function ensureLearningPathStarted(
+  services: ServiceContainer,
+  userId: string,
+  topicId: string
+): Promise<void> {
+  try {
+    const { data: pathId, error } = await services.supabaseServiceClient.rpc(
+      'ensure_learning_path_started',
+      { p_user_id: userId, p_topic_id: topicId }
+    );
+
+    if (error) {
+      console.warn('[topic-progress] ensure_learning_path_started failed:', error.message);
+      return;
+    }
+    if (pathId) {
+      console.log(`[topic-progress] Learning path ${pathId} ensured started for user`);
+    }
+  } catch (err) {
+    console.warn(
+      '[topic-progress] ensure_learning_path_started skipped:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+  }
+}
+
+// ============================================================================
 // Fellowship Auto-Advance
 // ============================================================================
 
@@ -493,6 +529,7 @@ async function handleTopicProgress(
   switch (request.action) {
     case 'start':
       result = await handleStartProgress(services, userId, request.topic_id);
+      await ensureLearningPathStarted(services, userId, request.topic_id);
       break;
 
     case 'complete': {
@@ -502,6 +539,7 @@ async function handleTopicProgress(
         request.topic_id,
         request.time_spent_seconds
       );
+      await ensureLearningPathStarted(services, userId, request.topic_id);
       await maybeTriggerScoreRecalculation(
         services,
         userId,

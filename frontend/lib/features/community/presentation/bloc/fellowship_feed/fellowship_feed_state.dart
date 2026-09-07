@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../../../features/community/domain/entities/fellowship_comment_entity.dart';
+import '../../../../../features/community/domain/entities/fellowship_entity.dart';
 import '../../../../../features/community/domain/entities/fellowship_post_entity.dart';
 
 /// Describes the primary load / pagination lifecycle for the fellowship feed.
@@ -78,6 +79,13 @@ class FellowshipFeedState extends Equatable {
   /// Lessons tab requests topic counts.
   final Map<String, int> topicPostCounts;
 
+  /// True when the Discipler AI helper is allowed to participate in this
+  /// fellowship — gates the Discipler row in the `@mention` sheet.
+  final bool disciplerAllowed;
+
+  /// All mentors of this fellowship, used to populate the `@mention` sheet.
+  final List<FellowshipMentorEntity> mentors;
+
   const FellowshipFeedState({
     this.status = FellowshipFeedStatus.initial,
     this.posts = const [],
@@ -96,6 +104,8 @@ class FellowshipFeedState extends Equatable {
     this.reportStatus = FellowshipReportStatus.idle,
     this.blockStatus = FellowshipBlockStatus.idle,
     this.topicPostCounts = const {},
+    this.disciplerAllowed = false,
+    this.mentors = const [],
   });
 
   /// Returns the initial state (used as the BLoC seed value).
@@ -130,6 +140,8 @@ class FellowshipFeedState extends Equatable {
         reportStatus,
         blockStatus,
         topicPostCounts,
+        disciplerAllowed,
+        mentors,
       ];
 
   /// Creates a copy of this state with the provided fields replaced.
@@ -153,6 +165,8 @@ class FellowshipFeedState extends Equatable {
     FellowshipReportStatus? reportStatus,
     FellowshipBlockStatus? blockStatus,
     Map<String, int>? topicPostCounts,
+    bool? disciplerAllowed,
+    List<FellowshipMentorEntity>? mentors,
   }) {
     return FellowshipFeedState(
       status: status ?? this.status,
@@ -174,6 +188,8 @@ class FellowshipFeedState extends Equatable {
       reportStatus: reportStatus ?? this.reportStatus,
       blockStatus: blockStatus ?? this.blockStatus,
       topicPostCounts: topicPostCounts ?? this.topicPostCounts,
+      disciplerAllowed: disciplerAllowed ?? this.disciplerAllowed,
+      mentors: mentors ?? this.mentors,
     );
   }
 }

@@ -606,6 +606,10 @@ class _FellowshipCard extends StatelessWidget {
                           Icon(Icons.public_rounded,
                               size: 14, color: context.appTextTertiary),
                         ],
+                        if (fellowship.isOfficial) ...[
+                          const SizedBox(width: 6),
+                          const _OfficialBadge(),
+                        ],
                       ],
                     ),
 
@@ -757,6 +761,37 @@ class _RolePill extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Official badge
+// ---------------------------------------------------------------------------
+
+class _OfficialBadge extends StatelessWidget {
+  const _OfficialBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.brandHighlight,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.brandHighlightDark.withAlpha(100)),
+      ),
+      child: Text(
+        l10n.officialBadge,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: AppColors.brandHighlightDark,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Study chip
 // ---------------------------------------------------------------------------
 
@@ -835,12 +870,9 @@ class _DiscoverTabState extends State<_DiscoverTab> {
       if (!mounted) return;
       final bloc = context.read<DiscoverBloc>();
       if (bloc.state.status != DiscoverStatus.initial) return;
-      // Default the language filter to the user's current app locale, bounded
-      // to the set of supported fellowship languages.
-      final localeCode = AppLocalizations.of(context)!.locale.languageCode;
-      final initialLang =
-          ['en', 'hi', 'ml'].contains(localeCode) ? localeCode : null;
-      bloc.add(DiscoverLoadRequested(language: initialLang));
+      // Default to "All" languages so Discover always shows the full set of
+      // publicly discoverable fellowships on first open.
+      bloc.add(const DiscoverLoadRequested());
     });
   }
 
@@ -1457,7 +1489,8 @@ class _PublicFellowshipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isFull = fellowship.memberCount >= fellowship.maxMembers;
+    final isFull = !fellowship.isUnlimited &&
+        fellowship.memberCount >= fellowship.maxMembers!;
     final initials = _initials(fellowship.name);
     final avatarColor = _avatarColor(fellowship.name);
 
@@ -1497,17 +1530,27 @@ class _PublicFellowshipCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  fellowship.name,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: context.appTextPrimary,
-                    height: 1.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        fellowship.name,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: context.appTextPrimary,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (fellowship.isOfficial) ...[
+                      const SizedBox(width: 6),
+                      const _OfficialBadge(),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 5),
                 // Language badge + member count
@@ -1519,8 +1562,9 @@ class _PublicFellowshipCard extends StatelessWidget {
                         size: 12, color: context.appTextTertiary),
                     const SizedBox(width: 3),
                     Text(
-                      l10n.discoverMembersCount(
-                          fellowship.memberCount, fellowship.maxMembers),
+                      fellowship.isUnlimited
+                          ? '${l10n.unlimitedMembers} · ${fellowship.memberCount}'
+                          : '${fellowship.memberCount} / ${fellowship.maxMembers}',
                       style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,

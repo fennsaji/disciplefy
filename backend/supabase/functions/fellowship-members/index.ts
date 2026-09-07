@@ -6,6 +6,7 @@
  *   POST /fellowship-members/unmute              → unmute member (mentor)
  *   POST /fellowship-members/remove              → remove member (mentor)
  *   POST /fellowship-members/transfer            → transfer mentor role (current mentor)
+ *   POST /fellowship-members/contact             → set own mentor contact channel (mentor)
  */
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
@@ -24,15 +25,20 @@ interface MemberResponse {
   role: 'mentor' | 'member'
   joined_at: string
   is_muted: boolean
+  is_owner: boolean
   display_name: string
   avatar_url: string | null
   topics_completed: number | null
+  mentor_whatsapp: string | null
+  mentor_email: string | null
 }
 
 interface FellowshipMemberRow {
   user_id: string
   role: 'mentor' | 'member'
   joined_at: string
+  mentor_whatsapp: string | null
+  mentor_email: string | null
 }
 
 async function handleListMembers(req: Request, services: ServiceContainer): Promise<Response> {
@@ -57,13 +63,15 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
   if (rpcError) throw new AppError('DATABASE_ERROR', 'Failed to verify membership', 500)
   if (!isMember) throw new AppError('PERMISSION_DENIED', 'You are not a member of this fellowship', 403)
 
-  const [membersResult, mutesResult, studyResult] = await Promise.all([
-    db.from('fellowship_members').select('user_id, role, joined_at')
+  const [membersResult, mutesResult, studyResult, fellowshipResult] = await Promise.all([
+    db.from('fellowship_members').select('user_id, role, joined_at, mentor_whatsapp, mentor_email')
       .eq('fellowship_id', fellowshipId).eq('is_active', true).order('joined_at', { ascending: true }),
     db.from('fellowship_mutes').select('muted_user_id').eq('fellowship_id', fellowshipId),
     db.from('fellowship_study').select('learning_path_id, current_guide_index')
-      .eq('fellowship_id', fellowshipId).is('completed_at', null).maybeSingle()
+      .eq('fellowship_id', fellowshipId).is('completed_at', null).maybeSingle(),
+    db.from('fellowships').select('mentor_user_id').eq('id', fellowshipId).maybeSingle()
   ])
+  const ownerId: string | null = fellowshipResult.data?.mentor_user_id ?? null
 
   if (membersResult.error) {
     console.error('[fellowship-members/list] Members query error:', membersResult.error)
@@ -125,21 +133,26 @@ async function handleListMembers(req: Request, services: ServiceContainer): Prom
         : (activeLearningPathId ? 0 : null)
       const topics_completed = personallyCompleted
 
+      const is_owner = row.user_id === ownerId
+      // Only mentors may expose a contact channel. Server-side enforced —
+      // never trust the stored value for non-mentor rows.
+      const mentor_whatsapp: string | null = row.role === 'mentor' ? row.mentor_whatsapp : null
+      const mentor_email: string | null = row.role === 'mentor' ? row.mentor_email : null
       try {
         const { data: userData, error: userError } =
           await services.supabaseServiceClient.auth.admin.getUserById(row.user_id)
         if (userError || !userData?.user) {
-          return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, display_name: 'Unknown Member', avatar_url: null, topics_completed }
+          return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name: 'Unknown Member', avatar_url: null, topics_completed, mentor_whatsapp, mentor_email }
         }
         const u = userData.user
         const display_name: string =
           u.user_metadata?.full_name ?? u.user_metadata?.name ??
           u.user_metadata?.display_name ?? u.email ?? 'Unknown Member'
         const avatar_url: string | null = u.user_metadata?.avatar_url ?? null
-        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, display_name, avatar_url, topics_completed }
+        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name, avatar_url, topics_completed, mentor_whatsapp, mentor_email }
       } catch (err) {
         console.error('[fellowship-members/list] Unexpected error fetching user:', row.user_id, err)
-        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, display_name: 'Unknown Member', avatar_url: null, topics_completed }
+        return { user_id: row.user_id, role: row.role, joined_at: row.joined_at, is_muted, is_owner, display_name: 'Unknown Member', avatar_url: null, topics_completed, mentor_whatsapp, mentor_email }
       }
     })
   )
@@ -261,7 +274,7 @@ async function handleRemoveMember(req: Request, services: ServiceContainer): Pro
   if ((targetMember as any).role === 'mentor') throw new AppError('VALIDATION_ERROR', 'Cannot remove the mentor — transfer mentor role first', 400)
 
   const { error } = await db.from('fellowship_members')
-    .update({ is_active: false })
+    .update({ is_active: false, mentor_whatsapp: null, mentor_email: null })
     .eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id)
   if (error) { console.error('[fellowship-members/remove] Update error:', error); throw new AppError('DATABASE_ERROR', 'Failed to remove member', 500) }
   return new Response(JSON.stringify({ success: true, message: 'Member removed' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
@@ -326,6 +339,146 @@ async function handleTransferMentor(req: Request, services: ServiceContainer): P
 }
 
 // ---------------------------------------------------------------------------
+// Promote / demote mentor  POST /fellowship-members/promote|demote
+// ---------------------------------------------------------------------------
+
+async function handleChangeMentorRole(req: Request, services: ServiceContainer, to: 'mentor' | 'member'): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(authHeader.replace('Bearer ', ''))
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+  let body: { fellowship_id: string; user_id: string }
+  try { body = await req.json() } catch { throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400) }
+  if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+  if (!body.user_id) throw new AppError('VALIDATION_ERROR', 'user_id is required', 400)
+  const db = services.supabaseServiceClient
+
+  const [{ data: isMentor }, { data: profile }, { data: fellowship }] = await Promise.all([
+    db.rpc('is_fellowship_mentor', { p_fellowship_id: body.fellowship_id, p_user_id: user.id }),
+    db.from('user_profiles').select('is_admin').eq('id', user.id).maybeSingle(),
+    db.from('fellowships').select('mentor_user_id').eq('id', body.fellowship_id).maybeSingle(),
+  ])
+  if (!isMentor && profile?.is_admin !== true) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
+  if (!fellowship) throw new AppError('NOT_FOUND', 'Fellowship not found', 404)
+  if (to === 'member' && body.user_id === fellowship.mentor_user_id) throw new AppError('VALIDATION_ERROR', 'The owner cannot be demoted — transfer ownership first', 400)
+
+  const { data: target } = await db.from('fellowship_members').select('role').eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id).eq('is_active', true).maybeSingle()
+  if (!target) throw new AppError('NOT_FOUND', 'Target user is not an active member', 404)
+  if (target.role === to) return new Response(JSON.stringify({ success: true, message: 'No change' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+
+  // Demotion drops the private contact channels with the role that justified them,
+  // rather than leaving the number or address stored but hidden.
+  const roleUpdate: { role: 'mentor' | 'member'; mentor_whatsapp?: null; mentor_email?: null } =
+    to === 'member'
+      ? { role: to, mentor_whatsapp: null, mentor_email: null }
+      : { role: to }
+  const { error } = await db.from('fellowship_members').update(roleUpdate).eq('fellowship_id', body.fellowship_id).eq('user_id', body.user_id)
+  if (error) { console.error('[fellowship-members/role] Update error:', error); throw new AppError('DATABASE_ERROR', 'Failed to change role', 500) }
+  return new Response(JSON.stringify({ success: true, data: { user_id: body.user_id, role: to } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+}
+
+// ---------------------------------------------------------------------------
+// Set own mentor contact channels  POST /fellowship-members/contact
+// ---------------------------------------------------------------------------
+
+const WHATSAPP_DIGITS_RE = /^\d{8,15}$/
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function normalizeWhatsapp(raw: string): string {
+  let digits = raw.replace(/[\s\-()]/g, '')
+  if (digits.startsWith('+')) digits = digits.slice(1)
+  return digits
+}
+
+async function handleSetMentorContact(req: Request, services: ServiceContainer): Promise<Response> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
+  const { data: { user }, error: authError } = await services.supabaseServiceClient.auth.getUser(
+    authHeader.replace('Bearer ', '')
+  )
+  if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
+
+  let body: { fellowship_id: string; whatsapp?: string | null; email?: string | null }
+  try { body = await req.json() } catch { throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400) }
+  if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
+  if (!UUID_RE.test(body.fellowship_id)) throw new AppError('VALIDATION_ERROR', 'fellowship_id must be a valid UUID', 400)
+
+  const hasWhatsapp = Object.prototype.hasOwnProperty.call(body, 'whatsapp')
+  const hasEmail = Object.prototype.hasOwnProperty.call(body, 'email')
+  if (!hasWhatsapp && !hasEmail) {
+    throw new AppError('VALIDATION_ERROR', 'At least one of whatsapp or email must be provided', 400)
+  }
+
+  const db = services.supabaseServiceClient
+
+  // Caller must be an active mentor of this fellowship. A mentor may only
+  // ever set their own contact — there is no target user_id in this route.
+  const { data: isMentor, error: rpcError } = await db.rpc('is_fellowship_mentor', {
+    p_fellowship_id: body.fellowship_id, p_user_id: user.id
+  })
+  if (rpcError) { console.error('[fellowship-members/contact] RPC error:', rpcError); throw new AppError('DATABASE_ERROR', 'Failed to verify mentor status', 500) }
+  if (!isMentor) throw new AppError('PERMISSION_DENIED', 'Mentor access required', 403)
+
+  // Only keys present in the body are written — omitting a key leaves that
+  // channel unchanged; explicit null/"" clears it. The two channels are
+  // edited independently.
+  const update: { mentor_whatsapp?: string | null; mentor_email?: string | null } = {}
+  const changedChannels: string[] = []
+
+  if (hasWhatsapp) {
+    const rawValue = body.whatsapp
+    if (rawValue === null || rawValue === '') {
+      update.mentor_whatsapp = null
+      changedChannels.push('whatsapp:cleared')
+    } else {
+      const digits = normalizeWhatsapp(String(rawValue).trim())
+      if (!WHATSAPP_DIGITS_RE.test(digits)) {
+        throw new AppError('VALIDATION_ERROR', 'whatsapp must be a number with 8-15 digits', 400)
+      }
+      update.mentor_whatsapp = digits
+      changedChannels.push('whatsapp:set')
+    }
+  }
+
+  if (hasEmail) {
+    const rawValue = body.email
+    if (rawValue === null || rawValue === '') {
+      update.mentor_email = null
+      changedChannels.push('email:cleared')
+    } else {
+      const trimmed = String(rawValue).trim().toLowerCase()
+      if (trimmed.length > 254) throw new AppError('VALIDATION_ERROR', 'email must be at most 254 characters', 400)
+      if (!EMAIL_RE.test(trimmed)) throw new AppError('VALIDATION_ERROR', 'email must be a valid email address', 400)
+      update.mentor_email = trimmed
+      changedChannels.push('email:set')
+    }
+  }
+
+  const { data: updated, error } = await db.from('fellowship_members')
+    .update(update)
+    .eq('fellowship_id', body.fellowship_id).eq('user_id', user.id)
+    .select('mentor_whatsapp, mentor_email')
+    .maybeSingle()
+
+  if (error) {
+    // Never log contact values — only fellowship id and which channels changed.
+    console.error('[fellowship-members/contact] Update error:', { fellowship_id: body.fellowship_id, changedChannels, error })
+    throw new AppError('DATABASE_ERROR', 'Failed to update mentor contact', 500)
+  }
+
+  console.log('[fellowship-members/contact] Updated:', { fellowship_id: body.fellowship_id, changedChannels })
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mentor_whatsapp: updated?.mentor_whatsapp ?? null,
+      mentor_email: updated?.mentor_email ?? null,
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -341,6 +494,9 @@ async function handleMembers(req: Request, services: ServiceContainer): Promise<
     if (pathname.endsWith('/unmute')) return handleUnmuteMember(req, services)
     if (pathname.endsWith('/remove')) return handleRemoveMember(req, services)
     if (pathname.endsWith('/transfer')) return handleTransferMentor(req, services)
+    if (pathname.endsWith('/promote')) return handleChangeMentorRole(req, services, 'mentor')
+    if (pathname.endsWith('/demote')) return handleChangeMentorRole(req, services, 'member')
+    if (pathname.endsWith('/contact')) return handleSetMentorContact(req, services)
   }
 
   throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)

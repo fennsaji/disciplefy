@@ -39,6 +39,45 @@ class FellowshipModel {
   /// Who is allowed to post: `'all_members'` or `'mentor_only'`.
   final String postingPermission;
 
+  /// All mentors of this fellowship (owner plus any promoted members).
+  final List<FellowshipMentorEntity> mentors;
+
+  /// True when this is an official Disciplefy fellowship.
+  final bool isOfficial;
+
+  /// True when the Discipler AI helper is allowed to participate.
+  final bool disciplerAllowed;
+
+  /// True when the fellowship admin allows a daily study post.
+  final bool dailyPostAllowed;
+
+  /// Discipler reply mode: `'off'`, `'auto'`, or `'review'`.
+  final String disciplerReplyMode;
+
+  /// Which questions the Discipler answers: `'all'` or `'lessons_only'`.
+  final String disciplerReplyScope;
+
+  /// Minutes to wait for a mentor to answer before Discipler replies.
+  final int disciplerReplyDelayMin;
+
+  /// True when the Discipler AI helper may react to posts.
+  final bool disciplerReactEnabled;
+
+  /// True when the fellowship has daily study posts turned on.
+  final bool dailyPostOn;
+
+  /// How often the daily study post runs, in days: `1` (daily), `2`
+  /// (every 2 days), or `7` (weekly).
+  final int dailyPostFrequencyDays;
+
+  /// True when the Discipler advances the fellowship's current lesson
+  /// automatically after each daily post.
+  final bool dailyPostAutoAdvance;
+
+  /// True when the current user wants push notifications for Discipler
+  /// activity in this fellowship.
+  final bool myDisciplerActivityPush;
+
   const FellowshipModel({
     required this.id,
     required this.name,
@@ -51,11 +90,24 @@ class FellowshipModel {
     this.mentorName,
     this.isPublic = false,
     this.postingPermission = 'all_members',
+    this.mentors = const [],
+    this.isOfficial = false,
+    this.disciplerAllowed = false,
+    this.dailyPostAllowed = false,
+    this.disciplerReplyMode = 'auto',
+    this.disciplerReplyScope = 'all',
+    this.disciplerReplyDelayMin = 0,
+    this.disciplerReactEnabled = true,
+    this.dailyPostOn = true,
+    this.dailyPostFrequencyDays = 1,
+    this.dailyPostAutoAdvance = true,
+    this.myDisciplerActivityPush = true,
   });
 
   /// Creates a [FellowshipModel] from a JSON map (API response).
   factory FellowshipModel.fromJson(Map<String, dynamic> json) {
     final currentStudyJson = json['current_study'] as Map<String, dynamic>?;
+    final mentorsJson = (json['mentors'] as List<dynamic>?) ?? [];
 
     return FellowshipModel(
       id: json['id'] as String,
@@ -71,6 +123,27 @@ class FellowshipModel {
       mentorName: json['mentor_name'] as String?,
       isPublic: json['is_public'] as bool? ?? false,
       postingPermission: json['posting_permission'] as String? ?? 'all_members',
+      mentors: mentorsJson
+          .map((m) => FellowshipMentorEntity(
+                userId: m['user_id'] as String,
+                displayName: m['display_name'] as String? ?? 'Mentor',
+                avatarUrl: m['avatar_url'] as String?,
+              ))
+          .toList(),
+      isOfficial: json['is_official'] as bool? ?? false,
+      disciplerAllowed: json['discipler_allowed'] as bool? ?? false,
+      dailyPostAllowed: json['daily_post_allowed'] as bool? ?? false,
+      disciplerReplyMode: json['discipler_reply_mode'] as String? ?? 'auto',
+      disciplerReplyScope: json['discipler_reply_scope'] as String? ?? 'all',
+      disciplerReplyDelayMin:
+          (json['discipler_reply_delay_min'] as num?)?.toInt() ?? 0,
+      disciplerReactEnabled: json['discipler_react_enabled'] as bool? ?? true,
+      dailyPostOn: json['daily_post_on'] as bool? ?? true,
+      dailyPostFrequencyDays:
+          (json['daily_post_frequency_days'] as num?)?.toInt() ?? 1,
+      dailyPostAutoAdvance: json['daily_post_auto_advance'] as bool? ?? true,
+      myDisciplerActivityPush:
+          json['my_discipler_activity_push'] as bool? ?? true,
     );
   }
 
@@ -87,5 +160,17 @@ class FellowshipModel {
         mentorName: mentorName,
         isPublic: isPublic,
         postingPermission: postingPermission,
+        mentors: mentors,
+        isOfficial: isOfficial,
+        disciplerAllowed: disciplerAllowed,
+        dailyPostAllowed: dailyPostAllowed,
+        disciplerReplyMode: disciplerReplyMode,
+        disciplerReplyScope: disciplerReplyScope,
+        disciplerReplyDelayMin: disciplerReplyDelayMin,
+        disciplerReactEnabled: disciplerReactEnabled,
+        dailyPostOn: dailyPostOn,
+        dailyPostFrequencyDays: dailyPostFrequencyDays,
+        dailyPostAutoAdvance: dailyPostAutoAdvance,
+        myDisciplerActivityPush: myDisciplerActivityPush,
       );
 }

@@ -192,6 +192,17 @@ class NotificationMessageHandlerWeb {
       'memory_verse_reminder',
       'memory_verse_overdue',
       'fellowship_meeting_reminder',
+      'fellowship_meeting',
+      'fellowship_meeting_cancelled',
+      'fellowship_meeting_invite',
+      'fellowship_new_post',
+      'fellowship_new_comment',
+      'fellowship_reaction',
+      'fellowship_question',
+      'fellowship_member_joined',
+      'fellowship_daily_post',
+      'fellowship_discipler_reply',
+      'fellowship_discipler_activity',
     };
     if (!validTypes.contains(type)) {
       Logger.warning('[FCM] ⚠️ Unknown notification type: $type');
@@ -258,16 +269,63 @@ class NotificationMessageHandlerWeb {
         Logger.debug('[FCM] ✅ Navigate → memory verse review');
         break;
 
+      // Meetings live on the fellowship home tab. Note the invite sends
+      // 'fellowship_meeting_invite'; 'meeting_invite' is only what it writes
+      // to notification_logs, and is never an FCM data type.
       case 'fellowship_meeting_reminder':
-        final fellowshipId = data['fellowship_id'];
-        if (fellowshipId is String && fellowshipId.isNotEmpty) {
-          _router.go('/community/$fellowshipId');
-          Logger.debug('[FCM] ✅ Navigate → fellowship: $fellowshipId');
+      case 'fellowship_meeting':
+      case 'fellowship_meeting_cancelled':
+      case 'fellowship_meeting_invite':
+        _goToFellowship(data, suffix: '');
+        break;
+
+      // Post activity — open the feed, where the post and its comments are.
+      case 'fellowship_new_post':
+      case 'fellowship_new_comment':
+      case 'fellowship_reaction':
+      case 'fellowship_question':
+        _goToFellowship(data, suffix: '/feed');
+        break;
+
+      // Sent to the mentor when someone joins; the member list is the point.
+      case 'fellowship_member_joined':
+        _goToFellowship(data, suffix: '/members');
+        break;
+
+      // The Discipler AI helper's daily study post lands in the feed.
+      case 'fellowship_daily_post':
+        _goToFellowship(data, suffix: '/feed');
+        break;
+
+      // A Discipler reply — deep-link straight to the thread when we have a
+      // post id, else fall back to the feed.
+      case 'fellowship_discipler_reply':
+        final postId = data['post_id'];
+        if (postId is String && postId.isNotEmpty) {
+          _goToFellowship(data, suffix: '/post/$postId');
         } else {
-          _router.go('/community');
-          Logger.warning('[FCM] ⚠️ No fellowship_id, navigating to community');
+          _goToFellowship(data, suffix: '/feed');
         }
         break;
+
+      // Mentor-facing digest of Discipler drafts/replies/reactions awaiting
+      // review.
+      case 'fellowship_discipler_activity':
+        _goToFellowship(data, suffix: '/discipler-activity');
+        break;
+    }
+  }
+
+  /// Navigates to a fellowship sub-route, falling back to the community list
+  /// when the push carries no usable fellowship_id.
+  void _goToFellowship(Map<String, dynamic> data, {required String suffix}) {
+    final fellowshipId = data['fellowship_id'];
+    if (fellowshipId is String && fellowshipId.isNotEmpty) {
+      _router.go('/community/$fellowshipId$suffix');
+      Logger.debug('[FCM] ✅ Navigate → fellowship: $fellowshipId$suffix');
+    } else {
+      _router.go('/community');
+      Logger.warning('[FCM] ⚠️ No fellowship_id, navigating to community');
     }
   }
 
