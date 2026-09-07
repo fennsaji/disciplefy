@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -14,6 +15,9 @@ import '../../domain/entities/fellowship_post_entity.dart';
 import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../bloc/fellowship_feed/fellowship_feed_state.dart';
+import '../utils/markdown_text.dart';
+import '../widgets/daily_post_card.dart';
+import '../widgets/discipler_badges.dart';
 
 // ============================================================================
 // Entry point
@@ -552,6 +556,8 @@ class _PostCardState extends State<_PostCard> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
+    final l10n = AppLocalizations.of(context)!;
+    final isSystem = post.authorIsSystem;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,7 +567,10 @@ class _PostCardState extends State<_PostCard> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Avatar(displayName: post.authorDisplayName, size: 34),
+              if (isSystem)
+                const DisciplerAvatar(radius: 17)
+              else
+                _Avatar(displayName: post.authorDisplayName, size: 34),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -570,15 +579,25 @@ class _PostCardState extends State<_PostCard> {
                     // Author + time
                     Row(
                       children: [
-                        Text(
-                          post.authorDisplayName,
-                          style: TextStyle(
-                            color: context.appTextPrimary,
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Text(
+                            isSystem
+                                ? l10n.disciplerName
+                                : post.authorDisplayName,
+                            style: TextStyle(
+                              color: context.appTextPrimary,
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (isSystem) ...[
+                          const SizedBox(width: 6),
+                          const DisciplerAiChip(),
+                        ],
                         const SizedBox(width: 6),
                         Text(
                           '·',
@@ -598,15 +617,27 @@ class _PostCardState extends State<_PostCard> {
                     ),
                     const SizedBox(height: 5),
                     // Content
-                    Text(
-                      post.content,
-                      style: TextStyle(
-                        color: context.appTextPrimary,
-                        fontFamily: 'Inter',
-                        fontSize: 14,
-                        height: 1.5,
+                    if (post.isDaily)
+                      DailyPostBody(
+                        content: post.content,
+                        accent: dailyPostAccent(context),
+                      )
+                    else
+                      Text(
+                        isSystem
+                            ? stripEmphasisMarkers(post.content)
+                            : post.content,
+                        style: TextStyle(
+                          color: context.appTextPrimary,
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
                       ),
-                    ),
+                    if (isSystem) ...[
+                      const SizedBox(height: 8),
+                      const DisciplerFooterNote(),
+                    ],
                     const SizedBox(height: 8),
                     // Reply action
                     GestureDetector(
@@ -737,12 +768,18 @@ class _CommentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isSystem = comment.authorIsSystem;
+
     return Padding(
       padding: const EdgeInsets.only(right: 16, bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Avatar(displayName: comment.authorDisplayName, size: 26),
+          if (isSystem)
+            const DisciplerAvatar(radius: 13)
+          else
+            _Avatar(displayName: comment.authorDisplayName, size: 26),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -750,15 +787,25 @@ class _CommentRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      comment.authorDisplayName,
-                      style: TextStyle(
-                        color: context.appTextPrimary,
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        isSystem
+                            ? l10n.disciplerName
+                            : comment.authorDisplayName,
+                        style: TextStyle(
+                          color: context.appTextPrimary,
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (isSystem) ...[
+                      const SizedBox(width: 6),
+                      const DisciplerAiChip(),
+                    ],
                     const SizedBox(width: 6),
                     Text(
                       '·',
@@ -778,7 +825,9 @@ class _CommentRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  comment.content,
+                  isSystem
+                      ? stripEmphasisMarkers(comment.content)
+                      : comment.content,
                   style: TextStyle(
                     color: context.appTextPrimary,
                     fontFamily: 'Inter',
@@ -786,6 +835,10 @@ class _CommentRow extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
+                if (isSystem) ...[
+                  const SizedBox(height: 6),
+                  const DisciplerFooterNote(),
+                ],
               ],
             ),
           ),

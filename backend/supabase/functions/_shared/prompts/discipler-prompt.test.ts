@@ -13,6 +13,15 @@ Deno.test('system prompt carries the theological foundation and language rule', 
   assertEquals(p.includes('"action"'), true)
 })
 
+Deno.test('system prompt forbids markdown in the reply', () => {
+  const p = buildDisciplerSystemPrompt()
+  assertEquals(p.includes('plain text in a mobile app'), true)
+  assertEquals(p.includes('NO markdown'), true)
+  assertEquals(p.includes('asterisks'), true)
+  assertEquals(p.includes('underscores'), true)
+  assertEquals(p.includes('backticks'), true)
+})
+
 Deno.test('user message includes context, thread and asker', () => {
   const m = buildDisciplerUserMessage({
     trigger: 'question', fellowshipLanguage: 'hi', question: 'Kya fasting zaroori hai?',

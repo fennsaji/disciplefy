@@ -11,6 +11,7 @@ import '../bloc/fellowship_feed/fellowship_feed_event.dart';
 import '../bloc/fellowship_feed/fellowship_feed_state.dart';
 import '../utils/auth_helpers.dart';
 import '../utils/feed_sort.dart';
+import '../utils/markdown_text.dart';
 import '../utils/mention_text.dart';
 import '../utils/share_helpers.dart';
 import '../widgets/block_user_dialog.dart';
@@ -716,7 +717,9 @@ class _CommentTile extends StatelessWidget {
                     Text.rich(
                       TextSpan(
                         children: mentionSpans(
-                          comment.content,
+                          isSystem
+                              ? stripEmphasisMarkers(comment.content)
+                              : comment.content,
                           TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 13,
