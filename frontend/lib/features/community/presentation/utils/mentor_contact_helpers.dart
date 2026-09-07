@@ -30,8 +30,7 @@ bool isValidEmailValue(String rawValue) {
 /// Builds the `wa.me` deep link for [digits] (WhatsApp number, digits only,
 /// no leading `+`) with a prefilled [text].
 Uri buildWhatsAppUri({required String digits, required String text}) {
-  return Uri.parse('https://wa.me/$digits')
-      .replace(queryParameters: {'text': text});
+  return Uri.parse('https://wa.me/$digits?text=${Uri.encodeComponent(text)}');
 }
 
 /// Builds a `mailto:` link to [address] with a prefilled [subject] and
@@ -41,10 +40,13 @@ Uri buildEmailUri({
   required String subject,
   required String body,
 }) {
+  // `queryParameters` form-encodes, turning every space into '+'. Mail and
+  // WhatsApp clients render that literally, so percent-encode instead.
   return Uri(
     scheme: 'mailto',
     path: address,
-    queryParameters: {'subject': subject, 'body': body},
+    query: 'subject=${Uri.encodeComponent(subject)}'
+        '&body=${Uri.encodeComponent(body)}',
   );
 }
 
