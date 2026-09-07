@@ -165,28 +165,12 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           listener: (context, state) {
             // Show monthly limit exceeded dialog (mid-conversation server rejection)
             if (state is VoiceConversationMonthlyLimitExceeded) {
-              MonthlyLimitExceededDialog.show(
-                context,
-                conversationsUsed: state.conversationsUsed,
-                limit: state.limit,
-                tier: state.tier,
-                month: state.month,
-              );
+              _showVoiceUpsell(state.tier);
             }
 
             // Show limit dialog when server rejects start (quota was unknown or stale)
             if (state.status == VoiceConversationStatus.quotaExceeded) {
-              final quota = state.quota;
-              final now = DateTime.now();
-              final month =
-                  '${now.year}-${now.month.toString().padLeft(2, '0')}';
-              MonthlyLimitExceededDialog.show(
-                context,
-                conversationsUsed: quota?.quotaUsed ?? 0,
-                limit: quota?.quotaLimit ?? 0,
-                tier: quota?.tier ?? 'free',
-                month: month,
-              );
+              _showVoiceUpsell(state.quota?.tier ?? 'free');
             }
 
             // Show error snackbar
@@ -407,33 +391,30 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     );
   }
 
+  /// The single upgrade sheet for every case where Talk to Discipler is
+  /// unavailable — no allowance on this plan, allowance spent, or the server
+  /// rejecting a start. The user's next step is the same in all of them.
+  void _showVoiceUpsell(String tier) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => UpgradeDialog(
+        featureKey: 'ai_discipler',
+        currentPlan: tier,
+        requiredPlans: const ['standard', 'plus', 'premium'],
+      ),
+    );
+  }
+
   void _startConversationWithState(VoiceConversationState state) {
     final quota = state.quota;
-    // A plan with no voice allowance at all (free is 0/month) has not "used up"
-    // anything, so the monthly-limit dialog would be wrong. Upsell instead.
-    if (quota != null && !quota.canStart && quota.quotaLimit <= 0) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (sheetContext) => UpgradeDialog(
-          featureKey: 'ai_discipler',
-          currentPlan: quota.tier,
-          requiredPlans: const ['standard', 'plus', 'premium'],
-        ),
-      );
-      return;
-    }
+    // Anyone who cannot start gets the same upgrade sheet, whether their plan
+    // never included Talk to Discipler (free is 0/month) or they used up this
+    // month's allowance. Two different dialogs for "you cannot start" was a
+    // distinction that mattered to the code, not to the person reading it.
     if (quota != null && !quota.canStart) {
-      final now = DateTime.now();
-      final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-      MonthlyLimitExceededDialog.show(
-        context,
-        conversationsUsed: quota.quotaUsed,
-        limit: quota.quotaLimit,
-        tier: quota.tier,
-        month: month,
-      );
+      _showVoiceUpsell(quota.tier);
       return;
     }
     context.read<VoiceConversationBloc>().add(StartConversation(
