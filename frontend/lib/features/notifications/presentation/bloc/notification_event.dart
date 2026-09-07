@@ -43,6 +43,7 @@ class UpdateNotificationPreferences extends NotificationEvent {
   final bool? meetingInviteEnabled;
   final bool? fellowshipMentorPromotedEnabled;
   final bool? fellowshipMemberJoinedEnabled;
+  final bool? fellowshipMentionEnabled;
 
   const UpdateNotificationPreferences({
     this.dailyVerseEnabled,
@@ -69,6 +70,7 @@ class UpdateNotificationPreferences extends NotificationEvent {
     this.meetingInviteEnabled,
     this.fellowshipMentorPromotedEnabled,
     this.fellowshipMemberJoinedEnabled,
+    this.fellowshipMentionEnabled,
   });
 
   @override
@@ -88,6 +90,7 @@ class UpdateNotificationPreferences extends NotificationEvent {
         meetingInviteEnabled,
         fellowshipMentorPromotedEnabled,
         fellowshipMemberJoinedEnabled,
+        fellowshipMentionEnabled,
         dailyVerseEnabled,
         recommendedTopicEnabled,
         streakReminderEnabled,

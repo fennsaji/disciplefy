@@ -56,6 +56,14 @@ class FellowshipEntity extends Equatable {
   /// The learning path the fellowship is currently working through, if any.
   final CurrentStudyEntity? currentStudy;
 
+  /// Learning paths this fellowship has finished.
+  ///
+  /// Group study records no personal per-topic progress, so a path the
+  /// fellowship completed still reads as 0% for each member. The For You
+  /// section uses this to avoid recommending a path the user has already
+  /// worked through with their group.
+  final List<String> completedPathIds;
+
   /// Display name of the fellowship's mentor, if available.
   final String? mentorName;
 
@@ -114,6 +122,7 @@ class FellowshipEntity extends Equatable {
     required this.joinedAt,
     required this.createdAt,
     this.currentStudy,
+    this.completedPathIds = const [],
     this.mentorName,
     this.isPublic = false,
     this.postingPermission = 'all_members',
@@ -159,6 +168,7 @@ class FellowshipEntity extends Equatable {
       joinedAt: joinedAt,
       createdAt: createdAt,
       currentStudy: currentStudy,
+      completedPathIds: completedPathIds,
       mentorName: mentorName,
       isPublic: isPublic,
       postingPermission: postingPermission ?? this.postingPermission,

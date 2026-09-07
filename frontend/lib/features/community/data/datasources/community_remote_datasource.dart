@@ -51,6 +51,7 @@ abstract class CommunityRemoteDatasource {
     String? guideInputType,
     String? guideLanguage,
     bool disciplerReplyOptOut = false,
+    List<String> mentionedUserIds = const [],
   });
 
   /// Soft-deletes the post identified by [postId].
@@ -63,6 +64,7 @@ abstract class CommunityRemoteDatasource {
   Future<FellowshipCommentModel> createComment({
     required String postId,
     required String content,
+    List<String> mentionedUserIds = const [],
   });
 
   /// Soft-deletes the comment identified by [commentId].
@@ -671,6 +673,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     String? guideInputType,
     String? guideLanguage,
     bool disciplerReplyOptOut = false,
+    List<String> mentionedUserIds = const [],
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipPostsCreateEndpoint';
@@ -686,6 +689,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         if (guideInputType != null) 'guide_input_type': guideInputType,
         if (guideLanguage != null) 'guide_language': guideLanguage,
         if (disciplerReplyOptOut) 'discipler_reply_opt_out': true,
+        if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
       });
 
       final headers = await _httpService.createHeaders();
@@ -797,12 +801,14 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
   Future<FellowshipCommentModel> createComment({
     required String postId,
     required String content,
+    List<String> mentionedUserIds = const [],
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipCommentsCreateEndpoint';
       final body = jsonEncode({
         'post_id': postId,
         'content': content,
+        if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
       });
 
       final headers = await _httpService.createHeaders();

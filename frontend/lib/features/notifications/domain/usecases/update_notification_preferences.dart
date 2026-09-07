@@ -46,6 +46,7 @@ class UpdateNotificationPreferences
       meetingInviteEnabled: params.meetingInviteEnabled,
       fellowshipMentorPromotedEnabled: params.fellowshipMentorPromotedEnabled,
       fellowshipMemberJoinedEnabled: params.fellowshipMemberJoinedEnabled,
+      fellowshipMentionEnabled: params.fellowshipMentionEnabled,
     );
   }
 }
@@ -74,6 +75,7 @@ class UpdatePreferencesParams extends Equatable {
   final bool? meetingInviteEnabled;
   final bool? fellowshipMentorPromotedEnabled;
   final bool? fellowshipMemberJoinedEnabled;
+  final bool? fellowshipMentionEnabled;
   final TimeOfDayVO? memoryVerseReminderTime;
 
   const UpdatePreferencesParams({
@@ -101,6 +103,7 @@ class UpdatePreferencesParams extends Equatable {
     this.meetingInviteEnabled,
     this.fellowshipMentorPromotedEnabled,
     this.fellowshipMemberJoinedEnabled,
+    this.fellowshipMentionEnabled,
   });
 
   @override
@@ -129,5 +132,6 @@ class UpdatePreferencesParams extends Equatable {
         meetingInviteEnabled,
         fellowshipMentorPromotedEnabled,
         fellowshipMemberJoinedEnabled,
+        fellowshipMentionEnabled,
       ];
 }

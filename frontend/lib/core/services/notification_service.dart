@@ -617,6 +617,8 @@ class NotificationService {
       'fellowship_daily_post',
       'fellowship_discipler_reply',
       'fellowship_discipler_activity',
+      'fellowship_mention',
+      'fellowship_mentor_promoted',
     };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
@@ -718,6 +720,21 @@ class NotificationService {
       case 'fellowship_reaction':
       case 'fellowship_question':
         _goToFellowship(data, suffix: '/feed');
+        break;
+
+      // Being tagged is about one thread, so deep-link to the post itself.
+      case 'fellowship_mention':
+        final mentionPostId = data['post_id'];
+        if (mentionPostId is String && mentionPostId.isNotEmpty) {
+          _goToFellowship(data, suffix: '/post/$mentionPostId');
+        } else {
+          _goToFellowship(data, suffix: '/feed');
+        }
+        break;
+
+      // Told to the person promoted; the fellowship home shows what changed.
+      case 'fellowship_mentor_promoted':
+        _goToFellowship(data, suffix: '');
         break;
 
       // Sent to the mentor when someone joins; the member list is the point.

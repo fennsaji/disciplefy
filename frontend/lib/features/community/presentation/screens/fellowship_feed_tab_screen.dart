@@ -24,6 +24,9 @@ import '../widgets/fellowship_post_card.dart';
 import '../widgets/mention_sheet.dart';
 import '../widgets/study_guide_chip.dart';
 import 'package:disciplefy_bible_study/core/theme/contrast.dart';
+import '../../domain/repositories/community_repository.dart';
+import '../../domain/entities/fellowship_member_entity.dart';
+import '../../../../core/di/injection_container.dart';
 
 /// Real implementation of the Fellowship Feed tab.
 ///
@@ -412,6 +415,12 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   /// Discipler answer, so ignoring the switch changes nothing.
   bool _letDisciplerAnswer = true;
 
+  /// Who the inserted @handles refer to, resolved at insertion time.
+  final MentionTracker _mentions = MentionTracker();
+
+  /// Fellowship members, fetched the first time the picker is opened.
+  List<FellowshipMemberEntity> _members = const [];
+
   /// Returns contextual placeholder text based on the selected post type.
   String _hintForType(String type) {
     switch (type) {
@@ -441,6 +450,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
             content: content,
             postType: _selectedType,
             disciplerReplyOptOut: !_letDisciplerAnswer,
+            mentionedUserIds: _mentions.idsIn(content),
           ),
         );
   }
@@ -459,12 +469,21 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   /// current cursor position (replacing a trailing partial `@word`).
   Future<void> _openMentionSheet({int? cursorOverride}) async {
     final feedState = context.read<FellowshipFeedBloc>().state;
+    if (_members.isEmpty) {
+      final result = await sl<CommunityRepository>()
+          .getFellowshipMembers(widget.fellowshipId);
+      result.fold((_) => null, (members) => _members = members);
+      if (!mounted) return;
+    }
     final candidate = await showMentionSheet(
       context,
       disciplerAllowed: feedState.disciplerAllowed,
       mentors: feedState.mentors,
+      members: _members,
+      currentUserId: feedState.currentUserId,
     );
     if (candidate == null || !mounted) return;
+    _mentions.remember(candidate.handle, candidate.userId);
     final selectionOffset = _contentController.selection.baseOffset;
     final cursor = cursorOverride ??
         (selectionOffset >= 0

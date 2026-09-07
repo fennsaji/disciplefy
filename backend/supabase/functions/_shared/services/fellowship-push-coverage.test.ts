@@ -30,6 +30,7 @@ const FELLOWSHIP_FUNCTIONS = [
   'fellowship-invites/index.ts',
   'fellowship-meetings/index.ts',
   'fellowship-members/index.ts',
+  '_shared/services/mention-service.ts',
 ];
 
 /** The raw helpers, which send immediately and consult no preference. */

@@ -87,6 +87,7 @@ abstract class CommunityRepository {
     String? guideInputType,
     String? guideLanguage,
     bool disciplerReplyOptOut = false,
+    List<String> mentionedUserIds = const [],
   });
 
   /// Soft-deletes the post identified by [postId].
@@ -100,6 +101,7 @@ abstract class CommunityRepository {
   Future<Either<Failure, FellowshipCommentEntity>> createComment({
     required String postId,
     required String content,
+    List<String> mentionedUserIds = const [],
   });
 
   /// Soft-deletes the comment identified by [commentId].

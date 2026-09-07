@@ -123,6 +123,7 @@ const PREFERENCE_COLUMN: Record<string, string> = {
   fellowship_meeting_invite: 'fellowship_meeting_invite_enabled',
   fellowship_mentor_promoted: 'fellowship_mentor_promoted_enabled',
   fellowship_member_joined: 'fellowship_member_joined_enabled',
+  fellowship_mention: 'fellowship_mention_enabled',
 }
 
 export interface DeliverOptions {
