@@ -21,6 +21,10 @@ export interface StreamMessage {
 export interface VoiceStreamingConfig {
   openaiApiKey: string
   anthropicApiKey?: string
+  /// When true, stream a canned reply instead of calling a provider. Every
+  /// other LLM path honours mock mode; without this the voice feature was the
+  /// one thing that could not run on a local stack (both providers 401).
+  useMock?: boolean
 }
 
 /**
@@ -39,6 +43,7 @@ interface ModelConfig {
 export class VoiceStreamingService {
   private readonly openaiApiKey: string
   private readonly anthropicApiKey?: string
+  private readonly useMock: boolean
 
   // Model configurations by tier
   private readonly MODELS: Record<string, ModelConfig> = {
@@ -73,6 +78,10 @@ export class VoiceStreamingService {
   constructor(config: VoiceStreamingConfig) {
     this.openaiApiKey = config.openaiApiKey
     this.anthropicApiKey = config.anthropicApiKey
+    this.useMock = config.useMock ?? false
+    if (this.useMock) {
+      console.log('[VoiceStreaming] Using mock data mode')
+    }
   }
 
   /**
@@ -105,6 +114,11 @@ export class VoiceStreamingService {
     messages: StreamMessage[],
     tier: string = 'standard'
   ): AsyncGenerator<string> {
+    if (this.useMock) {
+      yield* this.streamMock(messages)
+      return
+    }
+
     const config = this.getModelConfig(tier)
     console.log(`[VoiceStreaming] Using model: ${config.model} for tier: ${tier}`)
 
@@ -125,6 +139,26 @@ export class VoiceStreamingService {
       } else {
         throw error
       }
+    }
+  }
+
+  /**
+   * Stream a canned reply, word by word, so local runs exercise the same
+   * streaming path (SSE chunking, sentence buffering, TTS handoff) as a real
+   * provider without needing API keys.
+   */
+  private async *streamMock(messages: StreamMessage[]): AsyncGenerator<string> {
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user')
+    const question = lastUser?.content?.trim() || 'that'
+    const reply =
+      `That's a good question about ${question} ` +
+      'Scripture speaks to this directly. Take a moment to sit with the passage, ' +
+      'and notice what it says about God before what it asks of you. ' +
+      'What stands out to you as you read it?'
+
+    for (const word of reply.split(' ')) {
+      yield `${word} `
+      await new Promise((resolve) => setTimeout(resolve, 40))
     }
   }
 

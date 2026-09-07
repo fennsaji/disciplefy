@@ -137,7 +137,8 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const securityValidator = new SecurityValidator()
     const voiceStreamingService = new VoiceStreamingService({
       openaiApiKey: config.useMock ? '' : (config.openaiApiKey || ''),
-      anthropicApiKey: config.useMock ? undefined : config.anthropicApiKey
+      anthropicApiKey: config.useMock ? undefined : config.anthropicApiKey,
+      useMock: config.useMock
     })
     const voiceQuotaService = new VoiceQuotaService(supabaseServiceClient)
 
