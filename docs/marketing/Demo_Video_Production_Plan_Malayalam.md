@@ -30,7 +30,7 @@
 1. Open the app for the first time — splash screen → onboarding carousel loads
 2. **Slide 1** visible — "Daily Inspiration & Study" — pause 3s
 3. Swipe to **Slide 2** — "AI-Powered Study Guides" — pause 3s
-4. Swipe to **Slide 3** — "Voice Discipler" — pause 3s
+4. Swipe to **Slide 3** — "Talk to Discipler" — pause 3s
 5. Swipe to **Slide 4** — "Memory Verses" — pause 3s
 6. Tap **"Start Free"** button
 7. Language selection screen — show all 3 options, select Malayalam
@@ -50,8 +50,8 @@
 > **[Swipe to Slide 2: "AI-Powered Study Guides"]**
 > "ഒരു verse-ഓ topic-ഓ deeper ആയി study ചെയ്യണം, പക്ഷേ എങ്ങനെ തുടങ്ങണമെന്ന് അറിയില്ലേ? Scripture, theme, question — ഏതെങ്കിലും type ചെയ്‌താൽ app ഒരു complete Bible study build ചെയ്‌തു തരും. Context, meaning, life-ൽ apply ചെയ്യേണ്ടത് — എല്ലാം, seconds-ൽ."
 >
-> **[Swipe to Slide 3: "Voice Discipler"]**
-> "വായിച്ചതിൽ ഒരു question ഉണ്ടോ? Or faith-നെ കുറിച്ച് ആരും ശരിക്ക് answer ചെയ്‌തിട്ടില്ലാത്ത ഒരു big question? AI Discipler-നോട് ചോദിക്കൂ. Scripture-ലൂടെ കടന്ന് ഉത്തരം തരും. ഒരു Bible teacher സദാ ലഭ്യമായതുപോലെ. 'Call to me and I will answer you' — Jeremiah 33:3."
+> **[Swipe to Slide 3: "Talk to Discipler"]**
+> "വായിച്ചതിൽ ഒരു question ഉണ്ടോ? Or faith-നെ കുറിച്ച് ആരും ശരിക്ക് answer ചെയ്‌തിട്ടില്ലാത്ത ഒരു big question? Talk to Discipler-നോട് ചോദിക്കൂ. Scripture-ലൂടെ കടന്ന് ഉത്തരം തരും. ഒരു Bible teacher സദാ ലഭ്യമായതുപോലെ. 'Call to me and I will answer you' — Jeremiah 33:3."
 >
 > **[Swipe to Slide 4: "Memory Verses"]**
 > "Scripture memorize ചെയ്യണം — ആരും ആഗ്രഹിക്കും, പക്ഷേ കുറച്ചു ദിവസം കഴിഞ്ഞ് നിർത്തിപ്പോകും. Disciplefy-ൽ eight different practice modes ഉണ്ട് — verse വെറുതേ വായിക്കുന്നതല്ല, ശരിക്കും mind-ൽ ഒതുക്കാൻ. Psalm 119:11 — 'I have hidden your word in my heart.' അതാണ് goal."
@@ -168,7 +168,7 @@
 3. Type `Anxiety`
 4. Tap **Generate Study Guide**
 5. Study guide appears — scroll through sections
-6. Show **AI Discipler follow-up chat** — type `How do I apply this when I feel overwhelmed?`
+6. Show **Talk to Discipler follow-up chat** — type `How do I apply this when I feel overwhelmed?`
 7. Show AI response
 
 ### Voiceover
@@ -182,8 +182,8 @@
 > **[Study guide loads]**
 > "കണ്ടോ? Anxiety-ൽ most relevant scriptures — Philippians 4:6, Matthew 6:25 — ഇതൊക്കെ ഉപയോഗിച്ച് whole study build ചെയ്‌തു. Search ഒന്നും വേണ്ടായിരുന്നു. App-ന് അറിയാം."
 >
-> **[Scrolling to AI Discipler]**
-> "Bottom-ൽ — AI Discipler. Study guide-ൽ ഒരു question ഉണ്ടായോ? Just ask. 'How do I apply this when I feel overwhelmed?' Scripture-based real answer തരും. Honestly, ഒരു Bible teacher always available-ൽ ഇരിക്കുന്നതുപോലെ."
+> **[Scrolling to Talk to Discipler]**
+> "Bottom-ൽ — Talk to Discipler. Study guide-ൽ ഒരു question ഉണ്ടായോ? Just ask. 'How do I apply this when I feel overwhelmed?' Scripture-based real answer തരും. Honestly, ഒരു Bible teacher always available-ൽ ഇരിക്കുന്നതുപോലെ."
 
 ---
 
@@ -199,7 +199,7 @@
 3. Type `Why does God allow suffering?`
 4. Tap **Generate Study Guide**
 5. Study guide loads
-6. Scroll to **AI Discipler** section
+6. Scroll to **Talk to Discipler** section
 7. Type `What does the Bible say about Job's suffering?`
 8. Show AI response
 
@@ -214,8 +214,8 @@
 > **[Study guide loads]**
 > "Wow, നോക്കൂ. Bible ഇതിനെ കുറിച്ച് ശരിക്കും പറഞ്ഞത്, understand ചെയ്യേണ്ടത്, faith ഉള്ളവർ pain-ൽ God-നെ hold ചെയ്‌ത ഇടം — full study. Verses-ൻ്റെ list മാത്രമല്ല, real study."
 >
-> **[AI Discipler follow-up]**
-> "Deeper go ആകാം. Follow-up type ചെയ്യൂ — Job specifically-നെ കുറിച്ച്? AI Discipler കൂടെ വരും. Always Scripture-ൽ നിന്ന്, opinion-ൽ നിന്നല്ല. Tough stuff-ന് genuinely helpful."
+> **[Talk to Discipler follow-up]**
+> "Deeper go ആകാം. Follow-up type ചെയ്യൂ — Job specifically-നെ കുറിച്ച്? Talk to Discipler കൂടെ വരും. Always Scripture-ൽ നിന്ന്, opinion-ൽ നിന്നല്ല. Tough stuff-ന് genuinely helpful."
 
 ---
 

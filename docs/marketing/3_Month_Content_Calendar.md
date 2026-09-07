@@ -774,13 +774,13 @@ Highly recommend to all Malayali Christians abroad."
 
 ### Friday, Jan 17
 
-**Instagram Post - Feature: Voice Discipler:**
+**Instagram Post - Feature: Talk to Discipler:**
 ```
 🎙️ NEW FEATURE SPOTLIGHT
 
 Did you know you can TALK to Disciplefy?
 
-Introducing Voice Discipler! 🗣️
+Introducing Talk to Discipler! 🗣️
 
 Instead of typing, just speak:
 • "Tell me about David and Goliath"
@@ -1714,7 +1714,7 @@ AUDIO: Triumphant worship/celebration
 2. "AI Study Guide demo"
 3. "Watch me study [passage]"
 4. "Learning Path walkthrough"
-5. "Voice Discipler demo"
+5. "Talk to Discipler demo"
 
 ## Trending Format Reels
 1. "POV: You finally understand the Bible"

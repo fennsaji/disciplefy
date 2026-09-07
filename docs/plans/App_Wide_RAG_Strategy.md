@@ -10,9 +10,9 @@
 
 ## 1. Purpose
 
-This document looks beyond Voice Discipler and asks: **where else in Disciplefy is Retrieval-Augmented Generation (RAG) worth it?** It inventories every LLM/content surface, identifies a **shared retrieval substrate** that amortizes across multiple features, and ranks each surface as a RAG candidate with explicit decision gates.
+This document looks beyond Talk to Discipler and asks: **where else in Disciplefy is Retrieval-Augmented Generation (RAG) worth it?** It inventories every LLM/content surface, identifies a **shared retrieval substrate** that amortizes across multiple features, and ranks each surface as a RAG candidate with explicit decision gates.
 
-Voice Discipler has its own detailed phase plan (companion doc). This doc is the umbrella: it shows that the substrate built for Voice should be reused, not rebuilt, for the other strong candidates.
+Talk to Discipler has its own detailed phase plan (companion doc). This doc is the umbrella: it shows that the substrate built for Voice should be reused, not rebuilt, for the other strong candidates.
 
 ---
 
@@ -33,12 +33,12 @@ Two facts reframe the whole question:
 
 | Feature | LLM-driven? | Current grounding | RAG candidate | Notes |
 |---|---|---|---|---|
-| **Study Followup** (`study-followup`) | ✅ | Study guide + last 10 msgs; no external retrieval | **STRONG** | Text twin of Voice Discipler |
+| **Study Followup** (`study-followup`) | ✅ | Study guide + last 10 msgs; no external retrieval | **STRONG** | Text twin of Talk to Discipler |
 | **Study Generation — Deep/Sermon** (`study-generate-v2`) | ✅ | User input + mode only; invents related verses | **STRONG** | Long-form, scholarly; latency-tolerant |
 | **Study Generation — Standard/Lectio/Quick** | ✅ | Same | Weak | Don't need scholarly depth |
 | **Admin Study Generator** (`admin-study-generator`) | ✅ | Same as v2 | **STRONG** | Library seeding; quality matters most |
 | **Daily Verse** (`daily-verse`) | ✅ | Recent-30-day DB exclusion; LLM *selects* verse | **Not RAG** | Fix selection with curated pool, not embeddings |
-| **Voice Discipler** (`voice-conversation`) | ✅ | Study guide + profile + last 10 msgs | **STRONG** | See companion doc |
+| **Talk to Discipler** (`voice-conversation`) | ✅ | Study guide + profile + last 10 msgs | **STRONG** | See companion doc |
 | Memory Verses (`*-memory-*`) | ❌ | SM-2 algorithm | Weak/future | Optional struggle hints only |
 | Fellowship posts/comments | ❌ | User content | Weak/future | Thread summarization someday |
 | Learning Paths / Continue Learning | ❌ | Curated DB | N/A | Recommender, not RAG |
@@ -133,7 +133,7 @@ Ordered by ROI. Each phase is independently shippable and evidence-gated.
 
 ### Phase A — Verse grounding & validation (cross-cutting, ship first)
 **Substrate:** §4.1 only. No vector store.
-- **A1.** Voice Discipler verse-text injection (= Voice plan Phase 1).
+- **A1.** Talk to Discipler verse-text injection (= Voice plan Phase 1).
 - **A2.** Study-generation **reference validation**: verify LLM-emitted `passage`/`related_verses` against real verse text; drop or correct invented references before saving to `study_guides`.
 - **A3.** Study Followup verse-text injection.
 
@@ -148,7 +148,7 @@ Ordered by ROI. Each phase is independently shippable and evidence-gated.
 - **B1.** Stand up `pgvector` + KB ingestion + reviewed corpus.
 - **B2.** Wire KB retrieval into **Study Followup** (closest twin to Voice; highest reuse).
 - **B3.** Wire KB retrieval into **Study Generation Deep + Sermon** (and **Admin generator**) — inject commentary / historical background / real cross-references; latency-tolerant since cache-backed.
-- **B4.** Wire KB retrieval into **Voice Discipler** (= Voice plan Phase 2a).
+- **B4.** Wire KB retrieval into **Talk to Discipler** (= Voice plan Phase 2a).
 
 **Effort:** Medium–High (ingestion, ongoing doctrinal review, eval harness). The KB is permanent operational surface.
 

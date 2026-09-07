@@ -40,7 +40,7 @@ set. Each is a **30–60s screen-recording walkthrough** with on-screen step bad
 | 6 | Add a Memory Verse | Memory Verses | ~40s |
 | 7 | Review & Practice verses | Flip / Word Bank / Cloze / First-Letter | ~55s |
 | 8 | Build your streak & heat map | Gamification | ~40s |
-| 9 | Ask the Voice Discipler | Voice Buddy | ~50s |
+| 9 | Ask the Talk to Discipler | Voice Buddy | ~50s |
 | 10 | Save, share & read offline | Saved tab | ~45s |
 | 11 | Join or create a Fellowship | Community tab | ~55s |
 | 12 | Inside a Fellowship | Feed / Lessons / Members | ~50s |
@@ -174,12 +174,12 @@ set. Each is a **30–60s screen-recording walkthrough** with on-screen step bad
 
 ---
 
-# Tutorial 9 — Ask the Voice Discipler
+# Tutorial 9 — Ask the Talk to Discipler
 **Length:** ~50s · Voice Buddy
 
 - **0:00–0:06 — Promise.** **DANIEL:** "Got a faith question? Just ask out loud."
-- **0:06–0:18 — Step 1.** `[Open Voice Discipler from Home]` `(Step 1 — Open Voice Discipler)`
-  **DANIEL:** "Open the Voice Discipler."
+- **0:06–0:18 — Step 1.** `[Open Talk to Discipler from Home]` `(Step 1 — Open Talk to Discipler)`
+  **DANIEL:** "Open the Talk to Discipler."
 - **0:18–0:32 — Step 2.** `[Tap the mic → speak: "How do I deal with worry?" → it responds with Scripture]` `(Step 2 — Ask your question)`
   **DANIEL:** "Tap the mic and ask anything. It answers with Scripture."
 - **0:32–0:42 — Step 3.** `[Open Voice preferences → set voice / language]` `(Step 3 — Set your preferences)`
@@ -279,6 +279,6 @@ set. Each is a **30–60s screen-recording walkthrough** with on-screen step bad
 
 ## Suggested rollout (onboarding playlist order)
 1 (Tour) → 2 (Generate) → 4 (Daily Verse) → 5 (Learning Path) → 6 (Add Verse) →
-7 (Practice) → 9 (Voice Discipler) → 10 (Saved/Offline) → 11 (Fellowship) →
+7 (Practice) → 9 (Talk to Discipler) → 10 (Saved/Offline) → 11 (Fellowship) →
 3 (Modes) → 8 (Streak) → 12 (Inside Fellowship) → 13 (Language/Theme) →
 14 (Notifications) → 15 (Plans/Tokens).

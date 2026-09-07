@@ -43,11 +43,11 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
 | 13 | Memory Verse | 30-day Challenge | ~50s |
 | 14 | Memory Verse | POV walkthrough | ~35s |
 | 15 | Memory Verse | Testimonial | ~40s |
-| 16 | Voice Discipler | Problem → Solution | ~60s |
-| 17 | Voice Discipler | POV | ~40s |
-| 18 | Voice Discipler | Myth-buster (trust) | ~50s |
-| 19 | Voice Discipler | Friends skit | ~40s |
-| 20 | Voice Discipler | Testimonial | ~40s |
+| 16 | Talk to Discipler | Problem → Solution | ~60s |
+| 17 | Talk to Discipler | POV | ~40s |
+| 18 | Talk to Discipler | Myth-buster (trust) | ~50s |
+| 19 | Talk to Discipler | Friends skit | ~40s |
+| 20 | Talk to Discipler | Testimonial | ~40s |
 
 ## Translation guidelines (English → Hindi)
 - Keep every spoken line **≤ 10–12 words**.
@@ -289,7 +289,7 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
 ---
 ---
 
-# Reel 16 — Voice Discipler · Problem → Solution
+# Reel 16 — Talk to Discipler · Problem → Solution
 **Length:** ~60s
 
 - **0:00–0:06 — Hook.** `[Sarah alone, late night, lamp on, phone in hand, unable to sleep.]`
@@ -298,7 +298,7 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
   `(Faith questions don't keep office hours.)`
 - **0:18–0:26 — Enter Daniel.** `[Cut to Daniel, gentle.]`
   **DANIEL:** "You don't have to sit with it alone. Just ask out loud."
-- **0:26–0:48 — Walkthrough.** `[Screen: Sarah taps the mic and speaks — "How do I forgive someone who really hurt me?" The Voice Discipler responds in a warm voice; relevant Scripture appears on screen with a short, gentle explanation.]`
+- **0:26–0:48 — Walkthrough.** `[Screen: Sarah taps the mic and speaks — "How do I forgive someone who really hurt me?" The Talk to Discipler responds in a warm voice; relevant Scripture appears on screen with a short, gentle explanation.]`
   **SARAH:** *(listening)* "It's answering… with actual verses. And it's pointing me back to the Word, not just opinions."
 - **0:48–0:56 — Turn.** `[Sarah sets the phone down, calmer, a little teary.]`
   **SARAH:** "It felt like talking it through with a mentor."
@@ -307,21 +307,21 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
 
 ---
 
-# Reel 17 — Voice Discipler · POV
+# Reel 17 — Talk to Discipler · POV
 **Length:** ~40s · intimate
 
 - **0:00–0:06 — Hook.** `[POV at night: lamp on, your hand holding the phone, mic button glowing.]`
   `(POV: it's late, and you finally ask the question out loud.)`
 - **0:06–0:30 — Walkthrough.** `[POV screen: press mic.]`
   **VOICE:** "How do I forgive someone who hurt me?"
-  `[Voice Discipler replies; Scripture references fade in one by one with a calm explanation.]`
+  `[Talk to Discipler replies; Scripture references fade in one by one with a calm explanation.]`
   `(It listens.)` `(It answers — with Scripture.)` `(It points you back to the Word.)`
 - **0:30–0:40 — CTA.** `(A discipler in your pocket — anytime you need to talk it through.)`
   **CTA card.**
 
 ---
 
-# Reel 18 — Voice Discipler · Myth-buster (trust-builder)
+# Reel 18 — Talk to Discipler · Myth-buster (trust-builder)
 **Length:** ~50s
 
 - **0:00–0:07 — Hook.** **DANIEL:** *(to camera)* "Let's be clear about what this is — and what it isn't."
@@ -335,7 +335,7 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
 
 ---
 
-# Reel 19 — Voice Discipler · Friends skit
+# Reel 19 — Talk to Discipler · Friends skit
 **Length:** ~40s
 
 - **0:00–0:07 — Hook.** `[Daniel walks into the room; Sarah is talking to her phone.]`
@@ -350,7 +350,7 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
 
 ---
 
-# Reel 20 — Voice Discipler · Testimonial
+# Reel 20 — Talk to Discipler · Testimonial
 **Length:** ~40s
 
 - **0:00–0:07 — Hook.** `[Sarah to camera, quiet, honest.]`
@@ -370,15 +370,15 @@ For Instagram Reels / YouTube Shorts / TikTok. All dialogue **translates cleanly
 - **Pace for retention:** cut every 2–3 seconds; never hold a static shot longer than ~4s.
 - **Reuse footage:** film each app demo once; recut across the POV / Demo / Before-After reels.
 - **Consistent CTA card** closes every reel (logo + "Link in bio").
-- **Theology-safe** Voice Discipler framing — always "companion, points back to Scripture and community," never a replacement for pastor, church, or Bible.
+- **Theology-safe** Talk to Discipler framing — always "companion, points back to Scripture and community," never a replacement for pastor, church, or Bible.
 
 ## Suggested rollout (4 weeks, 3 posts/week)
 | Week | Mon | Wed | Fri |
 |------|-----|-----|-----|
-| 1 | Reel 1 (Study Guide) | Reel 11 (Memory Verse) | Reel 16 (Voice Discipler) |
+| 1 | Reel 1 (Study Guide) | Reel 11 (Memory Verse) | Reel 16 (Talk to Discipler) |
 | 2 | Reel 6 (Learning Paths) | Reel 2 (Before/After) | Reel 18 (Myth-buster) |
 | 3 | Reel 13 (30-day Challenge) | Reel 8 (7-day Challenge) | Reel 4 (Myth-buster) |
 | 4 | Reel 17 (POV) | Reel 12 (Time-jump) | Reel 9 + 15 (Testimonials) |
 
 Lead with Problem→Solution and Before/After (highest stop-scroll rate); use Myth-buster
-for Voice Discipler to set expectations and build trust.
+for Talk to Discipler to set expectations and build trust.

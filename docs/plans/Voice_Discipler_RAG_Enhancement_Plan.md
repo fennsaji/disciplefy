@@ -1,4 +1,4 @@
-# Voice Discipler — RAG Enhancement Plan
+# Talk to Discipler — RAG Enhancement Plan
 
 **Status:** Proposed
 **Owner:** TBD
@@ -9,7 +9,7 @@
 
 ## 1. Purpose
 
-Voice Discipler is a voice-based conversational Bible-discipleship feature (STT → LLM → TTS, streamed over SSE, EN/HI/ML, 5-Solas-constrained). This document specifies how Retrieval-Augmented Generation (RAG) can improve answer accuracy, theological grounding, and personalization — **and where it is *not* worth it.**
+Talk to Discipler is a voice-based conversational Bible-discipleship feature (STT → LLM → TTS, streamed over SSE, EN/HI/ML, 5-Solas-constrained). This document specifies how Retrieval-Augmented Generation (RAG) can improve answer accuracy, theological grounding, and personalization — **and where it is *not* worth it.**
 
 This is a phased plan. Each phase is independently shippable and gated by evidence. Do **not** treat "add RAG" as one project; the value is highly uneven across phases.
 
@@ -228,7 +228,7 @@ Two retrieval sources that *are* real RAG. Bundled because they share ingestion 
 | 2b | Per-user studies/convo recall | **Only if** users have enough history | Measure studies-per-user, convo length |
 | 3 | Topical semantic Bible search | Lowest ROI; defer | After 1–2 + evidence of topical-question gaps |
 
-**Bottom line:** RAG is worth it in slices, not as a monolith. Phase 1 is unconditional. Phases 2–3 are evidence-gated — without the transcript and engagement data, full RAG risks being a solution waiting for a problem. The current ceiling on Voice Discipler's value may be STT/TTS quality, latency, and the free-tier offering 0 conversations more than retrieval grounding; weigh RAG against those.
+**Bottom line:** RAG is worth it in slices, not as a monolith. Phase 1 is unconditional. Phases 2–3 are evidence-gated — without the transcript and engagement data, full RAG risks being a solution waiting for a problem. The current ceiling on Talk to Discipler's value may be STT/TTS quality, latency, and the free-tier offering 0 conversations more than retrieval grounding; weigh RAG against those.
 
 ---
 

@@ -19,7 +19,7 @@ Previously: 4 tokens = ₹1 — was running every single mode at a loss.
 - **Study Modes:** Quick only
 - **Token Purchases:** Enabled (2 tokens/₹1)
 - **Follow-ups:** None
-- **AI Discipler:** 1/month
+- **Talk to Discipler:** 1/month
 - **Memory Verses:** 3 active
 - **Practice Modes:** 2 (Flip Card, Type It Out)
 - **Practice Limit:** 1/verse/day
@@ -29,7 +29,7 @@ Previously: 4 tokens = ₹1 — was running every single mode at a loss.
 - **Study Modes:** Quick, Standard, Deep
 - **Token Purchases:** Enabled (2 tokens/₹1)
 - **Follow-ups:** 5/guide (Haiku)
-- **AI Discipler:** 3/month
+- **Talk to Discipler:** 3/month
 - **Memory Verses:** 5 active
 - **Practice Modes:** All 8 modes
 - **Practice Limit:** 2/verse/day
@@ -39,7 +39,7 @@ Previously: 4 tokens = ₹1 — was running every single mode at a loss.
 - **Study Modes:** Quick, Standard, Deep, Lectio Divina
 - **Token Purchases:** Enabled (2 tokens/₹1)
 - **Follow-ups:** 10/guide (Haiku)
-- **AI Discipler:** 10/month
+- **Talk to Discipler:** 10/month
 - **Memory Verses:** 10 active
 - **Practice Modes:** All 8 modes
 - **Practice Limit:** 3/verse/day
@@ -49,7 +49,7 @@ Previously: 4 tokens = ₹1 — was running every single mode at a loss.
 - **Study Modes:** All (Quick, Standard, Deep, Lectio, Sermon Outline)
 - **Token Purchases:** Not needed
 - **Follow-ups:** Unlimited (Haiku)
-- **AI Discipler:** Unlimited
+- **Talk to Discipler:** Unlimited
 - **Memory Verses:** Unlimited
 - **Practice Modes:** All 8 modes
 - **Practice Limit:** Unlimited
@@ -165,7 +165,7 @@ Premium profitability is healthy as long as learning path adoption drives ~30%+ 
 | **Study Modes** | Quick | Standard, Deep | + Lectio | All incl. Sermon |
 | **Follow-ups** | None | 5 | 10 | Unlimited |
 | **Token Purchases** | ✅ | ✅ | ✅ | — |
-| **AI Discipler** | 1/mo | 3/mo | 10/mo | Unlimited |
+| **Talk to Discipler** | 1/mo | 3/mo | 10/mo | Unlimited |
 | **Memory Verses** | 3 | 5 | 10 | Unlimited |
 | **Practice Modes** | 2 | 8 | 8 | All |
 | **Practice Limit** | 1/day | 2/day | 3/day | Unlimited |

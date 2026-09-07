@@ -32,7 +32,7 @@ Never: Condemning · Clickbait · Political · Divisive · Fear-based
 ## Language Rule — Never Say "AI"
 Confirmed against the live marketing site (`marketing/messages/en.json`): user-facing copy never uses the word "AI," "artificial intelligence," or similar — not even in feature names. The Technology section states it explicitly: "Disciplefy uses technology to generate Bible study content... The technology assists study; it does not interpret Scripture with authority. That authority belongs to Scripture alone." This is a theological stance, not a style preference — naming the tech "AI" risks implying it has interpretive authority over Scripture, which the brand explicitly rejects.
 
-Use instead: "Study Guides," "Voice Discipler" / "Voice Buddy," "Learning Paths," "Memory Verses," "generate," "technology" — never "AI-powered," "AI-generated," "artificial intelligence." Applies to all marketing copy: Instagram, ads, bios, captions, app-store listings.
+Use instead: "Study Guides," "Talk to Discipler" / "Voice Buddy," "Learning Paths," "Memory Verses," "generate," "technology" — never "AI-powered," "AI-generated," "artificial intelligence." Applies to all marketing copy: Instagram, ads, bios, captions, app-store listings.
 
 **Deliberate exception — blog SEO content:** The blog (`docs/marketing/Blog_SEO/Disciplefy Blog Content Roadmap.md`) may target "AI Bible study" as a real search-intent keyword (e.g. Article 9, "How AI Can Help You Study the Bible") — organic search traffic is a different context from brand-voice copy. This is the one place "AI" is allowed; it does not loosen the rule anywhere else.
 

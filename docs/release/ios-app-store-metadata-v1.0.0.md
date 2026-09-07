@@ -23,7 +23,7 @@ Alternates: `AI study guides & daily verse` (29) · `Study guides in your langua
 ## Promotional Text  _(≤ 170)_
 
 ```
-Type any verse or topic and get an instant study guide — context, interpretation & prayer points, plus a Voice Discipler. In English, हिन्दी & മലയാളം.
+Type any verse or topic and get an instant study guide — context, interpretation & prayer points, plus a Talk to Discipler. In English, हिन्दी & മലയാളം.
 ```
 
 ---
@@ -42,7 +42,7 @@ WHY DISCIPLEFY
 
 FEATURES
 • Study Guides — instant, structured guides for any verse or topic
-• Voice Discipler — have a natural spoken conversation about a passage or question and hear answers in your language
+• Talk to Discipler — have a natural spoken conversation about a passage or question and hear answers in your language
 • Follow-Up Chat — ask deeper questions about any guide while keeping the full context
 • Learning Paths — structured discipleship journeys on Grace, Prayer, Faith, Discipleship and more
 • Daily Verse — a fresh verse and short devotional each day, with reminders
@@ -52,7 +52,7 @@ FEATURES
 HOW IT WORKS
 1. Choose a verse or topic
 2. Get a complete study guide in seconds
-3. Talk it through with your Voice Discipler
+3. Talk it through with your Talk to Discipler
 4. Follow a learning path to grow with direction
 5. Memorise, build streaks, and keep growing
 
@@ -135,11 +135,11 @@ Disciplefy generates structured Bible study guides from any verse or topic using
 
 KEY FEATURES TO TEST
 • Study Guides — type a verse/topic on the home screen → "Generate".
-• Voice Discipler — a spoken conversation feature. It needs Microphone + Speech Recognition permission (granted on first use). NOTE: speech recognition does not work on the iOS Simulator (Apple limitation) — please test on a physical device.
+• Talk to Discipler — a spoken conversation feature. It needs Microphone + Speech Recognition permission (granted on first use). NOTE: speech recognition does not work on the iOS Simulator (Apple limitation) — please test on a physical device.
 • Daily Verse, Learning Paths, Memory Verses, Follow-Up Chat, Fellowship groups.
 
 PERMISSIONS & WHY
-• Microphone + Speech Recognition — Voice Discipler (speak to ask questions).
+• Microphone + Speech Recognition — Talk to Discipler (speak to ask questions).
 • Notifications — optional daily verse / reminders.
 
 IN-APP PURCHASES
@@ -163,7 +163,7 @@ Support: https://www.disciplefy.in/contact
 Welcome to Disciplefy! Turn any Bible verse or topic into a clear, personal study guide — in English, Hindi, or Malayalam.
 
 • Instant study guides with context, interpretation, application & prayer points
-• Voice Discipler — talk through Scripture and hear answers in your language
+• Talk to Discipler — talk through Scripture and hear answers in your language
 • Daily Verse, Learning Paths, Memory Verses, Follow-Up Chat & Fellowship groups
 
 Thank you for installing — we'd love your feedback.
