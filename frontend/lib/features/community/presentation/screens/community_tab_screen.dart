@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -185,6 +187,13 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
                             .add(const FellowshipListLoadRequested());
                       }
                     } else if (action == _CommunityAction.create) {
+                      if (!canCreate) {
+                        // Shown but not entitled: offer the upgrade rather
+                        // than hiding the capability, so there is something
+                        // to upgrade towards.
+                        _showCreateFellowshipUpsell(context);
+                        return;
+                      }
                       final created =
                           await context.push<bool>(AppRoutes.communityCreate);
                       if (created == true && context.mounted) {
@@ -215,12 +224,15 @@ class _CommunityTabContentState extends State<_CommunityTabContent> {
                         ],
                       ),
                     ),
-                    if (canCreate)
+                    if (!_hideCreateFellowship(context))
                       PopupMenuItem(
                         value: _CommunityAction.create,
                         child: Row(
                           children: [
-                            Icon(Icons.groups_2_rounded,
+                            Icon(
+                                canCreate
+                                    ? Icons.groups_2_rounded
+                                    : Icons.lock_outline_rounded,
                                 size: 18,
                                 color: Theme.of(context).colorScheme.primary),
                             const SizedBox(width: 12),
@@ -557,6 +569,9 @@ class _FellowshipCard extends StatelessWidget {
             border: Border.all(color: context.appBorder),
           ),
           child: Row(
+            // Top-align: once the body can grow to several lines, a centred
+            // avatar drifts away from the name it belongs to.
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Avatar ──────────────────────────────────────────────────
               Container(
@@ -584,66 +599,40 @@ class _FellowshipCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name row
+                    // Name gets the full width of the card. Badges used to sit
+                    // beside it, which squeezed longer names onto two ragged
+                    // lines with a gap; they now live in the meta row below.
+                    Text(
+                      fellowship.name,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: context.appTextPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // Meta row: one fixed line so every card in the list has
+                    // the same shape. A Wrap here reflowed differently per
+                    // card, which made adjacent cards look inconsistent.
+                    // The globe is gone: every fellowship listed here is one
+                    // you already belong to, so its public/private state is
+                    // not something you act on — that belongs on Discover.
                     Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Flexible(
-                          child: Text(
-                            fellowship.name,
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: context.appTextPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (fellowship.isPublic) ...[
-                          const SizedBox(width: 5),
-                          Icon(Icons.public_rounded,
-                              size: 14, color: context.appTextTertiary),
-                        ],
+                        _RolePill(isMentor: isMentor),
                         if (fellowship.isOfficial) ...[
                           const SizedBox(width: 6),
                           const _OfficialBadge(),
                         ],
-                      ],
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Subtitle: role badge + member count
-                    Row(
-                      children: [
-                        _RolePill(isMentor: isMentor),
-                        const SizedBox(width: 8),
-                        Icon(Icons.people_outline_rounded,
-                            size: 13, color: context.appTextTertiary),
-                        const SizedBox(width: 3),
-                        Text(
-                          '${fellowship.memberCount} ${l10n.communityMembersCount(fellowship.memberCount)}',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: context.appTextTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Mentor name
-                    if (fellowship.mentorName != null) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.person_outline_rounded,
-                              size: 13, color: context.appTextTertiary),
-                          const SizedBox(width: 3),
-                          Text(
-                            fellowship.mentorName!,
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            '${fellowship.memberCount} ${l10n.communityMembersCount(fellowship.memberCount)}',
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 13,
@@ -652,21 +641,16 @@ class _FellowshipCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
 
                     // Study chip (if active)
                     if (fellowship.currentStudy != null) ...[
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _StudyChip(
-                            title: fellowship.currentStudy!.learningPathTitle,
-                            guideIndex:
-                                fellowship.currentStudy!.currentGuideIndex,
-                          ),
-                        ],
+                      _StudyChip(
+                        title: fellowship.currentStudy!.learningPathTitle,
+                        guideIndex: fellowship.currentStudy!.currentGuideIndex,
                       ),
                     ],
                   ],
@@ -772,10 +756,14 @@ class _OfficialBadge extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      // Deliberately neutral: the role pill beside it is the coloured one.
+      // Two filled amber pills read as one pair of related tags, but role
+      // ("you are the mentor") and status ("this group is official") are
+      // different kinds of fact.
       decoration: BoxDecoration(
-        color: AppColors.brandHighlight,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.brandHighlightDark.withAlpha(100)),
+        border: Border.all(color: context.appBorder),
       ),
       child: Text(
         l10n.officialBadge,
@@ -783,7 +771,7 @@ class _OfficialBadge extends StatelessWidget {
           fontFamily: 'Inter',
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: AppColors.brandHighlightDark,
+          color: context.appTextTertiary,
           letterSpacing: 0.3,
         ),
       ),
@@ -825,11 +813,15 @@ class _StudyChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        // The icon labels the first line; centring it against a wrapped
+        // two-line title leaves it floating in the gap between the lines.
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.menu_book_rounded, size: 12, color: chipColor),
           const SizedBox(width: 5),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 160),
+          // Flexible rather than a fixed 160px cap so a long path title wraps
+          // to a second line instead of being clipped to an ellipsis.
+          Flexible(
             child: Text(
               label,
               style: TextStyle(
@@ -838,7 +830,7 @@ class _StudyChip extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: chipColor,
               ),
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -1542,7 +1534,7 @@ class _PublicFellowshipCard extends StatelessWidget {
                           color: context.appTextPrimary,
                           height: 1.2,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1776,6 +1768,44 @@ class _JoinButton extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Enums + helpers
 // ---------------------------------------------------------------------------
+
+/// Current plan code, defaulting to free when the subscription is unknown.
+String _currentPlan(BuildContext context) {
+  try {
+    final subState = context.read<SubscriptionBloc>().state;
+    if (subState is UserSubscriptionStatusLoaded) return subState.currentPlan;
+  } catch (_) {}
+  return 'free';
+}
+
+/// Whether the flag says to hide Create Fellowship entirely.
+///
+/// `display_mode` on the `create_fellowship` flag decides this: 'lock' keeps
+/// the item visible for an upsell, 'hide' removes it, and disabling the flag
+/// removes it for everyone. Backend-controlled so entitlement can change
+/// without an app release.
+bool _hideCreateFellowship(BuildContext context) {
+  try {
+    return sl<SystemConfigService>()
+        .shouldHideFeature('create_fellowship', _currentPlan(context));
+  } catch (_) {
+    return false; // Config unavailable — fall back to showing it.
+  }
+}
+
+/// Upgrade sheet for users whose plan does not include creating a fellowship.
+void _showCreateFellowshipUpsell(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => UpgradeDialog(
+      featureKey: 'create_fellowship',
+      currentPlan: _currentPlan(context),
+      requiredPlans: const ['plus', 'premium'],
+    ),
+  );
+}
 
 enum _CommunityAction { join, create }
 
