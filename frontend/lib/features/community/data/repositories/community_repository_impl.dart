@@ -110,7 +110,6 @@ class CommunityRepositoryImpl implements CommunityRepository {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
-    bool toMentors = false,
   }) async {
     try {
       final model = await _datasource.createPost(
@@ -124,7 +123,6 @@ class CommunityRepositoryImpl implements CommunityRepository {
         studyGuideId: studyGuideId,
         guideInputType: guideInputType,
         guideLanguage: guideLanguage,
-        toMentors: toMentors,
       );
       return Right(model.toEntity());
     } on NetworkException catch (e) {

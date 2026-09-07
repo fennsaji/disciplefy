@@ -86,7 +86,6 @@ abstract class CommunityRepository {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
-    bool toMentors = false,
   });
 
   /// Soft-deletes the post identified by [postId].

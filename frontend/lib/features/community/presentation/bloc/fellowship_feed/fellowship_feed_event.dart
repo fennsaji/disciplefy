@@ -128,9 +128,6 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
   /// Language code of the guide (e.g. `'en'`, `'hi'`, `'ml'`).
   final String? guideLanguage;
 
-  /// True when this post is addressed to mentors only (ask-a-mentor).
-  final bool toMentors;
-
   const FellowshipPostCreateRequested({
     required this.fellowshipId,
     required this.content,
@@ -142,7 +139,6 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
-    this.toMentors = false,
   });
 
   @override
@@ -157,7 +153,6 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
         studyGuideId,
         guideInputType,
         guideLanguage,
-        toMentors,
       ];
 }
 

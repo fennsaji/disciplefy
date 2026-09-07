@@ -74,9 +74,6 @@ class FellowshipPostEntity extends Equatable {
   /// (`'en'`, `'hi'`, or `'ml'`).
   final String? guideLanguage;
 
-  /// True when this post was addressed to mentors only (ask-a-mentor).
-  final bool toMentors;
-
   /// True when the post content mentions the Discipler AI helper.
   final bool mentionsDiscipler;
 
@@ -100,7 +97,6 @@ class FellowshipPostEntity extends Equatable {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
-    this.toMentors = false,
     this.mentionsDiscipler = false,
   });
 
@@ -142,7 +138,6 @@ class FellowshipPostEntity extends Equatable {
       studyGuideId: studyGuideId,
       guideInputType: guideInputType,
       guideLanguage: guideLanguage,
-      toMentors: toMentors,
       mentionsDiscipler: mentionsDiscipler,
     );
   }
@@ -168,7 +163,6 @@ class FellowshipPostEntity extends Equatable {
         studyGuideId,
         guideInputType,
         guideLanguage,
-        toMentors,
         mentionsDiscipler,
       ];
 }

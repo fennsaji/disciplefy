@@ -86,7 +86,7 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
 
   // Load post, optional comment, fellowship settings
   const [{ data: post }, settings, globalEnabled] = await Promise.all([
-    db.from('fellowship_posts').select('id, fellowship_id, author_user_id, content, post_type, topic_id, topic_title, to_mentors, reaction_counts, is_deleted').eq('id', q.post_id).maybeSingle(),
+    db.from('fellowship_posts').select('id, fellowship_id, author_user_id, content, post_type, topic_id, topic_title, reaction_counts, is_deleted').eq('id', q.post_id).maybeSingle(),
     loadFellowshipDiscipler(db, q.fellowship_id),
     isDisciplerGloballyEnabled(db),
   ])
@@ -107,7 +107,7 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
   const mentorIds = new Set(((mentorRows ?? []) as { user_id: string }[]).map((r) => r.user_id))
   const decision = q.comment_id
     ? classifyComment({ content: question, authorUserId: askerId, settings, globalEnabled })
-    : classifyPost({ content: question, postType: post.post_type, topicId: post.topic_id ?? null, toMentors: post.to_mentors === true,
+    : classifyPost({ content: question, postType: post.post_type, topicId: post.topic_id ?? null,
         authorIsMentor: mentorIds.has(askerId), authorUserId: askerId, settings, globalEnabled })
   if (!decision || decision.trigger === 'react') return done('skipped_gate')
   const trigger = decision.trigger

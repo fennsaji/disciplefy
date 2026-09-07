@@ -67,9 +67,6 @@ class FellowshipPostModel {
   /// (`'en'`, `'hi'`, or `'ml'`).
   final String? guideLanguage;
 
-  /// True when this post was addressed to mentors only (ask-a-mentor).
-  final bool toMentors;
-
   /// True when the post content mentions the Discipler AI helper.
   final bool mentionsDiscipler;
 
@@ -93,7 +90,6 @@ class FellowshipPostModel {
     this.studyGuideId,
     this.guideInputType,
     this.guideLanguage,
-    this.toMentors = false,
     this.mentionsDiscipler = false,
   });
 
@@ -128,7 +124,6 @@ class FellowshipPostModel {
       studyGuideId: json['study_guide_id'] as String?,
       guideInputType: json['guide_input_type'] as String?,
       guideLanguage: json['guide_language'] as String?,
-      toMentors: json['to_mentors'] as bool? ?? false,
       mentionsDiscipler: json['mentions_discipler'] as bool? ?? false,
     );
   }
@@ -154,7 +149,6 @@ class FellowshipPostModel {
         studyGuideId: studyGuideId,
         guideInputType: guideInputType,
         guideLanguage: guideLanguage,
-        toMentors: toMentors,
         mentionsDiscipler: mentionsDiscipler,
       );
 }

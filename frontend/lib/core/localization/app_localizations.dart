@@ -649,10 +649,6 @@ class AppLocalizations {
       'mentorMessageBody':
           "Hi, I'm from {fellowship} on Disciplefy and I had a question.",
       'mentorMessageSubject': 'Question from my fellowship',
-      'toMentorsChip': 'To mentors',
-      'askMentorsToggle': 'Ask the mentors directly',
-      'askMentorsHint':
-          'Mentors get notified. Discipler stays out of this one.',
       'mentionSheetTitle': 'Mention',
       'disciplerMentionSubtitle': 'AI helper · answers in your language',
       'mentorLabel': 'Mentor',
@@ -1350,10 +1346,6 @@ class AppLocalizations {
       'mentorMessageBody':
           'नमस्ते, मैं Disciplefy पर {fellowship} से हूँ और मेरा एक सवाल है।',
       'mentorMessageSubject': 'मेरी फ़ेलोशिप से सवाल',
-      'toMentorsChip': 'मेंटर्स के लिए',
-      'askMentorsToggle': 'सीधे मेंटर्स से पूछें',
-      'askMentorsHint':
-          'मेंटर्स को सूचना मिलेगी। डिसाइपलर इसमें भाग नहीं लेगा।',
       'mentionSheetTitle': 'मेंशन करें',
       'disciplerMentionSubtitle': 'AI सहायक · आपकी भाषा में उत्तर देता है',
       'mentorLabel': 'मेंटर',
@@ -2060,10 +2052,6 @@ class AppLocalizations {
       'mentorMessageBody':
           'നമസ്കാരം, ഞാൻ Disciplefy-ൽ {fellowship}-ൽ നിന്നാണ്, എനിക്ക് ഒരു ചോദ്യമുണ്ട്.',
       'mentorMessageSubject': 'എന്റെ ഫെലോഷിപ്പിൽ നിന്നുള്ള ചോദ്യം',
-      'toMentorsChip': 'മെന്റർമാർക്ക്',
-      'askMentorsToggle': 'മെന്റർമാരോട് നേരിട്ട് ചോദിക്കുക',
-      'askMentorsHint':
-          'മെന്റർമാർക്ക് അറിയിപ്പ് ലഭിക്കും. ഡിസൈപ്ലർ ഇതിൽ ഇടപെടില്ല.',
       'mentionSheetTitle': 'മെൻഷൻ',
       'disciplerMentionSubtitle': 'AI സഹായി · നിങ്ങളുടെ ഭാഷയിൽ മറുപടി നൽകുന്നു',
       'mentorLabel': 'മെന്റർ',
@@ -3014,12 +3002,6 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['mentorMessageBody']!;
   String get mentorMessageSubject =>
       _localizedValues[locale.languageCode]!['mentorMessageSubject']!;
-  String get toMentorsChip =>
-      _localizedValues[locale.languageCode]!['toMentorsChip']!;
-  String get askMentorsToggle =>
-      _localizedValues[locale.languageCode]!['askMentorsToggle']!;
-  String get askMentorsHint =>
-      _localizedValues[locale.languageCode]!['askMentorsHint']!;
   String get mentionSheetTitle =>
       _localizedValues[locale.languageCode]!['mentionSheetTitle']!;
   String get disciplerMentionSubtitle =>

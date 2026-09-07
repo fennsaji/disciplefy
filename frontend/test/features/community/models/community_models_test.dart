@@ -19,12 +19,10 @@ void main() {
       'created_at': '2026-09-06T01:00:00Z',
       'author_display_name': 'Discipler',
       'comment_count': 0,
-      'to_mentors': false,
       'mentions_discipler': false,
     }).toEntity();
     expect(p.authorIsSystem, true);
     expect(p.isDaily, true);
-    expect(p.toMentors, false);
   });
 
   test('post model defaults the new booleans when absent', () {
@@ -40,7 +38,6 @@ void main() {
       'author_display_name': 'n',
       'comment_count': 1,
     }).toEntity();
-    expect(p.toMentors, false);
     expect(p.mentionsDiscipler, false);
     expect(p.authorIsSystem, false);
   });

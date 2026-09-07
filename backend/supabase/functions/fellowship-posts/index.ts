@@ -16,7 +16,7 @@ import { FCMService } from '../_shared/fcm-service.ts'
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
 import { classifyPost, mentionsDiscipler, runAfterFor, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
 import {
-  enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, pushMentors, reactAsDiscipler, recordActivity,
+  enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, reactAsDiscipler, recordActivity,
 } from '../_shared/services/discipler-service.ts'
 import { handleDisciplerReply } from './discipler-reply.ts'
 import { handleDailyTeaser } from './daily-teaser.ts'
@@ -90,7 +90,7 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
 
   let query = db
     .from('fellowship_posts')
-    .select('id, fellowship_id, topic_id, topic_title, guide_title, lesson_index, study_guide_id, guide_input_type, guide_language, content, post_type, reaction_counts, author_user_id, is_deleted, created_at, to_mentors, mentions_discipler')
+    .select('id, fellowship_id, topic_id, topic_title, guide_title, lesson_index, study_guide_id, guide_input_type, guide_language, content, post_type, reaction_counts, author_user_id, is_deleted, created_at, mentions_discipler')
     .eq('fellowship_id', fellowshipId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
@@ -184,7 +184,6 @@ async function handleListPosts(req: Request, services: ServiceContainer): Promis
       author_avatar_url: author?.avatarUrl ?? null,
       comment_count: commentCountMap.get(post.id) ?? 0,
       user_reaction: reactionMap.get(post.id) ?? null,
-      to_mentors: post.to_mentors ?? false,
       mentions_discipler: post.mentions_discipler ?? false
     }
   })
@@ -210,7 +209,6 @@ interface CreatePostRequest {
   study_guide_id?: string | null
   guide_input_type?: string | null
   guide_language?: string | null
-  to_mentors?: boolean
 }
 
 async function handleCreatePost(req: Request, services: ServiceContainer): Promise<Response> {
@@ -276,7 +274,6 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       author_user_id: user.id,
       content: body.content.trim(),
       post_type: postType,
-      to_mentors: body.to_mentors === true,
       mentions_discipler: mentionsDiscipler(body.content),
       ...(body.topic_id        ? { topic_id:        body.topic_id }        : {}),
       ...(body.topic_title     ? { topic_title:      body.topic_title }     : {}),
@@ -309,11 +306,9 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   if (membersResult.error) console.error('[fellowship-posts/create] Members fetch error:', membersResult.error)
   const members = membersResult.data ?? []
 
-  // Question posts (or posts explicitly addressed to mentors) get a dedicated
-  // push to every mentor below. Mentors are also active members, so they must
-  // be dropped from the broadcast here or they receive two notifications for
-  // the same post.
-  const questionToMentors = postType === 'question' || body.to_mentors === true
+  // Every active member — mentors included — gets exactly one push per new
+  // post; private mentor contact covers the "reach a person" case, so there
+  // is no separate mentor-only broadcast to de-duplicate against.
   const { data: mentorRows } = await db.rpc('fellowship_mentor_ids', { p_fellowship_id: body.fellowship_id })
   const mentorIds = new Set(((mentorRows ?? []) as { user_id: string }[]).map((r) => r.user_id))
   const authorIsMentor = mentorIds.has(user.id)
@@ -329,7 +324,6 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         const memberIds = members
           .map((m: { user_id: string }) => m.user_id)
           .filter((id: string) => !blockedIds.has(id))
-          .filter((id: string) => !(questionToMentors && mentorIds.has(id)))
         if (memberIds.length === 0) return
         const { data: tokenRows } = await db.from('user_notification_tokens').select('fcm_token').in('user_id', memberIds)
         const tokens = (tokenRows ?? []).map((r: { fcm_token: string }) => r.fcm_token).filter(Boolean)
@@ -345,16 +339,6 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
     })()
   }
 
-  // Question posts (or posts explicitly to mentors): notify every mentor
-  // directly instead of via the broadcast above.
-  if (questionToMentors) {
-    const preview = post.content.length > 80 ? post.content.substring(0, 80) + '…' : post.content
-    const title = body.to_mentors ? `🙋 ${authorDisplayName} asked the mentors` : `❓ ${authorDisplayName} asked a question`
-    const p = pushMentors(db, body.fellowship_id, { title, body: preview },
-      { type: 'fellowship_question', fellowship_id: body.fellowship_id, post_id: post.id }, { excludeUserId: user.id })
-    if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(p)
-  }
-
   // ── Discipler ────────────────────────────────────────────────────────
   const disciplerPromise = (async () => {
     try {
@@ -363,7 +347,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       ])
       if (!settings) return
       const decision = classifyPost({
-        content: post.content, postType, topicId: post.topic_id ?? null, toMentors: body.to_mentors === true,
+        content: post.content, postType, topicId: post.topic_id ?? null,
         authorIsMentor, authorUserId: user.id, settings, globalEnabled,
       })
       if (!decision) return
@@ -408,7 +392,6 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
         author_avatar_url: authorAvatarUrl,
         comment_count: 0,
         user_reaction: null,
-        to_mentors: post.to_mentors ?? false,
         mentions_discipler: post.mentions_discipler ?? false
       }
     }),

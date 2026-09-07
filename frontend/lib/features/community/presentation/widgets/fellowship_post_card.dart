@@ -218,10 +218,6 @@ class FellowshipPostCard extends StatelessWidget {
                             ),
                             _PostTypeLabel(postType: post.postType),
                           ],
-                          if (post.toMentors) ...[
-                            const SizedBox(width: 6),
-                            _ToMentorsChip(),
-                          ],
                         ],
                       ),
                     ],
@@ -441,33 +437,6 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
       return AppColors.brandHighlightDark;
     default:
       return AppColors.brandPrimary;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// "To mentors" chip
-// ---------------------------------------------------------------------------
-
-class _ToMentorsChip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(
-        color: AppColors.brandHighlight.withAlpha(isDark ? 60 : 255),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        AppLocalizations.of(context)!.toMentorsChip,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: AppColors.brandHighlightDark,
-        ),
-      ),
-    );
   }
 }
 

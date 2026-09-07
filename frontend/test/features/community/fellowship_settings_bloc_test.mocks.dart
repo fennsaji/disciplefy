@@ -147,7 +147,6 @@ class MockCommunityRepository extends _i1.Mock
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
-    bool? toMentors = false,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -164,7 +163,6 @@ class MockCommunityRepository extends _i1.Mock
             #studyGuideId: studyGuideId,
             #guideInputType: guideInputType,
             #guideLanguage: guideLanguage,
-            #toMentors: toMentors,
           },
         ),
         returnValue:
@@ -185,7 +183,6 @@ class MockCommunityRepository extends _i1.Mock
               #studyGuideId: studyGuideId,
               #guideInputType: guideInputType,
               #guideLanguage: guideLanguage,
-              #toMentors: toMentors,
             },
           ),
         )),

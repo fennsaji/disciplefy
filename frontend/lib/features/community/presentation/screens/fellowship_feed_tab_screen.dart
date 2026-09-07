@@ -710,65 +710,6 @@ class _CommentTile extends StatelessWidget {
                           const SizedBox(width: 6),
                           const DisciplerAiChip(),
                         ],
-                        const Spacer(),
-                        if (canDelete)
-                          GestureDetector(
-                            onTap: () => context.read<FellowshipFeedBloc>().add(
-                                  FellowshipCommentDeleteRequested(
-                                    commentId: comment.id,
-                                    postId: postId,
-                                  ),
-                                ),
-                            child: Icon(
-                              Icons.close,
-                              size: 16,
-                              color: context.appTextTertiary,
-                            ),
-                          ),
-                        if (canReport)
-                          GestureDetector(
-                            onTap: () {
-                              showModalBottomSheet<void>(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => BlocProvider.value(
-                                  value: context.read<FellowshipFeedBloc>(),
-                                  child: _ReportSheet(
-                                    fellowshipId: fellowshipId,
-                                    contentType: 'comment',
-                                    contentId: comment.id,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Icon(
-                              Icons.flag_outlined,
-                              size: 16,
-                              color: context.appTextTertiary,
-                            ),
-                          ),
-                        if (canBlock) ...[
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () async {
-                              final bloc = context.read<FellowshipFeedBloc>();
-                              if (await showBlockUserConfirmation(context)) {
-                                bloc.add(FellowshipBlockUserRequested(
-                                  blockedUserId: comment.authorUserId,
-                                  fellowshipId: fellowshipId,
-                                  contentType: 'comment',
-                                  contentId: comment.id,
-                                ));
-                              }
-                            },
-                            child: Icon(
-                              Icons.block,
-                              size: 16,
-                              color: context.appTextTertiary,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -871,6 +812,91 @@ class _CommentTile extends StatelessWidget {
                   ],
                 ),
               ),
+              // One labelled menu rather than a row of bare glyphs:
+              // an X on someone's reply reads as "dismiss" when it
+              // actually deletes, and the icons gave no wording for
+              // what each one does.
+              if (canDelete || canReport || canBlock)
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert,
+                      size: 18, color: context.appTextTertiary),
+                  padding: EdgeInsets.zero,
+                  splashRadius: 18,
+                  onSelected: (value) async {
+                    final bloc = context.read<FellowshipFeedBloc>();
+                    if (value == 'delete') {
+                      bloc.add(FellowshipCommentDeleteRequested(
+                        commentId: comment.id,
+                        postId: postId,
+                      ));
+                    } else if (value == 'report') {
+                      await showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => BlocProvider.value(
+                          value: bloc,
+                          child: _ReportSheet(
+                            fellowshipId: fellowshipId,
+                            contentType: 'comment',
+                            contentId: comment.id,
+                          ),
+                        ),
+                      );
+                    } else if (value == 'block') {
+                      if (await showBlockUserConfirmation(context)) {
+                        bloc.add(FellowshipBlockUserRequested(
+                          blockedUserId: comment.authorUserId,
+                          fellowshipId: fellowshipId,
+                          contentType: 'comment',
+                          contentId: comment.id,
+                        ));
+                      }
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    if (canDelete)
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline_rounded,
+                                color: context.appError, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l10n.deleteAction,
+                                style: TextStyle(color: context.appError)),
+                          ],
+                        ),
+                      ),
+                    if (canReport)
+                      PopupMenuItem<String>(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined,
+                                color: context.appTextSecondary, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l10n.reportTitle,
+                                style:
+                                    TextStyle(color: context.appTextPrimary)),
+                          ],
+                        ),
+                      ),
+                    if (canBlock)
+                      PopupMenuItem<String>(
+                        value: 'block',
+                        child: Row(
+                          children: [
+                            Icon(Icons.block,
+                                color: context.appError, size: 20),
+                            const SizedBox(width: 8),
+                            Text(l10n.blockUserTitle,
+                                style: TextStyle(color: context.appError)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
             ],
           ),
         ],
@@ -885,12 +911,10 @@ class _CommentTile extends StatelessWidget {
 
 class FellowshipCreatePostSheet extends StatefulWidget {
   final String fellowshipId;
-  final bool initialToMentors;
   final String initialType;
 
   const FellowshipCreatePostSheet({
     required this.fellowshipId,
-    this.initialToMentors = false,
     this.initialType = 'general',
     super.key,
   });
@@ -903,7 +927,6 @@ class FellowshipCreatePostSheet extends StatefulWidget {
 class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   final TextEditingController _contentController = TextEditingController();
   late String _selectedType = widget.initialType;
-  late bool _toMentors = widget.initialToMentors;
 
   /// Returns contextual placeholder text based on the selected post type.
   String _hintForType(String type) {
@@ -932,8 +955,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
           FellowshipPostCreateRequested(
             fellowshipId: widget.fellowshipId,
             content: content,
-            postType: _toMentors ? 'question' : _selectedType,
-            toMentors: _toMentors,
+            postType: _selectedType,
           ),
         );
   }
@@ -1173,48 +1195,6 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                   ],
                 ),
               ],
-              const SizedBox(height: 8),
-
-              // ── Ask the mentors toggle ─────────────────────────────────
-              InkWell(
-                onTap: () => setState(() => _toMentors = !_toMentors),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.askMentorsToggle,
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: context.appTextPrimary,
-                              ),
-                            ),
-                            Text(
-                              l10n.askMentorsHint,
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                color: context.appTextTertiary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: _toMentors,
-                        onChanged: (v) => setState(() => _toMentors = v),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               const SizedBox(height: 8),
 
               // ── Content field ─────────────────────────────────────────
