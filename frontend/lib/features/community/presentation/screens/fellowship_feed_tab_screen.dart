@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
@@ -931,6 +933,10 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   final TextEditingController _contentController = TextEditingController();
   late String _selectedType = widget.initialType;
 
+  /// Mentors can leave one question to the group. Defaults to letting
+  /// Discipler answer, so ignoring the switch changes nothing.
+  bool _letDisciplerAnswer = true;
+
   /// Returns contextual placeholder text based on the selected post type.
   String _hintForType(String type) {
     switch (type) {
@@ -959,6 +965,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
             fellowshipId: widget.fellowshipId,
             content: content,
             postType: _selectedType,
+            disciplerReplyOptOut: !_letDisciplerAnswer,
           ),
         );
   }
@@ -1262,6 +1269,47 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                     ),
                   ),
                 ),
+              ),
+              // ── Discipler opt-out (mentors, question posts) ───────────
+              BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+                buildWhen: (prev, curr) =>
+                    prev.isMentor != curr.isMentor ||
+                    prev.disciplerAllowed != curr.disciplerAllowed,
+                builder: (context, state) {
+                  if (!state.isMentor ||
+                      !state.disciplerAllowed ||
+                      _selectedType != 'question') {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SwitchListTile.adaptive(
+                      value: _letDisciplerAnswer,
+                      onChanged: (v) => setState(() => _letDisciplerAnswer = v),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      title: Text(
+                        context
+                            .tr(TranslationKeys.fellowshipLetDisciplerAnswer),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      subtitle: Text(
+                        context.tr(
+                            TranslationKeys.fellowshipLetDisciplerAnswerHint),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: context.appTextTertiary,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 20),
 

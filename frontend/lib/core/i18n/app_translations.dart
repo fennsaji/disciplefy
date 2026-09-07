@@ -9,6 +9,11 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _englishTranslations = {
+    'community': {
+      'let_discipler_answer': 'Let Discipler answer',
+      'let_discipler_answer_hint':
+          'Turn off to leave this question to the group. Tagging @Discipler still gets a reply.',
+    },
     'study_guide': {
       'page_title': 'Study Guide',
       'sections': {
@@ -2102,6 +2107,11 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
+    'community': {
+      'let_discipler_answer': 'Discipler को उत्तर देने दें',
+      'let_discipler_answer_hint':
+          'इसे बंद करें ताकि यह सवाल समूह के लिए रहे। @Discipler टैग करने पर उत्तर फिर भी मिलेगा।',
+    },
     'study_guide': {
       'page_title': 'स्टडी गाइड',
       'sections': {
@@ -4197,6 +4207,11 @@ class AppTranslations {
   };
 
   static const Map<String, dynamic> _malayalamTranslations = {
+    'community': {
+      'let_discipler_answer': 'Discipler ഉത്തരം നൽകട്ടെ',
+      'let_discipler_answer_hint':
+          'ഈ ചോദ്യം ഗ്രൂപ്പിനു വിടാൻ ഇത് ഓഫ് ചെയ്യുക. @Discipler എന്ന് ടാഗ് ചെയ്താൽ മറുപടി ലഭിക്കും.',
+    },
     'study_guide': {
       'page_title': 'സ്റ്റഡി ഗൈഡ്',
       'sections': {

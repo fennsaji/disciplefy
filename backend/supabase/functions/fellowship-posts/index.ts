@@ -203,6 +203,7 @@ interface CreatePostRequest {
   fellowship_id: string
   content: string
   post_type?: 'general' | 'prayer' | 'praise' | 'question' | 'study_note' | 'shared_guide'
+  discipler_reply_opt_out?: boolean
   topic_id?: string | null
   topic_title?: string | null
   guide_title?: string | null
@@ -276,6 +277,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       content: body.content.trim(),
       post_type: postType,
       mentions_discipler: mentionsDiscipler(body.content),
+      discipler_reply_opt_out: body.discipler_reply_opt_out === true,
       ...(body.topic_id        ? { topic_id:        body.topic_id }        : {}),
       ...(body.topic_title     ? { topic_title:      body.topic_title }     : {}),
       ...(body.guide_title     ? { guide_title:      body.guide_title }     : {}),
@@ -347,6 +349,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       const decision = classifyPost({
         content: post.content, postType, topicId: post.topic_id ?? null,
         authorUserId: user.id, settings, globalEnabled,
+        disciplerOptOut: body.discipler_reply_opt_out === true,
       })
       if (!decision) return
       if (decision.trigger === 'react') {

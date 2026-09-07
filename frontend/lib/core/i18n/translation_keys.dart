@@ -2212,6 +2212,11 @@ class TranslationKeys {
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
 
+  // Community — create post sheet
+  static const fellowshipLetDisciplerAnswer = 'community.let_discipler_answer';
+  static const fellowshipLetDisciplerAnswerHint =
+      'community.let_discipler_answer_hint';
+
   // Fellowship share section (study guide screen)
   static const studyGuideFellowshipShareTitle =
       'study_guide.fellowship.share_title';

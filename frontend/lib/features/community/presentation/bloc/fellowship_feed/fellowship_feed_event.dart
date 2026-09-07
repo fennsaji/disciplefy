@@ -128,10 +128,15 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
   /// Language code of the guide (e.g. `'en'`, `'hi'`, `'ml'`).
   final String? guideLanguage;
 
+  /// When true, Discipler leaves this question to the group. Mentors set it
+  /// per post; an explicit `@Discipler` in the content still gets a reply.
+  final bool disciplerReplyOptOut;
+
   const FellowshipPostCreateRequested({
     required this.fellowshipId,
     required this.content,
     required this.postType,
+    this.disciplerReplyOptOut = false,
     this.topicId,
     this.topicTitle,
     this.guideTitle,
@@ -153,6 +158,7 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
         studyGuideId,
         guideInputType,
         guideLanguage,
+        disciplerReplyOptOut,
       ];
 }
 

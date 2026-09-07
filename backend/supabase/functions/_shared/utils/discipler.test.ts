@@ -63,6 +63,17 @@ Deno.test('classifyPost: a mentor\'s own question is answered like anyone else\'
     { trigger: 'question', delayMinutes: 30 })
 })
 
+Deno.test('classifyPost: opting out silences the question trigger, not a mention', () => {
+  const q = 'Is fasting required for believers?'
+  assertEquals(classifyPost({ ...base, content: q, disciplerOptOut: true }), null)
+  // An explicit tag is the clearer intent, so it still answers.
+  assertEquals(classifyPost({ ...base, content: '@Discipler ' + q, disciplerOptOut: true }),
+    { trigger: 'mention', delayMinutes: 0 })
+  // Absent or false behaves exactly as before.
+  assertEquals(classifyPost({ ...base, content: q, disciplerOptOut: false }),
+    { trigger: 'question', delayMinutes: 30 })
+})
+
 Deno.test('classifyPost: off mode, global off, system author → null or react', () => {
   assertEquals(classifyPost({ ...base, content: 'Is fasting required for believers?',
     settings: { ...settings, discipler_reply_mode: 'off' } }), null)
