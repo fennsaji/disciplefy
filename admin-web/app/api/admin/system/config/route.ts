@@ -127,6 +127,12 @@ export async function GET(request: NextRequest) {
         premium_trial_start_date: systemConfigMap.premium_trial_start_date ?? null,
         grace_period_days: systemConfigMap.grace_period_days ?? null,
       },
+      // Discipler kill switch - from system_config table.
+      // NOT the `ai_discipler` feature flag, which gates the paid voice
+      // conversation feature. This one gates fellowship replies and reactions.
+      discipler: {
+        global_enabled: systemConfigMap.discipler_global_enabled || false,
+      },
     }
 
     return NextResponse.json({ config })
@@ -255,6 +261,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         message: 'Voice conversation limits updated successfully in database!',
         updated_plans: updates.map(u => u.plan_code)
+      })
+    }
+
+    // Handle discipler kill switch - save to system_config table.
+    // The Edge Functions compare this value to the literal string 'true'
+    // (discipler-service.ts), so it must be written as 'true' / 'false'.
+    if (body.discipler) {
+      const enabled = body.discipler.global_enabled === true
+
+      const { error: disciplerError } = await supabaseAdmin
+        .from('system_config')
+        .update({ value: String(enabled), updated_at: new Date().toISOString() })
+        .eq('key', 'discipler_global_enabled')
+
+      if (disciplerError) {
+        return NextResponse.json({ error: disciplerError.message }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        message: `Discipler ${enabled ? 'enabled' : 'disabled'} successfully!`,
+        discipler_enabled: enabled
       })
     }
 
