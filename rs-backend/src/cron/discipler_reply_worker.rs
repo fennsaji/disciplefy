@@ -101,6 +101,10 @@ async fn call_reply(config: &Config, http: &Client, queue_id: Uuid) -> Result<()
     );
     let resp = http
         .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", config.supabase_service_role_key),
+        )
         .header("apikey", &config.supabase_anon_key)
         .header("X-Internal-Api-Key", &config.internal_api_key)
         .header("Content-Type", "application/json")
@@ -136,6 +140,10 @@ async fn flush_quiet_hours_pushes(config: &Config, http: &Client) -> Result<(), 
     );
     let resp = http
         .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", config.supabase_service_role_key),
+        )
         .header("apikey", &config.supabase_anon_key)
         .header("X-Internal-Api-Key", &config.internal_api_key)
         .header("Content-Type", "application/json")
