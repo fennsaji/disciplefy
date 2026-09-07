@@ -520,8 +520,17 @@ class MemoryVerseRemoteDataSource {
       final response = await _httpService.get(url, headers: headers);
 
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as List<dynamic>;
+        // `get-memory-practice-stats` answers with a stats OBJECT under `data`
+        // (streak, daily_goal, mastery_distribution, practice_modes, ...), not
+        // a bare list. Casting `data` to List threw on every successful call
+        // and surfaced as "server error" even though the request had
+        // succeeded, so read the `practice_modes` array out of the object.
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        if (jsonData['success'] != true) {
+          _errorHandler.handleErrorResponse(response);
+        }
+        final payload = jsonData['data'] as Map<String, dynamic>? ?? const {};
+        final data = payload['practice_modes'] as List<dynamic>? ?? const [];
 
         _errorHandler
             .logSuccess('Fetched practice statistics for ${data.length} modes');
@@ -779,8 +788,16 @@ class MemoryVerseRemoteDataSource {
       final response = await _httpService.get(url, headers: headers);
 
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as List<dynamic>;
+        // `get-active-challenges` answers with an OBJECT under `data`
+        // ({ challenges, total_active, completed_count, total_xp_available }),
+        // not a bare list. Casting `data` to List threw on every successful
+        // call, so read the `challenges` array out of the object.
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        if (jsonData['success'] != true) {
+          _errorHandler.handleErrorResponse(response);
+        }
+        final payload = jsonData['data'] as Map<String, dynamic>? ?? const {};
+        final data = payload['challenges'] as List<dynamic>? ?? const [];
 
         _errorHandler.logSuccess('Fetched ${data.length} active challenges');
         return data.cast<Map<String, dynamic>>();
