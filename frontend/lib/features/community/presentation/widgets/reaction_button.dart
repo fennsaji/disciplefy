@@ -117,7 +117,10 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
       onLongPressStart: (d) => _showPicker(d.globalPosition),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        // Matches the comment button's 44px minimum touch target.
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isActive
               ? widget.accentColor.withAlpha(26)
@@ -132,7 +135,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_activeEmoji, style: const TextStyle(fontSize: 15)),
+            Text(_activeEmoji, style: const TextStyle(fontSize: 17)),
             const SizedBox(width: 5),
             Text(
               total > 0
@@ -140,7 +143,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
                   : _defaultForType(widget.post.postType).label,
               style: TextStyle(
                 fontFamily: 'Inter',
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: isActive ? widget.accentColor : context.appTextSecondary,
               ),

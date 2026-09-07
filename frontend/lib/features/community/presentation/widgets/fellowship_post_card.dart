@@ -923,35 +923,42 @@ class _InteractiveFooter extends StatelessWidget {
         FellowshipReactionButton(post: post, accentColor: accentColor),
         const SizedBox(width: 8),
         if (onCommentTap != null)
-          GestureDetector(
-            onTap: onCommentTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: context.appSurfaceVariant,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 14,
-                    color: context.appTextSecondary,
+          // Sized to the 44px minimum touch target; the pill itself used to be
+          // ~29px tall and was easy to miss.
+          Material(
+            color: context.appSurfaceVariant,
+            borderRadius: BorderRadius.circular(22),
+            child: InkWell(
+              onTap: onCommentTap,
+              borderRadius: BorderRadius.circular(22),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                        color: context.appTextSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        post.commentCount > 0
+                            ? '${post.commentCount}'
+                            : l10n.replyAction,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    post.commentCount > 0
-                        ? '${post.commentCount}'
-                        : l10n.replyAction,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: context.appTextSecondary,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -960,10 +967,9 @@ class _InteractiveFooter extends StatelessWidget {
           IconButton(
             onPressed: onShareTap,
             icon: Icon(Icons.share_outlined,
-                size: 18, color: context.appTextSecondary),
+                size: 20, color: context.appTextSecondary),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
       ],
     );
