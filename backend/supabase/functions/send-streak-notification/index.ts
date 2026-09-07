@@ -6,7 +6,7 @@
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
-import { FCMService, logNotification } from '../_shared/fcm-service.ts'
+import { deliverOrQueue } from '../_shared/services/discipler-service.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 
 // ============================================================================
@@ -144,8 +144,6 @@ async function handleStreakNotification(
   console.log(`[StreakNotification] Processing ${notificationType} for user ${userId} (streak: ${streakCount})`)
 
   const supabase = services.supabaseServiceClient
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
   // Check user's notification preferences
   const { data: preferences } = await supabase
@@ -178,55 +176,40 @@ async function handleStreakNotification(
     return createSuccessResponse('Not a recognized milestone', { sent: false })
   }
 
-  // Send notification to all user's devices
-  const fcmService = new FCMService()
-  let successCount = 0
-  let failureCount = 0
   const fcmNotificationType = notificationType === 'milestone' ? 'streak_milestone' : 'streak_lost'
 
-  for (const token of tokens) {
-    try {
-      const result = await fcmService.sendNotification({
-        token: token.fcm_token,
-        notification: { title: content.title, body: content.body },
-        data: {
-          type: fcmNotificationType, // 'streak_milestone' | 'streak_lost'
-          streak_count: String(streakCount),
-          language,
-        },
-        android: { priority: 'high' },
-        apns: {
-          headers: { 'apns-priority': '10' },
-          payload: { aps: { sound: 'default', badge: 1 } },
-        },
-      })
+  // This route is client-triggered — the app calls it the moment it notices a
+  // streak change, which is whenever the user happens to open the app. That is
+  // usually daytime for them, but a background refresh or a late-night session
+  // can land it at 3 AM, so it goes through the quiet-hours path like every
+  // other event-driven push. Nothing about a streak is urgent.
+  //
+  // deliverOrQueue also handles the token lookup and notification_logs write
+  // that this function used to do per device.
+  const { sentTo, queuedTo } = await deliverOrQueue(
+    supabase,
+    [userId],
+    { title: content.title, body: content.body },
+    {
+      type: fcmNotificationType, // 'streak_milestone' | 'streak_lost'
+      streak_count: String(streakCount),
+      language,
+    },
+    { kind: fcmNotificationType },
+  )
 
-      await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        userId,
-        notificationType: fcmNotificationType,
-        title: content.title,
-        body: content.body,
-        language,
-        deliveryStatus: result.success ? 'sent' : 'failed',
-        fcmMessageId: result.messageId,
-        errorMessage: result.error,
-      })
+  console.log(`[StreakNotification] Complete: sent=${sentTo} queued=${queuedTo}`)
 
-      result.success ? successCount++ : failureCount++
-    } catch (error) {
-      failureCount++
-      console.error(`[StreakNotification] Error sending to token:`, error)
-    }
-  }
-
-  console.log(`[StreakNotification] Complete: ${successCount} sent, ${failureCount} failed`)
-
-  return createSuccessResponse(`${notificationType} notification sent`, {
-    sent: successCount > 0,
-    successCount,
-    failureCount,
-    totalDevices: tokens.length,
-  })
+  return createSuccessResponse(
+    queuedTo > 0
+      ? `${notificationType} notification held until 07:00 local`
+      : `${notificationType} notification sent`,
+    {
+      sent: sentTo > 0,
+      queued: queuedTo > 0,
+      totalDevices: tokens.length,
+    },
+  )
 }
 
 // ============================================================================

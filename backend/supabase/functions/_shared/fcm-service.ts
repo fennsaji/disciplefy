@@ -6,6 +6,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { formatError, formatFCMError } from './utils/error-formatter.ts';
+import { SCHEDULED_NOTIFICATION_TYPES_FOR_SPACING } from './utils/notification-window.ts';
 import type { NotificationType } from './services/notification-helper-service.ts';
 
 // ============================================================================
@@ -527,6 +528,13 @@ export async function getBatchNotificationStatus(
  *
  * Only counts successful sends, so a failed delivery never suppresses the next
  * category.
+ *
+ * Only the locally-scheduled devotional types
+ * (SCHEDULED_NOTIFICATION_TYPES_FOR_SPACING) are considered here. Fellowship
+ * and Discipler pushes are logged for observability and their own dedup, but
+ * are event-driven rather than window-based and must never suppress — or be
+ * suppressed by — a scheduled notification (a chatty fellowship morning must
+ * not cost a member their daily verse).
  */
 export async function getRecentlyNotifiedUserIds(
   supabaseUrl: string,
@@ -543,6 +551,7 @@ export async function getRecentlyNotifiedUserIds(
     .from('notification_logs')
     .select('user_id')
     .in('delivery_status', ['sent', 'delivered', 'clicked'])
+    .in('notification_type', SCHEDULED_NOTIFICATION_TYPES_FOR_SPACING as unknown as string[])
     .gte('sent_at', since)
     .in('user_id', userIds);
 

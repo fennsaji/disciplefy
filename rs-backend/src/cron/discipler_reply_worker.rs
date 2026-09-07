@@ -1,4 +1,5 @@
-//! Drains discipler_reply_queue and flushes hourly activity digests.
+//! Drains discipler_reply_queue, releases due quiet-hours pushes, and flushes
+//! hourly activity digests.
 use chrono::{Timelike, Utc};
 use reqwest::Client;
 use sqlx::PgPool;
@@ -118,6 +119,44 @@ async fn call_reply(config: &Config, http: &Client, queue_id: Uuid) -> Result<()
     Ok(())
 }
 
+/// Deliver quiet-hours pushes whose hold has expired.
+///
+/// Pushes composed during a recipient's 22:00-07:00 local night are parked in
+/// `notification_push_queue` with a `not_before` at their 07:00. Something has
+/// to release them, and this worker already ticks every minute with the
+/// internal key in hand — so it drains that queue too rather than justifying a
+/// second cron whose only job is a one-line HTTP call.
+///
+/// Best-effort: a failure here is logged and the next tick retries, because the
+/// Edge Function tracks its own per-row attempts and terminal state.
+async fn flush_quiet_hours_pushes(config: &Config, http: &Client) -> Result<(), AppError> {
+    let url = format!(
+        "{}/functions/v1/fellowship-posts/flush-pushes",
+        config.supabase_url
+    );
+    let resp = http
+        .post(&url)
+        .header("apikey", &config.supabase_anon_key)
+        .header("X-Internal-Api-Key", &config.internal_api_key)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({}))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("flush-pushes request failed: {e}")))?;
+    let status = resp.status();
+    let body = resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        return Err(AppError::Internal(format!(
+            "flush-pushes returned {status}: {body}"
+        )));
+    }
+    tracing::debug!(
+        "flush-pushes: {}",
+        body.chars().take(160).collect::<String>()
+    );
+    Ok(())
+}
+
 async fn discard_stale_drafts(pool: &PgPool) -> Result<u64, AppError> {
     let r = sqlx::query(
         "UPDATE fellowship_comments SET is_deleted = true
@@ -193,6 +232,12 @@ pub async fn run_discipler_reply_worker(
             tracing::warn!(queue_id = %row.id, attempts, status, "Reply call failed: {}", e);
             set_status(pool, row.id, status, Some(&e.to_string()), 2).await?;
         }
+    }
+
+    // Every tick, not just the top of the hour: a push released at 07:00 local
+    // must go out at 07:00, not at whatever hour the next digest run lands on.
+    if let Err(e) = flush_quiet_hours_pushes(config, http).await {
+        tracing::error!("Quiet-hours push flush failed: {}", e);
     }
 
     if is_top_of_hour {

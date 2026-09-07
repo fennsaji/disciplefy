@@ -28,6 +28,13 @@ export type NotificationType =
   | 'fellowship_daily_post'
   | 'fellowship_discipler_reply'
   | 'fellowship_discipler_activity'
+  | 'fellowship_new_post'
+  | 'fellowship_new_comment'
+  | 'fellowship_reaction'
+  | 'fellowship_meeting'
+  | 'fellowship_meeting_reminder'
+  | 'fellowship_meeting_cancelled'
+  | 'fellowship_meeting_invite'
 
 /**
  * Configuration for notification helper

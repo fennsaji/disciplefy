@@ -9,7 +9,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { determineAction, validateInputSecurity } from '../_shared/services/llm-utils/security-validator.ts'
 import { buildDisciplerSystemPrompt, buildDisciplerUserMessage, parseDisciplerOutput, type DisciplerOutput } from '../_shared/prompts/discipler-prompt.ts'
 import { classifyComment, classifyPost, DISCIPLER_SYSTEM_USER_ID, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
-import { isDisciplerGloballyEnabled, loadFellowshipDiscipler, pushMentors, pushUsers, reactAsDiscipler, recordActivity } from '../_shared/services/discipler-service.ts'
+import { deliverOrQueue, isDisciplerGloballyEnabled, loadFellowshipDiscipler, pushMentorsOrQueue, reactAsDiscipler, recordActivity } from '../_shared/services/discipler-service.ts'
 
 const USER_DAILY_LIMIT = 10
 const FELLOWSHIP_DAILY_LIMIT = 100
@@ -192,12 +192,15 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
   })
 
   const data = { type: 'fellowship_discipler_activity', fellowship_id: q.fellowship_id, post_id: post.id, comment_id: comment.id }
-  const p1 = pushMentors(db, q.fellowship_id,
+  // Neither of these is urgent: an answer to a question asked hours ago keeps
+  // until morning, so both go through the quiet-hours path.
+  const p1 = pushMentorsOrQueue(db, q.fellowship_id,
     { title: pending ? `📝 Discipler drafted a reply in ${settings.name}` : `✨ Discipler replied to ${askerName} in ${settings.name}`, body: out.reply!.slice(0, 80) },
-    data, { respectMute: true })
-  const p2 = pending ? Promise.resolve() : pushUsers(db, [askerId],
+    data, { kind: 'fellowship_discipler_activity', respectMute: true })
+  const p2 = pending ? Promise.resolve() : deliverOrQueue(db, [askerId],
     { title: '✨ Discipler replied to your question', body: out.reply!.slice(0, 80) },
-    { type: 'fellowship_discipler_reply', fellowship_id: q.fellowship_id, post_id: post.id, comment_id: comment.id })
+    { type: 'fellowship_discipler_reply', fellowship_id: q.fellowship_id, post_id: post.id, comment_id: comment.id },
+    { kind: 'fellowship_discipler_reply' })
   if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(Promise.all([p1, p2]))
 
   return done('done', { action: 'reply', comment_id: comment.id, pending })

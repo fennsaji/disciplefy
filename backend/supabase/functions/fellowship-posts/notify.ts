@@ -6,7 +6,7 @@
  */
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { pushMentors, pushUsers, recordActivity } from '../_shared/services/discipler-service.ts'
+import { deliverOrQueue, pushMentorsOrQueue, recordActivity } from '../_shared/services/discipler-service.ts'
 import { DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
 
 export async function handleNotify(req: Request, services: ServiceContainer): Promise<Response> {
@@ -25,9 +25,15 @@ export async function handleNotify(req: Request, services: ServiceContainer): Pr
     const ids = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== DISCIPLER_USER_ID)
     const title = `📖 Today's study in ${f?.name ?? 'your fellowship'}`
     const bodyText = post.topic_title ?? post.content.slice(0, 80)
-    await pushUsers(db, ids, { title, body: bodyText }, { type: 'fellowship_daily_post', fellowship_id: post.fellowship_id, post_id: post.id })
+    // The daily post is created on a 01:00 UTC cron, which is the middle of the
+    // night for most of the world. Each member is therefore held to their own
+    // 07:00 rather than being woken by "Today's study"; the post itself is
+    // already visible in the feed, only the push waits.
+    const { sentTo, queuedTo } = await deliverOrQueue(db, ids, { title, body: bodyText },
+      { type: 'fellowship_daily_post', fellowship_id: post.fellowship_id, post_id: post.id },
+      { kind: 'fellowship_daily_post' })
     await recordActivity(db, { fellowshipId: post.fellowship_id, kind: 'daily_post', postId: post.id, summary: `Posted today's study: ${bodyText}`, pushNow: false })
-    return ok({ sent: ids.length })
+    return ok({ sent: sentTo, queued: queuedTo })
   }
 
   if (body.kind === 'activity_digest') {
@@ -39,9 +45,12 @@ export async function handleNotify(req: Request, services: ServiceContainer): Pr
     const daily = list.filter((r) => r.kind === 'daily_post').length
     const parts = [reacts ? `${reacts} reaction${reacts === 1 ? '' : 's'}` : '', daily ? `${daily} daily post${daily === 1 ? '' : 's'}` : ''].filter(Boolean)
     const { data: f } = await db.from('fellowships').select('name').eq('id', body.fellowship_id).maybeSingle()
-    await pushMentors(db, body.fellowship_id,
+    // A digest is a summary of things that already happened — it is never
+    // urgent, so it observes quiet hours like everything else.
+    await pushMentorsOrQueue(db, body.fellowship_id,
       { title: `✨ Discipler activity in ${f?.name ?? 'your fellowship'}`, body: parts.join(' · ') },
-      { type: 'fellowship_discipler_activity', fellowship_id: body.fellowship_id }, { respectMute: true })
+      { type: 'fellowship_discipler_activity', fellowship_id: body.fellowship_id },
+      { kind: 'fellowship_discipler_activity', respectMute: true })
     await db.from('discipler_activity').update({ pushed_at: new Date().toISOString() }).in('id', list.map((r) => r.id))
     return ok({ sent: list.length })
   }

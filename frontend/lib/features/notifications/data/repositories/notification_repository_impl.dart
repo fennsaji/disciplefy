@@ -340,6 +340,15 @@ class NotificationRepositoryImpl implements NotificationRepository {
             'memoryVerseOverdueEnabled': memoryVerseOverdueEnabled,
           if (formattedMemoryVerseTime != null)
             'memoryVerseReminderTime': formattedMemoryVerseTime,
+          // Piggyback the device's current UTC offset on every preferences
+          // save. The server stores NULL for "unknown" and, not knowing where
+          // a user is, sends their pushes immediately rather than applying
+          // quiet hours on the wrong clock. Writing it here (and on token
+          // registration) is what turns quiet hours from theory into a rule
+          // that actually fires at the user's 22:00, not London's — and it
+          // keeps up with travel and DST for free, since it is re-sent
+          // whenever the user touches notification settings.
+          'timezoneOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,
         },
       );
 

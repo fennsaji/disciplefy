@@ -80,7 +80,9 @@ function enrichUsersWithTimezone(
     .map(t => ({
       user_id: t.user_id,
       fcm_token: t.fcm_token,
-      timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
+      // Unknown offset (null) is treated as UTC, matching the RPC-side
+      // COALESCE — never silently drop a user with no reported timezone.
+      timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes ?? 0
     }))
     .filter(u => isWithinDeliveryWindow(u.timezone_offset_minutes, TARGET_LOCAL_MINUTES, undefined, now))
 }
