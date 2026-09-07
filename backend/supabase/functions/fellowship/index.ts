@@ -17,6 +17,9 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 import { pushMentors } from '../_shared/services/discipler-service.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/// How many active fellowships one non-admin account may own.
+const MAX_FELLOWSHIPS_PER_USER = 5
+
 const VALID_LANGUAGES = ['en', 'hi', 'ml'] as const
 type Language = typeof VALID_LANGUAGES[number]
 
@@ -573,6 +576,33 @@ async function handleCreateFellowship(req: Request, services: ServiceContainer):
 
   if (!isMentor && !isPaidEligible) {
     throw new AppError('PERMISSION_DENIED', 'A Plus or Premium subscription is required to create a fellowship', 403)
+  }
+
+  // Cap what one person can own. Creation used to be unbounded: mentoring a
+  // single group granted it, and an existing mentor can promote anyone to
+  // co-mentor, so the grant spread without an admin ever being involved.
+  //
+  // Counted by ownership (`mentor_user_id`), not by mentor membership — being
+  // made a co-mentor of someone else's group should not consume, or unlock,
+  // your own allowance. Admins are exempt.
+  if (!isAdmin) {
+    const { count: ownedCount, error: ownedError } = await db
+      .from('fellowships')
+      .select('id', { count: 'exact', head: true })
+      .eq('mentor_user_id', user.id)
+      .eq('is_active', true)
+
+    if (ownedError) {
+      console.error('[fellowship/create] Owned-count error:', ownedError)
+      throw new AppError('DATABASE_ERROR', 'Failed to check fellowship limit', 500)
+    }
+    if ((ownedCount ?? 0) >= MAX_FELLOWSHIPS_PER_USER) {
+      throw new AppError(
+        'LIMIT_EXCEEDED',
+        `You can create up to ${MAX_FELLOWSHIPS_PER_USER} fellowships. Archive one to make room for another.`,
+        409,
+      )
+    }
   }
 
   const { count: nameCount, error: nameCheckError } = await db
