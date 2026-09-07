@@ -4,7 +4,7 @@
  *
  * This produces the same 8-item list shown on pricing pages and upgrade screens.
  * Order: Daily Verse → Tokens → Study Modes → Learning Paths →
- *        Memory Verses → Practice Modes → Follow-Up → Disciple AI
+ *        Memory Verses → Practice Modes → Follow-Up → Talk to Discipler
  */
 export function buildMarketingFeatures(
   features: Record<string, any>
@@ -58,14 +58,14 @@ export function buildMarketingFeatures(
     items.push('Follow-Up on Study Guides — Not Included')
   }
 
-  // 8. Disciple AI — uses voice_conversations_monthly as the session count
+  // 8. Talk to Discipler — uses voice_conversations_monthly as the session count
   const voiceConversations: number = features.voice_conversations_monthly ?? 0
   if (voiceConversations === -1) {
-    items.push('Disciple AI — Unlimited')
+    items.push('Talk to Discipler — Unlimited')
   } else if (voiceConversations > 0) {
-    items.push(`Disciple AI — ${voiceConversations} Sessions/Month`)
+    items.push(`Talk to Discipler — ${voiceConversations} Sessions/Month`)
   } else {
-    items.push('Disciple AI — Not Included')
+    items.push('Talk to Discipler — Not Included')
   }
 
   return items
