@@ -3,7 +3,7 @@
  *
  * Allows authenticated users to create a Plus subscription (₹149/month).
  * Plus plan offers enhanced features including 50 daily tokens, 10 follow-ups per guide,
- * 10 AI Discipler conversations/month, and more.
+ * 10 Talk to Discipler conversations/month, and more.
  * Returns Razorpay authorization URL for customer to complete payment setup.
  */
 

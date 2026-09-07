@@ -1,7 +1,7 @@
 /**
  * Voice Conversation Edge Function
  *
- * Handles AI Discipler voice conversations with streaming responses.
+ * Handles Talk to Discipler conversations with streaming responses.
  * Features:
  * - Server-Sent Events (SSE) for real-time streaming
  * - Multi-language support (English, Hindi, Malayalam)
@@ -200,7 +200,7 @@ async function handleVoiceConversation(
         success: false,
         error: {
           code: 'FEATURE_NOT_AVAILABLE',
-          message: `AI Discipler voice conversation is not available for your current plan (${tier}). Please upgrade to Plus or Premium to access this feature.`,
+          message: `Discipler voice conversation is not available for your current plan (${tier}). Please upgrade to Plus or Premium to access this feature.`,
           requiredFeature: 'ai_discipler',
           currentPlan: tier
         }
@@ -283,7 +283,7 @@ async function handleVoiceConversation(
           await sendEvent({
             type: 'monthly_conversation_limit_exceeded',
             data: {
-              message: `You've reached your monthly limit of ${quotaResult.limit} voice ${word} for ${tierName} plan. Upgrade to continue using AI Study Buddy Voice this month.`,
+              message: `You've reached your monthly limit of ${quotaResult.limit} voice ${word} for ${tierName} plan. Upgrade to continue using Talk to Discipler this month.`,
               conversations_used: quotaResult.conversations_used,
               limit: quotaResult.limit,
               remaining: 0,

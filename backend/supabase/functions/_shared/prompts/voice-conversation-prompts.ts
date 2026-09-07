@@ -1,5 +1,5 @@
 /**
- * Multi-language prompts for AI Discipler Voice conversations.
+ * Multi-language prompts for Talk to Discipler conversations.
  *
  * These prompts ensure theologically accurate, culturally appropriate responses
  * in English, Hindi, and Malayalam.
