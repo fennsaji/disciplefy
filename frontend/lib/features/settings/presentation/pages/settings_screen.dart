@@ -856,7 +856,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -906,7 +909,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             const SizedBox(height: 8),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -1211,7 +1214,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1269,7 +1275,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
 
             const SizedBox(height: 24),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -1673,7 +1679,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.all(24),
-          child: Column(
+          // Scrollable: the mode list is taller than a short
+          // screen, and isScrollControlled alone does not scroll.
+          child: SingleChildScrollView(
+              child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1747,7 +1756,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               ),
               const SizedBox(height: 16),
             ],
-          ),
+          )),
         ),
       ),
     );
@@ -1875,7 +1884,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1930,7 +1942,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             const SizedBox(height: 24),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -1948,7 +1960,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1980,7 +1995,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 builderContext, settingsBloc, 'ml', 'മലയാളം', currentLanguage),
             const SizedBox(height: 24),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -2000,7 +2015,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2074,7 +2092,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                 )),
             const SizedBox(height: 24),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -2095,7 +2113,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2179,7 +2200,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   ],
                 )),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -2913,7 +2934,10 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
+        // Scrollable: the mode list is taller than a short
+        // screen, and isScrollControlled alone does not scroll.
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
@@ -3025,7 +3049,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
             ),
             const SizedBox(height: 16),
           ],
-        ),
+        )),
       ),
     );
   }

@@ -23,6 +23,19 @@ abstract class NotificationRepository {
     bool? memoryVerseReminderEnabled,
     bool? memoryVerseOverdueEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
+    bool? continueLearningEnabled,
+    bool? achievementUnlockedEnabled,
+    bool? fellowshipDailyPostEnabled,
+    bool? fellowshipNewPostEnabled,
+    bool? fellowshipNewCommentEnabled,
+    bool? fellowshipReactionEnabled,
+    bool? fellowshipDisciplerReplyEnabled,
+    bool? fellowshipDisciplerActivityEnabled,
+    bool? fellowshipMeetingEnabled,
+    bool? fellowshipMeetingReminderEnabled,
+    bool? fellowshipMeetingCancelledEnabled,
+    bool? fellowshipMeetingInviteEnabled,
+    bool? meetingInviteEnabled,
   });
 
   /// Check if notifications are enabled on device

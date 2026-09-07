@@ -28,6 +28,19 @@ class UpdateNotificationPreferences extends NotificationEvent {
   final bool? memoryVerseReminderEnabled;
   final bool? memoryVerseOverdueEnabled;
   final TimeOfDay? memoryVerseReminderTime;
+  final bool? continueLearningEnabled;
+  final bool? achievementUnlockedEnabled;
+  final bool? fellowshipDailyPostEnabled;
+  final bool? fellowshipNewPostEnabled;
+  final bool? fellowshipNewCommentEnabled;
+  final bool? fellowshipReactionEnabled;
+  final bool? fellowshipDisciplerReplyEnabled;
+  final bool? fellowshipDisciplerActivityEnabled;
+  final bool? fellowshipMeetingEnabled;
+  final bool? fellowshipMeetingReminderEnabled;
+  final bool? fellowshipMeetingCancelledEnabled;
+  final bool? fellowshipMeetingInviteEnabled;
+  final bool? meetingInviteEnabled;
 
   const UpdateNotificationPreferences({
     this.dailyVerseEnabled,
@@ -39,10 +52,36 @@ class UpdateNotificationPreferences extends NotificationEvent {
     this.memoryVerseReminderEnabled,
     this.memoryVerseOverdueEnabled,
     this.memoryVerseReminderTime,
+    this.continueLearningEnabled,
+    this.achievementUnlockedEnabled,
+    this.fellowshipDailyPostEnabled,
+    this.fellowshipNewPostEnabled,
+    this.fellowshipNewCommentEnabled,
+    this.fellowshipReactionEnabled,
+    this.fellowshipDisciplerReplyEnabled,
+    this.fellowshipDisciplerActivityEnabled,
+    this.fellowshipMeetingEnabled,
+    this.fellowshipMeetingReminderEnabled,
+    this.fellowshipMeetingCancelledEnabled,
+    this.fellowshipMeetingInviteEnabled,
+    this.meetingInviteEnabled,
   });
 
   @override
   List<Object?> get props => [
+        continueLearningEnabled,
+        achievementUnlockedEnabled,
+        fellowshipDailyPostEnabled,
+        fellowshipNewPostEnabled,
+        fellowshipNewCommentEnabled,
+        fellowshipReactionEnabled,
+        fellowshipDisciplerReplyEnabled,
+        fellowshipDisciplerActivityEnabled,
+        fellowshipMeetingEnabled,
+        fellowshipMeetingReminderEnabled,
+        fellowshipMeetingCancelledEnabled,
+        fellowshipMeetingInviteEnabled,
+        meetingInviteEnabled,
         dailyVerseEnabled,
         recommendedTopicEnabled,
         streakReminderEnabled,

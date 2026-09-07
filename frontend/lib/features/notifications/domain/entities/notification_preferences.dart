@@ -22,6 +22,23 @@ class NotificationPreferences extends Equatable {
   final bool memoryVerseOverdueEnabled;
   final TimeOfDayVO memoryVerseReminderTime;
 
+  // Study, fellowship and meeting notification preferences. Every push type
+  // in notification_logs has a switch here; defaults are on so adding them
+  // changed nothing about what an existing user receives.
+  final bool continueLearningEnabled;
+  final bool achievementUnlockedEnabled;
+  final bool fellowshipDailyPostEnabled;
+  final bool fellowshipNewPostEnabled;
+  final bool fellowshipNewCommentEnabled;
+  final bool fellowshipReactionEnabled;
+  final bool fellowshipDisciplerReplyEnabled;
+  final bool fellowshipDisciplerActivityEnabled;
+  final bool fellowshipMeetingEnabled;
+  final bool fellowshipMeetingReminderEnabled;
+  final bool fellowshipMeetingCancelledEnabled;
+  final bool fellowshipMeetingInviteEnabled;
+  final bool meetingInviteEnabled;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -36,6 +53,19 @@ class NotificationPreferences extends Equatable {
     required this.memoryVerseReminderEnabled,
     required this.memoryVerseOverdueEnabled,
     required this.memoryVerseReminderTime,
+    this.continueLearningEnabled = true,
+    this.achievementUnlockedEnabled = true,
+    this.fellowshipDailyPostEnabled = true,
+    this.fellowshipNewPostEnabled = true,
+    this.fellowshipNewCommentEnabled = true,
+    this.fellowshipReactionEnabled = true,
+    this.fellowshipDisciplerReplyEnabled = true,
+    this.fellowshipDisciplerActivityEnabled = true,
+    this.fellowshipMeetingEnabled = true,
+    this.fellowshipMeetingReminderEnabled = true,
+    this.fellowshipMeetingCancelledEnabled = true,
+    this.fellowshipMeetingInviteEnabled = true,
+    this.meetingInviteEnabled = true,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -51,6 +81,19 @@ class NotificationPreferences extends Equatable {
     bool? memoryVerseReminderEnabled,
     bool? memoryVerseOverdueEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
+    bool? continueLearningEnabled,
+    bool? achievementUnlockedEnabled,
+    bool? fellowshipDailyPostEnabled,
+    bool? fellowshipNewPostEnabled,
+    bool? fellowshipNewCommentEnabled,
+    bool? fellowshipReactionEnabled,
+    bool? fellowshipDisciplerReplyEnabled,
+    bool? fellowshipDisciplerActivityEnabled,
+    bool? fellowshipMeetingEnabled,
+    bool? fellowshipMeetingReminderEnabled,
+    bool? fellowshipMeetingCancelledEnabled,
+    bool? fellowshipMeetingInviteEnabled,
+    bool? meetingInviteEnabled,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -71,6 +114,31 @@ class NotificationPreferences extends Equatable {
           memoryVerseOverdueEnabled ?? this.memoryVerseOverdueEnabled,
       memoryVerseReminderTime:
           memoryVerseReminderTime ?? this.memoryVerseReminderTime,
+      continueLearningEnabled:
+          continueLearningEnabled ?? this.continueLearningEnabled,
+      achievementUnlockedEnabled:
+          achievementUnlockedEnabled ?? this.achievementUnlockedEnabled,
+      fellowshipDailyPostEnabled:
+          fellowshipDailyPostEnabled ?? this.fellowshipDailyPostEnabled,
+      fellowshipNewPostEnabled:
+          fellowshipNewPostEnabled ?? this.fellowshipNewPostEnabled,
+      fellowshipNewCommentEnabled:
+          fellowshipNewCommentEnabled ?? this.fellowshipNewCommentEnabled,
+      fellowshipReactionEnabled:
+          fellowshipReactionEnabled ?? this.fellowshipReactionEnabled,
+      fellowshipDisciplerReplyEnabled: fellowshipDisciplerReplyEnabled ??
+          this.fellowshipDisciplerReplyEnabled,
+      fellowshipDisciplerActivityEnabled: fellowshipDisciplerActivityEnabled ??
+          this.fellowshipDisciplerActivityEnabled,
+      fellowshipMeetingEnabled:
+          fellowshipMeetingEnabled ?? this.fellowshipMeetingEnabled,
+      fellowshipMeetingReminderEnabled: fellowshipMeetingReminderEnabled ??
+          this.fellowshipMeetingReminderEnabled,
+      fellowshipMeetingCancelledEnabled: fellowshipMeetingCancelledEnabled ??
+          this.fellowshipMeetingCancelledEnabled,
+      fellowshipMeetingInviteEnabled:
+          fellowshipMeetingInviteEnabled ?? this.fellowshipMeetingInviteEnabled,
+      meetingInviteEnabled: meetingInviteEnabled ?? this.meetingInviteEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -88,6 +156,19 @@ class NotificationPreferences extends Equatable {
         memoryVerseReminderEnabled,
         memoryVerseOverdueEnabled,
         memoryVerseReminderTime,
+        continueLearningEnabled,
+        achievementUnlockedEnabled,
+        fellowshipDailyPostEnabled,
+        fellowshipNewPostEnabled,
+        fellowshipNewCommentEnabled,
+        fellowshipReactionEnabled,
+        fellowshipDisciplerReplyEnabled,
+        fellowshipDisciplerActivityEnabled,
+        fellowshipMeetingEnabled,
+        fellowshipMeetingReminderEnabled,
+        fellowshipMeetingCancelledEnabled,
+        fellowshipMeetingInviteEnabled,
+        meetingInviteEnabled,
         createdAt,
         updatedAt,
       ];

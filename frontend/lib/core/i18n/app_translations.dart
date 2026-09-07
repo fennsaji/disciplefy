@@ -944,6 +944,42 @@ class AppTranslations {
         'memory_verse_overdue_description':
             'Receive motivational alerts when verses are past their review date',
         'memory_verse_reminder_time_label': 'Reminder Time',
+        'study_section_title': 'Study',
+        'community_section_title': 'Community',
+        'discipler_section_title': 'Discipler',
+        'meetings_section_title': 'Meetings',
+        'continue_learning_title': 'Continue learning',
+        'continue_learning_description':
+            'A nudge to pick up a study you started',
+        'achievement_title': 'Achievements',
+        'achievement_description': 'When you unlock a new achievement',
+        'fellowship_daily_post_title': 'Daily study post',
+        'fellowship_daily_post_description':
+            'The study Discipler posts to your fellowship each day',
+        'fellowship_new_post_title': 'New posts',
+        'fellowship_new_post_description':
+            'When a member shares a post in your fellowship',
+        'fellowship_comment_title': 'Comments',
+        'fellowship_comment_description':
+            'When someone comments on a post you follow',
+        'fellowship_reaction_title': 'Reactions',
+        'fellowship_reaction_description': 'When someone reacts to your post',
+        'discipler_reply_title': 'Discipler replies',
+        'discipler_reply_description':
+            'When Discipler answers a question in your fellowship',
+        'discipler_activity_title': 'Discipler activity',
+        'discipler_activity_description':
+            'A summary of what Discipler did in groups you mentor',
+        'meeting_new_title': 'New meetings',
+        'meeting_new_description':
+            'When a meeting is scheduled in your fellowship',
+        'meeting_invite_title': 'Meeting invites',
+        'meeting_invite_description': 'When you are invited to a meeting',
+        'meeting_reminder_title': 'Meeting reminders',
+        'meeting_reminder_description': 'Shortly before a meeting starts',
+        'meeting_cancelled_title': 'Meeting cancellations',
+        'meeting_cancelled_description':
+            'When a scheduled meeting is called off',
         'permission_title': 'Notification Permission',
         'permission_enabled': 'Enabled - You will receive notifications',
         'permission_disabled': 'Disabled - Enable to receive notifications',
@@ -2998,6 +3034,41 @@ class AppTranslations {
         'memory_verse_overdue_description':
             'जब वचन अपनी समीक्षा तारीख से आगे हों तो प्रेरणादायक अलर्ट प्राप्त करें',
         'memory_verse_reminder_time_label': 'रिमाइंडर समय',
+        'study_section_title': 'अध्ययन',
+        'community_section_title': 'समुदाय',
+        'discipler_section_title': 'Discipler',
+        'meetings_section_title': 'सभाएँ',
+        'continue_learning_title': 'अध्ययन जारी रखें',
+        'continue_learning_description':
+            'आपके शुरू किए गए अध्ययन को आगे बढ़ाने की याद',
+        'achievement_title': 'उपलब्धियाँ',
+        'achievement_description': 'जब आप कोई नई उपलब्धि प्राप्त करें',
+        'fellowship_daily_post_title': 'दैनिक अध्ययन पोस्ट',
+        'fellowship_daily_post_description':
+            'Discipler हर दिन आपके समूह में जो अध्ययन पोस्ट करता है',
+        'fellowship_new_post_title': 'नई पोस्ट',
+        'fellowship_new_post_description':
+            'जब कोई सदस्य आपके समूह में पोस्ट साझा करे',
+        'fellowship_comment_title': 'टिप्पणियाँ',
+        'fellowship_comment_description':
+            'जब कोई आपकी अनुसरण की गई पोस्ट पर टिप्पणी करे',
+        'fellowship_reaction_title': 'प्रतिक्रियाएँ',
+        'fellowship_reaction_description':
+            'जब कोई आपकी पोस्ट पर प्रतिक्रिया दे',
+        'discipler_reply_title': 'Discipler के उत्तर',
+        'discipler_reply_description':
+            'जब Discipler आपके समूह में किसी प्रश्न का उत्तर दे',
+        'discipler_activity_title': 'Discipler गतिविधि',
+        'discipler_activity_description':
+            'आपके मार्गदर्शन वाले समूहों में Discipler की गतिविधि का सारांश',
+        'meeting_new_title': 'नई सभाएँ',
+        'meeting_new_description': 'जब आपके समूह में कोई सभा निर्धारित हो',
+        'meeting_invite_title': 'सभा के निमंत्रण',
+        'meeting_invite_description': 'जब आपको किसी सभा में आमंत्रित किया जाए',
+        'meeting_reminder_title': 'सभा की याद',
+        'meeting_reminder_description': 'सभा शुरू होने से कुछ समय पहले',
+        'meeting_cancelled_title': 'सभा रद्द',
+        'meeting_cancelled_description': 'जब कोई निर्धारित सभा रद्द हो',
         'permission_title': 'नोटिफिकेशन अनुमति',
         'permission_enabled': 'सक्षम - आपको नोटिफिकेशन प्राप्त होंगे',
         'permission_disabled':
@@ -5074,6 +5145,43 @@ class AppTranslations {
         'memory_verse_overdue_description':
             'വചനങ്ങൾ അവലോകന തീയതി കഴിഞ്ഞാൽ പ്രചോദനാത്മക അറിയിപ്പുകൾ നേടുക',
         'memory_verse_reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
+        'study_section_title': 'പഠനം',
+        'community_section_title': 'കൂട്ടായ്മ',
+        'discipler_section_title': 'Discipler',
+        'meetings_section_title': 'മീറ്റിംഗുകൾ',
+        'continue_learning_title': 'പഠനം തുടരുക',
+        'continue_learning_description':
+            'നിങ്ങൾ തുടങ്ങിയ പഠനം തുടരാനുള്ള ഓർമ്മപ്പെടുത്തൽ',
+        'achievement_title': 'നേട്ടങ്ങൾ',
+        'achievement_description': 'പുതിയ നേട്ടം കൈവരിക്കുമ്പോൾ',
+        'fellowship_daily_post_title': 'ദൈനംദിന പഠന പോസ്റ്റ്',
+        'fellowship_daily_post_description':
+            'Discipler ദിവസവും നിങ്ങളുടെ കൂട്ടായ്മയിൽ പോസ്റ്റ് ചെയ്യുന്ന പഠനം',
+        'fellowship_new_post_title': 'പുതിയ പോസ്റ്റുകൾ',
+        'fellowship_new_post_description':
+            'ഒരു അംഗം നിങ്ങളുടെ കൂട്ടായ്മയിൽ പോസ്റ്റ് പങ്കിടുമ്പോൾ',
+        'fellowship_comment_title': 'അഭിപ്രായങ്ങൾ',
+        'fellowship_comment_description':
+            'നിങ്ങൾ പിന്തുടരുന്ന പോസ്റ്റിൽ ആരെങ്കിലും അഭിപ്രായം എഴുതുമ്പോൾ',
+        'fellowship_reaction_title': 'പ്രതികരണങ്ങൾ',
+        'fellowship_reaction_description':
+            'ആരെങ്കിലും നിങ്ങളുടെ പോസ്റ്റിനോട് പ്രതികരിക്കുമ്പോൾ',
+        'discipler_reply_title': 'Discipler ന്റെ മറുപടികൾ',
+        'discipler_reply_description':
+            'നിങ്ങളുടെ കൂട്ടായ്മയിലെ ചോദ്യത്തിന് Discipler ഉത്തരം നൽകുമ്പോൾ',
+        'discipler_activity_title': 'Discipler പ്രവർത്തനം',
+        'discipler_activity_description':
+            'നിങ്ങൾ നയിക്കുന്ന ഗ്രൂപ്പുകളിലെ Discipler പ്രവർത്തനത്തിന്റെ സംഗ്രഹം',
+        'meeting_new_title': 'പുതിയ മീറ്റിംഗുകൾ',
+        'meeting_new_description':
+            'നിങ്ങളുടെ കൂട്ടായ്മയിൽ മീറ്റിംഗ് നിശ്ചയിക്കുമ്പോൾ',
+        'meeting_invite_title': 'മീറ്റിംഗ് ക്ഷണങ്ങൾ',
+        'meeting_invite_description':
+            'നിങ്ങളെ ഒരു മീറ്റിംഗിലേക്ക് ക്ഷണിക്കുമ്പോൾ',
+        'meeting_reminder_title': 'മീറ്റിംഗ് ഓർമ്മപ്പെടുത്തൽ',
+        'meeting_reminder_description': 'മീറ്റിംഗ് തുടങ്ങുന്നതിന് തൊട്ടുമുൻപ്',
+        'meeting_cancelled_title': 'മീറ്റിംഗ് റദ്ദാക്കൽ',
+        'meeting_cancelled_description': 'നിശ്ചയിച്ച മീറ്റിംഗ് റദ്ദാക്കുമ്പോൾ',
         'permission_title': 'അറിയിപ്പ് അനുമതി',
         'permission_enabled': 'പ്രവർ‍ത്തിപ്പിച്ചു - അറിയിപ്പുകൾ ലഭിക്കും',
         'permission_disabled':
