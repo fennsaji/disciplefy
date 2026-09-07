@@ -48,6 +48,7 @@ interface UpdatePreferencesRequest {
   fellowshipMeetingCancelledEnabled?: boolean
   fellowshipMeetingInviteEnabled?: boolean
   meetingInviteEnabled?: boolean
+  fellowshipMentorPromotedEnabled?: boolean
   timezoneOffsetMinutes?: number
 }
 
@@ -74,6 +75,7 @@ interface PreferencesUpdate {
   fellowship_meeting_cancelled_enabled?: boolean
   fellowship_meeting_invite_enabled?: boolean
   meeting_invite_enabled?: boolean
+  fellowship_mentor_promoted_enabled?: boolean
   timezone_offset_minutes?: number
   updated_at?: string
 }
@@ -252,6 +254,7 @@ async function handleRegisterToken(
         fellowshipMeetingCancelledEnabled: prefsData.fellowship_meeting_cancelled_enabled,
         fellowshipMeetingInviteEnabled: prefsData.fellowship_meeting_invite_enabled,
         meetingInviteEnabled: prefsData.meeting_invite_enabled,
+        fellowshipMentorPromotedEnabled: prefsData.fellowship_mentor_promoted_enabled,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
     }),
@@ -340,6 +343,9 @@ async function handleUpdatePreferences(
   }
   if (requestData.meetingInviteEnabled !== undefined) {
     updateData.meeting_invite_enabled = requestData.meetingInviteEnabled
+  }
+  if (requestData.fellowshipMentorPromotedEnabled !== undefined) {
+    updateData.fellowship_mentor_promoted_enabled = requestData.fellowshipMentorPromotedEnabled
   }
   if (requestData.timezoneOffsetMinutes !== undefined) {
     updateData.timezone_offset_minutes = requestData.timezoneOffsetMinutes

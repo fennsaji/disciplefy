@@ -121,6 +121,7 @@ const PREFERENCE_COLUMN: Record<string, string> = {
   fellowship_meeting_reminder: 'fellowship_meeting_reminder_enabled',
   fellowship_meeting_cancelled: 'fellowship_meeting_cancelled_enabled',
   fellowship_meeting_invite: 'fellowship_meeting_invite_enabled',
+  fellowship_mentor_promoted: 'fellowship_mentor_promoted_enabled',
 }
 
 export interface DeliverOptions {
