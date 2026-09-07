@@ -117,6 +117,18 @@ async function loadHistoryOrErrorResponse(
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    // An AppError already carries the right status. Matching on message text
+    // alone sent every other one through as a 500 — a guide the caller does
+    // not own raised FORBIDDEN/403 and surfaced to the app as a server error.
+    if (error instanceof AppError) {
+      return new Response(
+        JSON.stringify({ error: error.code, message: error.message }),
+        {
+          status: error.statusCode,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
     return serverErrorResponse(error, req)
   }
 }

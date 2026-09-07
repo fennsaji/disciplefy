@@ -135,13 +135,22 @@ export async function validateNotesInput(
 }
 
 /**
- * Validates that user has access to the study guide
- * Implements security validation using existing repository logic
- * 
+ * Validates that the study guide exists.
+ *
+ * Deliberately NOT an ownership check. Conversations and personal notes are
+ * stored per user (rows carry the caller's user_id and are always read back
+ * filtered by it), so a caller can only ever reach their own. Gating on
+ * ownership of the guide itself meant a fellowship member could open a guide
+ * the Discipler posted to their group but could not ask a question about it
+ * or keep a private note on it — the reads returned 403.
+ *
+ * `study_guides` is already world-readable under RLS, so confirming a row
+ * exists exposes nothing further.
+ *
  * @param study_guide_id - Study guide ID to check
- * @param userContext - User context for access check
- * @param studyGuideRepository - Repository for access validation
- * @throws AppError if user doesn't have access
+ * @param userContext - Caller, retained for logging and future policy
+ * @param studyGuideRepository - Repository used for the lookup
+ * @throws AppError when the guide does not exist
  */
 export async function validateStudyGuideAccess(
   study_guide_id: string,
@@ -149,18 +158,10 @@ export async function validateStudyGuideAccess(
   studyGuideRepository: StudyGuideRepository
 ): Promise<void> {
   try {
-    // Use existing repository method to check access
-    const hasAccess = await studyGuideRepository.userHasContent(
-      study_guide_id,
-      userContext
-    )
+    const exists = await studyGuideRepository.contentExists(study_guide_id)
 
-    if (!hasAccess) {
-      throw new AppError(
-        'FORBIDDEN',
-        'You do not have access to this study guide',
-        403
-      )
+    if (!exists) {
+      throw new AppError('NOT_FOUND', 'Study guide not found', 404)
     }
   } catch (error) {
     if (error instanceof AppError) {
