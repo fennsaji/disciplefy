@@ -384,7 +384,7 @@ class FellowshipPostCard extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(right: interactive ? 8 : 0),
               child: interactive
-                  ? _InteractiveFooter(
+                  ? FellowshipPostFooter(
                       post: post,
                       accentColor: accentColor,
                       onCommentTap: onCommentTap,
@@ -902,17 +902,24 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
 // Interactive footer (feed mode): reaction button + comment button
 // ---------------------------------------------------------------------------
 
-class _InteractiveFooter extends StatelessWidget {
+/// Reaction, reply and share row shared by the ordinary post card and the
+/// daily study card.
+///
+/// It lives in one place because it did not use to: the daily card kept its
+/// own copy, so raising the reaction button to a 44px touch target left its
+/// reply button at the old size and the two pills no longer lined up.
+class FellowshipPostFooter extends StatelessWidget {
   final FellowshipPostEntity post;
   final Color accentColor;
   final VoidCallback? onCommentTap;
   final VoidCallback? onShareTap;
 
-  const _InteractiveFooter({
+  const FellowshipPostFooter({
     required this.post,
     required this.accentColor,
     required this.onCommentTap,
     this.onShareTap,
+    super.key,
   });
 
   @override
