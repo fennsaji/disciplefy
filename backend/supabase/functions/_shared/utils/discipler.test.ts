@@ -12,7 +12,7 @@ const settings = {
   discipler_react_enabled: true,
 }
 const base = {
-  postType: 'general', topicId: null, authorIsMentor: false,
+  postType: 'general', topicId: null,
   authorUserId: 'user-1', settings, globalEnabled: true,
 }
 
@@ -43,7 +43,7 @@ Deno.test('ruleReactionFor maps post types, never i_prayed', () => {
 })
 
 Deno.test('classifyPost: mention wins over everything, no delay', () => {
-  const c = classifyPost({ ...base, content: '@Discipler is fasting required?', authorIsMentor: true })
+  const c = classifyPost({ ...base, content: '@Discipler is fasting required?' })
   assertEquals(c, { trigger: 'mention', delayMinutes: 0 })
 })
 
@@ -57,8 +57,13 @@ Deno.test('classifyPost: question honours delay and scope', () => {
     { trigger: 'question', delayMinutes: 30 })
 })
 
-Deno.test('classifyPost: mentor questions, off mode, global off, system author → null or react', () => {
-  assertEquals(classifyPost({ ...base, content: 'Is fasting required for believers?', authorIsMentor: true }), null)
+Deno.test('classifyPost: a mentor\'s own question is answered like anyone else\'s', () => {
+  // Deference to a human answer is the reply worker's job, not the classifier's.
+  assertEquals(classifyPost({ ...base, content: 'Is fasting required for believers?' }),
+    { trigger: 'question', delayMinutes: 30 })
+})
+
+Deno.test('classifyPost: off mode, global off, system author → null or react', () => {
   assertEquals(classifyPost({ ...base, content: 'Is fasting required for believers?',
     settings: { ...settings, discipler_reply_mode: 'off' } }), null)
   assertEquals(classifyPost({ ...base, content: '@Discipler hi', globalEnabled: false }), null)

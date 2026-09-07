@@ -309,13 +309,9 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
 
   // Every active member — mentors included — gets exactly one push per new
   // post; private mentor contact covers the "reach a person" case, so there
-  // is no separate mentor-only broadcast to de-duplicate against.
-  const { data: mentorRows } = await db.rpc('fellowship_mentor_ids', { p_fellowship_id: body.fellowship_id })
-  const mentorIds = new Set(((mentorRows ?? []) as { user_id: string }[]).map((r) => r.user_id))
-  const authorIsMentor = mentorIds.has(user.id)
-
-  // Send FCM to all other active members (fire-and-forget), excluding anyone
-  // in a mutual block with the author so blocked users don't get notified of
+  // is no separate mentor-only broadcast to de-duplicate against. Sent
+  // fire-and-forget, excluding anyone in a mutual block with the author so
+  // blocked users don't get notified of
   // (or leak notifications to) each other.
   if (members.length > 0) {
     const notifyPromise = (async () => {
@@ -350,7 +346,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       if (!settings) return
       const decision = classifyPost({
         content: post.content, postType, topicId: post.topic_id ?? null,
-        authorIsMentor, authorUserId: user.id, settings, globalEnabled,
+        authorUserId: user.id, settings, globalEnabled,
       })
       if (!decision) return
       if (decision.trigger === 'react') {

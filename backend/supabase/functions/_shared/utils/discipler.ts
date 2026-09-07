@@ -20,7 +20,6 @@ export interface ClassifyInput {
   content: string
   postType: string
   topicId: string | null
-  authorIsMentor: boolean
   authorUserId: string
   settings: FellowshipDisciplerSettings
   globalEnabled: boolean
@@ -61,7 +60,7 @@ function replyEnabled(s: FellowshipDisciplerSettings, globalEnabled: boolean): b
 }
 
 export function classifyPost(input: ClassifyInput): Classification {
-  const { content, postType, topicId, authorIsMentor, authorUserId, settings, globalEnabled } = input
+  const { content, postType, topicId, authorUserId, settings, globalEnabled } = input
   if (!globalEnabled || !settings.discipler_allowed) return null
   if (authorUserId === DISCIPLER_USER_ID || authorUserId === DISCIPLER_SYSTEM_USER_ID) return null
   if (postType === 'daily') return null
@@ -70,7 +69,10 @@ export function classifyPost(input: ClassifyInput): Classification {
     return settings.discipler_reply_mode === 'off' ? null : { trigger: 'mention', delayMinutes: 0 }
   }
 
-  if (replyEnabled(settings, globalEnabled) && !authorIsMentor && isQuestionLike(content, postType)) {
+  // Mentors' own questions are answered too. Deference to a human is handled
+  // downstream instead: the reply worker drops a queued reply if a mentor has
+  // answered the post within the fellowship's wait window.
+  if (replyEnabled(settings, globalEnabled) && isQuestionLike(content, postType)) {
     if (settings.discipler_reply_scope === 'lessons_only' && !topicId) return null
     return { trigger: 'question', delayMinutes: settings.discipler_reply_delay_min }
   }
