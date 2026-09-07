@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_entity.dart';
+import '../../domain/entities/fellowship_member_entity.dart';
 import 'discipler_badges.dart';
 
 /// A single row in the `@mention` picker sheet — either the Discipler AI
@@ -10,6 +11,13 @@ import 'discipler_badges.dart';
 class MentionCandidate {
   /// The `@Handle` token inserted into the composer text.
   final String handle;
+
+  /// The account this handle refers to, or null for the Discipler helper.
+  ///
+  /// Sent to the backend so the mention push reaches the right person:
+  /// display names are neither unique nor stable, so resolving the handle
+  /// back to an account server-side would be guesswork.
+  final String? userId;
 
   /// Display name shown in the row.
   final String display;
@@ -25,6 +33,7 @@ class MentionCandidate {
 
   const MentionCandidate({
     required this.handle,
+    this.userId,
     required this.display,
     required this.subtitle,
     required this.isDiscipler,
@@ -33,13 +42,19 @@ class MentionCandidate {
 }
 
 /// Opens a bottom sheet listing mentionable targets: the Discipler AI helper
-/// (when [disciplerAllowed]) followed by [mentors].
+/// (when [disciplerAllowed]), then mentors, then everyone else in the
+/// fellowship.
+///
+/// [members] may be empty while the member list is still loading, in which
+/// case only [mentors] are offered.
 ///
 /// Returns the selected [MentionCandidate], or `null` if dismissed.
 Future<MentionCandidate?> showMentionSheet(
   BuildContext context, {
   required bool disciplerAllowed,
   required List<FellowshipMentorEntity> mentors,
+  List<FellowshipMemberEntity> members = const [],
+  String? currentUserId,
 }) {
   final l10n = AppLocalizations.of(context)!;
   final candidates = <MentionCandidate>[
@@ -53,11 +68,26 @@ Future<MentionCandidate?> showMentionSheet(
     for (final mentor in mentors)
       MentionCandidate(
         handle: '@${mentor.displayName.replaceAll(RegExp(r'\s+'), '.')}',
+        userId: mentor.userId,
         display: mentor.displayName,
         subtitle: l10n.mentorLabel,
         isDiscipler: false,
         avatarUrl: mentor.avatarUrl,
       ),
+    // Everyone else. Mentors are already listed above, and tagging yourself
+    // notifies nobody, so both are skipped here.
+    for (final member in members)
+      if (member.role != 'mentor' &&
+          member.userId != currentUserId &&
+          !mentors.any((m) => m.userId == member.userId))
+        MentionCandidate(
+          handle: '@${member.displayName.replaceAll(RegExp(r'\s+'), '.')}',
+          userId: member.userId,
+          display: member.displayName,
+          subtitle: l10n.memberLabel,
+          isDiscipler: false,
+          avatarUrl: member.avatarUrl,
+        ),
   ];
 
   return showModalBottomSheet<MentionCandidate>(

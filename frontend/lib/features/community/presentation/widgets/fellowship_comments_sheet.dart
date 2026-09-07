@@ -22,6 +22,9 @@ import '../widgets/mention_sheet.dart';
 import '../widgets/study_guide_chip.dart';
 import 'package:disciplefy_bible_study/core/theme/contrast.dart';
 import 'fellowship_report_sheet.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 
 /// Comment thread for one post, opened as a modal bottom sheet.
 ///
@@ -49,6 +52,10 @@ class FellowshipCommentsSheet extends StatefulWidget {
 class FellowshipCommentsSheetState extends State<FellowshipCommentsSheet> {
   final TextEditingController _controller = TextEditingController();
 
+  final MentionTracker _mentions = MentionTracker();
+
+  List<FellowshipMemberEntity> _members = const [];
+
   @override
   void dispose() {
     _controller.dispose();
@@ -58,9 +65,14 @@ class FellowshipCommentsSheetState extends State<FellowshipCommentsSheet> {
   void _submit() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    final mentioned = _mentions.idsIn(text);
     _controller.clear();
+    _mentions.clear();
     context.read<FellowshipFeedBloc>().add(
-          FellowshipCommentCreateRequested(content: text),
+          FellowshipCommentCreateRequested(
+            content: text,
+            mentionedUserIds: mentioned,
+          ),
         );
   }
 
@@ -78,12 +90,21 @@ class FellowshipCommentsSheetState extends State<FellowshipCommentsSheet> {
   /// current cursor position (replacing a trailing partial `@word`).
   Future<void> _openMentionSheet({int? cursorOverride}) async {
     final feedState = context.read<FellowshipFeedBloc>().state;
+    if (_members.isEmpty) {
+      final result = await sl<CommunityRepository>()
+          .getFellowshipMembers(widget.fellowshipId);
+      result.fold((_) => null, (members) => _members = members);
+      if (!mounted) return;
+    }
     final candidate = await showMentionSheet(
       context,
       disciplerAllowed: feedState.disciplerAllowed,
       mentors: feedState.mentors,
+      members: _members,
+      currentUserId: feedState.currentUserId,
     );
     if (candidate == null || !mounted) return;
+    _mentions.remember(candidate.handle, candidate.userId);
     final selectionOffset = _controller.selection.baseOffset;
     final cursor = cursorOverride ??
         (selectionOffset >= 0 ? selectionOffset : _controller.text.length);

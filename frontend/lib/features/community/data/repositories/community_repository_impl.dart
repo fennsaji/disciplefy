@@ -111,6 +111,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
     String? guideInputType,
     String? guideLanguage,
     bool disciplerReplyOptOut = false,
+    List<String> mentionedUserIds = const [],
   }) async {
     try {
       final model = await _datasource.createPost(
@@ -125,6 +126,7 @@ class CommunityRepositoryImpl implements CommunityRepository {
         guideInputType: guideInputType,
         guideLanguage: guideLanguage,
         disciplerReplyOptOut: disciplerReplyOptOut,
+        mentionedUserIds: mentionedUserIds,
       );
       return Right(model.toEntity());
     } on NetworkException catch (e) {
@@ -181,10 +183,12 @@ class CommunityRepositoryImpl implements CommunityRepository {
   Future<Either<Failure, FellowshipCommentEntity>> createComment({
     required String postId,
     required String content,
+    List<String> mentionedUserIds = const [],
   }) async {
     try {
       final model = await _datasource.createComment(
         postId: postId,
+        mentionedUserIds: mentionedUserIds,
         content: content,
       );
       return Right(model.toEntity());

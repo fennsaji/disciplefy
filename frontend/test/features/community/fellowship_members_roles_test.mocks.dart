@@ -148,6 +148,7 @@ class MockCommunityRepository extends _i1.Mock
     String? guideInputType,
     String? guideLanguage,
     bool? disciplerReplyOptOut = false,
+    List<String>? mentionedUserIds = const [],
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -165,6 +166,7 @@ class MockCommunityRepository extends _i1.Mock
             #guideInputType: guideInputType,
             #guideLanguage: guideLanguage,
             #disciplerReplyOptOut: disciplerReplyOptOut,
+            #mentionedUserIds: mentionedUserIds,
           },
         ),
         returnValue:
@@ -186,6 +188,7 @@ class MockCommunityRepository extends _i1.Mock
               #guideInputType: guideInputType,
               #guideLanguage: guideLanguage,
               #disciplerReplyOptOut: disciplerReplyOptOut,
+              #mentionedUserIds: mentionedUserIds,
             },
           ),
         )),
@@ -235,6 +238,7 @@ class MockCommunityRepository extends _i1.Mock
       _i2.Either<_i5.Failure, _i9.FellowshipCommentEntity>> createComment({
     required String? postId,
     required String? content,
+    List<String>? mentionedUserIds = const [],
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -243,6 +247,7 @@ class MockCommunityRepository extends _i1.Mock
           {
             #postId: postId,
             #content: content,
+            #mentionedUserIds: mentionedUserIds,
           },
         ),
         returnValue: _i4
@@ -255,6 +260,7 @@ class MockCommunityRepository extends _i1.Mock
             {
               #postId: postId,
               #content: content,
+              #mentionedUserIds: mentionedUserIds,
             },
           ),
         )),

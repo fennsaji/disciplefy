@@ -132,11 +132,15 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
   /// per post; an explicit `@Discipler` in the content still gets a reply.
   final bool disciplerReplyOptOut;
 
+  /// Accounts tagged via the @mention picker, who each get a push.
+  final List<String> mentionedUserIds;
+
   const FellowshipPostCreateRequested({
     required this.fellowshipId,
     required this.content,
     required this.postType,
     this.disciplerReplyOptOut = false,
+    this.mentionedUserIds = const [],
     this.topicId,
     this.topicTitle,
     this.guideTitle,
@@ -159,6 +163,7 @@ class FellowshipPostCreateRequested extends FellowshipFeedEvent {
         guideInputType,
         guideLanguage,
         disciplerReplyOptOut,
+        mentionedUserIds,
       ];
 }
 
@@ -204,10 +209,16 @@ class FellowshipCommentsOpenRequested extends FellowshipFeedEvent {
 class FellowshipCommentCreateRequested extends FellowshipFeedEvent {
   final String content;
 
-  const FellowshipCommentCreateRequested({required this.content});
+  /// Accounts tagged via the @mention picker, who each get a push.
+  final List<String> mentionedUserIds;
+
+  const FellowshipCommentCreateRequested({
+    required this.content,
+    this.mentionedUserIds = const [],
+  });
 
   @override
-  List<Object?> get props => [content];
+  List<Object?> get props => [content, mentionedUserIds];
 }
 
 /// Deletes the comment identified by [commentId] from [postId].

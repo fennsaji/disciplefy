@@ -106,6 +106,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         meetingInviteEnabled: event.meetingInviteEnabled,
         fellowshipMentorPromotedEnabled: event.fellowshipMentorPromotedEnabled,
         fellowshipMemberJoinedEnabled: event.fellowshipMemberJoinedEnabled,
+        fellowshipMentionEnabled: event.fellowshipMentionEnabled,
       ),
     );
 

@@ -31,6 +31,7 @@ const FELLOWSHIP_FUNCTIONS = [
   'fellowship-comments/index.ts',
   'fellowship-invites/index.ts',
   'fellowship-meetings/index.ts',
+  '_shared/services/mention-service.ts',
 ];
 
 /**

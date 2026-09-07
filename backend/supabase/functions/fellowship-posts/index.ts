@@ -18,6 +18,7 @@ import { classifyPost, mentionsDiscipler, runAfterFor, DISCIPLER_USER_ID } from 
 import {
   deliverOrQueue, enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, reactAsDiscipler, recordActivity,
 } from '../_shared/services/discipler-service.ts'
+import { pushMentions } from '../_shared/services/mention-service.ts'
 import { handleDisciplerReply } from './discipler-reply.ts'
 import { handleDailyTeaser } from './daily-teaser.ts'
 import { handleNotify } from './notify.ts'
@@ -204,6 +205,7 @@ interface CreatePostRequest {
   content: string
   post_type?: 'general' | 'prayer' | 'praise' | 'question' | 'study_note' | 'shared_guide'
   discipler_reply_opt_out?: boolean
+  mentioned_user_ids?: string[]
   topic_id?: string | null
   topic_title?: string | null
   guide_title?: string | null
@@ -331,6 +333,17 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
           { title: `✍️ ${authorDisplayName} posted`, body: preview },
           { type: 'fellowship_new_post', fellowship_id: body.fellowship_id, post_id: post.id, post_type: postType },
           { kind: 'fellowship_new_post' })
+
+        // Tagged people get their own push rather than the generic "posted"
+        // one, so being mentioned stands out from ordinary feed traffic.
+        await pushMentions(db, {
+          fellowshipId: body.fellowship_id,
+          authorUserId: user.id,
+          authorDisplayName,
+          mentionedUserIds: body.mentioned_user_ids ?? [],
+          content: post.content,
+          postId: post.id,
+        })
       } catch (err) { console.error('[fellowship-posts/create] FCM error (non-fatal):', err) }
     })()
     // Keep the isolate alive past the response. Without this the notification

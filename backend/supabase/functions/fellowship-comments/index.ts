@@ -13,6 +13,7 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 import { hiddenAuthorIds, SupabaseLike } from '../_shared/utils/hidden-authors.ts'
 import { classifyComment, mentionsDiscipler, DISCIPLER_USER_ID } from '../_shared/utils/discipler.ts'
 import { deliverOrQueue, enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler } from '../_shared/services/discipler-service.ts'
+import { pushMentions } from '../_shared/services/mention-service.ts'
 
 // ---------------------------------------------------------------------------
 // List comments  GET /fellowship-comments?post_id=UUID
@@ -143,9 +144,9 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
   )
   if (authError || !user) throw new AppError('AUTHENTICATION_ERROR', 'Invalid token', 401)
 
-  let body: { post_id: string; content: string }
+  let body: { post_id: string; content: string; mentioned_user_ids?: string[] }
   try {
-    body = await req.json() as { post_id: string; content: string }
+    body = await req.json() as { post_id: string; content: string; mentioned_user_ids?: string[] }
   } catch {
     throw new AppError('VALIDATION_ERROR', 'Request body must be valid JSON', 400)
   }
@@ -236,6 +237,18 @@ async function handleCreateComment(req: Request, services: ServiceContainer): Pr
         { title: `💬 ${authorDisplayName} commented`, body: preview },
         { type: 'fellowship_new_comment', fellowship_id: post.fellowship_id, post_id: body.post_id, comment_id: comment.id },
         { kind: 'fellowship_new_comment' })
+
+      // Tagged people get their own push rather than the generic "commented"
+      // one, so being mentioned stands out from ordinary thread traffic.
+      await pushMentions(db, {
+        fellowshipId: post.fellowship_id,
+        authorUserId: user.id,
+        authorDisplayName,
+        mentionedUserIds: body.mentioned_user_ids ?? [],
+        content: trimmedContent,
+        postId: body.post_id,
+        commentId: comment.id,
+      })
     } catch (err) { console.error('[fellowship-comments/create] FCM error (non-fatal):', err) }
   })()
   // Keep the isolate alive past the response so the push actually sends.

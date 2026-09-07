@@ -39,6 +39,7 @@ const APPLICATION_TYPES = [
   'fellowship_meeting_invite',
   'fellowship_mentor_promoted',
   'fellowship_member_joined',
+  'fellowship_mention',
 ] as const;
 
 const HELPER_PATH = new URL('./notification-helper-service.ts', import.meta.url);

@@ -37,3 +37,32 @@ MentionInsertion insertMention(String text, int cursor, String handle) {
   final next = '$head$handle $after';
   return MentionInsertion(next, head.length + handle.length + 1);
 }
+
+/// Remembers which account each inserted `@Handle` referred to, so the
+/// composer can tell the backend exactly who was tagged.
+///
+/// Handles are display names with the spaces replaced, which are neither
+/// unique nor stable, so the id is captured at insertion time rather than
+/// resolved from the text afterwards. Only handles still present in the text
+/// when the message is sent are reported — deleting a mention un-tags the
+/// person.
+class MentionTracker {
+  final Map<String, String> _idsByHandle = {};
+
+  /// Records that [handle] was inserted for [userId].
+  void remember(String handle, String? userId) {
+    if (userId != null && userId.isNotEmpty) {
+      _idsByHandle[handle] = userId;
+    }
+  }
+
+  /// The ids of everyone still tagged in [text].
+  List<String> idsIn(String text) => _idsByHandle.entries
+      .where((e) => text.contains(e.key))
+      .map((e) => e.value)
+      .toSet()
+      .toList();
+
+  /// Forgets every recorded mention (after a successful send).
+  void clear() => _idsByHandle.clear();
+}

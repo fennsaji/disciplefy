@@ -964,6 +964,10 @@ class TranslationKeys {
       'notifications.settings.fellowship_new_post_title';
   static const notificationsSettingsFellowshipNewPostDescription =
       'notifications.settings.fellowship_new_post_description';
+  static const notificationsSettingsMentionTitle =
+      'notifications.settings.fellowship_mention_title';
+  static const notificationsSettingsMentionDescription =
+      'notifications.settings.fellowship_mention_description';
   static const notificationsSettingsMemberJoinedTitle =
       'notifications.settings.fellowship_member_joined_title';
   static const notificationsSettingsMemberJoinedDescription =
