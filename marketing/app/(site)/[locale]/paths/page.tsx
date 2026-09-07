@@ -1,4 +1,5 @@
 // marketing/app/[locale]/paths/page.tsx
+import { unstable_setRequestLocale } from "next-intl/server";
 // Force SSR so the path list is never pre-built with stale API data.
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function LocalePathsPage({
 }: {
   params: { locale: Locale };
 }) {
+  unstable_setRequestLocale(params.locale);
   const paths = await getLearningPaths(params.locale);
   return <PathsList paths={paths} locale={params.locale} />;
 }

@@ -1,4 +1,5 @@
 // marketing/app/[locale]/privacy/page.tsx
+import { unstable_setRequestLocale } from "next-intl/server";
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 }
 
 export default async function LocalePrivacyPage({ params }: { params: { locale: Locale } }) {
+  unstable_setRequestLocale(params.locale);
   const localePath = path.join(process.cwd(), `content/privacy/${params.locale}.mdx`);
   const fallbackPath = path.join(process.cwd(), "content/privacy/en.mdx");
   const raw = fs.readFileSync(fs.existsSync(localePath) ? localePath : fallbackPath, "utf-8");

@@ -9,6 +9,8 @@ import { AndroidIcon, AppleIcon, GlobeIcon, MailIcon } from "@/components/links/
 import { APP_STORE_URL, PLAY_STORE_URL, WEB_APP_URL } from "@/lib/app-links";
 import { SOCIAL } from "@/lib/social-links";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Disciplefy — All Links",
   description: "Download the Disciplefy app, follow along, or get in touch.",

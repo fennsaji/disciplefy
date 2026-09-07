@@ -1,4 +1,5 @@
 // marketing/app/[locale]/blog/[slug]/page.tsx
+import { unstable_setRequestLocale } from "next-intl/server";
 // ISR: page is cached at the edge and revalidated in the background every 60s
 // (see lib/blog.ts fetch revalidate), so newly published posts show up within
 // a minute without every visitor paying a live API round-trip.
@@ -47,6 +48,7 @@ export default async function LocaleBlogPostPage({
 }: {
   params: { locale: Locale; slug: string };
 }) {
+  unstable_setRequestLocale(params.locale);
   const post = await getPost(params.slug);
   if (!post) notFound();
 

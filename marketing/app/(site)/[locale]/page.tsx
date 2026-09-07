@@ -1,4 +1,5 @@
 // marketing/app/[locale]/page.tsx
+import { unstable_setRequestLocale } from "next-intl/server";
 // Each locale has its own page component so next-intl generates correct static params per locale.
 import { HomePage } from "@/app/_home";
 import { getAllPosts } from "@/lib/blog";
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 }
 
 export default async function LocalePage({ params: { locale } }: { params: { locale: Locale } }) {
+  unstable_setRequestLocale(locale);
   const { posts } = await getAllPosts(locale, 1, 3);
   return <HomePage posts={posts} />;
 }

@@ -2,7 +2,7 @@
 // Fallback for root "/" when middleware doesn't rewrite to /[locale].
 // Wraps with NextIntlClientProvider so useTranslations works.
 import { NextIntlClientProvider } from "next-intl";
-import { HomePage } from "./_home";
+import { HomePage } from "@/app/_home";
 import messages from "@/messages/en.json";
 import { getAllPosts } from "@/lib/blog";
 
