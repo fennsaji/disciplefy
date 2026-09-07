@@ -136,7 +136,9 @@ class DailyVerseCard extends StatelessWidget {
         opacity: isDisabled ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 150),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          // Compact by design: the card carries two short lines of text, so
+          // generous page-style padding left it eating a third of the screen.
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -148,7 +150,7 @@ class DailyVerseCard extends StatelessWidget {
                 streak: state.streak,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
               // Verse reference + translation citation (taps to copyright page)
               GestureDetector(
@@ -165,23 +167,24 @@ class DailyVerseCard extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 6),
 
-              // Verse text
+              // Verse text. 1.45 still gives Devanagari and Malayalam their
+              // ascenders room; 1.7 was paragraph spacing for two lines.
               Text(
                 state.currentVerseText,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w500,
                   color: Colors.white.withOpacity(0.95),
-                  height: 1.7,
+                  height: 1.45,
                   letterSpacing: 0.3,
                 ),
                 textAlign: TextAlign.start,
               ),
 
               if (onTap != null && !isDisabled) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Icon(
@@ -206,7 +209,7 @@ class DailyVerseCard extends StatelessWidget {
                 ),
               ],
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 4),
 
               // Action buttons
               _buildActionButtons(context, state),
@@ -374,9 +377,9 @@ class DailyVerseCard extends StatelessWidget {
         Icon(
           Icons.menu_book,
           color: textColor.withOpacity(0.9),
-          size: 24,
+          size: 20,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,12 +552,12 @@ class DailyVerseCard extends StatelessWidget {
           icon: const Icon(
             Icons.copy_outlined,
             color: iconColor,
-            size: 22,
+            size: 20,
           ),
           tooltip: context.tr(TranslationKeys.dailyVerseCopy),
           style: IconButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.all(10),
+            minimumSize: const Size(40, 40),
+            padding: const EdgeInsets.all(6),
           ),
         ),
 
@@ -566,12 +569,12 @@ class DailyVerseCard extends StatelessWidget {
           icon: const Icon(
             Icons.share_outlined,
             color: iconColor,
-            size: 22,
+            size: 20,
           ),
           tooltip: context.tr(TranslationKeys.dailyVerseShare),
           style: IconButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.all(10),
+            minimumSize: const Size(40, 40),
+            padding: const EdgeInsets.all(6),
           ),
         ),
 
@@ -590,11 +593,11 @@ class DailyVerseCard extends StatelessWidget {
           icon: const Icon(
             Icons.refresh,
             color: iconColor,
-            size: 22,
+            size: 20,
           ),
           style: IconButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.all(10),
+            minimumSize: const Size(40, 40),
+            padding: const EdgeInsets.all(6),
           ),
         ),
       ],
@@ -831,7 +834,7 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
               ? Icon(
                   Icons.psychology_rounded,
                   color: _iconColor.withOpacity(0.5),
-                  size: 22,
+                  size: 20,
                 )
               : Stack(
                   clipBehavior: Clip.none,
@@ -839,7 +842,7 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
                     Icon(
                       Icons.psychology_outlined,
                       color: _iconColor,
-                      size: 22,
+                      size: 20,
                     ),
                     Positioned(
                       right: -2,
@@ -860,8 +863,8 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
               ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
               : context.tr(TranslationKeys.dailyVerseAddToMemory),
           style: IconButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.all(10),
+            minimumSize: const Size(40, 40),
+            padding: const EdgeInsets.all(6),
           ),
         );
       },
