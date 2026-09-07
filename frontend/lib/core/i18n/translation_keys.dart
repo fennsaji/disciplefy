@@ -964,6 +964,10 @@ class TranslationKeys {
       'notifications.settings.fellowship_new_post_title';
   static const notificationsSettingsFellowshipNewPostDescription =
       'notifications.settings.fellowship_new_post_description';
+  static const notificationsSettingsMemberJoinedTitle =
+      'notifications.settings.fellowship_member_joined_title';
+  static const notificationsSettingsMemberJoinedDescription =
+      'notifications.settings.fellowship_member_joined_description';
   static const notificationsSettingsFellowshipCommentTitle =
       'notifications.settings.fellowship_comment_title';
   static const notificationsSettingsFellowshipCommentDescription =
@@ -2211,6 +2215,11 @@ class TranslationKeys {
   static const memoryStatsPerfectRecalls = 'memory_stats_page.perfect_recalls';
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
+
+  // Community — create post sheet
+  static const fellowshipLetDisciplerAnswer = 'community.let_discipler_answer';
+  static const fellowshipLetDisciplerAnswerHint =
+      'community.let_discipler_answer_hint';
 
   // Fellowship share section (study guide screen)
   static const studyGuideFellowshipShareTitle =

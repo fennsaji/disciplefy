@@ -40,6 +40,9 @@ class NotificationPreferences extends Equatable {
   final bool meetingInviteEnabled;
   final bool fellowshipMentorPromotedEnabled;
 
+  /// Someone joined a fellowship this user mentors.
+  final bool fellowshipMemberJoinedEnabled;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -68,6 +71,7 @@ class NotificationPreferences extends Equatable {
     this.fellowshipMeetingInviteEnabled = true,
     this.meetingInviteEnabled = true,
     this.fellowshipMentorPromotedEnabled = true,
+    this.fellowshipMemberJoinedEnabled = true,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -97,6 +101,7 @@ class NotificationPreferences extends Equatable {
     bool? fellowshipMeetingInviteEnabled,
     bool? meetingInviteEnabled,
     bool? fellowshipMentorPromotedEnabled,
+    bool? fellowshipMemberJoinedEnabled,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -144,6 +149,8 @@ class NotificationPreferences extends Equatable {
       meetingInviteEnabled: meetingInviteEnabled ?? this.meetingInviteEnabled,
       fellowshipMentorPromotedEnabled: fellowshipMentorPromotedEnabled ??
           this.fellowshipMentorPromotedEnabled,
+      fellowshipMemberJoinedEnabled:
+          fellowshipMemberJoinedEnabled ?? this.fellowshipMemberJoinedEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

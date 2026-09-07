@@ -11,7 +11,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { pushMentors } from '../_shared/services/discipler-service.ts'
+import { pushMentorsOrQueue } from '../_shared/services/discipler-service.ts'
 
 // ---------------------------------------------------------------------------
 // List invites  GET /fellowship-invites?fellowship_id=UUID
@@ -244,7 +244,7 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
     console.error('[fellowship-invites/join] Failed to increment use_count:', invite.id, usageError)
   }
 
-  // Notify mentors (fire-and-forget); pushMentors already excludes the joiner via excludeUserId
+  // Notify mentors (fire-and-forget); pushMentorsOrQueue already excludes the joiner via excludeUserId
   const notifyPromise = (async () => {
     try {
       let displayName = 'A new member'
@@ -254,9 +254,10 @@ async function handleJoinFellowship(req: Request, services: ServiceContainer): P
         displayName = u.user_metadata?.full_name ?? u.user_metadata?.name ??
           u.user_metadata?.display_name ?? 'A new member'
       }
-      await pushMentors(db, fellowship.id,
+      await pushMentorsOrQueue(db, fellowship.id,
         { title: `👋 ${displayName} joined the fellowship`, body: `${displayName} joined ${fellowship.name}` },
-        { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id }, { excludeUserId: user.id })
+        { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id },
+        { kind: 'fellowship_member_joined', excludeUserId: user.id })
     } catch (err) { console.error('[fellowship-invites/join] push error (non-fatal):', err) }
   })()
   // Keep the isolate alive past the response so the push actually sends.

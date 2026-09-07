@@ -203,6 +203,7 @@ interface CreatePostRequest {
   fellowship_id: string
   content: string
   post_type?: 'general' | 'prayer' | 'praise' | 'question' | 'study_note' | 'shared_guide'
+  discipler_reply_opt_out?: boolean
   topic_id?: string | null
   topic_title?: string | null
   guide_title?: string | null
@@ -276,6 +277,7 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       content: body.content.trim(),
       post_type: postType,
       mentions_discipler: mentionsDiscipler(body.content),
+      discipler_reply_opt_out: body.discipler_reply_opt_out === true,
       ...(body.topic_id        ? { topic_id:        body.topic_id }        : {}),
       ...(body.topic_title     ? { topic_title:      body.topic_title }     : {}),
       ...(body.guide_title     ? { guide_title:      body.guide_title }     : {}),
@@ -309,13 +311,9 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
 
   // Every active member — mentors included — gets exactly one push per new
   // post; private mentor contact covers the "reach a person" case, so there
-  // is no separate mentor-only broadcast to de-duplicate against.
-  const { data: mentorRows } = await db.rpc('fellowship_mentor_ids', { p_fellowship_id: body.fellowship_id })
-  const mentorIds = new Set(((mentorRows ?? []) as { user_id: string }[]).map((r) => r.user_id))
-  const authorIsMentor = mentorIds.has(user.id)
-
-  // Send FCM to all other active members (fire-and-forget), excluding anyone
-  // in a mutual block with the author so blocked users don't get notified of
+  // is no separate mentor-only broadcast to de-duplicate against. Sent
+  // fire-and-forget, excluding anyone in a mutual block with the author so
+  // blocked users don't get notified of
   // (or leak notifications to) each other.
   if (members.length > 0) {
     const notifyPromise = (async () => {
@@ -350,7 +348,8 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
       if (!settings) return
       const decision = classifyPost({
         content: post.content, postType, topicId: post.topic_id ?? null,
-        authorIsMentor, authorUserId: user.id, settings, globalEnabled,
+        authorUserId: user.id, settings, globalEnabled,
+        disciplerOptOut: body.discipler_reply_opt_out === true,
       })
       if (!decision) return
       if (decision.trigger === 'react') {

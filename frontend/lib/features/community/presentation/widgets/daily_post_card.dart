@@ -6,6 +6,7 @@ import '../../domain/entities/fellowship_post_entity.dart';
 import 'discipler_badges.dart';
 import 'reaction_button.dart';
 import 'study_guide_chip.dart';
+import 'fellowship_post_card.dart';
 
 /// Accent colour used by daily study post rendering, in both the feed card and
 /// the guide discussion thread.
@@ -144,52 +145,11 @@ class DailyPostCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // ── Footer ─────────────────────────────────────────────────
-          Row(
-            children: [
-              FellowshipReactionButton(post: post, accentColor: accent),
-              const SizedBox(width: 8),
-              if (onCommentTap != null)
-                GestureDetector(
-                  onTap: onCommentTap,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: context.appSurfaceVariant,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.chat_bubble_outline_rounded,
-                            size: 14, color: context.appTextSecondary),
-                        const SizedBox(width: 4),
-                        Text(
-                          post.commentCount > 0
-                              ? '${post.commentCount}'
-                              : l10n.replyAction,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: context.appTextSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              const Spacer(),
-              if (onShareTap != null)
-                IconButton(
-                  onPressed: onShareTap,
-                  icon: Icon(Icons.share_outlined,
-                      size: 18, color: context.appTextSecondary),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  visualDensity: VisualDensity.compact,
-                ),
-            ],
+          FellowshipPostFooter(
+            post: post,
+            accentColor: accent,
+            onCommentTap: onCommentTap,
+            onShareTap: onShareTap,
           ),
         ],
       ),

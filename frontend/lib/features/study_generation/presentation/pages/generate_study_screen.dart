@@ -50,6 +50,7 @@ import '../../../walkthrough/presentation/showcase_keys.dart';
 import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -2560,7 +2561,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
                 // Scrollable mode options
                 Flexible(
-                  child: SingleChildScrollView(
+                  child: SheetScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [

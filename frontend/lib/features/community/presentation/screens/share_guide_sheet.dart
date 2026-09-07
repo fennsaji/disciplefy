@@ -4,6 +4,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_entity.dart';
 import '../../domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// A modal bottom sheet that lets users share a study guide to one or more of
 /// their fellowships with an optional personal message.
@@ -160,7 +161,7 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
+      child: SheetScrollView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

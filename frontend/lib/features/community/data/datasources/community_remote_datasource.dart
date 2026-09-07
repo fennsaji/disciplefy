@@ -50,6 +50,7 @@ abstract class CommunityRemoteDatasource {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    bool disciplerReplyOptOut = false,
   });
 
   /// Soft-deletes the post identified by [postId].
@@ -669,6 +670,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
     String? studyGuideId,
     String? guideInputType,
     String? guideLanguage,
+    bool disciplerReplyOptOut = false,
   }) async {
     try {
       final url = '$_baseUrl$_fellowshipPostsCreateEndpoint';
@@ -683,6 +685,7 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
         if (studyGuideId != null) 'study_guide_id': studyGuideId,
         if (guideInputType != null) 'guide_input_type': guideInputType,
         if (guideLanguage != null) 'guide_language': guideLanguage,
+        if (disciplerReplyOptOut) 'discipler_reply_opt_out': true,
       });
 
       final headers = await _httpService.createHeaders();

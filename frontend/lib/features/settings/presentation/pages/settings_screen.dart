@@ -41,6 +41,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../../core/services/apple_consumable_purchase_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/platform_utils.dart';
+import '../../../../shared/widgets/sheet_scroll_view.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
 
@@ -858,7 +859,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1216,7 +1217,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1681,7 +1682,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
           padding: const EdgeInsets.all(24),
           // Scrollable: the mode list is taller than a short
           // screen, and isScrollControlled alone does not scroll.
-          child: SingleChildScrollView(
+          child: SheetScrollView(
               child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1886,7 +1887,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1962,7 +1963,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2017,7 +2018,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2115,7 +2116,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2936,7 +2937,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         padding: const EdgeInsets.all(24),
         // Scrollable: the mode list is taller than a short
         // screen, and isScrollControlled alone does not scroll.
-        child: SingleChildScrollView(
+        child: SheetScrollView(
             child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

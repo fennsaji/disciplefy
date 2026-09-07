@@ -14,7 +14,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
-import { pushMentors } from '../_shared/services/discipler-service.ts'
+import { pushMentorsOrQueue } from '../_shared/services/discipler-service.ts'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 /// How many active fellowships one non-admin account may own.
@@ -793,9 +793,10 @@ async function handleJoinPublicFellowship(req: Request, services: ServiceContain
     }
   } catch { /* non-fatal */ }
 
-  const joinPush = pushMentors(db, fellowship.id,
+  const joinPush = pushMentorsOrQueue(db, fellowship.id,
     { title: `👋 ${displayName} joined the fellowship`, body: `${displayName} joined ${fellowship.name}` },
-    { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id }, { excludeUserId: user.id })
+    { type: 'fellowship_member_joined', fellowship_id: fellowship.id, user_id: user.id },
+    { kind: 'fellowship_member_joined', excludeUserId: user.id })
   if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(joinPush)
 
   // Fire-and-forget: notify new member of upcoming meetings (non-blocking)

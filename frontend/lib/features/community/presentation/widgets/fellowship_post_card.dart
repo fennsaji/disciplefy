@@ -384,7 +384,7 @@ class FellowshipPostCard extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(right: interactive ? 8 : 0),
               child: interactive
-                  ? _InteractiveFooter(
+                  ? FellowshipPostFooter(
                       post: post,
                       accentColor: accentColor,
                       onCommentTap: onCommentTap,
@@ -902,17 +902,24 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
 // Interactive footer (feed mode): reaction button + comment button
 // ---------------------------------------------------------------------------
 
-class _InteractiveFooter extends StatelessWidget {
+/// Reaction, reply and share row shared by the ordinary post card and the
+/// daily study card.
+///
+/// It lives in one place because it did not use to: the daily card kept its
+/// own copy, so raising the reaction button to a 44px touch target left its
+/// reply button at the old size and the two pills no longer lined up.
+class FellowshipPostFooter extends StatelessWidget {
   final FellowshipPostEntity post;
   final Color accentColor;
   final VoidCallback? onCommentTap;
   final VoidCallback? onShareTap;
 
-  const _InteractiveFooter({
+  const FellowshipPostFooter({
     required this.post,
     required this.accentColor,
     required this.onCommentTap,
     this.onShareTap,
+    super.key,
   });
 
   @override
@@ -923,35 +930,42 @@ class _InteractiveFooter extends StatelessWidget {
         FellowshipReactionButton(post: post, accentColor: accentColor),
         const SizedBox(width: 8),
         if (onCommentTap != null)
-          GestureDetector(
-            onTap: onCommentTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: context.appSurfaceVariant,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 14,
-                    color: context.appTextSecondary,
+          // Sized to the 44px minimum touch target; the pill itself used to be
+          // ~29px tall and was easy to miss.
+          Material(
+            color: context.appSurfaceVariant,
+            borderRadius: BorderRadius.circular(22),
+            child: InkWell(
+              onTap: onCommentTap,
+              borderRadius: BorderRadius.circular(22),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                        color: context.appTextSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        post.commentCount > 0
+                            ? '${post.commentCount}'
+                            : l10n.replyAction,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    post.commentCount > 0
-                        ? '${post.commentCount}'
-                        : l10n.replyAction,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: context.appTextSecondary,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -960,10 +974,9 @@ class _InteractiveFooter extends StatelessWidget {
           IconButton(
             onPressed: onShareTap,
             icon: Icon(Icons.share_outlined,
-                size: 18, color: context.appTextSecondary),
+                size: 20, color: context.appTextSecondary),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
       ],
     );

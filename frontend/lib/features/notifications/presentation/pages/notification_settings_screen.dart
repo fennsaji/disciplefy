@@ -484,6 +484,22 @@ class _NotificationSettingsView extends StatelessWidget {
             },
           ),
 
+          const SizedBox(height: 12),
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsMemberJoinedTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsMemberJoinedDescription),
+            icon: Icons.person_add_alt_1_rounded,
+            enabled: state.preferences.fellowshipMemberJoinedEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                        fellowshipMemberJoinedEnabled: value),
+                  );
+            },
+          ),
+
           const SizedBox(height: 28),
 
           // Meetings Section

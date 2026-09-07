@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
+import '../widgets/fellowship_comments_sheet.dart';
+import '../widgets/fellowship_report_sheet.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
@@ -319,7 +323,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                           backgroundColor: Colors.transparent,
                           builder: (_) => BlocProvider.value(
                             value: context.read<FellowshipFeedBloc>(),
-                            child: _CommentsSheet(
+                            child: FellowshipCommentsSheet(
                               postId: post.id,
                               fellowshipId: widget.fellowshipId,
                               isMentor: state.isMentor,
@@ -335,7 +339,7 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                           backgroundColor: Colors.transparent,
                           builder: (_) => BlocProvider.value(
                             value: context.read<FellowshipFeedBloc>(),
-                            child: _ReportSheet(
+                            child: FellowshipReportSheet(
                               fellowshipId: widget.fellowshipId,
                               contentType: 'post',
                               contentId: post.id,
@@ -367,255 +371,8 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
 }
 
 // ---------------------------------------------------------------------------
-// _CommentsSheet
+// FellowshipCommentsSheet
 // ---------------------------------------------------------------------------
-
-class _CommentsSheet extends StatefulWidget {
-  final String postId;
-  final String fellowshipId;
-  final bool isMentor;
-  final String? currentUserId;
-
-  const _CommentsSheet({
-    required this.postId,
-    required this.fellowshipId,
-    required this.isMentor,
-    required this.currentUserId,
-  });
-
-  @override
-  State<_CommentsSheet> createState() => _CommentsSheetState();
-}
-
-class _CommentsSheetState extends State<_CommentsSheet> {
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    _controller.clear();
-    context.read<FellowshipFeedBloc>().add(
-          FellowshipCommentCreateRequested(content: text),
-        );
-  }
-
-  /// Watches for `'@'` typed at the start of a word and opens the mention
-  /// picker automatically.
-  void _handleCommentChanged(String text) {
-    final cursor = _controller.selection.baseOffset;
-    if (cursor < 0) return;
-    if (shouldOpenMentionSheet(text, cursor)) {
-      _openMentionSheet(cursorOverride: cursor);
-    }
-  }
-
-  /// Opens the `@mention` picker and, on selection, inserts the handle at the
-  /// current cursor position (replacing a trailing partial `@word`).
-  Future<void> _openMentionSheet({int? cursorOverride}) async {
-    final feedState = context.read<FellowshipFeedBloc>().state;
-    final candidate = await showMentionSheet(
-      context,
-      disciplerAllowed: feedState.disciplerAllowed,
-      mentors: feedState.mentors,
-    );
-    if (candidate == null || !mounted) return;
-    final selectionOffset = _controller.selection.baseOffset;
-    final cursor = cursorOverride ??
-        (selectionOffset >= 0 ? selectionOffset : _controller.text.length);
-    final result = insertMention(_controller.text, cursor, candidate.handle);
-    _controller.value = TextEditingValue(
-      text: result.text,
-      selection: TextSelection.collapsed(offset: result.cursor),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.35,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: context.appSurface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // ── Handle ────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 8),
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.appBorder,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-
-              // ── Comment list ───────────────────────────────────────
-              Expanded(
-                child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                  buildWhen: (prev, curr) =>
-                      prev.comments != curr.comments ||
-                      prev.commentsStatus != curr.commentsStatus,
-                  builder: (context, state) {
-                    if (state.commentsStatus ==
-                        FellowshipCommentsStatus.loading) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      );
-                    }
-                    if (state.commentsStatus ==
-                            FellowshipCommentsStatus.failure ||
-                        state.comments.isEmpty) {
-                      return Center(
-                        child: Text(
-                          state.commentsStatus ==
-                                  FellowshipCommentsStatus.failure
-                              ? (state.errorMessage ?? 'Failed to load')
-                              : 'No comments yet. Be first!',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            color: context.appTextSecondary,
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      itemCount: state.comments.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(color: context.appDivider, height: 1),
-                      itemBuilder: (context, index) {
-                        final comment = state.comments[index];
-                        return _CommentTile(
-                          comment: comment,
-                          postId: widget.postId,
-                          fellowshipId: widget.fellowshipId,
-                          isMentor: widget.isMentor,
-                          currentUserId: widget.currentUserId,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              // ── Compose row ────────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomInset),
-                child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                  buildWhen: (prev, curr) =>
-                      prev.commentSubmitting != curr.commentSubmitting,
-                  builder: (context, state) {
-                    return Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => _openMentionSheet(),
-                          icon: Icon(Icons.alternate_email_rounded,
-                              size: 20, color: context.appTextSecondary),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            maxLength: 500,
-                            buildCounter: (_,
-                                    {required currentLength,
-                                    required isFocused,
-                                    maxLength}) =>
-                                null,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: context.appTextPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Add a comment…',
-                              hintStyle: TextStyle(
-                                fontFamily: 'Inter',
-                                color: context.appTextTertiary,
-                              ),
-                              filled: true,
-                              fillColor: context.appScaffold,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: context.appBorder),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: context.appBorder),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                            onChanged: _handleCommentChanged,
-                            onSubmitted: (_) => _submit(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: ElevatedButton(
-                            onPressed: state.commentSubmitting ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.appInteractive,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              shape: const CircleBorder(),
-                            ),
-                            child: state.commentSubmitting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.send_rounded, size: 18),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // _CommentTile
@@ -627,286 +384,6 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 /// disclosure footer; shows a study guide link when [FellowshipCommentEntity
 /// .hasGuide]; and shows an approve/discard review pill for pending-review
 /// Discipler drafts (mentors only).
-class _CommentTile extends StatelessWidget {
-  final FellowshipCommentEntity comment;
-  final String postId;
-  final String fellowshipId;
-  final bool isMentor;
-  final String? currentUserId;
-
-  const _CommentTile({
-    required this.comment,
-    required this.postId,
-    required this.fellowshipId,
-    required this.isMentor,
-    required this.currentUserId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final isSystem = comment.authorIsSystem;
-    final canDelete = isMentor || comment.authorUserId == currentUserId;
-    final canReport =
-        !isSystem && !isMentor && comment.authorUserId != currentUserId;
-    final canBlock = !isSystem && comment.authorUserId != currentUserId;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      decoration: isSystem
-          ? BoxDecoration(
-              color: context.appPrimary.withAlpha(
-                  Theme.of(context).brightness == Brightness.dark ? 40 : 18),
-              borderRadius: BorderRadius.circular(12),
-            )
-          : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              isSystem
-                  ? const DisciplerAvatar(radius: 16)
-                  : CircleAvatar(
-                      radius: 16,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primary.withAlpha(26),
-                      child: Text(
-                        comment.authorDisplayName.isNotEmpty
-                            ? comment.authorDisplayName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            isSystem
-                                ? l10n.disciplerName
-                                : comment.authorDisplayName,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: context.appTextPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isSystem) ...[
-                          const SizedBox(width: 6),
-                          const DisciplerAiChip(),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text.rich(
-                      TextSpan(
-                        children: mentionSpans(
-                          isSystem
-                              ? stripEmphasisMarkers(comment.content)
-                              : comment.content,
-                          TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: context.appTextPrimary,
-                            height: 1.45,
-                          ),
-                          TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: context.appPrimary,
-                            height: 1.45,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (comment.hasGuide) ...[
-                      const SizedBox(height: 8),
-                      StudyGuideChip(
-                        studyGuideId: comment.studyGuideId,
-                        title: comment.guideTitle ?? l10n.openStudyGuide,
-                        inputType: comment.guideInputType,
-                        inputValue: comment.guideInputValue,
-                        language: comment.guideLanguage,
-                      ),
-                    ],
-                    if (isSystem) ...[
-                      const SizedBox(height: 8),
-                      const DisciplerFooterNote(),
-                    ],
-                    if (comment.isPendingReview) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning.withAlpha(30),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              l10n.disciplerDraftBadge,
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.warningDark,
-                              ),
-                            ),
-                          ),
-                          if (isMentor) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => context
-                                  .read<FellowshipFeedBloc>()
-                                  .add(FellowshipDisciplerCommentReviewed(
-                                    commentId: comment.id,
-                                    approve: true,
-                                  )),
-                              child: Text(
-                                l10n.approve,
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.appSuccess,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            GestureDetector(
-                              onTap: () => context
-                                  .read<FellowshipFeedBloc>()
-                                  .add(FellowshipDisciplerCommentReviewed(
-                                    commentId: comment.id,
-                                    approve: false,
-                                  )),
-                              child: Text(
-                                l10n.discard,
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.appError,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              // One labelled menu rather than a row of bare glyphs:
-              // an X on someone's reply reads as "dismiss" when it
-              // actually deletes, and the icons gave no wording for
-              // what each one does.
-              if (canDelete || canReport || canBlock)
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert,
-                      size: 18, color: context.appTextTertiary),
-                  padding: EdgeInsets.zero,
-                  splashRadius: 18,
-                  onSelected: (value) async {
-                    final bloc = context.read<FellowshipFeedBloc>();
-                    if (value == 'delete') {
-                      bloc.add(FellowshipCommentDeleteRequested(
-                        commentId: comment.id,
-                        postId: postId,
-                      ));
-                    } else if (value == 'report') {
-                      await showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => BlocProvider.value(
-                          value: bloc,
-                          child: _ReportSheet(
-                            fellowshipId: fellowshipId,
-                            contentType: 'comment',
-                            contentId: comment.id,
-                          ),
-                        ),
-                      );
-                    } else if (value == 'block') {
-                      if (await showBlockUserConfirmation(context)) {
-                        bloc.add(FellowshipBlockUserRequested(
-                          blockedUserId: comment.authorUserId,
-                          fellowshipId: fellowshipId,
-                          contentType: 'comment',
-                          contentId: comment.id,
-                        ));
-                      }
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    if (canDelete)
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_outline_rounded,
-                                color: context.appError, size: 20),
-                            const SizedBox(width: 8),
-                            Text(l10n.deleteAction,
-                                style: TextStyle(color: context.appError)),
-                          ],
-                        ),
-                      ),
-                    if (canReport)
-                      PopupMenuItem<String>(
-                        value: 'report',
-                        child: Row(
-                          children: [
-                            Icon(Icons.flag_outlined,
-                                color: context.appTextSecondary, size: 20),
-                            const SizedBox(width: 8),
-                            Text(l10n.reportTitle,
-                                style:
-                                    TextStyle(color: context.appTextPrimary)),
-                          ],
-                        ),
-                      ),
-                    if (canBlock)
-                      PopupMenuItem<String>(
-                        value: 'block',
-                        child: Row(
-                          children: [
-                            Icon(Icons.block,
-                                color: context.appError, size: 20),
-                            const SizedBox(width: 8),
-                            Text(l10n.blockUserTitle,
-                                style: TextStyle(color: context.appError)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // FellowshipCreatePostSheet (public — shared with home screen)
@@ -930,6 +407,10 @@ class FellowshipCreatePostSheet extends StatefulWidget {
 class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
   final TextEditingController _contentController = TextEditingController();
   late String _selectedType = widget.initialType;
+
+  /// Mentors can leave one question to the group. Defaults to letting
+  /// Discipler answer, so ignoring the switch changes nothing.
+  bool _letDisciplerAnswer = true;
 
   /// Returns contextual placeholder text based on the selected post type.
   String _hintForType(String type) {
@@ -959,6 +440,7 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
             fellowshipId: widget.fellowshipId,
             content: content,
             postType: _selectedType,
+            disciplerReplyOptOut: !_letDisciplerAnswer,
           ),
         );
   }
@@ -1263,6 +745,47 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
                   ),
                 ),
               ),
+              // ── Discipler opt-out (mentors, question posts) ───────────
+              BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+                buildWhen: (prev, curr) =>
+                    prev.isMentor != curr.isMentor ||
+                    prev.disciplerAllowed != curr.disciplerAllowed,
+                builder: (context, state) {
+                  if (!state.isMentor ||
+                      !state.disciplerAllowed ||
+                      _selectedType != 'question') {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SwitchListTile.adaptive(
+                      value: _letDisciplerAnswer,
+                      onChanged: (v) => setState(() => _letDisciplerAnswer = v),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      title: Text(
+                        context
+                            .tr(TranslationKeys.fellowshipLetDisciplerAnswer),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      subtitle: Text(
+                        context.tr(
+                            TranslationKeys.fellowshipLetDisciplerAnswerHint),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: context.appTextTertiary,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 20),
 
               // ── Submit button ─────────────────────────────────────────
@@ -1314,172 +837,5 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
 }
 
 // ---------------------------------------------------------------------------
-// _ReportSheet
+// FellowshipReportSheet
 // ---------------------------------------------------------------------------
-
-class _ReportSheet extends StatefulWidget {
-  final String fellowshipId;
-  final String contentType; // 'post' or 'comment'
-  final String contentId;
-
-  const _ReportSheet({
-    required this.fellowshipId,
-    required this.contentType,
-    required this.contentId,
-  });
-
-  @override
-  State<_ReportSheet> createState() => _ReportSheetState();
-}
-
-class _ReportSheetState extends State<_ReportSheet> {
-  final TextEditingController _reasonController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-
-  @override
-  void dispose() {
-    _reasonController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    context.read<FellowshipFeedBloc>().add(
-          FellowshipReportRequested(
-            fellowshipId: widget.fellowshipId,
-            contentType: widget.contentType,
-            contentId: widget.contentId,
-            reason: _reasonController.text.trim(),
-          ),
-        );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return BlocListener<FellowshipFeedBloc, FellowshipFeedState>(
-      listenWhen: (prev, curr) => prev.reportStatus != curr.reportStatus,
-      listener: (context, state) {
-        if (state.reportStatus == FellowshipReportStatus.success) {
-          Navigator.of(context).maybePop();
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(l10n.reportSuccess),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              ),
-            );
-        }
-      },
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.appBorder,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    l10n.reportTitle,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: context.appTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _reasonController,
-                    maxLength: 500,
-                    maxLines: 4,
-                    keyboardType: TextInputType.multiline,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      color: context.appTextPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: l10n.reportReasonLabel,
-                      hintText: l10n.reportReasonHint,
-                      filled: true,
-                      fillColor: context.appInputFill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().length < 5) {
-                        return 'Please provide at least 5 characters.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                    buildWhen: (prev, curr) =>
-                        prev.reportStatus != curr.reportStatus,
-                    builder: (context, state) {
-                      final loading =
-                          state.reportStatus == FellowshipReportStatus.loading;
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: loading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: context.appInteractive,
-                            foregroundColor: AppColors.onGradient,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: loading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.onGradient,
-                                  ),
-                                )
-                              : Text(
-                                  l10n.reportSubmit,
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

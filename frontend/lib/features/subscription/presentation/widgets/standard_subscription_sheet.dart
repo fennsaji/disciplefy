@@ -13,6 +13,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Bottom sheet for Standard subscription showing benefits and subscribe button.
 /// Uses BlocConsumer to react to SubscriptionCreated/Error/Loaded states directly,
@@ -135,7 +136,7 @@ class _StandardSubscriptionSheetState extends State<StandardSubscriptionSheet> {
             color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: SingleChildScrollView(
+          child: SheetScrollView(
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),

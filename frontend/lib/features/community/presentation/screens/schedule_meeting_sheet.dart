@@ -11,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_event.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// A modal bottom sheet that allows a fellowship mentor to schedule a new
 /// Google Meet session for the group.
@@ -251,7 +252,7 @@ class _ScheduleMeetingSheetState extends State<ScheduleMeetingSheet> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: SingleChildScrollView(
+        child: SheetScrollView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Form(
             key: _formKey,

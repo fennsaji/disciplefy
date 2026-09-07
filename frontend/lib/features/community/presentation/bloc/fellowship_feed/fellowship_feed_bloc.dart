@@ -168,6 +168,7 @@ class FellowshipFeedBloc
       studyGuideId: event.studyGuideId,
       guideInputType: event.guideInputType,
       guideLanguage: event.guideLanguage,
+      disciplerReplyOptOut: event.disciplerReplyOptOut,
     );
 
     result.fold(

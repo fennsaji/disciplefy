@@ -43,6 +43,7 @@ import '../widgets/for_you_learning_paths_section.dart';
 import '../widgets/learning_path_card.dart';
 import '../widgets/learning_paths_section.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Screen for browsing study topics with For You and Learning Paths sections.
 ///
@@ -934,7 +935,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
+        child: SheetScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

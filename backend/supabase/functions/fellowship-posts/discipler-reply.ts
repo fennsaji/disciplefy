@@ -86,7 +86,7 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
 
   // Load post, optional comment, fellowship settings
   const [{ data: post }, settings, globalEnabled] = await Promise.all([
-    db.from('fellowship_posts').select('id, fellowship_id, author_user_id, content, post_type, topic_id, topic_title, reaction_counts, is_deleted').eq('id', q.post_id).maybeSingle(),
+    db.from('fellowship_posts').select('id, fellowship_id, author_user_id, content, post_type, topic_id, topic_title, reaction_counts, is_deleted, discipler_reply_opt_out').eq('id', q.post_id).maybeSingle(),
     loadFellowshipDiscipler(db, q.fellowship_id),
     isDisciplerGloballyEnabled(db),
   ])
@@ -101,14 +101,17 @@ export async function handleDisciplerReply(req: Request, services: ServiceContai
     question = c.content
   }
 
-  // Re-check gates
+  // Mentor ids label the thread for the prompt; they no longer gate the reply.
   const { data: mentorRows, error: mentorError } = await db.rpc('fellowship_mentor_ids', { p_fellowship_id: q.fellowship_id })
   if (mentorError) return done((q.attempts ?? 0) + 1 >= 3 ? 'failed' : 'pending', {}, 'mentor rpc: ' + mentorError.message)
   const mentorIds = new Set(((mentorRows ?? []) as { user_id: string }[]).map((r) => r.user_id))
+
+  // Re-check gates
   const decision = q.comment_id
     ? classifyComment({ content: question, authorUserId: askerId, settings, globalEnabled })
     : classifyPost({ content: question, postType: post.post_type, topicId: post.topic_id ?? null,
-        authorIsMentor: mentorIds.has(askerId), authorUserId: askerId, settings, globalEnabled })
+        authorUserId: askerId, settings, globalEnabled,
+        disciplerOptOut: post.discipler_reply_opt_out === true })
   if (!decision || decision.trigger === 'react') return done('skipped_gate')
   const trigger = decision.trigger
 

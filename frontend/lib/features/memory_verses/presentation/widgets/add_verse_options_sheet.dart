@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Bottom sheet for selecting how to add a new memory verse.
 ///
@@ -53,7 +54,7 @@ class AddVerseOptionsSheet extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SafeArea(
-      child: SingleChildScrollView(
+      child: SheetScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

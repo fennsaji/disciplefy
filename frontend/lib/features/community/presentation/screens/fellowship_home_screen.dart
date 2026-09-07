@@ -42,6 +42,10 @@ import '../utils/feed_sort.dart';
 import '../utils/share_helpers.dart';
 import '../widgets/fellowship_post_card.dart';
 import '../widgets/mentor_contact_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
+import '../widgets/fellowship_report_sheet.dart';
+import '../widgets/fellowship_comments_sheet.dart';
+import '../widgets/block_user_dialog.dart';
 
 // ============================================================================
 // Root widget — provides BLoCs, delegates to _FellowshipHomeContent
@@ -1120,11 +1124,60 @@ class _FeedPreviewSection extends StatelessWidget {
                     child: FellowshipPostCard(
                       post: post,
                       fellowshipId: fellowshipId,
-                      interactive: false,
+                      // Same affordances as the feed: the preview shows real
+                      // posts, so reacting and replying belong here too.
+                      isMentor: state.isMentor,
+                      currentUserId: state.currentUserId,
                       maxContentLines: 3,
                       isAdmin: isAdmin,
                       onShareTap: () =>
                           sharePost(context, post, fellowshipName),
+                      onCommentTap: () {
+                        final bloc = context.read<FellowshipFeedBloc>();
+                        bloc.add(
+                            FellowshipCommentsOpenRequested(postId: post.id));
+                        showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => BlocProvider.value(
+                            value: bloc,
+                            child: FellowshipCommentsSheet(
+                              postId: post.id,
+                              fellowshipId: fellowshipId,
+                              isMentor: state.isMentor,
+                              currentUserId: state.currentUserId,
+                            ),
+                          ),
+                        );
+                      },
+                      onReportTap: () {
+                        final bloc = context.read<FellowshipFeedBloc>();
+                        showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => BlocProvider.value(
+                            value: bloc,
+                            child: FellowshipReportSheet(
+                              fellowshipId: fellowshipId,
+                              contentType: 'post',
+                              contentId: post.id,
+                            ),
+                          ),
+                        );
+                      },
+                      onBlockTap: () async {
+                        final bloc = context.read<FellowshipFeedBloc>();
+                        if (await showBlockUserConfirmation(context)) {
+                          bloc.add(FellowshipBlockUserRequested(
+                            blockedUserId: post.authorUserId,
+                            fellowshipId: fellowshipId,
+                            contentType: 'post',
+                            contentId: post.id,
+                          ));
+                        }
+                      },
                     ),
                   ),
                 // "View all" button when there are more
@@ -1297,7 +1350,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
+        child: SheetScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
