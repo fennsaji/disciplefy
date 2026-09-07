@@ -36,6 +36,7 @@ abstract class NotificationRepository {
     bool? fellowshipMeetingCancelledEnabled,
     bool? fellowshipMeetingInviteEnabled,
     bool? meetingInviteEnabled,
+    bool? fellowshipMentorPromotedEnabled,
   });
 
   /// Check if notifications are enabled on device

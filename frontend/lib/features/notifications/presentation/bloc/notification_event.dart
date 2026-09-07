@@ -41,6 +41,7 @@ class UpdateNotificationPreferences extends NotificationEvent {
   final bool? fellowshipMeetingCancelledEnabled;
   final bool? fellowshipMeetingInviteEnabled;
   final bool? meetingInviteEnabled;
+  final bool? fellowshipMentorPromotedEnabled;
 
   const UpdateNotificationPreferences({
     this.dailyVerseEnabled,
@@ -65,6 +66,7 @@ class UpdateNotificationPreferences extends NotificationEvent {
     this.fellowshipMeetingCancelledEnabled,
     this.fellowshipMeetingInviteEnabled,
     this.meetingInviteEnabled,
+    this.fellowshipMentorPromotedEnabled,
   });
 
   @override
@@ -82,6 +84,7 @@ class UpdateNotificationPreferences extends NotificationEvent {
         fellowshipMeetingCancelledEnabled,
         fellowshipMeetingInviteEnabled,
         meetingInviteEnabled,
+        fellowshipMentorPromotedEnabled,
         dailyVerseEnabled,
         recommendedTopicEnabled,
         streakReminderEnabled,

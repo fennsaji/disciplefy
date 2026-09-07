@@ -980,6 +980,9 @@ class AppTranslations {
         'meeting_cancelled_title': 'Meeting cancellations',
         'meeting_cancelled_description':
             'When a scheduled meeting is called off',
+        'mentor_promoted_title': 'Made a mentor',
+        'mentor_promoted_description':
+            'When you are made a mentor of a fellowship',
         'permission_title': 'Notification Permission',
         'permission_enabled': 'Enabled - You will receive notifications',
         'permission_disabled': 'Disabled - Enable to receive notifications',
@@ -3069,6 +3072,8 @@ class AppTranslations {
         'meeting_reminder_description': 'सभा शुरू होने से कुछ समय पहले',
         'meeting_cancelled_title': 'सभा रद्द',
         'meeting_cancelled_description': 'जब कोई निर्धारित सभा रद्द हो',
+        'mentor_promoted_title': 'मेंटर बनाए जाने पर',
+        'mentor_promoted_description': 'जब आपको किसी समूह का मेंटर बनाया जाए',
         'permission_title': 'नोटिफिकेशन अनुमति',
         'permission_enabled': 'सक्षम - आपको नोटिफिकेशन प्राप्त होंगे',
         'permission_disabled':
@@ -5182,6 +5187,9 @@ class AppTranslations {
         'meeting_reminder_description': 'മീറ്റിംഗ് തുടങ്ങുന്നതിന് തൊട്ടുമുൻപ്',
         'meeting_cancelled_title': 'മീറ്റിംഗ് റദ്ദാക്കൽ',
         'meeting_cancelled_description': 'നിശ്ചയിച്ച മീറ്റിംഗ് റദ്ദാക്കുമ്പോൾ',
+        'mentor_promoted_title': 'മെന്റർ ആക്കുമ്പോൾ',
+        'mentor_promoted_description':
+            'നിങ്ങളെ ഒരു കൂട്ടായ്മയുടെ മെന്ററാക്കുമ്പോൾ',
         'permission_title': 'അറിയിപ്പ് അനുമതി',
         'permission_enabled': 'പ്രവർ‍ത്തിപ്പിച്ചു - അറിയിപ്പുകൾ ലഭിക്കും',
         'permission_disabled':

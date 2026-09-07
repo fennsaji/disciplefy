@@ -997,6 +997,11 @@ class TranslationKeys {
   static const notificationsSettingsMeetingCancelledDescription =
       'notifications.settings.meeting_cancelled_description';
 
+  static const notificationsSettingsMentorPromotedTitle =
+      'notifications.settings.mentor_promoted_title';
+  static const notificationsSettingsMentorPromotedDescription =
+      'notifications.settings.mentor_promoted_description';
+
   // Memory Verses
   static const memoryFilterByLanguage = 'memory.filterByLanguage';
   static const memoryAll = 'memory.all';
