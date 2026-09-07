@@ -655,6 +655,7 @@ class AppLocalizations {
       'ownerLabel': 'Owner',
       'helpersSection': 'Helpers',
       'mentorsSection': 'Mentors',
+      'membersSection': 'Members',
       'promoteToMentor': 'Promote to Mentor',
       'demoteToMember': 'Demote to Member',
       'officialBadge': 'Official',
@@ -1352,6 +1353,7 @@ class AppLocalizations {
       'ownerLabel': 'स्वामी',
       'helpersSection': 'सहायक',
       'mentorsSection': 'मेंटर्स',
+      'membersSection': 'सदस्य',
       'promoteToMentor': 'मेंटर बनाएं',
       'demoteToMember': 'सदस्य बनाएं',
       'officialBadge': 'आधिकारिक',
@@ -2058,6 +2060,7 @@ class AppLocalizations {
       'ownerLabel': 'ഉടമ',
       'helpersSection': 'സഹായികൾ',
       'mentorsSection': 'മെന്റർമാർ',
+      'membersSection': 'അംഗങ്ങൾ',
       'promoteToMentor': 'മെന്ററാക്കുക',
       'demoteToMember': 'അംഗമാക്കുക',
       'officialBadge': 'ഔദ്യോഗികം',
@@ -3012,6 +3015,8 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['ownerLabel']!;
   String get helpersSection =>
       _localizedValues[locale.languageCode]!['helpersSection']!;
+  String get membersSection =>
+      _localizedValues[locale.languageCode]!['membersSection']!;
   String get mentorsSection =>
       _localizedValues[locale.languageCode]!['mentorsSection']!;
   String get promoteToMentor =>
