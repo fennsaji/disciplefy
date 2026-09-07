@@ -208,7 +208,10 @@ class UnlockLimitExceededDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop();
-            context.push(AppRoutes.pricing);
+            // Land on the cheapest plan that lifts this limit, not the top of the
+            // page where Free — the plan they already have — sits.
+            context.push(AppRoutes.pricing,
+                extra: const {'preselectedPlan': 'standard'});
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: context.appInteractive,

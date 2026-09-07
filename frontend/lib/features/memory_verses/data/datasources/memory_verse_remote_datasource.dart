@@ -33,21 +33,9 @@ class MemoryVerseRemoteDataSource {
   static const String _getStreakEndpoint = '/functions/v1/get-memory-streak';
   static const String _useStreakFreezeEndpoint =
       '/functions/v1/use-streak-freeze';
-  static const String _checkStreakMilestoneEndpoint =
-      '/functions/v1/check-streak-milestone';
-  static const String _getMasteryProgressEndpoint =
-      '/functions/v1/get-mastery-progress';
-  static const String _updateMasteryLevelEndpoint =
-      '/functions/v1/update-mastery-level';
   static const String _getDailyGoalEndpoint = '/functions/v1/get-daily-goal';
-  static const String _updateDailyGoalProgressEndpoint =
-      '/functions/v1/update-daily-goal-progress';
-  static const String _setDailyGoalTargetsEndpoint =
-      '/functions/v1/set-daily-goal-targets';
   static const String _getActiveChallengesEndpoint =
       '/functions/v1/get-active-challenges';
-  static const String _claimChallengeRewardEndpoint =
-      '/functions/v1/claim-challenge-reward';
 
   // Leaderboard and Statistics endpoints
   static const String _getMemoryChampionsEndpoint =
@@ -599,95 +587,6 @@ class MemoryVerseRemoteDataSource {
     }
   }
 
-  /// Checks if a streak milestone has been reached
-  Future<Map<String, dynamic>> checkStreakMilestone() async {
-    try {
-      _errorHandler.logDebug('Checking streak milestone');
-
-      final url = '$_baseUrl$_checkStreakMilestoneEndpoint';
-      final headers = await _httpService.createHeaders();
-      final response = await _httpService.post(url, headers: headers);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as Map<String, dynamic>;
-
-        _errorHandler.logSuccess('Streak milestone checked');
-        return data;
-      } else {
-        _errorHandler.handleErrorResponse(response);
-      }
-    } catch (e) {
-      _errorHandler.handleException(e, 'checking streak milestone');
-    }
-  }
-
-  /// Gets mastery progress for a specific verse
-  Future<Map<String, dynamic>> getMasteryProgress({
-    required String verseId,
-  }) async {
-    try {
-      _errorHandler.logDebug('Fetching mastery progress for verse: $verseId');
-
-      final queryParams = <String, String>{'verse_id': verseId};
-      final uri = Uri.parse('$_baseUrl$_getMasteryProgressEndpoint')
-          .replace(queryParameters: queryParams);
-
-      final headers = await _httpService.createHeaders();
-      final response = await _httpService.get(uri.toString(), headers: headers);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as Map<String, dynamic>;
-
-        _errorHandler.logSuccess('Mastery progress fetched successfully');
-        return data;
-      } else if (response.statusCode == 404) {
-        throw const ServerException(
-          message: 'Mastery progress not found for verse',
-          code: 'MASTERY_NOT_FOUND',
-        );
-      } else {
-        _errorHandler.handleErrorResponse(response);
-      }
-    } catch (e) {
-      _errorHandler.handleException(e, 'fetching mastery progress');
-    }
-  }
-
-  /// Updates the mastery level for a verse
-  Future<Map<String, dynamic>> updateMasteryLevel({
-    required String verseId,
-    required String masteryLevel,
-  }) async {
-    try {
-      _errorHandler.logDebug(
-          'Updating mastery level for verse: $verseId to $masteryLevel');
-
-      final url = '$_baseUrl$_updateMasteryLevelEndpoint';
-      final body = jsonEncode({
-        'verse_id': verseId,
-        'mastery_level': masteryLevel,
-      });
-
-      final headers = await _httpService.createHeaders();
-      final response =
-          await _httpService.post(url, headers: headers, body: body);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as Map<String, dynamic>;
-
-        _errorHandler.logSuccess('Mastery level updated successfully');
-        return data;
-      } else {
-        _errorHandler.handleErrorResponse(response);
-      }
-    } catch (e) {
-      _errorHandler.handleException(e, 'updating mastery level');
-    }
-  }
-
   /// Gets the user's daily goal and progress
   Future<Map<String, dynamic>> getDailyGoal() async {
     try {
@@ -713,68 +612,6 @@ class MemoryVerseRemoteDataSource {
       }
     } catch (e) {
       _errorHandler.handleException(e, 'fetching daily goal');
-    }
-  }
-
-  /// Updates daily goal progress after practice
-  Future<Map<String, dynamic>> updateDailyGoalProgress({
-    required bool isNewVerse,
-  }) async {
-    try {
-      _errorHandler
-          .logDebug('Updating daily goal progress (isNewVerse: $isNewVerse)');
-
-      final url = '$_baseUrl$_updateDailyGoalProgressEndpoint';
-      final body = jsonEncode({'is_new_verse': isNewVerse});
-
-      final headers = await _httpService.createHeaders();
-      final response =
-          await _httpService.post(url, headers: headers, body: body);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as Map<String, dynamic>;
-
-        _errorHandler.logSuccess('Daily goal progress updated');
-        return data;
-      } else {
-        _errorHandler.handleErrorResponse(response);
-      }
-    } catch (e) {
-      _errorHandler.handleException(e, 'updating daily goal progress');
-    }
-  }
-
-  /// Sets custom daily goal targets
-  Future<Map<String, dynamic>> setDailyGoalTargets({
-    required int targetReviews,
-    required int targetNewVerses,
-  }) async {
-    try {
-      _errorHandler.logDebug(
-          'Setting daily goal targets (reviews: $targetReviews, new: $targetNewVerses)');
-
-      final url = '$_baseUrl$_setDailyGoalTargetsEndpoint';
-      final body = jsonEncode({
-        'target_reviews': targetReviews,
-        'target_new_verses': targetNewVerses,
-      });
-
-      final headers = await _httpService.createHeaders();
-      final response =
-          await _httpService.post(url, headers: headers, body: body);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as Map<String, dynamic>;
-
-        _errorHandler.logSuccess('Daily goal targets set successfully');
-        return data;
-      } else {
-        _errorHandler.handleErrorResponse(response);
-      }
-    } catch (e) {
-      _errorHandler.handleException(e, 'setting daily goal targets');
     }
   }
 
@@ -806,39 +643,6 @@ class MemoryVerseRemoteDataSource {
       }
     } catch (e) {
       _errorHandler.handleException(e, 'fetching active challenges');
-    }
-  }
-
-  /// Claims reward for a completed challenge
-  Future<Map<String, dynamic>> claimChallengeReward({
-    required String challengeId,
-  }) async {
-    try {
-      _errorHandler.logDebug('Claiming challenge reward for: $challengeId');
-
-      final url = '$_baseUrl$_claimChallengeRewardEndpoint';
-      final body = jsonEncode({'challenge_id': challengeId});
-
-      final headers = await _httpService.createHeaders();
-      final response =
-          await _httpService.post(url, headers: headers, body: body);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final data = jsonData['data'] as Map<String, dynamic>;
-
-        _errorHandler.logSuccess('Challenge reward claimed successfully');
-        return data;
-      } else if (response.statusCode == 404) {
-        throw const ServerException(
-          message: 'Challenge not found or not completed',
-          code: 'CHALLENGE_NOT_FOUND',
-        );
-      } else {
-        _errorHandler.handleErrorResponse(response);
-      }
-    } catch (e) {
-      _errorHandler.handleException(e, 'claiming challenge reward');
     }
   }
 

@@ -638,7 +638,11 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                                                               mode.modeType),
                                                   onLockedTap: isTierLocked
                                                       ? () => context.push(
-                                                          AppRoutes.pricing)
+                                                              AppRoutes.pricing,
+                                                              extra: const {
+                                                                'preselectedPlan':
+                                                                    'standard'
+                                                              })
                                                       : () =>
                                                           UnlockLimitExceededDialog
                                                               .show(
@@ -956,7 +960,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => context.push(AppRoutes.pricing),
+                onPressed: () => context.push(AppRoutes.pricing,
+                    extra: const {'preselectedPlan': 'standard'}),
                 icon: const Icon(Icons.upgrade, size: 18),
                 label: const Text('Upgrade Plan'),
                 style: ElevatedButton.styleFrom(

@@ -330,83 +330,10 @@ class MockMemoryVerseRemoteDataSource extends _i1.Mock
       ) as _i7.Future<Map<String, dynamic>>);
 
   @override
-  _i7.Future<Map<String, dynamic>> checkStreakMilestone() =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #checkStreakMilestone,
-          [],
-        ),
-        returnValue:
-            _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i7.Future<Map<String, dynamic>>);
-
-  @override
-  _i7.Future<Map<String, dynamic>> getMasteryProgress(
-          {required String? verseId}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMasteryProgress,
-          [],
-          {#verseId: verseId},
-        ),
-        returnValue:
-            _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i7.Future<Map<String, dynamic>>);
-
-  @override
-  _i7.Future<Map<String, dynamic>> updateMasteryLevel({
-    required String? verseId,
-    required String? masteryLevel,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #updateMasteryLevel,
-          [],
-          {
-            #verseId: verseId,
-            #masteryLevel: masteryLevel,
-          },
-        ),
-        returnValue:
-            _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i7.Future<Map<String, dynamic>>);
-
-  @override
   _i7.Future<Map<String, dynamic>> getDailyGoal() => (super.noSuchMethod(
         Invocation.method(
           #getDailyGoal,
           [],
-        ),
-        returnValue:
-            _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i7.Future<Map<String, dynamic>>);
-
-  @override
-  _i7.Future<Map<String, dynamic>> updateDailyGoalProgress(
-          {required bool? isNewVerse}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #updateDailyGoalProgress,
-          [],
-          {#isNewVerse: isNewVerse},
-        ),
-        returnValue:
-            _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i7.Future<Map<String, dynamic>>);
-
-  @override
-  _i7.Future<Map<String, dynamic>> setDailyGoalTargets({
-    required int? targetReviews,
-    required int? targetNewVerses,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #setDailyGoalTargets,
-          [],
-          {
-            #targetReviews: targetReviews,
-            #targetNewVerses: targetNewVerses,
-          },
         ),
         returnValue:
             _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
@@ -422,19 +349,6 @@ class MockMemoryVerseRemoteDataSource extends _i1.Mock
         returnValue: _i7.Future<List<Map<String, dynamic>>>.value(
             <Map<String, dynamic>>[]),
       ) as _i7.Future<List<Map<String, dynamic>>>);
-
-  @override
-  _i7.Future<Map<String, dynamic>> claimChallengeReward(
-          {required String? challengeId}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #claimChallengeReward,
-          [],
-          {#challengeId: challengeId},
-        ),
-        returnValue:
-            _i7.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i7.Future<Map<String, dynamic>>);
 
   @override
   _i7.Future<(List<Map<String, dynamic>>, Map<String, dynamic>)>

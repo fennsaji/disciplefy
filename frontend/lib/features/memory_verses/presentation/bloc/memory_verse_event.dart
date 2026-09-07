@@ -399,104 +399,12 @@ class UseStreakFreezeEvent extends MemoryVerseEvent {
   List<Object?> get props => [freezeDate];
 }
 
-/// Event to check for streak milestone achievement.
-///
-/// Triggers checking if user reached 10, 30, 100, or 365-day milestone.
-class CheckStreakMilestoneEvent extends MemoryVerseEvent {
-  const CheckStreakMilestoneEvent();
-}
-
-// =============================================================================
-// MASTERY EVENTS
-// =============================================================================
-
-/// Event to load mastery progress for a verse.
-///
-/// Triggers fetching of mastery level, percentage, modes mastered,
-/// and perfect recall count for a specific verse.
-///
-/// **Parameters:**
-/// - [verseId] - UUID of the verse
-class LoadMasteryProgressEvent extends MemoryVerseEvent {
-  final String verseId;
-
-  const LoadMasteryProgressEvent({required this.verseId});
-
-  @override
-  List<Object?> get props => [verseId];
-}
-
-/// Event to update mastery level for a verse.
-///
-/// Triggers recalculation and update of mastery level based on
-/// recent performance and mode diversity.
-///
-/// **Parameters:**
-/// - [verseId] - UUID of the verse
-/// - [newMasteryLevel] - New mastery level (beginner/intermediate/advanced/expert/master)
-class UpdateMasteryLevelEvent extends MemoryVerseEvent {
-  final String verseId;
-  final String newMasteryLevel;
-
-  const UpdateMasteryLevelEvent({
-    required this.verseId,
-    required this.newMasteryLevel,
-  });
-
-  @override
-  List<Object?> get props => [verseId, newMasteryLevel];
-}
-
-// =============================================================================
-// DAILY GOAL EVENTS
-// =============================================================================
-
 /// Event to load daily goal progress.
 ///
 /// Triggers fetching of today's goal targets and completion status.
 class LoadDailyGoalEvent extends MemoryVerseEvent {
   const LoadDailyGoalEvent();
 }
-
-/// Event to update daily goal progress after practice.
-///
-/// Triggers incrementing review count or new verse count and checking
-/// for goal completion with bonus XP award.
-///
-/// **Parameters:**
-/// - [isNewVerse] - True if this was adding a new verse, false if review
-class UpdateDailyGoalProgressEvent extends MemoryVerseEvent {
-  final bool isNewVerse;
-
-  const UpdateDailyGoalProgressEvent({required this.isNewVerse});
-
-  @override
-  List<Object?> get props => [isNewVerse];
-}
-
-/// Event to set custom daily goal targets.
-///
-/// Triggers updating user's preferred daily review and new verse targets.
-///
-/// **Parameters:**
-/// - [targetReviews] - Number of reviews to complete daily
-/// - [targetNewVerses] - Number of new verses to add daily
-class SetDailyGoalTargetsEvent extends MemoryVerseEvent {
-  final int targetReviews;
-  final int targetNewVerses;
-
-  const SetDailyGoalTargetsEvent({
-    required this.targetReviews,
-    required this.targetNewVerses,
-  });
-
-  @override
-  List<Object?> get props => [targetReviews, targetNewVerses];
-}
-
-// =============================================================================
-// CHALLENGE EVENTS
-// =============================================================================
 
 /// Event to load active challenges.
 ///
@@ -505,25 +413,6 @@ class SetDailyGoalTargetsEvent extends MemoryVerseEvent {
 class LoadActiveChallengesEvent extends MemoryVerseEvent {
   const LoadActiveChallengesEvent();
 }
-
-/// Event to claim challenge reward.
-///
-/// Triggers marking challenge as complete and awarding XP bonus.
-///
-/// **Parameters:**
-/// - [challengeId] - UUID of the challenge to claim
-class ClaimChallengeRewardEvent extends MemoryVerseEvent {
-  final String challengeId;
-
-  const ClaimChallengeRewardEvent({required this.challengeId});
-
-  @override
-  List<Object?> get props => [challengeId];
-}
-
-// ==========================================================================
-// LEADERBOARD AND STATISTICS EVENTS
-// ==========================================================================
 
 /// Event to load Memory Champions Leaderboard.
 ///

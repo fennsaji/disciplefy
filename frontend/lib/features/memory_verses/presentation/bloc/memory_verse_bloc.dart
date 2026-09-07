@@ -8,14 +8,12 @@ import '../../domain/entities/mastery_progress_entity.dart';
 import '../../domain/entities/practice_mode_entity.dart';
 import '../../domain/usecases/add_verse_from_daily.dart' as add_from_daily_uc;
 import '../../domain/usecases/add_verse_manually.dart' as add_manually_uc;
-import '../../domain/usecases/claim_challenge_reward.dart';
 import '../../domain/usecases/delete_verse.dart' as delete_verse_uc;
 import '../../domain/usecases/fetch_verse_text.dart';
 import '../../domain/usecases/get_active_challenges.dart';
 import '../../domain/usecases/get_daily_goal.dart';
 import '../../domain/usecases/get_cached_due_verses.dart';
 import '../../domain/usecases/get_due_verses.dart';
-import '../../domain/usecases/get_mastery_progress.dart';
 import '../../domain/usecases/get_memory_streak.dart';
 import '../../domain/usecases/get_practice_mode_statistics.dart';
 import '../../domain/usecases/get_statistics.dart';
@@ -24,11 +22,8 @@ import '../../domain/usecases/get_suggested_verses.dart';
 import '../../domain/entities/suggested_verse_entity.dart';
 import '../../domain/usecases/reset_memory_progress.dart';
 import '../../domain/usecases/select_practice_mode.dart';
-import '../../domain/usecases/set_daily_goal_targets.dart';
 import '../../domain/usecases/submit_practice_session.dart';
 import '../../domain/usecases/submit_review.dart' as submit_review_uc;
-import '../../domain/usecases/update_daily_goal_progress.dart';
-import '../../domain/usecases/update_mastery_level.dart';
 import '../../domain/usecases/use_streak_freeze.dart';
 // Leaderboard and statistics use cases
 import '../../domain/usecases/get_memory_champions_leaderboard.dart';
@@ -75,13 +70,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final GetPracticeModeStatistics getPracticeModeStatistics;
   final GetMemoryStreak getMemoryStreak;
   final UseStreakFreeze useStreakFreeze;
-  final GetMasteryProgress getMasteryProgress;
-  final UpdateMasteryLevel updateMasteryLevel;
   final GetDailyGoal getDailyGoal;
-  final UpdateDailyGoalProgress updateDailyGoalProgress;
-  final SetDailyGoalTargets setDailyGoalTargets;
   final GetActiveChallenges getActiveChallenges;
-  final ClaimChallengeReward claimChallengeReward;
 
   // Leaderboard and statistics use cases
   final GetMemoryChampionsLeaderboard getMemoryChampionsLeaderboard;
@@ -114,13 +104,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     required this.getPracticeModeStatistics,
     required this.getMemoryStreak,
     required this.useStreakFreeze,
-    required this.getMasteryProgress,
-    required this.updateMasteryLevel,
     required this.getDailyGoal,
-    required this.updateDailyGoalProgress,
-    required this.setDailyGoalTargets,
     required this.getActiveChallenges,
-    required this.claimChallengeReward,
     // Leaderboard and statistics use cases
     required this.getMemoryChampionsLeaderboard,
     required this.getMemoryStatistics,
@@ -152,14 +137,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<PracticeUnlockLimitExceededEvent>(_onPracticeUnlockLimitExceeded);
     on<LoadMemoryStreakEvent>(_onLoadMemoryStreak);
     on<UseStreakFreezeEvent>(_onUseStreakFreeze);
-    on<CheckStreakMilestoneEvent>(_onCheckStreakMilestone);
-    on<LoadMasteryProgressEvent>(_onLoadMasteryProgress);
-    on<UpdateMasteryLevelEvent>(_onUpdateMasteryLevel);
     on<LoadDailyGoalEvent>(_onLoadDailyGoal);
-    on<UpdateDailyGoalProgressEvent>(_onUpdateDailyGoalProgress);
-    on<SetDailyGoalTargetsEvent>(_onSetDailyGoalTargets);
     on<LoadActiveChallengesEvent>(_onLoadActiveChallenges);
-    on<ClaimChallengeRewardEvent>(_onClaimChallengeReward);
 
     // Leaderboard and statistics event handlers
     on<LoadMemoryChampionsLeaderboardEvent>(_onLoadMemoryChampionsLeaderboard);
@@ -1072,160 +1051,6 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     }
   }
 
-  /// Handles CheckStreakMilestoneEvent.
-  ///
-  /// Checks if a streak milestone has been reached.
-  Future<void> _onCheckStreakMilestone(
-    CheckStreakMilestoneEvent event,
-    Emitter<MemoryVerseState> emit,
-  ) async {
-    try {
-      Logger.debug('📖 [BLOC] Checking streak milestone');
-
-      final result = await getMemoryStreak();
-
-      result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [BLOC] Check streak milestone failed: ${ErrorMessageSanitizer.sanitize(failure)}');
-          emit(MemoryVerseError(
-            message: ErrorMessageSanitizer.sanitize(failure),
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
-        },
-        (streak) {
-          // Check for milestone achievements
-          final milestones = [10, 30, 100, 365];
-          final currentStreak = streak.currentStreak;
-
-          for (final milestone in milestones) {
-            if (currentStreak == milestone &&
-                (streak.milestones[milestone] == null ||
-                    streak.milestones[milestone]!
-                            .difference(DateTime.now())
-                            .inDays ==
-                        0)) {
-              Logger.info('✅ [BLOC] Streak milestone reached: $milestone days');
-              emit(StreakMilestoneReached(
-                milestone: milestone,
-                achievementUnlocked: '$milestone Day Streak',
-                xpEarned: milestone * 10,
-              ));
-              return;
-            }
-          }
-
-          // No milestone reached
-          Logger.debug('ℹ️ [BLOC] No streak milestone at $currentStreak days');
-        },
-      );
-    } catch (e) {
-      Logger.error('❌ [BLOC] Unexpected error checking streak milestone: $e');
-      emit(MemoryVerseError(
-        message: 'Failed to check streak milestone',
-        code: 'UNEXPECTED_ERROR',
-      ));
-    }
-  }
-
-  /// Handles LoadMasteryProgressEvent.
-  ///
-  /// Loads mastery progress for a specific verse.
-  Future<void> _onLoadMasteryProgress(
-    LoadMasteryProgressEvent event,
-    Emitter<MemoryVerseState> emit,
-  ) async {
-    try {
-      Logger.debug(
-          '📖 [BLOC] Loading mastery progress for verse: ${event.verseId}');
-
-      emit(const MemoryVerseLoading(message: 'Loading mastery progress...'));
-
-      final result = await getMasteryProgress(verseId: event.verseId);
-
-      result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [BLOC] Load mastery progress failed: ${ErrorMessageSanitizer.sanitize(failure)}');
-          emit(MemoryVerseError(
-            message: ErrorMessageSanitizer.sanitize(failure),
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
-        },
-        (mastery) {
-          Logger.info(
-              '✅ [BLOC] Mastery progress loaded: ${mastery.masteryLevel.name}');
-          emit(MasteryProgressLoaded(
-            verseId: event.verseId,
-            masteryLevel: mastery.masteryLevel.name,
-            masteryPercentage: mastery.masteryPercentage,
-            modesMastered: mastery.modesMastered,
-            perfectRecalls: mastery.perfectRecalls,
-            confidenceRating: mastery.confidenceRating,
-          ));
-        },
-      );
-    } catch (e) {
-      Logger.error('❌ [BLOC] Unexpected error loading mastery progress: $e');
-      emit(MemoryVerseError(
-        message: 'Failed to load mastery progress',
-        code: 'UNEXPECTED_ERROR',
-      ));
-    }
-  }
-
-  /// Handles UpdateMasteryLevelEvent.
-  ///
-  /// Updates mastery level for a verse.
-  Future<void> _onUpdateMasteryLevel(
-    UpdateMasteryLevelEvent event,
-    Emitter<MemoryVerseState> emit,
-  ) async {
-    try {
-      Logger.debug(
-          '📖 [BLOC] Updating mastery level for verse: ${event.verseId} to ${event.newMasteryLevel}');
-
-      emit(const MemoryVerseLoading(message: 'Updating mastery level...'));
-
-      final result = await updateMasteryLevel(
-        verseId: event.verseId,
-        newMasteryLevel: MasteryLevel.values.firstWhere(
-          (e) => e.name == event.newMasteryLevel,
-        ),
-      );
-
-      result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [BLOC] Update mastery level failed: ${ErrorMessageSanitizer.sanitize(failure)}');
-          emit(MemoryVerseError(
-            message: ErrorMessageSanitizer.sanitize(failure),
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
-        },
-        (mastery) {
-          Logger.info(
-              '✅ [BLOC] Mastery level updated: ${mastery.masteryLevel.name}');
-          emit(MasteryLevelUpdated(
-            verseId: event.verseId,
-            newMasteryLevel: mastery.masteryLevel.name,
-            message: 'Mastery level updated to ${mastery.masteryLevel.name}!',
-            xpEarned: 100,
-          ));
-        },
-      );
-    } catch (e) {
-      Logger.error('❌ [BLOC] Unexpected error updating mastery level: $e');
-      emit(MemoryVerseError(
-        message: 'Failed to update mastery level',
-        code: 'UNEXPECTED_ERROR',
-      ));
-    }
-  }
-
   /// Handles LoadDailyGoalEvent.
   ///
   /// Loads today's daily goal and progress.
@@ -1267,109 +1092,6 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       Logger.error('❌ [BLOC] Unexpected error loading daily goal: $e');
       emit(MemoryVerseError(
         message: 'Failed to load daily goal',
-        code: 'UNEXPECTED_ERROR',
-      ));
-    }
-  }
-
-  /// Handles UpdateDailyGoalProgressEvent.
-  ///
-  /// Updates daily goal progress after practice.
-  Future<void> _onUpdateDailyGoalProgress(
-    UpdateDailyGoalProgressEvent event,
-    Emitter<MemoryVerseState> emit,
-  ) async {
-    try {
-      Logger.debug(
-          '📖 [BLOC] Updating daily goal progress (isNewVerse: ${event.isNewVerse})');
-
-      final result =
-          await updateDailyGoalProgress(isNewVerse: event.isNewVerse);
-
-      result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [BLOC] Update daily goal progress failed: ${ErrorMessageSanitizer.sanitize(failure)}');
-          emit(MemoryVerseError(
-            message: ErrorMessageSanitizer.sanitize(failure),
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
-        },
-        (goal) {
-          Logger.info(
-              '✅ [BLOC] Daily goal progress updated: ${goal.completedReviews}/${goal.targetReviews}');
-
-          final goalJustCompleted =
-              goal.goalAchieved && goal.bonusXpAwarded > 0;
-
-          emit(DailyGoalProgressUpdated(
-            message: goalJustCompleted
-                ? 'Daily goal completed! +${goal.bonusXpAwarded} XP'
-                : 'Progress updated',
-            newProgress: {
-              'target_reviews': goal.targetReviews,
-              'completed_reviews': goal.completedReviews,
-              'target_new_verses': goal.targetNewVerses,
-              'added_new_verses': goal.addedNewVerses,
-              'goal_achieved': goal.goalAchieved,
-            },
-            goalJustCompleted: goalJustCompleted,
-          ));
-        },
-      );
-    } catch (e) {
-      Logger.error(
-          '❌ [BLOC] Unexpected error updating daily goal progress: $e');
-      emit(MemoryVerseError(
-        message: 'Failed to update daily goal progress',
-        code: 'UNEXPECTED_ERROR',
-      ));
-    }
-  }
-
-  /// Handles SetDailyGoalTargetsEvent.
-  ///
-  /// Sets custom daily goal targets.
-  Future<void> _onSetDailyGoalTargets(
-    SetDailyGoalTargetsEvent event,
-    Emitter<MemoryVerseState> emit,
-  ) async {
-    try {
-      Logger.debug(
-          '📖 [BLOC] Setting daily goal targets: ${event.targetReviews} reviews, ${event.targetNewVerses} new verses');
-
-      emit(const MemoryVerseLoading(message: 'Setting goal targets...'));
-
-      final result = await setDailyGoalTargets(
-        targetReviews: event.targetReviews,
-        targetNewVerses: event.targetNewVerses,
-      );
-
-      result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [BLOC] Set daily goal targets failed: ${ErrorMessageSanitizer.sanitize(failure)}');
-          emit(MemoryVerseError(
-            message: ErrorMessageSanitizer.sanitize(failure),
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
-        },
-        (goal) {
-          Logger.info(
-              '✅ [BLOC] Daily goal targets set: ${goal.targetReviews} reviews, ${goal.targetNewVerses} new verses');
-          emit(DailyGoalTargetsSet(
-            message: 'Daily goals updated!',
-            targetReviews: goal.targetReviews,
-            targetNewVerses: goal.targetNewVerses,
-          ));
-        },
-      );
-    } catch (e) {
-      Logger.error('❌ [BLOC] Unexpected error setting daily goal targets: $e');
-      emit(MemoryVerseError(
-        message: 'Failed to set daily goal targets',
         code: 'UNEXPECTED_ERROR',
       ));
     }
@@ -1424,50 +1146,6 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       Logger.error('❌ [BLOC] Unexpected error loading active challenges: $e');
       emit(MemoryVerseError(
         message: 'Failed to load active challenges',
-        code: 'UNEXPECTED_ERROR',
-      ));
-    }
-  }
-
-  /// Handles ClaimChallengeRewardEvent.
-  ///
-  /// Claims reward for a completed challenge.
-  Future<void> _onClaimChallengeReward(
-    ClaimChallengeRewardEvent event,
-    Emitter<MemoryVerseState> emit,
-  ) async {
-    try {
-      Logger.debug('📖 [BLOC] Claiming challenge reward: ${event.challengeId}');
-
-      emit(const MemoryVerseLoading(message: 'Claiming reward...'));
-
-      final result = await claimChallengeReward(challengeId: event.challengeId);
-
-      result.fold(
-        (failure) {
-          Logger.error(
-              '❌ [BLOC] Claim challenge reward failed: ${ErrorMessageSanitizer.sanitize(failure)}');
-          emit(MemoryVerseError(
-            message: ErrorMessageSanitizer.sanitize(failure),
-            code: failure.code,
-            isNetworkError: failure is NetworkFailure,
-          ));
-        },
-        (data) {
-          final (challenge, xpEarned) = data;
-          Logger.info('✅ [BLOC] Challenge reward claimed: $xpEarned XP');
-          emit(ChallengeRewardClaimed(
-            challengeId: challenge.id,
-            message: 'Challenge completed! +$xpEarned XP',
-            xpEarned: xpEarned,
-            achievementUnlocked: challenge.badgeIcon,
-          ));
-        },
-      );
-    } catch (e) {
-      Logger.error('❌ [BLOC] Unexpected error claiming challenge reward: $e');
-      emit(MemoryVerseError(
-        message: 'Failed to claim challenge reward',
         code: 'UNEXPECTED_ERROR',
       ));
     }

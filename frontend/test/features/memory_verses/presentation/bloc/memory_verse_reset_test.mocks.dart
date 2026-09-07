@@ -10,19 +10,17 @@ import 'package:disciplefy_bible_study/core/error/failures.dart' as _i5;
 import 'package:disciplefy_bible_study/core/models/reset_progress_result.dart'
     as _i8;
 import 'package:disciplefy_bible_study/features/memory_verses/data/services/memory_verse_notification_service.dart'
-    as _i41;
+    as _i35;
 import 'package:disciplefy_bible_study/features/memory_verses/data/services/suggested_verses_cache_service.dart'
-    as _i42;
+    as _i36;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/daily_goal_entity.dart'
-    as _i15;
+    as _i14;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/fetched_verse_entity.dart'
     as _i10;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/mastery_progress_entity.dart'
-    as _i14;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_challenge_entity.dart'
-    as _i16;
+    as _i15;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_champion_entry.dart'
-    as _i17;
+    as _i16;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_streak_entity.dart'
     as _i13;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/memory_verse_entity.dart'
@@ -34,55 +32,45 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/re
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/review_statistics_entity.dart'
     as _i7;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/entities/suggested_verse_entity.dart'
-    as _i18;
+    as _i17;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/repositories/memory_verse_repository.dart'
     as _i3;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/add_verse_from_daily.dart'
-    as _i21;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/add_verse_manually.dart'
-    as _i22;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/claim_challenge_reward.dart'
-    as _i37;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/delete_verse.dart'
-    as _i26;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/fetch_verse_text.dart'
-    as _i25;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_active_challenges.dart'
-    as _i36;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_cached_due_verses.dart'
     as _i20;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_daily_goal.dart'
-    as _i33;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_due_verses.dart'
-    as _i19;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_mastery_progress.dart'
-    as _i31;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_champions_leaderboard.dart'
-    as _i38;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_statistics.dart'
-    as _i39;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_streak.dart'
-    as _i29;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_practice_mode_statistics.dart'
-    as _i28;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_statistics.dart'
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/add_verse_manually.dart'
+    as _i21;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/delete_verse.dart'
+    as _i25;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/fetch_verse_text.dart'
     as _i24;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_suggested_verses.dart'
-    as _i40;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/select_practice_mode.dart'
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_active_challenges.dart'
+    as _i31;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_cached_due_verses.dart'
+    as _i19;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_daily_goal.dart'
+    as _i30;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_due_verses.dart'
+    as _i18;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_champions_leaderboard.dart'
+    as _i32;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_statistics.dart'
+    as _i33;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_streak.dart'
+    as _i28;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_practice_mode_statistics.dart'
     as _i27;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/set_daily_goal_targets.dart'
-    as _i35;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_statistics.dart'
+    as _i23;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_suggested_verses.dart'
+    as _i34;
+import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/select_practice_mode.dart'
+    as _i26;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/submit_practice_session.dart'
     as _i12;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/submit_review.dart'
-    as _i23;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/update_daily_goal_progress.dart'
-    as _i34;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/update_mastery_level.dart'
-    as _i32;
+    as _i22;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/use_streak_freeze.dart'
-    as _i30;
+    as _i29;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -793,116 +781,15 @@ class MockMemoryVerseRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, _i13.MemoryStreakEntity>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>> checkStreakMilestone() =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #checkStreakMilestone,
-          [],
-        ),
-        returnValue: _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>>.value(
-            _FakeEither_0<_i5.Failure, (bool, int?)>(
-          this,
-          Invocation.method(
-            #checkStreakMilestone,
-            [],
-          ),
-        )),
-        returnValueForMissingStub:
-            _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>>.value(
-                _FakeEither_0<_i5.Failure, (bool, int?)>(
-          this,
-          Invocation.method(
-            #checkStreakMilestone,
-            [],
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, (bool, int?)>>);
-
-  @override
-  _i4.Future<
-      _i2.Either<_i5.Failure, _i14.MasteryProgressEntity>> getMasteryProgress(
-          {required String? verseId}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getMasteryProgress,
-          [],
-          {#verseId: verseId},
-        ),
-        returnValue: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #getMasteryProgress,
-            [],
-            {#verseId: verseId},
-          ),
-        )),
-        returnValueForMissingStub: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #getMasteryProgress,
-            [],
-            {#verseId: verseId},
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>);
-
-  @override
-  _i4.Future<
-      _i2.Either<_i5.Failure, _i14.MasteryProgressEntity>> updateMasteryLevel({
-    required String? verseId,
-    required _i14.MasteryLevel? newMasteryLevel,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #updateMasteryLevel,
-          [],
-          {
-            #verseId: verseId,
-            #newMasteryLevel: newMasteryLevel,
-          },
-        ),
-        returnValue: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #updateMasteryLevel,
-            [],
-            {
-              #verseId: verseId,
-              #newMasteryLevel: newMasteryLevel,
-            },
-          ),
-        )),
-        returnValueForMissingStub: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #updateMasteryLevel,
-            [],
-            {
-              #verseId: verseId,
-              #newMasteryLevel: newMasteryLevel,
-            },
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>> getDailyGoal() =>
+  _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>> getDailyGoal() =>
       (super.noSuchMethod(
         Invocation.method(
           #getDailyGoal,
           [],
         ),
         returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
+            _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i14.DailyGoalEntity>(
           this,
           Invocation.method(
             #getDailyGoal,
@@ -910,92 +797,18 @@ class MockMemoryVerseRepository extends _i1.Mock
           ),
         )),
         returnValueForMissingStub:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
+            _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i14.DailyGoalEntity>(
           this,
           Invocation.method(
             #getDailyGoal,
             [],
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>
-      updateDailyGoalProgress({required bool? isNewVerse}) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #updateDailyGoalProgress,
-              [],
-              {#isNewVerse: isNewVerse},
-            ),
-            returnValue:
-                _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                    _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-              this,
-              Invocation.method(
-                #updateDailyGoalProgress,
-                [],
-                {#isNewVerse: isNewVerse},
-              ),
-            )),
-            returnValueForMissingStub:
-                _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                    _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-              this,
-              Invocation.method(
-                #updateDailyGoalProgress,
-                [],
-                {#isNewVerse: isNewVerse},
-              ),
-            )),
-          ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>
-      setDailyGoalTargets({
-    required int? targetReviews,
-    required int? targetNewVerses,
-  }) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #setDailyGoalTargets,
-              [],
-              {
-                #targetReviews: targetReviews,
-                #targetNewVerses: targetNewVerses,
-              },
-            ),
-            returnValue:
-                _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                    _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-              this,
-              Invocation.method(
-                #setDailyGoalTargets,
-                [],
-                {
-                  #targetReviews: targetReviews,
-                  #targetNewVerses: targetNewVerses,
-                },
-              ),
-            )),
-            returnValueForMissingStub:
-                _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                    _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-              this,
-              Invocation.method(
-                #setDailyGoalTargets,
-                [],
-                {
-                  #targetReviews: targetReviews,
-                  #targetNewVerses: targetNewVerses,
-                },
-              ),
-            )),
-          ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>
+  _i4.Future<_i2.Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>
       getActiveChallenges() => (super.noSuchMethod(
             Invocation.method(
               #getActiveChallenges,
@@ -1003,8 +816,8 @@ class MockMemoryVerseRepository extends _i1.Mock
             ),
             returnValue: _i4.Future<
                     _i2.Either<_i5.Failure,
-                        List<_i16.MemoryChallengeEntity>>>.value(
-                _FakeEither_0<_i5.Failure, List<_i16.MemoryChallengeEntity>>(
+                        List<_i15.MemoryChallengeEntity>>>.value(
+                _FakeEither_0<_i5.Failure, List<_i15.MemoryChallengeEntity>>(
               this,
               Invocation.method(
                 #getActiveChallenges,
@@ -1013,8 +826,8 @@ class MockMemoryVerseRepository extends _i1.Mock
             )),
             returnValueForMissingStub: _i4.Future<
                     _i2.Either<_i5.Failure,
-                        List<_i16.MemoryChallengeEntity>>>.value(
-                _FakeEither_0<_i5.Failure, List<_i16.MemoryChallengeEntity>>(
+                        List<_i15.MemoryChallengeEntity>>>.value(
+                _FakeEither_0<_i5.Failure, List<_i15.MemoryChallengeEntity>>(
               this,
               Invocation.method(
                 #getActiveChallenges,
@@ -1022,46 +835,12 @@ class MockMemoryVerseRepository extends _i1.Mock
               ),
             )),
           ) as _i4.Future<
-              _i2.Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>
-      claimChallengeReward({required String? challengeId}) =>
-          (super.noSuchMethod(
-            Invocation.method(
-              #claimChallengeReward,
-              [],
-              {#challengeId: challengeId},
-            ),
-            returnValue: _i4.Future<
-                    _i2.Either<_i5.Failure,
-                        (_i16.MemoryChallengeEntity, int)>>.value(
-                _FakeEither_0<_i5.Failure, (_i16.MemoryChallengeEntity, int)>(
-              this,
-              Invocation.method(
-                #claimChallengeReward,
-                [],
-                {#challengeId: challengeId},
-              ),
-            )),
-            returnValueForMissingStub: _i4.Future<
-                    _i2.Either<_i5.Failure,
-                        (_i16.MemoryChallengeEntity, int)>>.value(
-                _FakeEither_0<_i5.Failure, (_i16.MemoryChallengeEntity, int)>(
-              this,
-              Invocation.method(
-                #claimChallengeReward,
-                [],
-                {#challengeId: challengeId},
-              ),
-            )),
-          ) as _i4.Future<
-              _i2.Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>);
+              _i2.Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>);
 
   @override
   _i4.Future<
           _i2.Either<_i5.Failure,
-              (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>>
+              (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>>
       getMemoryChampionsLeaderboard({
     required String? period,
     int? limit = 100,
@@ -1079,10 +858,10 @@ class MockMemoryVerseRepository extends _i1.Mock
                 _i2.Either<
                     _i5.Failure,
                     (
-                      List<_i17.MemoryChampionEntry>,
-                      _i17.UserMemoryStats
+                      List<_i16.MemoryChampionEntry>,
+                      _i16.UserMemoryStats
                     )>>.value(_FakeEither_0<_i5.Failure,
-                (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>(
+                (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>(
               this,
               Invocation.method(
                 #getMemoryChampionsLeaderboard,
@@ -1097,10 +876,10 @@ class MockMemoryVerseRepository extends _i1.Mock
                 _i2.Either<
                     _i5.Failure,
                     (
-                      List<_i17.MemoryChampionEntry>,
-                      _i17.UserMemoryStats
+                      List<_i16.MemoryChampionEntry>,
+                      _i16.UserMemoryStats
                     )>>.value(_FakeEither_0<_i5.Failure,
-                (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>(
+                (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>(
               this,
               Invocation.method(
                 #getMemoryChampionsLeaderboard,
@@ -1113,7 +892,7 @@ class MockMemoryVerseRepository extends _i1.Mock
             )),
           ) as _i4.Future<
               _i2.Either<_i5.Failure,
-                  (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>>);
+                  (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, Map<String, dynamic>>>
@@ -1145,8 +924,8 @@ class MockMemoryVerseRepository extends _i1.Mock
   @override
   _i4.Future<
       _i2
-      .Either<_i5.Failure, _i18.SuggestedVersesResponse>> getSuggestedVerses({
-    _i18.SuggestedVerseCategory? category,
+      .Either<_i5.Failure, _i17.SuggestedVersesResponse>> getSuggestedVerses({
+    _i17.SuggestedVerseCategory? category,
     String? language = 'en',
   }) =>
       (super.noSuchMethod(
@@ -1159,8 +938,8 @@ class MockMemoryVerseRepository extends _i1.Mock
           },
         ),
         returnValue: _i4.Future<
-                _i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>.value(
-            _FakeEither_0<_i5.Failure, _i18.SuggestedVersesResponse>(
+                _i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>.value(
+            _FakeEither_0<_i5.Failure, _i17.SuggestedVersesResponse>(
           this,
           Invocation.method(
             #getSuggestedVerses,
@@ -1172,8 +951,8 @@ class MockMemoryVerseRepository extends _i1.Mock
           ),
         )),
         returnValueForMissingStub: _i4.Future<
-                _i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>.value(
-            _FakeEither_0<_i5.Failure, _i18.SuggestedVersesResponse>(
+                _i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>.value(
+            _FakeEither_0<_i5.Failure, _i17.SuggestedVersesResponse>(
           this,
           Invocation.method(
             #getSuggestedVerses,
@@ -1184,13 +963,13 @@ class MockMemoryVerseRepository extends _i1.Mock
             },
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>);
 }
 
 /// A class which mocks [GetDueVerses].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGetDueVerses extends _i1.Mock implements _i19.GetDueVerses {
+class MockGetDueVerses extends _i1.Mock implements _i18.GetDueVerses {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1269,7 +1048,7 @@ class MockGetDueVerses extends _i1.Mock implements _i19.GetDueVerses {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetCachedDueVerses extends _i1.Mock
-    implements _i20.GetCachedDueVerses {
+    implements _i19.GetCachedDueVerses {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1303,7 +1082,7 @@ class MockGetCachedDueVerses extends _i1.Mock
 /// A class which mocks [AddVerseFromDaily].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAddVerseFromDaily extends _i1.Mock implements _i21.AddVerseFromDaily {
+class MockAddVerseFromDaily extends _i1.Mock implements _i20.AddVerseFromDaily {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1354,7 +1133,7 @@ class MockAddVerseFromDaily extends _i1.Mock implements _i21.AddVerseFromDaily {
 /// A class which mocks [AddVerseManually].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAddVerseManually extends _i1.Mock implements _i22.AddVerseManually {
+class MockAddVerseManually extends _i1.Mock implements _i21.AddVerseManually {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1418,7 +1197,7 @@ class MockAddVerseManually extends _i1.Mock implements _i22.AddVerseManually {
 /// A class which mocks [SubmitReview].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSubmitReview extends _i1.Mock implements _i23.SubmitReview {
+class MockSubmitReview extends _i1.Mock implements _i22.SubmitReview {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1482,7 +1261,7 @@ class MockSubmitReview extends _i1.Mock implements _i23.SubmitReview {
 /// A class which mocks [GetStatistics].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGetStatistics extends _i1.Mock implements _i24.GetStatistics {
+class MockGetStatistics extends _i1.Mock implements _i23.GetStatistics {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1527,7 +1306,7 @@ class MockGetStatistics extends _i1.Mock implements _i24.GetStatistics {
 /// A class which mocks [FetchVerseText].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFetchVerseText extends _i1.Mock implements _i25.FetchVerseText {
+class MockFetchVerseText extends _i1.Mock implements _i24.FetchVerseText {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1599,7 +1378,7 @@ class MockFetchVerseText extends _i1.Mock implements _i25.FetchVerseText {
 /// A class which mocks [DeleteVerse].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockDeleteVerse extends _i1.Mock implements _i26.DeleteVerse {
+class MockDeleteVerse extends _i1.Mock implements _i25.DeleteVerse {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1644,7 +1423,7 @@ class MockDeleteVerse extends _i1.Mock implements _i26.DeleteVerse {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSelectPracticeMode extends _i1.Mock
-    implements _i27.SelectPracticeMode {
+    implements _i26.SelectPracticeMode {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1755,7 +1534,7 @@ class MockSubmitPracticeSession extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetPracticeModeStatistics extends _i1.Mock
-    implements _i28.GetPracticeModeStatistics {
+    implements _i27.GetPracticeModeStatistics {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1800,7 +1579,7 @@ class MockGetPracticeModeStatistics extends _i1.Mock
 /// A class which mocks [GetMemoryStreak].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGetMemoryStreak extends _i1.Mock implements _i29.GetMemoryStreak {
+class MockGetMemoryStreak extends _i1.Mock implements _i28.GetMemoryStreak {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1845,7 +1624,7 @@ class MockGetMemoryStreak extends _i1.Mock implements _i29.GetMemoryStreak {
 /// A class which mocks [UseStreakFreeze].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockUseStreakFreeze extends _i1.Mock implements _i30.UseStreakFreeze {
+class MockUseStreakFreeze extends _i1.Mock implements _i29.UseStreakFreeze {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -1891,121 +1670,10 @@ class MockUseStreakFreeze extends _i1.Mock implements _i30.UseStreakFreeze {
       ) as _i4.Future<_i2.Either<_i5.Failure, _i13.MemoryStreakEntity>>);
 }
 
-/// A class which mocks [GetMasteryProgress].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockGetMasteryProgress extends _i1.Mock
-    implements _i31.GetMasteryProgress {
-  @override
-  _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
-        Invocation.getter(#repository),
-        returnValue: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-        returnValueForMissingStub: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-      ) as _i3.MemoryVerseRepository);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>> call(
-          {required String? verseId}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #call,
-          [],
-          {#verseId: verseId},
-        ),
-        returnValue: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {#verseId: verseId},
-          ),
-        )),
-        returnValueForMissingStub: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {#verseId: verseId},
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>);
-}
-
-/// A class which mocks [UpdateMasteryLevel].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockUpdateMasteryLevel extends _i1.Mock
-    implements _i32.UpdateMasteryLevel {
-  @override
-  _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
-        Invocation.getter(#repository),
-        returnValue: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-        returnValueForMissingStub: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-      ) as _i3.MemoryVerseRepository);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>> call({
-    required String? verseId,
-    required _i14.MasteryLevel? newMasteryLevel,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #call,
-          [],
-          {
-            #verseId: verseId,
-            #newMasteryLevel: newMasteryLevel,
-          },
-        ),
-        returnValue: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {
-              #verseId: verseId,
-              #newMasteryLevel: newMasteryLevel,
-            },
-          ),
-        )),
-        returnValueForMissingStub: _i4
-            .Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>.value(
-            _FakeEither_0<_i5.Failure, _i14.MasteryProgressEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {
-              #verseId: verseId,
-              #newMasteryLevel: newMasteryLevel,
-            },
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.MasteryProgressEntity>>);
-}
-
 /// A class which mocks [GetDailyGoal].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGetDailyGoal extends _i1.Mock implements _i33.GetDailyGoal {
+class MockGetDailyGoal extends _i1.Mock implements _i30.GetDailyGoal {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -2020,15 +1688,15 @@ class MockGetDailyGoal extends _i1.Mock implements _i33.GetDailyGoal {
       ) as _i3.MemoryVerseRepository);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>> call() =>
+  _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>> call() =>
       (super.noSuchMethod(
         Invocation.method(
           #call,
           [],
         ),
         returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
+            _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i14.DailyGoalEntity>(
           this,
           Invocation.method(
             #call,
@@ -2036,133 +1704,22 @@ class MockGetDailyGoal extends _i1.Mock implements _i33.GetDailyGoal {
           ),
         )),
         returnValueForMissingStub:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
+            _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i14.DailyGoalEntity>(
           this,
           Invocation.method(
             #call,
             [],
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
-}
-
-/// A class which mocks [UpdateDailyGoalProgress].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockUpdateDailyGoalProgress extends _i1.Mock
-    implements _i34.UpdateDailyGoalProgress {
-  @override
-  _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
-        Invocation.getter(#repository),
-        returnValue: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-        returnValueForMissingStub: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-      ) as _i3.MemoryVerseRepository);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>> call(
-          {required bool? isNewVerse}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #call,
-          [],
-          {#isNewVerse: isNewVerse},
-        ),
-        returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {#isNewVerse: isNewVerse},
-          ),
-        )),
-        returnValueForMissingStub:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {#isNewVerse: isNewVerse},
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
-}
-
-/// A class which mocks [SetDailyGoalTargets].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockSetDailyGoalTargets extends _i1.Mock
-    implements _i35.SetDailyGoalTargets {
-  @override
-  _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
-        Invocation.getter(#repository),
-        returnValue: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-        returnValueForMissingStub: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-      ) as _i3.MemoryVerseRepository);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>> call({
-    required int? targetReviews,
-    required int? targetNewVerses,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #call,
-          [],
-          {
-            #targetReviews: targetReviews,
-            #targetNewVerses: targetNewVerses,
-          },
-        ),
-        returnValue:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {
-              #targetReviews: targetReviews,
-              #targetNewVerses: targetNewVerses,
-            },
-          ),
-        )),
-        returnValueForMissingStub:
-            _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>.value(
-                _FakeEither_0<_i5.Failure, _i15.DailyGoalEntity>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {
-              #targetReviews: targetReviews,
-              #targetNewVerses: targetNewVerses,
-            },
-          ),
-        )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i15.DailyGoalEntity>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i14.DailyGoalEntity>>);
 }
 
 /// A class which mocks [GetActiveChallenges].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetActiveChallenges extends _i1.Mock
-    implements _i36.GetActiveChallenges {
+    implements _i31.GetActiveChallenges {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -2179,7 +1736,7 @@ class MockGetActiveChallenges extends _i1.Mock
   @override
   _i4.Future<
       _i2
-      .Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>> call() => (super
+      .Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>> call() => (super
               .noSuchMethod(
         Invocation.method(
           #call,
@@ -2187,8 +1744,8 @@ class MockGetActiveChallenges extends _i1.Mock
         ),
         returnValue: _i4.Future<
                 _i2
-                .Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>.value(
-            _FakeEither_0<_i5.Failure, List<_i16.MemoryChallengeEntity>>(
+                .Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>.value(
+            _FakeEither_0<_i5.Failure, List<_i15.MemoryChallengeEntity>>(
           this,
           Invocation.method(
             #call,
@@ -2197,8 +1754,8 @@ class MockGetActiveChallenges extends _i1.Mock
         )),
         returnValueForMissingStub: _i4.Future<
                 _i2
-                .Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>.value(
-            _FakeEither_0<_i5.Failure, List<_i16.MemoryChallengeEntity>>(
+                .Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>.value(
+            _FakeEither_0<_i5.Failure, List<_i15.MemoryChallengeEntity>>(
           this,
           Invocation.method(
             #call,
@@ -2206,67 +1763,14 @@ class MockGetActiveChallenges extends _i1.Mock
           ),
         )),
       ) as _i4
-          .Future<_i2.Either<_i5.Failure, List<_i16.MemoryChallengeEntity>>>);
-}
-
-/// A class which mocks [ClaimChallengeReward].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockClaimChallengeReward extends _i1.Mock
-    implements _i37.ClaimChallengeReward {
-  @override
-  _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
-        Invocation.getter(#repository),
-        returnValue: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-        returnValueForMissingStub: _FakeMemoryVerseRepository_1(
-          this,
-          Invocation.getter(#repository),
-        ),
-      ) as _i3.MemoryVerseRepository);
-
-  @override
-  _i4.Future<_i2.Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>> call(
-          {required String? challengeId}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #call,
-          [],
-          {#challengeId: challengeId},
-        ),
-        returnValue: _i4.Future<
-                _i2
-                .Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>.value(
-            _FakeEither_0<_i5.Failure, (_i16.MemoryChallengeEntity, int)>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {#challengeId: challengeId},
-          ),
-        )),
-        returnValueForMissingStub: _i4.Future<
-                _i2
-                .Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>.value(
-            _FakeEither_0<_i5.Failure, (_i16.MemoryChallengeEntity, int)>(
-          this,
-          Invocation.method(
-            #call,
-            [],
-            {#challengeId: challengeId},
-          ),
-        )),
-      ) as _i4
-          .Future<_i2.Either<_i5.Failure, (_i16.MemoryChallengeEntity, int)>>);
+          .Future<_i2.Either<_i5.Failure, List<_i15.MemoryChallengeEntity>>>);
 }
 
 /// A class which mocks [GetMemoryChampionsLeaderboard].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetMemoryChampionsLeaderboard extends _i1.Mock
-    implements _i38.GetMemoryChampionsLeaderboard {
+    implements _i32.GetMemoryChampionsLeaderboard {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -2283,8 +1787,8 @@ class MockGetMemoryChampionsLeaderboard extends _i1.Mock
   @override
   _i4.Future<
           _i2.Either<_i5.Failure,
-              (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>>
-      call(_i38.LeaderboardParams? params) => (super.noSuchMethod(
+              (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>>
+      call(_i32.LeaderboardParams? params) => (super.noSuchMethod(
             Invocation.method(
               #call,
               [params],
@@ -2293,10 +1797,10 @@ class MockGetMemoryChampionsLeaderboard extends _i1.Mock
                 _i2.Either<
                     _i5.Failure,
                     (
-                      List<_i17.MemoryChampionEntry>,
-                      _i17.UserMemoryStats
+                      List<_i16.MemoryChampionEntry>,
+                      _i16.UserMemoryStats
                     )>>.value(_FakeEither_0<_i5.Failure,
-                (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>(
+                (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>(
               this,
               Invocation.method(
                 #call,
@@ -2307,10 +1811,10 @@ class MockGetMemoryChampionsLeaderboard extends _i1.Mock
                 _i2.Either<
                     _i5.Failure,
                     (
-                      List<_i17.MemoryChampionEntry>,
-                      _i17.UserMemoryStats
+                      List<_i16.MemoryChampionEntry>,
+                      _i16.UserMemoryStats
                     )>>.value(_FakeEither_0<_i5.Failure,
-                (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>(
+                (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>(
               this,
               Invocation.method(
                 #call,
@@ -2319,14 +1823,14 @@ class MockGetMemoryChampionsLeaderboard extends _i1.Mock
             )),
           ) as _i4.Future<
               _i2.Either<_i5.Failure,
-                  (List<_i17.MemoryChampionEntry>, _i17.UserMemoryStats)>>);
+                  (List<_i16.MemoryChampionEntry>, _i16.UserMemoryStats)>>);
 }
 
 /// A class which mocks [GetMemoryStatistics].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetMemoryStatistics extends _i1.Mock
-    implements _i39.GetMemoryStatistics {
+    implements _i33.GetMemoryStatistics {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -2372,7 +1876,7 @@ class MockGetMemoryStatistics extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetSuggestedVerses extends _i1.Mock
-    implements _i40.GetSuggestedVerses {
+    implements _i34.GetSuggestedVerses {
   @override
   _i3.MemoryVerseRepository get repository => (super.noSuchMethod(
         Invocation.getter(#repository),
@@ -2387,8 +1891,8 @@ class MockGetSuggestedVerses extends _i1.Mock
       ) as _i3.MemoryVerseRepository);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>> call(
-          {_i40.GetSuggestedVersesParams? params}) =>
+  _i4.Future<_i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>> call(
+          {_i34.GetSuggestedVersesParams? params}) =>
       (super.noSuchMethod(
         Invocation.method(
           #call,
@@ -2396,8 +1900,8 @@ class MockGetSuggestedVerses extends _i1.Mock
           {#params: params},
         ),
         returnValue: _i4.Future<
-                _i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>.value(
-            _FakeEither_0<_i5.Failure, _i18.SuggestedVersesResponse>(
+                _i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>.value(
+            _FakeEither_0<_i5.Failure, _i17.SuggestedVersesResponse>(
           this,
           Invocation.method(
             #call,
@@ -2406,8 +1910,8 @@ class MockGetSuggestedVerses extends _i1.Mock
           ),
         )),
         returnValueForMissingStub: _i4.Future<
-                _i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>.value(
-            _FakeEither_0<_i5.Failure, _i18.SuggestedVersesResponse>(
+                _i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>.value(
+            _FakeEither_0<_i5.Failure, _i17.SuggestedVersesResponse>(
           this,
           Invocation.method(
             #call,
@@ -2415,14 +1919,14 @@ class MockGetSuggestedVerses extends _i1.Mock
             {#params: params},
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, _i18.SuggestedVersesResponse>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i17.SuggestedVersesResponse>>);
 }
 
 /// A class which mocks [MemoryVerseNotificationService].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockMemoryVerseNotificationService extends _i1.Mock
-    implements _i41.MemoryVerseNotificationService {
+    implements _i35.MemoryVerseNotificationService {
   @override
   _i4.Future<void> scheduleDailyPracticeReminder(
           {required int? dueVersesCount}) =>
@@ -2556,7 +2060,7 @@ class MockMemoryVerseNotificationService extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSuggestedVersesCacheService extends _i1.Mock
-    implements _i42.SuggestedVersesCacheService {
+    implements _i36.SuggestedVersesCacheService {
   @override
   _i4.Future<void> initialize() => (super.noSuchMethod(
         Invocation.method(
@@ -2569,8 +2073,8 @@ class MockSuggestedVersesCacheService extends _i1.Mock
 
   @override
   _i4.Future<void> cacheVerses({
-    required List<_i18.SuggestedVerseEntity>? verses,
-    required List<_i18.SuggestedVerseCategory>? categories,
+    required List<_i17.SuggestedVerseEntity>? verses,
+    required List<_i17.SuggestedVerseCategory>? categories,
     required String? language,
     String? category,
   }) =>
@@ -2590,7 +2094,7 @@ class MockSuggestedVersesCacheService extends _i1.Mock
       ) as _i4.Future<void>);
 
   @override
-  _i4.Future<_i42.CachedSuggestedVersesData?> getCachedVerses({
+  _i4.Future<_i36.CachedSuggestedVersesData?> getCachedVerses({
     required String? language,
     String? category,
   }) =>
@@ -2603,10 +2107,10 @@ class MockSuggestedVersesCacheService extends _i1.Mock
             #category: category,
           },
         ),
-        returnValue: _i4.Future<_i42.CachedSuggestedVersesData?>.value(),
+        returnValue: _i4.Future<_i36.CachedSuggestedVersesData?>.value(),
         returnValueForMissingStub:
-            _i4.Future<_i42.CachedSuggestedVersesData?>.value(),
-      ) as _i4.Future<_i42.CachedSuggestedVersesData?>);
+            _i4.Future<_i36.CachedSuggestedVersesData?>.value(),
+      ) as _i4.Future<_i36.CachedSuggestedVersesData?>);
 
   @override
   _i4.Future<bool> isCacheValid({

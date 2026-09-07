@@ -12,7 +12,6 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/ad
     as add_from_daily_uc;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/add_verse_manually.dart'
     as add_manually_uc;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/claim_challenge_reward.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/delete_verse.dart'
     as delete_verse_uc;
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/fetch_verse_text.dart';
@@ -20,7 +19,6 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/ge
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_cached_due_verses.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_daily_goal.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_due_verses.dart';
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_mastery_progress.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_champions_leaderboard.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_statistics.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_memory_streak.dart';
@@ -29,12 +27,9 @@ import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/ge
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/get_suggested_verses.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/reset_memory_progress.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/select_practice_mode.dart';
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/set_daily_goal_targets.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/submit_practice_session.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/submit_review.dart'
     as submit_review_uc;
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/update_daily_goal_progress.dart';
-import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/update_mastery_level.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/domain/usecases/use_streak_freeze.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import 'package:disciplefy_bible_study/features/memory_verses/presentation/bloc/memory_verse_event.dart';
@@ -66,13 +61,8 @@ class MockConnectivityBloc
   MockSpec<GetPracticeModeStatistics>(),
   MockSpec<GetMemoryStreak>(),
   MockSpec<UseStreakFreeze>(),
-  MockSpec<GetMasteryProgress>(),
-  MockSpec<UpdateMasteryLevel>(),
   MockSpec<GetDailyGoal>(),
-  MockSpec<UpdateDailyGoalProgress>(),
-  MockSpec<SetDailyGoalTargets>(),
   MockSpec<GetActiveChallenges>(),
-  MockSpec<ClaimChallengeReward>(),
   MockSpec<GetMemoryChampionsLeaderboard>(),
   MockSpec<GetMemoryStatistics>(),
   MockSpec<GetSuggestedVerses>(),
@@ -114,13 +104,8 @@ void main() {
         getPracticeModeStatistics: MockGetPracticeModeStatistics(),
         getMemoryStreak: MockGetMemoryStreak(),
         useStreakFreeze: MockUseStreakFreeze(),
-        getMasteryProgress: MockGetMasteryProgress(),
-        updateMasteryLevel: MockUpdateMasteryLevel(),
         getDailyGoal: MockGetDailyGoal(),
-        updateDailyGoalProgress: MockUpdateDailyGoalProgress(),
-        setDailyGoalTargets: MockSetDailyGoalTargets(),
         getActiveChallenges: MockGetActiveChallenges(),
-        claimChallengeReward: MockClaimChallengeReward(),
         getMemoryChampionsLeaderboard: MockGetMemoryChampionsLeaderboard(),
         getMemoryStatistics: MockGetMemoryStatistics(),
         getSuggestedVerses: MockGetSuggestedVerses(),
