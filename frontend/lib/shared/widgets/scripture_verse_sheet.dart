@@ -14,6 +14,7 @@ import '../../features/memory_verses/data/services/verse_cache_service.dart';
 import '../../features/memory_verses/domain/entities/fetched_verse_entity.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
+import 'sheet_scroll_view.dart';
 
 /// A bottom sheet widget for displaying scripture verse text.
 ///
@@ -251,7 +252,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 
             // ✅ FIX: Scrollable content area
             Flexible(
-              child: SingleChildScrollView(
+              child: SheetScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

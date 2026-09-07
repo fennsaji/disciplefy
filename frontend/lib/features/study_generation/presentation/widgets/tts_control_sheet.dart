@@ -6,6 +6,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Bottom sheet for advanced TTS controls including speed and section navigation.
 class TtsControlSheet extends StatefulWidget {
@@ -45,7 +46,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
-            child: SingleChildScrollView(
+            child: SheetScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

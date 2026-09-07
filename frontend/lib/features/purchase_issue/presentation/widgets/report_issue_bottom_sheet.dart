@@ -12,6 +12,7 @@ import '../../domain/entities/purchase_issue_entity.dart';
 import '../bloc/purchase_issue_bloc.dart';
 import '../bloc/purchase_issue_event.dart';
 import '../bloc/purchase_issue_state.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 // Conditional import for web image picker
 import '../utils/issue_image_picker_stub.dart'
@@ -90,7 +91,7 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
           }
         },
         builder: (context, state) {
-          return SingleChildScrollView(
+          return SheetScrollView(
             padding: EdgeInsets.fromLTRB(
               24,
               16,

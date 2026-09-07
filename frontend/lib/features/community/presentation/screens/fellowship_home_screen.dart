@@ -42,6 +42,7 @@ import '../utils/feed_sort.dart';
 import '../utils/share_helpers.dart';
 import '../widgets/fellowship_post_card.dart';
 import '../widgets/mentor_contact_sheet.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 // ============================================================================
 // Root widget — provides BLoCs, delegates to _FellowshipHomeContent
@@ -1297,7 +1298,7 @@ class _FellowshipLessonsPageState extends State<_FellowshipLessonsPage> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
+        child: SheetScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -13,6 +13,7 @@ import '../../domain/entities/study_mode.dart';
 import '../../data/repositories/token_cost_repository.dart';
 import '../../../../core/utils/logger.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 
 /// Bottom sheet for selecting study mode before generating a study guide.
 ///
@@ -379,7 +380,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
 
               // Scrollable content area
               Flexible(
-                child: SingleChildScrollView(
+                child: SheetScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
