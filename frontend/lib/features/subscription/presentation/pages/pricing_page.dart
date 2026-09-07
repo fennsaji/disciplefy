@@ -39,10 +39,18 @@ class PricingPage extends StatefulWidget {
   final PlatformDetectionService platformService;
   final SubscriptionRemoteDataSource dataSource;
 
+  /// Plan to scroll into view once the plans have loaded.
+  ///
+  /// Arriving from an upgrade sheet, the page used to open at the top showing
+  /// the Free card — the one plan the user already has — leaving them to hunt
+  /// for the plan they were just told to buy.
+  final String? preselectedPlan;
+
   const PricingPage({
     super.key,
     required this.platformService,
     required this.dataSource,
+    this.preselectedPlan,
   });
 
   @override
@@ -53,6 +61,11 @@ class _PricingPageState extends State<PricingPage> {
   bool _isLoading = true;
   String? _errorMessage;
   List<SubscriptionPlanModel> _plans = [];
+
+  /// One key per rendered plan card, used to scroll [PricingPage.preselectedPlan]
+  /// into view once the list exists.
+  final Map<String, GlobalKey> _planCardKeys = {};
+  bool _hasScrolledToPreselected = false;
   PromotionalCampaignModel? _appliedPromo;
 
   // Active plan code for current-plan highlighting — read from SubscriptionBloc
@@ -180,6 +193,7 @@ class _PricingPageState extends State<PricingPage> {
         }
         _isLoading = false;
       });
+      _scrollToPreselectedPlan();
     } catch (e) {
       Logger.error(
         'Failed to fetch pricing plans',
@@ -261,6 +275,35 @@ class _PricingPageState extends State<PricingPage> {
       body: _buildBody(context, isWideScreen),
     );
   }
+
+  /// Brings [PricingPage.preselectedPlan] into view after the cards render.
+  ///
+  /// Runs once: re-scrolling on every rebuild would fight the user the moment
+  /// they scroll away.
+  void _scrollToPreselectedPlan() {
+    final target = widget.preselectedPlan;
+    if (target == null || target.isEmpty || _hasScrolledToPreselected) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final key = _planCardKeys[target];
+      final targetContext = key?.currentContext;
+      if (targetContext == null) return;
+
+      _hasScrolledToPreselected = true;
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+        // Leave a little headroom so the card is not flush with the app bar.
+        alignment: 0.1,
+      );
+    });
+  }
+
+  /// Stable key for a plan's card, created on first use.
+  GlobalKey _planCardKey(String planCode) =>
+      _planCardKeys.putIfAbsent(planCode, GlobalKey.new);
 
   Widget _buildBody(BuildContext context, bool isWideScreen) {
     // IMPORTANT: SingleChildScrollView is kept PERMANENTLY in the widget tree.
@@ -458,8 +501,11 @@ class _PricingPageState extends State<PricingPage> {
             key: ValueKey('wide_${plan.planCode}'),
             child: Padding(
               padding: EdgeInsets.only(right: isLast ? 0 : 12),
-              child: _buildDynamicPlanCard(context, plan,
-                  activePlanCode: activePlanCode),
+              child: KeyedSubtree(
+                key: _planCardKey(plan.planCode),
+                child: _buildDynamicPlanCard(context, plan,
+                    activePlanCode: activePlanCode),
+              ),
             ),
           );
         }).toList(),
@@ -487,8 +533,11 @@ class _PricingPageState extends State<PricingPage> {
         return Padding(
           key: ValueKey('mobile_${plan.planCode}'),
           padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-          child: _buildDynamicPlanCard(context, plan,
-              isMobile: true, activePlanCode: activePlanCode),
+          child: KeyedSubtree(
+            key: _planCardKey(plan.planCode),
+            child: _buildDynamicPlanCard(context, plan,
+                isMobile: true, activePlanCode: activePlanCode),
+          ),
         );
       }).toList(),
     );

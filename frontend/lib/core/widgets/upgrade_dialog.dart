@@ -275,7 +275,16 @@ class UpgradeDialog extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _navigateToSubscription(context, upgradePlan);
+                        // Fall back to the cheapest qualifying plan when the
+                        // caller didn't name one, so the pricing page always
+                        // has something to scroll to.
+                        _navigateToSubscription(
+                          context,
+                          upgradePlan ??
+                              (requiredPlans.isNotEmpty
+                                  ? requiredPlans.first
+                                  : null),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.appInteractive,
@@ -442,10 +451,18 @@ class UpgradeDialog extends StatelessWidget {
         );
       case 'voice_buddy':
         return _FeatureInfo(
-          name: 'Voice Listener',
+          // Matches the control's own label and the feature flag's name.
+          name: 'Listen',
           description:
               'Listen to your study guides with natural text-to-speech narration.',
           icon: Icons.volume_up_rounded,
+        );
+      case 'create_fellowship':
+        return _FeatureInfo(
+          name: 'Create Fellowship',
+          description:
+              'Start your own group, invite members, and lead them through a study path.',
+          icon: Icons.groups_2_rounded,
         );
       case 'study_chat':
         return _FeatureInfo(
