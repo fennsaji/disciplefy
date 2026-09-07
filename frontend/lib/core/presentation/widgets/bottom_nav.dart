@@ -6,6 +6,7 @@ import 'package:showcaseview/showcaseview.dart';
 import '../../constants/app_fonts.dart';
 import '../../animations/app_animations.dart';
 import '../../localization/app_localizations.dart';
+import '../../../features/community/presentation/widgets/discipler_badges.dart';
 import '../../../features/walkthrough/domain/walkthrough_screen.dart';
 import '../../../features/walkthrough/presentation/showcase_keys.dart';
 import '../../../features/walkthrough/presentation/walkthrough_tooltip.dart';
@@ -52,12 +53,21 @@ class DisciplefyBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   final List<NavTab> tabs;
 
+  /// Opens Discipler (voice). Rendered as a raised centre action rather than a
+  /// tab: it pushes a route instead of switching branches, so it never owns a
+  /// [currentIndex] and never becomes the "selected" destination.
+  final VoidCallback? onDisciplerTap;
+
   const DisciplefyBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
     required this.tabs,
+    this.onDisciplerTap,
   });
+
+  /// Slot index the raised action occupies — the middle of the bar.
+  int get _disciplerSlot => (tabs.length / 2).floor();
 
   /// Default navigation tabs for Disciplefy app
   static const List<NavTab> defaultTabs = [
@@ -107,8 +117,12 @@ class DisciplefyBottomNav extends StatelessWidget {
     );
     final double tooltipWidth = math.min(280.0, screenWidth - 48);
     const double arrowWidth = 20.0;
-    // Community is the 4th of 4 equal tabs → center at 7/8 of screen width.
-    final double tabCenterX = screenWidth * 7.0 / 8.0;
+    // Community is the last of N equal slots. The raised Discipler action, when
+    // present, takes a slot of its own, so this cannot assume 4.
+    final int slotCount = tabs.length + (onDisciplerTap != null ? 1 : 0);
+    final double communityCenterFraction =
+        slotCount == 0 ? 0.5 : (slotCount - 0.5) / slotCount;
+    final double tabCenterX = screenWidth * communityCenterFraction;
     // showcaseview clamps the tooltip so its right edge ≤ screen width.
     final double tooltipLeft =
         (screenWidth - tooltipWidth).clamp(0.0, screenWidth);
@@ -141,79 +155,93 @@ class DisciplefyBottomNav extends StatelessWidget {
           height: 60, // Fixed height to prevent overflow
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: tabs.asMap().entries.map((entry) {
-              final index = entry.key;
-              final tab = entry.value;
-              final isSelected = currentIndex == index;
-
-              final navItem = _BottomNavItem(
-                tab: tab,
-                isSelected: isSelected,
-                onTap: () => _handleTap(context, index),
-              );
-
-              // Wrap Generate, Topics, and Community tabs with walkthrough
-              // tooltips so the home screen walkthrough highlights each nav item.
-              if (tab.id == 'generate') {
-                return Expanded(
-                  child: WalkthroughTooltip(
-                    showcaseKey: ShowcaseKeys.homeGenerateTab,
-                    title: AppLocalizations.of(context)!
-                        .walkthroughHomeGenerateTitle,
-                    description: AppLocalizations.of(context)!
-                        .walkthroughHomeGenerateDesc,
-                    screen: WalkthroughScreen.home,
-                    stepNumber: 3,
-                    totalSteps: 5,
-                    onNext: () => ShowCaseWidget.of(context).next(),
-                    child: navItem,
-                  ),
-                );
-              }
-
-              if (tab.id == 'topics') {
-                return Expanded(
-                  child: WalkthroughTooltip(
-                    showcaseKey: ShowcaseKeys.homeTopicsTab,
-                    title: AppLocalizations.of(context)!
-                        .walkthroughHomeTopicsTitle,
-                    description:
-                        AppLocalizations.of(context)!.walkthroughHomeTopicsDesc,
-                    screen: WalkthroughScreen.home,
-                    stepNumber: 4,
-                    totalSteps: 5,
-                    onNext: () => ShowCaseWidget.of(context).next(),
-                    child: navItem,
-                  ),
-                );
-              }
-
-              if (tab.id == 'community') {
-                return Expanded(
-                  child: WalkthroughTooltip(
-                    showcaseKey: ShowcaseKeys.homeCommunityTab,
-                    title: AppLocalizations.of(context)!
-                        .walkthroughCommunityNavTitle,
-                    description: AppLocalizations.of(context)!
-                        .walkthroughCommunityNavDesc,
-                    screen: WalkthroughScreen.home,
-                    stepNumber: 5,
-                    totalSteps: 5,
-                    // Community tab is rightmost — shift arrow right so it
-                    // points accurately at the tab icon.
-                    arrowAlignment: communityArrowAlignment,
-                    onNext: () => ShowCaseWidget.of(context).next(),
-                    child: navItem,
-                  ),
-                );
-              }
-
-              return Expanded(child: navItem);
-            }).toList(),
+            children: _buildSlots(context, communityArrowAlignment),
           ),
         ),
       ),
     );
+  }
+
+  /// The tab items, with the raised Discipler action inserted mid-bar.
+  List<Widget> _buildSlots(
+      BuildContext context, Alignment communityArrowAlignment) {
+    final items = _buildTabItems(context, communityArrowAlignment);
+    if (onDisciplerTap == null) return items;
+    return [
+      ...items.take(_disciplerSlot),
+      Expanded(child: _DisciplerNavAction(onTap: onDisciplerTap!)),
+      ...items.skip(_disciplerSlot),
+    ];
+  }
+
+  List<Widget> _buildTabItems(
+      BuildContext context, Alignment communityArrowAlignment) {
+    return tabs.asMap().entries.map((entry) {
+      final index = entry.key;
+      final tab = entry.value;
+      final isSelected = currentIndex == index;
+
+      final navItem = _BottomNavItem(
+        tab: tab,
+        isSelected: isSelected,
+        onTap: () => _handleTap(context, index),
+      );
+
+      // Wrap Generate, Topics, and Community tabs with walkthrough
+      // tooltips so the home screen walkthrough highlights each nav item.
+      if (tab.id == 'generate') {
+        return Expanded(
+          child: WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.homeGenerateTab,
+            title: AppLocalizations.of(context)!.walkthroughHomeGenerateTitle,
+            description:
+                AppLocalizations.of(context)!.walkthroughHomeGenerateDesc,
+            screen: WalkthroughScreen.home,
+            stepNumber: 3,
+            totalSteps: 5,
+            onNext: () => ShowCaseWidget.of(context).next(),
+            child: navItem,
+          ),
+        );
+      }
+
+      if (tab.id == 'topics') {
+        return Expanded(
+          child: WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.homeTopicsTab,
+            title: AppLocalizations.of(context)!.walkthroughHomeTopicsTitle,
+            description:
+                AppLocalizations.of(context)!.walkthroughHomeTopicsDesc,
+            screen: WalkthroughScreen.home,
+            stepNumber: 4,
+            totalSteps: 5,
+            onNext: () => ShowCaseWidget.of(context).next(),
+            child: navItem,
+          ),
+        );
+      }
+
+      if (tab.id == 'community') {
+        return Expanded(
+          child: WalkthroughTooltip(
+            showcaseKey: ShowcaseKeys.homeCommunityTab,
+            title: AppLocalizations.of(context)!.walkthroughCommunityNavTitle,
+            description:
+                AppLocalizations.of(context)!.walkthroughCommunityNavDesc,
+            screen: WalkthroughScreen.home,
+            stepNumber: 5,
+            totalSteps: 5,
+            // Community tab is rightmost — shift arrow right so it
+            // points accurately at the tab icon.
+            arrowAlignment: communityArrowAlignment,
+            onNext: () => ShowCaseWidget.of(context).next(),
+            child: navItem,
+          ),
+        );
+      }
+
+      return Expanded(child: navItem);
+    }).toList();
   }
 
   void _handleTap(BuildContext context, int index) {
@@ -222,6 +250,55 @@ class DisciplefyBottomNav extends StatelessWidget {
       flutter_services.HapticFeedback.lightImpact();
       onTap(index);
     }
+  }
+}
+
+/// Raised centre action that opens Discipler (voice).
+///
+/// Deliberately not a [NavTab]: it pushes a route rather than switching a
+/// branch, so it never reads as the selected destination.
+class _DisciplerNavAction extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _DisciplerNavAction({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      button: true,
+      label: l10n?.navDiscipler ?? 'Discipler',
+      child: Center(
+        child: InkWell(
+          onTap: () {
+            flutter_services.HapticFeedback.lightImpact();
+            onTap();
+          },
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brandPrimary.withOpacity(0.35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: const DisciplerGlyph(size: 39),
+          ),
+        ),
+      ),
+    );
   }
 }
 
