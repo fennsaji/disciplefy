@@ -4,7 +4,7 @@
 // 2. Mobile menu uses CSS max-height transition instead of AnimatePresence.
 // 3. Navbar slides in via CSS animation (animate-navbar) — no JS dependency.
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Link } from "@/lib/navigation";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -14,10 +14,8 @@ import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
 
 export function Navbar() {
   const t = useTranslations("nav");
-  const locale = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const downloadUrl = locale === "en" ? "/download" : `/${locale}/download`;
   const buttonLabel = t("download");
 
   useEffect(() => {
@@ -96,7 +94,7 @@ export function Navbar() {
             <LocaleSwitcher />
             <ThemeToggle />
             <Link
-              href={downloadUrl}
+              href="/download"
               className="hidden md:inline-flex px-4 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               {buttonLabel}
@@ -140,7 +138,7 @@ export function Navbar() {
               </Link>
             ))}
             <Link
-              href={downloadUrl}
+              href="/download"
               onClick={() => setMenuOpen(false)}
               className="w-full mt-2 min-h-[44px] flex items-center justify-center px-4 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
