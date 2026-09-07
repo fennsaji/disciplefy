@@ -787,14 +787,16 @@ class AppRouter {
               extra['conversationType'] as ConversationType? ??
                   ConversationType.general;
 
+          // No LockedFeatureWrapper here: the intro screen is what sells the
+          // feature, so it renders normally for every plan and Start
+          // Conversation raises the upgrade sheet when the plan has no
+          // allowance. The greyed overlay hid the pitch behind a scrim and
+          // duplicated the upsell the button already provides.
           return MaxWidthWrapper(
-            child: LockedFeatureWrapper(
-              featureKey: 'ai_discipler',
-              child: VoiceConversationPage(
-                studyGuideId: studyGuideId,
-                relatedScripture: relatedScripture,
-                conversationType: conversationType,
-              ),
+            child: VoiceConversationPage(
+              studyGuideId: studyGuideId,
+              relatedScripture: relatedScripture,
+              conversationType: conversationType,
             ),
           );
         },
@@ -924,6 +926,10 @@ class AppRouter {
                 dataSource: SubscriptionRemoteDataSourceImpl(
                   supabaseClient: Supabase.instance.client,
                 ),
+                // Sent by the upgrade sheet; the page scrolls to this card.
+                // It was already being passed and silently ignored.
+                preselectedPlan: (state.extra
+                    as Map<String, dynamic>?)?['preselectedPlan'] as String?,
               ),
             ),
           ),
@@ -1278,7 +1284,7 @@ extension AppRouterExtension on GoRouter {
   void goToPracticeResults(PracticeResultParams params) =>
       go(AppRoutes.practiceResults, extra: params);
 
-  /// Navigates to the voice conversation page for AI Discipler.
+  /// Navigates to the voice conversation page for Talk to Discipler.
   ///
   /// [studyGuideId] - Optional study guide ID for contextual conversations
   /// [relatedScripture] - Optional scripture reference for focused discussions
