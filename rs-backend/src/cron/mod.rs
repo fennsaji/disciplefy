@@ -3,6 +3,7 @@ pub mod discipler_reply_worker;
 pub mod fellowship_daily_post;
 pub mod schedules;
 pub mod subscription_reconciler;
+pub mod telegram_daily_post;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -24,6 +25,7 @@ pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static FELLOWSHIP_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static DISCIPLER_REPLY_WORKER_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static TELEGRAM_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// Guard that resets its flag to false on drop.
 pub struct CronGuard {
@@ -100,6 +102,13 @@ pub async fn start_scheduler(
                 enabled: false,
                 schedule: schedules::DISCIPLER_REPLY_WORKER.into(),
                 label: "Every minute — drain Discipler reply queue".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "telegram_daily_post".into(),
+                enabled: false,
+                schedule: schedules::TELEGRAM_DAILY_POST.into(),
+                label: "Daily 14:30 IST — Telegram channel post (en, hi, ml)".into(),
                 updated_at: chrono::Utc::now(),
             },
         ]
@@ -372,6 +381,50 @@ pub async fn start_scheduler(
         .expect("Failed to add discipler reply worker CRON job");
     job_ids.insert("discipler_reply_worker".into(), worker_uuid);
 
+    // Telegram channel post CRON
+    let telegram_cfg = configs.iter().find(|c| c.name == "telegram_daily_post");
+    let telegram_schedule = telegram_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::TELEGRAM_DAILY_POST.into());
+    let telegram_pool = pool.clone();
+    let telegram_config = Arc::new(config.clone());
+    let telegram_http = http.clone();
+
+    let telegram_job = Job::new_async(telegram_schedule.as_str(), move |_uuid, _lock| {
+        let p = telegram_pool.clone();
+        let c = telegram_config.clone();
+        let h = telegram_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "telegram_daily_post").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("telegram_daily_post cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&TELEGRAM_DAILY_POST_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Telegram daily post CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            if let Err(e) = telegram_daily_post::run_telegram_daily_post(&c, &h).await {
+                tracing::error!("Telegram daily post CRON failed: {}", e);
+            }
+        })
+    })
+    .expect("Failed to create Telegram daily post CRON job");
+
+    let telegram_uuid = sched
+        .add(telegram_job)
+        .await
+        .expect("Failed to add Telegram daily post CRON job");
+    job_ids.insert("telegram_daily_post".into(), telegram_uuid);
+
     sched.start().await.expect("Failed to start CRON scheduler");
 
     let schedule_by_name: HashMap<&str, &str> = HashMap::from([
@@ -381,6 +434,7 @@ pub async fn start_scheduler(
         ("subscription_reconcile", recon_schedule.as_str()),
         ("fellowship_daily_post", daily_schedule.as_str()),
         ("discipler_reply_worker", worker_schedule.as_str()),
+        ("telegram_daily_post", telegram_schedule.as_str()),
     ]);
     for name in job_ids.keys() {
         let s = schedule_by_name.get(name.as_str()).copied().unwrap_or("?");

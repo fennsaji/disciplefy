@@ -29,6 +29,7 @@ pub(crate) fn guard_for(name: &str) -> Option<&'static std::sync::atomic::Atomic
         "subscription_reconcile" => &SUBSCRIPTION_RECONCILE_RUNNING,
         "fellowship_daily_post" => &FELLOWSHIP_DAILY_POST_RUNNING,
         "discipler_reply_worker" => &DISCIPLER_REPLY_WORKER_RUNNING,
+        "telegram_daily_post" => &TELEGRAM_DAILY_POST_RUNNING,
         _ => return None,
     })
 }
@@ -53,6 +54,9 @@ async fn run_job(name: &str, pool: sqlx::PgPool, config: Config, http: reqwest::
             crate::cron::discipler_reply_worker::run_discipler_reply_worker(&pool, &config, &http)
                 .await
         }
+        "telegram_daily_post" => {
+            crate::cron::telegram_daily_post::run_telegram_daily_post(&config, &http).await
+        }
         other => Err(AppError::BadRequest(format!("Unknown cron '{other}'"))),
     };
     if let Err(e) = r {
@@ -72,6 +76,7 @@ mod tests {
             "subscription_reconcile",
             "fellowship_daily_post",
             "discipler_reply_worker",
+            "telegram_daily_post",
         ] {
             assert!(guard_for(n).is_some(), "{n}");
         }

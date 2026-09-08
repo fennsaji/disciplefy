@@ -20,3 +20,7 @@ pub const FELLOWSHIP_DAILY_POST: &str = "0 0 1 * * *";
 
 /// Discipler reply worker — every minute; drains the reply queue and, on minute 0, flushes activity digests.
 pub const DISCIPLER_REPLY_WORKER: &str = "0 * * * * *";
+
+/// Telegram daily post — 09:00 UTC (14:30 IST). One run posts every language;
+/// the Edge Function is idempotent per language per day.
+pub const TELEGRAM_DAILY_POST: &str = "0 0 9 * * *";

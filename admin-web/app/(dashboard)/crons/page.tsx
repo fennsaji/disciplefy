@@ -110,13 +110,19 @@ export default function CronsPage() {
   }
 
   const handleTrigger = async (name: string) => {
-    // Only blog_generation supports manual trigger (via /api/admin/blogs/cron)
-    if (name !== 'blog_generation') return
-    if (!confirm('Trigger blog generation now?')) return
+    // Every job can be run now. Blog generation keeps its own route, which
+    // predates the generic one; everything else goes through rs-backend's
+    // trigger endpoint. A job that posts publicly runs for real, hence the
+    // confirm naming it.
+    if (!confirm(`Run ${name} now?`)) return
     try {
-      const res = await fetch('/api/admin/blogs/cron', { method: 'POST' })
+      const url =
+        name === 'blog_generation'
+          ? '/api/admin/blogs/cron'
+          : `/api/admin/cron/${name}/trigger`
+      const res = await fetch(url, { method: 'POST' })
       if (!res.ok) throw new Error(await res.text())
-      toast.success('Blog generation triggered')
+      toast.success(`${name} triggered`)
       await fetchStatus()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to trigger')
@@ -242,14 +248,12 @@ export default function CronsPage() {
                         >
                           {toggling === cron.name ? '…' : cron.enabled ? 'Disable' : 'Enable'}
                         </button>
-                        {cron.name === 'blog_generation' && (
-                          <button
-                            onClick={() => handleTrigger(cron.name)}
-                            className="rounded px-2 py-1 text-xs text-indigo-300 hover:bg-indigo-500/10 transition-colors"
-                          >
-                            ▶ Trigger
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleTrigger(cron.name)}
+                          className="rounded px-2 py-1 text-xs text-indigo-300 hover:bg-indigo-500/10 transition-colors"
+                        >
+                          ▶ Trigger
+                        </button>
                       </div>
                     </td>
                   </tr>
