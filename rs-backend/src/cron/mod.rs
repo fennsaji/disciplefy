@@ -1,9 +1,9 @@
 pub mod blog_generator;
 pub mod discipler_reply_worker;
 pub mod fellowship_daily_post;
-pub mod telegram_daily_post;
 pub mod schedules;
 pub mod subscription_reconciler;
+pub mod telegram_daily_post;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -406,7 +406,9 @@ pub async fn start_scheduler(
             let _guard = match CronGuard::try_acquire(&TELEGRAM_DAILY_POST_RUNNING) {
                 Some(g) => g,
                 None => {
-                    tracing::warn!("Telegram daily post CRON skipped: previous run still in progress");
+                    tracing::warn!(
+                        "Telegram daily post CRON skipped: previous run still in progress"
+                    );
                     return;
                 }
             };

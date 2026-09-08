@@ -46,7 +46,11 @@ pub async fn run_telegram_daily_post(config: &Config, http: &Client) -> Result<(
                 // The function reports its own outcome: a language with no
                 // published article for the next lesson skips rather than
                 // posting, and that is not a failure.
-                if body.get("skipped").and_then(|v| v.as_bool()).unwrap_or(false) {
+                if body
+                    .get("skipped")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false)
+                {
                     skipped += 1;
                     tracing::info!(
                         language,
@@ -75,6 +79,11 @@ pub async fn run_telegram_daily_post(config: &Config, http: &Client) -> Result<(
         }
     }
 
-    tracing::info!(posted, skipped, failed, "Telegram daily post CRON job finished");
+    tracing::info!(
+        posted,
+        skipped,
+        failed,
+        "Telegram daily post CRON job finished"
+    );
     Ok(())
 }
