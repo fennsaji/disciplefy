@@ -34,16 +34,27 @@ Future<void> shareFellowshipInvite(
     },
     (invite) {
       final token = invite['token'] as String? ?? '';
-      final joinUrl = (invite['join_url'] as String?) ??
-          'https://app.disciplefy.in/fellowship/join/$token';
+      // Built here rather than trusting the API's join_url: that still
+      // points at the web app, which has no link preview and cannot hand the
+      // URL to an installed app.
+      final joinUrl = ShareLinks.fellowshipInvite(token);
       SharePlus.instance
           .share(ShareParams(text: 'Join $name on Disciplefy:\n$joinUrl'));
     },
   );
 }
 
-/// Builds the shareable text for [post]: a quoted excerpt (first 200 chars),
-/// an attribution line, and the post's deep link.
+/// Upper bound on the shared body. Android caps an intent's extras at ~500KB
+/// and iOS gets sluggish well before that; posts never approach this.
+const int _maxShareBody = 5000;
+
+/// Builds the shareable text for [post]: the full post, an attribution line,
+/// and the post's deep link.
+///
+/// The body is sent whole — a study post carries its topic, reflection,
+/// scripture and question, and an excerpt cut the reader off mid-thought.
+/// [_maxShareBody] only guards against a pathological post breaking the
+/// platform share sheet.
 ///
 /// The Discipler AI helper is attributed as `'Discipler'` rather than its
 /// raw author display name.
@@ -52,12 +63,13 @@ String buildPostShareText({
   required String fellowshipName,
   required String suffix,
 }) {
-  final body = post.content.length > 200
-      ? '${post.content.substring(0, 200)}…'
-      : post.content;
+  final content = post.content.trim();
+  final body = content.length > _maxShareBody
+      ? '${content.substring(0, _maxShareBody)}…'
+      : content;
   final author = post.authorIsSystem ? 'Discipler' : post.authorDisplayName;
   return '"$body"\n— $author in $fellowshipName $suffix\n'
-      '${ShareLinks.publicWebUrl}/fellowship/${post.fellowshipId}/post/${post.id}';
+      '${ShareLinks.fellowshipPost(post.fellowshipId, post.id)}';
 }
 
 /// Shares [post] via the native share sheet using [buildPostShareText].
