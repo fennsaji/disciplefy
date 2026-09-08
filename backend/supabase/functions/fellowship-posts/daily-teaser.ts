@@ -1,16 +1,19 @@
 // backend/supabase/functions/fellowship-posts/daily-teaser.ts
 /**
- * POST /fellowship-posts/daily-teaser  { fellowship_id, topic_title, path_title, language, summary, verse?, question? }
+ * POST /fellowship-posts/daily-teaser  { fellowship_id, topic_title, path_title, language, summary, verse?, question?, topic_id? }
  * Internal only (X-Internal-Api-Key). Called by the rs-backend cron before it posts a
  * fellowship's daily study — returns a short teaser so the caller can lead with it instead
  * of its own template. Any failure returns 503 so the caller falls back to its template.
+ *
+ * Teasers come from `_shared/services/teaser-service.ts`, which caches them per
+ * topic and language: the prompt carries nothing about the group, so a lesson is
+ * generated a few times and then reused — by other fellowships, and by the
+ * Telegram channel.
  */
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import {
-  buildDailyTeaserSystemPrompt, buildDailyTeaserUserMessage, parseDailyTeaserOutput,
-} from '../_shared/prompts/discipler-prompt.ts'
 import { isDisciplerGloballyEnabled } from '../_shared/services/discipler-service.ts'
+import { getOrCreateTeaser } from '../_shared/services/teaser-service.ts'
 import { isInternalCaller } from './discipler-reply.ts'
 
 interface DailyTeaserRequest {
@@ -21,6 +24,7 @@ interface DailyTeaserRequest {
   summary: string
   verse?: string
   question?: string
+  topic_id?: string
 }
 
 const LANGUAGES = new Set(['en', 'hi', 'ml'])
@@ -50,6 +54,7 @@ function validate(body: unknown): DailyTeaserRequest {
     summary: b.summary.trim(),
     verse: b.verse?.trim() || undefined,
     question: b.question?.trim() || undefined,
+    topic_id: typeof b.topic_id === 'string' && b.topic_id.trim() ? b.topic_id.trim() : undefined,
   }
 }
 
@@ -70,21 +75,24 @@ export async function handleDailyTeaser(req: Request, services: ServiceContainer
     const globalEnabled = await isDisciplerGloballyEnabled(db)
     if (!globalEnabled) return unavailable()
 
-    const result = await services.llmService.generateDailyTeaser({
-      systemMessage: buildDailyTeaserSystemPrompt(),
-      userMessage: buildDailyTeaserUserMessage({
-        topicTitle: input.topic_title, pathTitle: input.path_title, language: input.language,
-        summary: input.summary, verse: input.verse, question: input.question,
-      }),
-    })
-    const out = parseDailyTeaserOutput(result.content)
+    const teaser = await getOrCreateTeaser(db, services.llmService, {
+      topicId: input.topic_id,
+      topicTitle: input.topic_title,
+      pathTitle: input.path_title,
+      language: input.language,
+      summary: input.summary,
+      verse: input.verse,
+      question: input.question,
+    }, input.fellowship_id)
 
-    console.log('[fellowship-posts/daily-teaser] generated', {
-      fellowship_id: input.fellowship_id, model: result.model,
-      hook_length: out.hook.length, body_length: out.body.length,
+    console.log('[fellowship-posts/daily-teaser] served', {
+      fellowship_id: input.fellowship_id, model: teaser.model, cached: teaser.cached,
+      hook_length: teaser.hook.length, body_length: teaser.body.length,
     })
 
-    return new Response(JSON.stringify({ hook: out.hook, body: out.body, model: result.model }), {
+    return new Response(JSON.stringify({
+      hook: teaser.hook, body: teaser.body, model: teaser.model, cached: teaser.cached,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
