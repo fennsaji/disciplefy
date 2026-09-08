@@ -23,6 +23,8 @@ import 'bottom_nav.dart' as bottom_nav;
 import 'max_width_wrapper.dart';
 import '../../widgets/offline_banner.dart';
 import '../../router/app_routes.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import 'package:disciplefy_bible_study/features/study_topics/presentation/bloc/learning_paths_event.dart';
 
 /// Main App Shell with Bottom Navigation
 ///
@@ -157,6 +159,15 @@ class _AppShellState extends State<AppShell>
     // so completed paths get replaced by the next recommendation
     if (branchIndex == 0 && widget.navigationShell.currentIndex != 0) {
       sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    }
+
+    // Same for Study Topics. Its branch is kept alive by the IndexedStack, so
+    // the screen's initial load runs once and never again — a path finished
+    // in the meantime kept its old progress in For You, and a completed one
+    // stayed in the recommendations.
+    if (branchIndex == 2 && widget.navigationShell.currentIndex != 2) {
+      sl<LearningPathsBloc>().add(const LoadLearningPaths(forceRefresh: true));
+      sl<LearningPathsBloc>().add(const LoadPersonalizedPaths());
     }
 
     // Allow interrupting ongoing animation or loading with new tab selection

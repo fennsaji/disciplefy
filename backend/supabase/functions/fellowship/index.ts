@@ -130,14 +130,23 @@ async function handleListFellowships(req: Request, services: ServiceContainer): 
       .map((m: any) => m.fellowships?.id)
       .filter((id: string | undefined): id is string => !!id)
     if (fellowshipIds.length > 0) {
+      // There is one fellowship_study row per fellowship, reused as the group
+      // moves from path to path: the history lives in completed_path_ids, and
+      // completed_at only ever describes the path currently assigned. Reading
+      // completed_at alone therefore missed every path the group finished
+      // before its current one.
       const { data: completedRows } = await db.from('fellowship_study')
-        .select('fellowship_id, learning_path_id')
+        .select('fellowship_id, learning_path_id, completed_at, completed_path_ids')
         .in('fellowship_id', fellowshipIds)
-        .not('completed_at', 'is', null)
-      for (const row of (completedRows ?? []) as { fellowship_id: string; learning_path_id: string }[]) {
-        const list = completedPathsByFellowship.get(row.fellowship_id) ?? []
-        list.push(row.learning_path_id)
-        completedPathsByFellowship.set(row.fellowship_id, list)
+      for (const row of (completedRows ?? []) as {
+        fellowship_id: string
+        learning_path_id: string | null
+        completed_at: string | null
+        completed_path_ids: string[] | null
+      }[]) {
+        const done = new Set<string>(row.completed_path_ids ?? [])
+        if (row.completed_at && row.learning_path_id) done.add(row.learning_path_id)
+        if (done.size > 0) completedPathsByFellowship.set(row.fellowship_id, [...done])
       }
     }
   }

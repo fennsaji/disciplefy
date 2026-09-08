@@ -120,6 +120,7 @@ class LearningPathsRepositoryImpl implements LearningPathsRepository {
         includeEnrolled: includeEnrolled,
         categoryLimit: categoryLimit,
         categoryOffset: categoryOffset,
+        forceRefresh: forceRefresh,
       );
 
       final result = response.toEntity();
