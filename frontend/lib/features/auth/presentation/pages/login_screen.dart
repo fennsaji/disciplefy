@@ -45,9 +45,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Returns the pending deep-link redirect target, checking URL param first
   /// (works for email auth) then Hive storage (survives OAuth round-trip).
-  /// Clears Hive storage after reading so it is not reused.
   /// Returns null if the target is not a relative path (starts with '/').
+  ///
+  /// The key is deliberately NOT cleared here. RouterGuard redirects an
+  /// authenticated user off /login the moment the session lands, and it reads
+  /// the same key: if this screen deleted it, the guard would fall back to
+  /// home and overwrite the navigation below. The guard owns the delete, so
+  /// both paths resolve to the same destination whichever runs first.
   String? _consumeRedirectTarget(BuildContext context) {
+    final box = Hive.box('app_settings');
+
     // URL param is present for same-page flows (email auth)
     String? fromUrl;
     try {
@@ -56,14 +63,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (fromUrl != null && fromUrl.isNotEmpty) {
       final decoded = Uri.decodeComponent(fromUrl);
       if (!decoded.startsWith('/')) return null; // reject absolute URLs
+      // Mirror it into Hive so the guard sees the same target.
+      box.put('pending_deep_link_redirect', Uri.encodeComponent(decoded));
       return decoded;
     }
     // Hive key is written before launching Google OAuth so it survives the
     // browser round-trip to Google and back to the OAuth callback URL.
-    final box = Hive.box('app_settings');
     final fromHive = box.get('pending_deep_link_redirect') as String?;
     if (fromHive != null && fromHive.isNotEmpty) {
-      box.delete('pending_deep_link_redirect');
       final decoded = Uri.decodeComponent(fromHive);
       if (!decoded.startsWith('/')) return null; // reject absolute URLs
       return decoded;

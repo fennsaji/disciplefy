@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 // Conditional import for web-specific functionality
 import 'auth_aware_navigation_service_web.dart'
     if (dart.library.io) 'auth_aware_navigation_service_stub.dart' as web_utils;
@@ -37,9 +38,28 @@ class AuthAwareNavigationService {
   factory AuthAwareNavigationService() => _instance;
   AuthAwareNavigationService._internal();
 
+  /// Reads the deep link stashed before sign-in, without clearing it.
+  ///
+  /// A shared link opened on a fresh install detours through onboarding and
+  /// login; every post-auth navigation has to land there instead of home or
+  /// the link is lost. RouterGuard owns the delete — clearing it here would
+  /// let the guard's own redirect fall back to home and overwrite this one.
+  static String? _pendingDeepLink() {
+    try {
+      if (!Hive.isBoxOpen('app_settings')) return null;
+      final stored =
+          Hive.box('app_settings').get('pending_deep_link_redirect') as String?;
+      if (stored == null || stored.isEmpty) return null;
+      final target = Uri.decodeComponent(stored);
+      return target.startsWith('/') ? target : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Navigates after successful authentication, clearing any pre-auth history
   static void navigateAfterAuth(BuildContext context, {String? route}) {
-    final destination = route ?? AppRoutes.home;
+    final destination = route ?? _pendingDeepLink() ?? AppRoutes.home;
 
     Logger.info(
       'Post-authentication navigation initiated',
