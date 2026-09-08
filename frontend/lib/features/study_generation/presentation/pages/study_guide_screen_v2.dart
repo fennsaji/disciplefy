@@ -2838,7 +2838,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Widget _buildReadModeContent(bool isLargeScreen) {
     // Horizontal padding is applied per-section (not on the scroll view) so the
     // Follow-up Chat panel can break out and span the full screen width.
-    const sidePadding = EdgeInsets.symmetric(horizontal: 24);
+    //
+    // 12, not 24: the cards carry their own inset, so the old value cost ~44px
+    // on each side before a word appeared. Devanagari and Malayalam set longer
+    // words than English and were breaking mid-word on a phone.
+    const sidePadding = EdgeInsets.symmetric(horizontal: 12);
     return SingleChildScrollView(
       controller: _scrollController,
       child: Column(
@@ -3073,7 +3077,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -4659,7 +4663,9 @@ class _StudySection extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      padding: const EdgeInsets.all(20),
+      // Tighter on the sides than top and bottom: horizontal space is what the
+      // text needs, vertical space is what separates one section from the next.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: isBeingRead
             ? accentColor.withOpacity(0.08)
