@@ -9,6 +9,24 @@ const nextConfig = {
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
   experimental: { mdxRs: true },
 
+  // ── Deep-link verification files ──────────────────────────────────────────
+  // Apple fetches the association file with no extension, so Next would serve
+  // it as application/octet-stream — and iOS silently disables Universal Links
+  // for anything that is not JSON. Same reason the app host serves it with an
+  // explicit type.
+  async headers() {
+    return [
+      {
+        source: "/.well-known/apple-app-site-association",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
+    ];
+  },
+
   // ── policies.disciplefy.in redirects ──────────────────────────────────────
   // Redirects old policy subdomain URLs to canonical marketing site paths.
   async redirects() {
