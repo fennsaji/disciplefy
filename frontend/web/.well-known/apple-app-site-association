@@ -1,0 +1,33 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "4V6VA2U9MW.com.disciplefy.biblestudy"
+        ],
+        "components": [
+          {
+            "/": "/learning-path/*",
+            "comment": "Opens this content directly in the app"
+          },
+          {
+            "/": "/fellowship/join/*",
+            "comment": "Opens this content directly in the app"
+          },
+          {
+            "/": "/fellowship/*/post/*",
+            "comment": "Opens this content directly in the app"
+          }
+        ]
+      },
+      {
+        "appID": "4V6VA2U9MW.com.disciplefy.biblestudy",
+        "paths": [
+          "/learning-path/*",
+          "/fellowship/join/*",
+          "/fellowship/*/post/*"
+        ]
+      }
+    ]
+  }
+}

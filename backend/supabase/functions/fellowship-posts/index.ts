@@ -19,6 +19,7 @@ import {
   deliverOrQueue, enqueueReply, isDisciplerGloballyEnabled, loadFellowshipDiscipler, reactAsDiscipler, recordActivity,
 } from '../_shared/services/discipler-service.ts'
 import { pushMentions } from '../_shared/services/mention-service.ts'
+import { buildSharePreview, type SharePreview } from '../_shared/utils/share-preview.ts'
 import { handleDisciplerReply } from './discipler-reply.ts'
 import { handleDailyTeaser } from './daily-teaser.ts'
 import { handleNotify } from './notify.ts'
@@ -670,6 +671,58 @@ async function handleCreateReport(req: Request, services: ServiceContainer): Pro
 // Router
 // ---------------------------------------------------------------------------
 
+
+// ---------------------------------------------------------------------------
+// Share preview  GET /fellowship-posts/share?post_id=UUID
+// ---------------------------------------------------------------------------
+
+/**
+ * Unauthenticated preview of a shared post, for the link landing page's Open
+ * Graph card.
+ *
+ * Only public fellowships expose any content. For a private one the response
+ * carries nothing but `is_public: false` — no fellowship name, no author, no
+ * text. A link preview is fetched by WhatsApp, Slack and anyone the link is
+ * forwarded to, so treating a private post's text as previewable would leak it
+ * to every one of them.
+ *
+ * Deleted posts and unknown ids are indistinguishable in the response, so the
+ * endpoint cannot be used to probe which post ids exist.
+ */
+async function handleSharePreview(req: Request, services: ServiceContainer): Promise<Response> {
+  const db = services.supabaseServiceClient
+  const postId = new URL(req.url).searchParams.get('post_id')
+  const json = (preview: SharePreview) => new Response(
+    JSON.stringify({ success: true, data: preview }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  )
+
+  if (!postId) return json(buildSharePreview({ post: null, fellowship: null, authorName: '' }))
+
+  const { data: post } = await db.from('fellowship_posts')
+    .select('id, fellowship_id, content, post_type, author_user_id, is_deleted, created_at')
+    .eq('id', postId)
+    .maybeSingle()
+
+  const { data: fellowship } = post
+    ? await db.from('fellowships').select('id, name, is_public').eq('id', post.fellowship_id).maybeSingle()
+    : { data: null }
+
+  // Only looked up once the fellowship is known to be public, so a private
+  // post's author is never even read.
+  let authorName = 'A member'
+  if (post && fellowship?.is_public) {
+    try {
+      const { data: authorUser } = await db.auth.admin.getUserById(post.author_user_id)
+      const u = authorUser?.user
+      authorName = u?.user_metadata?.full_name ?? u?.user_metadata?.name ??
+        u?.user_metadata?.display_name ?? 'A member'
+    } catch { /* non-fatal: the preview still renders without a name */ }
+  }
+
+  return json(buildSharePreview({ post, fellowship, authorName }))
+}
+
 async function handlePosts(req: Request, services: ServiceContainer): Promise<Response> {
   const pathname = new URL(req.url).pathname
 
@@ -687,6 +740,12 @@ async function handlePosts(req: Request, services: ServiceContainer): Promise<Re
     if (pathname.endsWith('/react'))  return handleToggleReaction(req, services)
     if (pathname.endsWith('/report')) return handleCreateReport(req, services)
     return handleCreatePost(req, services)
+  }
+
+  // Public, unauthenticated: the link landing page renders before anyone has
+  // signed in.
+  if (req.method === 'GET' && pathname.endsWith('/share')) {
+    return handleSharePreview(req, services)
   }
 
   if (req.method === 'GET')    return handleListPosts(req, services)
