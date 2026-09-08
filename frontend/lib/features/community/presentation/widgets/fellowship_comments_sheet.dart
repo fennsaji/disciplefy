@@ -25,6 +25,7 @@ import 'fellowship_report_sheet.dart';
 import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
 import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
 import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'member_avatar.dart';
 
 /// Comment thread for one post, opened as a modal bottom sheet.
 ///
@@ -102,6 +103,10 @@ class FellowshipCommentsSheetState extends State<FellowshipCommentsSheet> {
       mentors: feedState.mentors,
       members: _members,
       currentUserId: feedState.currentUserId,
+      initialQuery: mentionQueryAt(
+        _controller.text,
+        cursorOverride ?? _controller.selection.baseOffset,
+      ),
     );
     if (candidate == null || !mounted) return;
     _mentions.remember(candidate.handle, candidate.userId);
@@ -339,21 +344,11 @@ class _CommentTile extends StatelessWidget {
             children: [
               isSystem
                   ? const DisciplerAvatar(radius: 16)
-                  : CircleAvatar(
+                  : MemberAvatar(
                       radius: 16,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primary.withAlpha(26),
-                      child: Text(
-                        comment.authorDisplayName.isNotEmpty
-                            ? comment.authorDisplayName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
+                      displayName: comment.authorDisplayName,
+                      accentColor: Theme.of(context).colorScheme.primary,
+                      avatarUrl: comment.authorAvatarUrl,
                     ),
               const SizedBox(width: 10),
               Expanded(
