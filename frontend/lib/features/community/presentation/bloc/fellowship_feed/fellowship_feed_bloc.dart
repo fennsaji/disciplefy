@@ -8,6 +8,7 @@ import '../../../../../features/community/domain/repositories/community_reposito
 import 'fellowship_feed_event.dart';
 import 'fellowship_feed_state.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
+import 'package:disciplefy_bible_study/core/error/failures.dart';
 
 /// Page size used for all paginated feed requests.
 const int _kPageLimit = 20;
@@ -108,10 +109,13 @@ class FellowshipFeedBloc
       (failure) => emit(state.copyWith(
         status: FellowshipFeedStatus.failure,
         errorMessage: ErrorMessageSanitizer.sanitize(failure),
+        // Not an error to apologise for: the viewer simply has not joined.
+        notAMember: failure is AuthorizationFailure,
       )),
       (posts) => emit(state.copyWith(
         status: FellowshipFeedStatus.success,
         posts: posts,
+        notAMember: false,
         cursor: _extractCursor(posts),
         hasMore: posts.length >= _kPageLimit,
         clearErrorMessage: true,

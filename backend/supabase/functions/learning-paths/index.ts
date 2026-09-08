@@ -957,22 +957,59 @@ async function handleGetRecommendedPaths(
     }
   }
 
-  // Fallback: return top featured paths
+  // Fallback: top featured paths, for anyone without questionnaire answers.
+  //
+  // This branch used to report every path as unenrolled and 0% complete and
+  // filtered nothing, so a user who had already finished a featured path was
+  // recommended it again — reading "0/8 Topics" on a path they had completed.
+  // The scored branch above already skips completed paths; this one has to do
+  // the same, and report the progress it knows about.
   const { data: featuredPaths } = await supabaseServiceClient
     .from('learning_paths')
     .select('*')
     .eq('is_featured', true)
     .eq('is_active', true)
     .order('display_order', { ascending: true })
-    .limit(limit);
+    .limit(limit + 10);
+
+  const progressByPath = new Map<string, { enrolled: boolean; topicsCompleted: number; completed: boolean }>();
+  if (userId) {
+    const { data: rows } = await supabaseServiceClient
+      .from('user_learning_path_progress')
+      .select('learning_path_id, topics_completed, completed_at')
+      .eq('user_id', userId);
+    for (const row of (rows ?? [])) {
+      progressByPath.set(row.learning_path_id as string, {
+        enrolled: true,
+        topicsCompleted: (row.topics_completed as number) ?? 0,
+        completed: row.completed_at != null,
+      });
+    }
+  }
 
   const fallbackObjects: LearningPath[] = [];
   for (const pathData of (featuredPaths || [])) {
+    if (fallbackObjects.length >= limit) break;
+    const progress = progressByPath.get(pathData.id as string);
+    if (progress?.completed) continue;
+
     const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+    // Real progress, not a flag: reporting 0 for a path already under way made
+    // the card read "0/8 Topics" on a path with a topic finished.
+    const percentage = progress && topicsCountNum > 0
+      ? Math.round((progress.topicsCompleted * 100) / topicsCountNum)
+      : 0;
     const localized = await getLocalizedTitleDescription(
       supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
     );
-    fallbackObjects.push(buildLearningPathResponse(pathData, topicsCountNum, false, 0, localized.title, localized.description));
+    fallbackObjects.push(buildLearningPathResponse(
+      pathData,
+      topicsCountNum,
+      progress?.enrolled ?? false,
+      percentage,
+      localized.title,
+      localized.description,
+    ));
   }
 
   return new Response(

@@ -34,11 +34,11 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
   OverlayEntry? _pickerOverlay;
 
   static const _kReactions = [
-    (type: 'amen', emoji: '🙏'),
-    (type: 'i_prayed', emoji: '🕊️'),
-    (type: 'heart', emoji: '❤️'),
-    (type: 'fire', emoji: '🔥'),
-    (type: 'hands', emoji: '👐'),
+    (type: 'amen', emoji: '🙏', label: 'Amen'),
+    (type: 'i_prayed', emoji: '🕊️', label: 'I Prayed'),
+    (type: 'heart', emoji: '❤️', label: 'Love'),
+    (type: 'fire', emoji: '🔥', label: 'Fire'),
+    (type: 'hands', emoji: '👐', label: 'Praise'),
   ];
 
   /// Default reaction (emoji + type + label) based on post type.
@@ -69,6 +69,24 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
     return _kReactions
         .firstWhere((r) => r.type == active, orElse: () => _kReactions.first)
         .emoji;
+  }
+
+  /// Label for whichever reaction is showing.
+  ///
+  /// The emoji already follows the user's own reaction, so the label has to
+  /// as well — otherwise picking 🔥 on a prayer left the button reading
+  /// "🔥 Amen".
+  String get _activeLabel {
+    final active = widget.post.userReaction;
+    if (active == null) return _defaultForType(widget.post.postType).label;
+    return _kReactions
+        .firstWhere((r) => r.type == active,
+            orElse: () => (
+                  type: 'amen',
+                  emoji: '🙏',
+                  label: _defaultForType(widget.post.postType).label
+                ))
+        .label;
   }
 
   void _onTap() {
@@ -138,9 +156,9 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
             Text(_activeEmoji, style: const TextStyle(fontSize: 17)),
             const SizedBox(width: 5),
             Text(
-              total > 0
-                  ? '$total'
-                  : _defaultForType(widget.post.postType).label,
+              // Same rule as the reply pill: the label always shows, with the
+              // count appended, so the two buttons stay a matching pair.
+              total > 0 ? '$_activeLabel $total' : _activeLabel,
               style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13,
@@ -162,7 +180,7 @@ class _FellowshipReactionButtonState extends State<FellowshipReactionButton> {
 class _ReactionPickerOverlay extends StatefulWidget {
   final String postId;
   final FellowshipFeedBloc bloc;
-  final List<({String type, String emoji})> reactions;
+  final List<({String type, String emoji, String label})> reactions;
   final Offset tapPosition;
   final String? userReaction;
   final VoidCallback onDismiss;

@@ -10,6 +10,10 @@ class AppTranslations {
 
   static const Map<String, dynamic> _englishTranslations = {
     'community': {
+      'join_to_view_title': 'Join to see this fellowship',
+      'join_to_view_body':
+          'You are not a member yet. Public fellowships let you join and read along.',
+      'join_action': 'Join fellowship',
       'let_discipler_answer': 'Let Discipler answer',
       'let_discipler_answer_hint':
           'Turn off to leave this question to the group. Tagging @Discipler still gets a reply.',
@@ -2114,6 +2118,10 @@ class AppTranslations {
 
   static const Map<String, dynamic> _hindiTranslations = {
     'community': {
+      'join_to_view_title': 'इस फेलोशिप को देखने के लिए जुड़ें',
+      'join_to_view_body':
+          'आप अभी सदस्य नहीं हैं। सार्वजनिक फेलोशिप में आप जुड़कर पढ़ सकते हैं।',
+      'join_action': 'फेलोशिप में जुड़ें',
       'let_discipler_answer': 'Discipler को उत्तर देने दें',
       'let_discipler_answer_hint':
           'इसे बंद करें ताकि यह सवाल समूह के लिए रहे। @Discipler टैग करने पर उत्तर फिर भी मिलेगा।',
@@ -4220,6 +4228,10 @@ class AppTranslations {
 
   static const Map<String, dynamic> _malayalamTranslations = {
     'community': {
+      'join_to_view_title': 'ഈ ഫെല്ലോഷിപ്പ് കാണാൻ ചേരുക',
+      'join_to_view_body':
+          'നിങ്ങൾ ഇതുവരെ അംഗമല്ല. പൊതു ഫെല്ലോഷിപ്പുകളിൽ ചേർന്ന് വായിക്കാം.',
+      'join_action': 'ഫെല്ലോഷിപ്പിൽ ചേരുക',
       'let_discipler_answer': 'Discipler ഉത്തരം നൽകട്ടെ',
       'let_discipler_answer_hint':
           'ഈ ചോദ്യം ഗ്രൂപ്പിനു വിടാൻ ഇത് ഓഫ് ചെയ്യുക. @Discipler എന്ന് ടാഗ് ചെയ്താൽ മറുപടി ലഭിക്കും.',

@@ -18,6 +18,7 @@ import '../screens/fellowship_guide_detail_screen.dart';
 import 'daily_post_card.dart';
 import 'discipler_badges.dart';
 import 'reaction_button.dart';
+import 'member_avatar.dart';
 
 /// Regex matching a mention token like `@Discipler` or `@Jane.Doe` in post
 /// or comment content.
@@ -167,7 +168,7 @@ class FellowshipPostCard extends StatelessWidget {
               children: [
                 isSystem
                     ? const DisciplerAvatar()
-                    : _PostAvatar(
+                    : MemberAvatar(
                         displayName: post.authorDisplayName,
                         accentColor: accentColor,
                         avatarUrl: post.authorAvatarUrl,
@@ -437,45 +438,6 @@ Color postTypeAccentColor(String postType, {bool isDark = false}) {
       return AppColors.brandHighlightDark;
     default:
       return AppColors.brandPrimary;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Author avatar
-// ---------------------------------------------------------------------------
-
-class _PostAvatar extends StatelessWidget {
-  final String displayName;
-  final Color accentColor;
-  final String? avatarUrl;
-
-  const _PostAvatar({
-    required this.displayName,
-    required this.accentColor,
-    this.avatarUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: accentColor.withAlpha(36),
-      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-          ? NetworkImage(avatarUrl!)
-          : null,
-      child: avatarUrl == null || avatarUrl!.isEmpty
-          ? Text(
-              initial,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: accentColor,
-              ),
-            )
-          : null,
-    );
   }
 }
 
@@ -953,8 +915,11 @@ class FellowshipPostFooter extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
+                        // Always the label, with the count appended when
+                        // there is one: a bare number on one card and a word
+                        // on another read as two different buttons.
                         post.commentCount > 0
-                            ? '${post.commentCount}'
+                            ? '${l10n.replyAction} ${post.commentCount}'
                             : l10n.replyAction,
                         style: TextStyle(
                           fontFamily: 'Inter',

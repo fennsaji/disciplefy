@@ -127,6 +127,10 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
           await sl<LearningPathsRepository>().getLearningPathDetails(
         pathId: pathId!,
         language: language.code,
+        // This card shows progress and leads the section, so it must not come
+        // from the persisted copy: a path finished since it was cached kept
+        // reading "1/8 Topics, 12%" and stayed at the top of For You.
+        forceRefresh: true,
       );
       detailResult.fold(
         (_) => null,
@@ -165,31 +169,40 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BlocBuilder<LearningPathsBloc, LearningPathsState>(
-      // A progress reset emits LearningPathsResetting / LearningPathsResetSuccess
-      // / LearningPathsResetError as siblings of LearningPathsLoaded on the same
-      // bloc — ignore them here so the currently displayed paths don't flash
-      // away (or disappear entirely, since this builder's fallback is
-      // SizedBox.shrink()) mid-reset or on a failed reset. The follow-up
-      // LoadLearningPaths(forceRefresh: true) emits LearningPathsLoading /
-      // LearningPathsLoaded normally, which this builder still reacts to.
-      buildWhen: (previous, current) =>
-          current is! LearningPathsResetting &&
-          current is! LearningPathsResetSuccess &&
-          current is! LearningPathsResetError,
-      builder: (context, state) {
-        if (state is LearningPathsLoading ||
-            state is LearningPathsInitial ||
-            _isFellowshipLoading) {
-          return _buildSkeleton(context);
-        }
-        if (state is LearningPathsLoaded) {
-          final paths = _buildForYouPaths(state);
-          if (paths.isEmpty) return const SizedBox.shrink();
-          return _buildContent(context, paths);
-        }
-        return const SizedBox.shrink();
-      },
+    // Re-resolve the fellowship's path whenever the listing reloads. The
+    // section's initState runs once — the tab is kept alive by the
+    // IndexedStack — so without this the card kept the progress it was built
+    // with, even after the path was finished.
+    return BlocListener<LearningPathsBloc, LearningPathsState>(
+      listenWhen: (previous, current) =>
+          current is LearningPathsLoaded && previous is! LearningPathsLoaded,
+      listener: (_, __) => _loadFellowshipActivePath(),
+      child: BlocBuilder<LearningPathsBloc, LearningPathsState>(
+        // A progress reset emits LearningPathsResetting / LearningPathsResetSuccess
+        // / LearningPathsResetError as siblings of LearningPathsLoaded on the same
+        // bloc — ignore them here so the currently displayed paths don't flash
+        // away (or disappear entirely, since this builder's fallback is
+        // SizedBox.shrink()) mid-reset or on a failed reset. The follow-up
+        // LoadLearningPaths(forceRefresh: true) emits LearningPathsLoading /
+        // LearningPathsLoaded normally, which this builder still reacts to.
+        buildWhen: (previous, current) =>
+            current is! LearningPathsResetting &&
+            current is! LearningPathsResetSuccess &&
+            current is! LearningPathsResetError,
+        builder: (context, state) {
+          if (state is LearningPathsLoading ||
+              state is LearningPathsInitial ||
+              _isFellowshipLoading) {
+            return _buildSkeleton(context);
+          }
+          if (state is LearningPathsLoaded) {
+            final paths = _buildForYouPaths(state);
+            if (paths.isEmpty) return const SizedBox.shrink();
+            return _buildContent(context, paths);
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 

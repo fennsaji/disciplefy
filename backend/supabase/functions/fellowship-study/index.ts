@@ -14,6 +14,49 @@ import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middlewa
 // Set study  POST /fellowship-study/set
 // ---------------------------------------------------------------------------
 
+
+/**
+ * Records the group's study against each active member's own progress.
+ *
+ * A fellowship's guides are worked through together, but advancing the study
+ * only ever moved the group's own row: no member gained an enrolment, a
+ * completion or any progress. Their Topics tab therefore kept recommending a
+ * path they had just finished with their group, showing "0/8 Topics" on it.
+ *
+ * Enrolment is created on start and marked complete when the group finishes.
+ * `onConflict` leaves a member's existing row alone apart from the completion,
+ * so someone who studied the path alone keeps the progress they earned.
+ */
+async function recordMemberProgress(
+  db: ServiceContainer['supabaseServiceClient'],
+  args: { fellowshipId: string; learningPathId: string; completed: boolean },
+): Promise<void> {
+  try {
+    const { data: members } = await db
+      .from('fellowship_members')
+      .select('user_id')
+      .eq('fellowship_id', args.fellowshipId)
+      .eq('is_active', true)
+    const userIds = (members ?? []).map((m: { user_id: string }) => m.user_id)
+    if (userIds.length === 0) return
+
+    const now = new Date().toISOString()
+    await db.from('user_learning_path_progress').upsert(
+      userIds.map((userId) => ({
+        user_id: userId,
+        learning_path_id: args.learningPathId,
+        enrolled_at: now,
+        last_activity_at: now,
+        ...(args.completed ? { completed_at: now } : {}),
+      })),
+      { onConflict: 'user_id,learning_path_id', ignoreDuplicates: !args.completed },
+    )
+  } catch (err) {
+    // Never fail the study action over bookkeeping.
+    console.error('[fellowship-study] member progress error (non-fatal):', err)
+  }
+}
+
 async function handleSetStudy(req: Request, services: ServiceContainer): Promise<Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) throw new AppError('AUTHENTICATION_ERROR', 'Authentication required', 401)
@@ -90,6 +133,12 @@ async function handleSetStudy(req: Request, services: ServiceContainer): Promise
     console.error('[fellowship-study/set] Upsert error:', error)
     throw new AppError('DATABASE_ERROR', 'Failed to set study', 500)
   }
+
+  await recordMemberProgress(db, {
+    fellowshipId: body.fellowship_id,
+    learningPathId: body.learning_path_id,
+    completed: false,
+  })
 
   return new Response(
     JSON.stringify({
@@ -178,6 +227,14 @@ async function handleAdvanceStudy(req: Request, services: ServiceContainer): Pro
   if (updateError) {
     console.error('[fellowship-study/advance] Update error:', updateError)
     throw new AppError('DATABASE_ERROR', 'Failed to advance study', 500)
+  }
+
+  if (isComplete) {
+    await recordMemberProgress(db, {
+      fellowshipId: body.fellowship_id,
+      learningPathId: study.learning_path_id,
+      completed: true,
+    })
   }
 
   return new Response(

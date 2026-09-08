@@ -100,6 +100,25 @@ jobs:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
         run: bundle exec fastlane release
 
+      # A build that ships without symbols looks identical to one that doesn't —
+      # until the crashes arrive unreadable weeks later. fastlane writes this
+      # marker after the upload attempt; the TestFlight upload has already
+      # happened, so failing here reports the gap without losing the build.
+      - name: 🔎 Verify Crashlytics symbols were uploaded
+        if: always()
+        run: |
+          MARKER=frontend/build/ios/crashlytics-symbols.status
+          if [ ! -f "$MARKER" ]; then
+            echo "::error::No Crashlytics symbol-upload marker — the upload step never ran."
+            exit 1
+          fi
+          STATUS=$(cat "$MARKER")
+          echo "Crashlytics symbols: $STATUS"
+          case "$STATUS" in
+            ok:*) ;;
+            *) echo "::error::dSYMs were not uploaded ($STATUS). Run 'bundle exec fastlane refresh_dsyms' in frontend/ios."; exit 1 ;;
+          esac
+
       - name: 🧹 Security cleanup
         if: always()
         run: rm -f frontend/ios/Runner/GoogleService-Info.plist

@@ -112,4 +112,34 @@ void main() {
     await _pumpCard(tester, daily: true);
     await _expectFooterPillsMatch(tester);
   });
+
+  testWidgets('both pills label themselves, with the count appended',
+      (tester) async {
+    await _pumpCard(tester);
+
+    // The post has one comment and no reactions: a bare "1" on one pill and a
+    // word on the other read as two different controls.
+    expect(find.textContaining('Reply'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+  });
+
+  testWidgets('the reaction label follows the reaction the user picked',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: FellowshipPostCard(
+          // A prayer defaults to "Amen", but this viewer reacted with fire.
+          post: _postOfType('prayer').copyWith(userReaction: 'fire'),
+          fellowshipId: 'f',
+          onCommentTap: () {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Fire'), findsOneWidget);
+    expect(find.textContaining('Amen'), findsNothing);
+  });
 }

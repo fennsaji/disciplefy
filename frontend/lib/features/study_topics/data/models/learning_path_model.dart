@@ -157,7 +157,11 @@ class LearningPathDetailModel extends LearningPathDetail {
       topicsCount: topics.length,
       isEnrolled: json['is_enrolled'] as bool? ?? false,
       progressPercentage: json['progress_percentage'] as int? ?? 0,
-      topicsCompleted: json['topics_completed'] as int? ?? 0,
+      // Counted from the topics themselves when the API omits the field:
+      // LearningPathDetail overrides the derived getter with this value, so a
+      // missing key made a started path read "0/8 Topics".
+      topicsCompleted: json['topics_completed'] as int? ??
+          topics.where((t) => t.isCompleted).length,
       enrolledAt: json['enrolled_at'] != null
           ? DateTime.parse(json['enrolled_at'] as String)
           : null,

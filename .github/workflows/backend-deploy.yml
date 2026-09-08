@@ -211,6 +211,12 @@ jobs:
         CRON_SECRET=${{ secrets.CRON_SECRET }}
         INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}
 
+        # Telegram broadcast (${{ env.DEPLOY_ENV }})
+        # Read by telegram-daily-post; without both the job posts nothing and
+        # returns telegram_not_configured.
+        TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+
         # ${{ env.DEPLOY_ENV }} settings
         LOG_LEVEL=info
         USE_MOCK=false

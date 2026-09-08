@@ -1014,6 +1014,25 @@ class AppRouter {
         },
       ),
 
+      // Shared post deep link — top-level, outside the shell.
+      //
+      // Shared links, the Android intent filters and the Apple site
+      // association all use /fellowship/<id>/post/<id>, but the screen itself
+      // lives under /community/<id>/post/<id> inside the shell. Without this
+      // entry the router had no match and every shared post opened the app on
+      // "Something went wrong". Redirecting keeps one screen for both paths.
+      GoRoute(
+        path: '/fellowship/:fellowshipId/post/:postId',
+        name: 'fellowship_post_deep',
+        redirect: (context, state) {
+          final fellowshipId = state.pathParameters['fellowshipId'] ?? '';
+          final postId = state.pathParameters['postId'] ?? '';
+          return fellowshipId.isEmpty || postId.isEmpty
+              ? AppRoutes.community
+              : '${AppRoutes.community}/$fellowshipId/post/$postId';
+        },
+      ),
+
       // Fellowship invite deep link — top-level, outside shell, public
       GoRoute(
         path: '/fellowship/join/:token',

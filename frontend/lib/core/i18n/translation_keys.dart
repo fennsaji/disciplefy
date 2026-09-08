@@ -2220,6 +2220,10 @@ class TranslationKeys {
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
 
+  static const fellowshipJoinToViewTitle = 'community.join_to_view_title';
+  static const fellowshipJoinToViewBody = 'community.join_to_view_body';
+  static const fellowshipJoinAction = 'community.join_action';
+
   // Community — create post sheet
   static const fellowshipLetDisciplerAnswer = 'community.let_discipler_answer';
   static const fellowshipLetDisciplerAnswerHint =

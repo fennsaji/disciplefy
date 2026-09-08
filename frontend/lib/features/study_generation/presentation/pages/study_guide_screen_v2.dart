@@ -69,6 +69,7 @@ import '../../../walkthrough/presentation/walkthrough_tooltip.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 import '../../../../core/utils/share_links.dart';
 import '../../../community/presentation/widgets/discipler_badges.dart';
+import 'package:disciplefy_bible_study/features/study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Removes duplicate section title from content if present at the start
 String _cleanDuplicateTitle(String content, String title) {
@@ -1691,6 +1692,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               '❌ [TOPIC_PROGRESS] Failed to complete topic: ${ErrorMessageSanitizer.sanitize(failure)}');
         },
         (completionResult) {
+          // Completing a topic changes the progress of whatever path it
+          // belongs to, and both the learning path lists and the per-path
+          // detail are cached — the persisted copy outlives the process. Left
+          // alone, Topics kept showing the progress from before this
+          // completion: a path just advanced still read "0/4 Topics".
+          sl<LearningPathsRepository>().clearCache();
+
           if (kDebugMode) {
             Logger.debug('✅ [TOPIC_PROGRESS] Topic completed successfully:');
             Logger.debug('   XP earned: ${completionResult.xpEarned}');

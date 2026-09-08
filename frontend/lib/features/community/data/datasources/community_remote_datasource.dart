@@ -598,6 +598,15 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       final headers = await _httpService.createHeaders();
       final response = await _httpService.get(uri.toString(), headers: headers);
 
+      // A shared link can be opened by someone who is not in the fellowship.
+      // That is an expected outcome with its own screen — an offer to join a
+      // public group — so it must not collapse into a generic server error.
+      if (response.statusCode == 403) {
+        throw const AuthorizationException(
+          message: 'Not a member of this fellowship',
+          code: 'NOT_A_MEMBER',
+        );
+      }
       if (response.statusCode != 200) {
         throw ServerException(
           message: 'Failed to fetch fellowship posts: ${response.statusCode}',

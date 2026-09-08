@@ -84,6 +84,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
         topicId: topicId,
       );
       return Right(models.map((m) => m.toEntity()).toList());
+    } on AuthorizationException catch (e) {
+      // Someone opening a shared link who is not in the fellowship.
+      return Left(AuthorizationFailure(message: e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on ServerException catch (e) {

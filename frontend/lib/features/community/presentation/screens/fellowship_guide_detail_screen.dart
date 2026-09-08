@@ -18,6 +18,7 @@ import '../bloc/fellowship_feed/fellowship_feed_state.dart';
 import '../utils/markdown_text.dart';
 import '../widgets/daily_post_card.dart';
 import '../widgets/discipler_badges.dart';
+import '../widgets/member_avatar.dart';
 
 // ============================================================================
 // Entry point
@@ -570,7 +571,12 @@ class _PostCardState extends State<_PostCard> {
               if (isSystem)
                 const DisciplerAvatar(radius: 17)
               else
-                _Avatar(displayName: post.authorDisplayName, size: 34),
+                MemberAvatar(
+                  displayName: post.authorDisplayName,
+                  accentColor: Theme.of(context).colorScheme.primary,
+                  avatarUrl: post.authorAvatarUrl,
+                  radius: 17,
+                ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -779,7 +785,12 @@ class _CommentRow extends StatelessWidget {
           if (isSystem)
             const DisciplerAvatar(radius: 13)
           else
-            _Avatar(displayName: comment.authorDisplayName, size: 26),
+            MemberAvatar(
+              displayName: comment.authorDisplayName,
+              accentColor: Theme.of(context).colorScheme.primary,
+              avatarUrl: comment.authorAvatarUrl,
+              radius: 13,
+            ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -1033,40 +1044,6 @@ class _CommentInputBar extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-// ============================================================================
-// Avatar
-// ============================================================================
-
-class _Avatar extends StatelessWidget {
-  final String displayName;
-  final double size;
-  const _Avatar({required this.displayName, this.size = 36});
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          initial,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: size * 0.44,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
     );
   }
 }

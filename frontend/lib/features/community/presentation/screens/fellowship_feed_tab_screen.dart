@@ -24,9 +24,9 @@ import '../widgets/fellowship_post_card.dart';
 import '../widgets/mention_sheet.dart';
 import '../widgets/study_guide_chip.dart';
 import 'package:disciplefy_bible_study/core/theme/contrast.dart';
-import '../../domain/repositories/community_repository.dart';
-import '../../domain/entities/fellowship_member_entity.dart';
-import '../../../../core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/features/community/domain/entities/fellowship_member_entity.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
 
 /// Real implementation of the Fellowship Feed tab.
 ///
@@ -481,6 +481,10 @@ class _FellowshipCreatePostSheetState extends State<FellowshipCreatePostSheet> {
       mentors: feedState.mentors,
       members: _members,
       currentUserId: feedState.currentUserId,
+      initialQuery: mentionQueryAt(
+        _contentController.text,
+        cursorOverride ?? _contentController.selection.baseOffset,
+      ),
     );
     if (candidate == null || !mounted) return;
     _mentions.remember(candidate.handle, candidate.userId);

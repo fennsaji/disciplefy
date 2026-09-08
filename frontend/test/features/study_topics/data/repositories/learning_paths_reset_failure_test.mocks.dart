@@ -172,6 +172,7 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
     bool? includeEnrolled = true,
     int? categoryLimit = 4,
     int? categoryOffset = 0,
+    bool? forceRefresh = false,
   }) =>
           (super.noSuchMethod(
             Invocation.method(
@@ -182,6 +183,7 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
                 #includeEnrolled: includeEnrolled,
                 #categoryLimit: categoryLimit,
                 #categoryOffset: categoryOffset,
+                #forceRefresh: forceRefresh,
               },
             ),
             returnValue:
@@ -196,6 +198,7 @@ class MockLearningPathsRemoteDataSource extends _i1.Mock
                   #includeEnrolled: includeEnrolled,
                   #categoryLimit: categoryLimit,
                   #categoryOffset: categoryOffset,
+                  #forceRefresh: forceRefresh,
                 },
               ),
             )),

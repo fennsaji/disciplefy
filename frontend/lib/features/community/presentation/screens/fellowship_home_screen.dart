@@ -46,6 +46,8 @@ import 'package:disciplefy_bible_study/shared/widgets/sheet_scroll_view.dart';
 import '../widgets/fellowship_report_sheet.dart';
 import '../widgets/fellowship_comments_sheet.dart';
 import '../widgets/block_user_dialog.dart';
+import 'package:disciplefy_bible_study/features/community/domain/repositories/community_repository.dart';
+import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 // ============================================================================
 // Root widget — provides BLoCs, delegates to _FellowshipHomeContent
@@ -1054,6 +1056,12 @@ class _FeedPreviewSection extends StatelessWidget {
                 );
               }
 
+              // Opened a shared link to a fellowship the viewer has not
+              // joined. Not a failure to report — offer the way in instead.
+              if (state.notAMember) {
+                return _NotAMemberCard(fellowshipId: fellowshipId);
+              }
+
               // Error
               if (state.status == FellowshipFeedStatus.failure &&
                   state.posts.isEmpty) {
@@ -1942,6 +1950,108 @@ class _MeetingsSectionTile extends StatelessWidget {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shown when a shared link leads to a fellowship the viewer is not in.
+///
+/// Joining is attempted through the public-join endpoint, which refuses any
+/// fellowship that is not public — so a private group's link ends here with a
+/// message rather than a way in.
+class _NotAMemberCard extends StatefulWidget {
+  final String fellowshipId;
+
+  const _NotAMemberCard({required this.fellowshipId});
+
+  @override
+  State<_NotAMemberCard> createState() => _NotAMemberCardState();
+}
+
+class _NotAMemberCardState extends State<_NotAMemberCard> {
+  bool _joining = false;
+  String? _error;
+
+  Future<void> _join() async {
+    setState(() {
+      _joining = true;
+      _error = null;
+    });
+    final result = await sl<CommunityRepository>()
+        .joinPublicFellowship(widget.fellowshipId);
+    if (!mounted) return;
+    result.fold(
+      (failure) => setState(() {
+        _joining = false;
+        _error = ErrorMessageSanitizer.sanitize(failure);
+      }),
+      (_) {
+        setState(() => _joining = false);
+        // Reload the feed now that membership exists.
+        context.read<FellowshipFeedBloc>().add(
+            FellowshipFeedLoadRequested(fellowshipId: widget.fellowshipId));
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      child: Column(
+        children: [
+          Icon(Icons.group_add_rounded,
+              size: 40, color: context.appTextTertiary),
+          const SizedBox(height: 12),
+          Text(
+            context.tr(TranslationKeys.fellowshipJoinToViewTitle),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: context.appTextPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.tr(TranslationKeys.fellowshipJoinToViewBody),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: context.appTextTertiary,
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                color: context.appError,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _joining ? null : _join,
+              child: _joining
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(context.tr(TranslationKeys.fellowshipJoinAction)),
+            ),
+          ),
+        ],
       ),
     );
   }

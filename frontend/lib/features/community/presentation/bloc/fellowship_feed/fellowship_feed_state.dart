@@ -37,6 +37,13 @@ class FellowshipFeedState extends Equatable {
   /// Non-null when [status] is [FellowshipFeedStatus.failure].
   final String? errorMessage;
 
+  /// The viewer is not in this fellowship.
+  ///
+  /// Reached by opening a shared link to a group you have not joined. It is
+  /// an ordinary outcome with its own screen — an offer to join a public
+  /// fellowship — rather than an error.
+  final bool notAMember;
+
   /// True while a post create or delete operation is in flight.
   final bool submitting;
 
@@ -92,6 +99,7 @@ class FellowshipFeedState extends Equatable {
     this.cursor,
     this.hasMore = true,
     this.errorMessage,
+    this.notAMember = false,
     this.submitting = false,
     this.isMentor = false,
     this.currentUserId,
@@ -128,6 +136,7 @@ class FellowshipFeedState extends Equatable {
         cursor,
         hasMore,
         errorMessage,
+        notAMember,
         submitting,
         isMentor,
         currentUserId,
@@ -167,6 +176,7 @@ class FellowshipFeedState extends Equatable {
     Map<String, int>? topicPostCounts,
     bool? disciplerAllowed,
     List<FellowshipMentorEntity>? mentors,
+    bool? notAMember,
   }) {
     return FellowshipFeedState(
       status: status ?? this.status,
@@ -190,6 +200,7 @@ class FellowshipFeedState extends Equatable {
       topicPostCounts: topicPostCounts ?? this.topicPostCounts,
       disciplerAllowed: disciplerAllowed ?? this.disciplerAllowed,
       mentors: mentors ?? this.mentors,
+      notAMember: notAMember ?? this.notAMember,
     );
   }
 }

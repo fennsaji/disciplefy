@@ -728,6 +728,8 @@ class AppLocalizations {
       'disciplerHelperSubtitle': 'AI helper',
       'replyAction': 'Reply',
       'memberLabel': 'Member',
+      'mentionSearchHint': 'Search people',
+      'mentionNoMatches': 'No one matches that name',
     },
     'hi': {
       // Common
@@ -1430,6 +1432,8 @@ class AppLocalizations {
       'disciplerHelperSubtitle': 'AI सहायक',
       'replyAction': 'उत्तर दें',
       'memberLabel': 'सदस्य',
+      'mentionSearchHint': 'लोगों को खोजें',
+      'mentionNoMatches': 'इस नाम का कोई नहीं मिला',
     },
     'ml': {
       // Common
@@ -2141,6 +2145,8 @@ class AppLocalizations {
       'disciplerHelperSubtitle': 'AI സഹായി',
       'replyAction': 'മറുപടി നൽകുക',
       'memberLabel': 'അംഗം',
+      'mentionSearchHint': 'ആളുകളെ തിരയുക',
+      'mentionNoMatches': 'ആ പേരിൽ ആരുമില്ല',
     },
   };
 
@@ -3140,6 +3146,10 @@ class AppLocalizations {
       _localizedValues[locale.languageCode]!['replyAction']!;
   String get memberLabel =>
       _localizedValues[locale.languageCode]!['memberLabel']!;
+  String get mentionSearchHint =>
+      _localizedValues[locale.languageCode]!['mentionSearchHint']!;
+  String get mentionNoMatches =>
+      _localizedValues[locale.languageCode]!['mentionNoMatches']!;
 
   // First Century Christian Facts for Loading Screen
   String getLoadingFact(int index) {

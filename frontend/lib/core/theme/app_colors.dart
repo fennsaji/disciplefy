@@ -40,11 +40,39 @@ class AppColors {
   /// Deep indigo — for high-contrast / pressed states.
   static const Color brandPrimaryDeep = Color(0xFF4338CA);
 
+  /// Indigo ink — the darkest brand indigo, for label text sitting ON a light
+  /// indigo fill. [brandPrimaryDeep] only reaches 3.96:1 against
+  /// [brandPrimaryLight]; this is 8:1 and clears WCAG AA for small text.
+  static const Color brandPrimaryInk = Color(0xFF1E1B4B);
+
   /// Gold highlight — secondary brand color, highlights, verse containers.
   static const Color brandHighlight = Color(0xFFFFEEC0);
 
   /// Dark gold — for richer gradient pairs with [brandHighlight].
   static const Color brandHighlightDark = Color(0xFFB8860B);
+
+  /// Palest gold — the top of the daily-study card's wash, a shade off the
+  /// warm-white background so the card reads as lit rather than tinted.
+  static const Color brandHighlightSoft = Color(0xFFFFFBF0);
+
+  /// Deep end of that wash. Warmer and a touch more saturated than
+  /// [brandHighlight], so the gradient has somewhere to travel.
+  static const Color brandHighlightWarm = Color(0xFFFDEBBE);
+
+  /// Daily-study card wash (light). Vertical, pale gold to warm gold: flat
+  /// [brandHighlight] alone read as a dull block of cream at card size.
+  static const LinearGradient dailyHighlightGradient = LinearGradient(
+    colors: [brandHighlightSoft, brandHighlightWarm],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  /// The same wash for dark mode — lamplight on a dark ground, not brown.
+  static const LinearGradient dailyHighlightGradientDark = LinearGradient(
+    colors: [Color(0xFF302816), Color(0xFF241E11)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
   /// Coral accent — action/alert, destructive-action confirmation.
   static const Color brandAccent = Color(0xFFFF6B6B);

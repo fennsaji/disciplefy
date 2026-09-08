@@ -75,14 +75,32 @@ class DailyPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF3A3018) : AppColors.brandHighlight;
     final accent = dailyPostAccent(context);
 
     return Container(
       decoration: BoxDecoration(
-        color: bg,
+        // A wash rather than a flat fill: at card size the single cream tone
+        // sat there as a dull block, and the gradient gives the gold somewhere
+        // to travel without shouting.
+        gradient: isDark
+            ? AppColors.dailyHighlightGradientDark
+            : AppColors.dailyHighlightGradient,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withAlpha(60), width: 0.5),
+        border: Border.all(
+          color: accent.withAlpha(isDark ? 70 : 45),
+          width: 0.5,
+        ),
+        // Warm, barely-there lift so the card sits on the page instead of
+        // being painted onto it. Gold-tinted, never grey.
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.brandHighlightDark.withAlpha(20),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       child: Column(

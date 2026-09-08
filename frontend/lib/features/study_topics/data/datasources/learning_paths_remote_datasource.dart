@@ -28,6 +28,7 @@ abstract class LearningPathsRemoteDataSource {
     bool includeEnrolled = true,
     int categoryLimit = 4,
     int categoryOffset = 0,
+    bool forceRefresh = false,
   });
 
   /// Clears all persistent cache entries.
@@ -171,9 +172,15 @@ class LearningPathsRemoteDataSourceImpl
     bool includeEnrolled = true,
     int categoryLimit = 4,
     int categoryOffset = 0,
+    bool forceRefresh = false,
   }) async {
-    // Check persistent cache for first page only
-    if (categoryOffset == 0) {
+    // Check persistent cache for first page only.
+    //
+    // The persistent copy outlives the process, so without honouring
+    // forceRefresh a pull-to-refresh — or even a restart — kept serving the
+    // progress a path had when it was cached. A path completed since then
+    // still read "1/8 Topics, 12%" and stayed in the recommendations.
+    if (categoryOffset == 0 && !forceRefresh) {
       final cached = await _cache.getCachedResponse(
           type: 'categories', language: language);
       if (cached != null) {

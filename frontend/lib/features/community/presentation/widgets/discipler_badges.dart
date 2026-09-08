@@ -9,23 +9,33 @@ class DisciplerAiChip extends StatelessWidget {
   const DisciplerAiChip({super.key});
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: BoxDecoration(
-          color: context.appPrimary,
-          borderRadius: BorderRadius.circular(6),
+  Widget build(BuildContext context) {
+    // Dark mode resolves the primary to the light indigo (#A5B4FC), which is a
+    // background colour — white on it fell to ~1.6:1 and the chip read as a
+    // pale smudge. On a light fill the label has to be dark.
+    final fill = context.appPrimary;
+    final onFill = ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
+        ? Colors.white
+        : AppColors.brandPrimaryInk;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        AppLocalizations.of(context)!.disciplerAiChip,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: onFill,
+          letterSpacing: 0.5,
         ),
-        child: Text(
-          AppLocalizations.of(context)!.disciplerAiChip,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: 0.5,
-          ),
-        ),
-      );
+      ),
+    );
+  }
 }
 
 /// Avatar used for the Discipler AI helper wherever a post/comment author

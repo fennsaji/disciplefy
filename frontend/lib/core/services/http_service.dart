@@ -5,6 +5,7 @@ import 'dart:async';
 import '../error/exceptions.dart';
 import 'api_auth_helper.dart';
 import '../utils/logger.dart';
+import 'session_refresh.dart';
 
 /// Centralized HTTP service with automatic 401 error handling and token refresh
 class HttpService {
@@ -97,6 +98,20 @@ class HttpService {
       await ApiAuthHelper.validateTokenForRequest();
     } catch (e) {
       if (e is TokenValidationException) {
+        // 'SESSION_UNVERIFIED' means we could not reach Supabase — offline, a
+        // timeout, or a cold start where restoration had not finished. The
+        // session may be perfectly valid, so the request fails and the user
+        // stays signed in. Signing out here logged people out every time they
+        // force-closed the app and reopened it before the network was back.
+        if (e.code == 'SESSION_UNVERIFIED') {
+          Logger.warning(
+              '🔐 [HTTP] Session could not be verified (network) — keeping the user signed in');
+          throw const NetworkException(
+            message: 'Could not reach the server. Please try again.',
+            code: 'SESSION_UNVERIFIED',
+          );
+        }
+
         Logger.error(
             '🔐 [HTTP] Pre-request token validation failed: ${e.message}');
         Logger.debug(
@@ -125,21 +140,33 @@ class HttpService {
           if (retryCount < _maxRetries && ApiAuthHelper.isAuthenticated) {
             Logger.debug('🔐 [HTTP] Attempting token refresh...');
 
-            final refreshed = await _refreshToken();
-            if (refreshed) {
+            final outcome = await _refreshToken();
+            if (outcome == SessionRefreshOutcome.refreshed) {
               Logger.debug(
                   '🔐 [HTTP] Token refresh successful, retrying request...');
               retryCount++;
               continue; // Retry the request
-            } else {
-              Logger.error(
-                  '🔐 [HTTP] Token refresh failed, logging out user...');
-              await _handleAuthenticationFailure();
-              throw const AuthenticationException(
-                message: 'Session expired. Please login again.',
-                code: 'SESSION_EXPIRED',
+            }
+
+            // Only a refusal from Supabase ends the session. A refresh that
+            // never completed leaves the user signed in — the next request
+            // retries, and the router refreshes on its own schedule.
+            if (outcome == SessionRefreshOutcome.inconclusive) {
+              Logger.warning(
+                  '🔐 [HTTP] Refresh could not complete — keeping the user signed in');
+              throw const NetworkException(
+                message: 'Could not reach the server. Please try again.',
+                code: 'SESSION_UNVERIFIED',
               );
             }
+
+            Logger.error(
+                '🔐 [HTTP] Refresh token rejected, logging out user...');
+            await _handleAuthenticationFailure();
+            throw const AuthenticationException(
+              message: 'Session expired. Please login again.',
+              code: 'SESSION_EXPIRED',
+            );
           } else {
             Logger.debug(
                 '🔐 [HTTP] No valid session or max retries reached, logging out...');
@@ -178,14 +205,16 @@ class HttpService {
   }
 
   /// Attempt to refresh the authentication token
-  Future<bool> _refreshToken() async {
+  Future<SessionRefreshOutcome> _refreshToken() async {
     try {
       final supabase = Supabase.instance.client;
       final currentSession = supabase.auth.currentSession;
 
       if (currentSession == null) {
+        // No session in memory yet: on a cold start that is restoration still
+        // running, not a signed-out user.
         Logger.debug('🔐 [HTTP] No current session to refresh');
-        return false;
+        return SessionRefreshOutcome.inconclusive;
       }
 
       // Check if token is close to expiry (within 5 minutes)
@@ -195,23 +224,26 @@ class HttpService {
 
       if (expiryTime.isAfter(now.add(const Duration(minutes: 5)))) {
         Logger.debug('🔐 [HTTP] Token is still valid, no refresh needed');
-        return true;
+        return SessionRefreshOutcome.refreshed;
       }
 
-      // Attempt to refresh the session
-      final response = await supabase.auth.refreshSession();
+      // Bounded, like the other refresh paths: a hung socket must not hold a
+      // request open past its own timeout.
+      final response = await supabase.auth
+          .refreshSession()
+          .timeout(const Duration(seconds: 5));
 
       if (response.session != null) {
         Logger.debug('🔐 [HTTP] Token refresh successful');
         ApiAuthHelper.logAuthState();
-        return true;
-      } else {
-        Logger.error('🔐 [HTTP] Token refresh failed');
-        return false;
+        return SessionRefreshOutcome.refreshed;
       }
+      Logger.error('🔐 [HTTP] Token refresh returned no session');
+      return SessionRefreshOutcome.rejected;
     } catch (e) {
-      Logger.error('🔐 [HTTP] Token refresh error: $e');
-      return false;
+      final outcome = classifySessionRefreshError(e);
+      Logger.error('🔐 [HTTP] Token refresh error (${outcome.name}): $e');
+      return outcome;
     }
   }
 

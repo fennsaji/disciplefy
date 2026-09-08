@@ -11,6 +11,7 @@ import '../services/language_cache_coordinator.dart';
 import '../services/system_config_service.dart';
 import '../di/injection_container.dart';
 import 'app_routes.dart';
+import '../services/session_refresh.dart';
 
 /// Router guard that handles authentication and onboarding logic
 /// Extracted from the main router to improve maintainability
@@ -134,6 +135,27 @@ class RouterGuard {
 
     final onboardingState = _getOnboardingState();
     final languageSelectionState = await _getLanguageSelectionState();
+
+    // The loading screen is a waiting room, not a destination. Once auth has
+    // initialised, decide where the user actually belongs and go there — the
+    // decision for /loading itself is "no redirect needed", which left the app
+    // sitting on the spinner forever once it had been shown (reproducible by
+    // cold-starting with an expired token and no network).
+    if (cleanPath == AppRoutes.appLoading) {
+      final target = await _determineRedirect(
+        authState,
+        onboardingState,
+        languageSelectionState,
+        _analyzeCurrentRoute(AppRoutes.home),
+      );
+      Logger.info(
+        'Auth initialised - leaving the loading screen',
+        tag: 'ROUTER',
+        context: {'target': target ?? AppRoutes.home},
+      );
+      return target ?? AppRoutes.home;
+    }
+
     final routeAnalysis = _analyzeCurrentRoute(cleanPath);
 
     return await _determineRedirect(
@@ -751,10 +773,77 @@ class RouterGuard {
     return redirectTarget;
   }
 
+  /// Stash the path the user was heading to before an interstitial screen
+  /// (onboarding, language selection) takes over, so the deep link can be
+  /// resumed once the user lands on home.
+  ///
+  /// Every interception between a deep link and home has to call this: the
+  /// login screen and the OAuth callback consume the key as soon as they
+  /// authenticate, so a later guard redirect would otherwise drop the link.
+  static void _stashPendingDeepLink(String path) {
+    if (path.isEmpty || path == '/' || path == AppRoutes.home) return;
+    if (path.startsWith(AppRoutes.onboarding) ||
+        path == AppRoutes.languageSelection ||
+        path == AppRoutes.login) {
+      return;
+    }
+    try {
+      Hive.box(_hiveBboxName)
+          .put('pending_deep_link_redirect', Uri.encodeComponent(path));
+    } catch (_) {}
+  }
+
+  /// Takes the stashed deep link, if any, and clears it.
+  ///
+  /// Returned by every redirect that would otherwise land the user on home
+  /// after signing in — the login screen consumes the same key and navigates
+  /// itself, so a guard redirect that hardcoded home would race it and win.
+  static String? _consumePendingDeepLink() {
+    try {
+      final box = Hive.box(_hiveBboxName);
+      final stored = box.get('pending_deep_link_redirect') as String?;
+      if (stored == null || stored.isEmpty) return null;
+      box.delete('pending_deep_link_redirect');
+      final target = Uri.decodeComponent(stored);
+      if (!target.startsWith('/')) return null;
+      Logger.info(
+        'Consuming pending deep-link redirect after auth',
+        tag: 'ROUTER',
+        context: {'target': target},
+      );
+      return target;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Test-only entry point for [_termsGateRedirect].
   @visibleForTesting
   static String? debugTermsGateRedirect(String currentPath) =>
       _termsGateRedirect(currentPath);
+
+  /// Test-only entry point for the unauthenticated branch of the guard.
+  @visibleForTesting
+  static String? debugUnauthenticatedRedirect(String currentPath) =>
+      _handleUnauthenticatedUser(_analyzeCurrentRoute(currentPath));
+
+  /// Test-only entry point for the language-selection interstitial.
+  @visibleForTesting
+  static String? debugLanguageSelectionRedirect(String currentPath) =>
+      _handleAuthenticatedUserWithoutLanguageSelection(
+          _analyzeCurrentRoute(currentPath));
+
+  /// Test-only entry point for the authenticated-on-an-auth-route branch.
+  @visibleForTesting
+  static String? debugAuthRouteRedirect(String currentPath) =>
+      _handleAuthenticatedUserOnAuthRoutes(
+        _analyzeCurrentRoute(currentPath),
+        const AuthenticationState(
+          isAuthenticated: true,
+          userType: 'supabase',
+          userId: 'test-user',
+        ),
+      );
 
   /// Handle redirect logic for unauthenticated users
   /// Phase 2 Enhancement: Better analytics and edge case handling
@@ -841,13 +930,7 @@ class RouterGuard {
 
     // New user going through onboarding — save deep link to Hive so it
     // survives the onboarding + login flow and is consumed on home arrival.
-    final path = routeAnalysis.currentPath;
-    if (path.isNotEmpty && path != '/' && path != AppRoutes.home) {
-      try {
-        final box = Hive.box(_hiveBboxName);
-        box.put('pending_deep_link_redirect', Uri.encodeComponent(path));
-      } catch (_) {}
-    }
+    _stashPendingDeepLink(routeAnalysis.currentPath);
     return AppRoutes.onboarding;
   }
 
@@ -877,13 +960,7 @@ class RouterGuard {
     }
 
     // Save deep link so it survives the onboarding flow and is consumed on home.
-    final path = routeAnalysis.currentPath;
-    if (path.isNotEmpty && path != '/' && path != AppRoutes.home) {
-      try {
-        final box = Hive.box(_hiveBboxName);
-        box.put('pending_deep_link_redirect', Uri.encodeComponent(path));
-      } catch (_) {}
-    }
+    _stashPendingDeepLink(routeAnalysis.currentPath);
 
     Logger.info(
       'Authenticated user without onboarding redirected to onboarding',
@@ -905,6 +982,11 @@ class RouterGuard {
     if (routeAnalysis.isAuthRoute) {
       return null;
     }
+
+    // Language selection is the last interstitial before home. A deep link
+    // that reached here was already consumed by the login screen or the OAuth
+    // callback, so re-stash it or it is lost for good.
+    _stashPendingDeepLink(routeAnalysis.currentPath);
 
     Logger.info(
       'Authenticated user without language selection redirected to language selection',
@@ -935,17 +1017,8 @@ class RouterGuard {
     // Supabase handles OAuth natively so the app starts authenticated at "/",
     // never passing through AuthCallbackPage or LoginScreen — consume the Hive key here.
     if (routeAnalysis.currentPath == AppRoutes.home) {
-      final box = Hive.box(_hiveBboxName);
-      final deepLinkRedirect = box.get('pending_deep_link_redirect') as String?;
-      if (deepLinkRedirect != null && deepLinkRedirect.isNotEmpty) {
-        await box.delete('pending_deep_link_redirect');
-        Logger.info(
-          'Consuming pending deep-link redirect after auth',
-          tag: 'ROUTER',
-          context: {'target': deepLinkRedirect},
-        );
-        return Uri.decodeComponent(deepLinkRedirect);
-      }
+      final deepLinkRedirect = _consumePendingDeepLink();
+      if (deepLinkRedirect != null) return deepLinkRedirect;
     }
 
     // Check for pending plan upgrade from pricing page
@@ -1272,6 +1345,11 @@ class RouterGuard {
     // Phase 2: More aggressive blocking for all other cases
     final blockReason = _determineBlockReason(routeAnalysis, authState);
 
+    // A user who signed in from a shared link is standing on /login when the
+    // session lands. Sending them to home here would overwrite the deep link
+    // the login screen just navigated to, so honour the stashed target.
+    final target = _consumePendingDeepLink() ?? AppRoutes.home;
+
     Logger.info(
       'Authenticated user blocked from pre-auth route',
       tag: 'ROUTER_SECURITY',
@@ -1280,12 +1358,12 @@ class RouterGuard {
         'user_type': authState.userType,
         'user_id': authState.userId,
         'block_reason': blockReason,
-        'redirect_target': AppRoutes.home,
+        'redirect_target': target,
         'security_action': 'force_redirect',
       },
     );
 
-    return AppRoutes.home;
+    return target;
   }
 
   /// Phase 2: Determine specific reason for blocking authenticated user
@@ -1450,16 +1528,17 @@ class RouterGuard {
 
   /// Decides whether a failed refresh means the session is really gone.
   ///
-  /// An [AuthException] is Supabase answering and rejecting the refresh token,
-  /// so the user is genuinely signed out. Everything else — a timeout, a dead
-  /// socket, a DNS failure — means we never got an answer, and assuming the
-  /// worst there would log out valid users on any network blip.
+  /// Delegates to [classifySessionRefreshError], which is shared with the HTTP
+  /// and auth layers. This used to test `error is AuthException` directly,
+  /// which was wrong: gotrue wraps an offline refresh in
+  /// [AuthRetryableFetchException] — an [AuthException] subclass — so a dead
+  /// socket was being read as a rejected session and logged the user out.
   ///
-  /// Visible for testing so the two branches can be exercised without a live
+  /// Visible for testing so the branches can be exercised without a live
   /// Supabase, following [debugTermsGateRedirect]'s precedent in this class.
   @visibleForTesting
   static SessionRefreshResult classifyRefreshError(Object error) =>
-      error is AuthException
+      classifySessionRefreshError(error) == SessionRefreshOutcome.rejected
           ? SessionRefreshResult.failed
           : SessionRefreshResult.inconclusive;
 

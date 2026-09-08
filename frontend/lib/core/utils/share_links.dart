@@ -18,6 +18,18 @@ class ShareLinks {
     defaultValue: 'https://app.disciplefy.in',
   );
 
+  /// Origin for links handed to people outside the app.
+  ///
+  /// Shared links point here rather than at [publicWebUrl] because the web app
+  /// renders client-side: chat apps found no Open Graph tags there, so a
+  /// shared post had no preview card, and their in-app browsers never hand a
+  /// URL to the installed app. This host serves a small server-rendered page
+  /// that carries both — and then offers to open the app.
+  static const String shareOrigin = String.fromEnvironment(
+    'SHARE_ORIGIN',
+    defaultValue: 'https://go.disciplefy.in',
+  );
+
   /// The "get the app" link for share text. One page listing Android, iOS
   /// and web, so the text no longer has to guess the recipient's platform —
   /// a Play Store link shared from Android was useless to an iPhone reader.
@@ -37,6 +49,23 @@ class ShareLinks {
   static String learningPathMessage(String title, String pathId) =>
       '$title — a guided Bible study path on Disciplefy\n\n'
       '${learningPath(pathId)}';
+
+  /// Link to a fellowship post, for sharing outside the app.
+  static String fellowshipPost(String fellowshipId, String postId) {
+    final origin = shareOrigin.endsWith('/')
+        ? shareOrigin.substring(0, shareOrigin.length - 1)
+        : shareOrigin;
+    return '$origin/fellowship/${Uri.encodeComponent(fellowshipId)}'
+        '/post/${Uri.encodeComponent(postId)}';
+  }
+
+  /// Link that invites someone into a fellowship.
+  static String fellowshipInvite(String token) {
+    final origin = shareOrigin.endsWith('/')
+        ? shareOrigin.substring(0, shareOrigin.length - 1)
+        : shareOrigin;
+    return '$origin/fellowship/join/${Uri.encodeComponent(token)}';
+  }
 
   /// Strips any trailing slash so joining a path never yields a double slash.
   static String get _normalisedOrigin => publicWebUrl.endsWith('/')

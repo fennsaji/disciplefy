@@ -223,6 +223,11 @@ jobs:
         JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}
         CRON_SECRET=${{ secrets.CRON_SECRET_DEV }}
 
+        # Telegram broadcast (Development)
+        # Deliberately left unset on dev: the bot posts to the live public
+        # channel, and a dev deploy must never broadcast to it. The job returns
+        # telegram_not_configured here, which is the intended no-op.
+
         # Development settings
         LOG_LEVEL=debug
         USE_MOCK='false'
