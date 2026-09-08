@@ -55,6 +55,7 @@ Future<MentionCandidate?> showMentionSheet(
   required List<FellowshipMentorEntity> mentors,
   List<FellowshipMemberEntity> members = const [],
   String? currentUserId,
+  String initialQuery = '',
 }) {
   final l10n = AppLocalizations.of(context)!;
   final candidates = <MentionCandidate>[
@@ -94,100 +95,213 @@ Future<MentionCandidate?> showMentionSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (sheetContext) => _MentionSheet(candidates: candidates),
+    builder: (sheetContext) =>
+        _MentionSheet(candidates: candidates, initialQuery: initialQuery),
   );
 }
 
-class _MentionSheet extends StatelessWidget {
+/// Filters [candidates] by a typed query, matching the display name or the
+/// handle. The Discipler helper always sorts first among the matches.
+///
+/// Matching ignores case and the dots that replace spaces in handles, so
+/// "sa", "Saji" and "@Fenn.Sa" all find "Fenn Ignatius Saji".
+List<MentionCandidate> filterMentionCandidates(
+  List<MentionCandidate> candidates,
+  String query,
+) {
+  final needle =
+      query.replaceAll('@', '').replaceAll('.', '').trim().toLowerCase();
+  if (needle.isEmpty) return candidates;
+  return candidates.where((c) {
+    final display = c.display.replaceAll('.', '').toLowerCase();
+    final handle =
+        c.handle.replaceAll('@', '').replaceAll('.', '').toLowerCase();
+    return display.contains(needle) || handle.contains(needle);
+  }).toList();
+}
+
+class _MentionSheet extends StatefulWidget {
   final List<MentionCandidate> candidates;
 
-  const _MentionSheet({required this.candidates});
+  /// The partial word already typed after `@` in the composer.
+  final String initialQuery;
+
+  const _MentionSheet({required this.candidates, this.initialQuery = ''});
+
+  @override
+  State<_MentionSheet> createState() => _MentionSheetState();
+}
+
+class _MentionSheetState extends State<_MentionSheet> {
+  late final TextEditingController _search =
+      TextEditingController(text: widget.initialQuery);
+  late String _query = widget.initialQuery;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
+    final l10n = AppLocalizations.of(context)!;
+    final matches = filterMentionCandidates(widget.candidates, _query);
+    return Padding(
+      // Lift the sheet above the keyboard the search field opens.
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      // A Material, not a decorated box: the rows are ListTiles, which paint
+      // their ink splashes on the nearest Material ancestor.
+      child: Material(
         color: context.appSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 24),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: context.appBorder,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            if (candidates.isEmpty)
-              const SizedBox.shrink()
-            else
-              ...candidates.map(
-                (c) => ListTile(
-                  leading: c.isDiscipler
-                      ? const DisciplerAvatar(radius: 18)
-                      : CircleAvatar(
-                          radius: 18,
-                          backgroundColor: context.appPrimary.withAlpha(36),
-                          backgroundImage:
-                              c.avatarUrl != null && c.avatarUrl!.isNotEmpty
-                                  ? NetworkImage(c.avatarUrl!)
-                                  : null,
-                          child: c.avatarUrl == null || c.avatarUrl!.isEmpty
-                              ? Text(
-                                  c.display.isNotEmpty
-                                      ? c.display[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w700,
-                                    color: context.appPrimary,
-                                  ),
-                                )
-                              : null,
-                        ),
-                  title: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          c.display,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w600,
-                            color: context.appTextPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (c.isDiscipler) ...[
-                        const SizedBox(width: 6),
-                        const DisciplerAiChip(),
-                      ],
-                    ],
-                  ),
-                  subtitle: Text(
-                    c.subtitle,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: context.appTextTertiary,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 24),
+          // A fellowship can have more members than fit on screen. Without a
+          // bound the list overflowed and the sheet clipped its own top,
+          // hiding Discipler — the row people reach for most.
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: context.appBorder,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  onTap: () => Navigator.of(context).pop(c),
                 ),
-              ),
-          ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  child: TextField(
+                    controller: _search,
+                    autofocus: true,
+                    onChanged: (value) => setState(() => _query = value),
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      color: context.appTextPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      prefixIcon: Icon(Icons.alternate_email_rounded,
+                          size: 18, color: context.appTextTertiary),
+                      hintText: l10n.mentionSearchHint,
+                      hintStyle: TextStyle(
+                        fontFamily: 'Inter',
+                        color: context.appTextTertiary,
+                      ),
+                      filled: true,
+                      fillColor: context.appScaffold,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: context.appBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: context.appBorder),
+                      ),
+                    ),
+                  ),
+                ),
+                if (matches.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      l10n.mentionNoMatches,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) =>
+                          _MentionRow(candidate: matches[index]),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _MentionRow extends StatelessWidget {
+  final MentionCandidate candidate;
+
+  const _MentionRow({required this.candidate});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = candidate;
+    return ListTile(
+      leading: c.isDiscipler
+          ? const DisciplerAvatar(radius: 18)
+          : CircleAvatar(
+              radius: 18,
+              backgroundColor: context.appPrimary.withAlpha(36),
+              backgroundImage: c.avatarUrl != null && c.avatarUrl!.isNotEmpty
+                  ? NetworkImage(c.avatarUrl!)
+                  : null,
+              child: c.avatarUrl == null || c.avatarUrl!.isEmpty
+                  ? Text(
+                      c.display.isNotEmpty ? c.display[0].toUpperCase() : '?',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w700,
+                        color: context.appPrimary,
+                      ),
+                    )
+                  : null,
+            ),
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              c.display,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+                color: context.appTextPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (c.isDiscipler) ...[
+            const SizedBox(width: 6),
+            const DisciplerAiChip(),
+          ],
+        ],
+      ),
+      subtitle: Text(
+        c.subtitle,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 12,
+          color: context.appTextTertiary,
+        ),
+      ),
+      onTap: () => Navigator.of(context).pop(c),
     );
   }
 }

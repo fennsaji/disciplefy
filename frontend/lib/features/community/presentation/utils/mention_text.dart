@@ -38,6 +38,19 @@ MentionInsertion insertMention(String text, int cursor, String handle) {
   return MentionInsertion(next, head.length + handle.length + 1);
 }
 
+/// The partial mention word being typed immediately before [cursor], without
+/// its leading `@`.
+///
+/// Returns an empty string when the cursor is not inside a mention token. The
+/// picker seeds its search box with this, so a member reached by typing
+/// `@sa` is already filtered when the sheet opens.
+String mentionQueryAt(String text, int cursor) {
+  if (cursor < 0 || cursor > text.length) return '';
+  final before = text.substring(0, cursor);
+  final match = RegExp(r'(?:^|\s)@([\w.]*)$').firstMatch(before);
+  return match?.group(1) ?? '';
+}
+
 /// Remembers which account each inserted `@Handle` referred to, so the
 /// composer can tell the backend exactly who was tagged.
 ///
