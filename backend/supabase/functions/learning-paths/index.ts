@@ -15,6 +15,7 @@ import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
 import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
+import { ACTIVE_PATH_CANDIDATES, effectiveProgress, getCompletedPathIds } from '../_shared/utils/path-progress.ts';
 import {
   calculatePathScores,
   type QuestionnaireResponses,
@@ -1054,9 +1055,18 @@ async function handleGetRecommendedPath(
   console.log(`[RECOMMENDED_PATH] Getting recommended path for user: ${userId || 'anonymous'}, language: ${language}`);
 
   try {
+    // Read once and use at every priority: a path finished at path level must
+    // not be offered again as active, personalized or featured.
+    const completedPathIds = userId
+      ? await getCompletedPathIds(supabaseServiceClient, userId)
+      : new Set<string>();
+
     // Priority 1: Check for active learning path (authenticated users only)
     if (userId) {
       console.log('[RECOMMENDED_PATH] Checking for active learning path...');
+      // Several, not one: the most recent row can turn out to be 100% done by
+      // topic count, and taking only that one meant falling through to a
+      // recommendation while the user still had another study in progress.
       const { data: activePathProgress, error: progressError } = await supabaseServiceClient
         .from('user_learning_path_progress')
         .select(`
@@ -1081,49 +1091,51 @@ async function handleGetRecommendedPath(
         .is('completed_at', null)
         .not('enrolled_at', 'is', null)
         .order('last_activity_at', { ascending: false })
-        .limit(1);
+        .limit(ACTIVE_PATH_CANDIDATES);
 
       if (progressError) {
         console.error('[RECOMMENDED_PATH] Error fetching active path:', progressError);
       }
 
-      if (activePathProgress && activePathProgress.length > 0) {
-        const activePath = activePathProgress[0];
+      for (const activePath of activePathProgress || []) {
         // Supabase returns joined relation as object (due to !inner), cast through unknown for type safety
         const pathData = activePath.learning_paths as unknown as LearningPathRow | null;
+        if (!pathData?.is_active) continue;
 
-        if (pathData?.is_active) {
-          console.log(`[RECOMMENDED_PATH] Found active path: ${pathData.title}`);
+        console.log(`[RECOMMENDED_PATH] Considering active path: ${pathData.title}`);
 
-          const topicsCountNum = await getTopicsCount(supabaseServiceClient, activePath.learning_path_id);
-          const localized = await getLocalizedTitleDescription(
-            supabaseServiceClient,
-            activePath.learning_path_id,
-            language,
-            pathData.title,
-            pathData.description
-          );
-          const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, activePath.learning_path_id, userId);
-          const progressPercentage = topicsCountNum > 0
-            ? Math.round((actualCompleted / topicsCountNum) * 100)
-            : 0;
+        const topicsCountNum = await getTopicsCount(supabaseServiceClient, activePath.learning_path_id);
+        const localized = await getLocalizedTitleDescription(
+          supabaseServiceClient,
+          activePath.learning_path_id,
+          language,
+          pathData.title,
+          pathData.description
+        );
+        const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, activePath.learning_path_id, userId);
+        const progressPercentage = effectiveProgress(
+          topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
+          activePath.learning_path_id,
+          completedPathIds,
+        );
 
-          // Skip completed paths — fall through to next priority
-          if (progressPercentage >= 100) {
-            console.log(`[RECOMMENDED_PATH] Active path ${pathData.title} is 100% complete, skipping`);
-          } else {
-            const path = buildLearningPathResponse(
-              pathData,
-              topicsCountNum,
-              true,
-              progressPercentage,
-              localized.title,
-              localized.description
-            );
-
-            return createRecommendedPathResponse(path, 'active');
-          }
+        // Finished — try the next in-progress path rather than giving up on the
+        // whole priority.
+        if (progressPercentage >= 100) {
+          console.log(`[RECOMMENDED_PATH] Active path ${pathData.title} is complete, trying the next one`);
+          continue;
         }
+
+        const path = buildLearningPathResponse(
+          pathData,
+          topicsCountNum,
+          true,
+          progressPercentage,
+          localized.title,
+          localized.description
+        );
+
+        return createRecommendedPathResponse(path, 'active');
       }
     }
 
@@ -1163,7 +1175,10 @@ async function handleGetRecommendedPath(
             console.error('[RECOMMENDED_PATH] Error fetching completed paths:', completedError);
           }
 
-          const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
+          // Named apart from the outer `completedPathIds` set: the scorer takes
+          // an array, and two same-named bindings of different types in one
+          // function is a trap for the next reader.
+          const completedForScoring = (completedPaths || []).map((p) => p.learning_path_id);
 
           // Build questionnaire responses object for scoring
           const responses: QuestionnaireResponses = {
@@ -1179,7 +1194,7 @@ async function handleGetRecommendedPath(
           const scoredPaths = calculatePathScores(
             responses,
             allPaths as ScoringLearningPath[],
-            completedPathIds
+            completedForScoring
           );
 
           // Iterate through scored paths to find first non-completed recommendation
@@ -1217,9 +1232,11 @@ async function handleGetRecommendedPath(
 
             // Always compute progress from user_topic_progress
             const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
-            const progressPercentage = topicsCountNum > 0
-              ? Math.round((actualCompleted / topicsCountNum) * 100)
-              : 0;
+            const progressPercentage = effectiveProgress(
+              topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
+              pathData.id,
+              completedPathIds,
+            );
 
             // Skip fully completed paths — try the next scored path
             if (progressPercentage >= 100) {
@@ -1291,9 +1308,11 @@ async function handleGetRecommendedPath(
         }
 
         const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
-        progressPercentage = topicsCountNum > 0
-          ? Math.round((actualCompleted / topicsCountNum) * 100)
-          : 0;
+        progressPercentage = effectiveProgress(
+          topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
+          pathData.id,
+          completedPathIds,
+        );
       }
 
       // Skip completed paths for authenticated users
