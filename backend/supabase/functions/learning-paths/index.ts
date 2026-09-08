@@ -866,6 +866,51 @@ async function handleGetRecommendedPaths(
   }
 
   const userId = userContext?.type === 'authenticated' ? userContext.userId : null;
+
+  // The studies already under way come first, exactly as the single-path
+  // recommendation does. Without this the Topics tab could only surface what
+  // its first page of categories happened to contain, so a path the user was
+  // halfway through — or the one Home was recommending — was missing entirely.
+  const inProgressFirst: LearningPath[] = [];
+  if (userId) {
+    const completedIds = await getCompletedPathIds(supabaseServiceClient, userId);
+    const { data: activeRows } = await supabaseServiceClient
+      .from('user_learning_path_progress')
+      .select('learning_path_id, learning_paths!inner(*)')
+      .eq('user_id', userId)
+      .is('completed_at', null)
+      .not('enrolled_at', 'is', null)
+      .order('last_activity_at', { ascending: false })
+      .limit(ACTIVE_PATH_CANDIDATES);
+
+    for (const row of (activeRows ?? [])) {
+      const pathData = row.learning_paths as unknown as LearningPathRow | null;
+      if (!pathData?.is_active) continue;
+
+      const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+      const actualCompleted = await getActualTopicsCompleted(supabaseServiceClient, pathData.id, userId);
+      const percentage = effectiveProgress(
+        topicsCountNum > 0 ? Math.round((actualCompleted / topicsCountNum) * 100) : 0,
+        pathData.id,
+        completedIds,
+      );
+      if (percentage >= 100) continue;
+
+      const localized = await getLocalizedTitleDescription(
+        supabaseServiceClient, pathData.id, language, pathData.title, pathData.description
+      );
+      inProgressFirst.push(buildLearningPathResponse(
+        pathData, topicsCountNum, true, percentage, localized.title, localized.description,
+      ));
+      if (inProgressFirst.length >= limit) break;
+    }
+  }
+
+  /** Puts the in-progress studies first and drops anything already listed. */
+  const withInProgress = (paths: LearningPath[]): LearningPath[] => {
+    const seen = new Set(inProgressFirst.map((p) => p.id));
+    return [...inProgressFirst, ...paths.filter((p) => !seen.has(p.id))].slice(0, limit);
+  };
   console.log(`[RECOMMENDED_PATHS] userId=${userId || 'anonymous'}, language=${language}, limit=${limit}`);
 
   // Personalized paths for authenticated users with completed questionnaire
@@ -949,7 +994,7 @@ async function handleGetRecommendedPaths(
 
           if (pathObjects.length > 0) {
             return new Response(
-              JSON.stringify({ success: true, data: { paths: pathObjects, reason: 'personalized' } }),
+              JSON.stringify({ success: true, data: { paths: withInProgress(pathObjects), reason: 'personalized' } }),
               { status: 200, headers: { 'Content-Type': 'application/json' } }
             );
           }
@@ -965,10 +1010,15 @@ async function handleGetRecommendedPaths(
   // recommended it again — reading "0/8 Topics" on a path they had completed.
   // The scored branch above already skips completed paths; this one has to do
   // the same, and report the progress it knows about.
+  //
+  // The pool matches the single-path recommendation's (see
+  // handleGetRecommendedPath): featured paths plus the default one. Two
+  // different pools meant Home could suggest a study that this list — the one
+  // behind the Topics tab's For You — had no way of showing.
   const { data: featuredPaths } = await supabaseServiceClient
     .from('learning_paths')
     .select('*')
-    .eq('is_featured', true)
+    .or(`slug.eq.${DEFAULT_FEATURED_PATH_SLUG},is_featured.eq.true`)
     .eq('is_active', true)
     .order('display_order', { ascending: true })
     .limit(limit + 10);
@@ -1014,7 +1064,15 @@ async function handleGetRecommendedPaths(
   }
 
   return new Response(
-    JSON.stringify({ success: true, data: { paths: fallbackObjects, reason: 'featured' } }),
+    JSON.stringify({
+      success: true,
+      data: {
+        paths: withInProgress(fallbackObjects),
+        // 'active' when a study already under way leads the list, so the client
+        // can tell a resumption from a fresh suggestion.
+        reason: inProgressFirst.length > 0 ? 'active' : 'featured',
+      },
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
