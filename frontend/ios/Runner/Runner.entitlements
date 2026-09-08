@@ -11,6 +11,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:app.disciplefy.in</string>
+		<string>applinks:go.disciplefy.in</string>
 		<string>applinks:wzdcwxvyjuxjgzpnukvm.supabase.co</string>
 	</array>
 </dict>

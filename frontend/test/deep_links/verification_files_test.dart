@@ -101,4 +101,19 @@ void main() {
 
     expect(components, equals(declared));
   });
+
+  test('both platforms claim the share host, not just the app host', () {
+    // Shared links point at go.disciplefy.in. Verifying that domain in Play
+    // does nothing on its own — the app has to declare it, or the link keeps
+    // opening the browser landing page.
+    final manifest =
+        File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    final entitlements =
+        File('ios/Runner/Runner.entitlements').readAsStringSync();
+
+    expect(manifest.contains('android:host="go.disciplefy.in"'), true,
+        reason: 'without an intent filter Android never opens a shared link');
+    expect(entitlements.contains('applinks:go.disciplefy.in'), true,
+        reason: 'without the entitlement iOS never opens a shared link');
+  });
 }

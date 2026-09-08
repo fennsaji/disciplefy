@@ -77,6 +77,24 @@
                       android:pathPrefix="/learning-path" />
             </intent-filter>
 
+            <!-- App Links for the share host. Every shared post and invite
+                 points at go.disciplefy.in, so without this the link opens the
+                 browser landing page and only reaches the app through its
+                 intent:// button. The landing page still serves anyone without
+                 the app installed. Paths mirror the app.disciplefy.in filter
+                 above and the components list in the AASA files. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                      android:host="go.disciplefy.in"
+                      android:pathPrefix="/fellowship" />
+                <data android:scheme="https"
+                      android:host="go.disciplefy.in"
+                      android:pathPrefix="/learning-path" />
+            </intent-filter>
+
             <!-- Custom scheme for OAuth redirects (fallback) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
