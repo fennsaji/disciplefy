@@ -994,7 +994,15 @@ async function handleGetRecommendedPaths(
 
           if (pathObjects.length > 0) {
             return new Response(
-              JSON.stringify({ success: true, data: { paths: withInProgress(pathObjects), reason: 'personalized' } }),
+              JSON.stringify({
+                success: true,
+                data: {
+                  paths: withInProgress(pathObjects),
+                  // Same rule as the featured branch: say 'active' when a study
+                  // already under way leads, whatever filled the rest.
+                  reason: inProgressFirst.length > 0 ? 'active' : 'personalized',
+                },
+              }),
               { status: 200, headers: { 'Content-Type': 'application/json' } }
             );
           }
