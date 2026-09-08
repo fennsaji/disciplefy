@@ -214,14 +214,14 @@ jobs:
           rm -rf vercel-deploy
           mkdir -p vercel-deploy/frontend
           
-          # Copy all build files to match Vercel's expected "frontend" root directory
-          cp -r build/web/* vercel-deploy/frontend/
+          # Copy the whole build, dotfiles included — `build/web/*` skips
+          # dot-directories, which is how .well-known went missing in production.
+          cp -a build/web/. vercel-deploy/frontend/
 
-          # Create .well-known/assetlinks.json for Android App Links
-          mkdir -p vercel-deploy/frontend/.well-known
-          cat > vercel-deploy/frontend/.well-known/assetlinks.json << 'ASSETLINKS'
-          [{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.disciplefy.bible_study","sha256_cert_fingerprints":["C0:55:BD:BE:B3:3E:8E:47:17:50:97:C7:88:60:88:DA:CA:11:86:0A:3D:8C:F8:D3:DE:FE:C2:53:E0:3D:2D:BE"]}}]
-          ASSETLINKS
+          # Verification files ship from web/.well-known/ in the repo, never
+          # inlined here: a hardcoded fingerprint is one nobody updates.
+          echo "🔎 Deep-link verification files:"
+          ls -la vercel-deploy/frontend/.well-known/ || true
 
           # Create Vercel configuration for development (static deployment only)
           cat > vercel-deploy/frontend/vercel.json << EOF

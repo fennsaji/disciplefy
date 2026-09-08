@@ -189,14 +189,28 @@ jobs:
           rm -rf vercel-deploy
           mkdir -p vercel-deploy
           
-          # Copy all build files to deployment root directory
-          cp -r build/web/* vercel-deploy/
+          # Copy the whole build, dotfiles included. `build/web/*` skips
+          # dot-directories, so .well-known never reached production: the AASA
+          # file was missing entirely (iOS got index.html from the SPA rewrite
+          # and silently disabled Universal Links) and assetlinks.json was
+          # whatever this workflow hardcoded.
+          cp -a build/web/. vercel-deploy/
 
-          # Create .well-known/assetlinks.json for Android App Links
-          mkdir -p vercel-deploy/.well-known
-          cat > vercel-deploy/.well-known/assetlinks.json << 'ASSETLINKS'
-          [{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.disciplefy.bible_study","sha256_cert_fingerprints":["C0:55:BD:BE:B3:3E:8E:47:17:50:97:C7:88:60:88:DA:CA:11:86:0A:3D:8C:F8:D3:DE:FE:C2:53:E0:3D:2D:BE"]}}]
-          ASSETLINKS
+          # The verification files ship from web/.well-known/ in the repo —
+          # never inlined here. A fingerprint pasted into a workflow is a
+          # fingerprint nobody updates: production served a certificate that had
+          # been out of the repo for a week, so Android App Links never verified.
+          echo "🔎 Deep-link verification files:"
+          ls -la vercel-deploy/.well-known/
+          for f in assetlinks.json apple-app-site-association; do
+            if [ ! -s "vercel-deploy/.well-known/$f" ]; then
+              echo "::error::vercel-deploy/.well-known/$f is missing — deep links would break silently."
+              exit 1
+            fi
+            python3 -c "import json,sys; json.load(open('vercel-deploy/.well-known/$f'))" \
+              || { echo "::error::.well-known/$f is not valid JSON"; exit 1; }
+          done
+          echo "✅ assetlinks.json + apple-app-site-association present and valid JSON"
 
           # Create Vercel configuration for production (static deployment only)
           cat > vercel-deploy/vercel.json << EOF
@@ -227,6 +241,24 @@ jobs:
                   {
                     "key": "Cache-Control",
                     "value": "public, max-age=31536000, immutable"
+                  }
+                ]
+              },
+              {
+                "source": "/.well-known/apple-app-site-association",
+                "headers": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ]
+              },
+              {
+                "source": "/.well-known/assetlinks.json",
+                "headers": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
                   }
                 ]
               }
