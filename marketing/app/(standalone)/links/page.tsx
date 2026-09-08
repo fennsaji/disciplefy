@@ -23,6 +23,7 @@ const SOCIAL_ROWS: Array<(typeof SOCIAL)[keyof typeof SOCIAL] & { chipClass: str
   { ...SOCIAL.instagram, chipClass: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5] text-white" },
   { ...SOCIAL.youtube, chipClass: "bg-[#FF0000] text-white" },
   { ...SOCIAL.whatsapp, chipClass: "bg-[#25D366] text-white", displayLabel: "WhatsApp Community" },
+  { ...SOCIAL.telegram, chipClass: "bg-[#229ED9] text-white", displayLabel: "Telegram Channel" },
   { ...SOCIAL.facebook, chipClass: "bg-[#1877F2] text-white" },
 ];
 
