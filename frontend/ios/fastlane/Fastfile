@@ -183,24 +183,66 @@ platform :ios do
     return found if found
 
     # Fall back to a search of the SPM checkouts, in case the layout shifts again.
-    Dir.glob("../build/ios/SourcePackages/**/Crashlytics/upload-symbols").first
+    globbed = Dir.glob("../build/ios/SourcePackages/**/Crashlytics/upload-symbols").first
+    return globbed if globbed
+
+    # Last resort: gym may have resolved packages into DerivedData rather than
+    # the pinned path. Missing this is how four shipped builds ended up with no
+    # symbols at all.
+    Dir.glob(File.expand_path(
+      "~/Library/Developer/Xcode/DerivedData/**/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"
+    )).first
+  end
+
+  # Every dSYM worth uploading for this build.
+  #
+  # gym's DSYM_OUTPUT_PATH is one zip and is not always set; the archive always
+  # has the real thing. Both are checked because a build that uploads no symbols
+  # still ships happily, and the gap only surfaces weeks later as unreadable
+  # crashes in the Crashlytics console.
+  def crashlytics_dsym_paths
+    paths = []
+
+    zipped = lane_context[SharedValues::DSYM_OUTPUT_PATH]
+    paths << zipped if zipped && File.exist?(zipped)
+
+    archive = lane_context[SharedValues::XCODEBUILD_ARCHIVE]
+    if archive && Dir.exist?(File.join(archive, "dSYMs"))
+      paths.concat(Dir.glob(File.join(archive, "dSYMs", "*.dSYM")))
+    end
+
+    paths.uniq
+  end
+
+  # Marker the CI job reads. A skipped upload must not fail the build — the app
+  # is already signed and shippable by this point — but it must not pass in
+  # silence either, which is exactly how 1.0.3 through 1.0.5 shipped unreadable.
+  SYMBOL_UPLOAD_MARKER = "../build/ios/crashlytics-symbols.status".freeze
+
+  def record_symbol_status(status)
+    File.write(File.expand_path(SYMBOL_UPLOAD_MARKER, __dir__), status)
+  rescue StandardError => e
+    UI.error("Could not write the symbol-upload marker: #{e.message}")
   end
 
   def upload_crashlytics_symbols
-    dsym = lane_context[SharedValues::DSYM_OUTPUT_PATH]
-    unless dsym && File.exist?(dsym)
-      UI.error("No dSYM produced by gym — Crashlytics upload skipped. Run `fastlane refresh_dsyms` afterwards.")
+    dsyms = crashlytics_dsym_paths
+    if dsyms.empty?
+      UI.error("No dSYM found in gym output or the archive — Crashlytics upload skipped. Run `fastlane refresh_dsyms` afterwards.")
+      record_symbol_status("skipped: no dSYM produced")
       return
     end
 
     binary = crashlytics_upload_symbols_binary
     unless binary
-      UI.error("upload-symbols not found (checked SPM and Pods) — Crashlytics upload skipped. Run `fastlane refresh_dsyms` afterwards.")
+      UI.error("upload-symbols not found (checked SPM, Pods and DerivedData) — Crashlytics upload skipped. Run `fastlane refresh_dsyms` afterwards.")
+      record_symbol_status("skipped: upload-symbols binary not found")
       return
     end
 
     UI.message("Using Crashlytics upload-symbols at #{binary}")
-    begin
+    failures = []
+    dsyms.each do |dsym|
       upload_symbols_to_crashlytics(
         dsym_path: dsym,
         gsp_path: "Runner/GoogleService-Info.plist",
@@ -208,8 +250,16 @@ platform :ios do
       )
     rescue StandardError => e
       # Crash symbolication is valuable but not worth failing a shippable build —
-      # surface loudly instead so CI logs/annotations catch it (was UI.important, silent).
-      UI.error("Crashlytics symbol upload failed (continuing): #{e.message}. Run `fastlane refresh_dsyms` afterwards.")
+      # surface loudly instead, and let the CI guard turn it into a red job.
+      UI.error("Crashlytics symbol upload failed for #{File.basename(dsym)}: #{e.message}")
+      failures << File.basename(dsym)
+    end
+
+    if failures.empty?
+      UI.success("Uploaded #{dsyms.count} dSYM(s) to Crashlytics")
+      record_symbol_status("ok: uploaded #{dsyms.count} dSYM(s)")
+    else
+      record_symbol_status("failed: #{failures.join(', ')}")
     end
   end
 end
