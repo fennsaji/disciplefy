@@ -12,6 +12,7 @@ import '../../../../core/config/app_config.dart';
 import 'auth_storage_service.dart';
 import 'oauth_service.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/session_refresh.dart';
 
 /// Core authentication service that orchestrates auth operations
 /// Handles Supabase integration, anonymous sessions, and user state management
@@ -122,24 +123,37 @@ class AuthenticationService {
   /// SECURITY FIX: Refresh the current authentication token
   /// Returns true if refresh succeeded, false otherwise
   /// Automatically updates stored session data with new expiration
-  Future<bool> refreshToken() async {
+  Future<bool> refreshToken() async =>
+      await refreshTokenOutcome() == SessionRefreshOutcome.refreshed;
+
+  /// Refreshes the session and reports what actually happened.
+  ///
+  /// [refreshToken]'s bool cannot distinguish "Supabase refused the token"
+  /// from "we never reached Supabase", and callers that log the user out on
+  /// false were signing out valid users on a network blip.
+  Future<SessionRefreshOutcome> refreshTokenOutcome() async {
     try {
       Logger.debug('🔐 [TOKEN REFRESH] 🔄 Starting token refresh...');
 
       final session = _supabase.auth.currentSession;
       if (session == null) {
+        // On a cold start this is restoration still running, not a signed-out
+        // user, so it must not be reported as a refusal.
         Logger.error('🔐 [TOKEN REFRESH] ❌ No active session to refresh');
-        return false;
+        return SessionRefreshOutcome.inconclusive;
       }
 
-      // Refresh the session using Supabase
-      final response = await _supabase.auth.refreshSession();
+      // Bounded so an offline refresh fails fast instead of hanging the
+      // caller on the socket timeout.
+      final response = await _supabase.auth
+          .refreshSession()
+          .timeout(const Duration(seconds: 5));
       final newSession = response.session;
 
       if (newSession == null) {
         Logger.error(
             '🔐 [TOKEN REFRESH] ❌ Token refresh failed - no new session');
-        return false;
+        return SessionRefreshOutcome.rejected;
       }
 
       if (kDebugMode) {
@@ -182,10 +196,12 @@ class AuthenticationService {
         Logger.debug('🔐 [TOKEN REFRESH] ✅ Stored updated session data');
       }
 
-      return true;
+      return SessionRefreshOutcome.refreshed;
     } catch (e) {
-      Logger.error('🔐 [TOKEN REFRESH] ❌ Error during token refresh: $e');
-      return false;
+      final outcome = classifySessionRefreshError(e);
+      Logger.error(
+          '🔐 [TOKEN REFRESH] ❌ Error during token refresh (${outcome.name}): $e');
+      return outcome;
     }
   }
 
@@ -204,15 +220,24 @@ class AuthenticationService {
     Logger.warning(
         '🔐 [TOKEN VALIDATION] ⚠️ Token expiring soon, attempting refresh...');
 
-    final refreshed = await refreshToken();
-    if (refreshed) {
+    final outcome = await refreshTokenOutcome();
+    if (outcome == SessionRefreshOutcome.refreshed) {
       Logger.debug('🔐 [TOKEN VALIDATION] ✅ Token successfully refreshed');
       return true;
     }
 
-    // Refresh failed - user needs to re-authenticate
+    // Unreachable is not unauthenticated. The periodic validator forces a
+    // logout on false, so a timeout here would sign out a user whose session
+    // is fine — the next tick tries again.
+    if (outcome == SessionRefreshOutcome.inconclusive) {
+      Logger.warning(
+          '🔐 [TOKEN VALIDATION] ⚠️ Refresh could not complete — keeping the session');
+      return true;
+    }
+
+    // Supabase refused the refresh token - user needs to re-authenticate
     Logger.error(
-        '🔐 [TOKEN VALIDATION] ❌ Token refresh failed - re-authentication required');
+        '🔐 [TOKEN VALIDATION] ❌ Refresh token rejected - re-authentication required');
     return false;
   }
 

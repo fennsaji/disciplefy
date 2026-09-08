@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../config/app_config.dart';
 import '../error/exceptions.dart';
 import '../utils/logger.dart';
+import 'session_refresh.dart';
 
 /// Unified authentication helper for all API services
 /// Ensures consistent authentication across the application
@@ -17,7 +18,7 @@ class ApiAuthHelper {
 
   /// Completer to synchronize concurrent token refresh attempts
   /// Prevents race condition where multiple API calls trigger simultaneous refreshes
-  static Completer<bool>? _refreshCompleter;
+  static Completer<SessionRefreshOutcome>? _refreshCompleter;
 
   /// Get API headers with proper authentication
   /// Uses live Supabase session for authenticated users
@@ -207,12 +208,20 @@ class ApiAuthHelper {
         }
 
         // Proactively refresh session if expired or close to expiry
-        final refreshed = await _refreshSessionIfNeeded();
-        if (!refreshed) {
+        final outcome = await _refreshSessionIfNeeded();
+        if (outcome == SessionRefreshOutcome.rejected) {
           throw const TokenValidationException(
             message:
                 'Authentication session expired and could not be refreshed',
             code: 'SESSION_EXPIRED',
+          );
+        }
+        if (outcome == SessionRefreshOutcome.inconclusive) {
+          // Unreachable, not unauthenticated. Carries its own code so the HTTP
+          // layer fails the request instead of signing the user out.
+          throw const TokenValidationException(
+            message: 'Could not verify the session right now',
+            code: 'SESSION_UNVERIFIED',
           );
         }
 
@@ -232,7 +241,8 @@ class ApiAuthHelper {
 
         // If this is not the last attempt and the error is about session expiry,
         // it might be an OAuth timing issue - retry
-        if (attempt < maxRetries && e.code == 'SESSION_EXPIRED') {
+        if (attempt < maxRetries &&
+            (e.code == 'SESSION_EXPIRED' || e.code == 'SESSION_UNVERIFIED')) {
           Logger.error(
               '🔐 [TOKEN_VALIDATION] Session validation failed (attempt $attempt/$maxRetries), retrying...');
           await Future.delayed(retryDelay);
@@ -271,7 +281,7 @@ class ApiAuthHelper {
   ///
   /// RACE CONDITION FIX: Uses Completer to ensure only one refresh happens at a time
   /// If multiple API calls trigger refresh simultaneously, they all wait for the same refresh
-  static Future<bool> _refreshSessionIfNeeded() async {
+  static Future<SessionRefreshOutcome> _refreshSessionIfNeeded() async {
     // If refresh already in progress, wait for it to complete
     if (_refreshCompleter != null) {
       Logger.debug(
@@ -280,15 +290,18 @@ class ApiAuthHelper {
     }
 
     // Start new refresh operation
-    _refreshCompleter = Completer<bool>();
+    _refreshCompleter = Completer<SessionRefreshOutcome>();
 
     try {
       final session = Supabase.instance.client.auth.currentSession;
 
       if (session == null) {
+        // Nothing to refresh yet. On a cold start this is usually restoration
+        // still running, not a signed-out user, so it is inconclusive rather
+        // than a rejection.
         Logger.debug('🔐 [SESSION_REFRESH] No session to refresh');
-        _refreshCompleter!.complete(false);
-        return false;
+        _refreshCompleter!.complete(SessionRefreshOutcome.inconclusive);
+        return SessionRefreshOutcome.inconclusive;
       }
 
       // Check if token has expiry information
@@ -298,8 +311,8 @@ class ApiAuthHelper {
             '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp found - assuming session is valid');
         Logger.debug(
             '🔐 [SESSION_REFRESH] ℹ️  Session may be persistent or long-lived');
-        _refreshCompleter!.complete(true);
-        return true;
+        _refreshCompleter!.complete(SessionRefreshOutcome.refreshed);
+        return SessionRefreshOutcome.refreshed;
       }
 
       // Check if token is expired or expires soon (within 5 minutes)
@@ -311,15 +324,19 @@ class ApiAuthHelper {
       if (expiryTime.isAfter(expiresWithin5Min)) {
         Logger.debug(
             '🔐 [SESSION_REFRESH] Token is still valid (expires: $expiryTime) - no refresh needed');
-        _refreshCompleter!.complete(true);
-        return true;
+        _refreshCompleter!.complete(SessionRefreshOutcome.refreshed);
+        return SessionRefreshOutcome.refreshed;
       }
 
       Logger.debug(
           '🔐 [SESSION_REFRESH] Token expired or expires soon (expires: $expiryTime) - refreshing...');
 
-      // Attempt to refresh the session
-      final response = await Supabase.instance.client.auth.refreshSession();
+      // Bounded: an offline refresh otherwise hangs on the socket timeout, and
+      // with the retry loop above that left the app sitting on the splash
+      // screen for ~40s before it gave up.
+      final response = await Supabase.instance.client.auth
+          .refreshSession()
+          .timeout(const Duration(seconds: 5));
 
       if (response.session != null) {
         // Verify the refreshed token is actually valid and not expired
@@ -333,8 +350,8 @@ class ApiAuthHelper {
                 '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
             Logger.debug(
                 '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
-            _refreshCompleter!.complete(false);
-            return false;
+            _refreshCompleter!.complete(SessionRefreshOutcome.rejected);
+            return SessionRefreshOutcome.rejected;
           }
 
           Logger.debug('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
@@ -345,17 +362,23 @@ class ApiAuthHelper {
               '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp on refreshed session - assumed valid');
         }
 
-        _refreshCompleter!.complete(true);
-        return true;
+        _refreshCompleter!.complete(SessionRefreshOutcome.refreshed);
+        return SessionRefreshOutcome.refreshed;
       } else {
         Logger.error('🔐 [SESSION_REFRESH] ❌ Session refresh returned null');
-        _refreshCompleter!.complete(false);
-        return false;
+        _refreshCompleter!.complete(SessionRefreshOutcome.rejected);
+        return SessionRefreshOutcome.rejected;
       }
     } catch (e) {
-      Logger.error('🔐 [SESSION_REFRESH] ❌ Session refresh error: $e');
-      _refreshCompleter!.complete(false);
-      return false;
+      // A thrown error is only a rejection when Supabase answered. A timeout or
+      // a dead socket must not cost the user their session — that is what
+      // logged people out after a force close, when the app fired its first
+      // request before the radio had reconnected.
+      final outcome = classifySessionRefreshError(e);
+      Logger.error(
+          '🔐 [SESSION_REFRESH] ❌ Session refresh error (${outcome.name}): $e');
+      _refreshCompleter!.complete(outcome);
+      return outcome;
     } finally {
       // Reset completer for next refresh cycle
       _refreshCompleter = null;
