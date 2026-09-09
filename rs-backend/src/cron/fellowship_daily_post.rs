@@ -146,6 +146,7 @@ async fn post_for_fellowship(
         http,
         TeaserRequest {
             fellowship_id: f.id,
+            topic_id: plan.lesson.topic_id,
             topic_title: l.title,
             path_title: l.path_title,
             language: &f.language,

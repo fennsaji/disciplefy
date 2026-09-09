@@ -29,12 +29,32 @@ struct TeaserResponse {
 
 pub struct TeaserRequest<'a> {
     pub fellowship_id: Uuid,
+    /// Catalogue topic id. The teaser cache keys on it, so every surface that
+    /// teases the same lesson (fellowship posts, the Telegram channel) shares
+    /// one wording per language instead of paying for its own.
+    pub topic_id: Uuid,
     pub topic_title: &'a str,
     pub path_title: &'a str,
     pub language: &'a str,
     pub summary: &'a str,
     pub verse: Option<&'a str>,
     pub question: Option<&'a str>,
+}
+
+/// JSON body for `fellowship-posts/daily-teaser`. `topic_id` is what the edge
+/// function keys its cache on; without it the teaser is keyed on a hash of the
+/// localized titles and never matches the one the Telegram job generated.
+fn request_body(req: &TeaserRequest<'_>) -> serde_json::Value {
+    serde_json::json!({
+        "fellowship_id": req.fellowship_id,
+        "topic_id": req.topic_id,
+        "topic_title": req.topic_title,
+        "path_title": req.path_title,
+        "language": req.language,
+        "summary": req.summary,
+        "verse": req.verse,
+        "question": req.question,
+    })
 }
 
 /// Fetch a daily teaser, or `None` if it can't be produced. Never fails the caller.
@@ -47,15 +67,7 @@ pub async fn fetch_daily_teaser(
         "{}/functions/v1/fellowship-posts/daily-teaser",
         config.supabase_url
     );
-    let body = serde_json::json!({
-        "fellowship_id": req.fellowship_id,
-        "topic_title": req.topic_title,
-        "path_title": req.path_title,
-        "language": req.language,
-        "summary": req.summary,
-        "verse": req.verse,
-        "question": req.question,
-    });
+    let body = request_body(&req);
 
     let resp = match http
         .post(&url)
@@ -104,4 +116,28 @@ pub async fn fetch_daily_teaser(
     }
 
     Some(Teaser { hook, body })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_body_carries_topic_id_for_cache_key() {
+        let topic_id = Uuid::parse_str("111e8400-e29b-41d4-a716-446655440001").unwrap();
+        let body = request_body(&TeaserRequest {
+            fellowship_id: Uuid::nil(),
+            topic_id,
+            topic_title: "यीशु मसीह कौन हैं?",
+            path_title: "नए विश्वासी की मूल बातें",
+            language: "hi",
+            summary: "s",
+            verse: None,
+            question: Some("q"),
+        });
+        assert_eq!(body["topic_id"], topic_id.to_string());
+        assert_eq!(body["language"], "hi");
+        assert_eq!(body["question"], "q");
+        assert!(body["verse"].is_null());
+    }
 }
