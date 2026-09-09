@@ -712,7 +712,11 @@ async function handleStudyGenerateV2(
     type: input_type,
     value: input_value,
     language: language,
-    study_mode: study_mode
+    study_mode: study_mode,
+    // Catalogue lesson, when the client sent one. The cache prefers it over the
+    // title hash so a lesson opened under a Hindi title still finds the guide
+    // the blog generator wrote for it.
+    topic_id: topic_id
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)

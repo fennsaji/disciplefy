@@ -39,6 +39,15 @@ export interface StudyGuideInput {
   readonly value: string
   readonly language: string
   readonly study_mode: StudyMode
+  /**
+   * Catalogue topic id, when the study is a learning-path topic.
+   *
+   * The cache keys on this ahead of the title hash: the app sends the English
+   * title with a language code while the blog generator sends the translated
+   * one, so their hashes never match and the same Hindi or Malayalam guide is
+   * generated twice. Free-text studies carry no topic id and use the hash.
+   */
+  readonly topic_id?: string
 }
 
 /**
@@ -158,6 +167,9 @@ export class StudyGuideRepository {
         input_value_hash: inputHash,
         language: input.language,
         study_mode: input.study_mode, // Include study_mode for mode-specific caching
+        // Catalogue topic, when this study is a learning-path lesson. Later
+        // lookups match on this, whatever title the caller used.
+        topic_id: input.topic_id ?? null,
         summary: content.summary,
         interpretation: content.interpretation,
         context: content.context,
@@ -190,19 +202,12 @@ export class StudyGuideRepository {
     // If conflict (content already exists), SELECT the existing record
     // This preserves the original creator
     if (insertError && insertError.code === '23505') { // Unique constraint violation
-      const { data: existingContent, error: selectError } = await this.supabase
-        .from('study_guides')
-        .select('*')
-        .eq('input_type', input.type)
-        .eq('input_value_hash', inputHash)
-        .eq('language', input.language)
-        .eq('study_mode', input.study_mode) // Include study_mode for mode-specific caching
-        .single()
+      const existingContent = await this.findCachedRow(input)
 
-      if (selectError || !existingContent) {
+      if (!existingContent) {
         throw new AppError(
           'CACHE_CORRUPTION',
-          `Content conflict detected but unable to retrieve: ${selectError?.message}`,
+          'Content conflict detected but the existing row could not be retrieved',
           500
         )
       }
@@ -578,25 +583,54 @@ export class StudyGuideRepository {
   }
 
   /**
-   * Check if content already exists for caching
+   * The cached row for [input], by catalogue topic first and title hash second.
+   *
+   * A catalogue topic is the same lesson whatever title it arrived under, so a
+   * guide the blog generator wrote in Hindi is the guide the app should serve.
+   * Free-text studies carry no topic id and resolve on the hash alone.
    */
-  async findExistingContent(
-    input: StudyGuideInput,
-    userContext: UserContext
-  ): Promise<StudyGuideResponse | null> {
-    const inputHash = await this.generateInputHash(input)
+  // deno-lint-ignore no-explicit-any -- row shape mirrors findOrCreateCachedContent
+  private async findCachedRow(input: StudyGuideInput): Promise<any | null> {
+    if (input.topic_id) {
+      const { data: byTopic } = await this.supabase
+        .from('study_guides')
+        .select('*')
+        .eq('topic_id', input.topic_id)
+        .eq('language', input.language)
+        .eq('study_mode', input.study_mode)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
 
-    // Check if content exists in cache (including study_mode for mode-specific caching)
-    const { data: content, error } = await this.supabase
+      if (byTopic) {
+        console.log(`[StudyGuideRepository] Cache hit by topic_id ${input.topic_id} (${input.language}/${input.study_mode})`)
+        return byTopic
+      }
+    }
+
+    const inputHash = await this.generateInputHash(input)
+    const { data: byHash } = await this.supabase
       .from('study_guides')
       .select('*')
       .eq('input_type', input.type)
       .eq('input_value_hash', inputHash)
       .eq('language', input.language)
       .eq('study_mode', input.study_mode)
-      .single()
+      .maybeSingle()
 
-    if (error || !content) {
+    return byHash ?? null
+  }
+
+  /**
+   * Check if content already exists for caching
+   */
+  async findExistingContent(
+    input: StudyGuideInput,
+    userContext: UserContext
+  ): Promise<StudyGuideResponse | null> {
+    const content = await this.findCachedRow(input)
+
+    if (!content) {
       return null
     }
 

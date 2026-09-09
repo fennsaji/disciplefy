@@ -94,6 +94,7 @@ async fn generate_for_locale(
         Some(&topic.disciple_level),
         locale,
         mode,
+        Some(topic.topic_id),
     )
     .await?;
 
@@ -119,7 +120,9 @@ async fn generate_for_locale(
         source_type: Some("learning_path_topic".to_string()),
         source_topic_id: Some(topic.topic_id),
         source_learning_path_id: Some(topic.path_id),
-        source_guide_id: None,
+        // The guide this post was written from. Telegram joins on it for the
+        // lesson's verse and question, and it ties the post to the cached guide.
+        source_guide_id: guide.study_guide_id,
         scheduled_for: None,
     };
 

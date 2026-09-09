@@ -97,6 +97,10 @@ pub async fn generate_study_guide(
     disciple_level: Option<&str>,
     language: &str,
     mode: &str,
+    // Catalogue topic, when this study is a learning-path lesson. The cache
+    // keys on it ahead of the title, so a guide made here under a translated
+    // title is the guide the app serves for the same lesson.
+    topic_id: Option<Uuid>,
 ) -> Result<StudyGuideResult, AppError> {
     // Truncate long fields to prevent URL overflow — same limits as the mobile app.
     // (Non-Latin scripts URL-encode at up to 9 bytes/char, easily blowing past 8 KB limits.)
@@ -126,6 +130,9 @@ pub async fn generate_study_guide(
     if let Some(level) = disciple_level {
         url.push_str(&format!("&disciple_level={}", urlencoding::encode(level)));
     }
+    if let Some(id) = topic_id {
+        url.push_str(&format!("&topic_id={id}"));
+    }
 
     tracing::info!(
         input_type = %input_type,
@@ -136,6 +143,7 @@ pub async fn generate_study_guide(
         path_title = %path_title.as_deref().unwrap_or("(none)"),
         path_description = %path_description.as_deref().unwrap_or("(none)"),
         disciple_level = %disciple_level.unwrap_or("(none)"),
+        topic_id = %topic_id.map(|i| i.to_string()).unwrap_or_else(|| "(none)".into()),
         "study-generate-v2 params"
     );
 

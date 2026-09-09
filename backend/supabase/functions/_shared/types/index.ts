@@ -70,6 +70,16 @@ export interface StudyGuideInput {
   readonly value: string
   readonly language: string
   readonly study_mode: StudyMode
+  /**
+   * Catalogue topic id, when the study is a learning-path topic.
+   *
+   * The cache keys on this in preference to a hash of the title: the app sends
+   * the English title with a language code while the blog generator sends the
+   * translated one, so title hashes never match across the two and the same
+   * Hindi or Malayalam guide gets generated twice. Free-text studies have no
+   * topic id and stay on the hash.
+   */
+  readonly topic_id?: string
 }
 
 /**
