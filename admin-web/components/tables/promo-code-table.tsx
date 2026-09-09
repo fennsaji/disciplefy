@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import type { PromoCodeCampaign } from '@/types/admin'
 import { ManageIcon, ToggleIcon, actionButtonStyles } from '@/components/ui/action-icons'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 interface PromoCodeTableProps {
   campaigns: PromoCodeCampaign[]
@@ -66,7 +67,7 @@ export function PromoCodeTable({ campaigns, onToggleStatus, onViewDetails }: Pro
                   <span className="font-medium text-gray-900 dark:text-gray-100">
                     {campaign.discount_type === 'percentage'
                       ? `${campaign.discount_value}%`
-                      : `₹${campaign.discount_value}`}
+                      : formatInrAsUsd(campaign.discount_value)}
                   </span>
                   <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">off</span>
                 </td>

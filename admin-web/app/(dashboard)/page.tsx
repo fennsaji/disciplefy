@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 interface DashboardStats {
   llmCost: {
@@ -316,7 +317,7 @@ function TokenManagementOverview() {
         <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
           <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Revenue</p>
           <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            ₹{formatNumber(tokenStats.total_revenue_this_month)}
+            {formatInrAsUsd(tokenStats.total_revenue_this_month)}
           </p>
         </div>
       </div>

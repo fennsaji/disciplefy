@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import type { UserWithSubscription, SubscriptionTier } from '@/types/admin'
 import { ManageIcon, EditIcon, actionButtonStyles } from '@/components/ui/action-icons'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 interface SubscriptionTableProps {
   users: UserWithSubscription[]
@@ -116,7 +117,7 @@ export function SubscriptionTable({ users }: SubscriptionTableProps) {
                   {activeSub?.subscription_plans ? (
                     <div className="flex flex-col">
                       <span className="font-medium text-gray-900 dark:text-gray-100">
-                        ₹{activeSub.subscription_plans.price_inr}
+                        {formatInrAsUsd(activeSub.subscription_plans.price_inr)}
                       </span>
                     </div>
                   ) : (

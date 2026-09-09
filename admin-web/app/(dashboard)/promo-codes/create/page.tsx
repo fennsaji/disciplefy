@@ -195,7 +195,7 @@ export default function CreatePromoCodePage() {
                       disabled={isLoading}
                     >
                       <option value="percentage">Percentage (%)</option>
-                      <option value="fixed_amount">Fixed Amount (₹)</option>
+                      <option value="fixed_amount">Fixed Amount (₹, charged in rupees)</option>
                     </select>
                   </div>
 

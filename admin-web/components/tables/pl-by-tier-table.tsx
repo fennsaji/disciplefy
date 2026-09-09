@@ -1,6 +1,7 @@
 'use client'
 
 import type { PlByTierItem } from '@/types/admin'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 interface PlByTierTableProps {
   data: PlByTierItem[]
@@ -16,8 +17,9 @@ const PLAN_LABELS: Record<string, string> = {
   total: 'Total',
 }
 
-function formatInr(value: number | null): string {
-  return `₹${(value ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+/** Figures arrive in rupees; the dashboard reads in dollars throughout. */
+function money(value: number | null, rate: number): string {
+  return formatInrAsUsd(value, rate)
 }
 
 function rowClass(item: PlByTierItem): string {
@@ -40,9 +42,9 @@ export function PlByTierTable({ data, exchangeRateUsed, exchangeRateIsLive }: Pl
             <tr>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 sticky left-0 z-20 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.06)] dark:bg-gray-800">Plan</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Revenue (₹)</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">LLM Cost (₹)</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Gross Profit (₹)</th>
+              <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</th>
+              <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">LLM Cost</th>
+              <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Gross Profit</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Margin %</th>
             </tr>
           </thead>
@@ -59,15 +61,15 @@ export function PlByTierTable({ data, exchangeRateUsed, exchangeRateIsLive }: Pl
                   {(item.active_users ?? 0).toLocaleString()}
                 </td>
                 <td className="px-6 py-3 text-right text-sm text-gray-900 dark:text-gray-100">
-                  {formatInr(item.revenue_inr)}
+                  {money(item.revenue_inr, exchangeRateUsed)}
                 </td>
                 <td className="px-6 py-3 text-right text-sm text-gray-900 dark:text-gray-100">
-                  {formatInr(item.llm_cost_inr)}
+                  {money(item.llm_cost_inr, exchangeRateUsed)}
                 </td>
                 <td className={`px-6 py-3 text-right text-sm font-medium ${
                   (item.gross_profit_inr ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}>
-                  {formatInr(item.gross_profit_inr)}
+                  {money(item.gross_profit_inr, exchangeRateUsed)}
                 </td>
                 <td className="px-6 py-3 text-right text-sm text-gray-600 dark:text-gray-400">
                   {item.margin_pct != null ? `${item.margin_pct.toFixed(1)}%` : '—'}
@@ -79,7 +81,7 @@ export function PlByTierTable({ data, exchangeRateUsed, exchangeRateIsLive }: Pl
       </div>
       <div className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
         {exchangeRateIsLive
-          ? `Exchange rate: $1 = ₹${exchangeRateUsed.toFixed(2)} (live)`
+          ? `Converted at $1 = ₹${exchangeRateUsed.toFixed(2)} (live)`
           : `Exchange rate: $1 = ₹${exchangeRateUsed.toFixed(2)} (fallback — live rate unavailable)`}
       </div>
     </div>

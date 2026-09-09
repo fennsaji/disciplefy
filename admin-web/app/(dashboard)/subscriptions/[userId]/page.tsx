@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import type { PaymentHistoryResponse } from '@/types/admin'
 import { LoadingState } from '@/components/ui/loading-spinner'
 import { ErrorState } from '@/components/ui/empty-state'
+import { formatInrAsUsd, formatInrDetail } from '@/lib/utils/currency'
 
 export default function UserDetailsPage() {
   const params = useParams()
@@ -230,7 +231,10 @@ export default function UserDetailsPage() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Price</p>
                   <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
-                    ₹{activeSubscription.subscription_plans.price_inr}
+                    {formatInrAsUsd(activeSubscription.subscription_plans.price_inr)}
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                      {formatInrDetail(activeSubscription.subscription_plans.price_inr)}
+                    </span>
                   </p>
                 </div>
               )}
