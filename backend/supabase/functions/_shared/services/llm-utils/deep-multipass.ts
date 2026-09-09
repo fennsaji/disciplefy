@@ -15,8 +15,7 @@ import { joinInterpretationParts } from './join-passes.ts'
 import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
   createSharedFoundation,
-  createVerseReferenceBlock,
-  getLanguageExamples
+  createVerseReferenceBlock
 } from './prompt-builder.ts'
 
 export type DeepPass = 'pass1' | 'pass2'
@@ -67,9 +66,7 @@ Focus: Greek/Hebrew word analysis + semantic ranges + theological significance.
 Target output: ~800-900 words for this pass.
 Tone: Scholarly precision, exegetically rich, doctrinally sound.`
 
-  const userMessage = `${taskDescription}
-
-${createVerseReferenceBlock(language)}
+  const passInstructions = `${createVerseReferenceBlock(language)}
 
 ---
 PASS 1: DEEP STUDY FOUNDATION (Summary + Context + Analysis)
@@ -164,17 +161,15 @@ Target: 235-300 words, 6-8 complete sentences with doctrinal precision.
 
 VERIFY: summary 130-160 words | context 50-70 words | passage reference ONLY (MANDATORY) | interpretationPart1: 3 paragraphs, 6-8 sentences each, 700-900 words | Includes Hebrew/Greek insights | Verse refs in ${languageConfig.name} | Total ~800-900 words. Generate FULL CONTENT - no placeholders. FIX any issues BEFORE output.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "summary": "[YOUR 130-160 WORD SUMMARY HERE - as specified above]",
-  "context": "[YOUR 50-70 WORD CONTEXT HERE - as specified above]",
-  "passage": "[Scripture reference ONLY - e.g., '${passageOutputExample}']",
-  "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 3 paragraphs]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = taskDescription
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -196,11 +191,7 @@ This is part 2 of a 2-part deep study generation. Focus on practical transformat
 Target output: ~700 words for this pass.
 Continue the scholarly tone with practical application.`
 
-  const userMessage = `---
-PASS 2: DEEP STUDY APPLICATION (Practical Transformation + Resources)
----
-
-CONTEXT FROM PASS 1:
+  const passInstructions = `CONTEXT FROM PASS 1:
 - Study Summary: ${pass1Result.summary.substring(0, 200)}...
 - You already wrote: Comprehensive exegetical analysis in Pass 1
 
@@ -258,17 +249,18 @@ VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 6]", "[VERSE 7]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 6]", "[QUESTION 7]", "[QUESTION 8]"],
-  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 6-8 sentences, 200-250 words, addressing God directly]"]
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 2: DEEP STUDY APPLICATION (Practical Transformation + Resources)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**

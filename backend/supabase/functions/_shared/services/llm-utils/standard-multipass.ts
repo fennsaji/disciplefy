@@ -14,8 +14,7 @@ import { joinInterpretationParts } from './join-passes.ts'
 import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
   createSharedFoundation,
-  createVerseReferenceBlock,
-  getLanguageExamples
+  createVerseReferenceBlock
 } from './prompt-builder.ts'
 
 export type StandardPass = 'pass1' | 'pass2'
@@ -52,9 +51,7 @@ This is part 1 of a multi-pass standard study generation. Focus on solid teachin
 Target output: ~700 words for this pass.
 Tone: Clear, accessible, biblically grounded, practical.`
 
-  const userMessage = `${taskDescription}
-
-${createVerseReferenceBlock(language)}
+  const passInstructions = `${createVerseReferenceBlock(language)}
 
 ---
 PASS 1: STANDARD STUDY FOUNDATION (Summary + Context + Teaching)
@@ -146,17 +143,15 @@ VERIFY: summary 80-100 words | context 40-60 words | passage reference ONLY (MAN
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "summary": "[YOUR 80-100 WORD SUMMARY HERE - as specified above]",
-  "context": "[YOUR 40-60 WORD CONTEXT HERE - as specified above]",
-  "passage": "[Scripture reference ONLY - e.g., 'Romans 8:1-39' in ${languageConfig.name}]",
-  "interpretationPart1": "[YOUR 500-650 WORD INTERPRETATION PART 1 HERE - 2 paragraphs]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = taskDescription
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -178,11 +173,7 @@ This is part 2 of a 2-part standard study generation. Focus on practical life ch
 Target output: ~500 words for this pass.
 Continue the clear, practical, biblically grounded tone.`
 
-  const userMessage = `---
-PASS 2: STANDARD STUDY APPLICATION (Life Application + Resources)
----
-
-CONTEXT FROM PASS 1:
+  const passInstructions = `CONTEXT FROM PASS 1:
 - Study Summary: ${pass1Result.summary.substring(0, 200)}...
 - You already wrote: Main teaching and key principles in Pass 1
 
@@ -240,17 +231,18 @@ VERIFY: interpretationPart2: 2 paragraphs, 5-7 sentences each, 350-450 words | p
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]"],
-  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 5-6 sentences, 80-100 words, addressing God directly]"]
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 2: STANDARD STUDY APPLICATION (Life Application + Resources)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**

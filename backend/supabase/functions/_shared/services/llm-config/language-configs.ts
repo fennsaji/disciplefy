@@ -60,7 +60,26 @@ const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
     maxTokens: 4000,
     temperature: 0.2,
     promptModifiers: {
-      languageInstruction: 'Output only in SIMPLE, everyday Malayalam that common people speak at home. Use CHRISTIAN terminology familiar to Kerala Protestant churches. Avoid complex literary Malayalam completely.',
+      // The vocabulary list is deliberate. A blind doctrinal review on 9 Sep 2026
+      // found even Sonnet rendering grace as അനുഗ്രഹം (blessing) inside the
+      // Ephesians 2:8 quotation, and reaching for Catholic-register words that
+      // Kerala Protestant readers do not use. It sits in the cached prefix, so
+      // it costs almost nothing after the first call of each session.
+      languageInstruction: `Output only in SIMPLE, everyday Malayalam that common people speak at home. Use CHRISTIAN terminology familiar to Kerala Protestant churches. Avoid complex literary Malayalam completely.
+
+REQUIRED MALAYALAM VOCABULARY (Kerala Protestant usage):
+- grace = കൃപ (NEVER അനുഗ്രഹം, which means blessing)
+- bore/carried (as in "bore our sins") = വഹിച്ചു (NEVER ഭരിച്ചു, which means ruled)
+- confess (Rom 10:9) = ഏറ്റുപറയുക (NEVER സ്വീകരിക്കുക)
+- apostles = അപ്പോസ്തലന്മാർ (NEVER പ്രേരിതന്മാർ)
+- epistles/letters = ലേഖനങ്ങൾ (NEVER പത്രങ്ങൾ)
+- the Lord's Prayer = കർത്തൃപ്രാർത്ഥന
+- Old/New Testament = പഴയ നിയമം / പുതിയ നിയമം
+
+BOOK NAMES (use exactly these): മത്തായി, മർക്കൊസ്, ലൂക്കോസ്, യോഹന്നാൻ, അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ, റോമർ, 1 കൊരിന്ത്യർ, 2 കൊരിന്ത്യർ, ഗലാത്യർ, എഫെസ്യർ, ഫിലിപ്പിയർ, കൊലൊസ്സ്യർ, എബ്രായർ, യാക്കോബ്, വെളിപ്പാട്.
+NEVER invent or transliterate a book name.
+
+Write theological terms in Malayalam, not transliterated English or Latin.`,
       complexityInstruction: 'Use 5th-6th grade level Malayalam - simple spoken words, not formal/literary language. Make it easy for anyone to understand.'
     },
     culturalContext: 'Kerala Christian context - use terms familiar to Protestant Christians in Kerala churches',

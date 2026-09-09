@@ -16,8 +16,7 @@ import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair
 import {
   createSharedFoundation,
   createVerseReferenceBlock,
-  getSermonHeadings,
-  getLanguageExamples
+  getSermonHeadings
 } from './prompt-builder.ts'
 
 export type SermonPass = 'pass1' | 'pass2' | 'pass3' | 'pass4'
@@ -56,9 +55,7 @@ This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
 Target output: ~1,800 words
 Tone: Theologically rich, pastorally wise, suitable for preacher preparation.`
 
-  const userMessage = `${taskDescription}
-
-${createVerseReferenceBlock(language)}
+  const passInstructions = `${createVerseReferenceBlock(language)}
 
 ---
 PASS 1/4: SERMON FOUNDATION (Summary + Context + Passage + Intro + Point 1)
@@ -173,17 +170,15 @@ FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "summary": "[YOUR 250-350 WORD SUMMARY HERE]",
-  "context": "[YOUR 50-100 WORD CONTEXT HERE]",
-  "passage": "[Scripture reference ONLY - e.g., 'Romans 8:1-39' in ${languageConfig.name}]",
-  "interpretationPart1": "[YOUR 1450-1750 WORD PREACHER-FACING EXPLANATION HERE - Introduction (conceptual hook, bridge, preview, transition) + Point 1 (core teaching, 2-3 verses, conceptual illustration, 3 applications, transition)]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = taskDescription
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -206,11 +201,7 @@ This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pas
 Target output: ~1,000-1,200 words
 Provide CORE content that preachers will expand during delivery.`
 
-  const userMessage = `---
-PASS 2/4: MAIN TEACHING POINT 2 (Point 2 Only)
----
-
-CONTEXT FROM PASS 1:
+  const passInstructions = `CONTEXT FROM PASS 1:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
 - You already wrote: Introduction + Point 1 in Pass 1
 
@@ -241,14 +232,18 @@ VERIFY: Point 2 complete with all components (Main Teaching, Scripture, Illustra
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart2": "[YOUR 1000-1200 WORD PREACHER-FACING EXPLANATION HERE - Point 2 (core teaching, 2-3 verses, conceptual illustration, 3 applications, transition)]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 2/4: MAIN TEACHING POINT 2 (Point 2 Only)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -272,11 +267,7 @@ This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pas
 Target output: ~700-900 words
 Provide CORE content that preachers will expand during delivery.`
 
-  const userMessage = `---
-PASS 3/4: FINAL TEACHING POINT (Point 3 Only)
----
-
-CONTEXT FROM PREVIOUS PASSES:
+  const passInstructions = `CONTEXT FROM PREVIOUS PASSES:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2)
 
@@ -305,14 +296,18 @@ VERIFY: Point 3 complete with all components (Main Teaching, Scripture, Illustra
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart3": "[YOUR 700-900 WORD PREACHER-FACING EXPLANATION HERE - Point 3 (core teaching, 2-3 verses, conceptual illustration, 2-3 applications, transition)]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 3/4: FINAL TEACHING POINT (Point 3 Only)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -335,11 +330,7 @@ This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home po
 Target output: ~1,100 words
 Provide CORE conclusion and altar call outline that preachers will expand.`
 
-  const userMessage = `---
-PASS 4/4: CONCLUSION + INVITATION + SUPPORTING MATERIALS
----
-
-CONTEXT FROM PREVIOUS PASSES:
+  const passInstructions = `CONTEXT FROM PREVIOUS PASSES:
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2) + Point 3 (Pass 3)
 - Sermon Summary: ${pass1Result.summary.substring(0, 200)}...
 
@@ -402,17 +393,18 @@ FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart4": "[YOUR 350-450 WORD CONCLUSION HERE - PREACHER-FACING OUTLINE]",
-  "prayerPoints": ["[YOUR 300-400 WORD ALTAR CALL HERE AS SINGLE STRING - CONCISE OUTLINE]"],
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]"]
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 4/4: CONCLUSION + INVITATION + SUPPORTING MATERIALS
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**

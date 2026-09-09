@@ -20,8 +20,7 @@ import { joinInterpretationParts } from './join-passes.ts'
 import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
   createSharedFoundation,
-  createVerseReferenceBlock,
-  getLanguageExamples
+  createVerseReferenceBlock
 } from './prompt-builder.ts'
 
 export type LectioPass = 'pass1' | 'pass2'
@@ -65,9 +64,7 @@ PROTESTANT DISTINCTIVES (MANDATORY):
 - Silence and stillness are valid postures for reflection, but never as emptying techniques or centering practices
 - Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text`
 
-  const userMessage = `${taskDescription}
-
-${createVerseReferenceBlock(language)}
+  const passInstructions = `${createVerseReferenceBlock(language)}
 
 ---
 PASS 1: MEDITATIVE READING FOUNDATION (Careful Reading + Biblical Reflection)
@@ -160,17 +157,15 @@ VERIFY: summary 150-200 words | context 40-60 words | passage reference ONLY (MA
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "summary": "[YOUR 150-200 WORD SUMMARY HERE - as specified above]",
-  "context": "[YOUR 40-60 WORD CONTEXT HERE - as specified above]",
-  "passage": "[Scripture reference ONLY - e.g., 'Psalm 23:1-6' in ${languageConfig.name}]",
-  "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 2 sections, each with bold header in ${languageConfig.name}]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = taskDescription
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -197,11 +192,7 @@ PROTESTANT DISTINCTIVES (MANDATORY):
 - Application must be specific, concrete, and measurable — not vague spiritual feelings
 - Commitment should be accountable: who, what, when, how — real-life obedience to God's Word`
 
-  const userMessage = `---
-PASS 2: MEDITATIVE READING RESPONSE (Prayer + Application & Commitment + Resources)
----
-
-CONTEXT FROM PASS 1:
+  const passInstructions = `CONTEXT FROM PASS 1:
 - Summary: ${pass1Result.summary.substring(0, 200)}...
 - You already wrote: Careful Reading (Observation, Understanding, Personalizing) and Biblical Reflection in Pass 1
 
@@ -280,17 +271,18 @@ VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 5
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart2": "[YOUR 500-650 WORD INTERPRETATION PART 2 HERE - 2 sections with bold headers in ${languageConfig.name}]",
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]"],
-  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 5-7 sentences, 150-200 words, grounded in the passage]"]
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 2: MEDITATIVE READING RESPONSE (Prayer + Application & Commitment + Resources)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
