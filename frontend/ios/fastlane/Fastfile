@@ -182,16 +182,24 @@ platform :ios do
     found = candidates.find { |path| File.exist?(path) }
     return found if found
 
-    # Fall back to a search of the SPM checkouts, in case the layout shifts again.
-    globbed = Dir.glob("../build/ios/SourcePackages/**/Crashlytics/upload-symbols").first
-    return globbed if globbed
+    # The exact layout has moved between Xcode, Flutter and SPM versions, and a
+    # miss here is silent — four shipped builds had no symbols before this was
+    # checked at all. So search the trees the binary can plausibly be in rather
+    # than guessing one more fixed path.
+    roots = [
+      "../build",                                    # flutter build ios output
+      "./build",                                     # gym's own derived data
+      "./Pods",                                      # CocoaPods
+      File.expand_path("~/Library/Developer/Xcode/DerivedData"),
+    ]
+    roots.each do |root|
+      next unless Dir.exist?(root)
+      hit = Dir.glob("#{root}/**/Crashlytics/upload-symbols").first
+      return hit if hit
+    end
 
-    # Last resort: gym may have resolved packages into DerivedData rather than
-    # the pinned path. Missing this is how four shipped builds ended up with no
-    # symbols at all.
-    Dir.glob(File.expand_path(
-      "~/Library/Developer/Xcode/DerivedData/**/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"
-    )).first
+    UI.error("upload-symbols not found. Searched: #{roots.join(', ')} (cwd #{Dir.pwd})")
+    nil
   end
 
   # Every dSYM worth uploading for this build.
@@ -217,10 +225,19 @@ platform :ios do
   # Marker the CI job reads. A skipped upload must not fail the build — the app
   # is already signed and shippable by this point — but it must not pass in
   # silence either, which is exactly how 1.0.3 through 1.0.5 shipped unreadable.
-  SYMBOL_UPLOAD_MARKER = "../build/ios/crashlytics-symbols.status".freeze
+  # Resolved from this file's directory (ios/fastlane), so it lands in
+  # frontend/build/ios — the path the workflow's verification step reads. The
+  # first version was one level short and wrote into ios/build/ios, which does
+  # not exist, so the marker never appeared and the job failed with "the upload
+  # step never ran" even when it had.
+  SYMBOL_UPLOAD_MARKER = "../../build/ios/crashlytics-symbols.status".freeze
 
   def record_symbol_status(status)
-    File.write(File.expand_path(SYMBOL_UPLOAD_MARKER, __dir__), status)
+    path = File.expand_path(SYMBOL_UPLOAD_MARKER, __dir__)
+    require "fileutils"
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, status)
+    UI.message("Recorded Crashlytics symbol status at #{path}: #{status}")
   rescue StandardError => e
     UI.error("Could not write the symbol-upload marker: #{e.message}")
   end
@@ -233,21 +250,20 @@ platform :ios do
       return
     end
 
+    # A nil binary is not the end: fastlane can locate the tool itself for a
+    # CocoaPods layout. Try that before giving up, and only record a skip when
+    # the upload genuinely cannot run.
     binary = crashlytics_upload_symbols_binary
-    unless binary
-      UI.error("upload-symbols not found (checked SPM, Pods and DerivedData) — Crashlytics upload skipped. Run `fastlane refresh_dsyms` afterwards.")
-      record_symbol_status("skipped: upload-symbols binary not found")
-      return
-    end
+    UI.message(binary ? "Using Crashlytics upload-symbols at #{binary}" : "Letting fastlane locate upload-symbols")
 
-    UI.message("Using Crashlytics upload-symbols at #{binary}")
     failures = []
     dsyms.each do |dsym|
-      upload_symbols_to_crashlytics(
+      options = {
         dsym_path: dsym,
         gsp_path: "Runner/GoogleService-Info.plist",
-        binary_path: binary
-      )
+      }
+      options[:binary_path] = binary if binary
+      upload_symbols_to_crashlytics(**options)
     rescue StandardError => e
       # Crash symbolication is valuable but not worth failing a shippable build —
       # surface loudly instead, and let the CI guard turn it into a red job.
