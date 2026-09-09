@@ -6,12 +6,14 @@
  * 2026), and Standard is free for its first year, so without a monthly ceiling
  * a few enthusiastic users can outspend everyone who pays.
  *
- * Two rules, both counted from usage_logs, which records a generation as
+ * Three rules, all counted from usage_logs, which records a generation as
  * `create` and a cache hit as `read`:
  *
  *   - a monthly cap on fresh studies, per plan
- *   - two sermons a day, because sermon is four Sonnet passes and lives on the
- *     plan whose tokens are unlimited
+ *   - a daily fair-use ceiling for Premium, whose tokens are unlimited and
+ *     which therefore has nothing else bounding a single day
+ *   - two sermons a day, because sermon is four Sonnet passes and lives on that
+ *     same plan
  *
  * Learning-path studies never count. They are served from the catalogue cache,
  * cost nothing to repeat, and are the part of the product that should stay open
@@ -28,7 +30,7 @@ const UNLIMITED = -1
 export interface FreshStudyLimitResult {
   readonly allowed: boolean
   /** Which ceiling was reached, when one was. */
-  readonly limit?: 'monthly_fresh_studies' | 'daily_sermons'
+  readonly limit?: 'monthly_fresh_studies' | 'daily_fresh_studies' | 'daily_sermons'
   readonly used?: number
   readonly cap?: number
 }
@@ -59,12 +61,22 @@ export async function checkFreshStudyLimits(
   const features = config.features as Record<string, unknown>
 
   const monthlyCap = asLimit(features.monthly_fresh_studies)
+  const dailyCap = asLimit(features.daily_fresh_studies)
   const sermonCap = asLimit(features.daily_sermons)
 
   if (studyMode === 'sermon' && sermonCap !== UNLIMITED) {
     const used = await countFresh(db, userId, startOfDay(), 'sermon')
     if (used >= sermonCap) {
       return { allowed: false, limit: 'daily_sermons', used, cap: sermonCap }
+    }
+  }
+
+  // Premium's fair-use ceiling. The other plans are bounded by daily tokens,
+  // so this is unlimited for them and the check costs nothing.
+  if (dailyCap !== UNLIMITED) {
+    const used = await countFresh(db, userId, startOfDay())
+    if (used >= dailyCap) {
+      return { allowed: false, limit: 'daily_fresh_studies', used, cap: dailyCap }
     }
   }
 
@@ -87,6 +99,9 @@ export async function checkFreshStudyLimits(
 export function limitMessage(result: FreshStudyLimitResult): string {
   if (result.limit === 'daily_sermons') {
     return "You have made today's sermon outlines. Please try again tomorrow."
+  }
+  if (result.limit === 'daily_fresh_studies') {
+    return "You have made today's new studies. All learning-path studies are still open, and your limit resets tomorrow."
   }
   return "You have used this month's new studies. All learning-path studies are still open. Upgrade for more."
 }

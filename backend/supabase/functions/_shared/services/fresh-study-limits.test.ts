@@ -19,6 +19,14 @@ Deno.test('the monthly message says the catalogue is still open', () => {
   )
 })
 
+Deno.test("Premium's daily ceiling points at tomorrow, and says the catalogue is open", () => {
+  const message = limitMessage({ allowed: false, limit: 'daily_fresh_studies', used: 10, cap: 10 })
+  assertEquals(
+    message,
+    "You have made today's new studies. All learning-path studies are still open, and your limit resets tomorrow.",
+  )
+})
+
 Deno.test('the sermon message points at tomorrow, not an upgrade', () => {
   const message = limitMessage({ allowed: false, limit: 'daily_sermons', used: 2, cap: 2 })
   assertEquals(message, "You have made today's sermon outlines. Please try again tomorrow.")

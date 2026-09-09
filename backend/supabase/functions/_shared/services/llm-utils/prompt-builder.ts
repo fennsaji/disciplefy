@@ -1084,62 +1084,52 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
 export function calculateOptimalTokens(params: LLMGenerationParams, _languageConfig: LanguageConfig): number {
   const { language, studyMode = 'standard' } = params
 
-  // Base token allocations for English (optimized for 0.70 words/token efficiency)
+  // This is a guard, not a budget. Billing is on tokens actually produced, so a
+  // generous cap costs nothing; its job is to stop a runaway response, and a
+  // cap set too close to real output silently truncates a guide mid-sentence.
+  //
+  // The figures below are roughly 2.5x the largest output measured on 9
+  // September 2026 across five topics per language, per pass:
+  //
+  //   English   standard  ~1,200 tokens a pass
+  //   Hindi     standard  ~2,600
+  //   Malayalam standard  ~4,000
+  //
+  // The old values were a flat 16,000 for every mode and language, which was
+  // four times what English needed and, because the language multipliers were
+  // all 1.0, occasionally too tight for Malayalam.
   const baseTokensEnglish: Record<string, number> = {
-    quick: 8000,       // 600-750 words (Claude 3.5 Haiku max: 8192)
-    standard: 16000,   // 2000-2500 words
-    deep: 16000,       // 5000-6000 words
-    lectio: 16000,     // 3000-3500 words
-    sermon: 16000      // 9000-11000 words
+    quick: 2500,      // one pass, 450-600 words
+    standard: 3000,   // per pass, two passes
+    deep: 4000,       // per pass, longer teaching
+    lectio: 5000,     // per pass, contemplative and wordier
+    sermon: 6000      // per pass, four passes
   }
 
-  // Language-specific multipliers based on script efficiency and adjusted word targets
-  const languageMultipliers: Record<string, Record<string, number>> = {
-    en: {
-      quick: 1.0,
-      standard: 1.0,
-      deep: 1.0,
-      lectio: 1.0,
-      sermon: 1.0
-    },
-    hi: {
-      quick: 1.0,        // 16k tokens → 500-600 words
-      standard: 1.0,     // 16k tokens → 2000-2500 words
-      deep: 1.024,       // 16.4k tokens (model max)
-      lectio: 1.0,       // 16k tokens → 3000-3500 words
-      sermon: 1.024      // 16.4k tokens → ~4500 words (model limit: 0.28 words/token efficiency)
-    },
-    ml: {
-      // Malayalam adjusted targets (token-inefficient: 0.09 words/token = 7-8x more tokens)
-      // Capped at model's 16,384 token limit for realistic generation
-      quick: 0.44,       // 7k tokens → 400-500 words
-      standard: 1.024,   // 16.4k tokens → ~1500 words (model max)
-      deep: 1.024,       // 16.4k tokens → ~1500 words (model max)
-      lectio: 1.024,     // 16.4k tokens → ~1500 words (model max)
-      sermon: 1.024      // 16.4k tokens → ~1500 words (model max, Malayalam severely limited)
-    }
+  // Malayalam spends about 3.3 times the tokens of English for the same
+  // content, Hindi about 2.2, measured on the same guides. The old table used
+  // 1.0 for all three, which is why Malayalam had the least headroom of any
+  // language despite needing the most.
+  const languageMultipliers: Record<string, number> = {
+    en: 1.0,
+    hi: 2.2,
+    ml: 3.4
   }
 
-  const base = baseTokensEnglish[studyMode] || 16000
+  const base = baseTokensEnglish[studyMode] ?? 3000
+  const multiplier = languageMultipliers[language] ?? 1.0
+  const calculatedTokens = Math.ceil(base * multiplier)
 
-  // Get language-specific multiplier
-  const langMultipliers = languageMultipliers[language] || languageMultipliers.en
-  const multiplier = langMultipliers[studyMode] || 1.0
-
-  const calculatedTokens = Math.floor(base * multiplier)
-
-  // Cap at model's maximum completion tokens based on study mode
-  // - Claude 3.5 Haiku (quick mode): 8,192 tokens max
-  // - Claude 3.5 Sonnet (other modes): 16,384 tokens max
-  // - GPT-4o-mini: 16,384 tokens max
-  const MODEL_MAX_TOKENS = studyMode === 'quick' ? 8192 : 16384
+  // Sonnet 4.5 accepts far more than this; the ceiling is here so a bad
+  // multiplier cannot ask for something the model will reject outright.
+  const MODEL_MAX_TOKENS = 32000
   const maxTokens = Math.min(calculatedTokens, MODEL_MAX_TOKENS)
 
   if (calculatedTokens > MODEL_MAX_TOKENS) {
-    console.warn(`[Token Calculation] Requested ${calculatedTokens} tokens exceeds model limit, capping at ${MODEL_MAX_TOKENS}`)
+    console.warn(`[Token Calculation] ${calculatedTokens} exceeds the model ceiling, capping at ${MODEL_MAX_TOKENS}`)
   }
 
-  console.log(`[Token Calculation] ${language} ${studyMode}: ${maxTokens} tokens (${multiplier}x base)`)
+  console.log(`[Token Calculation] ${language} ${studyMode}: ${maxTokens} tokens (${multiplier}x base ${base})`)
 
   return maxTokens
 }
