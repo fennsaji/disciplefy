@@ -54,6 +54,9 @@ interface Lesson {
   path_title: string
   path_description: string | null
   disciple_level: string
+  /** Where the path sits in the catalogue, and the lesson within the path. */
+  path_order: number
+  topic_position: number
 }
 
 /**
@@ -121,20 +124,35 @@ async function remainingBudgetUsd(db: Db): Promise<{ budget: number; spent: numb
   return { budget, spent: spentUsd, left: Math.max(0, budget - spentUsd) }
 }
 
-/** Lessons still missing a guide, across every language, newest paths last. */
+/**
+ * Lessons still missing a guide, in catalogue order across every language.
+ *
+ * Ordered by path, then position within the path, then language, so a budget
+ * that only covers part of the catalogue covers the *first* lessons in all
+ * three languages rather than the whole of English. Readers of every language
+ * reach a cached guide at the same point in their path.
+ */
 async function lessonsNeedingGuides(db: Db, limit: number): Promise<Array<{ lesson: Lesson; language: string }>> {
   const wanted: Array<{ lesson: Lesson; language: string }> = []
 
   for (const language of LANGUAGES) {
-    if (wanted.length >= limit) break
     const { data, error } = await db.rpc('prewarm_missing_lessons', {
       p_language: language,
       p_study_mode: STUDY_MODE,
-      p_limit: limit - wanted.length,
+      p_limit: limit,
     })
     if (error) throw new Error(`Could not list ${language} lessons: ${error.message}`)
     for (const lesson of (data ?? []) as Lesson[]) wanted.push({ lesson, language })
   }
+
+  const languageOrder = (language: string) => LANGUAGES.indexOf(language as typeof LANGUAGES[number])
+
+  wanted.sort((a, b) =>
+    (a.lesson.path_order ?? 0) - (b.lesson.path_order ?? 0) ||
+    (a.lesson.topic_position ?? 0) - (b.lesson.topic_position ?? 0) ||
+    a.lesson.title.localeCompare(b.lesson.title) ||
+    languageOrder(a.language) - languageOrder(b.language)
+  )
 
   return wanted.slice(0, limit)
 }
