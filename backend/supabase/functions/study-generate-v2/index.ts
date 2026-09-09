@@ -29,6 +29,7 @@ import { getUsageLoggingService } from '../_shared/services/usage-logging-servic
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
+import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -688,6 +689,22 @@ async function handleStudyGenerateV2(
     if (lpRecommendedMode && lpRecommendedMode === study_mode) {
       isFreeGeneration = true
       console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (recommended mode: ${study_mode})`)
+    }
+  }
+
+  // The day's budget across every user. Learning-path studies are exempt: they
+  // come from the cache, so they cost nothing and there is no reason to take
+  // them away while the ceiling is in force.
+  if (!isFreeGeneration) {
+    const budget = await checkCostCeiling(studyGuideRepository.getSupabaseClient())
+    if (!budget.withinBudget) {
+      return new Response(
+        JSON.stringify({
+          error: 'DAILY_COST_LIMIT_REACHED',
+          message: COST_CEILING_MESSAGE
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
   }
 

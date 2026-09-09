@@ -33,9 +33,23 @@ function getValidatedConfig(): AppConfig {
   const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
   const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
   const useMockEnv = Deno.env.get('USE_MOCK')
-  
-  // Auto-enable mock mode if no LLM keys are provided
+
+  // Auto-enable mock mode if no LLM keys are provided. Convenient locally,
+  // dangerous in production: on 18 July 2026 six placeholder guides were
+  // written into the cache and served to readers as real studies, because a
+  // missing key silently turned this on. In production a missing key is a
+  // deployment fault and must be loud.
   const hasLLMKeys = !!(openaiApiKey || anthropicApiKey)
+  const isProduction = Deno.env.get('NODE_ENV') === 'production'
+
+  if (isProduction && !hasLLMKeys) {
+    throw new AppError(
+      'CONFIGURATION_ERROR',
+      'No LLM API key is configured. Refusing to serve placeholder content as study guides.',
+      500
+    )
+  }
+
   const useMock = useMockEnv === 'true' || !hasLLMKeys
 
   const config: Partial<AppConfig> = {
