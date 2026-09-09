@@ -132,6 +132,7 @@ export async function GET(request: NextRequest) {
       // Learning-path studies keep working; they come from the cache.
       cost_control: {
         daily_cost_limit_usd: Number(systemConfigMap.daily_cost_limit_usd ?? 15),
+        prewarm_monthly_budget_usd: Number(systemConfigMap.prewarm_monthly_budget_usd ?? 20),
       },
       // Discipler kill switch - from system_config table.
       // NOT the `ai_discipler` feature flag, which gates the paid voice
@@ -295,6 +296,7 @@ export async function POST(request: NextRequest) {
     // Handle the daily spend ceiling - save to system_config table
     if (body.cost_control) {
       const limit = Number(body.cost_control.daily_cost_limit_usd)
+      const prewarmBudget = Number(body.cost_control.prewarm_monthly_budget_usd)
 
       if (!Number.isFinite(limit) || limit <= 0) {
         return NextResponse.json(
@@ -303,14 +305,30 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      await supabaseAdmin
-        .from('system_config')
-        .update({ value: String(limit), updated_at: new Date().toISOString() })
-        .eq('key', 'daily_cost_limit_usd')
+      // Zero is meaningful here: it pauses pre-warming without disabling the job.
+      if (!Number.isFinite(prewarmBudget) || prewarmBudget < 0) {
+        return NextResponse.json(
+          { error: 'prewarm_monthly_budget_usd must be zero or a positive number of dollars' },
+          { status: 400 }
+        )
+      }
+
+      const configUpdates = [
+        { key: 'daily_cost_limit_usd', value: String(limit) },
+        { key: 'prewarm_monthly_budget_usd', value: String(prewarmBudget) }
+      ]
+
+      for (const update of configUpdates) {
+        await supabaseAdmin
+          .from('system_config')
+          .update({ value: update.value, updated_at: new Date().toISOString() })
+          .eq('key', update.key)
+      }
 
       return NextResponse.json({
-        message: 'Daily spend ceiling updated. It takes effect within a minute.',
-        daily_cost_limit_usd: limit
+        message: 'Spending limits updated. They take effect within a minute.',
+        daily_cost_limit_usd: limit,
+        prewarm_monthly_budget_usd: prewarmBudget
       })
     }
 

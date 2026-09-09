@@ -24,3 +24,8 @@ pub const DISCIPLER_REPLY_WORKER: &str = "0 * * * * *";
 /// Telegram daily post — 09:00 UTC (14:30 IST). One run posts every language;
 /// the Edge Function is idempotent per language per day.
 pub const TELEGRAM_DAILY_POST: &str = "0 0 9 * * *";
+
+/// Pre-warm tick — hourly. Starts a batch of learning-path guides when the
+/// monthly budget allows one, then moves it through its two passes and writes
+/// the results. Idle and free when there is nothing to do.
+pub const PREWARM: &str = "0 0 * * * *";

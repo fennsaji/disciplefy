@@ -477,6 +477,18 @@ export default function SystemConfigPage() {
                 ${config.cost_control?.daily_cost_limit_usd ?? 15}
               </div>
             </div>
+            <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div>
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Pre-warm budget per month</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  What the scheduled pre-warm may spend generating learning-path guides ahead of
+                  time, at half price. When it is spent the job waits for next month. Zero pauses it.
+                </div>
+              </div>
+              <div className="px-4 py-2 rounded-lg font-semibold bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                ${config.cost_control?.prewarm_monthly_budget_usd ?? 20}
+              </div>
+            </div>
           </div>
         </div>
 

@@ -13,6 +13,13 @@
  * those results. Anything that fails is reported by topic and language and left
  * for the streaming path to make on demand.
  *
+ * Spending is governed by a monthly budget held in system_config
+ * (`prewarm_monthly_budget_usd`, editable from the admin dashboard). The job
+ * takes only as many lessons as the remaining budget covers and stops; whatever
+ * it did not reach stays uncached and is generated on demand, as it would have
+ * been anyway. Its spend is written to usage_logs under the 'prewarm' feature
+ * name, so it appears on the LLM costs page beside everything else.
+ *
  * Dry run by default. It prints what it would submit and what that costs, and
  * touches neither Anthropic nor the database:
  *
@@ -71,6 +78,56 @@ async function lessonsNeedingGuides(
   return (rows ?? []) as Lesson[]
 }
 
+/** Cost of one guide, both passes, at batch pricing. */
+const ESTIMATED_COST_PER_GUIDE =
+  2 * ((6000 * PRICE_PER_MTOK.input + 3000 * PRICE_PER_MTOK.output) / 1_000_000)
+
+/** The month's budget and what is left of it. */
+async function remainingBudget(
+  // deno-lint-ignore no-explicit-any -- see lessonsNeedingGuides
+  db: any,
+): Promise<{ budgetUsd: number; spentUsd: number; remainingUsd: number }> {
+  const { data: row } = await db
+    .from('system_config')
+    .select('value')
+    .eq('key', 'prewarm_monthly_budget_usd')
+    .eq('is_active', true)
+    .maybeSingle()
+
+  const configured = Number(row?.value)
+  const budgetUsd = Number.isFinite(configured) && configured >= 0 ? configured : 20
+
+  const { data: spent } = await db.rpc('prewarm_spend_this_month')
+  const spentUsd = Number(spent ?? 0)
+
+  return { budgetUsd, spentUsd, remainingUsd: Math.max(0, budgetUsd - spentUsd) }
+}
+
+/** Records what a run spent, so the next one knows and the costs page shows it. */
+async function recordSpend(
+  // deno-lint-ignore no-explicit-any -- see lessonsNeedingGuides
+  db: any,
+  inputTokens: number,
+  outputTokens: number,
+  guides: number,
+): Promise<void> {
+  const costUsd = (inputTokens * PRICE_PER_MTOK.input + outputTokens * PRICE_PER_MTOK.output) / 1_000_000
+  const { error } = await db.from('usage_logs').insert({
+    user_id: null,
+    tier: 'system',
+    feature_name: 'prewarm',
+    operation_type: 'create',
+    tokens_consumed: 0,
+    llm_provider: 'anthropic',
+    llm_model: MODEL,
+    llm_input_tokens: inputTokens,
+    llm_output_tokens: outputTokens,
+    llm_cost_usd: costUsd,
+    request_metadata: { guides, pricing: 'batch' },
+  })
+  if (error) console.error('[prewarm] could not record spend:', error.message)
+}
+
 function paramsFor(lesson: Lesson, language: string, mode: string): LLMGenerationParams {
   return {
     inputType: 'topic',
@@ -84,14 +141,21 @@ function paramsFor(lesson: Lesson, language: string, mode: string): LLMGeneratio
   }
 }
 
-/** `topicId|language|pass` — the id Anthropic echoes back with each result. */
+/**
+ * `topicId_language_passN` — the id Anthropic echoes back with each result.
+ *
+ * Anthropic requires `^[a-zA-Z0-9_-]{1,64}$`, so the separator is an
+ * underscore: a UUID contains hyphens but never one of those.
+ */
 function customId(topicId: string, language: string, pass: 1 | 2): string {
-  return `${topicId}|${language}|pass${pass}`
+  return `${topicId}_${language}_pass${pass}`
 }
 
 function parseCustomId(id: string): { topicId: string; language: string; pass: number } {
-  const [topicId, language, pass] = id.split('|')
-  return { topicId, language, pass: Number(pass.replace('pass', '')) }
+  const parts = id.split('_')
+  const pass = Number(parts.pop()!.replace('pass', ''))
+  const language = parts.pop()!
+  return { topicId: parts.join('_'), language, pass }
 }
 
 function extractJson(text: string): Record<string, unknown> {
@@ -150,7 +214,7 @@ async function main(): Promise<void> {
         ],
         userMessage: prompt.userMessage,
       })
-      lessonsById.set(`${lesson.topic_id}|${language}`, { lesson, language })
+      lessonsById.set(`${lesson.topic_id}_${language}`, { lesson, language })
     }
   }
 
@@ -161,9 +225,30 @@ async function main(): Promise<void> {
 
   // Rough estimate from the measured shape of a standard guide, doubled for the
   // two passes. Real cost is reported at the end from the batch's own counts.
+  const budget = await remainingBudget(db)
+  const affordable = Math.floor(budget.remainingUsd / ESTIMATED_COST_PER_GUIDE)
+
+  console.log(
+    `[prewarm] budget: $${budget.budgetUsd.toFixed(2)} a month, ` +
+    `$${budget.spentUsd.toFixed(2)} spent, $${budget.remainingUsd.toFixed(2)} left ` +
+    `(about ${affordable} guides)`,
+  )
+
+  if (affordable <= 0) {
+    console.log('[prewarm] This month\'s budget is spent. Waiting for next month.')
+    return
+  }
+
+  if (pass1Requests.length > affordable) {
+    console.log(
+      `[prewarm] ${pass1Requests.length} lessons need a guide; taking the first ${affordable} ` +
+      'that the budget covers. The rest wait for next month.',
+    )
+    pass1Requests.length = affordable
+  }
+
   const estimatedGuides = pass1Requests.length
-  const estimatedCost = estimatedGuides * 2 *
-    ((6000 * PRICE_PER_MTOK.input + 3000 * PRICE_PER_MTOK.output) / 1_000_000)
+  const estimatedCost = estimatedGuides * ESTIMATED_COST_PER_GUIDE
 
   console.log(`[prewarm] ${estimatedGuides} guides, two passes each`)
   console.log(`[prewarm] estimated cost at batch pricing: $${estimatedCost.toFixed(2)}`)
@@ -192,7 +277,7 @@ async function main(): Promise<void> {
     inputTokens += result.inputTokens ?? 0
     outputTokens += result.outputTokens ?? 0
     try {
-      pass1Data.set(`${topicId}|${language}`, extractJson(result.content) as never)
+      pass1Data.set(`${topicId}_${language}`, extractJson(result.content) as never)
     } catch (error) {
       failures.push(`${topicId} ${language} pass1: ${(error as Error).message}`)
     }
@@ -225,7 +310,7 @@ async function main(): Promise<void> {
   let written = 0
   for await (const result of client.results(batch2)) {
     const { topicId, language } = parseCustomId(result.customId)
-    const key = `${topicId}|${language}`
+    const key = `${topicId}_${language}`
     const entry = lessonsById.get(key)
     const pass1 = pass1Data.get(key)
     if (result.error || !result.content || !entry || !pass1) {
@@ -266,6 +351,8 @@ async function main(): Promise<void> {
       failures.push(`${topicId} ${language} pass2: ${(error as Error).message}`)
     }
   }
+
+  await recordSpend(db, inputTokens, outputTokens, written)
 
   const cost = (inputTokens * PRICE_PER_MTOK.input + outputTokens * PRICE_PER_MTOK.output) / 1_000_000
   console.log(`[prewarm] wrote ${written} guides`)

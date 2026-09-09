@@ -1,6 +1,7 @@
 pub mod blog_generator;
 pub mod discipler_reply_worker;
 pub mod fellowship_daily_post;
+pub mod prewarm;
 pub mod schedules;
 pub mod subscription_reconciler;
 pub mod telegram_daily_post;
@@ -22,6 +23,7 @@ use crate::models::cron_config::{self, CronConfig};
 pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static PREWARM_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static FELLOWSHIP_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static DISCIPLER_REPLY_WORKER_RUNNING: AtomicBool = AtomicBool::new(false);
@@ -102,6 +104,13 @@ pub async fn start_scheduler(
                 enabled: false,
                 schedule: schedules::DISCIPLER_REPLY_WORKER.into(),
                 label: "Every minute — drain Discipler reply queue".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "prewarm".into(),
+                enabled: false,
+                schedule: schedules::PREWARM.into(),
+                label: "Hourly — pre-generate learning-path guides on the Batch API".into(),
                 updated_at: chrono::Utc::now(),
             },
             CronConfig {
@@ -425,6 +434,48 @@ pub async fn start_scheduler(
         .expect("Failed to add Telegram daily post CRON job");
     job_ids.insert("telegram_daily_post".into(), telegram_uuid);
 
+    // Pre-warm CRON
+    let prewarm_cfg = configs.iter().find(|c| c.name == "prewarm");
+    let prewarm_schedule = prewarm_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::PREWARM.into());
+    let prewarm_pool = pool.clone();
+    let prewarm_config = Arc::new(config.clone());
+    let prewarm_http = http.clone();
+
+    let prewarm_job = Job::new_async(prewarm_schedule.as_str(), move |_uuid, _lock| {
+        let p = prewarm_pool.clone();
+        let c = prewarm_config.clone();
+        let h = prewarm_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "prewarm").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("prewarm cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&PREWARM_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!("Pre-warm CRON skipped: previous run still in progress");
+                    return;
+                }
+            };
+            if let Err(e) = prewarm::run_prewarm(&c, &h).await {
+                tracing::error!("Pre-warm CRON failed: {}", e);
+            }
+        })
+    })
+    .expect("Failed to create pre-warm CRON job");
+
+    let prewarm_uuid = sched
+        .add(prewarm_job)
+        .await
+        .expect("Failed to add pre-warm CRON job");
+    job_ids.insert("prewarm".into(), prewarm_uuid);
+
     sched.start().await.expect("Failed to start CRON scheduler");
 
     let schedule_by_name: HashMap<&str, &str> = HashMap::from([
@@ -435,6 +486,7 @@ pub async fn start_scheduler(
         ("fellowship_daily_post", daily_schedule.as_str()),
         ("discipler_reply_worker", worker_schedule.as_str()),
         ("telegram_daily_post", telegram_schedule.as_str()),
+        ("prewarm", prewarm_schedule.as_str()),
     ]);
     for name in job_ids.keys() {
         let s = schedule_by_name.get(name.as_str()).copied().unwrap_or("?");

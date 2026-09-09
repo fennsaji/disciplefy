@@ -30,6 +30,7 @@ pub(crate) fn guard_for(name: &str) -> Option<&'static std::sync::atomic::Atomic
         "fellowship_daily_post" => &FELLOWSHIP_DAILY_POST_RUNNING,
         "discipler_reply_worker" => &DISCIPLER_REPLY_WORKER_RUNNING,
         "telegram_daily_post" => &TELEGRAM_DAILY_POST_RUNNING,
+        "prewarm" => &PREWARM_RUNNING,
         _ => return None,
     })
 }
@@ -57,6 +58,7 @@ async fn run_job(name: &str, pool: sqlx::PgPool, config: Config, http: reqwest::
         "telegram_daily_post" => {
             crate::cron::telegram_daily_post::run_telegram_daily_post(&config, &http).await
         }
+        "prewarm" => crate::cron::prewarm::run_prewarm(&config, &http).await,
         other => Err(AppError::BadRequest(format!("Unknown cron '{other}'"))),
     };
     if let Err(e) = r {
