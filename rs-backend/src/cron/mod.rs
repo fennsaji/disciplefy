@@ -1,4 +1,5 @@
 pub mod blog_generator;
+pub mod cost_reconcile;
 pub mod discipler_reply_worker;
 pub mod fellowship_daily_post;
 pub mod prewarm;
@@ -24,6 +25,7 @@ pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static PREWARM_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static COST_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static FELLOWSHIP_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static DISCIPLER_REPLY_WORKER_RUNNING: AtomicBool = AtomicBool::new(false);
@@ -104,6 +106,13 @@ pub async fn start_scheduler(
                 enabled: false,
                 schedule: schedules::DISCIPLER_REPLY_WORKER.into(),
                 label: "Every minute — drain Discipler reply queue".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "cost_reconcile".into(),
+                enabled: false,
+                schedule: schedules::COST_RECONCILE.into(),
+                label: "Daily 02:00 UTC — compare recorded spend with Anthropic's bill".into(),
                 updated_at: chrono::Utc::now(),
             },
             CronConfig {
@@ -476,6 +485,50 @@ pub async fn start_scheduler(
         .expect("Failed to add pre-warm CRON job");
     job_ids.insert("prewarm".into(), prewarm_uuid);
 
+    // Cost reconciliation CRON
+    let reconcile_cfg = configs.iter().find(|c| c.name == "cost_reconcile");
+    let reconcile_schedule = reconcile_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::COST_RECONCILE.into());
+    let reconcile_pool = pool.clone();
+    let reconcile_config = Arc::new(config.clone());
+    let reconcile_http = http.clone();
+
+    let reconcile_job = Job::new_async(reconcile_schedule.as_str(), move |_uuid, _lock| {
+        let p = reconcile_pool.clone();
+        let c = reconcile_config.clone();
+        let h = reconcile_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "cost_reconcile").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("cost_reconcile cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&COST_RECONCILE_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Cost reconciliation CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            if let Err(e) = cost_reconcile::run_cost_reconcile(&c, &h).await {
+                tracing::error!("Cost reconciliation CRON failed: {}", e);
+            }
+        })
+    })
+    .expect("Failed to create cost reconciliation CRON job");
+
+    let reconcile_uuid = sched
+        .add(reconcile_job)
+        .await
+        .expect("Failed to add cost reconciliation CRON job");
+    job_ids.insert("cost_reconcile".into(), reconcile_uuid);
+
     sched.start().await.expect("Failed to start CRON scheduler");
 
     let schedule_by_name: HashMap<&str, &str> = HashMap::from([
@@ -487,6 +540,7 @@ pub async fn start_scheduler(
         ("discipler_reply_worker", worker_schedule.as_str()),
         ("telegram_daily_post", telegram_schedule.as_str()),
         ("prewarm", prewarm_schedule.as_str()),
+        ("cost_reconcile", reconcile_schedule.as_str()),
     ]);
     for name in job_ids.keys() {
         let s = schedule_by_name.get(name.as_str()).copied().unwrap_or("?");

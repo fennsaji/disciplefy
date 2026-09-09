@@ -29,3 +29,7 @@ pub const TELEGRAM_DAILY_POST: &str = "0 0 9 * * *";
 /// monthly budget allows one, then moves it through its two passes and writes
 /// the results. Idle and free when there is nothing to do.
 pub const PREWARM: &str = "0 0 * * * *";
+
+/// Cost reconciliation — daily at 02:00 UTC, comparing yesterday's recorded
+/// spend against Anthropic's billed figure once that day has settled.
+pub const COST_RECONCILE: &str = "0 0 2 * * *";

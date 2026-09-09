@@ -184,6 +184,14 @@ jobs:
         OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
         LLM_PROVIDER=${{ secrets.LLM_PROVIDER || 'openai' }}
+        # Reconciles our recorded spend against Anthropic's bill. Needs an Admin
+        # API key (sk-ant-admin...), which a workspace-scoped key cannot stand in
+        # for, and the workspace Disciplefy runs in — the cost report covers the
+        # whole organisation, so without the workspace an account with several
+        # projects would reconcile against all of them. Missing either one and
+        # the job records our own side and reports itself unconfigured.
+        ANTHROPIC_ADMIN_KEY=${{ secrets.ANTHROPIC_ADMIN_KEY }}
+        ANTHROPIC_WORKSPACE_ID=${{ secrets.ANTHROPIC_WORKSPACE_ID }}
 
         # Bible API Configuration (${{ env.DEPLOY_ENV }})
         BIBLE_API=${{ secrets.BIBLE_API }}
