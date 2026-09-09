@@ -148,16 +148,64 @@ const DEFAULT_FEATURED_PATH_SLUG = 'new-believer-essentials';
 /**
  * Gets the count of topics in a learning path
  */
+/**
+ * Topic counts already fetched, for the lifetime of one request.
+ *
+ * Every section of a response — active paths, featured, recommended — asks for
+ * the same handful of paths, and each ask was its own round trip. A single
+ * response could spend twenty of them counting the same rows over and over.
+ * The map is cleared per request, so a path whose topics change is never served
+ * a stale count.
+ */
+const topicCountCache = new Map<string, number>();
+
+/** Forgets cached counts. Called once at the start of each request. */
+function resetRequestCaches(): void {
+  topicCountCache.clear();
+}
+
+/**
+ * Counts every path in [learningPathIds] in one query, filling the cache.
+ *
+ * Callers that know their paths up front should use this; getTopicsCount then
+ * answers from memory.
+ */
+async function preloadTopicCounts(
+  // deno-lint-ignore no-explicit-any -- the client type is not narrowed here
+  supabaseClient: any,
+  learningPathIds: string[]
+): Promise<void> {
+  const missing = learningPathIds.filter((id) => id && !topicCountCache.has(id));
+  if (missing.length === 0) return;
+
+  const { data } = await supabaseClient
+    .from('learning_path_topics')
+    .select('learning_path_id')
+    .in('learning_path_id', missing)
+    .eq('is_active', true);
+
+  for (const id of missing) topicCountCache.set(id, 0);
+  for (const row of (data ?? []) as Array<{ learning_path_id: string }>) {
+    topicCountCache.set(row.learning_path_id, (topicCountCache.get(row.learning_path_id) ?? 0) + 1);
+  }
+}
+
 async function getTopicsCount(
   supabaseClient: ReturnType<ServiceContainer['supabaseServiceClient']['from']> extends (...args: any[]) => any ? any : any,
   learningPathId: string
 ): Promise<number> {
+  const cached = topicCountCache.get(learningPathId);
+  if (cached !== undefined) return cached;
+
   const { data } = await supabaseClient
     .from('learning_path_topics')
     .select('id', { count: 'exact' })
     .eq('learning_path_id', learningPathId)
     .eq('is_active', true);
-  return data?.length || 0;
+
+  const count = data?.length || 0;
+  topicCountCache.set(learningPathId, count);
+  return count;
 }
 
 /**
@@ -287,6 +335,9 @@ async function handleLearningPaths(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
+  // Caches live for one request only, so nothing is ever served a stale count.
+  resetRequestCaches();
+
   // Check maintenance mode FIRST
   await checkMaintenanceMode(req, services)
 
@@ -883,6 +934,9 @@ async function handleGetRecommendedPaths(
       .order('last_activity_at', { ascending: false })
       .limit(ACTIVE_PATH_CANDIDATES);
 
+    // One count query for every path below, instead of one per path.
+    await preloadTopicCounts(supabaseServiceClient, (activeRows ?? []).map((r: { learning_path_id: string }) => r.learning_path_id));
+
     for (const row of (activeRows ?? [])) {
       const pathData = row.learning_paths as unknown as LearningPathRow | null;
       if (!pathData?.is_active) continue;
@@ -1047,6 +1101,8 @@ async function handleGetRecommendedPaths(
   }
 
   const fallbackObjects: LearningPath[] = [];
+  await preloadTopicCounts(supabaseServiceClient, (featuredPaths || []).map((p: { id: string }) => p.id));
+
   for (const pathData of (featuredPaths || [])) {
     if (fallbackObjects.length >= limit) break;
     const progress = progressByPath.get(pathData.id as string);
@@ -1162,6 +1218,8 @@ async function handleGetRecommendedPath(
       if (progressError) {
         console.error('[RECOMMENDED_PATH] Error fetching active path:', progressError);
       }
+
+      await preloadTopicCounts(supabaseServiceClient, (activePathProgress || []).map((p: { learning_path_id: string }) => p.learning_path_id));
 
       for (const activePath of activePathProgress || []) {
         // Supabase returns joined relation as object (due to !inner), cast through unknown for type safety
@@ -1348,6 +1406,8 @@ async function handleGetRecommendedPath(
     ];
 
     // Iterate through featured paths to find the first non-completed one
+    await preloadTopicCounts(supabaseServiceClient, sortedFeatured.map((p: { id: string }) => p.id));
+
     for (const pathData of sortedFeatured) {
       const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
       const localized = await getLocalizedTitleDescription(
