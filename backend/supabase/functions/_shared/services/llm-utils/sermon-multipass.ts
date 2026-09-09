@@ -351,14 +351,6 @@ Generate this JSON structure (IMPORTANT: interpretationPart4 MUST be LAST for st
   "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Acts 4:12', '1 Timothy 2:5-6') - NO verse text"],
   "reflectionQuestions": ["5-7 discussion questions mixing theology and application"],
   "prayerPoints": ["[300-400 words ALTAR CALL OUTLINE with gospel recap, invitation, response options, prayer outline]"],
-  "summaryInsights": ["[5 sermon takeaways - 15-20 words each]"],
-  "interpretationInsights": ["[5 theological truths taught - 15-20 words each]"],
-  "reflectionAnswers": ["[5 life applications - 15-20 words each]"],
-  "contextQuestion": "[Yes/no question connecting biblical context to modern life]",
-  "summaryQuestion": "[Question about sermon thesis - 12-18 words]",
-  "relatedVersesQuestion": "[Question encouraging scripture study - 12-18 words]",
-  "reflectionQuestion": "[Application question for reflection - 12-18 words]",
-  "prayerQuestion": "[Invitation question encouraging commitment - 10-15 words]",
   "interpretationPart4": "[350-450 words: Conclusion with summaries of all 3 points (80-100 words each) + gospel climax (100-120 words)]"
 }
 
@@ -399,17 +391,12 @@ Preacher will expand with personal warmth.
 Preacher will expand into full prayer during delivery. End with Amen.
 
 **SUPPORTING MATERIALS:**
-- relatedVerses: 5-7 verse REFERENCES ONLY in ${languageConfig.name} (e.g., '2 Corinthians 5:21') - NO verse text
+- relatedVerses: 4 verse REFERENCES ONLY in ${languageConfig.name} (e.g., '2 Corinthians 5:21') - NO verse text
 - reflectionQuestions: 5-7 discussion questions
-- summaryInsights: 5 takeaways (15-20 words each)
-- interpretationInsights: 5 theological truths (15-20 words each)
-- reflectionAnswers: 5 applications (15-20 words each)
-- 5 yes/no questions for engagement
 
 VERIFY BEFORE OUTPUT:
 - interpretationPart4: 350-450 words (4 paragraphs: 3 point summaries + gospel climax)
 - prayerPoints (altar call): 300-400 words with Gospel Recap, Invitation, Response Options, Closing Prayer
-- All supporting fields present: 5-7 relatedVerses, 5-7 reflectionQuestions, 5 summaryInsights/interpretationInsights/reflectionAnswers, 5 yes/no questions
 - Total: ~1,100 words | Verse refs in ${languageConfig.name}
 FIX any issues BEFORE output.
 
@@ -421,16 +408,8 @@ OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "interpretationPart4": "[YOUR 350-450 WORD CONCLUSION HERE - PREACHER-FACING OUTLINE]",
   "prayerPoints": ["[YOUR 300-400 WORD ALTAR CALL HERE AS SINGLE STRING - CONCISE OUTLINE]"],
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
-  "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]", "[INSIGHT 5]"],
-  "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]", "[TRUTH 5]"],
-  "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]", "[APPLICATION 5]"],
-  "contextQuestion": "[YOUR YES/NO QUESTION ABOUT BIBLICAL CONTEXT]",
-  "summaryQuestion": "[YOUR QUESTION ABOUT SERMON THESIS - 12-18 words]",
-  "relatedVersesQuestion": "[YOUR QUESTION ENCOURAGING SCRIPTURE STUDY - 12-18 words]",
-  "reflectionQuestion": "[YOUR APPLICATION QUESTION - 12-18 words]",
-  "prayerQuestion": "[YOUR INVITATION QUESTION - 10-15 words]"
+  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]"],
+  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]"]
 }`
 
   return { sharedSystem, passSystem, userMessage }
@@ -448,14 +427,6 @@ export function combineSermonPasses(
     prayerPoints: string[]
     relatedVerses: string[]
     reflectionQuestions: string[]
-    summaryInsights: string[]
-    interpretationInsights: string[]
-    reflectionAnswers: string[]
-    contextQuestion: string
-    summaryQuestion: string
-    relatedVersesQuestion: string
-    reflectionQuestion: string
-    prayerQuestion: string
   }
 ): Record<string, unknown> {
   return {
@@ -473,14 +444,6 @@ export function combineSermonPasses(
     passage: pass1.passage,
     relatedVerses: pass4.relatedVerses,
     reflectionQuestions: pass4.reflectionQuestions,
-    prayerPoints: pass4.prayerPoints,
-    summaryInsights: pass4.summaryInsights,
-    interpretationInsights: pass4.interpretationInsights,
-    reflectionAnswers: pass4.reflectionAnswers,
-    contextQuestion: pass4.contextQuestion,
-    summaryQuestion: pass4.summaryQuestion,
-    relatedVersesQuestion: pass4.relatedVersesQuestion,
-    reflectionQuestion: pass4.reflectionQuestion,
-    prayerQuestion: pass4.prayerQuestion
+    prayerPoints: pass4.prayerPoints
   }
 }

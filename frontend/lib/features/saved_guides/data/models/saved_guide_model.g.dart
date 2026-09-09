@@ -31,20 +31,6 @@ SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
           ?.map((e) => e as String)
           .toList(),
       passage: json['passage'] as String?,
-      interpretationInsights: (json['interpretationInsights'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      summaryInsights: (json['summaryInsights'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      reflectionAnswers: (json['reflectionAnswers'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      contextQuestion: json['contextQuestion'] as String?,
-      summaryQuestion: json['summaryQuestion'] as String?,
-      relatedVersesQuestion: json['relatedVersesQuestion'] as String?,
-      reflectionQuestion: json['reflectionQuestion'] as String?,
-      prayerQuestion: json['prayerQuestion'] as String?,
     );
 
 Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
@@ -58,14 +44,6 @@ Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
       'relatedVerses': instance.relatedVerses,
       'reflectionQuestions': instance.reflectionQuestions,
       'prayerPoints': instance.prayerPoints,
-      'interpretationInsights': instance.interpretationInsights,
-      'contextQuestion': instance.contextQuestion,
-      'summaryQuestion': instance.summaryQuestion,
-      'relatedVersesQuestion': instance.relatedVersesQuestion,
-      'reflectionQuestion': instance.reflectionQuestion,
-      'prayerQuestion': instance.prayerQuestion,
-      'summaryInsights': instance.summaryInsights,
-      'reflectionAnswers': instance.reflectionAnswers,
       'studyMode': instance.studyMode,
       'passage': instance.passage,
       'type': instance.typeString,

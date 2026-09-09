@@ -190,22 +190,14 @@ export function validateStudyGuideResponse(response: unknown): response is LLMRe
 
   const resp = response as Record<string, unknown>
   
-  // Validate all 14 required fields are present
+  // Validate all required fields are present
   const requiredFields = [
     'summary',
     'interpretation',
     'context',
     'relatedVerses',
     'reflectionQuestions',
-    'prayerPoints',
-    'summaryInsights',
-    'interpretationInsights',
-    'reflectionAnswers',
-    'contextQuestion',
-    'summaryQuestion',
-    'relatedVersesQuestion',
-    'reflectionQuestion',
-    'prayerQuestion'
+    'prayerPoints'
   ]
   
   for (const field of requiredFields) {
@@ -228,49 +220,11 @@ export function validateStudyGuideResponse(response: unknown): response is LLMRe
     }
   }
 
-  // Validate insights array fields (should have 2-5 items)
-  const insightArrayFields = ['summaryInsights', 'interpretationInsights', 'reflectionAnswers']
-  for (const field of insightArrayFields) {
-    if (!Array.isArray(resp[field])) {
-      console.error(`[ResponseParser] Field ${field} is not an array`)
-      return false
-    }
-    const arr = resp[field] as unknown[]
-    if (!arr.every((item) => typeof item === 'string')) {
-      console.error(`[ResponseParser] Field ${field} contains non-string elements`)
-      return false
-    }
-    if (arr.length < 2 || arr.length > 5) {
-      console.error(`[ResponseParser] Field ${field} should have 2-5 items, got ${arr.length}`)
-      return false
-    }
-  }
-
   // Validate base string fields
   const baseStringFields = ['summary', 'context', 'interpretation']
   for (const field of baseStringFields) {
     if (typeof resp[field] !== 'string' || (resp[field] as string).trim().length === 0) {
       console.error(`[ResponseParser] Field ${field} is not a valid string`)
-      return false
-    }
-  }
-
-  // Validate question string fields
-  const questionFields = [
-    'contextQuestion',
-    'summaryQuestion',
-    'relatedVersesQuestion',
-    'reflectionQuestion',
-    'prayerQuestion'
-  ]
-
-  for (const field of questionFields) {
-    if (typeof resp[field] !== 'string') {
-      console.error(`[ResponseParser] ${field} is not a string`)
-      return false
-    }
-    if ((resp[field] as string).trim().length === 0) {
-      console.error(`[ResponseParser] ${field} is empty`)
       return false
     }
   }
@@ -322,7 +276,7 @@ export function sanitizeMarkdownText(text: string): string {
 
 /**
  * Sanitizes study guide response for security and consistency.
- * All 14 fields are required and will be sanitized.
+ * All fields are required and will be sanitized.
  * 
  * @param response - Raw LLM response
  * @returns Sanitized response
@@ -335,22 +289,7 @@ export function sanitizeStudyGuideResponse(response: Record<string, unknown>): L
     passage: sanitizeText((response.passage as string) || ''),
     relatedVerses: (response.relatedVerses as string[]).map(verse => sanitizeText(verse)),
     reflectionQuestions: (response.reflectionQuestions as string[]).map(q => sanitizeText(q)),
-    prayerPoints: (response.prayerPoints as string[]).map(point => sanitizeText(point)),
-    interpretationInsights: (response.interpretationInsights as string[])
-      .map(sanitizeText)
-      .filter(insight => insight.length > 0 && insight.length <= 150)
-      .slice(0, 5),
-    summaryInsights: (response.summaryInsights as string[])
-      .map(sanitizeText)
-      .slice(0, 5),
-    reflectionAnswers: (response.reflectionAnswers as string[])
-      .map(sanitizeText)
-      .slice(0, 5),
-    contextQuestion: sanitizeText(response.contextQuestion as string),
-    summaryQuestion: sanitizeText(response.summaryQuestion as string),
-    relatedVersesQuestion: sanitizeText(response.relatedVersesQuestion as string),
-    reflectionQuestion: sanitizeText(response.reflectionQuestion as string),
-    prayerQuestion: sanitizeText(response.prayerQuestion as string)
+    prayerPoints: (response.prayerPoints as string[]).map(point => sanitizeText(point))
   }
 }
 

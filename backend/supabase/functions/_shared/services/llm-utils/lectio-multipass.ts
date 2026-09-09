@@ -211,17 +211,9 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
 
 {
   "interpretationPart2": "[500-650 words: **[Prayer Response header in ${languageConfig.name}]** + PRAYER RESPONSE (responding to God in prayer, 250-320 words) + **[Application & Commitment header in ${languageConfig.name}]** + APPLICATION & COMMITMENT (concrete, specific obedience, 250-320 words). EACH SECTION MUST BEGIN WITH A BOLD **HEADER** IN ${languageConfig.name}.]",
-  "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support or expand the passage studied (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
-  "reflectionQuestions": [5-7 reflection questions grounded in the text studied],
-  "prayerPoints": [ONE single continuous prayer paragraph (5-7 sentences, 150-200 words) arising from the passage. Do NOT split into multiple items.],
-  "summaryInsights": [4-5 key biblical truths from the passage - 15-20 words each],
-  "interpretationInsights": [4-5 theological insights revealed by the text - 15-20 words each],
-  "reflectionAnswers": [4-5 concrete life applications - 15-20 words each],
-  "contextQuestion": "[Yes/no question connecting the passage's original context to personal life]",
-  "summaryQuestion": "[Question about the central biblical message of the passage - 12-18 words]",
-  "relatedVersesQuestion": "[Question encouraging further Bible reading on this theme - 12-18 words]",
-  "reflectionQuestion": "[Question inviting personal reflection on the text - 12-18 words]",
-  "prayerQuestion": "[Invitation to respond in prayer based on what Scripture taught - 10-15 words]"
+  "relatedVerses": [4 Bible verse REFERENCES ONLY in ${languageConfig.name} that support or expand the passage studied (e.g., 'Psalm 131:2', 'Matthew 11:28-30') - NO verse text],
+  "reflectionQuestions": [4 reflection questions grounded in the text studied],
+  "prayerPoints": [ONE single continuous prayer paragraph (5-7 sentences, 150-200 words) arising from the passage. Do NOT split into multiple items.]
 }
 
 **INTERPRETATION PART 2 - PRAYER RESPONSE & APPLICATION (500-650 words):**
@@ -280,14 +272,11 @@ Target: 250-320 words, 6-8 complete sentences with specific, accountable applica
 
 **SUPPORTING MATERIALS:**
 - relatedVerses: 5-7 additional verses that support the passage's themes in ${languageConfig.name}
-- reflectionQuestions: 5-7 questions grounded in the text (not abstract or mystical)
+- reflectionQuestions: 4 questions grounded in the text (not abstract or mystical)
 - prayerPoints: ONE single prayer paragraph (5-7 sentences, 150-200 words), arising from the passage
-- summaryInsights: 4-5 key biblical truths (15-20 words each)
-- interpretationInsights: 4-5 theological insights (15-20 words each)
-- reflectionAnswers: 4-5 concrete life applications (15-20 words each)
 - 5 yes/no questions connecting the text to personal life
 
-VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | prayerPoints: 1 item, single paragraph (5-7 sentences, 150-200 words) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | prayerPoints: 1 item, single paragraph (5-7 sentences, 150-200 words) | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
@@ -296,17 +285,9 @@ ${getLanguageExamples(language)}
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "interpretationPart2": "[YOUR 500-650 WORD INTERPRETATION PART 2 HERE - 2 sections with bold headers in ${languageConfig.name}]",
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
-  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 5-7 sentences, 150-200 words, grounded in the passage]"],
-  "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]"],
-  "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]"],
-  "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]"],
-  "contextQuestion": "[YOUR YES/NO QUESTION]",
-  "summaryQuestion": "[YOUR QUESTION]",
-  "relatedVersesQuestion": "[YOUR QUESTION]",
-  "reflectionQuestion": "[YOUR QUESTION]",
-  "prayerQuestion": "[YOUR QUESTION]"
+  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]"],
+  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]"],
+  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 5-7 sentences, 150-200 words, grounded in the passage]"]
 }`
 
   return { sharedSystem, passSystem, userMessage }
@@ -322,14 +303,6 @@ export function combineLectioPasses(
     relatedVerses: string[]
     reflectionQuestions: string[]
     prayerPoints: string[]
-    summaryInsights: string[]
-    interpretationInsights: string[]
-    reflectionAnswers: string[]
-    contextQuestion: string
-    summaryQuestion: string
-    relatedVersesQuestion: string
-    reflectionQuestion: string
-    prayerQuestion: string
   }
 ): Record<string, unknown> {
   return {
@@ -342,14 +315,6 @@ export function combineLectioPasses(
     passage: pass1.passage,
     relatedVerses: pass2.relatedVerses,
     reflectionQuestions: pass2.reflectionQuestions,
-    prayerPoints: pass2.prayerPoints,
-    summaryInsights: pass2.summaryInsights,
-    interpretationInsights: pass2.interpretationInsights,
-    reflectionAnswers: pass2.reflectionAnswers,
-    contextQuestion: pass2.contextQuestion,
-    summaryQuestion: pass2.summaryQuestion,
-    relatedVersesQuestion: pass2.relatedVersesQuestion,
-    reflectionQuestion: pass2.reflectionQuestion,
-    prayerQuestion: pass2.prayerQuestion
+    prayerPoints: pass2.prayerPoints
   }
 }

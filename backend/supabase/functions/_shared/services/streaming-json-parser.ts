@@ -12,14 +12,6 @@
  * 5. relatedVerses (array of strings) - Required
  * 6. reflectionQuestions (array of strings) - Required
  * 7. prayerPoints (array of strings) - Required
- * 8. summaryInsights (array of strings) - Optional
- * 9. interpretationInsights (array of strings) - Optional
- * 10. reflectionAnswers (array of strings) - Optional
- * 11. contextQuestion (string) - Optional
- * 12. summaryQuestion (string) - Optional
- * 13. relatedVersesQuestion (string) - Optional
- * 14. reflectionQuestion (string) - Optional
- * 15. prayerQuestion (string) - Optional
  */
 
 /**
@@ -37,14 +29,6 @@ export type SectionType =
   | 'relatedVerses'
   | 'reflectionQuestions'
   | 'prayerPoints'
-  | 'interpretationInsights'
-  | 'summaryInsights'
-  | 'reflectionAnswers'
-  | 'contextQuestion'
-  | 'summaryQuestion'
-  | 'relatedVersesQuestion'
-  | 'reflectionQuestion'
-  | 'prayerQuestion'
 
 /**
  * A parsed section from the streaming response
@@ -66,19 +50,11 @@ export interface CompleteStudyGuide {
   relatedVerses: string[]
   reflectionQuestions: string[]
   prayerPoints: string[]
-  interpretationInsights?: string[]
-  summaryInsights?: string[]
-  reflectionAnswers?: string[]
-  contextQuestion?: string
-  summaryQuestion?: string
-  relatedVersesQuestion?: string
-  reflectionQuestion?: string
-  prayerQuestion?: string
 }
 
 /**
  * Section order for parsing (MUST match LLM generation order for optimal streaming)
- * Order: Summary → Context → Passage → Interpretation → Related Verses → Questions → Prayer → Insights
+ * Order: Summary → Context → Passage → Interpretation → Related Verses → Questions → Prayer
  * This order matches the JSON structure in all prompt templates to minimize buffering delays
  */
 const SECTION_ORDER: SectionType[] = [
@@ -93,15 +69,7 @@ const SECTION_ORDER: SectionType[] = [
   'interpretationPart4',
   'relatedVerses',
   'reflectionQuestions',
-  'prayerPoints',
-  'summaryInsights',
-  'interpretationInsights',
-  'reflectionAnswers',
-  'contextQuestion',
-  'summaryQuestion',
-  'relatedVersesQuestion',
-  'reflectionQuestion',
-  'prayerQuestion'
+  'prayerPoints'
 ]
 
 /**
@@ -247,10 +215,7 @@ export class StreamingJsonParser {
     const isArrayType = [
       'relatedVerses',
       'reflectionQuestions',
-      'prayerPoints',
-      'interpretationInsights',
-      'summaryInsights',
-      'reflectionAnswers'
+      'prayerPoints'
     ].includes(sectionType)
 
     if (isArrayType) {
@@ -426,7 +391,6 @@ export class StreamingJsonParser {
 
   /**
    * Checks if all required sections have been emitted
-   * (Optional sections like interpretationInsights and contextQuestion are not required)
    */
   isComplete(): boolean {
     const complete = REQUIRED_SECTIONS.every(section => this.emittedSections.has(section))
@@ -465,32 +429,6 @@ export class StreamingJsonParser {
       relatedVerses: this.parsedData.relatedVerses!,
       reflectionQuestions: this.parsedData.reflectionQuestions!,
       prayerPoints: this.parsedData.prayerPoints!
-    }
-
-    // Add optional fields if present
-    if (this.parsedData.interpretationInsights) {
-      result.interpretationInsights = this.parsedData.interpretationInsights
-    }
-    if (this.parsedData.summaryInsights) {
-      result.summaryInsights = this.parsedData.summaryInsights
-    }
-    if (this.parsedData.reflectionAnswers) {
-      result.reflectionAnswers = this.parsedData.reflectionAnswers
-    }
-    if (this.parsedData.contextQuestion) {
-      result.contextQuestion = this.parsedData.contextQuestion
-    }
-    if (this.parsedData.summaryQuestion) {
-      result.summaryQuestion = this.parsedData.summaryQuestion
-    }
-    if (this.parsedData.relatedVersesQuestion) {
-      result.relatedVersesQuestion = this.parsedData.relatedVersesQuestion
-    }
-    if (this.parsedData.reflectionQuestion) {
-      result.reflectionQuestion = this.parsedData.reflectionQuestion
-    }
-    if (this.parsedData.prayerQuestion) {
-      result.prayerQuestion = this.parsedData.prayerQuestion
     }
 
     return result
@@ -565,32 +503,6 @@ export class StreamingJsonParser {
           relatedVerses: parsed.relatedVerses,
           reflectionQuestions: parsed.reflectionQuestions,
           prayerPoints: parsed.prayerPoints
-        }
-
-        // Add optional fields if present and valid
-        if (Array.isArray(parsed.interpretationInsights)) {
-          result.interpretationInsights = parsed.interpretationInsights
-        }
-        if (Array.isArray(parsed.summaryInsights)) {
-          result.summaryInsights = parsed.summaryInsights
-        }
-        if (Array.isArray(parsed.reflectionAnswers)) {
-          result.reflectionAnswers = parsed.reflectionAnswers
-        }
-        if (typeof parsed.contextQuestion === 'string') {
-          result.contextQuestion = parsed.contextQuestion
-        }
-        if (typeof parsed.summaryQuestion === 'string') {
-          result.summaryQuestion = parsed.summaryQuestion
-        }
-        if (typeof parsed.relatedVersesQuestion === 'string') {
-          result.relatedVersesQuestion = parsed.relatedVersesQuestion
-        }
-        if (typeof parsed.reflectionQuestion === 'string') {
-          result.reflectionQuestion = parsed.reflectionQuestion
-        }
-        if (typeof parsed.prayerQuestion === 'string') {
-          result.prayerQuestion = parsed.prayerQuestion
         }
 
         return result

@@ -251,33 +251,12 @@ async function handleAdminStudyGenerator(
             passage: existingContent.content.passage || '',
             relatedVerses: [...(existingContent.content.relatedVerses || [])],
             reflectionQuestions: [...(existingContent.content.reflectionQuestions || [])],
-            prayerPoints: [...(existingContent.content.prayerPoints || [])],
-            interpretationInsights: existingContent.content.interpretationInsights
-              ? [...existingContent.content.interpretationInsights]
-              : undefined,
-            summaryInsights: existingContent.content.summaryInsights
-              ? [...existingContent.content.summaryInsights]
-              : undefined,
-            reflectionAnswers: existingContent.content.reflectionAnswers
-              ? [...existingContent.content.reflectionAnswers]
-              : undefined,
-            contextQuestion: existingContent.content.contextQuestion || undefined,
-            summaryQuestion: existingContent.content.summaryQuestion || undefined,
-            relatedVersesQuestion: existingContent.content.relatedVersesQuestion || undefined,
-            reflectionQuestion: existingContent.content.reflectionQuestion || undefined,
-            prayerQuestion: existingContent.content.prayerQuestion || undefined
+            prayerPoints: [...(existingContent.content.prayerPoints || [])]
           }
 
-          const cachedSectionCount = 6 +
-            (cachedGuide.passage ? 1 : 0) +
-            (cachedGuide.interpretationInsights ? 1 : 0) +
-            (cachedGuide.summaryInsights ? 1 : 0) +
-            (cachedGuide.reflectionAnswers ? 1 : 0) +
-            (cachedGuide.contextQuestion ? 1 : 0) +
-            (cachedGuide.summaryQuestion ? 1 : 0) +
-            (cachedGuide.relatedVersesQuestion ? 1 : 0) +
-            (cachedGuide.reflectionQuestion ? 1 : 0) +
-            (cachedGuide.prayerQuestion ? 1 : 0)
+          // summary, context, interpretation, relatedVerses,
+          // reflectionQuestions, prayerPoints, plus passage when present
+          const cachedSectionCount = 6 + (cachedGuide.passage ? 1 : 0)
 
           emit(createInitEvent('cache_hit', cachedSectionCount))
 
@@ -293,14 +272,6 @@ async function handleAdminStudyGenerator(
 
           let idx = 6
           if (cachedGuide.passage) sections.push({ type: 'passage', content: cachedGuide.passage, index: idx++ })
-          if (cachedGuide.interpretationInsights) sections.push({ type: 'interpretationInsights', content: cachedGuide.interpretationInsights, index: idx++ })
-          if (cachedGuide.summaryInsights) sections.push({ type: 'summaryInsights', content: cachedGuide.summaryInsights, index: idx++ })
-          if (cachedGuide.reflectionAnswers) sections.push({ type: 'reflectionAnswers', content: cachedGuide.reflectionAnswers, index: idx++ })
-          if (cachedGuide.contextQuestion) sections.push({ type: 'contextQuestion', content: cachedGuide.contextQuestion, index: idx++ })
-          if (cachedGuide.summaryQuestion) sections.push({ type: 'summaryQuestion', content: cachedGuide.summaryQuestion, index: idx++ })
-          if (cachedGuide.relatedVersesQuestion) sections.push({ type: 'relatedVersesQuestion', content: cachedGuide.relatedVersesQuestion, index: idx++ })
-          if (cachedGuide.reflectionQuestion) sections.push({ type: 'reflectionQuestion', content: cachedGuide.reflectionQuestion, index: idx++ })
-          if (cachedGuide.prayerQuestion) sections.push({ type: 'prayerQuestion', content: cachedGuide.prayerQuestion, index: idx++ })
 
           for (const section of sections) {
             emit(createSectionEvent(section as any, cachedSectionCount))
@@ -378,15 +349,7 @@ async function handleAdminStudyGenerator(
             passage: studyGuideData.passage || null,
             relatedVerses: studyGuideData.relatedVerses,
             reflectionQuestions: studyGuideData.reflectionQuestions,
-            prayerPoints: studyGuideData.prayerPoints,
-            interpretationInsights: studyGuideData.interpretationInsights || [],
-            summaryInsights: studyGuideData.summaryInsights || [],
-            reflectionAnswers: studyGuideData.reflectionAnswers || [],
-            contextQuestion: studyGuideData.contextQuestion || '',
-            summaryQuestion: studyGuideData.summaryQuestion || '',
-            relatedVersesQuestion: studyGuideData.relatedVersesQuestion || '',
-            reflectionQuestion: studyGuideData.reflectionQuestion || '',
-            prayerQuestion: studyGuideData.prayerQuestion || ''
+            prayerPoints: studyGuideData.prayerPoints
           },
           userContext
         )

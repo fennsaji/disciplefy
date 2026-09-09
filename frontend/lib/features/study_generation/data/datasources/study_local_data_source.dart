@@ -140,11 +140,6 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
         language: data['language'] as String? ?? AppConstants.DEFAULT_LANGUAGE,
         createdAt: DateTime.parse(data['createdAt'] as String),
         userId: data['userId'] as String?,
-        interpretationInsights:
-            (data['interpretationInsights'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList(),
-        contextQuestion: data['contextQuestion'] as String?,
         personalNotes: data['personalNotes'] as String?,
         isSaved: data['isSaved'] as bool?,
         studyMode: data['studyMode'] as String?,
@@ -165,8 +160,6 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
         'language': studyGuide.language,
         'createdAt': studyGuide.createdAt.toIso8601String(),
         'userId': studyGuide.userId,
-        'interpretationInsights': studyGuide.interpretationInsights,
-        'contextQuestion': studyGuide.contextQuestion,
         'personalNotes': studyGuide.personalNotes,
         'isSaved': studyGuide.isSaved,
         'studyMode': studyGuide.studyMode,

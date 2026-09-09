@@ -62,14 +62,6 @@ interface SermonPass4Data {
   relatedVerses: Array<{ reference: string; text: string }>
   reflectionQuestions: string[]
   prayerPoints: string[]
-  summaryInsights: string[]
-  interpretationInsights: string[]
-  reflectionAnswers: string[]
-  contextQuestion: string
-  summaryQuestion: string
-  relatedVersesQuestion: string
-  reflectionQuestion: string
-  prayerQuestion: string
 }
 
 interface StandardPass1Data {
@@ -233,36 +225,12 @@ async function* streamCachedContent(
     { type: 'interpretation', content: studyGuide.interpretation, index: 3 },
     { type: 'relatedVerses', content: studyGuide.relatedVerses, index: 4 },
     { type: 'reflectionQuestions', content: studyGuide.reflectionQuestions, index: 5 },
-    { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 6 },
+    { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 6 }
   ]
 
   // Add optional sections if present (in SECTION_ORDER)
   let currentIndex = 7
 
-  if (studyGuide.interpretationInsights) {
-    sections.push({ type: 'interpretationInsights', content: studyGuide.interpretationInsights, index: currentIndex++ })
-  }
-  if (studyGuide.summaryInsights) {
-    sections.push({ type: 'summaryInsights', content: studyGuide.summaryInsights, index: currentIndex++ })
-  }
-  if (studyGuide.reflectionAnswers) {
-    sections.push({ type: 'reflectionAnswers', content: studyGuide.reflectionAnswers, index: currentIndex++ })
-  }
-  if (studyGuide.contextQuestion) {
-    sections.push({ type: 'contextQuestion', content: studyGuide.contextQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.summaryQuestion) {
-    sections.push({ type: 'summaryQuestion', content: studyGuide.summaryQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.relatedVersesQuestion) {
-    sections.push({ type: 'relatedVersesQuestion', content: studyGuide.relatedVersesQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.reflectionQuestion) {
-    sections.push({ type: 'reflectionQuestion', content: studyGuide.reflectionQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.prayerQuestion) {
-    sections.push({ type: 'prayerQuestion', content: studyGuide.prayerQuestion, index: currentIndex++ })
-  }
 
   const totalSections = sections.length
 
@@ -414,38 +382,6 @@ async function streamAndParsePass2WithEmission(
         console.log(`[LLM-MultiPass] 📤 Emitting prayerPoints from ${passName}`)
         emit(createSectionEvent({ type: 'prayerPoints', content: section.content, index: 5 }, totalSections))
         emittedSections.add('prayerPoints')
-      } else if (sectionType === 'summaryInsights') {
-        console.log(`[LLM-MultiPass] 📤 Emitting summaryInsights from ${passName}`)
-        emit(createSectionEvent({ type: 'summaryInsights', content: section.content, index: 6 }, totalSections))
-        emittedSections.add('summaryInsights')
-      } else if (sectionType === 'interpretationInsights') {
-        console.log(`[LLM-MultiPass] 📤 Emitting interpretationInsights from ${passName}`)
-        emit(createSectionEvent({ type: 'interpretationInsights', content: section.content, index: 7 }, totalSections))
-        emittedSections.add('interpretationInsights')
-      } else if (sectionType === 'reflectionAnswers') {
-        console.log(`[LLM-MultiPass] 📤 Emitting reflectionAnswers from ${passName}`)
-        emit(createSectionEvent({ type: 'reflectionAnswers', content: section.content, index: 8 }, totalSections))
-        emittedSections.add('reflectionAnswers')
-      } else if (sectionType === 'contextQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting contextQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'contextQuestion', content: section.content, index: 9 }, totalSections))
-        emittedSections.add('contextQuestion')
-      } else if (sectionType === 'summaryQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting summaryQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'summaryQuestion', content: section.content, index: 10 }, totalSections))
-        emittedSections.add('summaryQuestion')
-      } else if (sectionType === 'relatedVersesQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting relatedVersesQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'relatedVersesQuestion', content: section.content, index: 11 }, totalSections))
-        emittedSections.add('relatedVersesQuestion')
-      } else if (sectionType === 'reflectionQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting reflectionQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'reflectionQuestion', content: section.content, index: 12 }, totalSections))
-        emittedSections.add('reflectionQuestion')
-      } else if (sectionType === 'prayerQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting prayerQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'prayerQuestion', content: section.content, index: 13 }, totalSections))
-        emittedSections.add('prayerQuestion')
       } else {
         console.log(`[LLM-MultiPass] ⚠️ Unhandled section type in ${passName}: "${sectionType}" - not emitting`)
       }
@@ -828,35 +764,13 @@ async function handleStudyGenerateV2(
             passage: existingContent.content.passage || '',
             relatedVerses: [...(existingContent.content.relatedVerses || [])],
             reflectionQuestions: [...(existingContent.content.reflectionQuestions || [])],
-            prayerPoints: [...(existingContent.content.prayerPoints || [])],
-            // Reflection Mode fields - insights and answers
-            interpretationInsights: existingContent.content.interpretationInsights
-              ? [...existingContent.content.interpretationInsights]
-              : undefined,
-            summaryInsights: existingContent.content.summaryInsights
-              ? [...existingContent.content.summaryInsights]
-              : undefined,
-            reflectionAnswers: existingContent.content.reflectionAnswers
-              ? [...existingContent.content.reflectionAnswers]
-              : undefined,
-            // Reflection Mode fields - dynamic questions
-            contextQuestion: existingContent.content.contextQuestion || undefined,
-            summaryQuestion: existingContent.content.summaryQuestion || undefined,
-            relatedVersesQuestion: existingContent.content.relatedVersesQuestion || undefined,
-            reflectionQuestion: existingContent.content.reflectionQuestion || undefined,
-            prayerQuestion: existingContent.content.prayerQuestion || undefined
+            prayerPoints: [...(existingContent.content.prayerPoints || [])]
           }
 
           // Calculate total sections for this cached guide (base 7: summary, context, passage, interpretation, relatedVerses, reflectionQuestions, prayerPoints)
-          const cachedSectionCount = 7 +
-            (cachedGuide.interpretationInsights ? 1 : 0) +
-            (cachedGuide.summaryInsights ? 1 : 0) +
-            (cachedGuide.reflectionAnswers ? 1 : 0) +
-            (cachedGuide.contextQuestion ? 1 : 0) +
-            (cachedGuide.summaryQuestion ? 1 : 0) +
-            (cachedGuide.relatedVersesQuestion ? 1 : 0) +
-            (cachedGuide.reflectionQuestion ? 1 : 0) +
-            (cachedGuide.prayerQuestion ? 1 : 0)
+          // summary, context, passage, interpretation, relatedVerses,
+          // reflectionQuestions, prayerPoints
+          const cachedSectionCount = 7
 
           console.log('📊 [STUDY-V2] Cached section count:', cachedSectionCount)
 
@@ -1413,30 +1327,6 @@ async function handleStudyGenerateV2(
 
             // Emit optional sections (6+) immediately
             let currentIndex = 6
-            if (studyGuideData.interpretationInsights) {
-              emit(createSectionEvent({ type: 'interpretationInsights', content: studyGuideData.interpretationInsights, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.summaryInsights) {
-              emit(createSectionEvent({ type: 'summaryInsights', content: studyGuideData.summaryInsights, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.reflectionAnswers) {
-              emit(createSectionEvent({ type: 'reflectionAnswers', content: studyGuideData.reflectionAnswers, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.contextQuestion) {
-              emit(createSectionEvent({ type: 'contextQuestion', content: studyGuideData.contextQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.summaryQuestion) {
-              emit(createSectionEvent({ type: 'summaryQuestion', content: studyGuideData.summaryQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.relatedVersesQuestion) {
-              emit(createSectionEvent({ type: 'relatedVersesQuestion', content: studyGuideData.relatedVersesQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.reflectionQuestion) {
-              emit(createSectionEvent({ type: 'reflectionQuestion', content: studyGuideData.reflectionQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.prayerQuestion) {
-              emit(createSectionEvent({ type: 'prayerQuestion', content: studyGuideData.prayerQuestion, index: currentIndex++ }, 14))
-            }
 
             } else if (study_mode === 'deep' || study_mode === 'lectio' || study_mode === 'standard') {
               // DEEP / LECTIO / STANDARD MODES: 2-pass generation
@@ -1727,30 +1617,6 @@ async function handleStudyGenerateV2(
 
             // Add optional sections if present (in SECTION_ORDER)
 
-            if (studyGuideData.interpretationInsights) {
-              allSections.push({ type: 'interpretationInsights', content: studyGuideData.interpretationInsights, index: currentIndex++ })
-            }
-            if (studyGuideData.summaryInsights) {
-              allSections.push({ type: 'summaryInsights', content: studyGuideData.summaryInsights, index: currentIndex++ })
-            }
-            if (studyGuideData.reflectionAnswers) {
-              allSections.push({ type: 'reflectionAnswers', content: studyGuideData.reflectionAnswers, index: currentIndex++ })
-            }
-            if (studyGuideData.contextQuestion) {
-              allSections.push({ type: 'contextQuestion', content: studyGuideData.contextQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.summaryQuestion) {
-              allSections.push({ type: 'summaryQuestion', content: studyGuideData.summaryQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.relatedVersesQuestion) {
-              allSections.push({ type: 'relatedVersesQuestion', content: studyGuideData.relatedVersesQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.reflectionQuestion) {
-              allSections.push({ type: 'reflectionQuestion', content: studyGuideData.reflectionQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.prayerQuestion) {
-              allSections.push({ type: 'prayerQuestion', content: studyGuideData.prayerQuestion, index: currentIndex++ })
-            }
 
             const totalSections = allSections.length
 
@@ -1827,15 +1693,7 @@ async function handleStudyGenerateV2(
             passage: studyGuideData.passage || null,
             relatedVerses: studyGuideData.relatedVerses,
             reflectionQuestions: studyGuideData.reflectionQuestions,
-            prayerPoints: studyGuideData.prayerPoints,
-            interpretationInsights: studyGuideData.interpretationInsights || [],
-            summaryInsights: studyGuideData.summaryInsights || [],
-            reflectionAnswers: studyGuideData.reflectionAnswers || [],
-            contextQuestion: studyGuideData.contextQuestion || '',
-            summaryQuestion: studyGuideData.summaryQuestion || '',
-            relatedVersesQuestion: studyGuideData.relatedVersesQuestion || '',
-            reflectionQuestion: studyGuideData.reflectionQuestion || '',
-            prayerQuestion: studyGuideData.prayerQuestion || ''
+            prayerPoints: studyGuideData.prayerPoints
           },
           userContext
         )

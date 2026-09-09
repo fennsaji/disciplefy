@@ -1086,26 +1086,6 @@ Return ONLY the numeric score, nothing else.`
         "Ask for wisdom to understand His Word",
         "Pray for opportunities to share this message"
       ],
-      interpretationInsights: [
-        "God's love is unconditional and universal",
-        "Salvation requires faith and trust in Christ",
-        "Divine grace transforms our understanding"
-      ],
-      summaryInsights: [
-        "Divine love manifested through sacrifice",
-        "Universal offer of eternal life",
-        "Faith as the path to redemption"
-      ],
-      reflectionAnswers: [
-        "Strengthen my daily prayer practice",
-        "Share God's love with those around me",
-        "Trust God's plan in difficult times"
-      ],
-      contextQuestion: "Does this historical context change how you view God's timing?",
-      summaryQuestion: "What aspect of God's love resonates most with you today?",
-      relatedVersesQuestion: "Which of these verses speaks to your current journey?",
-      reflectionQuestion: "How will you apply this truth in your daily walk?",
-      prayerQuestion: "What would you like to tell God right now?"
     }
   }
 

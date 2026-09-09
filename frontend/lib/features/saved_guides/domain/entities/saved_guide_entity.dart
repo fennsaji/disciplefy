@@ -20,16 +20,6 @@ class SavedGuideEntity extends Equatable {
   // Scripture passage for meditation and reading
   final String? passage;
 
-  // Reflection enhancement fields
-  final List<String>? interpretationInsights;
-  final List<String>? summaryInsights;
-  final List<String>? reflectionAnswers;
-  final String? contextQuestion;
-  final String? summaryQuestion;
-  final String? relatedVersesQuestion;
-  final String? reflectionQuestion;
-  final String? prayerQuestion;
-
   // Legacy content field for backward compatibility
   final String content;
 
@@ -59,14 +49,6 @@ class SavedGuideEntity extends Equatable {
     this.reflectionQuestions,
     this.prayerPoints,
     this.passage,
-    this.interpretationInsights,
-    this.summaryInsights,
-    this.reflectionAnswers,
-    this.contextQuestion,
-    this.summaryQuestion,
-    this.relatedVersesQuestion,
-    this.reflectionQuestion,
-    this.prayerQuestion,
   });
 
   SavedGuideEntity copyWith({
@@ -87,14 +69,6 @@ class SavedGuideEntity extends Equatable {
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
     String? passage,
-    List<String>? interpretationInsights,
-    List<String>? summaryInsights,
-    List<String>? reflectionAnswers,
-    String? contextQuestion,
-    String? summaryQuestion,
-    String? relatedVersesQuestion,
-    String? reflectionQuestion,
-    String? prayerQuestion,
   }) =>
       SavedGuideEntity(
         id: id ?? this.id,
@@ -114,16 +88,6 @@ class SavedGuideEntity extends Equatable {
         reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
         prayerPoints: prayerPoints ?? this.prayerPoints,
         passage: passage ?? this.passage,
-        interpretationInsights:
-            interpretationInsights ?? this.interpretationInsights,
-        summaryInsights: summaryInsights ?? this.summaryInsights,
-        reflectionAnswers: reflectionAnswers ?? this.reflectionAnswers,
-        contextQuestion: contextQuestion ?? this.contextQuestion,
-        summaryQuestion: summaryQuestion ?? this.summaryQuestion,
-        relatedVersesQuestion:
-            relatedVersesQuestion ?? this.relatedVersesQuestion,
-        reflectionQuestion: reflectionQuestion ?? this.reflectionQuestion,
-        prayerQuestion: prayerQuestion ?? this.prayerQuestion,
       );
 
   String get displayTitle {
@@ -236,14 +200,6 @@ class SavedGuideEntity extends Equatable {
         reflectionQuestions,
         prayerPoints,
         passage,
-        interpretationInsights,
-        summaryInsights,
-        reflectionAnswers,
-        contextQuestion,
-        summaryQuestion,
-        relatedVersesQuestion,
-        reflectionQuestion,
-        prayerQuestion,
       ];
 
   /// The `extra` map the study-guide route expects to open this guide
@@ -273,14 +229,6 @@ class SavedGuideEntity extends Equatable {
           'reflection_questions': reflectionQuestions,
           'prayer_points': prayerPoints,
           'passage': passage,
-          'interpretation_insights': interpretationInsights,
-          'summary_insights': summaryInsights,
-          'reflection_answers': reflectionAnswers,
-          'context_question': contextQuestion,
-          'summary_question': summaryQuestion,
-          'related_verses_question': relatedVersesQuestion,
-          'reflection_question': reflectionQuestion,
-          'prayer_question': prayerQuestion,
         },
       };
 }

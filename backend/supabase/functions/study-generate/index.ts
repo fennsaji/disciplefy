@@ -358,14 +358,6 @@ async function handleStudyGenerate(req: Request, services: ServiceContainer): Pr
         relatedVerses: generatedContent.relatedVerses,
         reflectionQuestions: generatedContent.reflectionQuestions,
         prayerPoints: generatedContent.prayerPoints,
-        interpretationInsights: generatedContent.interpretationInsights,
-        summaryInsights: generatedContent.summaryInsights,
-        reflectionAnswers: generatedContent.reflectionAnswers,
-        contextQuestion: generatedContent.contextQuestion,
-        summaryQuestion: generatedContent.summaryQuestion,
-        relatedVersesQuestion: generatedContent.relatedVersesQuestion,
-        reflectionQuestion: generatedContent.reflectionQuestion,
-        prayerQuestion: generatedContent.prayerQuestion
       },
       userContext
     )

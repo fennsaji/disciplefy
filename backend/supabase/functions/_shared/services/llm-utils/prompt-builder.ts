@@ -333,7 +333,7 @@ Target total output: ${wordTarget} words across all fields.`
 ${createVerseReferenceBlock(params.language)}
 
 ---
-CONTENT STRUCTURE — ALL 15 FIELDS MANDATORY
+CONTENT STRUCTURE — ALL 7 FIELDS MANDATORY
 ---
 
 WORD COUNTS:
@@ -341,7 +341,7 @@ WORD COUNTS:
 - "context": 40-70 words (one short paragraph, essential background only)
 - "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
 - "interpretation": 900-1,200 words, EXACTLY 4-5 paragraphs, each 7-9 sentences
-- "prayerPoints": ONE single prayer paragraph (6-8 sentences, 150-200 words)
+- "prayerPoints": ONE single prayer paragraph (5-6 sentences, 80-100 words)
 - Total: ${wordTarget} words (10-minute study at 140-150 wpm)
 
 INTERPRETATION STRUCTURE:
@@ -355,28 +355,20 @@ INTERPRETATION STRUCTURE:
   "context": "40-70 words MAX — single most essential background fact",
   "passage": "Scripture reference only (e.g., 'Romans 8:1-39'). MANDATORY. No verse text.",
   "interpretation": "4-5 sections, each with **Bold Title** + 7-9 sentences. 900-1,200 words. Prose only.",
-  "relatedVerses": ["5-7 verse REFERENCES in ${languageConfig.name} — no verse text"],
-  "reflectionQuestions": ["5-7 deep application questions"],
-  "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 150-200 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."],
-  "summaryInsights": ["4-5 resonance themes (15-20 words each)"],
-  "interpretationInsights": ["4-5 theological insights (15-20 words each)"],
-  "reflectionAnswers": ["4-5 life applications (15-20 words each)"],
-  "contextQuestion": "Yes/no question connecting context to modern life",
-  "summaryQuestion": "Question about summary (12-18 words)",
-  "relatedVersesQuestion": "Verse study question (12-18 words)",
-  "reflectionQuestion": "Application question (12-18 words)",
-  "prayerQuestion": "Prayer invitation (10-15 words)"
+  "relatedVerses": ["EXACTLY 4 verse REFERENCES in ${languageConfig.name} — no verse text"],
+  "reflectionQuestions": ["EXACTLY 4 deep application questions"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (5-6 sentences, 80-100 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."]
 }
 
-${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
+${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
 
-PRAYER: 6-8 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
+PRAYER: 5-6 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
 
 VERIFY BEFORE OUTPUT:
 - interpretation: 4-5 paragraphs × 7-9 sentences each = 900-1,200 words?
 - passage: reference ONLY (not full text)?
-- prayer: 6-8 sentences with correct closing?
-- All 15 fields present? All verse references in ${languageConfig.name}?
+- prayer: 5-6 sentences with correct closing?
+- All 7 fields present? All verse references in ${languageConfig.name}?
 
 ${languageExamples}
 
@@ -428,7 +420,7 @@ WORD LIMITS (strict):
 - context: 40-70 words, essential background only
 - interpretation: 120-150 words, EXACTLY 2 paragraphs (3-4 sentences each), NO headings
 - prayer: 60-80 words, 4-5 sentences
-- relatedVerses/reflectionQuestions/all insights: EXACTLY 3 each
+- relatedVerses/reflectionQuestions: EXACTLY 3 each
 
 {
   "summary": "3-4 sentences (MAX ${wordLimits.summary} words)",
@@ -437,20 +429,14 @@ WORD LIMITS (strict):
   "interpretation": "2 paragraphs, 3-4 sentences each, MAX ${wordLimits.interpretation} words. Prose only.",
   "relatedVerses": ["EXACTLY 3 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["EXACTLY 3 practical questions"],
-  "prayerPoints": ["4-5 sentences, MAX ${wordLimits.prayer} words, addressing God directly"],
-  "summaryInsights": ["EXACTLY 3 themes (8-12 words each)"],
-  "interpretationInsights": ["EXACTLY 3 insights (8-12 words each)"],
-  "reflectionAnswers": ["EXACTLY 3 applications (8-12 words each)"],
-  "contextQuestion": "Yes/no question", "summaryQuestion": "6-10 words",
-  "relatedVersesQuestion": "6-10 words", "reflectionQuestion": "6-10 words",
-  "prayerQuestion": "5-8 words"
+  "prayerPoints": ["4-5 sentences, MAX ${wordLimits.prayer} words, addressing God directly"]
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
 Focus on ONE central truth. Continuous prose, \\n\\n between paragraphs. Brevity is paramount.
 
-VERIFY: summary ≤${wordLimits.summary}w | interpretation: 2 paragraphs, 3-4 sentences each, ≤${wordLimits.interpretation}w | context ≤${wordLimits.context}w | prayer: 4-5 sentences, ≤${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions, summaryInsights, interpretationInsights, reflectionAnswers | All 15 fields present.
+VERIFY: summary ≤${wordLimits.summary}w | interpretation: 2 paragraphs, 3-4 sentences each, ≤${wordLimits.interpretation}w | context ≤${wordLimits.context}w | prayer: 4-5 sentences, ≤${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions | All 7 fields present.
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
 IF WORD LIMITS ARE EXCEEDED - YOU MUST CUT CONTENT TO MEET LIMITS.
@@ -545,17 +531,11 @@ INTERPRETATION PARAGRAPHS (6-8 sentences each, **Bold Title** per section):
   "relatedVerses": ["7-10 verse REFERENCES in ${languageConfig.name} — no text"],
   "reflectionQuestions": ["8-12 deep theological questions"],
   "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 200-250 words). Respond to theological depth, address God directly, end with correct closing. Do NOT split into multiple items."],
-  "summaryInsights": ["5-7 themes (15-20 words each)"],
-  "interpretationInsights": ["5-7 doctrinal truths (15-20 words each)"],
-  "reflectionAnswers": ["5-7 applications (15-20 words each)"],
-  "contextQuestion": "Yes/no question", "summaryQuestion": "12-18 words",
-  "relatedVersesQuestion": "12-18 words", "reflectionQuestion": "12-18 words",
-  "prayerQuestion": "10-15 words"
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
 
-VERIFY: 5-6 paragraphs × 6-8 sentences = 1,350-1,550 words? All 15 fields? Context ≤70 words? Word studies integrated (not forced)?
+VERIFY: 5-6 paragraphs × 6-8 sentences = 1,350-1,550 words? All 7 fields? Context ≤70 words? Word studies integrated (not forced)?
 
 ${getLanguageExamples(params.language)}
 
@@ -613,14 +593,14 @@ ${createNativeWritingStyle(params.language)}`
 ${createVerseReferenceBlock(params.language)}
 
 ---
-MEDITATIVE READING STRUCTURE - ALL 15 FIELDS MANDATORY
+MEDITATIVE READING STRUCTURE - ALL 7 FIELDS MANDATORY
 ---
 
 WORD COUNTS:
 - "interpretation": 800-1,000 words — EXACTLY 4 paragraphs, 6-8 sentences each
 - "summary": 150-200 words (prayerful invitation)
 - "context": 40-60 words (brief heart preparation)
-- "prayerPoints": ONE single prayer paragraph (5-7 sentences, 150-200 words, text-grounded)
+- "prayerPoints": ONE single prayer paragraph (5-6 sentences, 80-100 words, text-grounded)
 - Total: ${wordTarget} words
 
 INTERPRETATION — 4 paragraphs (6-8 sentences each):
@@ -629,23 +609,15 @@ INTERPRETATION — 4 paragraphs (6-8 sentences each):
 3. PRAYER RESPONSE: Thanksgiving, confession (1 Jn 1:9), trust promises, petition, intercession
 4. APPLICATION: One truth to believe, one sin to repent, one action to take, one person to serve, one verse to carry
 
-CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
+CONTENT STRUCTURE (ALL 7 FIELDS MANDATORY):
 {
   "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Prayerful, warm invitation to read this passage carefully — 150-200 words. State what the passage is about and what God reveals through it. Invite the reader to come with open Bible, open heart, and dependence on the Holy Spirit.]",
   "context": "Brief introduction to prayerful Scripture reading as a Protestant spiritual discipline (40-60 words): coming to God's Word expectantly, asking the Holy Spirit for understanding (1 Corinthians 2:12-14), reading observationally and responding in prayer and obedience.",
   "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused reading (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9', '1 John 4:7-12'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
   "interpretation": "[EXACTLY 4 paragraphs as structured above. EACH paragraph MUST begin with a **bold header** in ${languageConfig.name} followed by 6-8 sentences of Scripture-anchored guidance. Target: 800-1,000 words. Guide through: CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION & COMMITMENT. NO bullets. Flowing prayerful prose grounded in the text.]",
-  "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
-  "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What specific sin or attitude does this passage call you to repent of?", "What one concrete step of obedience will you take this week based on this text?"],
-  "prayerPoints": ["ONE single continuous prayer paragraph (5-7 sentences, 150-200 words). Address God directly. Ground the prayer in what the text reveals. Respond to Scripture studied. Close with appropriate ending for ${languageConfig.name}. Do NOT split into multiple items."],
-  "summaryInsights": ["4-5 key biblical truths from the passage (15-20 words each)"],
-  "interpretationInsights": ["4-5 theological insights revealed by the text (15-20 words each)"],
-  "reflectionAnswers": ["4-5 concrete life applications from the text (15-20 words each)"],
-  "contextQuestion": "Yes/no question connecting the passage's original context to personal life today",
-  "summaryQuestion": "Question about the central biblical message of the passage (12-18 words)",
-  "relatedVersesQuestion": "Question encouraging further Bible reading on this theme (12-18 words)",
-  "reflectionQuestion": "Question inviting personal reflection on the text (12-18 words)",
-  "prayerQuestion": "Invitation to respond in prayer based on what Scripture taught (10-15 words)"
+  "relatedVerses": ["EXACTLY 4 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
+  "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What one concrete step of obedience will you take this week based on this text?"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (5-6 sentences, 80-100 words). Address God directly. Ground the prayer in what the text reveals. Respond to Scripture studied. Close with appropriate ending for ${languageConfig.name}. Do NOT split into multiple items."]
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
@@ -653,7 +625,7 @@ ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 VERIFY BEFORE OUTPUT:
 - interpretation: 4 paragraphs × 6-8 sentences = 800-1,000 words?
 - summary: 150-200 words? context: 40-60 words?
-- All 15 fields present? All content Scripture-anchored (not mystical)?
+- All 7 fields present? All content Scripture-anchored (not mystical)?
 - Total ~${wordTarget} words?
 
 ${getLanguageExamples(params.language)}
@@ -857,23 +829,15 @@ Keep summaries CONCISE - give the core idea, preacher will add emotional intensi
 - **${headings.responseOptions}** (50-70 words): 4-5 response options (come forward, raise hand, meet pastor, contact later, connection card)
 - **${headings.closingPrayer}** (60-80 words): Brief prayer outline — for responders, Spirit's work, courage to obey
 
-CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
+CONTENT STRUCTURE (ALL 7 FIELDS MANDATORY):
 {
   "summary": "**Sermon Title:** [Compelling 3-6 word title]\\n\\n**Thesis Statement:** [1-2 sentence core message of entire sermon - memorable and transformative]\\n\\n**Hook Preview:** [2-3 sentences describing the introduction's attention-grabber and why it matters]\\n\\n**Key Question:** [The central question this sermon answers]\\n\\n**Gospel Connection:** [2-3 sentences showing how this sermon ultimately points to Christ]\\n\\nTarget: 250-350 words with compelling framing that makes people want to hear the full sermon",
   "context": "Historical/cultural background (40-70 words MAX). One short paragraph — only the single most essential fact needed for preaching this passage. No fluff.",
   "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation reading. PREFER LONGER PASSAGES (10-20+ verses) that provide substantial content for reflection and meditation (e.g., 'Romans 8:1-39', 'Psalm 119:1-24', 'Matthew 5:1-20', 'Isaiah 53:1-12'). Choose a passage that best captures the core message of this sermon and provides rich material for personal devotion. Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
   "interpretation": "[PREACHER-FACING EXPLANATION following structure above. Target: 3,800-4,500 words. Include: Introduction (450-550 words), Point 1 (1,000-1,200 words), Point 2 (1,000-1,200 words), Point 3 (700-900 words), Conclusion (350-450 words). Provide CORE theological content and conceptual illustrations that preachers will expand during delivery.]",
-  "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Isaiah 53:5', '1 Peter 2:24') - NO verse text"],
-  "reflectionQuestions": ["5-7 discussion questions for small groups - mix theological reflection and personal application"],
+  "relatedVerses": ["EXACTLY 4 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Isaiah 53:5', '1 Peter 2:24') - NO verse text"],
+  "reflectionQuestions": ["EXACTLY 4 discussion questions for small groups - mix theological reflection and personal application"],
   "prayerPoints": ["**ALTAR CALL / PRAYER PROMPTS (300-400 words)**\\n\\n**${headings.gospelRecap}** (120-150 words):\\n[Write 2-3 concise paragraphs with clear gospel presentation: God's holiness, our sin, Christ's death and resurrection, call to repentance and faith. Keep it focused - preacher will expand.]\\n\\n**${headings.theInvitation}** (120-150 words):\\n[Write 2-3 paragraphs with specific invitation based on sermon theme. Be direct and gracious. Preacher will add personal warmth.]\\n\\n**${headings.responseOptions}** (50-70 words):\\n• Come forward during closing song\\n• Raise hand for prayer\\n• Meet pastor after service\\n• Contact during the week\\n• Fill out connection card\\n\\n**${headings.closingPrayer}** (60-80 words):\\n[Brief prayer outline. Preacher will expand into full prayer during delivery.]\\n\\nAmen."],
-  "summaryInsights": ["5 sermon takeaways congregation should remember (15-20 words each - memorable and actionable)"],
-  "interpretationInsights": ["5 theological truths taught in the sermon (15-20 words each - doctrinally precise)"],
-  "reflectionAnswers": ["5 life applications from the sermon (15-20 words each - specific and transformative)"],
-  "contextQuestion": "Compelling yes/no question connecting biblical context to modern life challenges",
-  "summaryQuestion": "Thought-provoking question about the sermon thesis (12-18 words)",
-  "relatedVersesQuestion": "Question encouraging further scripture study during the week (12-18 words)",
-  "reflectionQuestion": "Convicting application question for personal reflection (12-18 words)",
-  "prayerQuestion": "Invitation question encouraging commitment and response (10-15 words)"
 }
 
 CRITICAL: USE EXACT HEADINGS IN ${languageConfig.name} (NOT ENGLISH):
@@ -891,7 +855,7 @@ ${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
 VERIFY BEFORE OUTPUT:
 - interpretation TOTAL: 3,800-4,500 words (Intro 450-550, Pt1 1000-1200, Pt2 1000-1200, Pt3 700-900, Conclusion 350-450)
 - summary: 250-350 words | context: 40-70 words | prayerPoints (altar call): 300-400 words
-- All 15 fields present (including passage) | All headings in ${languageConfig.name}
+- All 7 fields present (including passage) | All headings in ${languageConfig.name}
 - TOTAL output: ${wordTarget} words | Gospel-centered throughout
 IF WORD COUNTS ARE TOO LOW - FIX BEFORE OUTPUT.
 

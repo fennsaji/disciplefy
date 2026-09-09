@@ -192,17 +192,9 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
 
 {
   "interpretationPart2": "[350-450 words: PRACTICAL APPLICATION with life transformation and specific action steps]",
-  "relatedVerses": [5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'John 14:6', 'Romans 12:1-2') - NO verse text],
-  "reflectionQuestions": [5-7 reflection questions mixing understanding and application],
-  "prayerPoints": [ONE single continuous prayer paragraph (6-8 sentences, 150-200 words) responding to the study. Do NOT split into multiple items.],
-  "summaryInsights": [4-5 key takeaways - 15-20 words each],
-  "interpretationInsights": [4-5 biblical truths taught - 15-20 words each],
-  "reflectionAnswers": [4-5 life applications - 15-20 words each],
-  "contextQuestion": "[Yes/no question connecting biblical context to modern life]",
-  "summaryQuestion": "[Question about the key message - 12-18 words]",
-  "relatedVersesQuestion": "[Question encouraging scripture study - 12-18 words]",
-  "reflectionQuestion": "[Application question for reflection - 12-18 words]",
-  "prayerQuestion": "[Invitation question encouraging response - 10-15 words]"
+  "relatedVerses": [4 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'John 14:6', 'Romans 12:1-2') - NO verse text],
+  "reflectionQuestions": [4 reflection questions mixing understanding and application],
+  "prayerPoints": [ONE single continuous prayer paragraph (5-6 sentences, 80-100 words) responding to the study. Do NOT split into multiple items.]
 }
 
 **INTERPRETATION PART 2 - PRACTICAL APPLICATION (350-450 words):**
@@ -240,15 +232,11 @@ Provide CONCRETE steps for the next 7 days:
 Target: 175-225 words, 5-7 complete sentences that are actionable, not vague.
 
 **SUPPORTING MATERIALS:**
-- relatedVerses: 5-7 verse REFERENCES ONLY in ${languageConfig.name} (e.g., 'Galatians 5:22-23') - NO verse text
-- reflectionQuestions: 5-7 questions (understanding + application)
-- prayerPoints: ONE single prayer paragraph (6-8 sentences, 150-200 words)
-- summaryInsights: 4-5 takeaways (15-20 words each)
-- interpretationInsights: 4-5 biblical truths (15-20 words each)
-- reflectionAnswers: 4-5 applications (15-20 words each)
-- 5 yes/no questions for engagement
+- relatedVerses: 4 verse REFERENCES ONLY in ${languageConfig.name} (e.g., 'Galatians 5:22-23') - NO verse text
+- reflectionQuestions: 4 questions (understanding + application)
+- prayerPoints: ONE single prayer paragraph (5-6 sentences, 80-100 words)
 
-VERIFY: interpretationPart2: 2 paragraphs, 5-7 sentences each, 350-450 words | prayerPoints: 1 item, single paragraph (6-8 sentences, 150-200 words) | 4-5 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | Verse refs in ${languageConfig.name} | Total ~500 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 paragraphs, 5-7 sentences each, 350-450 words | prayerPoints: 1 item, single paragraph (5-6 sentences, 80-100 words) | Verse refs in ${languageConfig.name} | Total ~500 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
@@ -257,17 +245,9 @@ ${getLanguageExamples(language)}
 OUTPUT ONLY THIS JSON - NO OTHER TEXT:
 {
   "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
-  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 6-8 sentences, 150-200 words, addressing God directly]"],
-  "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]"],
-  "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]"],
-  "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]"],
-  "contextQuestion": "[YOUR YES/NO QUESTION]",
-  "summaryQuestion": "[YOUR QUESTION]",
-  "relatedVersesQuestion": "[YOUR QUESTION]",
-  "reflectionQuestion": "[YOUR QUESTION]",
-  "prayerQuestion": "[YOUR QUESTION]"
+  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]"],
+  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]"],
+  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 5-6 sentences, 80-100 words, addressing God directly]"]
 }`
 
   return { sharedSystem, passSystem, userMessage }
@@ -283,14 +263,6 @@ export function combineStandardPasses(
     relatedVerses: string[]
     reflectionQuestions: string[]
     prayerPoints: string[]
-    summaryInsights: string[]
-    interpretationInsights: string[]
-    reflectionAnswers: string[]
-    contextQuestion: string
-    summaryQuestion: string
-    relatedVersesQuestion: string
-    reflectionQuestion: string
-    prayerQuestion: string
   }
 ): Record<string, unknown> {
   return {
@@ -303,14 +275,6 @@ export function combineStandardPasses(
     passage: pass1.passage,
     relatedVerses: pass2.relatedVerses,
     reflectionQuestions: pass2.reflectionQuestions,
-    prayerPoints: pass2.prayerPoints,
-    summaryInsights: pass2.summaryInsights,
-    interpretationInsights: pass2.interpretationInsights,
-    reflectionAnswers: pass2.reflectionAnswers,
-    contextQuestion: pass2.contextQuestion,
-    summaryQuestion: pass2.summaryQuestion,
-    relatedVersesQuestion: pass2.relatedVersesQuestion,
-    reflectionQuestion: pass2.reflectionQuestion,
-    prayerQuestion: pass2.prayerQuestion
+    prayerPoints: pass2.prayerPoints
   }
 }
