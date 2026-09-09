@@ -55,26 +55,16 @@ export class AnthropicClient {
     const cacheCreationTokens = data.usage.cache_creation_input_tokens || 0
     const cacheReadTokens = data.usage.cache_read_input_tokens || 0
 
-    // Calculate cost: cache reads are 10% of input price, cache writes are 125%
-    const cost = this.costTracker.calculateCost('anthropic', model, inputTokens, outputTokens)
-
-    // Adjust cost for cached tokens
-    const pricing = this.costTracker.getModelPricing('anthropic', model)
-    let cacheSavings = 0
-    if (pricing && cacheReadTokens > 0) {
-      // Cache reads cost 10% of input price (saving 90%)
-      cacheSavings = (cacheReadTokens / 1000) * pricing.input_per_1k * 0.9
-    }
-    let cacheWriteCost = 0
-    if (pricing && cacheCreationTokens > 0) {
-      // Cache writes cost 125% of input price (25% surcharge)
-      cacheWriteCost = (cacheCreationTokens / 1000) * pricing.input_per_1k * 0.25
-    }
-
-    const adjustedCost = cost.totalCost - cacheSavings + cacheWriteCost
+    // input_tokens already excludes anything served from or written to the
+    // cache, so the cached counts are passed through and priced as additions:
+    // 10% of the input rate for a read, 125% for a write.
+    const cost = this.costTracker.calculateCost('anthropic', model, inputTokens, outputTokens, {
+      cacheReadTokens,
+      cacheCreationTokens
+    })
 
     if (cacheReadTokens > 0 || cacheCreationTokens > 0) {
-      console.log(`[Anthropic] Cache: ${cacheReadTokens} read, ${cacheCreationTokens} written (savings: $${cacheSavings.toFixed(4)})`)
+      console.log(`[Anthropic] Cache: ${cacheReadTokens} read, ${cacheCreationTokens} written`)
     }
 
     return {
@@ -83,7 +73,7 @@ export class AnthropicClient {
       inputTokens: inputTokens + cacheReadTokens + cacheCreationTokens,
       outputTokens,
       totalTokens: inputTokens + cacheReadTokens + cacheCreationTokens + outputTokens,
-      costUsd: adjustedCost
+      costUsd: cost.totalCost
     }
   }
 
