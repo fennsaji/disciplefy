@@ -28,6 +28,7 @@ import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import { getUsageLoggingService } from '../_shared/services/usage-logging-service.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -606,7 +607,20 @@ async function handleStudyGenerateV2(
   }
 
   const requiredFeature = modeFeatureMap[study_mode]
-  const hasFeatureAccess = await isFeatureEnabledForPlan(requiredFeature, userPlan)
+
+  // A learning-path topic opens in the mode its path recommends, on every plan.
+  // Those guides are cached and cost nothing to serve again, and the catalogue
+  // is the part of the product that should stay open to everyone; the plan's
+  // mode rule is about the studies a user types in for themselves.
+  const isCataloguePath = topic_id
+    ? (await getLearningPathRecommendedMode(services.supabaseServiceClient, topic_id)) === study_mode
+    : false
+
+  const hasFeatureAccess = isCataloguePath || await isFeatureEnabledForPlan(requiredFeature, userPlan)
+
+  if (isCataloguePath) {
+    console.log(`📚 [STUDY-V2] Learning-path topic in its recommended mode: ${study_mode} allowed on ${userPlan}`)
+  }
 
   if (!hasFeatureAccess) {
     console.warn(`⛔ [STUDY-V2] Feature access denied: ${requiredFeature} not available for plan ${userPlan}`)
@@ -674,6 +688,33 @@ async function handleStudyGenerateV2(
     if (lpRecommendedMode && lpRecommendedMode === study_mode) {
       isFreeGeneration = true
       console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (recommended mode: ${study_mode})`)
+    }
+  }
+
+  // Ceilings on studies that actually call the model. A learning-path study in
+  // its recommended mode is served from the catalogue cache and costs nothing
+  // to repeat, so it is never counted and never blocked.
+  if (!isFreeGeneration && userContext.type === 'authenticated' && userContext.userId) {
+    const limits = await checkFreshStudyLimits(
+      studyGuideRepository.getSupabaseClient(),
+      userContext.userId,
+      userPlan,
+      study_mode
+    )
+
+    if (!limits.allowed) {
+      console.warn(`⛔ [STUDY-V2] ${limits.limit} reached: ${limits.used}/${limits.cap} for plan ${userPlan}`)
+      return new Response(
+        JSON.stringify({
+          error: 'FRESH_STUDY_LIMIT_REACHED',
+          message: limitMessage(limits),
+          limit: limits.limit,
+          used: limits.used,
+          cap: limits.cap,
+          currentPlan: userPlan
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
   }
 
