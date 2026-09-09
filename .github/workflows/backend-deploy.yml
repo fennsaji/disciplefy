@@ -223,7 +223,7 @@ jobs:
         # The day's spend across every user, in dollars, before generation
         # stops and readers are asked to come back tomorrow. Raise it
         # deliberately as traffic grows; see _shared/services/cost-ceiling.ts.
-        DAILY_COST_LIMIT_USD=${{ secrets.DAILY_COST_LIMIT_USD || '50' }}
+        DAILY_COST_LIMIT_USD=${{ secrets.DAILY_COST_LIMIT_USD || '15' }}
         NODE_ENV=${{ env.DEPLOY_ENV }}
 
         # Payment Configuration (${{ env.DEPLOY_ENV }})

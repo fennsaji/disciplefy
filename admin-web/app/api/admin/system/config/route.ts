@@ -127,6 +127,12 @@ export async function GET(request: NextRequest) {
         premium_trial_start_date: systemConfigMap.premium_trial_start_date ?? null,
         grace_period_days: systemConfigMap.grace_period_days ?? null,
       },
+      // Daily spend ceiling - from system_config table. Dollars the app may
+      // spend with the model providers in a day before study generation stops.
+      // Learning-path studies keep working; they come from the cache.
+      cost_control: {
+        daily_cost_limit_usd: Number(systemConfigMap.daily_cost_limit_usd ?? 15),
+      },
       // Discipler kill switch - from system_config table.
       // NOT the `ai_discipler` feature flag, which gates the paid voice
       // conversation feature. This one gates fellowship replies and reactions.
@@ -286,6 +292,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle maintenance_mode updates - save to system_config table
+    // Handle the daily spend ceiling - save to system_config table
+    if (body.cost_control) {
+      const limit = Number(body.cost_control.daily_cost_limit_usd)
+
+      if (!Number.isFinite(limit) || limit <= 0) {
+        return NextResponse.json(
+          { error: 'daily_cost_limit_usd must be a positive number of dollars' },
+          { status: 400 }
+        )
+      }
+
+      await supabaseAdmin
+        .from('system_config')
+        .update({ value: String(limit), updated_at: new Date().toISOString() })
+        .eq('key', 'daily_cost_limit_usd')
+
+      return NextResponse.json({
+        message: 'Daily spend ceiling updated. It takes effect within a minute.',
+        daily_cost_limit_usd: limit
+      })
+    }
+
     if (body.maintenance_mode) {
       const { enabled, message } = body.maintenance_mode
 

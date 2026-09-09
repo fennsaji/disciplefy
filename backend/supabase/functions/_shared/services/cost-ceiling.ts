@@ -16,8 +16,17 @@
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-/** Dollars per day across every feature. Override with DAILY_COST_LIMIT_USD. */
-const DEFAULT_DAILY_LIMIT_USD = 50
+/**
+ * Dollars per day across every feature, used only when config cannot be read.
+ *
+ * The real figure lives in system_config under `daily_cost_limit_usd` so it can
+ * be raised from the admin dashboard as traffic grows, without a deploy.
+ */
+const FALLBACK_DAILY_LIMIT_USD = 15
+
+/** Config is read once per instance; a change takes effect within the minute. */
+const LIMIT_CACHE_MS = 60_000
+let cachedLimit: { value: number; readAt: number } | null = null
 
 export interface CostCeilingResult {
   readonly withinBudget: boolean
@@ -29,10 +38,45 @@ export interface CostCeilingResult {
 export const COST_CEILING_MESSAGE =
   "Today's study limit has been reached. Please try again tomorrow. Learning-path studies are still available."
 
-export function dailyLimitUsd(): number {
+/**
+ * The configured ceiling, from system_config, falling back to the environment
+ * and then to {@link FALLBACK_DAILY_LIMIT_USD}.
+ *
+ * Cached briefly so a busy minute does not read config on every request.
+ */
+export async function dailyLimitUsd(db?: SupabaseClient): Promise<number> {
+  if (cachedLimit && Date.now() - cachedLimit.readAt < LIMIT_CACHE_MS) {
+    return cachedLimit.value
+  }
+
+  if (db) {
+    const { data, error } = await db
+      .from('system_config')
+      .select('value')
+      .eq('key', 'daily_cost_limit_usd')
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (!error && data?.value) {
+      const configured = Number(data.value)
+      if (Number.isFinite(configured) && configured > 0) {
+        cachedLimit = { value: configured, readAt: Date.now() }
+        return configured
+      }
+      console.warn(`[CostCeiling] Ignoring unusable configured limit: ${data.value}`)
+    }
+  }
+
   const raw = Deno.env.get('DAILY_COST_LIMIT_USD')
-  const parsed = raw ? Number(raw) : NaN
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_DAILY_LIMIT_USD
+  const fromEnv = raw ? Number(raw) : NaN
+  const value = Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : FALLBACK_DAILY_LIMIT_USD
+  cachedLimit = { value, readAt: Date.now() }
+  return value
+}
+
+/** Forgets the cached limit, so a change in admin applies at once. */
+export function resetDailyLimitCache(): void {
+  cachedLimit = null
 }
 
 /**
@@ -43,7 +87,7 @@ export function dailyLimitUsd(): number {
  * not take the product down; the per-user limits still apply underneath.
  */
 export async function checkCostCeiling(db: SupabaseClient): Promise<CostCeilingResult> {
-  const limitUsd = dailyLimitUsd()
+  const limitUsd = await dailyLimitUsd(db)
   const since = new Date()
   since.setUTCHours(0, 0, 0, 0)
 
