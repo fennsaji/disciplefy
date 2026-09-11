@@ -162,6 +162,46 @@ export class StreamingJsonParser {
   private parsedData: Partial<CompleteStudyGuide> = {}
 
   /**
+   * Resume state for a string field that has not closed yet, keyed by field
+   * name. Without this, every incoming chunk re-scanned every unclosed
+   * field's value from its first character, which is O(length x chunk count)
+   * — quadratic in the field's total size. A 20,000+ token sermon pass in
+   * Malayalam streams over hundreds of chunks and pushed this well past the
+   * platform's 2-second CPU budget per request, dropping the connection.
+   * Each field is now visited once per character across the whole request.
+   */
+  private stringScans: Map<string, { valueStart: number; pos: number; value: string; escaped: boolean }> = new Map()
+
+  /** Same idea as {@link stringScans}, for array fields. */
+  private arrayScans: Map<string, { arrayStart: number; pos: number; depth: number; inString: boolean; escaped: boolean }> = new Map()
+
+  /**
+   * How much of the buffer has already been confirmed to not contain a given
+   * field's key, so the next search only looks at newly arrived characters
+   * (plus a small overlap in case the key straddles the boundary) instead of
+   * re-scanning from position 0 for every field that hasn't started yet.
+   */
+  private keySearchProgress: Map<string, number> = new Map()
+
+  /**
+   * Finds `"fieldName":` style openers without re-scanning already-searched
+   * buffer content. Returns the absolute index just past [pattern]'s match,
+   * or null if it is not present yet.
+   */
+  private findKeyEnd(fieldName: string, pattern: RegExp): number | null {
+    const already = this.keySearchProgress.get(fieldName) ?? 0
+    // Long enough to cover the pattern re-matching across the old/new boundary.
+    const overlap = fieldName.length + 8
+    const searchFrom = Math.max(0, already - overlap)
+
+    const match = pattern.exec(this.buffer.slice(searchFrom))
+    if (match) return searchFrom + match.index + match[0].length
+
+    this.keySearchProgress.set(fieldName, this.buffer.length)
+    return null
+  }
+
+  /**
    * Adds a new chunk to the buffer and checks for complete sections
    *
    * @param chunk - Raw text chunk from LLM stream
@@ -251,17 +291,24 @@ export class StreamingJsonParser {
    * by a structural JSON token (comma, closing brace/bracket, or next key name).
    */
   private tryExtractString(fieldName: string): string | null {
-    // Find the field key followed by opening quote
-    const keyPattern = new RegExp(`"${fieldName}"\\s*:\\s*"`)
-    const keyMatch = keyPattern.exec(this.buffer)
-    if (!keyMatch) return null
+    let scan = this.stringScans.get(fieldName)
 
-    const valueStart = keyMatch.index + keyMatch[0].length
+    if (!scan) {
+      // Find the field key followed by opening quote. Only needed once per
+      // field: its position never changes once found.
+      const keyPattern = new RegExp(`"${fieldName}"\\s*:\\s*"`)
+      const valueStart = this.findKeyEnd(fieldName, keyPattern)
+      if (valueStart === null) return null
 
-    // Scan forward to find the closing quote via look-ahead heuristic
-    let pos = valueStart
-    let escaped = false
-    let value = ''
+      scan = { valueStart, pos: valueStart, value: '', escaped: false }
+      this.stringScans.set(fieldName, scan)
+    }
+
+    // Resume from where the last call left off — only the newly arrived
+    // characters are visited, not the whole value again.
+    let pos = scan.pos
+    let escaped = scan.escaped
+    let value = scan.value
 
     while (pos < this.buffer.length) {
       const char = this.buffer[pos]
@@ -273,12 +320,26 @@ export class StreamingJsonParser {
         value += char
         escaped = true
       } else if (char === '"') {
-        // A quote closes the string only if followed by a structural token
-        const remaining = this.buffer.substring(pos + 1)
+        // A quote closes the string only if followed by a structural token.
+        // The lookahead only needs a handful of characters, never the rest of
+        // the buffer — later passes' data can already be sitting beyond this
+        // point once several sections have streamed in.
+        const remaining = this.buffer.slice(pos + 1, pos + 21)
+        if (/^\s*$/.test(remaining)) {
+          // No lookahead yet — this quote could still turn out to be the
+          // closer once more of the stream arrives. Stop here without
+          // consuming it, so the next call re-examines this same position
+          // instead of permanently committing it as literal content.
+          scan.pos = pos
+          scan.value = value
+          scan.escaped = escaped
+          return null
+        }
         const isClosing =
           /^\s*[,}\]]/.test(remaining) ||
           /^\s*"[a-zA-Z_]/.test(remaining)
         if (isClosing) {
+          this.stringScans.delete(fieldName)
           return this.unescapeJsonString(value)
         } else {
           // Unescaped quote inside the value — treat as literal content
@@ -291,7 +352,11 @@ export class StreamingJsonParser {
       pos++
     }
 
-    // Reached end of buffer without a structural closing quote — still streaming
+    // Reached end of buffer without a structural closing quote — still
+    // streaming. Save progress so the next call resumes here.
+    scan.pos = pos
+    scan.value = value
+    scan.escaped = escaped
     return null
   }
 
@@ -301,25 +366,27 @@ export class StreamingJsonParser {
    * Pattern: "fieldName": ["value1", "value2", ...]
    */
   private tryExtractArray(fieldName: string): string[] | null {
-    // Find the start of the array
-    const startPattern = new RegExp(`"${fieldName}"\\s*:\\s*\\[`)
-    const startMatch = this.buffer.match(startPattern)
-    
-    if (!startMatch) {
-      return null
+    let scan = this.arrayScans.get(fieldName)
+
+    if (!scan) {
+      const startPattern = new RegExp(`"${fieldName}"\\s*:\\s*\\[`)
+      const arrayStart = this.findKeyEnd(fieldName, startPattern)
+      if (arrayStart === null) return null
+
+      scan = { arrayStart, pos: arrayStart, depth: 1, inString: false, escaped: false }
+      this.arrayScans.set(fieldName, scan)
     }
 
-    const arrayStart = this.buffer.indexOf(startMatch[0]) + startMatch[0].length
-    
-    // Find the matching closing bracket
-    let depth = 1
-    let pos = arrayStart
-    let inString = false
-    let escaped = false
+    // Resume the bracket-depth scan from the last visited position rather
+    // than re-walking the array from its start on every chunk.
+    let pos = scan.pos
+    let depth = scan.depth
+    let inString = scan.inString
+    let escaped = scan.escaped
 
     while (pos < this.buffer.length && depth > 0) {
       const char = this.buffer[pos]
-      
+
       if (escaped) {
         escaped = false
       } else if (char === '\\') {
@@ -330,16 +397,20 @@ export class StreamingJsonParser {
         if (char === '[') depth++
         if (char === ']') depth--
       }
-      
+
       pos++
     }
 
     if (depth === 0) {
-      // Found complete array
-      const arrayContent = this.buffer.substring(arrayStart, pos - 1)
+      const arrayContent = this.buffer.substring(scan.arrayStart, pos - 1)
+      this.arrayScans.delete(fieldName)
       return this.parseArrayContent(arrayContent)
     }
 
+    scan.pos = pos
+    scan.depth = depth
+    scan.inString = inString
+    scan.escaped = escaped
     return null
   }
 
@@ -546,6 +617,8 @@ export class StreamingJsonParser {
     this.buffer = ''
     this.emittedSections.clear()
     this.parsedData = {}
+    this.stringScans.clear()
+    this.arrayScans.clear()
   }
 
   /**
