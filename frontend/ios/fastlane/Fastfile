@@ -173,11 +173,21 @@ platform :ios do
   # Symbol upload is best-effort: a missing binary or a failed upload must never
   # fail a release that has already produced a valid IPA.
   def crashlytics_upload_symbols_binary
+    # Fastlane chdirs into this file's own directory (frontend/ios/fastlane)
+    # before running any lane, so a bare relative literal like "../build" is
+    # only correct if every caller happens to share that cwd. gym's raw
+    # xcodebuild invocations are not guaranteed to: the archive that shipped
+    # from CI resolved its SPM checkout with -clonedSourcePackagesDirPath
+    # relative to a different cwd, so "../build" here searched an empty
+    # directory tree while the real checkout sat one level up. Anchor every
+    # root to __dir__ instead of trusting Dir.pwd.
+    ios_root = File.expand_path("..", __dir__) # frontend/ios
+    frontend_root = File.expand_path("../..", __dir__) # frontend
+
     candidates = [
-      # Swift Package Manager (current): flutter build ios resolves packages here.
-      "../build/ios/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols",
-      # CocoaPods (pre-3.44 projects, and any future revert).
-      "./Pods/FirebaseCrashlytics/upload-symbols"
+      File.join(ios_root, "build/ios/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"),
+      File.join(frontend_root, "build/ios/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"),
+      File.join(ios_root, "Pods/FirebaseCrashlytics/upload-symbols") # CocoaPods (pre-3.44 projects, and any future revert)
     ]
     found = candidates.find { |path| File.exist?(path) }
     return found if found
@@ -185,16 +195,19 @@ platform :ios do
     # The exact layout has moved between Xcode, Flutter and SPM versions, and a
     # miss here is silent — four shipped builds had no symbols before this was
     # checked at all. So search the trees the binary can plausibly be in rather
-    # than guessing one more fixed path.
+    # than guessing one more fixed path. Both cwd interpretations are covered by
+    # searching from absolute anchors instead of relative ones, and the glob
+    # matches "upload-symbols" at any nesting depth — not just directly under a
+    # folder literally named "Crashlytics" — since that has also moved between
+    # firebase-ios-sdk releases.
     roots = [
-      "../build",                                    # flutter build ios output
-      "./build",                                     # gym's own derived data
-      "./Pods",                                      # CocoaPods
+      ios_root,
+      frontend_root,
       File.expand_path("~/Library/Developer/Xcode/DerivedData"),
     ]
     roots.each do |root|
       next unless Dir.exist?(root)
-      hit = Dir.glob("#{root}/**/Crashlytics/upload-symbols").first
+      hit = Dir.glob("#{root}/**/upload-symbols").first
       return hit if hit
     end
 
