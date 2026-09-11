@@ -843,10 +843,13 @@ class MockLanguagePreferenceService extends _i1.Mock
       ) as _i8.Future<void>);
 
   @override
-  _i8.Future<void> setStudyContentLanguageToDefault() => (super.noSuchMethod(
+  _i8.Future<void> setStudyContentLanguageToDefault(
+          {_i18.AppLanguage? appLanguage}) =>
+      (super.noSuchMethod(
         Invocation.method(
           #setStudyContentLanguageToDefault,
           [],
+          {#appLanguage: appLanguage},
         ),
         returnValue: _i8.Future<void>.value(),
         returnValueForMissingStub: _i8.Future<void>.value(),

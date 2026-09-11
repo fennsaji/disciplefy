@@ -237,8 +237,14 @@ class LanguagePreferenceService {
       }
 
       // Reset study content language to default when app language changes
-      // This ensures study content follows the new app language automatically
-      await setStudyContentLanguageToDefault();
+      // This ensures study content follows the new app language automatically.
+      //
+      // Pass the language we just saved. Letting this re-resolve would call
+      // getSelectedLanguage(), which re-reads the profile and writes whatever
+      // the DB says back over local storage — so a failed DB write above
+      // silently reverted the user's choice to the old language and emitted it,
+      // leaving storage and UI disagreeing until the next launch.
+      await setStudyContentLanguageToDefault(appLanguage: language);
       Logger.debug(
           '🔄 [STUDY_CONTENT_LANGUAGE] Reset to default after app language change');
 
@@ -418,6 +424,11 @@ class LanguagePreferenceService {
             // Use cached language preference
             await _prefs.setString(_languagePreferenceKey, dbLanguageCode);
             final language = AppLanguage.fromCode(dbLanguageCode);
+            _cachedLanguage = language;
+            // Tell the listeners. Without this the stores move but every
+            // i18n runtime keeps rendering the previous language until the
+            // next launch.
+            _languageChangeController.add(language);
             Logger.debug(
                 'Synced cached language preference to local: ${language.displayName}');
             return;
@@ -432,7 +443,12 @@ class LanguagePreferenceService {
               Logger.warning('No language preference found in database'),
           (language) async {
             if (language == null) return;
+            final previousCode = _prefs.getString(_languagePreferenceKey);
             await _prefs.setString(_languagePreferenceKey, language.code);
+            _cachedLanguage = language;
+            if (previousCode != language.code) {
+              _languageChangeController.add(language);
+            }
             Logger.debug(
                 'Synced database language preference to local: ${language.displayName}');
           },
@@ -477,6 +493,10 @@ class LanguagePreferenceService {
     _cachedHasCompletedSelection = null;
     _cachedLanguage = null;
     _cacheTimestamp = null;
+    // This runs on sign-out too, so the one-shot local→DB sync has to be armed
+    // again for whoever signs in next. Leaving it latched meant the second
+    // account in one app run never got its null language_preference filled in.
+    _localToDbSyncAttempted = false;
     Logger.debug('🔄 [LANGUAGE_CACHE] Language cache invalidated');
   }
 
@@ -842,7 +862,7 @@ class LanguagePreferenceService {
         // Notify listeners of the change
         _studyContentLanguageChangeController.add(language);
       }
-      Logger.error(
+      Logger.debug(
           'ℹ️  [STUDY_CONTENT_LANGUAGE] App UI language remains unchanged');
     } catch (e) {
       Logger.debug('Error saving study content language: $e');
@@ -851,7 +871,13 @@ class LanguagePreferenceService {
   }
 
   /// Set study content language to default (will use app language).
-  Future<void> setStudyContentLanguageToDefault() async {
+  ///
+  /// [appLanguage] lets a caller that already knows the app language skip the
+  /// re-resolve. That matters when called during a language change: resolving
+  /// here would re-read the profile and write the DB's value back over the
+  /// choice being saved.
+  Future<void> setStudyContentLanguageToDefault(
+      {AppLanguage? appLanguage}) async {
     try {
       await _prefs.setString(
           _studyContentLanguageKey, _defaultStudyLanguageValue);
@@ -859,7 +885,7 @@ class LanguagePreferenceService {
           '💾 [STUDY_CONTENT_LANGUAGE] Study content language reset to default');
 
       // Notify listeners with current app language
-      final currentLanguage = await getSelectedLanguage();
+      final currentLanguage = appLanguage ?? await getSelectedLanguage();
       _studyContentLanguageChangeController.add(currentLanguage);
     } catch (e) {
       Logger.debug('Error resetting study content language to default: $e');

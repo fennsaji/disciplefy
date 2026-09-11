@@ -167,8 +167,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           (_) async {
             // Convert language code to AppLanguage and sync with unified service
             final appLanguage = AppLanguage.fromCode(event.language);
+            // saveLanguagePreference already writes local storage and the
+            // profile. syncWithProfile() afterwards re-read a just-invalidated
+            // cache and wrote again — a second DB round trip, and a race:
+            // it resolves conflicts local-wins while getSelectedLanguage()
+            // resolves them DB-wins, so whichever ran last decided the
+            // language.
             await languagePreferenceService.saveLanguagePreference(appLanguage);
-            await languagePreferenceService.syncWithProfile();
 
             final updatedSettings = currentState.settings.copyWith(
               language: event.language,
