@@ -862,6 +862,11 @@ class LanguagePreferenceService {
         // Notify listeners of the change
         _studyContentLanguageChangeController.add(language);
       }
+      // Best-effort push to the server: a push notification's deep link is
+      // built server-side and needs this to generate content in the right
+      // language, since the app never sends it any other way. Not awaited —
+      // this must not block the local save on a slow or failed request.
+      _syncStudyContentLanguageToBackend(language);
       Logger.debug(
           'ℹ️  [STUDY_CONTENT_LANGUAGE] App UI language remains unchanged');
     } catch (e) {
@@ -887,10 +892,29 @@ class LanguagePreferenceService {
       // Notify listeners with current app language
       final currentLanguage = appLanguage ?? await getSelectedLanguage();
       _studyContentLanguageChangeController.add(currentLanguage);
+      // Best-effort push — see saveStudyContentLanguage for why.
+      _syncStudyContentLanguageToBackend(null);
     } catch (e) {
       Logger.debug('Error resetting study content language to default: $e');
       rethrow;
     }
+  }
+
+  /// Pushes the study content language to the server so a push notification's
+  /// deep link can generate content in the right language — the frontend has
+  /// no other way to tell the server this preference. Fire-and-forget: a
+  /// failure here must not surface to the caller, since the local save (the
+  /// thing the user is waiting on) already succeeded.
+  void _syncStudyContentLanguageToBackend(AppLanguage? language) {
+    if (!_authStateProvider.isAuthenticated) return;
+    unawaited(_userProfileService.updateStudyContentLanguage(language).then(
+          (result) => result.fold(
+            (failure) => Logger.warning(
+                '⚠️ [STUDY_CONTENT_LANGUAGE] Failed to sync to server: ${failure.message}'),
+            (_) => Logger.debug(
+                '✅ [STUDY_CONTENT_LANGUAGE] Synced to server: ${language?.displayName ?? 'default'}'),
+          ),
+        ));
   }
 
   /// Check if study content language is set to default (follows app language).

@@ -265,6 +265,43 @@ export class NotificationHelperService {
   }
 
   /**
+   * Get study content language for users — the language study guides/topics
+   * should generate in, which is independent of `language_preference` (the
+   * UI language). Falls back to the UI language when the user hasn't set a
+   * content language (NULL = "follow app language", same as the frontend's
+   * 'default' sentinel).
+   *
+   * Use this — not {@link getUserLanguagePreferences} — for any notification
+   * payload field that drives study generation (e.g. a deep link's `language`
+   * param). A notification's own title/body text should still use the UI
+   * language: that's a display string, not generated content.
+   *
+   * @param supabase - Supabase client
+   * @param userIds - User IDs to fetch preferences for
+   * @returns Map of user_id to language code
+   */
+  async getUserStudyContentLanguages(
+    supabase: SupabaseClient,
+    userIds: readonly string[]
+  ): Promise<Map<string, string>> {
+    const { data: profiles, error } = await supabase
+      .from('user_profiles')
+      .select('id, language_preference, study_content_language')
+      .in('id', userIds as string[])
+
+    if (error) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch user profiles: ${error.message}`, 500)
+    }
+
+    const languageMap = new Map<string, string>()
+    profiles?.forEach(profile => {
+      languageMap.set(profile.id, profile.study_content_language || profile.language_preference || 'en')
+    })
+
+    return languageMap
+  }
+
+  /**
    * Send notifications to users in batches
    *
    * @param users - Users to send notifications to
