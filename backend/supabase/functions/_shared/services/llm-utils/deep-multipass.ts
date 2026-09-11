@@ -48,7 +48,7 @@ export function createDeepPass1Prompt(
   const passageExamples = language === 'hi'
     ? "'रोमियों 8:1-39', 'यूहन्ना 14:1-27', 'इफिसियों 2:1-10'"
     : language === 'ml'
-    ? "'റോമർ 8:1-39', 'യോഹന്നാൻ 14:1-27', 'എഫേസ്യർ 2:1-10'"
+    ? "'റോമർ 8:1-39', 'യോഹന്നാൻ 14:1-27', 'എഫെസ്യർ 2:1-10'"
     : "'Romans 8:1-39', 'John 14:1-27', 'Ephesians 2:1-10'"
   const passageOutputExample = language === 'hi'
     ? 'रोमियों 8:1-39'

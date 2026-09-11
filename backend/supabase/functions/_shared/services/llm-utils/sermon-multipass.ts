@@ -53,7 +53,35 @@ export function createSermonPass1Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 1/4 (Introduction + First Point)
 This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
 Target output: ~1,800 words
-Tone: Theologically rich, pastorally wise, suitable for preacher preparation.`
+Tone: Theologically rich, pastorally wise, suitable for preacher preparation.
+
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
   const passInstructions = `${createVerseReferenceBlock(language)}
 
@@ -112,7 +140,7 @@ Keep it SHORT and FOCUSED - only what's necessary to understand the sermon text.
 
 PREACHER-FACING: Core theological content + conceptual ideas (not full manuscript). 3-4 paragraphs/section. Conceptual illustrations. 2-3 verses/point. 3 focused applications. Pastors expand during delivery.
 
-## ${headings.introduction} (450-550 words)
+## ${headings.introduction}
 
 **Hook (Conceptual)** (120-150 words): Provide a CONCEPTUAL hook idea (not full story):
 - Real-life tension, question, or problem
@@ -133,7 +161,7 @@ Make it CLEAR and MEMORABLE.
 
 **${headings.transition}** (50-60 words): One compelling paragraph bridging to Point 1.
 
-## ${headings.point} 1: [Memorable Title]  (1000-1200 words)
+## ${headings.point} 1: [Memorable Title]
 
 **${headings.mainTeaching}** (350-450 words): Write 3-4 concise paragraphs with CORE theological exposition:
 - Introduce the main theological truth
@@ -199,7 +227,35 @@ export function createSermonPass2Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 2/4 (Point 2 Only)
 This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1.
 Target output: ~1,000-1,200 words
-Provide CORE content that preachers will expand during delivery.`
+Provide CORE content that preachers will expand during delivery.
+
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
   const passInstructions = `CONTEXT FROM PASS 1:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
@@ -217,7 +273,7 @@ Generate this JSON structure:
 
 PREACHER-FACING: Core content, conceptual illustrations, 2-3 verses, 3 applications. Pastors expand during delivery.
 
-## ${headings.point} 2: [Memorable Title] (1000-1200 words)
+## ${headings.point} 2: [Memorable Title]
 
 Use SAME STRUCTURE as Point 1:
 - **${headings.mainTeaching}** (350-450 words): 3-4 concise paragraphs with core theological exposition
@@ -265,7 +321,35 @@ export function createSermonPass3Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 3/4 (Point 3 Only)
 This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1 and Pass 2.
 Target output: ~700-900 words
-Provide CORE content that preachers will expand during delivery.`
+Provide CORE content that preachers will expand during delivery.
+
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
   const passInstructions = `CONTEXT FROM PREVIOUS PASSES:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
@@ -283,7 +367,7 @@ Generate this JSON structure:
 
 PREACHER-FACING: Core content (condensed), conceptual illustrations, 2-3 verses, 2-3 applications. Pastors expand during delivery.
 
-## ${headings.point} 3: [Memorable Title] (700-900 words)
+## ${headings.point} 3: [Memorable Title]
 
 Condensed structure:
 - **${headings.mainTeaching}** (280-350 words): 2-3 paragraphs with core teaching
@@ -328,7 +412,35 @@ export function createSermonPass4Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 4/4 (Conclusion + Altar Call + Extras)
 This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home powerfully.
 Target output: ~1,100 words
-Provide CORE conclusion and altar call outline that preachers will expand.`
+Provide CORE conclusion and altar call outline that preachers will expand.
+
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
   const passInstructions = `CONTEXT FROM PREVIOUS PASSES:
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2) + Point 3 (Pass 3)

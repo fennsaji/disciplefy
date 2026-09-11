@@ -62,7 +62,14 @@ PROTESTANT DISTINCTIVES (MANDATORY):
 - "God speaking" means God speaking through His written Word (2 Timothy 3:16-17), not mystical inner voices
 - Prayer is a believer's response to what Scripture reveals, not a technique for achieving spiritual states
 - Silence and stillness are valid postures for reflection, but never as emptying techniques or centering practices
-- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text`
+- Scripture interprets Scripture — cross-references must illuminate, not replace, the primary text
+
+PASSAGE DISCIPLINE: every movement below is performed on the passage this
+study assigns, not on any example passage named elsewhere in these
+instructions. Quote and work with phrases from the assigned passage itself.
+The memory verse and every application step must come from that passage. A
+reference like "John 15:1-8" appearing anywhere in this prompt is an example
+of a reference format, never a passage to read, assign, or memorize from.`
 
   const passInstructions = `${createVerseReferenceBlock(language)}
 
@@ -130,26 +137,31 @@ Count sentences as you write (end with ./!/?). Each section: 6-8 sentences, 300-
 
 ## CAREFUL READING: First and Second Pass Through the Text
 
+⚠️ The prompts below are for your own analysis. Answer them in your own finished
+sentences; never print a prompt itself, or any question resembling it, as part
+of the output. A reader must never see "What does the text say?" — only your
+answer to that question, stated as observation.
+
 **Section 1 - First Reading: Observation & Understanding (6-8 sentences, 300-400 words):**
-- Invitation to pray first: Ask the Holy Spirit to open your eyes (Psalm 119:18)
-- Observation prompts: What does the text actually SAY? What words are repeated or striking?
-- Immediate context: What comes before and after this passage? How does that shape its meaning?
-- Theological content: What does this passage teach about God, humanity, sin, or salvation?
-- Original audience: What was God saying to them? What does that mean for us?
-- Personal alignment: Which commands, promises, or warnings apply directly to you?
+- Open by asking the Holy Spirit to give understanding (Psalm 119:18) — state this as your own brief prayerful sentence, not an instruction to the reader to do so
+- State plainly what the text itself says, naming words or ideas it repeats or emphasises
+- Explain the immediate context — what comes before and after — and how that shapes its meaning
+- State what the passage teaches about God, humanity, sin, or salvation
+- Explain what God was saying to the original audience, and what that means for us today
+- Name which commands, promises, or warnings apply directly to the reader
 
 Target: 300-400 words, 6-8 complete sentences with observational and interpretive focus.
 
 ## BIBLICAL REFLECTION: What the Text Reveals About God
 
 **Section 2 - What God Reveals (6-8 sentences, 300-400 words):**
-Work through the passage focusing on what it reveals about God:
-- God's nature: What does this passage teach about who God is (His attributes, character, ways)?
-- Christ-centered reading: How does this passage point to or find fulfillment in Jesus Christ?
-- Grace and truth: Where is the grace of God visible? Where is the demand of God visible?
-- Doxological response: What about God in this passage moves you to worship, trust, or obedience?
+Work through the passage focusing on what it reveals about God, stated as finished observations rather than questions:
+- God's nature: name what this passage teaches about who God is — His attributes, character, ways
+- Christ-centred reading: show how this passage points to or is fulfilled in Jesus Christ. If the gospel is in view at all, state plainly that Christ died for sinners and rose bodily (1 Corinthians 15:3-4) — do not let reflection end in only what the reader must do
+- Grace and truth: name where the grace of God is visible, and where the demand of God is visible
+- Doxological response: name what about God here should move the reader to worship, trust, or obedience
 
-⚠️ DO NOT include prayer content here — prayer response belongs ONLY in Pass 2 (Section 3). End this section with a question or reflection that prepares the reader to respond in prayer, but do NOT write the prayer itself.
+⚠️ DO NOT include prayer content here — prayer response belongs ONLY in Pass 2 (Section 3). End this section with your own brief reflection that prepares the reader to respond in prayer, but do NOT write the prayer itself, and do NOT end with a bare question.
 
 Target: 300-400 words, 6-8 complete sentences with theological depth.
 
@@ -190,7 +202,14 @@ Continue the prayerful, Scripture-anchored tone. All prayer and application must
 PROTESTANT DISTINCTIVES (MANDATORY):
 - Prayer is response to what Scripture reveals — always grounded in the text
 - Application must be specific, concrete, and measurable — not vague spiritual feelings
-- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word`
+- Commitment should be accountable: who, what, when, how — real-life obedience to God's Word
+
+PASSAGE DISCIPLINE: every movement below is performed on the passage this
+study assigns, not on any example passage named elsewhere in these
+instructions. Quote and work with phrases from the assigned passage itself.
+The memory verse and every application step must come from that passage. A
+reference like "John 15:1-8" appearing anywhere in this prompt is an example
+of a reference format, never a passage to read, assign, or memorize from.`
 
   const passInstructions = `CONTEXT FROM PASS 1:
 - Summary: ${pass1Result.summary.substring(0, 200)}...
@@ -262,12 +281,12 @@ Guide specific, measurable life application:
 Target: 250-320 words, 6-8 complete sentences with specific, accountable application.
 
 **SUPPORTING MATERIALS:**
-- relatedVerses: 5-7 additional verses that support the passage's themes in ${languageConfig.name}
+- relatedVerses: 4 additional verses that support the passage's themes in ${languageConfig.name}
 - reflectionQuestions: 4 questions grounded in the text (not abstract or mystical)
 - prayerPoints: ONE single prayer paragraph (5-7 sentences, 150-200 words), arising from the passage
 - 5 yes/no questions connecting the text to personal life
 
-VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 5-7 relatedVerses | 5-7 text-grounded reflectionQuestions | prayerPoints: 1 item, single paragraph (5-7 sentences, 150-200 words) | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 sections with bold headers, 6-8 sentences each, 500-650 words | 4 relatedVerses | 4 text-grounded reflectionQuestions | prayerPoints: 1 item, single paragraph (5-7 sentences, 150-200 words) | Prayerful & Scripture-anchored tone | Verse refs in ${languageConfig.name} | Total ~600-750 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
