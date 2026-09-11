@@ -99,31 +99,6 @@ impl CronLease {
     }
 }
 
-/// Runs `job` while holding the lease for `name`, releasing it afterwards.
-///
-/// Does nothing when another instance holds the lease. The lease is released
-/// whether the job succeeded or failed, because a failed run should not block
-/// the next one.
-pub async fn with_lease<F, Fut>(pool: &PgPool, name: &str, ttl: Duration, job: F)
-where
-    F: FnOnce() -> Fut,
-    Fut: std::future::Future<Output = Result<(), AppError>>,
-{
-    let Some(lease) = CronLease::try_acquire(pool, name, ttl).await else {
-        return;
-    };
-
-    let outcome = job().await;
-
-    if let Err(e) = lease.release().await {
-        tracing::warn!(job = name, error = %e, "Lease will expire on its own");
-    }
-
-    if let Err(e) = outcome {
-        tracing::error!(job = name, "CRON failed: {}", e);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
