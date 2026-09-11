@@ -16,6 +16,8 @@ import '../../../../core/utils/reset_progress_error_localizer.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/widgets/destructive_confirm_dialog.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/models/app_language.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
@@ -1059,18 +1061,30 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     }
   }
 
-  void _showAddManuallyDialog(BuildContext context) {
+  Future<void> _showAddManuallyDialog(BuildContext context) async {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
 
-    // Get default language: use filter if selected, otherwise use user's preferred language
+    // Get default language: use filter if selected, otherwise the user's
+    // study content language. Verse text is scripture, not UI chrome, so it
+    // follows the content axis — the UI language is a different setting and
+    // using it here defaulted the dialog to the wrong language for anyone
+    // whose two preferences differ.
     VerseLanguage defaultLanguage;
     if (_selectedLanguageFilter != null) {
       defaultLanguage = _selectedLanguageFilter!;
     } else {
-      // Get user's preferred language from TranslationService
-      final userLanguageCode = context.translationService.currentLanguage.code;
-      defaultLanguage = _getVerseLanguageFromCode(userLanguageCode);
+      var contentLanguageCode = AppLanguage.english.code;
+      try {
+        final resolved =
+            await sl<LanguagePreferenceService>().getStudyContentLanguage();
+        contentLanguageCode = resolved.code;
+      } catch (_) {
+        // Fall back to English if the preference cannot be read.
+      }
+      defaultLanguage = _getVerseLanguageFromCode(contentLanguageCode);
     }
+
+    if (!context.mounted) return;
 
     AddManualVerseDialog.show(
       context,
