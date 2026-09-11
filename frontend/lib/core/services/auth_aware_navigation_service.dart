@@ -38,18 +38,21 @@ class AuthAwareNavigationService {
   factory AuthAwareNavigationService() => _instance;
   AuthAwareNavigationService._internal();
 
-  /// Reads the deep link stashed before sign-in, without clearing it.
+  /// Reads and clears the deep link stashed before sign-in.
   ///
   /// A shared link opened on a fresh install detours through onboarding and
   /// login; every post-auth navigation has to land there instead of home or
-  /// the link is lost. RouterGuard owns the delete — clearing it here would
-  /// let the guard's own redirect fall back to home and overwrite this one.
+  /// the link is lost. This always navigates straight to the target rather
+  /// than via home, so RouterGuard's own home-only consume never runs for
+  /// it — leaving the key here meant it replayed on every later login, deep
+  /// link or not, until the app happened to pass through home again.
   static String? _pendingDeepLink() {
     try {
       if (!Hive.isBoxOpen('app_settings')) return null;
-      final stored =
-          Hive.box('app_settings').get('pending_deep_link_redirect') as String?;
+      final box = Hive.box('app_settings');
+      final stored = box.get('pending_deep_link_redirect') as String?;
       if (stored == null || stored.isEmpty) return null;
+      box.delete('pending_deep_link_redirect');
       final target = Uri.decodeComponent(stored);
       return target.startsWith('/') ? target : null;
     } catch (_) {
