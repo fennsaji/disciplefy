@@ -544,8 +544,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 const SizedBox(height: 8),
                 Text(
                   isOffline
-                      ? 'This learning path hasn\'t been downloaded. Download it while online to access it offline.'
-                      : 'Something went wrong. Please try again.',
+                      ? context
+                          .tr(TranslationKeys.downloadsNotDownloadedOffline)
+                      : context
+                          .tr(TranslationKeys.studyTopicsSomethingWentWrong),
                   style: AppFonts.inter(
                     fontSize: 14,
                     color: isOffline
@@ -564,7 +566,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   OutlinedButton.icon(
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Go Back'),
+                    label: Text(context.tr(TranslationKeys.downloadsGoBack)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.onSurfaceVariant,
                       side: BorderSide(
@@ -648,7 +650,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   Widget _buildShareButton(LearningPathDetail path) {
     return IconButton(
       icon: const Icon(Icons.ios_share),
-      tooltip: 'Share this path',
+      tooltip: context.tr(TranslationKeys.downloadsSharePath),
       onPressed: () => _sharePath(path),
     );
   }
@@ -665,7 +667,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the share sheet.')),
+        SnackBar(
+            content: Text(context.tr(TranslationKeys.downloadsShareFailed))),
       );
     }
   }
@@ -678,7 +681,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         model.status == PathDownloadStatus.paused) {
       return IconButton(
         icon: const Icon(Icons.download_outlined),
-        tooltip: 'Download for offline',
+        tooltip: context.tr(TranslationKeys.downloadsDownloadForOffline),
         onPressed: () => _showTopicSelectionSheet(path),
       );
     }
@@ -686,7 +689,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     if (model.status == PathDownloadStatus.completed) {
       return IconButton(
         icon: Icon(Icons.check_circle, color: context.appSuccess),
-        tooltip: 'Available offline',
+        tooltip: context.tr(TranslationKeys.downloadsAvailableOffline),
         onPressed: () => _showCompletedDownloadOptions(path),
       );
     }
@@ -1599,8 +1602,10 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
                     Expanded(
                       child: Text(
                         _isDownloading
-                            ? 'Downloading offline guides'
-                            : 'Offline guides',
+                            ? context.tr(TranslationKeys
+                                .downloadsDownloadingOfflineGuides)
+                            : context
+                                .tr(TranslationKeys.downloadsOfflineGuides),
                         style: AppFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
@@ -1647,10 +1652,15 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
                 const SizedBox(height: 6),
                 Text(
                   _isDownloading
-                      ? 'Downloading $done of $total guides…'
+                      ? context.tr(TranslationKeys.downloadsDownloadingProgress,
+                          {'done': done, 'total': total})
                       : _missingCount > 0
-                          ? '$done downloaded · $_missingCount not yet downloaded'
-                          : 'All $total guides available offline',
+                          ? context.tr(
+                              TranslationKeys.downloadsPartlyDownloaded,
+                              {'done': done, 'missing': _missingCount})
+                          : context.tr(
+                              TranslationKeys.downloadsAllAvailableOffline,
+                              {'total': total}),
                   style: AppFonts.inter(
                     fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
@@ -1704,7 +1714,8 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
                           child: OutlinedButton.icon(
                             onPressed: widget.onPause,
                             icon: const Icon(Icons.pause_rounded, size: 18),
-                            label: const Text('Pause'),
+                            label: Text(
+                                context.tr(TranslationKeys.downloadsPause)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1712,7 +1723,8 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
                           child: OutlinedButton.icon(
                             onPressed: widget.onCancel,
                             icon: const Icon(Icons.close_rounded, size: 18),
-                            label: const Text('Cancel'),
+                            label:
+                                Text(context.tr(TranslationKeys.commonCancel)),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: theme.colorScheme.error,
                               side: BorderSide(color: theme.colorScheme.error),
@@ -1731,8 +1743,12 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
                               onPressed: widget.onDownloadMore,
                               icon:
                                   const Icon(Icons.download_rounded, size: 18),
-                              label: Text(
-                                  'Download $_missingCount more guide${_missingCount == 1 ? '' : 's'}'),
+                              label: Text(_missingCount == 1
+                                  ? context.tr(
+                                      TranslationKeys.downloadsDownloadOneMore)
+                                  : context.tr(
+                                      TranslationKeys.downloadsDownloadMore,
+                                      {'count': _missingCount})),
                             ),
                           ),
                         if (_missingCount > 0) const SizedBox(height: 8),
@@ -1742,7 +1758,8 @@ class _UnifiedDownloadSheetState extends State<_UnifiedDownloadSheet> {
                             onPressed: widget.onRemoveAll,
                             icon: const Icon(Icons.delete_outline_rounded,
                                 size: 18),
-                            label: const Text('Remove all downloads'),
+                            label: Text(
+                                context.tr(TranslationKeys.downloadsRemoveAll)),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: theme.colorScheme.error,
                               side: BorderSide(color: theme.colorScheme.error),
@@ -1835,15 +1852,17 @@ class _DownloadTopicCard extends StatelessWidget {
 
     final String subtitle;
     if (isDone) {
-      subtitle = 'Downloaded';
+      subtitle = context.tr(TranslationKeys.downloadsStatusDownloaded);
     } else if (isActivelyDownloading) {
-      subtitle = 'Downloading…';
+      subtitle = context.tr(TranslationKeys.downloadsStatusDownloading);
     } else if (isFailed) {
-      subtitle = 'Failed — tap to retry';
+      subtitle = context.tr(TranslationKeys.downloadsStatusFailed);
     } else if (isPending) {
-      subtitle = 'Waiting in queue';
+      subtitle = context.tr(TranslationKeys.downloadsStatusWaiting);
     } else {
-      subtitle = isCompleted ? 'Not downloaded' : 'Not in queue';
+      subtitle = isCompleted
+          ? context.tr(TranslationKeys.downloadsStatusNotDownloaded)
+          : context.tr(TranslationKeys.downloadsStatusNotQueued);
     }
 
     final double opacity =
@@ -2007,7 +2026,7 @@ class _TopicSelectionSheetState extends State<_TopicSelectionSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Select guides to download',
+                        context.tr(TranslationKeys.downloadsSelectGuides),
                         style: AppFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
@@ -2017,8 +2036,12 @@ class _TopicSelectionSheetState extends State<_TopicSelectionSheet> {
                       const SizedBox(height: 2),
                       Text(
                         widget.costPerGuide > 0
-                            ? '$_selectedCount guides · $_totalCost tokens'
-                            : '$_selectedCount guides selected',
+                            ? context.tr(
+                                TranslationKeys.downloadsGuidesWithCost,
+                                {'count': _selectedCount, 'cost': _totalCost})
+                            : context.tr(
+                                TranslationKeys.downloadsGuidesSelected,
+                                {'count': _selectedCount}),
                         style: AppFonts.inter(
                           fontSize: 13,
                           color: theme.colorScheme.onSurface
@@ -2038,8 +2061,8 @@ class _TopicSelectionSheetState extends State<_TopicSelectionSheet> {
                   }),
                   child: Text(
                     _selected.length == widget.topics.length
-                        ? 'Deselect all'
-                        : 'Select all',
+                        ? context.tr(TranslationKeys.downloadsDeselectAll)
+                        : context.tr(TranslationKeys.downloadsSelectAll),
                     style: AppFonts.inter(
                       fontSize: 13,
                       color: theme.colorScheme.primary,
@@ -2121,10 +2144,13 @@ class _TopicSelectionSheetState extends State<_TopicSelectionSheet> {
                   ),
                   child: Text(
                     _selectedCount == 0
-                        ? 'Select at least one guide'
+                        ? context.tr(TranslationKeys.downloadsSelectAtLeastOne)
                         : widget.costPerGuide > 0
-                            ? 'Download $_selectedCount guides ($_totalCost tokens)'
-                            : 'Download $_selectedCount guides',
+                            ? context.tr(
+                                TranslationKeys.downloadsDownloadCountWithCost,
+                                {'count': _selectedCount, 'cost': _totalCost})
+                            : context.tr(TranslationKeys.downloadsDownloadCount,
+                                {'count': _selectedCount}),
                     style: AppFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

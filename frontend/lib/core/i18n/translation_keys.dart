@@ -1200,6 +1200,40 @@ class TranslationKeys {
   static const discipleLevelBeliever = 'disciple_level.believer';
   static const discipleLevelDisciple = 'disciple_level.disciple';
   static const discipleLevelLeader = 'disciple_level.leader';
+  // Offline download sheet / learning path downloads
+  static const downloadsOfflineGuides = 'downloads.offline_guides';
+  static const downloadsDownloadingOfflineGuides =
+      'downloads.downloading_offline_guides';
+  static const downloadsDownloadingProgress = 'downloads.downloading_progress';
+  static const downloadsPartlyDownloaded = 'downloads.partly_downloaded';
+  static const downloadsAllAvailableOffline = 'downloads.all_available_offline';
+  static const downloadsPause = 'downloads.pause';
+  static const downloadsDownloadMore = 'downloads.download_more';
+  static const downloadsDownloadOneMore = 'downloads.download_one_more';
+  static const downloadsRemoveAll = 'downloads.remove_all';
+  static const downloadsSelectGuides = 'downloads.select_guides';
+  static const downloadsSelectAll = 'downloads.select_all';
+  static const downloadsDeselectAll = 'downloads.deselect_all';
+  static const downloadsDownloadCount = 'downloads.download_count';
+  static const downloadsDownloadCountWithCost =
+      'downloads.download_count_with_cost';
+  static const downloadsSelectAtLeastOne = 'downloads.select_at_least_one';
+  static const downloadsGuidesWithCost = 'downloads.guides_with_cost';
+  static const downloadsGuidesSelected = 'downloads.guides_selected';
+  static const downloadsStatusDownloaded = 'downloads.status_downloaded';
+  static const downloadsStatusDownloading = 'downloads.status_downloading';
+  static const downloadsStatusFailed = 'downloads.status_failed';
+  static const downloadsStatusWaiting = 'downloads.status_waiting';
+  static const downloadsStatusNotDownloaded = 'downloads.status_not_downloaded';
+  static const downloadsStatusNotQueued = 'downloads.status_not_queued';
+  static const downloadsSharePath = 'downloads.share_path';
+  static const downloadsShareFailed = 'downloads.share_failed';
+  static const downloadsDownloadForOffline = 'downloads.download_for_offline';
+  static const downloadsAvailableOffline = 'downloads.available_offline';
+  static const downloadsNotDownloadedOffline =
+      'downloads.not_downloaded_offline';
+  static const downloadsGoBack = 'downloads.go_back';
+
   static const discipleLevelFollower = 'disciple_level.follower';
 
   // Continue Learning
