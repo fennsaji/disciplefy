@@ -531,10 +531,27 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Loads the fellowships the current user belongs to so the
   /// [_FellowshipShareSection] can be shown.
   Future<void> _loadUserFellowships() async {
-    final result = await sl<CommunityRepository>().getFellowships('en');
+    // Content language, like every other getFellowships caller: the parameter
+    // selects the translation of each fellowship's learning-path title, not
+    // which fellowships come back (membership decides that).
+    String language = 'en';
+    try {
+      final resolved =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+      language = resolved.code;
+    } catch (_) {
+      // Keep the English default and still attempt the fetch.
+    }
+
+    final result = await sl<CommunityRepository>().getFellowships(language);
     if (!mounted) return;
     result.fold(
-      (_) => setState(() => _userFellowships = []),
+      // A failed lookup is not the same as belonging to no fellowship —
+      // emptying the list here hides the share section entirely, so a
+      // transient error looks like "you have no groups". Leave whatever we
+      // already had instead.
+      (_) => Logger.warning(
+          '[STUDY_GUIDE] Could not load fellowships for the share section'),
       (fellowships) => setState(() => _userFellowships = fellowships),
     );
   }

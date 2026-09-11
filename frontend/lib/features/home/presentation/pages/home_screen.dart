@@ -1256,7 +1256,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               if (homeState.learningPathReason ==
                   LearningPathRecommendationReason.personalized) ...[
                 Text(
-                  "You're ready for your next step",
+                  context.tr(TranslationKeys.homeReadyForNextStep),
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -1279,7 +1279,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Available offline',
+                      context.tr(TranslationKeys.homeAvailableOffline),
                       style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -1502,13 +1502,28 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
   Future<void> _fetchUpcomingMeeting() async {
     try {
       final repo = sl<CommunityRepository>();
-      final fellowshipsResult = await repo.getFellowships('en');
-      final fellowships = fellowshipsResult.fold(
-        (_) => <FellowshipEntity>[],
+      // Content language, matching every other getFellowships caller — the
+      // parameter picks a learning-path title translation, it does not filter
+      // which fellowships are returned.
+      String language = 'en';
+      try {
+        final resolved =
+            await sl<LanguagePreferenceService>().getStudyContentLanguage();
+        language = resolved.code;
+      } catch (_) {
+        // Keep the English default and still attempt the fetch.
+      }
+
+      final fellowshipsResult = await repo.getFellowships(language);
+      // A failed lookup is not the same as belonging to no fellowship:
+      // folding the error into an empty list makes today's meeting silently
+      // disappear from Home as though none were scheduled.
+      final fellowships = fellowshipsResult.fold<List<FellowshipEntity>?>(
+        (_) => null,
         (list) => list,
       );
 
-      if (fellowships.isEmpty) {
+      if (fellowships == null || fellowships.isEmpty) {
         if (mounted) setState(() => _loaded = true);
         return;
       }
