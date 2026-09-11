@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import type { HeavyUserItem } from '@/types/admin'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 interface TopHeavyUsersTableProps {
   data: HeavyUserItem[]
 }
 
-function formatInr(value: number): string {
-  return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+/** Figures arrive in rupees; the dashboard reads in dollars throughout. */
+function money(value: number): string {
+  return formatInrAsUsd(value)
 }
 
 export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
@@ -51,10 +53,10 @@ export function TopHeavyUsersTable({ data }: TopHeavyUsersTableProps) {
                   {user.operations.toLocaleString()}
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-medium text-red-600 dark:text-red-400">
-                  {formatInr(user.llm_cost_inr)}
+                  {money(user.llm_cost_inr)}
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-medium text-green-600 dark:text-green-400">
-                  {formatInr(user.revenue_inr)}
+                  {money(user.revenue_inr)}
                 </td>
                 <td className="px-4 py-3 text-center">
                   {user.is_profitable ? (

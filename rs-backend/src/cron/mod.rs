@@ -1,6 +1,9 @@
 pub mod blog_generator;
+pub mod cost_reconcile;
 pub mod discipler_reply_worker;
 pub mod fellowship_daily_post;
+pub mod locks;
+pub mod prewarm;
 pub mod schedules;
 pub mod subscription_reconciler;
 pub mod telegram_daily_post;
@@ -8,6 +11,7 @@ pub mod telegram_daily_post;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 use reqwest::Client;
 use sqlx::PgPool;
@@ -22,10 +26,19 @@ use crate::models::cron_config::{self, CronConfig};
 pub static BLOG_GENERATION_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static BLOG_PUBLISH_SCHEDULED_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static PREWARM_RUNNING: AtomicBool = AtomicBool::new(false);
+pub static COST_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static SUBSCRIPTION_RECONCILE_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static FELLOWSHIP_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static DISCIPLER_REPLY_WORKER_RUNNING: AtomicBool = AtomicBool::new(false);
 pub static TELEGRAM_DAILY_POST_RUNNING: AtomicBool = AtomicBool::new(false);
+
+/// How long each job may hold its cross-instance lease.
+///
+/// Comfortably longer than the job's real runtime: a lease that expires early
+/// lets a second instance start the same work, which is what leases exist to
+/// prevent. A crashed instance frees its job when the lease runs out.
+const LEASE_TTL: Duration = Duration::from_secs(30 * 60);
 
 /// Guard that resets its flag to false on drop.
 pub struct CronGuard {
@@ -105,6 +118,20 @@ pub async fn start_scheduler(
                 updated_at: chrono::Utc::now(),
             },
             CronConfig {
+                name: "cost_reconcile".into(),
+                enabled: false,
+                schedule: schedules::COST_RECONCILE.into(),
+                label: "Daily 02:00 UTC — compare recorded spend with Anthropic's bill".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
+                name: "prewarm".into(),
+                enabled: false,
+                schedule: schedules::PREWARM.into(),
+                label: "Hourly — pre-generate learning-path guides on the Batch API".into(),
+                updated_at: chrono::Utc::now(),
+            },
+            CronConfig {
                 name: "telegram_daily_post".into(),
                 enabled: false,
                 schedule: schedules::TELEGRAM_DAILY_POST.into(),
@@ -149,8 +176,17 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) = locks::CronLease::try_acquire(&p, "blog_generation", LEASE_TTL).await
+            else {
+                return;
+            };
             if let Err(e) = blog_generator::run_blog_generation(&p, &c, &h).await {
                 tracing::error!("Blog generation CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -192,8 +228,17 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) = locks::CronLease::try_acquire(&p, "blog_retry", LEASE_TTL).await
+            else {
+                return;
+            };
             if let Err(e) = blog_generator::run_blog_retry(&p, &c, &h).await {
                 tracing::error!("Blog retry CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -232,12 +277,22 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) =
+                locks::CronLease::try_acquire(&p, "blog_publish_scheduled", LEASE_TTL).await
+            else {
+                return;
+            };
             match crate::models::post::publish_due_scheduled(&p).await {
                 Ok(published) if !published.is_empty() => {
                     tracing::info!(count = published.len(), "Auto-published scheduled posts");
                 }
                 Ok(_) => {}
                 Err(e) => tracing::error!("Scheduled-publish CRON failed: {}", e),
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -280,8 +335,18 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) =
+                locks::CronLease::try_acquire(&p, "subscription_reconcile", LEASE_TTL).await
+            else {
+                return;
+            };
             if let Err(e) = subscription_reconciler::run_subscription_reconcile(&c, &h).await {
                 tracing::error!("Subscription reconcile CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -324,8 +389,18 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) =
+                locks::CronLease::try_acquire(&p, "fellowship_daily_post", LEASE_TTL).await
+            else {
+                return;
+            };
             if let Err(e) = fellowship_daily_post::run_fellowship_daily_post(&p, &c, &h).await {
                 tracing::error!("Discipler daily post CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -368,8 +443,18 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) =
+                locks::CronLease::try_acquire(&p, "discipler_reply_worker", LEASE_TTL).await
+            else {
+                return;
+            };
             if let Err(e) = discipler_reply_worker::run_discipler_reply_worker(&p, &c, &h).await {
                 tracing::error!("Discipler reply worker CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -412,8 +497,18 @@ pub async fn start_scheduler(
                     return;
                 }
             };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) =
+                locks::CronLease::try_acquire(&p, "telegram_daily_post", LEASE_TTL).await
+            else {
+                return;
+            };
             if let Err(e) = telegram_daily_post::run_telegram_daily_post(&c, &h).await {
                 tracing::error!("Telegram daily post CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
             }
         })
     })
@@ -425,6 +520,109 @@ pub async fn start_scheduler(
         .expect("Failed to add Telegram daily post CRON job");
     job_ids.insert("telegram_daily_post".into(), telegram_uuid);
 
+    // Pre-warm CRON
+    let prewarm_cfg = configs.iter().find(|c| c.name == "prewarm");
+    let prewarm_schedule = prewarm_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::PREWARM.into());
+    let prewarm_pool = pool.clone();
+    let prewarm_config = Arc::new(config.clone());
+    let prewarm_http = http.clone();
+
+    let prewarm_job = Job::new_async(prewarm_schedule.as_str(), move |_uuid, _lock| {
+        let p = prewarm_pool.clone();
+        let c = prewarm_config.clone();
+        let h = prewarm_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "prewarm").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("prewarm cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&PREWARM_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!("Pre-warm CRON skipped: previous run still in progress");
+                    return;
+                }
+            };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) = locks::CronLease::try_acquire(&p, "prewarm", LEASE_TTL).await else {
+                return;
+            };
+            if let Err(e) = prewarm::run_prewarm(&c, &h).await {
+                tracing::error!("Pre-warm CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
+            }
+        })
+    })
+    .expect("Failed to create pre-warm CRON job");
+
+    let prewarm_uuid = sched
+        .add(prewarm_job)
+        .await
+        .expect("Failed to add pre-warm CRON job");
+    job_ids.insert("prewarm".into(), prewarm_uuid);
+
+    // Cost reconciliation CRON
+    let reconcile_cfg = configs.iter().find(|c| c.name == "cost_reconcile");
+    let reconcile_schedule = reconcile_cfg
+        .map(|c| c.schedule.clone())
+        .unwrap_or_else(|| schedules::COST_RECONCILE.into());
+    let reconcile_pool = pool.clone();
+    let reconcile_config = Arc::new(config.clone());
+    let reconcile_http = http.clone();
+
+    let reconcile_job = Job::new_async(reconcile_schedule.as_str(), move |_uuid, _lock| {
+        let p = reconcile_pool.clone();
+        let c = reconcile_config.clone();
+        let h = reconcile_http.clone();
+        Box::pin(async move {
+            match cron_config::get(&p, "cost_reconcile").await {
+                Ok(cfg) if !cfg.enabled => {
+                    tracing::info!("cost_reconcile cron disabled — skipping");
+                    return;
+                }
+                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
+                _ => {}
+            }
+            let _guard = match CronGuard::try_acquire(&COST_RECONCILE_RUNNING) {
+                Some(g) => g,
+                None => {
+                    tracing::warn!(
+                        "Cost reconciliation CRON skipped: previous run still in progress"
+                    );
+                    return;
+                }
+            };
+            // The guard above is per process; this lease keeps a second
+            // container from running the same job at the same time.
+            let Some(lease) = locks::CronLease::try_acquire(&p, "cost_reconcile", LEASE_TTL).await
+            else {
+                return;
+            };
+            if let Err(e) = cost_reconcile::run_cost_reconcile(&c, &h).await {
+                tracing::error!("Cost reconciliation CRON failed: {}", e);
+            }
+            if let Err(e) = lease.release().await {
+                tracing::warn!(error = %e, "Lease will expire on its own");
+            }
+        })
+    })
+    .expect("Failed to create cost reconciliation CRON job");
+
+    let reconcile_uuid = sched
+        .add(reconcile_job)
+        .await
+        .expect("Failed to add cost reconciliation CRON job");
+    job_ids.insert("cost_reconcile".into(), reconcile_uuid);
+
     sched.start().await.expect("Failed to start CRON scheduler");
 
     let schedule_by_name: HashMap<&str, &str> = HashMap::from([
@@ -435,6 +633,8 @@ pub async fn start_scheduler(
         ("fellowship_daily_post", daily_schedule.as_str()),
         ("discipler_reply_worker", worker_schedule.as_str()),
         ("telegram_daily_post", telegram_schedule.as_str()),
+        ("prewarm", prewarm_schedule.as_str()),
+        ("cost_reconcile", reconcile_schedule.as_str()),
     ]);
     for name in job_ids.keys() {
         let s = schedule_by_name.get(name.as_str()).copied().unwrap_or("?");

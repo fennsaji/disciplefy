@@ -134,7 +134,7 @@ export async function getOrCreateTeaser(
       topicTitle: lesson.topicTitle, pathTitle: lesson.pathTitle, language: lesson.language,
       summary: lesson.summary, verse: lesson.verse, question: lesson.question,
     }),
-  })
+  }, lesson.language)
   const out = parseDailyTeaserOutput(result.content)
 
   // Store before returning so the next surface on this lesson pays nothing. A

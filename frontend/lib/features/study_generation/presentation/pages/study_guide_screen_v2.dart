@@ -52,10 +52,8 @@ import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../../gamification/presentation/bloc/gamification_state.dart';
 import '../../domain/entities/study_mode.dart';
-import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/repositories/reflections_repository.dart';
-import '../widgets/reading_completion_card.dart';
 import '../../../../core/connectivity/connectivity_bloc.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
@@ -273,7 +271,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   bool _isTopicCompletedFromPath = false;
 
   // View mode state for Read/Reflect toggle
-  StudyViewMode _viewMode = StudyViewMode.read;
 
   // Language state for loading screen localization
   String _selectedLanguage = 'en';
@@ -333,7 +330,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   bool _isCompletionTrackingStarted = false;
 
   // Reading completion card visibility
-  bool _showCompletionCard = true;
 
   // PDF export state
   bool _isExportingPdf = false;
@@ -1554,34 +1550,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     return !systemConfigService.shouldHideFeature('study_chat', userPlan);
   }
 
-  /// Checks if Reflections feature should be visible (not hidden)
-  bool _shouldShowReflections() {
-    final tokenBloc = sl<TokenBloc>();
-    final tokenState = tokenBloc.state;
-
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
-
-    final systemConfigService = sl<SystemConfigService>();
-    return !systemConfigService.shouldHideFeature('reflections', userPlan);
-  }
-
-  /// Checks if Reflections feature is locked for current user
-  bool _isReflectionsLocked() {
-    final tokenBloc = sl<TokenBloc>();
-    final tokenState = tokenBloc.state;
-
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
-
-    final systemConfigService = sl<SystemConfigService>();
-    return systemConfigService.isFeatureLocked('reflections', userPlan);
-  }
-
   /// Check if both completion conditions are met and mark complete if so
   void _checkCompletionConditions() {
     if (_completionMarked || _currentStudyGuide == null) return;
@@ -1590,17 +1558,13 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     final timeConditionMet = _timeSpentSeconds >= minTimeSeconds;
 
     // In Reflect Mode, there's no scrolling, so auto-satisfy scroll condition
-    final scrollConditionMet =
-        _hasScrolledToBottom || _viewMode == StudyViewMode.reflect;
+    final scrollConditionMet = _hasScrolledToBottom;
 
     if (kDebugMode) {
       Logger.debug('📊 [COMPLETION] Conditions check:');
       Logger.debug(
-          '   View Mode: ${_viewMode == StudyViewMode.read ? "Read" : "Reflect"}');
-      Logger.debug(
           '   Time: $_timeSpentSeconds/${minTimeSeconds}s (${timeConditionMet ? "✓" : "✗"})');
-      Logger.debug(
-          '   Scroll: ${scrollConditionMet ? "✓" : "✗"}${_viewMode == StudyViewMode.reflect ? " (Reflect mode - auto-met)" : ""}');
+      Logger.debug('   Scroll: ${scrollConditionMet ? "✓" : "✗"}');
     }
 
     if (timeConditionMet && scrollConditionMet) {
@@ -2552,14 +2516,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       relatedVerses: state.content.relatedVerses ?? [],
       reflectionQuestions: state.content.reflectionQuestions ?? [],
       prayerPoints: state.content.prayerPoints ?? [],
-      interpretationInsights: state.content.interpretationInsights,
-      summaryInsights: state.content.summaryInsights,
-      reflectionAnswers: state.content.reflectionAnswers,
-      contextQuestion: state.content.contextQuestion,
-      summaryQuestion: state.content.summaryQuestion,
-      relatedVersesQuestion: state.content.relatedVersesQuestion,
-      reflectionQuestion: state.content.reflectionQuestion,
-      prayerQuestion: state.content.prayerQuestion,
       createdAt: DateTime.now(),
       isSaved: false,
     );
@@ -2823,13 +2779,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       children: [
         // Main content
         Expanded(
-          child: _viewMode == StudyViewMode.read
-              ? _buildReadModeContent(isLargeScreen)
-              : _buildReflectModeContent(),
+          child: _buildReadModeContent(isLargeScreen),
         ),
 
-        // Bottom Action Buttons (only show in read mode)
-        if (_viewMode == StudyViewMode.read) _buildBottomActions(),
+        _buildBottomActions(),
       ],
     );
   }
@@ -2865,27 +2818,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 _buildStudyContent(),
 
                 SizedBox(height: isLargeScreen ? 32 : 24),
-
-                // Reading Completion Card (dismissible) - respect reflections feature access
-                if (_showCompletionCard && _shouldShowReflections())
-                  LockedFeatureWrapper(
-                    featureKey: 'reflections',
-                    showLockOverlay: _isReflectionsLocked(),
-                    child: ReadingCompletionCard(
-                      onReflect: () {
-                        // Only proceed if not locked
-                        if (!_isReflectionsLocked()) {
-                          setState(() => _viewMode = StudyViewMode.reflect);
-                        }
-                      },
-                      onMaybeLater: () {
-                        // Simply dismiss the card
-                        setState(() {
-                          _showCompletionCard = false;
-                        });
-                      },
-                    ),
-                  ),
 
                 SizedBox(height: isLargeScreen ? 16 : 12),
 
@@ -2990,19 +2922,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     );
   }
 
-  /// Builds the Reflect Mode content (interactive card-by-card view)
-  Widget _buildReflectModeContent() {
-    return ReflectModeView(
-      studyGuide: _currentStudyGuide!,
-      onSwitchToRead: () {
-        setState(() => _viewMode = StudyViewMode.read);
-      },
-      onComplete: _handleReflectionComplete,
-      onExit: () => _handleBackNavigation(),
-      isCompletingReflection: _isCompletingReflection,
-    );
-  }
-
   /// Handles reflection completion - saves responses and shows success message
   void _handleReflectionComplete(
     List<ReflectionResponse> responses,
@@ -3043,7 +2962,6 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
       setState(() {
         _isCompletingReflection = false;
-        _viewMode = StudyViewMode.read;
       });
 
       _showSnackBar(

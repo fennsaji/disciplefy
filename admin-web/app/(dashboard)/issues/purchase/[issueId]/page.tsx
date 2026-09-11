@@ -4,6 +4,7 @@ import { useState, use } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { formatInrAsUsd, formatInrDetail } from '@/lib/utils/currency'
 
 export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{ issueId: string }> }) {
   const router = useRouter()
@@ -215,7 +216,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Cost Paid</dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">₹{issue.cost_rupees}</dd>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{formatInrAsUsd(issue.cost_rupees)}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Purchase Time</dt>
@@ -292,7 +293,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Amount (Rupees)</dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">₹{dbPayment.cost_rupees}</dd>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{formatInrAsUsd(dbPayment.cost_rupees)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Amount (Paise)</dt>
@@ -376,7 +377,10 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                  ₹{(razorpayPayment.amount / 100).toFixed(2)}
+                  {formatInrAsUsd(razorpayPayment.amount / 100)}{' '}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatInrDetail(razorpayPayment.amount / 100)}
+                  </span>
                 </dd>
               </div>
               <div>
@@ -431,13 +435,16 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                  ₹{(razorpayOrder.amount / 100).toFixed(2)}
+                  {formatInrAsUsd(razorpayOrder.amount / 100)}{' '}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatInrDetail(razorpayOrder.amount / 100)}
+                  </span>
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Amount Paid</dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                  ₹{(razorpayOrder.amount_paid / 100).toFixed(2)}
+                  {formatInrAsUsd(razorpayOrder.amount_paid / 100)}
                 </dd>
               </div>
               <div>
@@ -522,7 +529,7 @@ export default function PurchaseIssueDetailsPage({ params }: { params: Promise<{
                         {purchase.token_amount} tokens
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
-                        ₹{purchase.cost_rupees || (purchase.cost_paise / 100).toFixed(2)}
+                        {formatInrAsUsd(purchase.cost_rupees ?? purchase.cost_paise / 100)}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
                         {purchase.status}

@@ -346,9 +346,10 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
     final box = Hive.box('app_settings');
     final redirect = box.get('pending_deep_link_redirect') as String?;
     if (redirect != null && redirect.isNotEmpty) {
-      // RouterGuard clears the key when it redirects off this auth route;
-      // deleting it here as well would let the guard fall back to home and
-      // overwrite the navigation below.
+      // This navigates straight to the target, not through home, so
+      // RouterGuard's own home-only consume never runs for it — leaving the
+      // key behind meant it replayed on every later login, deep link or not.
+      box.delete('pending_deep_link_redirect');
       final decoded = Uri.decodeComponent(redirect);
       if (decoded.startsWith('/')) {
         context.go(decoded);

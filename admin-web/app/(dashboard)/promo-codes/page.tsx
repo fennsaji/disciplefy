@@ -13,6 +13,7 @@ import { formatCompactNumber } from '@/lib/utils/date'
 import type { PromoCodeCampaign } from '@/types/admin'
 import { LoadingState } from '@/components/ui/loading-spinner'
 import { ErrorState } from '@/components/ui/empty-state'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 export default function PromoCodesPage() {
   const router = useRouter()
@@ -213,7 +214,7 @@ export default function PromoCodesPage() {
                 <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
                   {selectedCampaign.discount_type === 'percentage'
                     ? `${selectedCampaign.discount_value}%`
-                    : `₹${selectedCampaign.discount_value}`}
+                    : formatInrAsUsd(selectedCampaign.discount_value)}
                 </p>
               </div>
               <div>

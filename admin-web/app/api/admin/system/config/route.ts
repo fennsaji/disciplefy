@@ -127,6 +127,13 @@ export async function GET(request: NextRequest) {
         premium_trial_start_date: systemConfigMap.premium_trial_start_date ?? null,
         grace_period_days: systemConfigMap.grace_period_days ?? null,
       },
+      // Daily spend ceiling - from system_config table. Dollars the app may
+      // spend with the model providers in a day before study generation stops.
+      // Learning-path studies keep working; they come from the cache.
+      cost_control: {
+        daily_cost_limit_usd: Number(systemConfigMap.daily_cost_limit_usd ?? 15),
+        prewarm_monthly_budget_usd: Number(systemConfigMap.prewarm_monthly_budget_usd ?? 20),
+      },
       // Discipler kill switch - from system_config table.
       // NOT the `ai_discipler` feature flag, which gates the paid voice
       // conversation feature. This one gates fellowship replies and reactions.
@@ -286,6 +293,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle maintenance_mode updates - save to system_config table
+    // Handle the daily spend ceiling - save to system_config table
+    if (body.cost_control) {
+      const limit = Number(body.cost_control.daily_cost_limit_usd)
+      const prewarmBudget = Number(body.cost_control.prewarm_monthly_budget_usd)
+
+      if (!Number.isFinite(limit) || limit <= 0) {
+        return NextResponse.json(
+          { error: 'daily_cost_limit_usd must be a positive number of dollars' },
+          { status: 400 }
+        )
+      }
+
+      // Zero is meaningful here: it pauses pre-warming without disabling the job.
+      if (!Number.isFinite(prewarmBudget) || prewarmBudget < 0) {
+        return NextResponse.json(
+          { error: 'prewarm_monthly_budget_usd must be zero or a positive number of dollars' },
+          { status: 400 }
+        )
+      }
+
+      const configUpdates = [
+        { key: 'daily_cost_limit_usd', value: String(limit) },
+        { key: 'prewarm_monthly_budget_usd', value: String(prewarmBudget) }
+      ]
+
+      for (const update of configUpdates) {
+        await supabaseAdmin
+          .from('system_config')
+          .update({ value: update.value, updated_at: new Date().toISOString() })
+          .eq('key', update.key)
+      }
+
+      return NextResponse.json({
+        message: 'Spending limits updated. They take effect within a minute.',
+        daily_cost_limit_usd: limit,
+        prewarm_monthly_budget_usd: prewarmBudget
+      })
+    }
+
     if (body.maintenance_mode) {
       const { enabled, message } = body.maintenance_mode
 

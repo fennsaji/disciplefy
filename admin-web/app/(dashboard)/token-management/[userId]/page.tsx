@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { LoadingState } from '@/components/ui/loading-spinner'
 import { ErrorState } from '@/components/ui/empty-state'
+import { formatInrAsUsd } from '@/lib/utils/currency'
 
 export default function UserTokenDetailsPage() {
   const params = useParams()
@@ -292,7 +293,7 @@ export default function UserTokenDetailsPage() {
                       {purchase.token_amount}
                     </td>
                     <td className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                      ₹{purchase.cost_rupees}
+                      {formatInrAsUsd(purchase.cost_rupees)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {purchase.payment_method || '-'}

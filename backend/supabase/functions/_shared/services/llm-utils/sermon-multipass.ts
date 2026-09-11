@@ -16,8 +16,7 @@ import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair
 import {
   createSharedFoundation,
   createVerseReferenceBlock,
-  getSermonHeadings,
-  getLanguageExamples
+  getSermonHeadings
 } from './prompt-builder.ts'
 
 export type SermonPass = 'pass1' | 'pass2' | 'pass3' | 'pass4'
@@ -54,11 +53,37 @@ export function createSermonPass1Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 1/4 (Introduction + First Point)
 This is part 1 of a 4-part PREACHER-FACING EXPLANATION (not full manuscript).
 Target output: ~1,800 words
-Tone: Theologically rich, pastorally wise, suitable for preacher preparation.`
+Tone: Theologically rich, pastorally wise, suitable for preacher preparation.
 
-  const userMessage = `${taskDescription}
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
-${createVerseReferenceBlock(language)}
+  const passInstructions = `${createVerseReferenceBlock(language)}
 
 ---
 PASS 1/4: SERMON FOUNDATION (Summary + Context + Passage + Intro + Point 1)
@@ -115,7 +140,7 @@ Keep it SHORT and FOCUSED - only what's necessary to understand the sermon text.
 
 PREACHER-FACING: Core theological content + conceptual ideas (not full manuscript). 3-4 paragraphs/section. Conceptual illustrations. 2-3 verses/point. 3 focused applications. Pastors expand during delivery.
 
-## ${headings.introduction} (450-550 words)
+## ${headings.introduction}
 
 **Hook (Conceptual)** (120-150 words): Provide a CONCEPTUAL hook idea (not full story):
 - Real-life tension, question, or problem
@@ -136,7 +161,7 @@ Make it CLEAR and MEMORABLE.
 
 **${headings.transition}** (50-60 words): One compelling paragraph bridging to Point 1.
 
-## ${headings.point} 1: [Memorable Title]  (1000-1200 words)
+## ${headings.point} 1: [Memorable Title]
 
 **${headings.mainTeaching}** (350-450 words): Write 3-4 concise paragraphs with CORE theological exposition:
 - Introduce the main theological truth
@@ -173,17 +198,15 @@ FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "summary": "[YOUR 250-350 WORD SUMMARY HERE]",
-  "context": "[YOUR 50-100 WORD CONTEXT HERE]",
-  "passage": "[Scripture reference ONLY - e.g., 'Romans 8:1-39' in ${languageConfig.name}]",
-  "interpretationPart1": "[YOUR 1450-1750 WORD PREACHER-FACING EXPLANATION HERE - Introduction (conceptual hook, bridge, preview, transition) + Point 1 (core teaching, 2-3 verses, conceptual illustration, 3 applications, transition)]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = taskDescription
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -204,13 +227,37 @@ export function createSermonPass2Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 2/4 (Point 2 Only)
 This is part 2 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1.
 Target output: ~1,000-1,200 words
-Provide CORE content that preachers will expand during delivery.`
+Provide CORE content that preachers will expand during delivery.
 
-  const userMessage = `---
-PASS 2/4: MAIN TEACHING POINT 2 (Point 2 Only)
----
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
-CONTEXT FROM PASS 1:
+  const passInstructions = `CONTEXT FROM PASS 1:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
 - You already wrote: Introduction + Point 1 in Pass 1
 
@@ -226,7 +273,7 @@ Generate this JSON structure:
 
 PREACHER-FACING: Core content, conceptual illustrations, 2-3 verses, 3 applications. Pastors expand during delivery.
 
-## ${headings.point} 2: [Memorable Title] (1000-1200 words)
+## ${headings.point} 2: [Memorable Title]
 
 Use SAME STRUCTURE as Point 1:
 - **${headings.mainTeaching}** (350-450 words): 3-4 concise paragraphs with core theological exposition
@@ -241,14 +288,18 @@ VERIFY: Point 2 complete with all components (Main Teaching, Scripture, Illustra
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart2": "[YOUR 1000-1200 WORD PREACHER-FACING EXPLANATION HERE - Point 2 (core teaching, 2-3 verses, conceptual illustration, 3 applications, transition)]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 2/4: MAIN TEACHING POINT 2 (Point 2 Only)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -270,13 +321,37 @@ export function createSermonPass3Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 3/4 (Point 3 Only)
 This is part 3 of a 4-part PREACHER-FACING EXPLANATION. Continue building on Pass 1 and Pass 2.
 Target output: ~700-900 words
-Provide CORE content that preachers will expand during delivery.`
+Provide CORE content that preachers will expand during delivery.
 
-  const userMessage = `---
-PASS 3/4: FINAL TEACHING POINT (Point 3 Only)
----
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
-CONTEXT FROM PREVIOUS PASSES:
+  const passInstructions = `CONTEXT FROM PREVIOUS PASSES:
 - Sermon Summary: ${pass1Result.summary.substring(0, 300)}...
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2)
 
@@ -292,7 +367,7 @@ Generate this JSON structure:
 
 PREACHER-FACING: Core content (condensed), conceptual illustrations, 2-3 verses, 2-3 applications. Pastors expand during delivery.
 
-## ${headings.point} 3: [Memorable Title] (700-900 words)
+## ${headings.point} 3: [Memorable Title]
 
 Condensed structure:
 - **${headings.mainTeaching}** (280-350 words): 2-3 paragraphs with core teaching
@@ -305,14 +380,18 @@ VERIFY: Point 3 complete with all components (Main Teaching, Scripture, Illustra
 
 Generate FULL CONTENT - no literal "..." placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart3": "[YOUR 700-900 WORD PREACHER-FACING EXPLANATION HERE - Point 3 (core teaching, 2-3 verses, conceptual illustration, 2-3 applications, transition)]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 3/4: FINAL TEACHING POINT (Point 3 Only)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -333,13 +412,37 @@ export function createSermonPass4Prompt(
 STUDY MODE: SERMON OUTLINE - PASS 4/4 (Conclusion + Altar Call + Extras)
 This is the final part of a 4-part PREACHER-FACING EXPLANATION. Bring it home powerfully.
 Target output: ~1,100 words
-Provide CORE conclusion and altar call outline that preachers will expand.`
+Provide CORE conclusion and altar call outline that preachers will expand.
 
-  const userMessage = `---
-PASS 4/4: CONCLUSION + INVITATION + SUPPORTING MATERIALS
----
+OUTPUT DISCIPLINE — the following are instructions to you, never content:
+- Length targets are for you alone. Never print a word count, a section budget,
+  a bracketed placeholder or any part of these instructions. A heading contains
+  its title and nothing else.
+- The three point titles are fixed once the introduction announces them. Body
+  headings and the conclusion must use those same titles, word for word. A
+  point that is announced must be preached.
+- prayerPoints holds prayers the reader can pray, and nothing else. The closing
+  exhortation and gospel appeal belong at the end of the interpretation.
+- The reader is one person alone with a phone. Never tell them to come forward,
+  raise a hand, meet an elder or fill in a card. Call for repentance and faith
+  where they are, and point them to a local church rather than to a room.
+- Section descriptions in this prompt, including any text explaining what an
+  illustration or example should contain, are instructions to you and must
+  never appear in the output. Every section is finished content addressed
+  directly to the congregation in second person; never describe what a section
+  should contain or address the preacher instead of the congregation.
+- Decide the three point titles before writing anything else, and make them
+  distinct — each point argues something the others do not, drawing on
+  different supporting verses. At least one point must expound Christ's own
+  person or work, not only its effects in the believer's life. Once decided,
+  the introduction's preview, every point heading, every transition, and the
+  conclusion's recap use those exact titles and only promise what the sermon
+  actually delivers.
+- The sermon expounds the assigned passage across its full range, not only its
+  opening verses. If the passage is ten verses long, work through all ten;
+  cross-references support the passage's own argument and never replace it.`
 
-CONTEXT FROM PREVIOUS PASSES:
+  const passInstructions = `CONTEXT FROM PREVIOUS PASSES:
 - You already wrote: Introduction + Point 1 (Pass 1) + Point 2 (Pass 2) + Point 3 (Pass 3)
 - Sermon Summary: ${pass1Result.summary.substring(0, 200)}...
 
@@ -351,14 +454,6 @@ Generate this JSON structure (IMPORTANT: interpretationPart4 MUST be LAST for st
   "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Acts 4:12', '1 Timothy 2:5-6') - NO verse text"],
   "reflectionQuestions": ["5-7 discussion questions mixing theology and application"],
   "prayerPoints": ["[300-400 words ALTAR CALL OUTLINE with gospel recap, invitation, response options, prayer outline]"],
-  "summaryInsights": ["[5 sermon takeaways - 15-20 words each]"],
-  "interpretationInsights": ["[5 theological truths taught - 15-20 words each]"],
-  "reflectionAnswers": ["[5 life applications - 15-20 words each]"],
-  "contextQuestion": "[Yes/no question connecting biblical context to modern life]",
-  "summaryQuestion": "[Question about sermon thesis - 12-18 words]",
-  "relatedVersesQuestion": "[Question encouraging scripture study - 12-18 words]",
-  "reflectionQuestion": "[Application question for reflection - 12-18 words]",
-  "prayerQuestion": "[Invitation question encouraging commitment - 10-15 words]",
   "interpretationPart4": "[350-450 words: Conclusion with summaries of all 3 points (80-100 words each) + gospel climax (100-120 words)]"
 }
 
@@ -399,41 +494,29 @@ Preacher will expand with personal warmth.
 Preacher will expand into full prayer during delivery. End with Amen.
 
 **SUPPORTING MATERIALS:**
-- relatedVerses: 5-7 verse REFERENCES ONLY in ${languageConfig.name} (e.g., '2 Corinthians 5:21') - NO verse text
+- relatedVerses: 4 verse REFERENCES ONLY in ${languageConfig.name} (e.g., '2 Corinthians 5:21') - NO verse text
 - reflectionQuestions: 5-7 discussion questions
-- summaryInsights: 5 takeaways (15-20 words each)
-- interpretationInsights: 5 theological truths (15-20 words each)
-- reflectionAnswers: 5 applications (15-20 words each)
-- 5 yes/no questions for engagement
 
 VERIFY BEFORE OUTPUT:
 - interpretationPart4: 350-450 words (4 paragraphs: 3 point summaries + gospel climax)
 - prayerPoints (altar call): 300-400 words with Gospel Recap, Invitation, Response Options, Closing Prayer
-- All supporting fields present: 5-7 relatedVerses, 5-7 reflectionQuestions, 5 summaryInsights/interpretationInsights/reflectionAnswers, 5 yes/no questions
 - Total: ~1,100 words | Verse refs in ${languageConfig.name}
 FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart4": "[YOUR 350-450 WORD CONCLUSION HERE - PREACHER-FACING OUTLINE]",
-  "prayerPoints": ["[YOUR 300-400 WORD ALTAR CALL HERE AS SINGLE STRING - CONCISE OUTLINE]"],
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]"],
-  "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]", "[INSIGHT 5]"],
-  "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]", "[TRUTH 5]"],
-  "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]", "[APPLICATION 5]"],
-  "contextQuestion": "[YOUR YES/NO QUESTION ABOUT BIBLICAL CONTEXT]",
-  "summaryQuestion": "[YOUR QUESTION ABOUT SERMON THESIS - 12-18 words]",
-  "relatedVersesQuestion": "[YOUR QUESTION ENCOURAGING SCRIPTURE STUDY - 12-18 words]",
-  "reflectionQuestion": "[YOUR APPLICATION QUESTION - 12-18 words]",
-  "prayerQuestion": "[YOUR INVITATION QUESTION - 10-15 words]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 4/4: CONCLUSION + INVITATION + SUPPORTING MATERIALS
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -448,14 +531,6 @@ export function combineSermonPasses(
     prayerPoints: string[]
     relatedVerses: string[]
     reflectionQuestions: string[]
-    summaryInsights: string[]
-    interpretationInsights: string[]
-    reflectionAnswers: string[]
-    contextQuestion: string
-    summaryQuestion: string
-    relatedVersesQuestion: string
-    reflectionQuestion: string
-    prayerQuestion: string
   }
 ): Record<string, unknown> {
   return {
@@ -473,14 +548,6 @@ export function combineSermonPasses(
     passage: pass1.passage,
     relatedVerses: pass4.relatedVerses,
     reflectionQuestions: pass4.reflectionQuestions,
-    prayerPoints: pass4.prayerPoints,
-    summaryInsights: pass4.summaryInsights,
-    interpretationInsights: pass4.interpretationInsights,
-    reflectionAnswers: pass4.reflectionAnswers,
-    contextQuestion: pass4.contextQuestion,
-    summaryQuestion: pass4.summaryQuestion,
-    relatedVersesQuestion: pass4.relatedVersesQuestion,
-    reflectionQuestion: pass4.reflectionQuestion,
-    prayerQuestion: pass4.prayerQuestion
+    prayerPoints: pass4.prayerPoints
   }
 }

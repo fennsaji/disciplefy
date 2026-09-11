@@ -37,7 +37,7 @@ export interface AuthContext {
 
 /**
  * Study guide content for caching.
- * All 15 fields are required to ensure complete study guide generation.
+ * All fields are required to ensure complete study guide generation.
  */
 export interface StudyGuideContent {
   readonly summary: string
@@ -47,14 +47,6 @@ export interface StudyGuideContent {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
-  readonly interpretationInsights: readonly string[]  // 2-5 theological insights for Reflect Mode multi-select
-  readonly summaryInsights: readonly string[]  // 2-5 resonance themes for Summary card (Reflect Mode)
-  readonly reflectionAnswers: readonly string[]  // 2-5 actionable life application responses for Reflection card (Reflect Mode)
-  readonly contextQuestion: string  // Yes/no question from historical context for Reflect Mode
-  readonly summaryQuestion: string  // Engaging question about the summary (8-12 words)
-  readonly relatedVersesQuestion: string  // Question prompting verse selection/memorization (8-12 words)
-  readonly reflectionQuestion: string  // Question connecting study to daily life (8-12 words)
-  readonly prayerQuestion: string  // Question inviting personal prayer response (6-10 words)
 }
 
 /**
@@ -70,6 +62,16 @@ export interface StudyGuideInput {
   readonly value: string
   readonly language: string
   readonly study_mode: StudyMode
+  /**
+   * Catalogue topic id, when the study is a learning-path topic.
+   *
+   * The cache keys on this in preference to a hash of the title: the app sends
+   * the English title with a language code while the blog generator sends the
+   * translated one, so title hashes never match across the two and the same
+   * Hindi or Malayalam guide gets generated twice. Free-text studies have no
+   * topic id and stay on the hash.
+   */
+  readonly topic_id?: string
 }
 
 /**

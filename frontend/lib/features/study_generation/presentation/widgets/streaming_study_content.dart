@@ -731,118 +731,11 @@ class StreamingStudyContent extends StatelessWidget {
 
                 // Optional sections (index 7+) - Dynamic order based on backend emission
 
-                // Summary Question
-                if (content.summaryQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioReflectionPrompt),
-                    content: content.summaryQuestion,
-                    index: 7,
-                    icon: Icons.psychology,
-                  ),
-
-                if (content.summaryQuestion != null) const SizedBox(height: 24),
-
                 // Summary Insights
-                if (content.summaryInsights != null &&
-                    content.summaryInsights!.isNotEmpty)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioKeyThemes),
-                    content: content.summaryInsights!
-                        .map((insight) => '• $insight')
-                        .join('\n'),
-                    index: 8,
-                    icon: Icons.insights,
-                  ),
-
-                if (content.summaryInsights != null &&
-                    content.summaryInsights!.isNotEmpty)
-                  const SizedBox(height: 24),
 
                 // Interpretation Insights
-                if (content.interpretationInsights != null &&
-                    content.interpretationInsights!.isNotEmpty)
-                  _buildLectioSection(
-                    context,
-                    title:
-                        context.tr(TranslationKeys.lectioTheologicalInsights),
-                    content: content.interpretationInsights!
-                        .map((insight) => '• $insight')
-                        .join('\n'),
-                    index: 9,
-                    icon: Icons.auto_awesome,
-                  ),
-
-                if (content.interpretationInsights != null &&
-                    content.interpretationInsights!.isNotEmpty)
-                  const SizedBox(height: 24),
-
-                // Context Question
-                if (content.contextQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioConnectToToday),
-                    content: content.contextQuestion,
-                    index: 9,
-                    icon: Icons.question_answer,
-                  ),
-
-                if (content.contextQuestion != null) const SizedBox(height: 24),
-
-                // Related Verses Question
-                if (content.relatedVersesQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioVerseReflection),
-                    content: content.relatedVersesQuestion,
-                    index: 10,
-                    icon: Icons.format_quote,
-                  ),
-
-                if (content.relatedVersesQuestion != null)
-                  const SizedBox(height: 24),
-
-                // Reflection Question
-                if (content.reflectionQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title:
-                        context.tr(TranslationKeys.lectioPersonalApplication),
-                    content: content.reflectionQuestion,
-                    index: 11,
-                    icon: Icons.lightbulb,
-                  ),
-
-                if (content.reflectionQuestion != null)
-                  const SizedBox(height: 24),
 
                 // Reflection Answers (Life Application)
-                if (content.reflectionAnswers != null &&
-                    content.reflectionAnswers!.isNotEmpty)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioLivingItOut),
-                    content: content.reflectionAnswers!
-                        .map((answer) => '• $answer')
-                        .join('\n'),
-                    index: 12,
-                    icon: Icons.check_circle_outline,
-                  ),
-
-                if (content.reflectionAnswers != null &&
-                    content.reflectionAnswers!.isNotEmpty)
-                  const SizedBox(height: 24),
-
-                // Prayer Question
-                if (content.prayerQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioPrayerInvitation),
-                    content: content.prayerQuestion,
-                    index: 13,
-                    icon: Icons.favorite,
-                  ),
 
                 const SizedBox(height: 32),
               ],

@@ -55,26 +55,16 @@ export class AnthropicClient {
     const cacheCreationTokens = data.usage.cache_creation_input_tokens || 0
     const cacheReadTokens = data.usage.cache_read_input_tokens || 0
 
-    // Calculate cost: cache reads are 10% of input price, cache writes are 125%
-    const cost = this.costTracker.calculateCost('anthropic', model, inputTokens, outputTokens)
-
-    // Adjust cost for cached tokens
-    const pricing = this.costTracker.getModelPricing('anthropic', model)
-    let cacheSavings = 0
-    if (pricing && cacheReadTokens > 0) {
-      // Cache reads cost 10% of input price (saving 90%)
-      cacheSavings = (cacheReadTokens / 1000) * pricing.input_per_1k * 0.9
-    }
-    let cacheWriteCost = 0
-    if (pricing && cacheCreationTokens > 0) {
-      // Cache writes cost 125% of input price (25% surcharge)
-      cacheWriteCost = (cacheCreationTokens / 1000) * pricing.input_per_1k * 0.25
-    }
-
-    const adjustedCost = cost.totalCost - cacheSavings + cacheWriteCost
+    // input_tokens already excludes anything served from or written to the
+    // cache, so the cached counts are passed through and priced as additions:
+    // 10% of the input rate for a read, 125% for a write.
+    const cost = this.costTracker.calculateCost('anthropic', model, inputTokens, outputTokens, {
+      cacheReadTokens,
+      cacheCreationTokens
+    })
 
     if (cacheReadTokens > 0 || cacheCreationTokens > 0) {
-      console.log(`[Anthropic] Cache: ${cacheReadTokens} read, ${cacheCreationTokens} written (savings: $${cacheSavings.toFixed(4)})`)
+      console.log(`[Anthropic] Cache: ${cacheReadTokens} read, ${cacheCreationTokens} written`)
     }
 
     return {
@@ -83,7 +73,7 @@ export class AnthropicClient {
       inputTokens: inputTokens + cacheReadTokens + cacheCreationTokens,
       outputTokens,
       totalTokens: inputTokens + cacheReadTokens + cacheCreationTokens + outputTokens,
-      costUsd: adjustedCost
+      costUsd: cost.totalCost
     }
   }
 
@@ -167,12 +157,21 @@ export class AnthropicClient {
     const { systemMessage, userMessage, temperature = 0.3, maxTokens = 3000, model: modelOverride } = options
 
     const model = modelOverride || this.selectModel('en')
+
+    // Discipler replies send the same ~1,200-token system prompt on every call,
+    // many times an hour in an active fellowship, so it is worth a cache
+    // breakpoint. Below Anthropic's 1,024-token minimum a plain string is sent.
+    const CACHE_MIN_CHARS = 1024 * 3
+    const system = systemMessage.length >= CACHE_MIN_CHARS
+      ? [{ type: 'text' as const, text: systemMessage, cache_control: { type: 'ephemeral' as const } }]
+      : systemMessage
+
     const request: AnthropicRequest = {
       model,
       max_tokens: maxTokens,
       temperature,
       top_k: 250,
-      system: systemMessage,
+      system,
       messages: [{ role: 'user', content: userMessage }]
     }
 
@@ -296,12 +295,21 @@ export class AnthropicClient {
     const estimatedSharedTokens = Math.ceil(sharedSystem.length / charPerToken)
     const MIN_CACHEABLE = 1024
 
+    // The pass block is the mode's fixed instructions — the JSON shape, the
+    // section rules, the verification line — identical for every study in that
+    // mode and language. Marking it as a second breakpoint caches the whole
+    // prefix, so only the topic itself is charged at full rate.
+    const estimatedPassTokens = Math.ceil(passSystem.length / charPerToken)
+
     if (estimatedSharedTokens >= MIN_CACHEABLE) {
-      console.log(`[Anthropic] Caching: shared prefix ~${estimatedSharedTokens} tokens (caching: enabled)`)
-      return [
+      const blocks = [
         { type: 'text' as const, text: sharedSystem, cache_control: { type: 'ephemeral' as const } },
-        { type: 'text' as const, text: passSystem }
+        estimatedPassTokens >= MIN_CACHEABLE
+          ? { type: 'text' as const, text: passSystem, cache_control: { type: 'ephemeral' as const } }
+          : { type: 'text' as const, text: passSystem }
       ]
+      console.log(`[Anthropic] Caching: shared ~${estimatedSharedTokens} tokens, pass ~${estimatedPassTokens} tokens (breakpoints: ${blocks.filter((b) => 'cache_control' in b).length})`)
+      return blocks
     }
 
     console.log(`[Anthropic] Caching: shared prefix ~${estimatedSharedTokens} tokens (caching: disabled, below 1024 minimum)`)

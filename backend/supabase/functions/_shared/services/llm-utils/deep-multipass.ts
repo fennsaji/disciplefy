@@ -15,8 +15,7 @@ import { joinInterpretationParts } from './join-passes.ts'
 import { type LLMGenerationParams, type LanguageConfig, type CacheablePromptPair } from '../llm-types.ts'
 import {
   createSharedFoundation,
-  createVerseReferenceBlock,
-  getLanguageExamples
+  createVerseReferenceBlock
 } from './prompt-builder.ts'
 
 export type DeepPass = 'pass1' | 'pass2'
@@ -49,7 +48,7 @@ export function createDeepPass1Prompt(
   const passageExamples = language === 'hi'
     ? "'रोमियों 8:1-39', 'यूहन्ना 14:1-27', 'इफिसियों 2:1-10'"
     : language === 'ml'
-    ? "'റോമർ 8:1-39', 'യോഹന്നാൻ 14:1-27', 'എഫേസ്യർ 2:1-10'"
+    ? "'റോമർ 8:1-39', 'യോഹന്നാൻ 14:1-27', 'എഫെസ്യർ 2:1-10'"
     : "'Romans 8:1-39', 'John 14:1-27', 'Ephesians 2:1-10'"
   const passageOutputExample = language === 'hi'
     ? 'रोमियों 8:1-39'
@@ -67,9 +66,7 @@ Focus: Greek/Hebrew word analysis + semantic ranges + theological significance.
 Target output: ~800-900 words for this pass.
 Tone: Scholarly precision, exegetically rich, doctrinally sound.`
 
-  const userMessage = `${taskDescription}
-
-${createVerseReferenceBlock(language)}
+  const passInstructions = `${createVerseReferenceBlock(language)}
 
 ---
 PASS 1: DEEP STUDY FOUNDATION (Summary + Context + Analysis)
@@ -164,17 +161,15 @@ Target: 235-300 words, 6-8 complete sentences with doctrinal precision.
 
 VERIFY: summary 130-160 words | context 50-70 words | passage reference ONLY (MANDATORY) | interpretationPart1: 3 paragraphs, 6-8 sentences each, 700-900 words | Includes Hebrew/Greek insights | Verse refs in ${languageConfig.name} | Total ~800-900 words. Generate FULL CONTENT - no placeholders. FIX any issues BEFORE output.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "summary": "[YOUR 130-160 WORD SUMMARY HERE - as specified above]",
-  "context": "[YOUR 50-70 WORD CONTEXT HERE - as specified above]",
-  "passage": "[Scripture reference ONLY - e.g., '${passageOutputExample}']",
-  "interpretationPart1": "[YOUR 700-900 WORD INTERPRETATION PART 1 HERE - 3 paragraphs]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = taskDescription
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -196,11 +191,7 @@ This is part 2 of a 2-part deep study generation. Focus on practical transformat
 Target output: ~700 words for this pass.
 Continue the scholarly tone with practical application.`
 
-  const userMessage = `---
-PASS 2: DEEP STUDY APPLICATION (Practical Transformation + Resources)
----
-
-CONTEXT FROM PASS 1:
+  const passInstructions = `CONTEXT FROM PASS 1:
 - Study Summary: ${pass1Result.summary.substring(0, 200)}...
 - You already wrote: Comprehensive exegetical analysis in Pass 1
 
@@ -212,15 +203,7 @@ Generate this JSON structure (IMPORTANT: interpretationPart2 MUST be FIRST for o
   "interpretationPart2": "[550-700 words: PRACTICAL APPLICATION with life transformation, contemporary relevance, and action steps]",
   "relatedVerses": [7-10 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Colossians 1:15-20', 'Hebrews 1:1-4') - NO verse text],
   "reflectionQuestions": [8-12 deep reflection questions mixing theology and application],
-  "prayerPoints": [ONE single continuous prayer paragraph (6-8 sentences, 200-250 words) responding to the theological depth. Do NOT split into multiple items.],
-  "summaryInsights": [5-7 key takeaways - 15-20 words each],
-  "interpretationInsights": [5-7 theological truths taught - 15-20 words each],
-  "reflectionAnswers": [5-7 life applications - 15-20 words each],
-  "contextQuestion": "[Yes/no question connecting biblical context to modern life]",
-  "summaryQuestion": "[Question about study theme - 12-18 words]",
-  "relatedVersesQuestion": "[Question encouraging scripture study - 12-18 words]",
-  "reflectionQuestion": "[Application question for reflection - 12-18 words]",
-  "prayerQuestion": "[Invitation question encouraging commitment - 10-15 words]"
+  "prayerPoints": [ONE single continuous prayer paragraph (6-8 sentences, 200-250 words) responding to the theological depth. Do NOT split into multiple items.]
 }
 
 **INTERPRETATION PART 2 - PRACTICAL APPLICATION (550-700 words):**
@@ -261,34 +244,23 @@ Target: 275-350 words, 6-8 complete sentences with contemporary insight and acti
 - relatedVerses: 7-10 additional verses in ${languageConfig.name}
 - reflectionQuestions: 8-12 deep questions (theological + practical)
 - prayerPoints: ONE single prayer paragraph (6-8 sentences, 200-250 words)
-- summaryInsights: 5-7 takeaways (15-20 words each)
-- interpretationInsights: 5-7 theological truths (15-20 words each)
-- reflectionAnswers: 5-7 applications (15-20 words each)
-- 5 yes/no questions for engagement
 
-VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | prayerPoints: 1 item, single paragraph (6-8 sentences, 200-250 words) | 5-7 items each for summaryInsights/interpretationInsights/reflectionAnswers (15-20 words) | 5 yes/no questions | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
+VERIFY: interpretationPart2: 2 paragraphs, 6-8 sentences each, 550-700 words | 7-10 relatedVerses | 8-12 reflectionQuestions | prayerPoints: 1 item, single paragraph (6-8 sentences, 200-250 words) | Verse refs in ${languageConfig.name} | Total ~700 words. FIX any issues BEFORE output.
 
 Generate FULL CONTENT - no literal "..." or [...] placeholders.
 
-${getLanguageExamples(language)}
 
-OUTPUT ONLY THIS JSON - NO OTHER TEXT:
-{
-  "interpretationPart2": "[YOUR INTERPRETATION PART 2 HERE - as specified above]",
-  "relatedVerses": ["[VERSE 1]", "[VERSE 2]", "[VERSE 3]", "[VERSE 4]", "[VERSE 5]", "[VERSE 6]", "[VERSE 7]"],
-  "reflectionQuestions": ["[QUESTION 1]", "[QUESTION 2]", "[QUESTION 3]", "[QUESTION 4]", "[QUESTION 5]", "[QUESTION 6]", "[QUESTION 7]", "[QUESTION 8]"],
-  "prayerPoints": ["[YOUR SINGLE PRAYER PARAGRAPH: 6-8 sentences, 200-250 words, addressing God directly]"],
-  "summaryInsights": ["[INSIGHT 1: 15-20 words]", "[INSIGHT 2]", "[INSIGHT 3]", "[INSIGHT 4]", "[INSIGHT 5]"],
-  "interpretationInsights": ["[TRUTH 1: 15-20 words]", "[TRUTH 2]", "[TRUTH 3]", "[TRUTH 4]", "[TRUTH 5]"],
-  "reflectionAnswers": ["[APPLICATION 1: 15-20 words]", "[APPLICATION 2]", "[APPLICATION 3]", "[APPLICATION 4]", "[APPLICATION 5]"],
-  "contextQuestion": "[YOUR YES/NO QUESTION]",
-  "summaryQuestion": "[YOUR QUESTION]",
-  "relatedVersesQuestion": "[YOUR QUESTION]",
-  "reflectionQuestion": "[YOUR QUESTION]",
-  "prayerQuestion": "[YOUR QUESTION]"
-}`
+Return ONLY the JSON object described above.
+`
 
-  return { sharedSystem, passSystem, userMessage }
+  const userMessage = `---
+PASS 2: DEEP STUDY APPLICATION (Practical Transformation + Resources)
+---
+`
+
+  return { sharedSystem, passSystem: `${passSystem}
+
+${passInstructions}`, userMessage }
 }
 
 /**
@@ -301,14 +273,6 @@ export function combineDeepPasses(
     relatedVerses: string[]
     reflectionQuestions: string[]
     prayerPoints: string[]
-    summaryInsights: string[]
-    interpretationInsights: string[]
-    reflectionAnswers: string[]
-    contextQuestion: string
-    summaryQuestion: string
-    relatedVersesQuestion: string
-    reflectionQuestion: string
-    prayerQuestion: string
   }
 ): Record<string, unknown> {
   return {
@@ -321,14 +285,6 @@ export function combineDeepPasses(
     passage: pass1.passage,
     relatedVerses: pass2.relatedVerses,
     reflectionQuestions: pass2.reflectionQuestions,
-    prayerPoints: pass2.prayerPoints,
-    summaryInsights: pass2.summaryInsights,
-    interpretationInsights: pass2.interpretationInsights,
-    reflectionAnswers: pass2.reflectionAnswers,
-    contextQuestion: pass2.contextQuestion,
-    summaryQuestion: pass2.summaryQuestion,
-    relatedVersesQuestion: pass2.relatedVersesQuestion,
-    reflectionQuestion: pass2.reflectionQuestion,
-    prayerQuestion: pass2.prayerQuestion
+    prayerPoints: pass2.prayerPoints
   }
 }

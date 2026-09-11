@@ -14,6 +14,11 @@ import 'package:disciplefy_bible_study/features/saved_guides/data/models/saved_g
 ///     records that lack the field still decode.
 ///  3. Write it in [write] and bump the `writeByte(...)` field count.
 /// Never reuse or renumber an existing index, and never change `typeId`.
+///
+/// Indexes 15-22 belonged to the retired Reflect Mode fields. They are no
+/// longer read or written, but they remain permanently retired: records
+/// written before the removal still carry them and are simply ignored on
+/// read. Do not reuse those indexes for new fields.
 class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
   @override
   final int typeId = 1;
@@ -42,21 +47,13 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       reflectionQuestions: (fields[13] as List?)?.cast<String>(),
       prayerPoints: (fields[14] as List?)?.cast<String>(),
       passage: fields[24] as String?,
-      interpretationInsights: (fields[15] as List?)?.cast<String>(),
-      summaryInsights: (fields[21] as List?)?.cast<String>(),
-      reflectionAnswers: (fields[22] as List?)?.cast<String>(),
-      contextQuestion: fields[16] as String?,
-      summaryQuestion: fields[17] as String?,
-      relatedVersesQuestion: fields[18] as String?,
-      reflectionQuestion: fields[19] as String?,
-      prayerQuestion: fields[20] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedGuideModel obj) {
     writer
-      ..writeByte(25)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -75,22 +72,6 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       ..write(obj.reflectionQuestions)
       ..writeByte(14)
       ..write(obj.prayerPoints)
-      ..writeByte(15)
-      ..write(obj.interpretationInsights)
-      ..writeByte(16)
-      ..write(obj.contextQuestion)
-      ..writeByte(17)
-      ..write(obj.summaryQuestion)
-      ..writeByte(18)
-      ..write(obj.relatedVersesQuestion)
-      ..writeByte(19)
-      ..write(obj.reflectionQuestion)
-      ..writeByte(20)
-      ..write(obj.prayerQuestion)
-      ..writeByte(21)
-      ..write(obj.summaryInsights)
-      ..writeByte(22)
-      ..write(obj.reflectionAnswers)
       ..writeByte(23)
       ..write(obj.studyMode)
       ..writeByte(24)

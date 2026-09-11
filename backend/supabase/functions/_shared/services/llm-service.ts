@@ -69,6 +69,16 @@ export type { LLMServiceConfig } from './llm-types.ts'
  * This service handles LLM integration with provider selection and fallback.
  * Supports OpenAI GPT and Anthropic Claude APIs with proper error handling.
  */
+/**
+ * Anthropic model for a daily teaser in [language]. English reads fine on
+ * Haiku 4.5; Hindi and Malayalam need Sonnet 4.5 (see generateDailyTeaser).
+ */
+export function teaserModelForLanguage(language: string): string {
+  return language === 'hi' || language === 'ml'
+    ? 'claude-sonnet-4-5-20250929'
+    : 'claude-haiku-4-5-20251001'
+}
+
 export class LLMService {
   private readonly provider: LLMProvider
   private readonly useMockData: boolean
@@ -709,14 +719,20 @@ Return ONLY the numeric score, nothing else.`
 
   /**
    * Short JSON completion for a fellowship's daily-post teaser.
-   * Cheapest models on both providers; Anthropic preferred when available.
+   * Anthropic preferred when available. English uses Haiku; Hindi and
+   * Malayalam use Sonnet, because a 9 Sep 2026 blind review of Haiku output in
+   * those languages found mistranslated theology and wrong church vocabulary.
+   * Each lesson's teaser is cached per language, so the Sonnet cost is one-off.
    */
-  async generateDailyTeaser(prompt: { systemMessage: string; userMessage: string }): Promise<{
+  async generateDailyTeaser(
+    prompt: { systemMessage: string; userMessage: string },
+    language: string = 'en',
+  ): Promise<{
     content: string; usage: LLMUsageMetadata; model: string; provider: LLMProvider
   }> {
     const provider: LLMProvider = this.availableProviders.has('anthropic') ? 'anthropic' : this.getAnyAvailableProvider()
     if (provider === 'anthropic') {
-      const model = 'claude-haiku-4-5-20251001'
+      const model = teaserModelForLanguage(language)
       const result = await this.getAnthropicClient().call({
         systemMessage: prompt.systemMessage, userMessage: prompt.userMessage,
         temperature: 0.7, maxTokens: 220, model,
@@ -1070,26 +1086,6 @@ Return ONLY the numeric score, nothing else.`
         "Ask for wisdom to understand His Word",
         "Pray for opportunities to share this message"
       ],
-      interpretationInsights: [
-        "God's love is unconditional and universal",
-        "Salvation requires faith and trust in Christ",
-        "Divine grace transforms our understanding"
-      ],
-      summaryInsights: [
-        "Divine love manifested through sacrifice",
-        "Universal offer of eternal life",
-        "Faith as the path to redemption"
-      ],
-      reflectionAnswers: [
-        "Strengthen my daily prayer practice",
-        "Share God's love with those around me",
-        "Trust God's plan in difficult times"
-      ],
-      contextQuestion: "Does this historical context change how you view God's timing?",
-      summaryQuestion: "What aspect of God's love resonates most with you today?",
-      relatedVersesQuestion: "Which of these verses speaks to your current journey?",
-      reflectionQuestion: "How will you apply this truth in your daily walk?",
-      prayerQuestion: "What would you like to tell God right now?"
     }
   }
 

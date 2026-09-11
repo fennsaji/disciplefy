@@ -28,6 +28,8 @@ import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import { getUsageLoggingService } from '../_shared/services/usage-logging-service.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { checkFreshStudyLimits, limitMessage } from '../_shared/services/fresh-study-limits.ts'
+import { checkCostCeiling, COST_CEILING_MESSAGE } from '../_shared/services/cost-ceiling.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -62,14 +64,6 @@ interface SermonPass4Data {
   relatedVerses: Array<{ reference: string; text: string }>
   reflectionQuestions: string[]
   prayerPoints: string[]
-  summaryInsights: string[]
-  interpretationInsights: string[]
-  reflectionAnswers: string[]
-  contextQuestion: string
-  summaryQuestion: string
-  relatedVersesQuestion: string
-  reflectionQuestion: string
-  prayerQuestion: string
 }
 
 interface StandardPass1Data {
@@ -233,36 +227,12 @@ async function* streamCachedContent(
     { type: 'interpretation', content: studyGuide.interpretation, index: 3 },
     { type: 'relatedVerses', content: studyGuide.relatedVerses, index: 4 },
     { type: 'reflectionQuestions', content: studyGuide.reflectionQuestions, index: 5 },
-    { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 6 },
+    { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 6 }
   ]
 
   // Add optional sections if present (in SECTION_ORDER)
   let currentIndex = 7
 
-  if (studyGuide.interpretationInsights) {
-    sections.push({ type: 'interpretationInsights', content: studyGuide.interpretationInsights, index: currentIndex++ })
-  }
-  if (studyGuide.summaryInsights) {
-    sections.push({ type: 'summaryInsights', content: studyGuide.summaryInsights, index: currentIndex++ })
-  }
-  if (studyGuide.reflectionAnswers) {
-    sections.push({ type: 'reflectionAnswers', content: studyGuide.reflectionAnswers, index: currentIndex++ })
-  }
-  if (studyGuide.contextQuestion) {
-    sections.push({ type: 'contextQuestion', content: studyGuide.contextQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.summaryQuestion) {
-    sections.push({ type: 'summaryQuestion', content: studyGuide.summaryQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.relatedVersesQuestion) {
-    sections.push({ type: 'relatedVersesQuestion', content: studyGuide.relatedVersesQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.reflectionQuestion) {
-    sections.push({ type: 'reflectionQuestion', content: studyGuide.reflectionQuestion, index: currentIndex++ })
-  }
-  if (studyGuide.prayerQuestion) {
-    sections.push({ type: 'prayerQuestion', content: studyGuide.prayerQuestion, index: currentIndex++ })
-  }
 
   const totalSections = sections.length
 
@@ -414,38 +384,6 @@ async function streamAndParsePass2WithEmission(
         console.log(`[LLM-MultiPass] 📤 Emitting prayerPoints from ${passName}`)
         emit(createSectionEvent({ type: 'prayerPoints', content: section.content, index: 5 }, totalSections))
         emittedSections.add('prayerPoints')
-      } else if (sectionType === 'summaryInsights') {
-        console.log(`[LLM-MultiPass] 📤 Emitting summaryInsights from ${passName}`)
-        emit(createSectionEvent({ type: 'summaryInsights', content: section.content, index: 6 }, totalSections))
-        emittedSections.add('summaryInsights')
-      } else if (sectionType === 'interpretationInsights') {
-        console.log(`[LLM-MultiPass] 📤 Emitting interpretationInsights from ${passName}`)
-        emit(createSectionEvent({ type: 'interpretationInsights', content: section.content, index: 7 }, totalSections))
-        emittedSections.add('interpretationInsights')
-      } else if (sectionType === 'reflectionAnswers') {
-        console.log(`[LLM-MultiPass] 📤 Emitting reflectionAnswers from ${passName}`)
-        emit(createSectionEvent({ type: 'reflectionAnswers', content: section.content, index: 8 }, totalSections))
-        emittedSections.add('reflectionAnswers')
-      } else if (sectionType === 'contextQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting contextQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'contextQuestion', content: section.content, index: 9 }, totalSections))
-        emittedSections.add('contextQuestion')
-      } else if (sectionType === 'summaryQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting summaryQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'summaryQuestion', content: section.content, index: 10 }, totalSections))
-        emittedSections.add('summaryQuestion')
-      } else if (sectionType === 'relatedVersesQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting relatedVersesQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'relatedVersesQuestion', content: section.content, index: 11 }, totalSections))
-        emittedSections.add('relatedVersesQuestion')
-      } else if (sectionType === 'reflectionQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting reflectionQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'reflectionQuestion', content: section.content, index: 12 }, totalSections))
-        emittedSections.add('reflectionQuestion')
-      } else if (sectionType === 'prayerQuestion') {
-        console.log(`[LLM-MultiPass] 📤 Emitting prayerQuestion from ${passName}`)
-        emit(createSectionEvent({ type: 'prayerQuestion', content: section.content, index: 13 }, totalSections))
-        emittedSections.add('prayerQuestion')
       } else {
         console.log(`[LLM-MultiPass] ⚠️ Unhandled section type in ${passName}: "${sectionType}" - not emitting`)
       }
@@ -670,7 +608,20 @@ async function handleStudyGenerateV2(
   }
 
   const requiredFeature = modeFeatureMap[study_mode]
-  const hasFeatureAccess = await isFeatureEnabledForPlan(requiredFeature, userPlan)
+
+  // A learning-path topic opens in the mode its path recommends, on every plan.
+  // Those guides are cached and cost nothing to serve again, and the catalogue
+  // is the part of the product that should stay open to everyone; the plan's
+  // mode rule is about the studies a user types in for themselves.
+  const isCataloguePath = topic_id
+    ? (await getLearningPathRecommendedMode(services.supabaseServiceClient, topic_id)) === study_mode
+    : false
+
+  const hasFeatureAccess = isCataloguePath || await isFeatureEnabledForPlan(requiredFeature, userPlan)
+
+  if (isCataloguePath) {
+    console.log(`📚 [STUDY-V2] Learning-path topic in its recommended mode: ${study_mode} allowed on ${userPlan}`)
+  }
 
   if (!hasFeatureAccess) {
     console.warn(`⛔ [STUDY-V2] Feature access denied: ${requiredFeature} not available for plan ${userPlan}`)
@@ -712,7 +663,11 @@ async function handleStudyGenerateV2(
     type: input_type,
     value: input_value,
     language: language,
-    study_mode: study_mode
+    study_mode: study_mode,
+    // Catalogue lesson, when the client sent one. The cache prefers it over the
+    // title hash so a lesson opened under a Hindi title still finds the guide
+    // the blog generator wrote for it.
+    topic_id: topic_id
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
@@ -734,6 +689,49 @@ async function handleStudyGenerateV2(
     if (lpRecommendedMode && lpRecommendedMode === study_mode) {
       isFreeGeneration = true
       console.log(`🆓 [STUDY-V2] Free generation: topic ${topic_id} in learning path (recommended mode: ${study_mode})`)
+    }
+  }
+
+  // The day's budget across every user. Learning-path studies are exempt: they
+  // come from the cache, so they cost nothing and there is no reason to take
+  // them away while the ceiling is in force.
+  if (!isFreeGeneration) {
+    const budget = await checkCostCeiling(studyGuideRepository.getSupabaseClient())
+    if (!budget.withinBudget) {
+      return new Response(
+        JSON.stringify({
+          error: 'DAILY_COST_LIMIT_REACHED',
+          message: COST_CEILING_MESSAGE
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // Ceilings on studies that actually call the model. A learning-path study in
+  // its recommended mode is served from the catalogue cache and costs nothing
+  // to repeat, so it is never counted and never blocked.
+  if (!isFreeGeneration && userContext.type === 'authenticated' && userContext.userId) {
+    const limits = await checkFreshStudyLimits(
+      studyGuideRepository.getSupabaseClient(),
+      userContext.userId,
+      userPlan,
+      study_mode
+    )
+
+    if (!limits.allowed) {
+      console.warn(`⛔ [STUDY-V2] ${limits.limit} reached: ${limits.used}/${limits.cap} for plan ${userPlan}`)
+      return new Response(
+        JSON.stringify({
+          error: 'FRESH_STUDY_LIMIT_REACHED',
+          message: limitMessage(limits),
+          limit: limits.limit,
+          used: limits.used,
+          cap: limits.cap,
+          currentPlan: userPlan
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
   }
 
@@ -824,35 +822,13 @@ async function handleStudyGenerateV2(
             passage: existingContent.content.passage || '',
             relatedVerses: [...(existingContent.content.relatedVerses || [])],
             reflectionQuestions: [...(existingContent.content.reflectionQuestions || [])],
-            prayerPoints: [...(existingContent.content.prayerPoints || [])],
-            // Reflection Mode fields - insights and answers
-            interpretationInsights: existingContent.content.interpretationInsights
-              ? [...existingContent.content.interpretationInsights]
-              : undefined,
-            summaryInsights: existingContent.content.summaryInsights
-              ? [...existingContent.content.summaryInsights]
-              : undefined,
-            reflectionAnswers: existingContent.content.reflectionAnswers
-              ? [...existingContent.content.reflectionAnswers]
-              : undefined,
-            // Reflection Mode fields - dynamic questions
-            contextQuestion: existingContent.content.contextQuestion || undefined,
-            summaryQuestion: existingContent.content.summaryQuestion || undefined,
-            relatedVersesQuestion: existingContent.content.relatedVersesQuestion || undefined,
-            reflectionQuestion: existingContent.content.reflectionQuestion || undefined,
-            prayerQuestion: existingContent.content.prayerQuestion || undefined
+            prayerPoints: [...(existingContent.content.prayerPoints || [])]
           }
 
           // Calculate total sections for this cached guide (base 7: summary, context, passage, interpretation, relatedVerses, reflectionQuestions, prayerPoints)
-          const cachedSectionCount = 7 +
-            (cachedGuide.interpretationInsights ? 1 : 0) +
-            (cachedGuide.summaryInsights ? 1 : 0) +
-            (cachedGuide.reflectionAnswers ? 1 : 0) +
-            (cachedGuide.contextQuestion ? 1 : 0) +
-            (cachedGuide.summaryQuestion ? 1 : 0) +
-            (cachedGuide.relatedVersesQuestion ? 1 : 0) +
-            (cachedGuide.reflectionQuestion ? 1 : 0) +
-            (cachedGuide.prayerQuestion ? 1 : 0)
+          // summary, context, passage, interpretation, relatedVerses,
+          // reflectionQuestions, prayerPoints
+          const cachedSectionCount = 7
 
           console.log('📊 [STUDY-V2] Cached section count:', cachedSectionCount)
 
@@ -956,12 +932,23 @@ async function handleStudyGenerateV2(
               input: input_value.substring(0, 50)
             })
 
-            // Mark stale record as failed (truly abandoned)
-            await studyGuideRepository.markInProgressFailed(
-              inProgressStudy.id,
-              'TIMEOUT',
-              'Generation abandoned - no updates for 5+ minutes'
-            )
+            // Mark stale record as failed (truly abandoned) and refund whatever
+            // tokens that attempt charged — it crashed before its own catch
+            // block could refund itself, so this is the only chance to give
+            // those tokens back.
+            const staleRefund = await studyGuideRepository.markStaleInProgressFailed(inProgressStudy.id)
+            if (staleRefund) {
+              const refundResult = await tokenService.refundTokens(
+                staleRefund.identifier,
+                staleRefund.dailyTokensUsed,
+                staleRefund.purchasedTokensUsed
+              )
+              console.log(
+                refundResult.success
+                  ? `💰 [STUDY-V2] Refunded abandoned generation's tokens: daily=${staleRefund.dailyTokensUsed}, purchased=${staleRefund.purchasedTokensUsed}`
+                  : `⚠️ [STUDY-V2] Failed to refund abandoned generation's tokens: ${refundResult.errorMessage}`
+              )
+            }
 
             // Continue with new generation (don't poll stale record)
           } else {
@@ -1086,7 +1073,8 @@ async function handleStudyGenerateV2(
           inputHash,
           targetLanguage,
           study_mode,
-          clientId
+          clientId,
+          tokensWereConsumed ? { identifier, dailyTokensUsed, purchasedTokensUsed } : undefined
         )
 
         if (inProgressError) {
@@ -1409,30 +1397,6 @@ async function handleStudyGenerateV2(
 
             // Emit optional sections (6+) immediately
             let currentIndex = 6
-            if (studyGuideData.interpretationInsights) {
-              emit(createSectionEvent({ type: 'interpretationInsights', content: studyGuideData.interpretationInsights, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.summaryInsights) {
-              emit(createSectionEvent({ type: 'summaryInsights', content: studyGuideData.summaryInsights, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.reflectionAnswers) {
-              emit(createSectionEvent({ type: 'reflectionAnswers', content: studyGuideData.reflectionAnswers, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.contextQuestion) {
-              emit(createSectionEvent({ type: 'contextQuestion', content: studyGuideData.contextQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.summaryQuestion) {
-              emit(createSectionEvent({ type: 'summaryQuestion', content: studyGuideData.summaryQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.relatedVersesQuestion) {
-              emit(createSectionEvent({ type: 'relatedVersesQuestion', content: studyGuideData.relatedVersesQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.reflectionQuestion) {
-              emit(createSectionEvent({ type: 'reflectionQuestion', content: studyGuideData.reflectionQuestion, index: currentIndex++ }, 14))
-            }
-            if (studyGuideData.prayerQuestion) {
-              emit(createSectionEvent({ type: 'prayerQuestion', content: studyGuideData.prayerQuestion, index: currentIndex++ }, 14))
-            }
 
             } else if (study_mode === 'deep' || study_mode === 'lectio' || study_mode === 'standard') {
               // DEEP / LECTIO / STANDARD MODES: 2-pass generation
@@ -1723,30 +1687,6 @@ async function handleStudyGenerateV2(
 
             // Add optional sections if present (in SECTION_ORDER)
 
-            if (studyGuideData.interpretationInsights) {
-              allSections.push({ type: 'interpretationInsights', content: studyGuideData.interpretationInsights, index: currentIndex++ })
-            }
-            if (studyGuideData.summaryInsights) {
-              allSections.push({ type: 'summaryInsights', content: studyGuideData.summaryInsights, index: currentIndex++ })
-            }
-            if (studyGuideData.reflectionAnswers) {
-              allSections.push({ type: 'reflectionAnswers', content: studyGuideData.reflectionAnswers, index: currentIndex++ })
-            }
-            if (studyGuideData.contextQuestion) {
-              allSections.push({ type: 'contextQuestion', content: studyGuideData.contextQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.summaryQuestion) {
-              allSections.push({ type: 'summaryQuestion', content: studyGuideData.summaryQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.relatedVersesQuestion) {
-              allSections.push({ type: 'relatedVersesQuestion', content: studyGuideData.relatedVersesQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.reflectionQuestion) {
-              allSections.push({ type: 'reflectionQuestion', content: studyGuideData.reflectionQuestion, index: currentIndex++ })
-            }
-            if (studyGuideData.prayerQuestion) {
-              allSections.push({ type: 'prayerQuestion', content: studyGuideData.prayerQuestion, index: currentIndex++ })
-            }
 
             const totalSections = allSections.length
 
@@ -1823,15 +1763,7 @@ async function handleStudyGenerateV2(
             passage: studyGuideData.passage || null,
             relatedVerses: studyGuideData.relatedVerses,
             reflectionQuestions: studyGuideData.reflectionQuestions,
-            prayerPoints: studyGuideData.prayerPoints,
-            interpretationInsights: studyGuideData.interpretationInsights || [],
-            summaryInsights: studyGuideData.summaryInsights || [],
-            reflectionAnswers: studyGuideData.reflectionAnswers || [],
-            contextQuestion: studyGuideData.contextQuestion || '',
-            summaryQuestion: studyGuideData.summaryQuestion || '',
-            relatedVersesQuestion: studyGuideData.relatedVersesQuestion || '',
-            reflectionQuestion: studyGuideData.reflectionQuestion || '',
-            prayerQuestion: studyGuideData.prayerQuestion || ''
+            prayerPoints: studyGuideData.prayerPoints
           },
           userContext
         )

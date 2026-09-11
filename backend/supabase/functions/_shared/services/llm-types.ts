@@ -61,14 +61,6 @@ export interface LLMResponse {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
-  readonly interpretationInsights: readonly string[]  // 2-5 theological insights for Reflect Mode multi-select
-  readonly summaryInsights: readonly string[]  // 2-5 resonance themes for Summary card (Quick/Lectio: 2-3, Standard/Deep: 3-5)
-  readonly reflectionAnswers: readonly string[]  // 2-5 actionable life application responses for Reflection card (Quick/Lectio: 2-3, Standard/Deep: 3-5)
-  readonly contextQuestion: string  // Yes/no question from historical context for Reflect Mode
-  readonly summaryQuestion: string  // Engaging question about the summary (8-12 words)
-  readonly relatedVersesQuestion: string  // Question prompting verse selection/memorization (8-12 words)
-  readonly reflectionQuestion: string  // Question connecting study to daily life (8-12 words)
-  readonly prayerQuestion: string  // Question inviting personal prayer response (6-10 words)
 }
 
 /**

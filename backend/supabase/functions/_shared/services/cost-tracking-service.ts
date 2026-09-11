@@ -42,8 +42,8 @@ const LLM_PRICING = {
       output_per_1k: 0.015, // $0.015 per 1K output tokens
     },
     'claude-haiku-4-5-20251001': {
-      input_per_1k: 0.0008, // $0.0008 per 1K input tokens (73% cheaper than Sonnet)
-      output_per_1k: 0.004, // $0.004 per 1K output tokens
+      input_per_1k: 0.001, // $1 per million input tokens
+      output_per_1k: 0.005, // $5 per million output tokens
     },
   },
   elevenlabs: {
@@ -52,6 +52,22 @@ const LLM_PRICING = {
     },
   },
 };
+
+/** A cache read is billed at 10% of the input price, a cache write at 125%. */
+const CACHE_READ_MULTIPLIER = 0.1;
+const CACHE_WRITE_MULTIPLIER = 1.25;
+
+/**
+ * Used when a model has no entry above. Deliberately the dearest rate we know,
+ * so an untracked model overstates rather than disappears.
+ */
+const FALLBACK_PRICING = { input_per_1k: 0.003, output_per_1k: 0.015 };
+
+/** Cached-token counts, as Anthropic reports them alongside input_tokens. */
+export interface CacheTokenCounts {
+  readonly cacheReadTokens?: number;
+  readonly cacheCreationTokens?: number;
+}
 
 const USD_TO_INR_RATE = 83.5;
 
@@ -67,20 +83,36 @@ export class CostTrackingService {
     provider: LLMProvider,
     model: string,
     inputTokens: number,
-    outputTokens: number
+    outputTokens: number,
+    cacheTokens?: CacheTokenCounts
   ): LLMCostCalculation {
     let totalCost = 0;
 
-    if (provider === 'openai' && LLM_PRICING.openai[model as keyof typeof LLM_PRICING.openai]) {
-      const pricing = LLM_PRICING.openai[model as keyof typeof LLM_PRICING.openai];
-      totalCost = (inputTokens / 1000) * pricing.input_per_1k +
-                 (outputTokens / 1000) * pricing.output_per_1k;
-    } else if (provider === 'anthropic' && LLM_PRICING.anthropic[model as keyof typeof LLM_PRICING.anthropic]) {
-      const pricing = LLM_PRICING.anthropic[model as keyof typeof LLM_PRICING.anthropic];
-      totalCost = (inputTokens / 1000) * pricing.input_per_1k +
+    const pricing = this.getModelPricing(provider, model);
+
+    if (pricing) {
+      // Anthropic reports cached tokens separately from input_tokens: a cache
+      // read is billed at 10% of the input price and a cache write at 125%.
+      // Both are additions. Treating a read as a discount on input_tokens —
+      // which never included it — made cache-heavy calls look free, and could
+      // drive a recorded cost below zero.
+      const billableInput = inputTokens +
+        (cacheTokens?.cacheReadTokens ?? 0) * CACHE_READ_MULTIPLIER +
+        (cacheTokens?.cacheCreationTokens ?? 0) * CACHE_WRITE_MULTIPLIER;
+
+      totalCost = (billableInput / 1000) * pricing.input_per_1k +
                  (outputTokens / 1000) * pricing.output_per_1k;
     } else {
-      console.warn(`Unknown model ${model} for provider ${provider}, cost calculation defaulting to 0`);
+      // Silently costing nothing is worse than costing too much: an untracked
+      // model would spend real money while every budget read zero. Fall back to
+      // the dearest price we know, so the gap shows up rather than hiding.
+      const fallback = FALLBACK_PRICING;
+      totalCost = (inputTokens / 1000) * fallback.input_per_1k +
+                 (outputTokens / 1000) * fallback.output_per_1k;
+      console.error(
+        `[CostTracking] No price for ${provider}/${model}. Charging the highest known rate ` +
+        `($${fallback.input_per_1k}/$${fallback.output_per_1k} per 1K) so the spend is visible. Add it to LLM_PRICING.`
+      );
     }
 
     return {

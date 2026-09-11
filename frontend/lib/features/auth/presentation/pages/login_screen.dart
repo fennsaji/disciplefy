@@ -47,11 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
   /// (works for email auth) then Hive storage (survives OAuth round-trip).
   /// Returns null if the target is not a relative path (starts with '/').
   ///
-  /// The key is deliberately NOT cleared here. RouterGuard redirects an
-  /// authenticated user off /login the moment the session lands, and it reads
-  /// the same key: if this screen deleted it, the guard would fall back to
-  /// home and overwrite the navigation below. The guard owns the delete, so
-  /// both paths resolve to the same destination whichever runs first.
+  /// Deletes the Hive key once it decides to navigate straight to the
+  /// target: RouterGuard only ever consumes/deletes it when the redirect
+  /// lands on home, so a direct navigation to the deep-link target itself
+  /// (the normal case) left the key behind forever — every later login,
+  /// including ones with no deep link involved, then replayed that stale
+  /// target. Consuming it here closes that leak.
   String? _consumeRedirectTarget(BuildContext context) {
     final box = Hive.box('app_settings');
 
@@ -63,8 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (fromUrl != null && fromUrl.isNotEmpty) {
       final decoded = Uri.decodeComponent(fromUrl);
       if (!decoded.startsWith('/')) return null; // reject absolute URLs
-      // Mirror it into Hive so the guard sees the same target.
-      box.put('pending_deep_link_redirect', Uri.encodeComponent(decoded));
+      box.delete('pending_deep_link_redirect');
       return decoded;
     }
     // Hive key is written before launching Google OAuth so it survives the
@@ -72,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final fromHive = box.get('pending_deep_link_redirect') as String?;
     if (fromHive != null && fromHive.isNotEmpty) {
       final decoded = Uri.decodeComponent(fromHive);
+      box.delete('pending_deep_link_redirect');
       if (!decoded.startsWith('/')) return null; // reject absolute URLs
       return decoded;
     }

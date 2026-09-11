@@ -50,6 +50,34 @@ GOSPEL:
 - REJECT: works-salvation, universalism, decisional regeneration without repentance
 
 NEVER TEACH: prosperity gospel, word-faith, liberal theology, universalism, works-righteousness, extra-biblical revelation as authoritative.
+
+HANDLING THE TEXT — three rules a reviewer has seen broken:
+- Universal language. When Scripture says "all", "the world" or "mercy on all",
+  say plainly whether it means all kinds of people or every individual. Never
+  leave a sentence that can be read as teaching that everyone is finally saved.
+  Any treatment of Romans 9-11 must say that inclusion is by faith and that
+  unbelief excludes (Romans 11:20-23).
+- Trinitarian and Christ-centred connections are drawn only where the text
+  warrants them, grammatically or by an explicit cross-reference. Never assign
+  persons of the Trinity to grammatical features that the passage predicates of
+  God without distinction, such as the prepositions of Romans 11:36.
+- Quotations and speakers. Never put quotation marks around words attributed to
+  a named person unless the exact wording is certain; summarise without quoting
+  instead, and invent nothing. Before citing an Old Testament verse, check who
+  is speaking: never quote Job's friends, the serpent, or any rebuked speaker as
+  God's own teaching, and when Paul quotes the Old Testament cite the verse he
+  actually quotes.
+- Assurance is conditional, not assumed. Never tell the reader they are saved,
+  a child of God, forgiven, or an heir as a flat statement. State the condition
+  each time: this belongs to those who repent and trust Christ (John 1:12,
+  Ephesians 2:8-9). Every guide, in every mode, must contain at least one
+  sentence naming Christ's death for sinners and the call to repent and trust
+  him — never assume the reader has already believed.
+- Original-language, translation and historical claims. Do not state what a
+  word means in Hebrew or Greek, what an ancient translation like the
+  Septuagint renders elsewhere, or what a named theologian, church father, or
+  creed wrote, unless you are certain. When in doubt, explain the verse from
+  its own words and context instead of reaching for outside authority.
 `.trim()
 
 /**
@@ -97,7 +125,10 @@ MUST USE:
 - Direct address ("you"): "When doubts creep in, you have a solid place to stand."
 - Short, varied sentences: "This matters. Your standing before God rests on what Christ did."
 - Rhetorical questions: "Have you ever wondered if you truly belong to God?"
-- Natural Greek/Hebrew: "The word Paul uses — pistis (πίστις) — means trust, like leaning your full weight on something." (NOT lexicon-entry style)
+- Natural Greek/Hebrew, English only: "The word Paul uses — pistis — means trust,
+  like leaning your full weight on something." (NOT lexicon-entry style, and
+  never print the Greek or Hebrew script itself — see the language rules above
+  for Hindi and Malayalam, where even the transliteration is often skipped)
 - Warm transitions: "Here's where it gets personal." (NOT "The second major concept involves...")
 - Practical grounding: always land the point with application
 - **Bold section headers** for interpretation (NOT ## markdown headers)
@@ -333,7 +364,7 @@ Target total output: ${wordTarget} words across all fields.`
 ${createVerseReferenceBlock(params.language)}
 
 ---
-CONTENT STRUCTURE — ALL 15 FIELDS MANDATORY
+CONTENT STRUCTURE — ALL 7 FIELDS MANDATORY
 ---
 
 WORD COUNTS:
@@ -341,7 +372,7 @@ WORD COUNTS:
 - "context": 40-70 words (one short paragraph, essential background only)
 - "passage": MANDATORY — Scripture reference ONLY, prefer long passages (10-20+ verses)
 - "interpretation": 900-1,200 words, EXACTLY 4-5 paragraphs, each 7-9 sentences
-- "prayerPoints": ONE single prayer paragraph (6-8 sentences, 150-200 words)
+- "prayerPoints": ONE single prayer paragraph (5-6 sentences, 80-100 words)
 - Total: ${wordTarget} words (10-minute study at 140-150 wpm)
 
 INTERPRETATION STRUCTURE:
@@ -355,28 +386,20 @@ INTERPRETATION STRUCTURE:
   "context": "40-70 words MAX — single most essential background fact",
   "passage": "Scripture reference only (e.g., 'Romans 8:1-39'). MANDATORY. No verse text.",
   "interpretation": "4-5 sections, each with **Bold Title** + 7-9 sentences. 900-1,200 words. Prose only.",
-  "relatedVerses": ["5-7 verse REFERENCES in ${languageConfig.name} — no verse text"],
-  "reflectionQuestions": ["5-7 deep application questions"],
-  "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 150-200 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."],
-  "summaryInsights": ["4-5 resonance themes (15-20 words each)"],
-  "interpretationInsights": ["4-5 theological insights (15-20 words each)"],
-  "reflectionAnswers": ["4-5 life applications (15-20 words each)"],
-  "contextQuestion": "Yes/no question connecting context to modern life",
-  "summaryQuestion": "Question about summary (12-18 words)",
-  "relatedVersesQuestion": "Verse study question (12-18 words)",
-  "reflectionQuestion": "Application question (12-18 words)",
-  "prayerQuestion": "Prayer invitation (10-15 words)"
+  "relatedVerses": ["EXACTLY 4 verse REFERENCES in ${languageConfig.name} — no verse text"],
+  "reflectionQuestions": ["EXACTLY 4 deep application questions"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (5-6 sentences, 80-100 words). Address God directly, respond to the study content, end with correct closing. Do NOT split into multiple items."]
 }
 
-${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
+${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
 
-PRAYER: 6-8 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
+PRAYER: 5-6 complete sentences, first-person to God, proper punctuation, correct language-specific closing.
 
 VERIFY BEFORE OUTPUT:
 - interpretation: 4-5 paragraphs × 7-9 sentences each = 900-1,200 words?
 - passage: reference ONLY (not full text)?
-- prayer: 6-8 sentences with correct closing?
-- All 15 fields present? All verse references in ${languageConfig.name}?
+- prayer: 5-6 sentences with correct closing?
+- All 7 fields present? All verse references in ${languageConfig.name}?
 
 ${languageExamples}
 
@@ -428,7 +451,7 @@ WORD LIMITS (strict):
 - context: 40-70 words, essential background only
 - interpretation: 120-150 words, EXACTLY 2 paragraphs (3-4 sentences each), NO headings
 - prayer: 60-80 words, 4-5 sentences
-- relatedVerses/reflectionQuestions/all insights: EXACTLY 3 each
+- relatedVerses/reflectionQuestions: EXACTLY 3 each
 
 {
   "summary": "3-4 sentences (MAX ${wordLimits.summary} words)",
@@ -437,20 +460,14 @@ WORD LIMITS (strict):
   "interpretation": "2 paragraphs, 3-4 sentences each, MAX ${wordLimits.interpretation} words. Prose only.",
   "relatedVerses": ["EXACTLY 3 verse REFERENCES in ${languageConfig.name} — no verse text"],
   "reflectionQuestions": ["EXACTLY 3 practical questions"],
-  "prayerPoints": ["4-5 sentences, MAX ${wordLimits.prayer} words, addressing God directly"],
-  "summaryInsights": ["EXACTLY 3 themes (8-12 words each)"],
-  "interpretationInsights": ["EXACTLY 3 insights (8-12 words each)"],
-  "reflectionAnswers": ["EXACTLY 3 applications (8-12 words each)"],
-  "contextQuestion": "Yes/no question", "summaryQuestion": "6-10 words",
-  "relatedVersesQuestion": "6-10 words", "reflectionQuestion": "6-10 words",
-  "prayerQuestion": "5-8 words"
+  "prayerPoints": ["4-5 sentences, MAX ${wordLimits.prayer} words, addressing God directly"]
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 
 Focus on ONE central truth. Continuous prose, \\n\\n between paragraphs. Brevity is paramount.
 
-VERIFY: summary ≤${wordLimits.summary}w | interpretation: 2 paragraphs, 3-4 sentences each, ≤${wordLimits.interpretation}w | context ≤${wordLimits.context}w | prayer: 4-5 sentences, ≤${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions, summaryInsights, interpretationInsights, reflectionAnswers | All 15 fields present.
+VERIFY: summary ≤${wordLimits.summary}w | interpretation: 2 paragraphs, 3-4 sentences each, ≤${wordLimits.interpretation}w | context ≤${wordLimits.context}w | prayer: 4-5 sentences, ≤${wordLimits.prayer}w | 3 each: relatedVerses, reflectionQuestions | All 7 fields present.
 
 IF ANY COUNT IS WRONG - YOU MUST FIX IT BEFORE OUTPUT.
 IF WORD LIMITS ARE EXCEEDED - YOU MUST CUT CONTENT TO MEET LIMITS.
@@ -545,17 +562,11 @@ INTERPRETATION PARAGRAPHS (6-8 sentences each, **Bold Title** per section):
   "relatedVerses": ["7-10 verse REFERENCES in ${languageConfig.name} — no text"],
   "reflectionQuestions": ["8-12 deep theological questions"],
   "prayerPoints": ["ONE single continuous prayer paragraph (6-8 sentences, 200-250 words). Respond to theological depth, address God directly, end with correct closing. Do NOT split into multiple items."],
-  "summaryInsights": ["5-7 themes (15-20 words each)"],
-  "interpretationInsights": ["5-7 doctrinal truths (15-20 words each)"],
-  "reflectionAnswers": ["5-7 applications (15-20 words each)"],
-  "contextQuestion": "Yes/no question", "summaryQuestion": "12-18 words",
-  "relatedVersesQuestion": "12-18 words", "reflectionQuestion": "12-18 words",
-  "prayerQuestion": "10-15 words"
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '5-6')}
 
-VERIFY: 5-6 paragraphs × 6-8 sentences = 1,350-1,550 words? All 15 fields? Context ≤70 words? Word studies integrated (not forced)?
+VERIFY: 5-6 paragraphs × 6-8 sentences = 1,350-1,550 words? All 7 fields? Context ≤70 words? Word studies integrated (not forced)?
 
 ${getLanguageExamples(params.language)}
 
@@ -613,14 +624,14 @@ ${createNativeWritingStyle(params.language)}`
 ${createVerseReferenceBlock(params.language)}
 
 ---
-MEDITATIVE READING STRUCTURE - ALL 15 FIELDS MANDATORY
+MEDITATIVE READING STRUCTURE - ALL 7 FIELDS MANDATORY
 ---
 
 WORD COUNTS:
 - "interpretation": 800-1,000 words — EXACTLY 4 paragraphs, 6-8 sentences each
 - "summary": 150-200 words (prayerful invitation)
 - "context": 40-60 words (brief heart preparation)
-- "prayerPoints": ONE single prayer paragraph (5-7 sentences, 150-200 words, text-grounded)
+- "prayerPoints": ONE single prayer paragraph (5-6 sentences, 80-100 words, text-grounded)
 - Total: ${wordTarget} words
 
 INTERPRETATION — 4 paragraphs (6-8 sentences each):
@@ -629,23 +640,15 @@ INTERPRETATION — 4 paragraphs (6-8 sentences each):
 3. PRAYER RESPONSE: Thanksgiving, confession (1 Jn 1:9), trust promises, petition, intercession
 4. APPLICATION: One truth to believe, one sin to repent, one action to take, one person to serve, one verse to carry
 
-CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
+CONTENT STRUCTURE (ALL 7 FIELDS MANDATORY):
 {
   "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Prayerful, warm invitation to read this passage carefully — 150-200 words. State what the passage is about and what God reveals through it. Invite the reader to come with open Bible, open heart, and dependence on the Holy Spirit.]",
   "context": "Brief introduction to prayerful Scripture reading as a Protestant spiritual discipline (40-60 words): coming to God's Word expectantly, asking the Holy Spirit for understanding (1 Corinthians 2:12-14), reading observationally and responding in prayer and obedience.",
   "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation. PREFER SHORTER passages (5-12 verses) for focused reading (e.g., 'Psalm 23:1-6', 'John 15:1-8', 'Philippians 4:4-9', '1 John 4:7-12'). Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
   "interpretation": "[EXACTLY 4 paragraphs as structured above. EACH paragraph MUST begin with a **bold header** in ${languageConfig.name} followed by 6-8 sentences of Scripture-anchored guidance. Target: 800-1,000 words. Guide through: CAREFUL READING → BIBLICAL REFLECTION → PRAYER RESPONSE → APPLICATION & COMMITMENT. NO bullets. Flowing prayerful prose grounded in the text.]",
-  "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
-  "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What specific sin or attitude does this passage call you to repent of?", "What one concrete step of obedience will you take this week based on this text?"],
-  "prayerPoints": ["ONE single continuous prayer paragraph (5-7 sentences, 150-200 words). Address God directly. Ground the prayer in what the text reveals. Respond to Scripture studied. Close with appropriate ending for ${languageConfig.name}. Do NOT split into multiple items."],
-  "summaryInsights": ["4-5 key biblical truths from the passage (15-20 words each)"],
-  "interpretationInsights": ["4-5 theological insights revealed by the text (15-20 words each)"],
-  "reflectionAnswers": ["4-5 concrete life applications from the text (15-20 words each)"],
-  "contextQuestion": "Yes/no question connecting the passage's original context to personal life today",
-  "summaryQuestion": "Question about the central biblical message of the passage (12-18 words)",
-  "relatedVersesQuestion": "Question encouraging further Bible reading on this theme (12-18 words)",
-  "reflectionQuestion": "Question inviting personal reflection on the text (12-18 words)",
-  "prayerQuestion": "Invitation to respond in prayer based on what Scripture taught (10-15 words)"
+  "relatedVerses": ["EXACTLY 4 Bible verse REFERENCES ONLY in ${languageConfig.name} that support the passage themes (e.g., 'Psalm 119:18', 'John 16:13') - NO verse text"],
+  "reflectionQuestions": ["What does this passage actually say? What words or phrases stand out?", "What does this passage teach about God's character or purposes?", "How does this passage point to or find fulfillment in Jesus Christ?", "What one concrete step of obedience will you take this week based on this text?"],
+  "prayerPoints": ["ONE single continuous prayer paragraph (5-6 sentences, 80-100 words). Address God directly. Ground the prayer in what the text reveals. Respond to Scripture studied. Close with appropriate ending for ${languageConfig.name}. Do NOT split into multiple items."]
 }
 
 ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
@@ -653,7 +656,7 @@ ${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
 VERIFY BEFORE OUTPUT:
 - interpretation: 4 paragraphs × 6-8 sentences = 800-1,000 words?
 - summary: 150-200 words? context: 40-60 words?
-- All 15 fields present? All content Scripture-anchored (not mystical)?
+- All 7 fields present? All content Scripture-anchored (not mystical)?
 - Total ~${wordTarget} words?
 
 ${getLanguageExamples(params.language)}
@@ -857,23 +860,15 @@ Keep summaries CONCISE - give the core idea, preacher will add emotional intensi
 - **${headings.responseOptions}** (50-70 words): 4-5 response options (come forward, raise hand, meet pastor, contact later, connection card)
 - **${headings.closingPrayer}** (60-80 words): Brief prayer outline — for responders, Spirit's work, courage to obey
 
-CONTENT STRUCTURE (ALL 15 FIELDS MANDATORY):
+CONTENT STRUCTURE (ALL 7 FIELDS MANDATORY):
 {
   "summary": "**Sermon Title:** [Compelling 3-6 word title]\\n\\n**Thesis Statement:** [1-2 sentence core message of entire sermon - memorable and transformative]\\n\\n**Hook Preview:** [2-3 sentences describing the introduction's attention-grabber and why it matters]\\n\\n**Key Question:** [The central question this sermon answers]\\n\\n**Gospel Connection:** [2-3 sentences showing how this sermon ultimately points to Christ]\\n\\nTarget: 250-350 words with compelling framing that makes people want to hear the full sermon",
   "context": "Historical/cultural background (40-70 words MAX). One short paragraph — only the single most essential fact needed for preaching this passage. No fluff.",
   "passage": "⚠️ MANDATORY FIELD - Provide a Scripture reference for meditation reading. PREFER LONGER PASSAGES (10-20+ verses) that provide substantial content for reflection and meditation (e.g., 'Romans 8:1-39', 'Psalm 119:1-24', 'Matthew 5:1-20', 'Isaiah 53:1-12'). Choose a passage that best captures the core message of this sermon and provides rich material for personal devotion. Format: Just the reference in ${languageConfig.name}, no verse text. DO NOT skip this field.",
   "interpretation": "[PREACHER-FACING EXPLANATION following structure above. Target: 3,800-4,500 words. Include: Introduction (450-550 words), Point 1 (1,000-1,200 words), Point 2 (1,000-1,200 words), Point 3 (700-900 words), Conclusion (350-450 words). Provide CORE theological content and conceptual illustrations that preachers will expand during delivery.]",
-  "relatedVerses": ["5-7 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Isaiah 53:5', '1 Peter 2:24') - NO verse text"],
-  "reflectionQuestions": ["5-7 discussion questions for small groups - mix theological reflection and personal application"],
+  "relatedVerses": ["EXACTLY 4 Bible verse REFERENCES ONLY in ${languageConfig.name} for further study (e.g., 'Isaiah 53:5', '1 Peter 2:24') - NO verse text"],
+  "reflectionQuestions": ["EXACTLY 4 discussion questions for small groups - mix theological reflection and personal application"],
   "prayerPoints": ["**ALTAR CALL / PRAYER PROMPTS (300-400 words)**\\n\\n**${headings.gospelRecap}** (120-150 words):\\n[Write 2-3 concise paragraphs with clear gospel presentation: God's holiness, our sin, Christ's death and resurrection, call to repentance and faith. Keep it focused - preacher will expand.]\\n\\n**${headings.theInvitation}** (120-150 words):\\n[Write 2-3 paragraphs with specific invitation based on sermon theme. Be direct and gracious. Preacher will add personal warmth.]\\n\\n**${headings.responseOptions}** (50-70 words):\\n• Come forward during closing song\\n• Raise hand for prayer\\n• Meet pastor after service\\n• Contact during the week\\n• Fill out connection card\\n\\n**${headings.closingPrayer}** (60-80 words):\\n[Brief prayer outline. Preacher will expand into full prayer during delivery.]\\n\\nAmen."],
-  "summaryInsights": ["5 sermon takeaways congregation should remember (15-20 words each - memorable and actionable)"],
-  "interpretationInsights": ["5 theological truths taught in the sermon (15-20 words each - doctrinally precise)"],
-  "reflectionAnswers": ["5 life applications from the sermon (15-20 words each - specific and transformative)"],
-  "contextQuestion": "Compelling yes/no question connecting biblical context to modern life challenges",
-  "summaryQuestion": "Thought-provoking question about the sermon thesis (12-18 words)",
-  "relatedVersesQuestion": "Question encouraging further scripture study during the week (12-18 words)",
-  "reflectionQuestion": "Convicting application question for personal reflection (12-18 words)",
-  "prayerQuestion": "Invitation question encouraging commitment and response (10-15 words)"
 }
 
 CRITICAL: USE EXACT HEADINGS IN ${languageConfig.name} (NOT ENGLISH):
@@ -891,7 +886,7 @@ ${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
 VERIFY BEFORE OUTPUT:
 - interpretation TOTAL: 3,800-4,500 words (Intro 450-550, Pt1 1000-1200, Pt2 1000-1200, Pt3 700-900, Conclusion 350-450)
 - summary: 250-350 words | context: 40-70 words | prayerPoints (altar call): 300-400 words
-- All 15 fields present (including passage) | All headings in ${languageConfig.name}
+- All 7 fields present (including passage) | All headings in ${languageConfig.name}
 - TOTAL output: ${wordTarget} words | Gospel-centered throughout
 IF WORD COUNTS ARE TOO LOW - FIX BEFORE OUTPUT.
 
@@ -1120,62 +1115,52 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
 export function calculateOptimalTokens(params: LLMGenerationParams, _languageConfig: LanguageConfig): number {
   const { language, studyMode = 'standard' } = params
 
-  // Base token allocations for English (optimized for 0.70 words/token efficiency)
+  // This is a guard, not a budget. Billing is on tokens actually produced, so a
+  // generous cap costs nothing; its job is to stop a runaway response, and a
+  // cap set too close to real output silently truncates a guide mid-sentence.
+  //
+  // The figures below are roughly 2.5x the largest output measured on 9
+  // September 2026 across five topics per language, per pass:
+  //
+  //   English   standard  ~1,200 tokens a pass
+  //   Hindi     standard  ~2,600
+  //   Malayalam standard  ~4,000
+  //
+  // The old values were a flat 16,000 for every mode and language, which was
+  // four times what English needed and, because the language multipliers were
+  // all 1.0, occasionally too tight for Malayalam.
   const baseTokensEnglish: Record<string, number> = {
-    quick: 8000,       // 600-750 words (Claude 3.5 Haiku max: 8192)
-    standard: 16000,   // 2000-2500 words
-    deep: 16000,       // 5000-6000 words
-    lectio: 16000,     // 3000-3500 words
-    sermon: 16000      // 9000-11000 words
+    quick: 2500,      // one pass, 450-600 words
+    standard: 3000,   // per pass, two passes
+    deep: 4000,       // per pass, longer teaching
+    lectio: 5000,     // per pass, contemplative and wordier
+    sermon: 6000      // per pass, four passes
   }
 
-  // Language-specific multipliers based on script efficiency and adjusted word targets
-  const languageMultipliers: Record<string, Record<string, number>> = {
-    en: {
-      quick: 1.0,
-      standard: 1.0,
-      deep: 1.0,
-      lectio: 1.0,
-      sermon: 1.0
-    },
-    hi: {
-      quick: 1.0,        // 16k tokens → 500-600 words
-      standard: 1.0,     // 16k tokens → 2000-2500 words
-      deep: 1.024,       // 16.4k tokens (model max)
-      lectio: 1.0,       // 16k tokens → 3000-3500 words
-      sermon: 1.024      // 16.4k tokens → ~4500 words (model limit: 0.28 words/token efficiency)
-    },
-    ml: {
-      // Malayalam adjusted targets (token-inefficient: 0.09 words/token = 7-8x more tokens)
-      // Capped at model's 16,384 token limit for realistic generation
-      quick: 0.44,       // 7k tokens → 400-500 words
-      standard: 1.024,   // 16.4k tokens → ~1500 words (model max)
-      deep: 1.024,       // 16.4k tokens → ~1500 words (model max)
-      lectio: 1.024,     // 16.4k tokens → ~1500 words (model max)
-      sermon: 1.024      // 16.4k tokens → ~1500 words (model max, Malayalam severely limited)
-    }
+  // Malayalam spends about 3.3 times the tokens of English for the same
+  // content, Hindi about 2.2, measured on the same guides. The old table used
+  // 1.0 for all three, which is why Malayalam had the least headroom of any
+  // language despite needing the most.
+  const languageMultipliers: Record<string, number> = {
+    en: 1.0,
+    hi: 2.2,
+    ml: 3.4
   }
 
-  const base = baseTokensEnglish[studyMode] || 16000
+  const base = baseTokensEnglish[studyMode] ?? 3000
+  const multiplier = languageMultipliers[language] ?? 1.0
+  const calculatedTokens = Math.ceil(base * multiplier)
 
-  // Get language-specific multiplier
-  const langMultipliers = languageMultipliers[language] || languageMultipliers.en
-  const multiplier = langMultipliers[studyMode] || 1.0
-
-  const calculatedTokens = Math.floor(base * multiplier)
-
-  // Cap at model's maximum completion tokens based on study mode
-  // - Claude 3.5 Haiku (quick mode): 8,192 tokens max
-  // - Claude 3.5 Sonnet (other modes): 16,384 tokens max
-  // - GPT-4o-mini: 16,384 tokens max
-  const MODEL_MAX_TOKENS = studyMode === 'quick' ? 8192 : 16384
+  // Sonnet 4.5 accepts far more than this; the ceiling is here so a bad
+  // multiplier cannot ask for something the model will reject outright.
+  const MODEL_MAX_TOKENS = 32000
   const maxTokens = Math.min(calculatedTokens, MODEL_MAX_TOKENS)
 
   if (calculatedTokens > MODEL_MAX_TOKENS) {
-    console.warn(`[Token Calculation] Requested ${calculatedTokens} tokens exceeds model limit, capping at ${MODEL_MAX_TOKENS}`)
+    console.warn(`[Token Calculation] ${calculatedTokens} exceeds the model ceiling, capping at ${MODEL_MAX_TOKENS}`)
   }
 
-  console.log(`[Token Calculation] ${language} ${studyMode}: ${maxTokens} tokens (${multiplier}x base)`)
+  console.log(`[Token Calculation] ${language} ${studyMode}: ${maxTokens} tokens (${multiplier}x base ${base})`)
 
   return maxTokens
 }
