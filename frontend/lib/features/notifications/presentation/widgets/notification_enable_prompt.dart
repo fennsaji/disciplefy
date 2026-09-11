@@ -9,6 +9,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/notification_preferences.dart';
@@ -500,8 +502,36 @@ class _NotificationEnableSheet extends StatelessWidget {
     final osPermissionGranted = await notificationService
         .areNotificationsEnabled()
         .catchError((_) => true);
+    var granted = osPermissionGranted;
     if (!osPermissionGranted) {
-      await notificationService.requestPermissions().catchError((_) => false);
+      granted = await notificationService
+          .requestPermissions()
+          .catchError((_) => false);
+    }
+
+    if (!context.mounted) return;
+
+    // Still refused, and the OS will not prompt again: the preference below
+    // would switch on while no notification could ever arrive. Say so, and
+    // offer the only route that still works.
+    if (!granted) {
+      final permanentlyDenied = await notificationService
+          .isPermissionPermanentlyDenied()
+          .catchError((_) => false);
+      if (!context.mounted) return;
+      if (permanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context
+                .tr(TranslationKeys.notificationsSettingsPermissionsDenied)),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: context.tr(TranslationKeys.commonOpenSettings),
+              onPressed: notificationService.openPermissionSettings,
+            ),
+          ),
+        );
+      }
     }
 
     if (!context.mounted) return;
