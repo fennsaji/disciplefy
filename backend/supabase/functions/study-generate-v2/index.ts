@@ -932,12 +932,23 @@ async function handleStudyGenerateV2(
               input: input_value.substring(0, 50)
             })
 
-            // Mark stale record as failed (truly abandoned)
-            await studyGuideRepository.markInProgressFailed(
-              inProgressStudy.id,
-              'TIMEOUT',
-              'Generation abandoned - no updates for 5+ minutes'
-            )
+            // Mark stale record as failed (truly abandoned) and refund whatever
+            // tokens that attempt charged — it crashed before its own catch
+            // block could refund itself, so this is the only chance to give
+            // those tokens back.
+            const staleRefund = await studyGuideRepository.markStaleInProgressFailed(inProgressStudy.id)
+            if (staleRefund) {
+              const refundResult = await tokenService.refundTokens(
+                staleRefund.identifier,
+                staleRefund.dailyTokensUsed,
+                staleRefund.purchasedTokensUsed
+              )
+              console.log(
+                refundResult.success
+                  ? `💰 [STUDY-V2] Refunded abandoned generation's tokens: daily=${staleRefund.dailyTokensUsed}, purchased=${staleRefund.purchasedTokensUsed}`
+                  : `⚠️ [STUDY-V2] Failed to refund abandoned generation's tokens: ${refundResult.errorMessage}`
+              )
+            }
 
             // Continue with new generation (don't poll stale record)
           } else {
@@ -1062,7 +1073,8 @@ async function handleStudyGenerateV2(
           inputHash,
           targetLanguage,
           study_mode,
-          clientId
+          clientId,
+          tokensWereConsumed ? { identifier, dailyTokensUsed, purchasedTokensUsed } : undefined
         )
 
         if (inProgressError) {

@@ -1049,7 +1049,8 @@ export class StudyGuideRepository {
     inputHash: string,
     language: string,
     studyMode: string,
-    clientId: string
+    clientId: string,
+    tokenConsumption?: { identifier: string; dailyTokensUsed: number; purchasedTokensUsed: number }
   ): Promise<{ error: any }> {
     const { error } = await this.supabase
       .from('study_guides_in_progress')
@@ -1064,10 +1065,50 @@ export class StudyGuideRepository {
         status: 'generating',
         client_id: clientId,
         last_heartbeat_at: new Date().toISOString(),
-        sections: {}
+        sections: {},
+        identifier: tokenConsumption?.identifier ?? null,
+        daily_tokens_used: tokenConsumption?.dailyTokensUsed ?? 0,
+        purchased_tokens_used: tokenConsumption?.purchasedTokensUsed ?? 0
       })
 
     return { error }
+  }
+
+  /**
+   * Marks an abandoned (stale) in-progress record as failed and returns the
+   * token consumption it charged, so the caller can refund it — guarded by
+   * the generating -> failed transition so a concurrent caller (another
+   * joiner request, or the cleanup cron) cannot also refund the same record.
+   *
+   * @param inProgressId - In-progress record ID
+   * @returns The identifier/amounts to refund, or null if nothing is owed
+   *   (already refunded, already resolved, or consumed no tokens)
+   */
+  async markStaleInProgressFailed(
+    inProgressId: string
+  ): Promise<{ identifier: string; dailyTokensUsed: number; purchasedTokensUsed: number } | null> {
+    const { data, error } = await this.supabase
+      .from('study_guides_in_progress')
+      .update({
+        status: 'failed',
+        error_code: 'TIMEOUT',
+        error_message: 'Generation abandoned - no updates for 5+ minutes',
+        last_updated_at: new Date().toISOString(),
+        tokens_refunded: true
+      })
+      .eq('id', inProgressId)
+      .eq('status', 'generating')
+      .select('identifier, daily_tokens_used, purchased_tokens_used')
+      .single()
+
+    if (error || !data || !data.identifier) return null
+    if (data.daily_tokens_used === 0 && data.purchased_tokens_used === 0) return null
+
+    return {
+      identifier: data.identifier,
+      dailyTokensUsed: data.daily_tokens_used,
+      purchasedTokensUsed: data.purchased_tokens_used
+    }
   }
 
   /**
