@@ -141,6 +141,11 @@ class TranslationKeys {
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
   static const homeForYou = 'home.for_you';
   static const homeForYouSubtitle = 'home.for_you_subtitle';
+  static const communityVerseStudyLabel = 'community.verse_study_label';
+  static const communityTopicStudyLabel = 'community.topic_study_label';
+  static const communityStudyGuideLabel = 'community.study_guide_label';
+  static const homeReadyForNextStep = 'home.ready_for_next_step';
+  static const homeAvailableOffline = 'home.available_offline';
   static const homeExploreTopics = 'home.explore_topics';
   static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
   static const homePersonalizePromptSubtitle =

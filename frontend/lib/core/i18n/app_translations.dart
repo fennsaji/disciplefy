@@ -14,6 +14,9 @@ class AppTranslations {
       'join_to_view_body':
           'You are not a member yet. Public fellowships let you join and read along.',
       'join_action': 'Join fellowship',
+      'verse_study_label': 'Verse study',
+      'topic_study_label': 'Topic study',
+      'study_guide_label': 'Study guide',
       'let_discipler_answer': 'Let Discipler answer',
       'let_discipler_answer_hint':
           'Turn off to leave this question to the group. Tagging @Discipler still gets a reply.',
@@ -225,6 +228,8 @@ class AppTranslations {
       'verse_not_loaded': 'Daily verse is not yet loaded. Please try again.',
       'for_you': 'For You',
       'for_you_subtitle': 'Personalized topics based on your journey',
+      'ready_for_next_step': "You're ready for your next step",
+      'available_offline': 'Available offline',
       'explore_topics': 'Explore Topics',
       'personalize_prompt_title': 'Personalize Your Experience',
       'personalize_prompt_subtitle': '3 quick questions',
@@ -2122,6 +2127,9 @@ class AppTranslations {
       'join_to_view_body':
           'आप अभी सदस्य नहीं हैं। सार्वजनिक फेलोशिप में आप जुड़कर पढ़ सकते हैं।',
       'join_action': 'फेलोशिप में जुड़ें',
+      'verse_study_label': 'वचन अध्ययन',
+      'topic_study_label': 'विषय अध्ययन',
+      'study_guide_label': 'अध्ययन गाइड',
       'let_discipler_answer': 'Discipler को उत्तर देने दें',
       'let_discipler_answer_hint':
           'इसे बंद करें ताकि यह सवाल समूह के लिए रहे। @Discipler टैग करने पर उत्तर फिर भी मिलेगा।',
@@ -2329,6 +2337,8 @@ class AppTranslations {
       'verse_not_loaded': 'आयत अभी लोड नहीं हुई। फिर कोशिश करें।',
       'for_you': 'आपके लिए',
       'for_you_subtitle': 'आपकी यात्रा के आधार पर विषय',
+      'ready_for_next_step': 'आप अगले कदम के लिए तैयार हैं',
+      'available_offline': 'ऑफ़लाइन उपलब्ध',
       'explore_topics': 'विषय खोजें',
       'personalize_prompt_title': 'अपना अनुभव निजीकृत करें',
       'personalize_prompt_subtitle': '3 त्वरित प्रश्न',
@@ -4232,6 +4242,9 @@ class AppTranslations {
       'join_to_view_body':
           'നിങ്ങൾ ഇതുവരെ അംഗമല്ല. പൊതു ഫെല്ലോഷിപ്പുകളിൽ ചേർന്ന് വായിക്കാം.',
       'join_action': 'ഫെല്ലോഷിപ്പിൽ ചേരുക',
+      'verse_study_label': 'വാക്യ പഠനം',
+      'topic_study_label': 'വിഷയ പഠനം',
+      'study_guide_label': 'പഠന ഗൈഡ്',
       'let_discipler_answer': 'Discipler ഉത്തരം നൽകട്ടെ',
       'let_discipler_answer_hint':
           'ഈ ചോദ്യം ഗ്രൂപ്പിനു വിടാൻ ഇത് ഓഫ് ചെയ്യുക. @Discipler എന്ന് ടാഗ് ചെയ്താൽ മറുപടി ലഭിക്കും.',
@@ -4440,6 +4453,8 @@ class AppTranslations {
       'verse_not_loaded': 'വചനം ഇതുവരെ വന്നില്ല. വീണ്ടും ശ്രമിക്കൂ.',
       'for_you': 'നിങ്ങൾക്കായി',
       'for_you_subtitle': 'നിങ്ങളുടെ യാത്രയെ ആസ്പദമാക്കിയ വിഷയങ്ങൾ',
+      'ready_for_next_step': 'അടുത്ത ചുവടിനായി നിങ്ങൾ തയ്യാറാണ്',
+      'available_offline': 'ഓഫ്‌ലൈനിൽ ലഭ്യമാണ്',
       'explore_topics': 'വിഷയങ്ങൾ കണ്ടെത്തൂ',
       'personalize_prompt_title': 'അനുഭവം വ്യക്തിഗതമാക്കൂ',
       'personalize_prompt_subtitle': '3 ചോദ്യങ്ങൾ',
