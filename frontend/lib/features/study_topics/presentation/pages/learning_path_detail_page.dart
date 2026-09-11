@@ -726,9 +726,25 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     final lang = await languageService.getStudyContentLanguage();
 
     // Fetch token cost per guide (0 for premium users).
+    //
+    // A failed lookup must not fold into 0: the sheet renders "N guides
+    // selected" with no price for a zero cost, which is exactly what a
+    // premium/free download looks like. Folding a network error into that
+    // told the user a bulk download was free and then charged them for it.
+    // Abort instead and let them retry.
     final costResult = await sl<TokenCostRepository>()
         .getTokenCost(lang.code, path.recommendedMode ?? 'standard');
-    final costPerGuide = costResult.fold((_) => 0, (c) => c);
+    final costPerGuide = costResult.fold<int?>((_) => null, (c) => c);
+    if (costPerGuide == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(context.tr(TranslationKeys.studyTopicsSomethingWentWrong)),
+        ),
+      );
+      return;
+    }
 
     // Pre-select topics that haven't been downloaded yet.
     final alreadyDownloaded = sl<LearningPathDownloadService>()

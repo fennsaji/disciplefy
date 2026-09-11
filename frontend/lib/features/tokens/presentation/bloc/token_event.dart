@@ -109,29 +109,6 @@ class ValidateTokenSufficiency extends TokenEvent {
   List<Object?> get props => [requiredTokens, operationType];
 }
 
-/// Event to handle payment success callback from Razorpay
-///
-/// Updates token balance after successful payment
-class PaymentSuccess extends TokenEvent {
-  final String paymentId;
-  final String orderId;
-  final String signature;
-  final int tokensPurchased;
-
-  const PaymentSuccess({
-    required this.paymentId,
-    required this.orderId,
-    required this.signature,
-    required this.tokensPurchased,
-  });
-
-  @override
-  List<Object?> get props => [paymentId, orderId, signature, tokensPurchased];
-
-  @override
-  String toString() => 'PaymentSuccess(tokensPurchased: $tokensPurchased)';
-}
-
 /// Event to handle payment failure callback from Razorpay
 ///
 /// Provides error feedback and cleanup after failed payment attempts
