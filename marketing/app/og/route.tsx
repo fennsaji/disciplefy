@@ -35,6 +35,37 @@ function loadPoppins(origin: string): Promise<ArrayBuffer> {
   return pending;
 }
 
+// Same fix, same reason: the logo was passed to satori as a bare `<img
+// src="https://…/logo-dark.png">`, which satori fetches over the network on
+// every single render, cache hit or not, on top of the font fetch above.
+// Resolving it to a data URI once per isolate means rendering touches the
+// network zero times on a warm request.
+const logoDataUriByOrigin = new Map<string, Promise<string>>();
+
+function loadLogoDataUri(origin: string): Promise<string> {
+  const cached = logoDataUriByOrigin.get(origin);
+  if (cached) return cached;
+  const pending = fetch(new URL("/logo-dark.png", origin))
+    .then(async (r) => {
+      const bytes = await r.arrayBuffer();
+      // Edge Runtime has no Buffer global; btoa needs a binary string, built
+      // in chunks so a large PNG doesn't blow the call-stack via spread/apply.
+      let binary = "";
+      const chunk = 0x8000;
+      const view = new Uint8Array(bytes);
+      for (let i = 0; i < view.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, Array.from(view.subarray(i, i + chunk)));
+      }
+      return `data:image/png;base64,${btoa(binary)}`;
+    })
+    .catch((err) => {
+      logoDataUriByOrigin.delete(origin);
+      throw err;
+    });
+  logoDataUriByOrigin.set(origin, pending);
+  return pending;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const title = searchParams.get("title") ?? "Disciplefy";
@@ -42,7 +73,10 @@ export async function GET(req: NextRequest) {
 
   const indic = isIndicScript(title);
 
-  const poppinsData = await loadPoppins(origin);
+  const [poppinsData, logoDataUri] = await Promise.all([
+    loadPoppins(origin),
+    loadLogoDataUri(origin),
+  ]);
 
   // Shorten long titles so they don't overflow
   const displayTitle = title.length > 50 ? title.slice(0, 48) + "…" : title;
@@ -198,7 +232,7 @@ export async function GET(req: NextRequest) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`${origin}/logo-dark.png`}
+            src={logoDataUri}
             width={300}
             alt=""
           />
