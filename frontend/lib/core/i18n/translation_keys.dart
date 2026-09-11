@@ -1200,6 +1200,7 @@ class TranslationKeys {
   static const discipleLevelBeliever = 'disciple_level.believer';
   static const discipleLevelDisciple = 'disciple_level.disciple';
   static const discipleLevelLeader = 'disciple_level.leader';
+  static const discipleLevelFollower = 'disciple_level.follower';
 
   // Continue Learning
   static const continueLearningTitle = 'continue_learning.title';
