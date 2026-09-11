@@ -1155,6 +1155,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
         final sectionTitle = context.tr(TranslationKeys.homeForYou);
 
+        // Nothing to recommend and nothing to prompt for: drop the whole
+        // section rather than leaving a heading and a "View All" button
+        // stranded above empty space.
+        final hasSectionContent = homeState.showPersonalizationPrompt ||
+            homeState.activeLearningPath != null ||
+            homeState.isLoadingActivePath ||
+            _isLearningPathsLocked();
+        if (!hasSectionContent) return const SizedBox.shrink();
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1457,7 +1466,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 }
-
 
 // ---------------------------------------------------------------------------
 // Upcoming Meeting Banner
