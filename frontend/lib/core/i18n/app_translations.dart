@@ -176,6 +176,7 @@ class AppTranslations {
         'save': 'Save',
         'delete': 'Delete',
         'edit': 'Edit',
+        'open_settings': 'Open Settings',
       },
       'messages': {
         'error': 'An error occurred',
@@ -1448,6 +1449,16 @@ class AppTranslations {
       'start_conversation': 'Start Conversation',
       'conversations_remaining': 'Conversations remaining',
       'unlimited': 'Unlimited',
+      'mic_permission': {
+        'title': 'Microphone access needed',
+        'message':
+            'Allow microphone access to speak with Discipler. You can type your message instead.',
+        'blocked_message':
+            'Microphone access is turned off. Turn it on in Settings to speak, or type your message instead.',
+        'open_settings': 'Open Settings',
+        'type_instead': 'Type instead',
+        'allow': 'Allow',
+      },
       'quota_exceeded': {
         'title': 'Monthly Limit Reached',
         'message':
@@ -2320,6 +2331,7 @@ class AppTranslations {
         'save': 'सेव करें',
         'delete': 'डिलीट करें',
         'edit': 'एडिट करें',
+        'open_settings': 'सेटिंग्स खोलें',
       },
       'messages': {
         'error': 'कुछ गड़बड़ हुई',
@@ -3587,6 +3599,16 @@ class AppTranslations {
       'start_conversation': 'बातचीत शुरू करें',
       'conversations_remaining': 'शेष बातचीत',
       'unlimited': 'असीमित',
+      'mic_permission': {
+        'title': 'माइक्रोफ़ोन की अनुमति चाहिए',
+        'message':
+            'शिक्षागुरु से बोलकर बात करने के लिए माइक्रोफ़ोन की अनुमति दें। आप संदेश टाइप भी कर सकते हैं।',
+        'blocked_message':
+            'माइक्रोफ़ोन की अनुमति बंद है। बोलने के लिए इसे सेटिंग्स में चालू करें, या अपना संदेश टाइप करें।',
+        'open_settings': 'सेटिंग्स खोलें',
+        'type_instead': 'टाइप करें',
+        'allow': 'अनुमति दें',
+      },
       'quota_exceeded': {
         'title': 'मासिक सीमा पूरी हुई',
         'message':
@@ -4469,6 +4491,7 @@ class AppTranslations {
         'save': 'സേവ് ചെയ്യൂ',
         'delete': 'ഡിലീറ്റ് ചെയ്യൂ',
         'edit': 'എഡിറ്റ് ചെയ്യൂ',
+        'open_settings': 'ക്രമീകരണങ്ങൾ തുറക്കുക',
       },
       'messages': {
         'error': 'എന്തോ തെറ്റി',
@@ -5812,6 +5835,16 @@ class AppTranslations {
       'start_conversation': 'സംഭാഷണം ആരംഭിക്കുക',
       'conversations_remaining': 'ശേഷിക്കുന്ന സംഭാഷണങ്ങൾ',
       'unlimited': 'പരിധിയില്ലാത്ത',
+      'mic_permission': {
+        'title': 'മൈക്രോഫോൺ അനുമതി വേണം',
+        'message':
+            'Discipler-നോട് സംസാരിക്കാൻ മൈക്രോഫോൺ അനുമതി നൽകുക. പകരം സന്ദേശം ടൈപ്പ് ചെയ്യാം.',
+        'blocked_message':
+            'മൈക്രോഫോൺ അനുമതി ഓഫാണ്. സംസാരിക്കാൻ ക്രമീകരണങ്ങളിൽ അത് ഓണാക്കുക, അല്ലെങ്കിൽ സന്ദേശം ടൈപ്പ് ചെയ്യുക.',
+        'open_settings': 'ക്രമീകരണങ്ങൾ തുറക്കുക',
+        'type_instead': 'ടൈപ്പ് ചെയ്യുക',
+        'allow': 'അനുമതി നൽകുക',
+      },
       'quota_exceeded': {
         'title': 'മാസ പരിധി എത്തി',
         'message':

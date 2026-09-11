@@ -59,6 +59,7 @@ class TranslationKeys {
   static const commonSave = 'common.actions.save';
   static const commonDelete = 'common.actions.delete';
   static const commonEdit = 'common.actions.edit';
+  static const commonOpenSettings = 'common.actions.open_settings';
 
   // Common Messages
   static const commonError = 'common.messages.error';
@@ -2458,4 +2459,20 @@ class TranslationKeys {
   static const resetProgressErrorAuth = 'reset_progress.error_auth';
   static const resetProgressErrorNetwork = 'reset_progress.error_network';
   static const resetProgressErrorGeneric = 'reset_progress.error_generic';
+
+  // ==========================================================================
+  // Microphone permission (Discipler voice chat and follow-up chat input)
+  // ==========================================================================
+
+  static const micPermissionTitle = 'voice_buddy.mic_permission.title';
+  static const micPermissionMessage = 'voice_buddy.mic_permission.message';
+
+  /// Shown when the permission can only be restored from app settings.
+  static const micPermissionBlockedMessage =
+      'voice_buddy.mic_permission.blocked_message';
+  static const micPermissionOpenSettings =
+      'voice_buddy.mic_permission.open_settings';
+  static const micPermissionTypeInstead =
+      'voice_buddy.mic_permission.type_instead';
+  static const micPermissionAllow = 'voice_buddy.mic_permission.allow';
 }

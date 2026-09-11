@@ -13,6 +13,11 @@
     <!-- Required for study guide TTS audio playback in background (Android 14+) -->
     <!-- Note: dataSync type is deprecated in Android 15; download runs in main isolate so mediaPlayback covers both use cases -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Speech-to-text for the Discipler voice chat and the follow-up chat mic.
+         The speech_to_text plugin merges this in, but declaring it here keeps
+         the app's own permission surface visible and explicit. Requested at the
+         moment the user taps the mic, never on screen open. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Note: RECEIVE_BOOT_COMPLETED removed - FCM handles post-boot notification delivery automatically -->
     
     <application
@@ -144,6 +149,13 @@
         <intent>
             <action android:name="android.intent.action.SENDTO"/>
             <data android:scheme="mailto"/>
+        </intent>
+        <!-- Required for speech recognition to resolve on Android 11+. Without
+             it the recognizer package is invisible to us and speech_to_text
+             fails with error_listen_failed, which looks like a denied
+             microphone but is not. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
     </queries>
 </manifest>

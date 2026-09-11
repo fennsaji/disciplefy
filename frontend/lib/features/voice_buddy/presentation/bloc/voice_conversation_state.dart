@@ -16,6 +16,10 @@ class VoiceConversationState extends Equatable {
   final String languageCode;
   final VoiceQuotaEntity? quota;
   final String? errorMessage;
+
+  /// True when the mic was refused for good and only app settings can re-enable
+  /// it — the UI then offers a settings shortcut instead of a retry.
+  final bool micPermissionPermanentlyDenied;
   final List<VoiceConversationEntity> conversationHistory;
 
   // User preferences
@@ -41,6 +45,7 @@ class VoiceConversationState extends Equatable {
     this.languageCode = 'en-US',
     this.quota,
     this.errorMessage,
+    this.micPermissionPermanentlyDenied = false,
     this.conversationHistory = const [],
     // Preference defaults
     this.showTranscription = true,
@@ -66,6 +71,7 @@ class VoiceConversationState extends Equatable {
         languageCode,
         quota,
         errorMessage,
+        micPermissionPermanentlyDenied,
         conversationHistory,
         showTranscription,
         autoPlayResponse,
@@ -89,6 +95,7 @@ class VoiceConversationState extends Equatable {
     String? languageCode,
     VoiceQuotaEntity? quota,
     String? errorMessage,
+    bool? micPermissionPermanentlyDenied,
     List<VoiceConversationEntity>? conversationHistory,
     bool? showTranscription,
     bool? autoPlayResponse,
@@ -112,6 +119,8 @@ class VoiceConversationState extends Equatable {
       languageCode: languageCode ?? this.languageCode,
       quota: quota ?? this.quota,
       errorMessage: errorMessage,
+      micPermissionPermanentlyDenied:
+          micPermissionPermanentlyDenied ?? this.micPermissionPermanentlyDenied,
       conversationHistory: conversationHistory ?? this.conversationHistory,
       showTranscription: showTranscription ?? this.showTranscription,
       autoPlayResponse: autoPlayResponse ?? this.autoPlayResponse,
@@ -149,6 +158,10 @@ enum VoiceConversationStatus {
   streaming,
   playing,
   error,
+
+  /// The user has not granted microphone access. Not an error: the screen asks
+  /// for the permission (or points at settings) and typing still works.
+  micPermissionDenied,
   quotaExceeded,
   monthlyLimitExceeded,
 }

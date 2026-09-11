@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../data/services/speech_service.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
 import '../bloc/voice_conversation_bloc.dart';
 import '../bloc/voice_conversation_event.dart';
@@ -73,6 +75,10 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   final FocusNode _textFocusNode = FocusNode();
 
   bool _isTextInputMode = false;
+
+  /// Guards against a second mic-permission dialog stacking on the first when
+  /// the bloc re-emits the denied state.
+  bool _micPermissionSheetOpen = false;
 
   @override
   void initState() {
@@ -173,12 +179,21 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
               _showVoiceUpsell(state.quota?.tier ?? 'free');
             }
 
+            // A declined microphone is a choice, not a failure — explain what
+            // it blocks and offer the way back instead of a red error.
+            if (state.status == VoiceConversationStatus.micPermissionDenied) {
+              _showMicPermissionSheet(
+                context,
+                permanentlyDenied: state.micPermissionPermanentlyDenied,
+              );
+            }
+
             // Show error snackbar
             if (state.status == VoiceConversationStatus.error &&
                 state.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Something went wrong. Please try again.'),
+                  content: Text(context.tr(TranslationKeys.commonError)),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -394,6 +409,50 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   /// The single upgrade sheet for every case where Talk to Discipler is
   /// unavailable — no allowance on this plan, allowance spent, or the server
   /// rejecting a start. The user's next step is the same in all of them.
+  /// Explains what a declined microphone blocks, and offers the way back.
+  ///
+  /// Deliberately not an error dialog: typing still works, so this only asks
+  /// again (or points at settings when the OS will no longer prompt).
+  void _showMicPermissionSheet(
+    BuildContext context, {
+    required bool permanentlyDenied,
+  }) {
+    if (_micPermissionSheetOpen) return;
+    _micPermissionSheetOpen = true;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr(TranslationKeys.micPermissionTitle)),
+        content: Text(context.tr(permanentlyDenied
+            ? TranslationKeys.micPermissionBlockedMessage
+            : TranslationKeys.micPermissionMessage)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(context.tr(TranslationKeys.micPermissionTypeInstead)),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              if (permanentlyDenied) {
+                sl<SpeechService>().openPermissionSettings();
+              } else {
+                // The OS will prompt again; re-running the flow is the retry.
+                context
+                    .read<VoiceConversationBloc>()
+                    .add(const StartListening());
+              }
+            },
+            child: Text(context.tr(permanentlyDenied
+                ? TranslationKeys.micPermissionOpenSettings
+                : TranslationKeys.micPermissionAllow)),
+          ),
+        ],
+      ),
+    ).whenComplete(() => _micPermissionSheetOpen = false);
+  }
+
   void _showVoiceUpsell(String tier) {
     showModalBottomSheet(
       context: context,

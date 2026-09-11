@@ -314,6 +314,25 @@ class VoiceConversationBloc
   ) async {
     if (!state.hasActiveConversation) return;
 
+    // Ask for the microphone before touching the recognizer. Without this the
+    // refusal comes back as a bare `initialize() == false` and the screen shows
+    // a generic "something went wrong", which tells the user nothing about the
+    // permission they just declined.
+    final permission = await _speechService.requestMicrophonePermission();
+    if (permission != MicPermission.granted) {
+      // Leave isContinuousMode alone: the auto re-arm only fires after a
+      // completed listen-and-reply turn, which cannot have happened here, and
+      // clearing it would silently drop the user's own mode preference.
+      _vadService.stop();
+      emit(state.copyWith(
+        status: VoiceConversationStatus.micPermissionDenied,
+        isListening: false,
+        micPermissionPermanentlyDenied:
+            permission == MicPermission.permanentlyDenied,
+      ));
+      return;
+    }
+
     // Stop any ongoing TTS playback when user starts speaking
     if (state.isPlaying || _streamingTTSStarted) {
       Logger.debug('🎙️ [VOICE] User started speaking - stopping TTS playback');

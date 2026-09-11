@@ -77,6 +77,8 @@ void main() {
     when(supabaseClient.auth).thenReturn(auth);
     when(auth.currentUser).thenReturn(null);
 
+    when(speechService.requestMicrophonePermission())
+        .thenAnswer((_) async => MicPermission.granted);
     when(speechService.initialize()).thenAnswer((_) async => true);
     when(speechService.stopListening()).thenAnswer((_) async {});
     when(ttsService.stop()).thenAnswer((_) async {});

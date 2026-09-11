@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -40,9 +41,50 @@ class SpeechService {
     return _isIosSimulator!;
   }
 
+  /// Whether the microphone permission is already granted, without prompting.
+  ///
+  /// Never call [initialize] just to find this out: the plugin's initialize()
+  /// raises the OS permission dialogs (on iOS, both microphone and speech
+  /// recognition), so calling it before the user asks to speak prompts them out
+  /// of nowhere.
+  Future<bool> hasMicrophonePermission() async {
+    if (kIsWeb) return true;
+    return Permission.microphone.isGranted;
+  }
+
+  /// Request the microphone permission, prompting the user if needed.
+  ///
+  /// Call this at the moment the user asks to speak — never on screen open.
+  Future<MicPermission> requestMicrophonePermission() async {
+    // The browser raises its own prompt as part of getUserMedia; there is no
+    // permission_handler status to read on web.
+    if (kIsWeb) return MicPermission.granted;
+
+    var status = await Permission.microphone.status;
+    if (status.isGranted || status.isLimited) return MicPermission.granted;
+
+    // iOS reports permanentlyDenied without a request once the user has said no
+    // and settings is the only way back, so check before requesting.
+    if (!status.isPermanentlyDenied) {
+      status = await Permission.microphone.request();
+    }
+
+    if (status.isGranted || status.isLimited) return MicPermission.granted;
+    if (status.isPermanentlyDenied || status.isRestricted) {
+      return MicPermission.permanentlyDenied;
+    }
+    return MicPermission.denied;
+  }
+
+  /// Open the OS settings page for this app so the user can grant the mic.
+  Future<bool> openPermissionSettings() => openAppSettings();
+
   /// Initialize the speech recognition service.
   ///
   /// Returns true if initialization was successful.
+  ///
+  /// On mobile this raises the OS permission dialogs the first time it runs, so
+  /// only call it once the user has asked to speak.
   Future<bool> initialize() async {
     if (_isInitialized) return true;
 
@@ -168,6 +210,17 @@ class SpeechService {
     }
     releaseCallbacks();
   }
+}
+
+/// Outcome of a microphone permission request.
+enum MicPermission {
+  granted,
+
+  /// Declined this time; asking again will prompt again.
+  denied,
+
+  /// Declined for good (or blocked by policy) — only app settings can change it.
+  permanentlyDenied,
 }
 
 /// Exception thrown by SpeechService.

@@ -63,10 +63,13 @@ class _ChatInputState extends State<ChatInput>
     _focusNode.addListener(_onFocusChange);
     _controller.addListener(_onTextChange);
 
-    // Initialize speech service if voice input is enabled
+    // Resolve the service but do NOT initialize it here: the plugin's
+    // initialize() raises the OS microphone (and, on iOS, speech recognition)
+    // prompts, and this input is mounted by every study guide screen — asking
+    // for the mic on page open, before the user has gone near the mic button,
+    // is what that used to do. The first mic tap initializes instead.
     if (widget.enableVoiceInput) {
       _speechService = sl<SpeechService>();
-      _initializeSpeech();
     }
 
     // Setup pulse animation for listening indicator
@@ -79,13 +82,31 @@ class _ChatInputState extends State<ChatInput>
     );
   }
 
-  Future<void> _initializeSpeech() async {
+  /// Prepares speech input on demand, prompting for the microphone only now.
+  ///
+  /// Returns false when the user declined or the recognizer is unavailable, in
+  /// which case the caller has already told them why.
+  Future<bool> _prepareSpeech() async {
+    final permission = await _speechService.requestMicrophonePermission();
+    if (permission != MicPermission.granted) {
+      if (mounted) {
+        _showMicPermissionSnackbar(
+          permanentlyDenied: permission == MicPermission.permanentlyDenied,
+        );
+      }
+      return false;
+    }
+
     final available = await _speechService.initialize();
     if (mounted) {
       setState(() {
         _isSpeechAvailable = available;
       });
     }
+    if (!available && mounted) {
+      _showSpeechNotAvailableSnackbar();
+    }
+    return available;
   }
 
   @override
@@ -131,8 +152,7 @@ class _ChatInputState extends State<ChatInput>
 
   /// Toggle voice listening
   Future<void> _toggleListening() async {
-    if (!_isSpeechAvailable) {
-      _showSpeechNotAvailableSnackbar();
+    if (!_isSpeechAvailable && !await _prepareSpeech()) {
       return;
     }
 
@@ -221,6 +241,25 @@ class _ChatInputState extends State<ChatInput>
             Text(context.tr(TranslationKeys.followUpChatSpeechNotAvailable)),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  /// Tells the user what the declined microphone blocks, and how to undo it.
+  /// Not styled as an error — typing still works.
+  void _showMicPermissionSnackbar({required bool permanentlyDenied}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.tr(permanentlyDenied
+            ? TranslationKeys.micPermissionBlockedMessage
+            : TranslationKeys.micPermissionMessage)),
+        behavior: SnackBarBehavior.floating,
+        action: permanentlyDenied
+            ? SnackBarAction(
+                label: context.tr(TranslationKeys.micPermissionOpenSettings),
+                onPressed: _speechService.openPermissionSettings,
+              )
+            : null,
       ),
     );
   }
