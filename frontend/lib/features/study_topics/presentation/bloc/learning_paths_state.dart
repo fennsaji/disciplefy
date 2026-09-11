@@ -50,6 +50,11 @@ class LearningPathsLoaded extends LearningPathsState {
   /// True while a search API call is in flight.
   final bool isSearching;
 
+  /// True when the last search request failed. Distinguishes "the search
+  /// broke" from "the search genuinely matched nothing" — folding the two
+  /// together told users no path matched when the request never succeeded.
+  final bool searchFailed;
+
   /// Questionnaire-based personalized paths for the "For You" section.
   /// Empty if personalization has not loaded yet or failed.
   final List<LearningPath> personalizedPaths;
@@ -64,6 +69,7 @@ class LearningPathsLoaded extends LearningPathsState {
     this.searchQuery,
     this.searchResults,
     this.isSearching = false,
+    this.searchFailed = false,
     this.personalizedPaths = const [],
   });
 
@@ -78,6 +84,7 @@ class LearningPathsLoaded extends LearningPathsState {
         searchQuery,
         searchResults,
         isSearching,
+        searchFailed,
         personalizedPaths,
       ];
 
@@ -113,6 +120,7 @@ class LearningPathsLoaded extends LearningPathsState {
     String? searchQuery,
     List<LearningPath>? searchResults,
     bool? isSearching,
+    bool? searchFailed,
     bool clearSearch = false,
     List<LearningPath>? personalizedPaths,
   }) {
@@ -127,6 +135,7 @@ class LearningPathsLoaded extends LearningPathsState {
       searchQuery: clearSearch ? null : (searchQuery ?? this.searchQuery),
       searchResults: clearSearch ? null : (searchResults ?? this.searchResults),
       isSearching: clearSearch ? false : (isSearching ?? this.isSearching),
+      searchFailed: clearSearch ? false : (searchFailed ?? this.searchFailed),
       personalizedPaths: personalizedPaths ?? this.personalizedPaths,
     );
   }
