@@ -729,7 +729,11 @@ class _HeroHeader extends StatelessWidget {
                     ],
                   ]),
                   const SizedBox(height: 14),
-                  Row(children: [
+                  // Wrap, not Row: these labels are far longer in Hindi and
+                  // Malayalam — the mentor contact prompt alone overflowed the
+                  // row by 227px — and a Row has no way to give way. Wrapping
+                  // puts the second button on its own line instead.
+                  Wrap(spacing: 10, runSpacing: 10, children: [
                     // A mentor who has not opened the private channel yet gets
                     // a quiet prompt in place of the member-facing button:
                     // without it the setting is only discoverable by scrolling
@@ -751,8 +755,20 @@ class _HeroHeader extends StatelessWidget {
                         },
                         icon: const Icon(Icons.alternate_email_rounded,
                             size: 16, color: Colors.white),
-                        label: Text(l10n.mentorContactPrompt,
-                            style: const TextStyle(color: Colors.white)),
+                        label: ConstrainedBox(
+                          // Even wrapped, one button can be wider than the
+                          // screen when its label is this long. Cap it and let
+                          // the text take two lines.
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.sizeOf(context).width - 120,
+                          ),
+                          child: Text(
+                            l10n.mentorContactPrompt,
+                            style: const TextStyle(color: Colors.white),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white70),
                           padding: const EdgeInsets.symmetric(
@@ -762,7 +778,6 @@ class _HeroHeader extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
                     ],
                     if (mentorsWithContact.isNotEmpty) ...[
                       ElevatedButton.icon(
