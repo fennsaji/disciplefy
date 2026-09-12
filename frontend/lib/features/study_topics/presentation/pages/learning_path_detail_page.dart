@@ -1364,7 +1364,13 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Two lines, and the badge aligned to the first one: a
+                      // chapter title like "വെളിപ്പാട് 1: നിലവിളക്കുകളുടെ
+                      // നടുവിൽ" does not fit on one line in Malayalam or Hindi,
+                      // and on a milestone row the badge took part of the width
+                      // too — so the title people scan by was cut mid-word.
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
@@ -1374,13 +1380,13 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurface,
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (topic.isMilestone)
                             const Padding(
-                              padding: EdgeInsets.only(left: 8),
+                              padding: EdgeInsets.only(left: 8, top: 2),
                               child: MilestoneBadge(),
                             ),
                         ],
