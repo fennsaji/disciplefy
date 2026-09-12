@@ -72,9 +72,18 @@ class AuthNotifier extends ChangeNotifier {
         // Without this, the RouterGuard's _isSessionExpired() reads a stale
         // expiry from Hive and incorrectly treats the user as logged out,
         // causing a redirect bounce (home → login → home → error page).
+        //
+        // initialSession counts too: it is the event that carries the restored
+        // session on a cold start. Without it Hive kept whatever expiry was
+        // written before the app last closed, so the very next guard run read a
+        // stale value, decided the session had expired, and tried to refresh a
+        // token Supabase had already rotated — ending in a forced logout. That
+        // is the state a shared link lands in, which is why opening one and
+        // then navigating signed people out.
         if (authState.session != null &&
             (authState.event == AuthChangeEvent.tokenRefreshed ||
-                authState.event == AuthChangeEvent.signedIn)) {
+                authState.event == AuthChangeEvent.signedIn ||
+                authState.event == AuthChangeEvent.initialSession)) {
           _syncSessionExpiry(authState.session!);
         }
 

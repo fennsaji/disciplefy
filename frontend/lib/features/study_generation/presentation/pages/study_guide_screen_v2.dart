@@ -4382,7 +4382,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   Future<void> _shareStudyGuide() async {
     if (_currentStudyGuide == null) return;
 
-    const appLink = '📱 ${ShareLinks.appDownloadUrl}';
+    final appLink = '📱 ${ShareLinks.studyGuide(_currentStudyGuide!.id)}';
 
     final passage = _currentStudyGuide!.passage;
     final shareText = '''

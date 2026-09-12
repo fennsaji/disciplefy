@@ -423,15 +423,25 @@ class _MemberCard extends StatelessWidget {
     final initials = _initials(member.displayName);
     final joinDate = _formatJoinDate(member.joinedAt);
 
-    final viewerCanManage = isMentor || isAdmin;
-    // Mentor/admin may act on any non-mentor member (not on themselves/mentor card)
-    final canAct = viewerCanManage && !isMemberMentor;
+    // Mentors run their own group; a global admin may only change who mentors
+    // it. The two were merged into one `viewerCanManage`, which offered an
+    // admin — and so an ordinary member of a group they happen to administer —
+    // mute, transfer and remove. Those are refused server-side with 403 (see
+    // is_fellowship_mentor in fellowship-members), so the menu was showing
+    // actions that could only fail. The split below matches what the backend
+    // actually accepts: mentor-only for member management, mentor-or-admin for
+    // the mentor role itself.
+    final canManageMembers = isMentor;
+    final canChangeMentorRole = isMentor || isAdmin;
+
+    // Mentor may act on any non-mentor member (not on themselves/mentor card)
+    final canAct = canManageMembers && !isMemberMentor;
     // Any viewer may block any other member, mentor or not.
     final canBlock = currentUserId != null && member.userId != currentUserId;
     // Promote a regular member to mentor.
-    final canPromote = viewerCanManage && !isMemberMentor;
+    final canPromote = canChangeMentorRole && !isMemberMentor;
     // Demote a non-owner mentor back to member.
-    final canDemote = viewerCanManage && isMemberMentor && !member.isOwner;
+    final canDemote = canChangeMentorRole && isMemberMentor && !member.isOwner;
     final showMenu = canAct || canBlock || canPromote || canDemote;
 
     return Padding(
@@ -557,8 +567,8 @@ class _MemberCard extends StatelessWidget {
                           ? Icons.mic_rounded
                           : Icons.mic_off_rounded,
                       label: member.isMuted
-                          ? l10n.unmuteSuccess
-                          : l10n.muteSuccess,
+                          ? l10n.unmuteMemberAction
+                          : l10n.muteMemberAction,
                       color: context.appTextPrimary,
                     ),
                   ),
@@ -639,8 +649,18 @@ class _PopupItem extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 10),
-        Text(label,
-            style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: color)),
+        // Expanded, because these labels are longer in Hindi and Malayalam than
+        // the menu is wide — "Block user" overflowed its row by 24px in
+        // Malayalam. Two lines rather than a clipped one: a menu entry that
+        // cannot be read in full is worse than a slightly taller menu.
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: color),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

@@ -545,6 +545,15 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
       final headers = await _httpService.createHeaders();
       final response = await _httpService.get(uri.toString(), headers: headers);
 
+      // Same as the posts feed: a non-member opening a shared link is expected,
+      // not a server fault. Surfacing it as one put a red "Server error
+      // occurred" toast over the join offer.
+      if (response.statusCode == 403) {
+        throw const AuthorizationException(
+          message: 'Not a member of this fellowship',
+          code: 'NOT_A_MEMBER',
+        );
+      }
       if (response.statusCode != 200) {
         throw ServerException(
           message: 'Failed to fetch fellowship members: ${response.statusCode}',
@@ -564,6 +573,8 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
               FellowshipMemberModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } on ServerException {
+      rethrow;
+    } on AuthorizationException {
       rethrow;
     } catch (e) {
       throw ServerException(
@@ -629,6 +640,13 @@ class CommunityRemoteDatasourceImpl implements CommunityRemoteDatasource {
               FellowshipPostModel.fromJson(item as Map<String, dynamic>))
           .toList();
     } on ServerException {
+      rethrow;
+    } on AuthorizationException {
+      // Deliberately not re-wrapped: the 403 above is thrown so the feed can
+      // offer to join the group. Letting it fall into the catch below turned it
+      // back into a ServerException, which is why a shared link opened by a
+      // non-member showed "Something went wrong" and a red server-error toast
+      // instead of the join card that was already written for exactly this.
       rethrow;
     } catch (e) {
       throw ServerException(

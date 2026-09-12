@@ -347,6 +347,12 @@ class TranslationKeys {
   // Settings Screen
   static const settingsTitle = 'settings.title';
   static const settingsAccount = 'settings.account';
+  static const settingsEditNameTitle = 'settings.edit_name_title';
+  static const settingsEditNameHint = 'settings.edit_name_hint';
+  static const settingsEditNameSave = 'settings.edit_name_save';
+  static const settingsEditNameSuccess = 'settings.edit_name_success';
+  static const settingsEditNameFailed = 'settings.edit_name_failed';
+  static const settingsEditNameInvalid = 'settings.edit_name_invalid';
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
   static const settingsSignInToSavePreferences =
       'settings.sign_in_to_save_preferences';
@@ -2279,6 +2285,18 @@ class TranslationKeys {
   static const memoryStatsPerfectRecalls = 'memory_stats_page.perfect_recalls';
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
+
+  /// Shared-link outcomes for someone who is not in the fellowship.
+  static const fellowshipLinkUnavailable = 'community.link_unavailable';
+  static const fellowshipLinkNotAMember = 'community.link_not_a_member';
+  static const fellowshipThisGroup = 'community.this_group';
+  static const fellowshipJoinPromptTitle = 'community.join_prompt_title';
+  static const fellowshipJoinPromptBody = 'community.join_prompt_body';
+  static const fellowshipJoinPromptConfirm = 'community.join_prompt_confirm';
+  static const fellowshipJoinFailed = 'community.join_failed';
+
+  /// Shared-link outcome when the linked study guide can't be opened.
+  static const studyGuideLinkUnavailable = 'study_guide.link_unavailable';
 
   static const fellowshipJoinToViewTitle = 'community.join_to_view_title';
   static const fellowshipJoinToViewBody = 'community.join_to_view_body';

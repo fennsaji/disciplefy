@@ -655,7 +655,7 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _shareVerse(DailyVerseLoaded state) {
-    const appLink = '📱 ${ShareLinks.appDownloadUrl}';
+    final appLink = '📱 ${ShareLinks.dailyVerse}';
     final ref = state.verse.getReferenceText(state.currentLanguage);
     final abbr = _translationAbbr(state.currentLanguage);
     final text =

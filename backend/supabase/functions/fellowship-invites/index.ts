@@ -65,7 +65,12 @@ async function handleListInvites(req: Request, services: ServiceContainer): Prom
 
   const invitesWithUrl = invites.map((inv: any) => ({
     ...inv,
-    join_url: `https://app.disciplefy.in/fellowship/join/${inv.token}`
+    // go.disciplefy.in, not app.disciplefy.in: it is the server-rendered
+    // landing page with an Open Graph preview and app-store fallback, which
+    // is what a recipient without the app needs. app.disciplefy.in is the
+    // client-side SPA — no preview card, and nothing for someone who hasn't
+    // installed the app yet.
+    join_url: `https://go.disciplefy.in/fellowship/join/${inv.token}`
   }))
 
   return new Response(
@@ -148,7 +153,9 @@ async function handleCreateInvite(req: Request, services: ServiceContainer): Pro
         expires_at: invite.expires_at,
         max_uses: invite.max_uses,
         use_count: invite.use_count,
-        join_url: `https://app.disciplefy.in/fellowship/join/${invite.token}`
+        // See the comment on the list endpoint above: go.disciplefy.in is
+        // the correct host for a link handed to people outside the app.
+        join_url: `https://go.disciplefy.in/fellowship/join/${invite.token}`
       }
     }),
     { status: 201, headers: { 'Content-Type': 'application/json' } }

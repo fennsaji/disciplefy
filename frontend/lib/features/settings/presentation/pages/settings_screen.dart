@@ -44,6 +44,8 @@ import '../../../../core/utils/platform_utils.dart';
 import '../../../../shared/widgets/sheet_scroll_view.dart';
 import '../../../walkthrough/domain/walkthrough_repository.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/widgets/email_verification_banner.dart';
+import '../../../auth/domain/utils/auth_validator.dart';
+import '../../../user_profile/data/services/user_profile_api_service.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and unauthenticated users
@@ -432,6 +434,101 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
     );
   }
 
+  /// Lets the user set or correct their display name.
+  ///
+  /// Writes to two places, both needed: the Supabase auth metadata
+  /// (`full_name`/`name`) that fellowship member lists and post authors read
+  /// directly, and `user_profiles.first_name`/`last_name`, which is what
+  /// Settings itself and the rest of the app read first. Writing only one
+  /// would leave the other showing the old name.
+  Future<void> _showEditNameDialog(
+    BuildContext context,
+    AuthStateProvider authProvider,
+  ) async {
+    final controller = TextEditingController(
+      text: authProvider.profileBasedDisplayNameOrEmpty,
+    );
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.tr(TranslationKeys.settingsEditNameTitle)),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              hintText: dialogContext.tr(TranslationKeys.settingsEditNameHint),
+            ),
+            validator: (value) => AuthValidator.isValidFullName(value ?? '')
+                ? null
+                : dialogContext.tr(TranslationKeys.settingsEditNameInvalid),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.tr(TranslationKeys.commonCancel)),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.of(dialogContext).pop(true);
+              }
+            },
+            child: Text(dialogContext.tr(TranslationKeys.settingsEditNameSave)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final fullName = controller.text.trim();
+    final nameParts = fullName.split(RegExp(r'\s+'));
+    final firstName = nameParts.first;
+    final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : null;
+
+    try {
+      // Auth metadata first: it's what fellowship reads, and it's the part a
+      // user actually opened this dialog to fix.
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(data: {'full_name': fullName, 'name': fullName}),
+      );
+
+      final profileResult = await UserProfileApiService().syncOAuthProfile({
+        'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+      });
+
+      if (!context.mounted) return;
+
+      if (profileResult.isLeft()) {
+        // The part that matters (fellowship display) is already saved; only
+        // the local profile mirror failed. Still tell the user, since Settings
+        // itself won't reflect the change until this succeeds.
+        Logger.warning(
+            'Name saved to auth but user_profiles sync failed: $profileResult');
+      }
+
+      context.read<AuthBloc>().add(const RefreshUserProfileRequested());
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr(TranslationKeys.settingsEditNameSuccess)),
+      ));
+    } catch (e) {
+      Logger.error('Failed to update display name', error: e);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr(TranslationKeys.settingsEditNameFailed)),
+        backgroundColor: AppColors.error,
+      ));
+    }
+  }
+
   /// User Profile Tile showing user info
   Widget _buildUserProfileTile(
           BuildContext context, AuthStateProvider authProvider) =>
@@ -449,13 +546,42 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    authProvider.profileBasedDisplayName,
-                    style: AppFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          authProvider.profileBasedDisplayName,
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Nothing else in the app lets a user set their name: an
+                      // email/password signup that skipped the name field, or
+                      // an account created before this screen existed, is
+                      // stuck showing its raw email — in fellowship member
+                      // lists too, since those read the same auth metadata
+                      // this dialog writes.
+                      InkWell(
+                        onTap: () => _showEditNameDialog(context, authProvider),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            size: 16,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(

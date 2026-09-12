@@ -4,7 +4,6 @@ import '../../domain/entities/usage_stats.dart';
 import '../../domain/repositories/usage_stats_repository.dart';
 import '../datasources/usage_stats_remote_data_source.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../core/services/http_service.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Implementation of usage stats repository
@@ -24,14 +23,20 @@ class UsageStatsRepositoryImpl implements UsageStatsRepository {
         tag: 'USAGE_STATS_REPO',
         error: e,
       );
-      // 401 means the session is invalid — sign the user out so the
-      // router and AuthBloc return to a consistent unauthenticated state.
+      // A 401 here is reported, not acted on. It used to sign the user out
+      // immediately, with no refresh attempted — so a single stale-token
+      // response from one non-essential stats call could end the session,
+      // including moments after a resume when the session had simply not
+      // finished restoring. Usage statistics are not worth a logout.
+      //
+      // The refresh-or-keep decision belongs to HttpService and the router,
+      // which both distinguish "refused by the server" from "could not
+      // confirm". This returns the failure and lets them decide.
       if (e.status == 401) {
         Logger.warning(
-          '401 from usage-stats function — signalling auth failure',
+          '401 from usage-stats function — reporting without ending the session',
           tag: 'USAGE_STATS_REPO',
         );
-        HttpService.signalAuthFailure('Session expired (401 from usage-stats)');
         return const Left(AuthenticationFailure(
           message: 'Session expired. Please sign in again.',
         ));

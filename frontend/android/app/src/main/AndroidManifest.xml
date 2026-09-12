@@ -98,6 +98,14 @@
                 <data android:scheme="https"
                       android:host="go.disciplefy.in"
                       android:pathPrefix="/learning-path" />
+                <!-- Shared daily verse: opens the app to Home. -->
+                <data android:scheme="https"
+                      android:host="go.disciplefy.in"
+                      android:pathPrefix="/daily-verse" />
+                <!-- Shared study guide: opens the guide directly (login-gated). -->
+                <data android:scheme="https"
+                      android:host="go.disciplefy.in"
+                      android:pathPrefix="/study-guide" />
             </intent-filter>
 
             <!-- Custom scheme for OAuth redirects (fallback) -->

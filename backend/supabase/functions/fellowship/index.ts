@@ -363,6 +363,12 @@ async function handleGetFellowship(req: Request, services: ServiceContainer): Pr
         posting_permission: fellowship.posting_permission,
         member_count: memberCount || 0,
         is_active: fellowship.is_active,
+        // Whether a non-member may join. This endpoint is the only one a
+        // non-member can call for a given fellowship, so without this the app
+        // had no way to tell "you can join this" from "this is private" when
+        // someone opened a shared link, and walked them into a screen that
+        // could only fail.
+        is_public: fellowship.is_public ?? false,
         active_study: study ? {
           learning_path_id: learningPathId,
           learning_path_title: learningPathTitle,

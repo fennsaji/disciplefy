@@ -167,9 +167,44 @@ class HttpService {
               message: 'Session expired. Please login again.',
               code: 'SESSION_EXPIRED',
             );
+          } else if (retryCount >= _maxRetries) {
+            // Retries exhausted against a 401 we could not refresh past. The
+            // session is not provably dead, so it is not destroyed here; the
+            // caller sees a failed request and the router refreshes on its own
+            // schedule.
+            Logger.warning(
+                '🔐 [HTTP] 401 persisted after $_maxRetries retries — keeping the user signed in');
+            throw const NetworkException(
+              message: 'Could not reach the server. Please try again.',
+              code: 'SESSION_UNVERIFIED',
+            );
           } else {
-            Logger.debug(
-                '🔐 [HTTP] No valid session or max retries reached, logging out...');
+            // No session object in memory. That is NOT proof of a signed-out
+            // user: on a resume or cold start, restoration may still be in
+            // flight. This branch used to sign the user out on the spot without
+            // attempting a refresh, which is how opening a shared link and then
+            // navigating logged people out — the first authenticated request
+            // after the jump ran before the session was back.
+            //
+            // Ask first. Only a refusal from Supabase ends the session.
+            final outcome = await _refreshToken();
+            if (outcome == SessionRefreshOutcome.refreshed) {
+              Logger.debug('🔐 [HTTP] Session recovered, retrying request...');
+              retryCount++;
+              continue;
+            }
+
+            if (outcome == SessionRefreshOutcome.inconclusive) {
+              Logger.warning(
+                  '🔐 [HTTP] Session not restored yet — keeping the user signed in');
+              throw const NetworkException(
+                message: 'Could not reach the server. Please try again.',
+                code: 'SESSION_UNVERIFIED',
+              );
+            }
+
+            Logger.error(
+                '🔐 [HTTP] Session refused by the server, logging out...');
             await _handleAuthenticationFailure();
             throw const AuthenticationException(
               message: 'Authentication required. Please login.',
