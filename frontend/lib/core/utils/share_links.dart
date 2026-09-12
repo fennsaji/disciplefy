@@ -37,10 +37,17 @@ class ShareLinks {
 
   /// Link to a learning path detail page.
   ///
+  /// Uses [shareOrigin]: `go.disciplefy.in/learning-path/<id>` has a
+  /// server-rendered preview page (marketing/app/(standalone)/go/learning-path),
+  /// so a recipient without the app gets a real card instead of the bare
+  /// client-side web app.
+  ///
   /// [source] is carried through so opens from a shared link can be told apart
   /// from in-app navigation in analytics.
   static String learningPath(String pathId, {String source = 'share'}) {
-    final origin = _normalisedOrigin;
+    final origin = shareOrigin.endsWith('/')
+        ? shareOrigin.substring(0, shareOrigin.length - 1)
+        : shareOrigin;
     final id = Uri.encodeComponent(pathId);
     return '$origin/learning-path/$id?source=${Uri.encodeComponent(source)}';
   }
@@ -87,8 +94,12 @@ class ShareLinks {
     return '$origin/study-guide/${Uri.encodeComponent(guideId)}';
   }
 
-  /// Strips any trailing slash so joining a path never yields a double slash.
-  static String get _normalisedOrigin => publicWebUrl.endsWith('/')
-      ? publicWebUrl.substring(0, publicWebUrl.length - 1)
-      : publicWebUrl;
+  /// The "get the app" landing page: no per-item content, just Android, iOS
+  /// and web in one place, styled like every other shared-link page.
+  static String get download {
+    final origin = shareOrigin.endsWith('/')
+        ? shareOrigin.substring(0, shareOrigin.length - 1)
+        : shareOrigin;
+    return '$origin/download';
+  }
 }
