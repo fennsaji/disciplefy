@@ -33,6 +33,7 @@ import 'fellowship_feed_tab_screen.dart';
 import 'fellowship_lessons_tab_screen.dart';
 import 'fellowship_members_tab_screen.dart';
 import 'fellowship_meetings_tab_screen.dart';
+import 'fellowship_post_detail_screen.dart';
 import 'schedule_meeting_sheet.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_bloc.dart';
 import '../bloc/fellowship_meetings/fellowship_meetings_event.dart';
@@ -94,15 +95,13 @@ class _FellowshipHomeScreenState extends State<FellowshipHomeScreen> {
       MaterialPageRoute<void>(
         builder: (_) => BlocProvider.value(
           value: feedBloc,
-          child: _FellowshipFullFeedPage(
+          child: FellowshipPostDetailScreen(
             fellowshipId: widget.fellowshipId,
             fellowshipName: widget.fellowshipName,
+            postId: widget.initialPostId!,
           ),
         ),
       ),
-    );
-    feedBloc.add(
-      FellowshipCommentsOpenRequested(postId: widget.initialPostId!),
     );
   }
 

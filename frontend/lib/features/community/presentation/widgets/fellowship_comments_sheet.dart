@@ -31,7 +31,12 @@ import 'member_avatar.dart';
 ///
 /// Shared by the feed and the fellowship home preview so a post's comments
 /// look and behave the same wherever the card is shown.
-class FellowshipCommentsSheet extends StatefulWidget {
+///
+/// This is a thin wrapper around [FellowshipCommentsBody] that adds the
+/// bottom-sheet chrome (drag handle, rounded top, draggable sizing).
+/// [FellowshipPostDetailScreen] uses the body directly, full-page, without
+/// any of that chrome.
+class FellowshipCommentsSheet extends StatelessWidget {
   final String postId;
   final String fellowshipId;
   final bool isMentor;
@@ -46,11 +51,77 @@ class FellowshipCommentsSheet extends StatefulWidget {
   });
 
   @override
-  State<FellowshipCommentsSheet> createState() =>
-      FellowshipCommentsSheetState();
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.35,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: context.appSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // ── Handle ────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.appBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: FellowshipCommentsBody(
+                  postId: postId,
+                  fellowshipId: fellowshipId,
+                  isMentor: isMentor,
+                  currentUserId: currentUserId,
+                  scrollController: scrollController,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
-class FellowshipCommentsSheetState extends State<FellowshipCommentsSheet> {
+/// The comment list and composer, without any bottom-sheet chrome — the part
+/// [FellowshipCommentsSheet] and [FellowshipPostDetailScreen] both need.
+class FellowshipCommentsBody extends StatefulWidget {
+  final String postId;
+  final String fellowshipId;
+  final bool isMentor;
+  final String? currentUserId;
+
+  /// Only meaningful inside a [DraggableScrollableSheet]; `null` when used
+  /// full-page, where the list scrolls on its own.
+  final ScrollController? scrollController;
+
+  const FellowshipCommentsBody({
+    required this.postId,
+    required this.fellowshipId,
+    required this.isMentor,
+    required this.currentUserId,
+    this.scrollController,
+    super.key,
+  });
+
+  @override
+  State<FellowshipCommentsBody> createState() => FellowshipCommentsBodyState();
+}
+
+class FellowshipCommentsBodyState extends State<FellowshipCommentsBody> {
   final TextEditingController _controller = TextEditingController();
 
   final MentionTracker _mentions = MentionTracker();
@@ -123,181 +194,147 @@ class FellowshipCommentsSheetState extends State<FellowshipCommentsSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.35,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: context.appSurface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // ── Handle ────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 8),
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.appBorder,
-                      borderRadius: BorderRadius.circular(2),
+    return Column(
+      children: [
+        // ── Comment list ───────────────────────────────────────
+        Expanded(
+          child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+            buildWhen: (prev, curr) =>
+                prev.comments != curr.comments ||
+                prev.commentsStatus != curr.commentsStatus,
+            builder: (context, state) {
+              if (state.commentsStatus == FellowshipCommentsStatus.loading) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                );
+              }
+              if (state.commentsStatus == FellowshipCommentsStatus.failure ||
+                  state.comments.isEmpty) {
+                return Center(
+                  child: Text(
+                    state.commentsStatus == FellowshipCommentsStatus.failure
+                        ? (state.errorMessage ?? 'Failed to load')
+                        : 'No comments yet. Be first!',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      color: context.appTextSecondary,
                     ),
                   ),
-                ),
-              ),
-
-              // ── Comment list ───────────────────────────────────────
-              Expanded(
-                child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                  buildWhen: (prev, curr) =>
-                      prev.comments != curr.comments ||
-                      prev.commentsStatus != curr.commentsStatus,
-                  builder: (context, state) {
-                    if (state.commentsStatus ==
-                        FellowshipCommentsStatus.loading) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      );
-                    }
-                    if (state.commentsStatus ==
-                            FellowshipCommentsStatus.failure ||
-                        state.comments.isEmpty) {
-                      return Center(
-                        child: Text(
-                          state.commentsStatus ==
-                                  FellowshipCommentsStatus.failure
-                              ? (state.errorMessage ?? 'Failed to load')
-                              : 'No comments yet. Be first!',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            color: context.appTextSecondary,
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      itemCount: state.comments.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(color: context.appDivider, height: 1),
-                      itemBuilder: (context, index) {
-                        final comment = state.comments[index];
-                        return _CommentTile(
-                          comment: comment,
-                          postId: widget.postId,
-                          fellowshipId: widget.fellowshipId,
-                          isMentor: widget.isMentor,
-                          currentUserId: widget.currentUserId,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              // ── Compose row ────────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomInset),
-                child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
-                  buildWhen: (prev, curr) =>
-                      prev.commentSubmitting != curr.commentSubmitting,
-                  builder: (context, state) {
-                    return Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => _openMentionSheet(),
-                          icon: Icon(Icons.alternate_email_rounded,
-                              size: 20, color: context.appTextSecondary),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            maxLength: 500,
-                            buildCounter: (_,
-                                    {required currentLength,
-                                    required isFocused,
-                                    maxLength}) =>
-                                null,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: context.appTextPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Add a comment…',
-                              hintStyle: TextStyle(
-                                fontFamily: 'Inter',
-                                color: context.appTextTertiary,
-                              ),
-                              filled: true,
-                              fillColor: context.appScaffold,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: context.appBorder),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide:
-                                    BorderSide(color: context.appBorder),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                            onChanged: _handleCommentChanged,
-                            onSubmitted: (_) => _submit(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: ElevatedButton(
-                            onPressed: state.commentSubmitting ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.appInteractive,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              shape: const CircleBorder(),
-                            ),
-                            child: state.commentSubmitting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.send_rounded, size: 18),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
+                );
+              }
+              return ListView.separated(
+                controller: widget.scrollController,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: state.comments.length,
+                separatorBuilder: (_, __) =>
+                    Divider(color: context.appDivider, height: 1),
+                itemBuilder: (context, index) {
+                  final comment = state.comments[index];
+                  return _CommentTile(
+                    comment: comment,
+                    postId: widget.postId,
+                    fellowshipId: widget.fellowshipId,
+                    isMentor: widget.isMentor,
+                    currentUserId: widget.currentUserId,
+                  );
+                },
+              );
+            },
           ),
-        );
-      },
+        ),
+
+        // ── Compose row ────────────────────────────────────────
+        Padding(
+          padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomInset),
+          child: BlocBuilder<FellowshipFeedBloc, FellowshipFeedState>(
+            buildWhen: (prev, curr) =>
+                prev.commentSubmitting != curr.commentSubmitting,
+            builder: (context, state) {
+              return Row(
+                children: [
+                  IconButton(
+                    onPressed: () => _openMentionSheet(),
+                    icon: Icon(Icons.alternate_email_rounded,
+                        size: 20, color: context.appTextSecondary),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      maxLength: 500,
+                      buildCounter: (_,
+                              {required currentLength,
+                              required isFocused,
+                              maxLength}) =>
+                          null,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        color: context.appTextPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Add a comment…',
+                        hintStyle: TextStyle(
+                          fontFamily: 'Inter',
+                          color: context.appTextTertiary,
+                        ),
+                        filled: true,
+                        fillColor: context.appScaffold,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: context.appBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: context.appBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      onChanged: _handleCommentChanged,
+                      onSubmitted: (_) => _submit(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: state.commentSubmitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.appInteractive,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.zero,
+                        shape: const CircleBorder(),
+                      ),
+                      child: state.commentSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, size: 18),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
