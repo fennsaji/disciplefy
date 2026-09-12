@@ -659,7 +659,7 @@ class DailyVerseCard extends StatelessWidget {
     final ref = state.verse.getReferenceText(state.currentLanguage);
     final abbr = _translationAbbr(state.currentLanguage);
     final text =
-        '$ref ($abbr)\n\n${state.currentVerseText}\n\nScripture provided by API.Bible\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
+        '$ref ($abbr)\n\n${state.currentVerseText}\n\n— Shared from Disciplefy: Bible Study App\n$appLink';
     Share.share(text);
   }
 }
