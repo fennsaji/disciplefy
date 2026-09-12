@@ -333,6 +333,8 @@ class AppLocalizations {
       'leaveFellowshipConfirm':
           'Are you sure you want to leave this fellowship?',
       'cancel': 'Cancel',
+      'muteMemberAction': 'Mute member',
+      'unmuteMemberAction': 'Unmute member',
       'muteSuccess': 'Member muted',
       'unmuteSuccess': 'Member unmuted',
       'fellowshipInviteMembers': 'Invite',
@@ -1040,6 +1042,8 @@ class AppLocalizations {
       'leaveFellowshipTitle': 'संगति छोड़ें',
       'leaveFellowshipConfirm': 'क्या आप वाकई इस संगति को छोड़ना चाहते हैं?',
       'cancel': 'रद्द करें',
+      'muteMemberAction': 'सदस्य को म्यूट करें',
+      'unmuteMemberAction': 'सदस्य को अनम्यूट करें',
       'muteSuccess': 'सदस्य म्यूट किया गया',
       'unmuteSuccess': 'सदस्य अनम्यूट किया गया',
       'fellowshipInviteMembers': 'आमंत्रित करें',
@@ -1748,6 +1752,8 @@ class AppLocalizations {
       'leaveFellowshipTitle': 'കൂട്ടായ്മ വിടുക',
       'leaveFellowshipConfirm': 'നിങ്ങൾക്ക് ഈ കൂട്ടായ്മ വിടണോ?',
       'cancel': 'റദ്ദാക്കുക',
+      'muteMemberAction': 'അംഗത്തെ നിശ്ശബ്ദമാക്കുക',
+      'unmuteMemberAction': 'അംഗത്തിന്റെ നിശ്ശബ്ദത മാറ്റുക',
       'muteSuccess': 'അംഗം നിശ്ശബ്ദമാക്കി',
       'unmuteSuccess': 'അംഗം നിശ്ശബ്ദം മാറ്റി',
       'fellowshipInviteMembers': 'ക്ഷണിക്കുക',
@@ -2536,6 +2542,15 @@ class AppLocalizations {
   String get leaveFellowshipConfirm =>
       _localizedValues[locale.languageCode]!['leaveFellowshipConfirm']!;
   String get cancel => _localizedValues[locale.languageCode]!['cancel']!;
+
+  /// Menu labels: what tapping does, not what already happened. The menu used
+  /// the success-toast strings, so the entry read "Member muted" on a member
+  /// who was not muted.
+  String get muteMemberAction =>
+      _localizedValues[locale.languageCode]!['muteMemberAction']!;
+  String get unmuteMemberAction =>
+      _localizedValues[locale.languageCode]!['unmuteMemberAction']!;
+
   String get muteSuccess =>
       _localizedValues[locale.languageCode]!['muteSuccess']!;
   String get unmuteSuccess =>

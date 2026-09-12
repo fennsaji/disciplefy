@@ -647,7 +647,13 @@ class _HeroHeader extends StatelessWidget {
         children: [
           // ── Mentors strip + member count (from members BLoC) ────────────
           BlocBuilder<FellowshipMembersBloc, FellowshipMembersState>(
-            buildWhen: (prev, curr) => prev.members != curr.members,
+            // isMentor as well as members: the invite button below depends on
+            // it, and it is re-derived from the roster after load — so on a
+            // deep link, where the navigation extra is absent and the seed is
+            // false, the button must appear once the roster proves the viewer
+            // mentors this group.
+            buildWhen: (prev, curr) =>
+                prev.members != curr.members || prev.isMentor != curr.isMentor,
             builder: (ctx, membersState) {
               final l10n = AppLocalizations.of(context)!;
               final mentorMembers = membersState.members
@@ -784,22 +790,32 @@ class _HeroHeader extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                     ],
-                    OutlinedButton.icon(
-                      onPressed: () => shareFellowshipInvite(
-                          context, fellowshipId, fellowshipName),
-                      icon: const Icon(Icons.person_add_alt_1_outlined,
-                          size: 16, color: Colors.white),
-                      label: Text(l10n.fellowshipInviteMembers,
-                          style: const TextStyle(color: Colors.white)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white70),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    // Only a mentor may invite: creating an invite is refused
+                    // server-side for anyone else (fellowship-invites checks
+                    // is_fellowship_mentor and returns 403). The button was
+                    // unconditional, so an ordinary member could tap it and got
+                    // a misleading "couldn't load" toast for what is really a
+                    // permission they do not have.
+                    //
+                    // The seed can be false on a deep link, so take the roster's
+                    // answer too — it is re-derived from the loaded members.
+                    if (isMentor || membersState.isMentor)
+                      OutlinedButton.icon(
+                        onPressed: () => shareFellowshipInvite(
+                            context, fellowshipId, fellowshipName),
+                        icon: const Icon(Icons.person_add_alt_1_outlined,
+                            size: 16, color: Colors.white),
+                        label: Text(l10n.fellowshipInviteMembers,
+                            style: const TextStyle(color: Colors.white)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white70),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ),
                   ]),
                 ],
               );
