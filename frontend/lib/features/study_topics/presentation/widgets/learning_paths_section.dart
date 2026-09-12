@@ -413,7 +413,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
               child: Text(
                 isOffline
                     ? 'You\'re offline. Learning Paths require an internet connection.'
-                    : 'Something went wrong. Please try again.',
+                    : context.tr(TranslationKeys.commonErrorTryAgain),
                 style: AppFonts.inter(
                   fontSize: 14,
                   color: isOffline

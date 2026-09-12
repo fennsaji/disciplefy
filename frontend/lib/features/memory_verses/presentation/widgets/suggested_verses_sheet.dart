@@ -144,8 +144,8 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
                   } else if (state is MemoryVerseError) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content:
-                            Text('Something went wrong. Please try again.'),
+                        content: Text(
+                            context.tr(TranslationKeys.commonErrorTryAgain)),
                         backgroundColor: AppColors.error,
                       ),
                     );
@@ -165,7 +165,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
 
                   if (state is SuggestedVersesError) {
                     return _buildErrorState(context, theme,
-                        'Something went wrong. Please try again.');
+                        context.tr(TranslationKeys.commonErrorTryAgain));
                   }
 
                   if (state is SuggestedVersesLoaded) {

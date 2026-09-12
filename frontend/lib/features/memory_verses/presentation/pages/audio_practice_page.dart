@@ -141,6 +141,10 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 permission == MicPermission.permanentlyDenied
                     ? TranslationKeys.micPermissionBlockedMessage
                     : TranslationKeys.micPermissionMessage)),
+            // persist:false — since Flutter 3.44 a SnackBar with an action
+            // defaults to persist:true, so it never times out AND blocks every
+            // later snackbar behind it in the app-wide queue.
+            persist: false,
             action: permission == MicPermission.permanentlyDenied
                 ? SnackBarAction(
                     label:
@@ -587,7 +591,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         children: [
           _buildPhaseChip(
             theme,
-            'Read',
+            context.tr(TranslationKeys.practiceStepRead),
             Icons.menu_book,
             _currentPhase == AudioPhase.reading,
             _currentPhase.index >= 0,
@@ -601,7 +605,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           ),
           _buildPhaseChip(
             theme,
-            'Speak',
+            context.tr(TranslationKeys.practiceStepSpeak),
             Icons.mic,
             _currentPhase == AudioPhase.speaking,
             _currentPhase.index >= 1,
@@ -615,7 +619,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           ),
           _buildPhaseChip(
             theme,
-            'Results',
+            context.tr(TranslationKeys.practiceStepResults),
             Icons.check_circle,
             _currentPhase == AudioPhase.results,
             _currentPhase.index >= 2,

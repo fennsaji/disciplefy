@@ -180,6 +180,7 @@ class AppTranslations {
       },
       'messages': {
         'error': 'An error occurred',
+        'error_try_again': 'Something went wrong. Please try again.',
         'success': 'Success',
       },
       'exit': {
@@ -1289,6 +1290,8 @@ class AppTranslations {
         'needed': 'Needed',
         'credits_unit': 'credits',
         'get_more': 'Get more credits:',
+        'plan_credits_per_day': '{credits} credits/day — ₹{price}/month',
+        'plan_unlimited': 'Unlimited credits — ₹{price}/month',
         'info_box':
             'Credits refresh daily at midnight — come back tomorrow to generate more study guides! Or get more credits now to keep going.',
         'purchase': 'Get More Credits',
@@ -1825,6 +1828,15 @@ class AppTranslations {
       'clear': 'Clear',
       'retry': 'Retry',
       'complete': 'Practice Complete',
+      'unlocked_modes_today': 'Unlocked Modes Today',
+      'modes_progress': '{count} / {limit} modes',
+      'choose_one_mode': 'Choose a mode to practice today',
+      'choose_modes': 'Choose up to {limit} modes to practice today',
+      'unlock_one_more': 'You can unlock 1 more mode today',
+      'unlock_more_modes': 'You can unlock {count} more modes today',
+      'step_read': 'Read',
+      'step_speak': 'Speak',
+      'step_results': 'Results',
     },
     // Word Bank Practice Page
     'word_bank': {
@@ -2335,6 +2347,7 @@ class AppTranslations {
       },
       'messages': {
         'error': 'कुछ गड़बड़ हुई',
+        'error_try_again': 'कुछ गड़बड़ हुई। कृपया दोबारा कोशिश करें।',
         'success': 'हो गया',
       },
       'exit': {
@@ -3440,6 +3453,8 @@ class AppTranslations {
         'needed': 'जरूरी',
         'credits_unit': 'क्रेडिट',
         'get_more': 'और क्रेडिट पाएं:',
+        'plan_credits_per_day': '{credits} क्रेडिट/दिन — ₹{price}/माह',
+        'plan_unlimited': 'असीमित क्रेडिट — ₹{price}/माह',
         'info_box':
             'क्रेडिट हर रात 12 बजे वापस आते हैं — कल और गाइड बनाएं! या अभी और क्रेडिट लें।',
         'purchase': 'और क्रेडिट लें',
@@ -3974,6 +3989,15 @@ class AppTranslations {
       'clear': 'साफ़ करें',
       'retry': 'पुनः प्रयास',
       'complete': 'अभ्यास पूर्ण',
+      'unlocked_modes_today': 'आज अनलॉक हुए मोड',
+      'modes_progress': '{count} / {limit} मोड',
+      'choose_one_mode': 'आज अभ्यास के लिए एक मोड चुनें',
+      'choose_modes': 'आज अभ्यास के लिए {limit} मोड तक चुनें',
+      'unlock_one_more': 'आप आज 1 और मोड अनलॉक कर सकते हैं',
+      'unlock_more_modes': 'आप आज {count} और मोड अनलॉक कर सकते हैं',
+      'step_read': 'पढ़ें',
+      'step_speak': 'बोलें',
+      'step_results': 'नतीजे',
     },
     'word_bank': {
       'tap_words_instruction': 'वचन बनाने के लिए शब्दों पर क्रम से टैप करें',
@@ -4495,6 +4519,7 @@ class AppTranslations {
       },
       'messages': {
         'error': 'എന്തോ തെറ്റി',
+        'error_try_again': 'എന്തോ കുഴപ്പം സംഭവിച്ചു. വീണ്ടും ശ്രമിക്കൂ.',
         'success': 'ആയി',
       },
       'exit': {
@@ -5650,6 +5675,8 @@ class AppTranslations {
         'needed': 'വേണ്ടത്',
         'credits_unit': 'ക്രെഡിറ്റ്',
         'get_more': 'കൂടുതൽ ക്രെഡിറ്റ് നേടൂ:',
+        'plan_credits_per_day': '{credits} ക്രെഡിറ്റ്/ദിവസം — ₹{price}/മാസം',
+        'plan_unlimited': 'പരിധിയില്ലാത്ത ക്രെഡിറ്റ് — ₹{price}/മാസം',
         'info_box':
             'ക്രെഡിറ്റ് ദിവസേന അർദ്ധരാത്രി പുതുക്കുന്നു — നാളെ വീണ്ടും ഗൈഡ് ഉണ്ടാക്കൂ! അല്ലെങ്കിൽ ഇപ്പോൾ കൂടുതൽ ക്രെഡിറ്റ് നേടൂ.',
         'purchase': 'കൂടുതൽ ക്രെഡിറ്റ് നേടൂ',
@@ -6217,6 +6244,15 @@ class AppTranslations {
       'clear': 'മായ്ക്കുക',
       'retry': 'വീണ്ടും ശ്രമിക്കുക',
       'complete': 'പരിശീലനം പൂർത്തിയായി',
+      'unlocked_modes_today': 'ഇന്ന് അൺലോക്ക് ചെയ്ത മോഡുകൾ',
+      'modes_progress': '{count} / {limit} മോഡുകൾ',
+      'choose_one_mode': 'ഇന്ന് പരിശീലിക്കാൻ ഒരു മോഡ് തിരഞ്ഞെടുക്കുക',
+      'choose_modes': 'ഇന്ന് പരിശീലിക്കാൻ {limit} മോഡുകൾ വരെ തിരഞ്ഞെടുക്കുക',
+      'unlock_one_more': 'ഇന്ന് ഒരു മോഡ് കൂടി അൺലോക്ക് ചെയ്യാം',
+      'unlock_more_modes': 'ഇന്ന് {count} മോഡുകൾ കൂടി അൺലോക്ക് ചെയ്യാം',
+      'step_read': 'വായിക്കുക',
+      'step_speak': 'പറയുക',
+      'step_results': 'ഫലങ്ങൾ',
     },
     'word_bank': {
       'tap_words_instruction':

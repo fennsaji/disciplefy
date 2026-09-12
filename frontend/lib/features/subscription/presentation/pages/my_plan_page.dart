@@ -277,7 +277,8 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
                 } else if (state is SubscriptionError) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Something went wrong. Please try again.'),
+                      content:
+                          Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                       backgroundColor: AppTheme.errorColor,
                     ),
                   );
@@ -1642,7 +1643,7 @@ class _MyPlanPageState extends State<MyPlanPage> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
             backgroundColor: AppTheme.errorColor,
           ),
         );

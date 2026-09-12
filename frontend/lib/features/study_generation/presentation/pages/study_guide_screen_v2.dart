@@ -1265,7 +1265,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     setState(() {
       _isLoading = false;
       _hasError = true;
-      _errorMessage = 'Something went wrong. Please try again.';
+      _errorMessage = context.tr(TranslationKeys.commonErrorTryAgain);
       // Check for token-related errors by type or error code
       _isInsufficientTokensError = state.failure is InsufficientTokensFailure ||
           state.failure is TokenFailure ||
@@ -2152,7 +2152,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               } else if (state is StudyPersonalNotesFailure) {
                 if (!state.isAutoSave) {
                   _showSnackBar(
-                    'Something went wrong. Please try again.',
+                    context.tr(TranslationKeys.commonErrorTryAgain),
                     Theme.of(context).colorScheme.error,
                     icon: Icons.error_outline,
                   );
@@ -4187,7 +4187,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         }
         _setupAutoSave();
       } else {
-        message = 'Something went wrong. Please try again.';
+        message = context.tr(TranslationKeys.commonErrorTryAgain);
       }
     }
 
@@ -4558,7 +4558,7 @@ $appLink
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Something went wrong. Please try again.'),
+            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

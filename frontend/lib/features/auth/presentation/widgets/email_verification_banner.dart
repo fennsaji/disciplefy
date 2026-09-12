@@ -45,7 +45,7 @@ class _EmailVerificationBannerState extends State<EmailVerificationBanner> {
           setState(() => _isResending = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
               backgroundColor: AppColors.error,
             ),
           );

@@ -142,7 +142,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             currentTier: 'free', // TODO: Get from user subscription
             availableModes: ['flip_card', 'type_it_out'],
             requiredTier: 'standard',
-            message: 'Something went wrong. Please try again.',
+            message: context.tr(TranslationKeys.commonErrorTryAgain),
           );
         }
 

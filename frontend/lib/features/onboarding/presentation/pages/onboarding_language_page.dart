@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/onboarding_state_entity.dart';
 import '../bloc/onboarding_bloc.dart';
@@ -53,7 +55,7 @@ class _OnboardingLanguageContent extends StatelessWidget {
         } else if (state is OnboardingError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );

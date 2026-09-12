@@ -112,7 +112,8 @@ class _SubscriptionManagementPageState
                 // Show error message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Something went wrong. Please try again.'),
+                    content:
+                        Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                     backgroundColor: AppTheme.errorColor,
                   ),
                 );

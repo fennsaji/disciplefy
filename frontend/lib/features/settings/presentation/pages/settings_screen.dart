@@ -163,7 +163,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                     }
                     _showSnackBar(
                         context,
-                        'Something went wrong. Please try again.',
+                        context.tr(TranslationKeys.commonErrorTryAgain),
                         Theme.of(context).colorScheme.error);
                   }
                 },
@@ -172,7 +172,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                     if (state is SettingsError) {
                       _showSnackBar(
                           context,
-                          'Something went wrong. Please try again.',
+                          context.tr(TranslationKeys.commonErrorTryAgain),
                           Theme.of(context).colorScheme.error);
                     } else if (state is SettingsUpdateSuccess) {
                       _showSnackBar(context, state.message, AppColors.success);
@@ -2442,7 +2442,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                   }
                   _showSnackBar(
                     parentContext,
-                    'Something went wrong. Please try again.',
+                    parentContext.tr(TranslationKeys.commonErrorTryAgain),
                     Theme.of(parentContext).colorScheme.error,
                   );
                 },

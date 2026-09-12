@@ -10,6 +10,8 @@ import '../../../../core/services/http_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 // Platform-conditional import for image picker
 import '../../utils/profile_image_picker_stub.dart'
@@ -588,7 +590,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -676,7 +678,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
             backgroundColor: AppColors.error,
           ),
         );

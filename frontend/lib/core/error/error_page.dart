@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
 import '../localization/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../utils/logger.dart';
@@ -213,7 +215,7 @@ class _ErrorPageState extends State<ErrorPage> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Something went wrong',
+                  context.tr(TranslationKeys.commonErrorTryAgain),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

@@ -420,6 +420,8 @@ void main() {
 String _getMockTranslation(String key) {
   // Map of translation keys to their English values
   const translations = {
+    'common.messages.error_try_again':
+        'Something went wrong. Please try again.',
     'login.welcome': 'Welcome to Disciplefy',
     'login.subtitle': 'Deepen your faith through guided Bible study',
     'login.continue_with_google': 'Continue with Google',

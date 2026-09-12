@@ -61,8 +61,27 @@ class TranslationKeys {
   static const commonEdit = 'common.actions.edit';
   static const commonOpenSettings = 'common.actions.open_settings';
 
+  // ==========================================================================
+  // Memory verse practice
+  // ==========================================================================
+
+  static const practiceUnlockedModesToday = 'practice.unlocked_modes_today';
+  static const practiceModesProgress = 'practice.modes_progress';
+  static const practiceChooseOneMode = 'practice.choose_one_mode';
+  static const practiceChooseModes = 'practice.choose_modes';
+  static const practiceUnlockOneMore = 'practice.unlock_one_more';
+  static const practiceUnlockMoreModes = 'practice.unlock_more_modes';
+  static const practiceStepRead = 'practice.step_read';
+  static const practiceStepSpeak = 'practice.step_speak';
+  static const practiceStepResults = 'practice.step_results';
+
   // Common Messages
   static const commonError = 'common.messages.error';
+
+  /// Shared generic failure text. Preferred over repeating the English literal
+  /// at each call site — it used to appear untranslated on Hindi and Malayalam
+  /// screens in ~40 files.
+  static const commonErrorTryAgain = 'common.messages.error_try_again';
   static const commonSuccess = 'common.messages.success';
 
   // App Exit Confirmation
@@ -2323,6 +2342,9 @@ class TranslationKeys {
   static const tokenDialogNeeded = 'tokens.dialog.needed';
   static const tokenDialogCreditsUnit = 'tokens.dialog.credits_unit';
   static const tokenDialogGetMore = 'tokens.dialog.get_more';
+  static const tokenDialogPlanCreditsPerDay =
+      'tokens.dialog.plan_credits_per_day';
+  static const tokenDialogPlanUnlimited = 'tokens.dialog.plan_unlimited';
   static const tokenDialogInfoBox = 'tokens.dialog.info_box';
   static const tokenDialogPurchase = 'tokens.dialog.purchase';
   static const tokenDialogMaybeLater = 'tokens.dialog.maybe_later';

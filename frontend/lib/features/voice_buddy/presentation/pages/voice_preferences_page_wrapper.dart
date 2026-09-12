@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/repositories/voice_buddy_repository.dart';
 import '../bloc/voice_preferences_bloc.dart';
 import '../bloc/voice_preferences_event.dart';
@@ -57,7 +59,7 @@ class _VoicePreferencesPageWrapperState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Something went wrong. Please try again.'),
+                    Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {

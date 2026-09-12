@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -208,7 +209,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
               '[TokenManagementPage] Payment gateway error: ${response.message}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
               backgroundColor: AppColors.error,
             ),
           );
@@ -218,7 +219,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
       Logger.debug('[TokenManagementPage] Error opening payment gateway: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Something went wrong. Please try again.'),
+          content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -281,7 +282,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                 state.operation == 'resuming') {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Something went wrong. Please try again.'),
+                  content:
+                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -392,7 +394,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Something went wrong. Please try again.',
+                        context.tr(TranslationKeys.commonErrorTryAgain),
                         style: AppFonts.inter(
                           fontSize: 14,
                           color: Theme.of(context)
