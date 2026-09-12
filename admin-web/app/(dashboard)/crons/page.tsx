@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { Fragment, useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { CronExpressionParser } from 'cron-parser'
 import { PageHeader } from '@/components/ui/page-header'
@@ -32,7 +32,13 @@ function parseNextRun(expr: string): string {
     // cron-parser uses 5-field; our schedules are 6-field (with seconds). Strip leading seconds field.
     const parts = expr.trim().split(/\s+/)
     const fiveField = parts.length === 6 ? parts.slice(1).join(' ') : expr
-    const interval = CronExpressionParser.parse(fiveField)
+    // rs-backend's scheduler runs these fields as UTC (they're written and
+    // documented as UTC everywhere else, e.g. "Daily at midnight UTC"). Without
+    // an explicit tz, cron-parser resolves the fields in the *browser's* local
+    // timezone — for an IST admin that silently shifted every preview by 5:30h
+    // (e.g. "09:00 UTC" previewed as if it meant "09:00 IST", landing on what
+    // was actually the previous day's 03:30 UTC run).
+    const interval = CronExpressionParser.parse(fiveField, { tz: 'UTC' })
     return interval.next().toDate().toUTCString()
   } catch {
     return 'Invalid expression'
@@ -43,7 +49,7 @@ function isValidExpr(expr: string): boolean {
   try {
     const parts = expr.trim().split(/\s+/)
     const fiveField = parts.length === 6 ? parts.slice(1).join(' ') : expr
-    CronExpressionParser.parse(fiveField)
+    CronExpressionParser.parse(fiveField, { tz: 'UTC' })
     return true
   } catch {
     return false
@@ -211,8 +217,8 @@ export default function CronsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {(status?.crons ?? []).map(cron => (
-                <>
-                  <tr key={cron.name} className="hover:bg-white/5 transition-colors">
+                <Fragment key={cron.name}>
+                  <tr className="hover:bg-white/5 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-mono text-xs font-semibold text-white">{cron.name}</p>
                       <p className="text-xs text-slate-400">{cron.label}</p>
@@ -331,7 +337,7 @@ export default function CronsPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

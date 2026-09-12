@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_comment_entity.dart';
 import '../widgets/fellowship_comments_sheet.dart';
 import '../widgets/fellowship_report_sheet.dart';
+import 'fellowship_post_detail_screen.dart';
 import '../../domain/entities/fellowship_post_entity.dart';
 import '../bloc/fellowship_feed/fellowship_feed_bloc.dart';
 import '../bloc/fellowship_feed/fellowship_feed_event.dart';
@@ -314,6 +315,21 @@ class _FellowshipFeedViewState extends State<_FellowshipFeedView> {
                       isMentor: state.isMentor,
                       currentUserId: state.currentUserId,
                       isAdmin: isAdmin,
+                      onPostTap: () {
+                        final bloc = context.read<FellowshipFeedBloc>();
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => BlocProvider.value(
+                              value: bloc,
+                              child: FellowshipPostDetailScreen(
+                                fellowshipId: widget.fellowshipId,
+                                fellowshipName: widget.fellowshipName,
+                                postId: post.id,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                       onShareTap: () =>
                           sharePost(context, post, widget.fellowshipName),
                       onCommentTap: () {

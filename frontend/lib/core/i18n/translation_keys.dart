@@ -59,6 +59,8 @@ class TranslationKeys {
   static const commonSave = 'common.actions.save';
   static const commonDelete = 'common.actions.delete';
   static const commonEdit = 'common.actions.edit';
+  static const commonShowMore = 'common.actions.show_more';
+  static const commonShowLess = 'common.actions.show_less';
   static const commonOpenSettings = 'common.actions.open_settings';
 
   // ==========================================================================
@@ -2297,6 +2299,10 @@ class TranslationKeys {
 
   /// Shared-link outcome when the linked study guide can't be opened.
   static const studyGuideLinkUnavailable = 'study_guide.link_unavailable';
+
+  /// Prompt appended to a shared study guide's preview text, pointing at the
+  /// full guide link.
+  static const studyGuideShareReadMore = 'study_guide.share_read_more';
 
   static const fellowshipJoinToViewTitle = 'community.join_to_view_title';
   static const fellowshipJoinToViewBody = 'community.join_to_view_body';

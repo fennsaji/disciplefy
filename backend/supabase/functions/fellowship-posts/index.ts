@@ -232,12 +232,24 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
   }
 
   if (!body.fellowship_id) throw new AppError('VALIDATION_ERROR', 'fellowship_id is required', 400)
-  if (!body.content?.trim()) throw new AppError('VALIDATION_ERROR', 'content is required', 400)
-  if (body.content.length > 2000) throw new AppError('VALIDATION_ERROR', 'content exceeds 2000 characters', 400)
 
   const validTypes = ['general', 'prayer', 'praise', 'question', 'study_note', 'shared_guide']
   const postType = body.post_type || 'general'
   if (!validTypes.includes(postType)) throw new AppError('VALIDATION_ERROR', 'Invalid post_type', 400)
+
+  // A shared guide is content on its own — the guide card the client renders
+  // from study_guide_id/guide_title — so the optional message next to it is
+  // allowed to be blank. The share sheet's own label calls it optional, but
+  // this check used to reject an empty message for every post type, so
+  // sharing a guide with no personal note attached failed with a generic
+  // "Something went wrong" every time.
+  const isBareSharedGuide = postType === 'shared_guide' && !!body.study_guide_id
+  if (!isBareSharedGuide) {
+    if (!body.content?.trim()) throw new AppError('VALIDATION_ERROR', 'content is required', 400)
+  }
+  if (body.content && body.content.length > 2000) {
+    throw new AppError('VALIDATION_ERROR', 'content exceeds 2000 characters', 400)
+  }
 
   const db = services.supabaseServiceClient
 
@@ -277,9 +289,9 @@ async function handleCreatePost(req: Request, services: ServiceContainer): Promi
     .insert({
       fellowship_id: body.fellowship_id,
       author_user_id: user.id,
-      content: body.content.trim(),
+      content: (body.content ?? '').trim(),
       post_type: postType,
-      mentions_discipler: mentionsDiscipler(body.content),
+      mentions_discipler: mentionsDiscipler(body.content ?? ''),
       discipler_reply_opt_out: body.discipler_reply_opt_out === true,
       ...(body.topic_id        ? { topic_id:        body.topic_id }        : {}),
       ...(body.topic_title     ? { topic_title:      body.topic_title }     : {}),

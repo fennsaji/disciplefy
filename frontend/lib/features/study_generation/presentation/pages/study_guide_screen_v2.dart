@@ -130,6 +130,30 @@ Color _lightenColor(Color color, [double amount = 0.2]) {
 /// - Error handling with retry functionality
 /// - Same UI/UX as original study guide screen
 /// - Auto-save and personal notes support
+/// The interpretation's opening heading (if any) plus its first paragraph —
+/// enough to give a reader the gist without the whole (often very long)
+/// interpretation section, for the share-text preview.
+String firstInterpretationParagraph(String interpretation) {
+  final paragraphs = interpretation
+      .split(RegExp(r'\n\s*\n'))
+      .map((p) => p.trim())
+      .where((p) => p.isNotEmpty)
+      .toList();
+  if (paragraphs.isEmpty) return interpretation.trim();
+
+  final first = paragraphs.first;
+  // A heading-only first chunk (e.g. "**Creation Declares God's
+  // Existence**") reads as an orphaned title without the paragraph under
+  // it, so pull that paragraph in too when the split left it separate.
+  final isHeadingOnly = first.startsWith('**') &&
+      first.endsWith('**') &&
+      !first.substring(2, first.length - 2).contains('**');
+  if (isHeadingOnly && paragraphs.length > 1) {
+    return '$first\n\n${paragraphs[1]}';
+  }
+  return first;
+}
+
 class StudyGuideScreenV2 extends StatelessWidget {
   /// Optional topic ID from database (used for tracking/future features)
   final String? topicId;
@@ -4383,75 +4407,31 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     if (_currentStudyGuide == null) return;
 
     final appLink = '📱 ${ShareLinks.studyGuide(_currentStudyGuide!.id)}';
-
     final passage = _currentStudyGuide!.passage;
+    final preview = firstInterpretationParagraph(
+      _currentStudyGuide!.interpretation,
+    );
+
+    // A short preview, not the whole guide: the full guide (summary, every
+    // interpretation section, context, related verses, discussion questions,
+    // prayer points) routinely ran past WhatsApp's ~65 536-code-point paste
+    // limit and arrived cropped mid-sentence with no way to read the rest.
+    // Summary + passage + the interpretation's first paragraph fits easily,
+    // and the link is where the whole guide actually lives.
     final shareText = '''
 ${context.tr(TranslationKeys.studyGuideSummary)}:
 ${_currentStudyGuide!.summary}
 ${passage != null && passage.isNotEmpty ? '\n${context.tr(TranslationKeys.studyGuidePassageReading)}:\n$passage' : ''}
 ${context.tr(TranslationKeys.studyGuideInterpretation)}:
-${_currentStudyGuide!.interpretation}
+$preview
 
-${context.tr(TranslationKeys.studyGuideContext)}:
-${_currentStudyGuide!.context}
-
-${context.tr(TranslationKeys.studyGuideRelatedVerses)}:
-${_currentStudyGuide!.relatedVerses.join('\n')}
-
-${context.tr(TranslationKeys.studyGuideDiscussionQuestions)}:
-${_currentStudyGuide!.reflectionQuestions.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}
-
-${context.tr(TranslationKeys.studyGuidePrayerPoints)}:
-${_currentStudyGuide!.prayerPoints.map((p) => '• $p').join('\n')}
-
+${context.tr(TranslationKeys.studyGuideShareReadMore)}
 — Shared from Disciplefy: Bible Study App
 $appLink
 ''';
 
-    // WhatsApp truncates pasted text at ~65 536 Unicode code points (same limit
-    // for all languages — Hindi/Malayalam characters count the same as English).
-    // Prompt to use PDF when approaching that limit.
-    const int longGuideThreshold = 50000;
-    if (shareText.length > longGuideThreshold && mounted) {
-      final usePdf = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Study guide is long'),
-          content: const Text(
-            'This guide may be cut off when pasted into messaging apps like WhatsApp. '
-            'Share as a PDF to send the complete guide.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Continue anyway'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Share as PDF'),
-            ),
-          ],
-        ),
-      );
-      if (!mounted) return;
-      if (usePdf == true) {
-        _exportToPdf();
-        return;
-      }
-    }
-
-    // Android Binder IPC safety cap (rare — guides are typically < 25 000 chars).
-    const int maxShareChars = 200000;
-    final String textToShare;
-    if (shareText.length > maxShareChars) {
-      textToShare =
-          '${shareText.substring(0, maxShareChars)}\n\n[... content truncated — open Disciplefy to read the full guide]\n📱 ${ShareLinks.studyGuide(_currentStudyGuide!.id)}';
-    } else {
-      textToShare = shareText;
-    }
-
     Share.share(
-      textToShare,
+      shareText,
       subject: 'Bible Study: ${_getDisplayTitle()}',
     );
   }

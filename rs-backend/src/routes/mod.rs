@@ -48,4 +48,12 @@ pub fn create_router() -> Router<AppState> {
             "/api/v1/admin/study-guides/:guide_id/generate-blog",
             post(admin::generate_blog_from_study_guide),
         )
+        .route(
+            "/api/v1/admin/content-pipeline/:job_name",
+            get(admin::content_pipeline_overview),
+        )
+        .route(
+            "/api/v1/admin/content-pipeline/:job_name/start",
+            put(admin::content_pipeline_set_start),
+        )
 }

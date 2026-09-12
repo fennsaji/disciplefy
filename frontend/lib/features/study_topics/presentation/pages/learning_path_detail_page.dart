@@ -70,6 +70,11 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
   /// — an ordinary look-and-go-back leaves the caller's state untouched.
   bool _progressChanged = false;
 
+  /// Whether the path description is showing its full text rather than the
+  /// 3-line preview. A path's description can run well past 3 lines, and
+  /// there was no way to read the rest of it.
+  bool _descriptionExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -963,16 +968,54 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
           const SizedBox(height: 12),
 
-          // Description
-          Text(
-            path.description,
-            style: AppFonts.inter(
-              fontSize: 15,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              height: 1.5,
+          // Description — tap to read the rest when it runs past 3 lines.
+          GestureDetector(
+            onTap: () =>
+                setState(() => _descriptionExpanded = !_descriptionExpanded),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  path.description,
+                  style: AppFonts.inter(
+                    fontSize: 15,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    height: 1.5,
+                  ),
+                  maxLines: _descriptionExpanded ? null : 3,
+                  overflow: _descriptionExpanded
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
+                ),
+                Builder(builder: (context) {
+                  final span = TextSpan(
+                    text: path.description,
+                    style: AppFonts.inter(fontSize: 15, height: 1.5),
+                  );
+                  final painter = TextPainter(
+                    text: span,
+                    maxLines: 3,
+                    textDirection: Directionality.of(context),
+                  )..layout(maxWidth: MediaQuery.of(context).size.width - 40);
+                  if (!painter.didExceedMaxLines) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      _descriptionExpanded
+                          ? context.tr(TranslationKeys.commonShowLess)
+                          : context.tr(TranslationKeys.commonShowMore),
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                    ),
+                  );
+                }),
+              ],
             ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
           ),
 
           const SizedBox(height: 20),

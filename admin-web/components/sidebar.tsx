@@ -23,6 +23,7 @@ const navGroups = [
       { name: 'Blog Posts', href: '/blogs', emoji: '✍️' },
       { name: 'Daily Verses', href: '/content-management', emoji: '📅' },
       { name: 'Study Generator', href: '/study-generator', emoji: '✨' },
+      { name: 'Content Pipeline', href: '/content-pipeline', emoji: '📡' },
     ],
   },
   {
@@ -73,7 +74,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1e1a40] shadow-lg shadow-black/30">
-            <Image src="/logo.png" alt="Disciplefy" width={28} height={28} className="object-contain" />
+            <Image src="/logo.png" alt="Disciplefy" width={28} height={28} className="h-7 w-7 object-contain" />
           </div>
           <div className="leading-none">
             <span className="block text-[15px] font-bold tracking-wide text-white">Disciplefy</span>

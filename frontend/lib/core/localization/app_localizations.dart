@@ -1794,7 +1794,7 @@ class AppLocalizations {
       'fellowshipProgress': 'കൂട്ടായ്മ പുരോഗതി',
       // Edit Fellowship
       'editFellowshipTitle': 'കൂട്ടായ്മ തിരുത്തുക',
-      'editFellowshipSave': 'മാറ്റങ്ങൾ സംരക്ഷിക്കുക',
+      'editFellowshipSave': 'സംരക്ഷിക്കുക',
       'editFellowshipSuccess': 'കൂട്ടായ്മ അപ്ഡേറ്റ് ചെയ്തു',
       'deleteFellowshipTitle': 'കൂട്ടായ്മ ഇല്ലാതാക്കുക',
       'deleteFellowshipConfirm':
