@@ -4,6 +4,7 @@
  */
 
 import type { LLMProvider, LLMCostCalculation } from '../types/usage-types.ts';
+import { FALLBACK_USD_TO_INR } from './exchange-rate.ts';
 
 // ========================================
 // LLM Pricing Configuration
@@ -97,7 +98,12 @@ export interface CacheTokenCounts {
   readonly cacheCreationTokens?: number;
 }
 
-const USD_TO_INR_RATE = 83.5;
+/**
+ * Display-side conversions only. The authoritative rate is
+ * `system_config.usd_to_inr_rate` (see exchange-rate.ts); these helpers are
+ * synchronous, so they use the shared fallback rather than reading config.
+ */
+const USD_TO_INR_RATE = FALLBACK_USD_TO_INR;
 
 // ========================================
 // Cost Tracking Service

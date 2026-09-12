@@ -4,6 +4,7 @@
  */
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { FALLBACK_USD_TO_INR, usdToInrRate } from './exchange-rate.ts';
 import type {
   LogUsageRequest,
   LogUsageResponse,
@@ -23,7 +24,12 @@ const REVENUE_ALLOCATION_PER_100_OPS: Record<SubscriptionTier, number> = {
   premium: 4.99, // ₹499/month / 100 operations
 };
 
-const USD_TO_INR_RATE = 83.5; // Update periodically
+/**
+ * Used only where the rate cannot be read from config: see exchange-rate.ts.
+ * The authoritative rate is `system_config.usd_to_inr_rate`, editable from the
+ * admin dashboard.
+ */
+const USD_TO_INR_RATE = FALLBACK_USD_TO_INR;
 
 // ========================================
 // Usage Logging Service Class
@@ -47,8 +53,10 @@ export class UsageLoggingService {
         request.featureName
       );
 
-      // Convert LLM cost to INR
-      const costInr = (request.llmCostUsd || 0) * USD_TO_INR_RATE;
+      // Convert LLM cost to INR at the configured rate rather than a constant
+      // baked into this file; log_usage applies the same rate on the SQL side.
+      const rate = await usdToInrRate(this.supabaseClient);
+      const costInr = (request.llmCostUsd || 0) * rate;
 
       // Calculate profit margin
       const profitMargin = estimatedRevenue - costInr;
