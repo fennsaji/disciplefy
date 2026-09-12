@@ -4445,7 +4445,7 @@ $appLink
     final String textToShare;
     if (shareText.length > maxShareChars) {
       textToShare =
-          '${shareText.substring(0, maxShareChars)}\n\n[... content truncated — open Disciplefy to read the full guide]\n📱 ${ShareLinks.appDownloadUrl}';
+          '${shareText.substring(0, maxShareChars)}\n\n[... content truncated — open Disciplefy to read the full guide]\n📱 ${ShareLinks.studyGuide(_currentStudyGuide!.id)}';
     } else {
       textToShare = shareText;
     }

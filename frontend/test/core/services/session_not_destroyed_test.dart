@@ -66,4 +66,23 @@ void main() {
     expect(notifier.contains('AuthChangeEvent.initialSession'), true,
         reason: 'without it the guard reads a stale expiry after a cold start');
   });
+
+  test('_refreshToken never trusts a local "still valid" shortcut', () {
+    // _refreshToken() is only ever called reactively, right after the server
+    // has returned 401 for a request made with the current token — so the
+    // server has already proven that token invalid *right now*, no matter
+    // what the locally cached expiresAt claims (clock skew, an out-of-band
+    // revocation, a stale cached session). A shortcut that skipped the real
+    // refreshSession() call whenever local expiry looked fine meant such a
+    // session could never be classified `rejected`, so it could never be
+    // logged out: every request kept 401ing forever, sign-in was unreachable
+    // (the router never saw the session as invalid) and sign-out's own
+    // network call hit the same dead end.
+    expect(http.contains('Token is still valid, no refresh needed'), false,
+        reason: 'a 401 already proved the local expiry cannot be trusted');
+    expect(http.contains('await supabase.auth'), true,
+        reason: 'a real refresh must always be attempted here');
+    expect(http.contains('.refreshSession()'), true,
+        reason: 'a real refresh must always be attempted here');
+  });
 }

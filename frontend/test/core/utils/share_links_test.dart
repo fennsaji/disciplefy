@@ -47,6 +47,21 @@ void main() {
     test('does not produce a double slash', () {
       expect(ShareLinks.learningPath('abc123'), isNot(contains('//learning')));
     });
+
+    test('goes through the share host, not the bare web app', () {
+      // go.disciplefy.in/learning-path/<id> has a server-rendered preview
+      // page; app.disciplefy.in does not, so a recipient without the app
+      // would land on a blank client-side shell.
+      final url = ShareLinks.learningPath('abc123');
+      expect(url, startsWith(ShareLinks.shareOrigin));
+      expect(url.contains(ShareLinks.publicWebUrl), false);
+    });
+  });
+
+  group('download', () {
+    test('points at the share host download page', () {
+      expect(ShareLinks.download, '${ShareLinks.shareOrigin}/download');
+    });
   });
 
   group('learningPathMessage', () {
