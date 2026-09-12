@@ -118,6 +118,10 @@ class FellowshipPostCard extends StatelessWidget {
   /// Called when the "Share" menu item / footer share icon is tapped.
   final VoidCallback? onShareTap;
 
+  /// Called when the card itself (outside its buttons) is tapped — opens the
+  /// post's own page. If null, the card is not tappable.
+  final VoidCallback? onPostTap;
+
   const FellowshipPostCard({
     required this.post,
     required this.fellowshipId,
@@ -130,6 +134,7 @@ class FellowshipPostCard extends StatelessWidget {
     this.onBlockTap,
     this.isAdmin = false,
     this.onShareTap,
+    this.onPostTap,
     super.key,
   });
 
@@ -149,6 +154,20 @@ class FellowshipPostCard extends StatelessWidget {
     final isSystem = post.authorIsSystem;
     final l10n = AppLocalizations.of(context)!;
 
+    return GestureDetector(
+      onTap: onPostTap,
+      behavior: HitTestBehavior.opaque,
+      child: _buildCard(context, isDark, accentColor, isSystem, l10n),
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    bool isDark,
+    Color accentColor,
+    bool isSystem,
+    AppLocalizations l10n,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: isSystem
@@ -888,43 +907,52 @@ class FellowshipPostFooter extends StatelessWidget {
         FellowshipReactionButton(post: post, accentColor: accentColor),
         const SizedBox(width: 8),
         if (onCommentTap != null)
-          // Sized to the 44px minimum touch target; the pill itself used to be
-          // ~29px tall and was easy to miss.
-          Material(
-            color: context.appSurfaceVariant,
-            borderRadius: BorderRadius.circular(22),
-            child: InkWell(
-              onTap: onCommentTap,
+          // Flexible: "reply" runs noticeably longer in Malayalam/Hindi than
+          // in English, and next to the reaction pill it could overflow the
+          // row by a few pixels. Flexible lets the pill's own text ellipsize
+          // instead.
+          Flexible(
+            // Sized to the 44px minimum touch target; the pill itself used to
+            // be ~29px tall and was easy to miss.
+            child: Material(
+              color: context.appSurfaceVariant,
               borderRadius: BorderRadius.circular(22),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline_rounded,
-                        size: 18,
-                        color: context.appTextSecondary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        // Always the label, with the count appended when
-                        // there is one: a bare number on one card and a word
-                        // on another read as two different buttons.
-                        post.commentCount > 0
-                            ? '${l10n.replyAction} ${post.commentCount}'
-                            : l10n.replyAction,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+              child: InkWell(
+                onTap: onCommentTap,
+                borderRadius: BorderRadius.circular(22),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 18,
                           color: context.appTextSecondary,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            // Always the label, with the count appended when
+                            // there is one: a bare number on one card and a
+                            // word on another read as two different buttons.
+                            post.commentCount > 0
+                                ? '${l10n.replyAction} ${post.commentCount}'
+                                : l10n.replyAction,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: context.appTextSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

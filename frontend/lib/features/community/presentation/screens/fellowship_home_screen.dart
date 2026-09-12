@@ -1168,6 +1168,21 @@ class _FeedPreviewSection extends StatelessWidget {
                       currentUserId: state.currentUserId,
                       maxContentLines: 3,
                       isAdmin: isAdmin,
+                      onPostTap: () {
+                        final bloc = context.read<FellowshipFeedBloc>();
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => BlocProvider.value(
+                              value: bloc,
+                              child: FellowshipPostDetailScreen(
+                                fellowshipId: fellowshipId,
+                                fellowshipName: fellowshipName,
+                                postId: post.id,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                       onShareTap: () =>
                           sharePost(context, post, fellowshipName),
                       onCommentTap: () {
