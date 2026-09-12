@@ -11,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../../features/study_topics/data/services/learning_paths_cache_service.dart';
 import '../../../../features/study_topics/domain/entities/learning_path.dart';
+import '../../../../features/study_topics/domain/disciple_level.dart';
 import '../../../../features/study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../../../features/study_topics/presentation/bloc/learning_paths_event.dart';
@@ -1515,6 +1516,22 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
     });
   }
 
+  /// The paths in discipleship order: seeker, follower, disciple, leader.
+  ///
+  /// Sorting is stable, so within a level the listing's own ordering — which
+  /// carries the personalisation and the fellowship's progress — is preserved.
+  List<LearningPath> _byDiscipleLevel(List<LearningPath> paths) {
+    final sorted = [...paths];
+    sorted.sort((a, b) {
+      final byLevel = discipleLevelRank(a.discipleLevel)
+          .compareTo(discipleLevelRank(b.discipleLevel));
+      return byLevel != 0
+          ? byLevel
+          : paths.indexOf(a).compareTo(paths.indexOf(b));
+    });
+    return sorted;
+  }
+
   void _maybeLoadMore(BuildContext context, ScrollNotification notification) {
     if (notification is! ScrollUpdateNotification &&
         notification is! ScrollEndNotification) {
@@ -1688,7 +1705,12 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
                             ),
                           );
                         }
-                        final results = state.searchResults ?? [];
+                        // This is the sheet's normal listing too, not only an
+                        // actual search: LoadFlatLearningPaths emits every path
+                        // as `searchResults` with an empty query, so `categories`
+                        // — and therefore `allPaths` — is always empty here.
+                        final results =
+                            _byDiscipleLevel(state.searchResults ?? []);
                         if (results.isEmpty) {
                           return _PathPickerEmpty(
                               message: l10n.searchNoResults);
@@ -1697,24 +1719,44 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
                           controller: sheetController,
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                           itemCount: results.length,
-                          itemBuilder: (context, index) => _PathPickerItem(
-                            path: results[index],
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              widget.studyBloc.add(
-                                FellowshipStudySetRequested(
-                                  fellowshipId: widget.fellowshipId,
-                                  learningPathId: results[index].id,
-                                  learningPathTitle: results[index].title,
-                                ),
-                              );
-                            },
-                          ),
+                          itemBuilder: (context, index) {
+                            final path = results[index];
+                            final previous = index == 0
+                                ? null
+                                : results[index - 1].discipleLevel;
+                            final startsLevel = index == 0 ||
+                                discipleLevelRank(previous) !=
+                                    discipleLevelRank(path.discipleLevel);
+
+                            return _PathPickerItem(
+                              levelHeading:
+                                  startsLevel ? path.discipleLevel : null,
+                              path: path,
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                widget.studyBloc.add(
+                                  FellowshipStudySetRequested(
+                                    fellowshipId: widget.fellowshipId,
+                                    learningPathId: path.id,
+                                    learningPathTitle: path.title,
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         );
                       }
 
                       // ── Normal mode (category listing + pagination) ──────
-                      final allPaths = state.allPaths;
+                      // Ordered by the discipleship progression rather than the
+                      // personalised category order the listing arrives in.
+                      // Flattening the categories dropped their headings, so the
+                      // picker showed seeker, follower, disciple, seeker... with
+                      // nothing on screen explaining the grouping — it read as
+                      // random. The whole list arrives in one request here
+                      // (LoadFlatLearningPaths, limit 100), so sorting it is
+                      // stable; nothing reshuffles as the sheet scrolls.
+                      final allPaths = _byDiscipleLevel(state.allPaths);
 
                       if (allPaths.isEmpty && !state.hasMoreCategories) {
                         return _PathPickerEmpty(
@@ -1763,7 +1805,18 @@ class _PathPickerSheetState extends State<_PathPickerSheet> {
                             }
 
                             final path = allPaths[index];
+                            // Heading at each level change, so the progression
+                            // the list is sorted by is visible rather than implied.
+                            final previous = index == 0
+                                ? null
+                                : allPaths[index - 1].discipleLevel;
+                            final startsLevel = index == 0 ||
+                                discipleLevelRank(previous) !=
+                                    discipleLevelRank(path.discipleLevel);
+
                             return _PathPickerItem(
+                              levelHeading:
+                                  startsLevel ? path.discipleLevel : null,
                               path: path,
                               onTap: () {
                                 Navigator.of(context).pop();
@@ -1836,10 +1889,49 @@ class _PathPickerItem extends StatelessWidget {
   final LearningPath path;
   final VoidCallback onTap;
 
-  const _PathPickerItem({required this.path, required this.onTap});
+  /// Level name to head this row with, set on the first path of each level.
+  final String? levelHeading;
+
+  const _PathPickerItem({
+    required this.path,
+    required this.onTap,
+    this.levelHeading,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final heading = levelHeading;
+    if (heading != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 8, left: 2),
+            child: Text(
+              _levelLabel(context, heading),
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: context.appTextSecondary,
+              ),
+            ),
+          ),
+          _buildCard(context),
+        ],
+      );
+    }
+    return _buildCard(context);
+  }
+
+  /// The level's name in the reader's language, falling back to whatever the
+  /// row holds when it is a level this build does not know.
+  String _levelLabel(BuildContext context, String level) {
+    final key = discipleLevelLabelKey(level);
+    return key == null ? level : context.tr(key);
+  }
+
+  Widget _buildCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -1905,7 +1997,8 @@ class _PathPickerItem extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            '${path.topicsCount} topics · ${path.discipleLevel}',
+                            '${path.topicsCount} ${context.tr(TranslationKeys.learningPathsTopics)}'
+                            ' · ${_levelLabel(context, path.discipleLevel)}',
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 12,

@@ -145,15 +145,6 @@ class _ForYouLearningPathsSectionState extends State<ForYouLearningPathsSection>
     }
   }
 
-  // ── Level helpers ────────────────────────────────────────────────────────
-
-  static const _levelOrder = ['seeker', 'follower', 'disciple', 'leader'];
-
-  int _levelRank(String level) {
-    final idx = _levelOrder.indexOf(level.toLowerCase());
-    return idx == -1 ? 0 : idx;
-  }
-
   // ── Priority list builder ────────────────────────────────────────────────
 
   List<LearningPath> _buildForYouPaths(LearningPathsLoaded state) =>
