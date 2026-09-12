@@ -158,7 +158,8 @@ class SavedGuideModel extends SavedGuideEntity {
           : (interpretation.isNotEmpty
               ? interpretation
               : 'Study Guide Content'),
-      typeString: inputType,
+      // The API says 'scripture'; this model's type vocabulary is 'verse'.
+      typeString: inputType == 'scripture' ? 'verse' : 'topic',
       studyMode: studyMode,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastAccessedAt: DateTime.parse(json['updatedAt'] as String),
