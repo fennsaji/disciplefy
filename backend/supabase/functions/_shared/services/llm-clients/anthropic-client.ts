@@ -78,6 +78,42 @@ export class AnthropicClient {
   }
 
   /**
+   * Usage for a stream that ended without reporting any, priced rather than
+   * zeroed.
+   *
+   * These streams cost exactly as much as any other; the only thing missing is
+   * Anthropic's own count. Returning costUsd 0 made them free in
+   * `usage_logs.llm_cost_usd`, which is not just a dashboard number — the daily
+   * cost ceiling, the pre-warm budget and the per-user daily cost limit all sum
+   * that column, so unreported streams quietly ate budget that nothing counted.
+   *
+   * The token split is a rough estimate (~4 chars a token, 30/70 in to out), so
+   * the figure is an estimate too — but an estimate priced at the real rate is
+   * far closer to the truth than zero, and it errs toward spending less rather
+   * than more.
+   */
+  private estimateUsageFromChars(totalChars: number, model: string): LLMUsageMetadata {
+    const estimatedTokens = Math.ceil(totalChars / 4)
+    const inputTokens = Math.round(estimatedTokens * 0.3)
+    const outputTokens = estimatedTokens - inputTokens
+    const cost = this.costTracker.calculateCost('anthropic', model, inputTokens, outputTokens)
+
+    console.warn(
+      `[Anthropic] No usage reported; estimated ${estimatedTokens} tokens ` +
+        `(~$${cost.totalCost.toFixed(4)}) from ${totalChars} characters`
+    )
+
+    return {
+      provider: 'anthropic',
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: estimatedTokens,
+      costUsd: cost.totalCost
+    }
+  }
+
+  /**
    * Selects the optimal Anthropic model based on language and study mode.
    * v3.6: Cost optimization - Claude Haiku 4.5 for lightweight tasks (73% cheaper).
    * v3.5: Claude Sonnet 4.5 for study guide generation (better quality).
@@ -463,13 +499,7 @@ export class AnthropicClient {
                   console.log(`[Anthropic] Usage: ${usageData.totalTokens} tokens (cost: $${usageData.costUsd.toFixed(4)})`)
                   return usageData
                 } else {
-                  console.warn(`[Anthropic] No usage data from cached stream, estimating...`)
-                  const estimatedTokens = Math.ceil(totalChars / 4)
-                  return {
-                    provider: 'anthropic', model,
-                    inputTokens: estimatedTokens * 0.3, outputTokens: estimatedTokens * 0.7,
-                    totalTokens: estimatedTokens, costUsd: 0
-                  }
+                  return this.estimateUsageFromChars(totalChars, model)
                 }
               } else if (parsed.type === 'message_start') {
                 if (parsed.message?.usage) {
@@ -504,12 +534,7 @@ export class AnthropicClient {
 
     console.log(`[Anthropic] Cached stream ended: ${totalChars} total characters`)
     if (usageData) return usageData
-    const estimatedTokens = Math.ceil(totalChars / 4)
-    return {
-      provider: 'anthropic', model,
-      inputTokens: estimatedTokens * 0.3, outputTokens: estimatedTokens * 0.7,
-      totalTokens: estimatedTokens, costUsd: 0
-    }
+    return this.estimateUsageFromChars(totalChars, model)
   }
 
   /**
@@ -655,16 +680,7 @@ export class AnthropicClient {
                   return usageData
                 } else {
                   // Fallback: estimate if usage not captured
-                  console.warn(`[Anthropic] ⚠️ No usage data from streaming, estimating...`)
-                  const estimatedTokens = Math.ceil(totalChars / 4)
-                  return {
-                    provider: 'anthropic',
-                    model,
-                    inputTokens: estimatedTokens * 0.3,
-                    outputTokens: estimatedTokens * 0.7,
-                    totalTokens: estimatedTokens,
-                    costUsd: 0
-                  }
+                  return this.estimateUsageFromChars(totalChars, model)
                 }
               } else if (parsed.type === 'message_start') {
                 // Anthropic sends usage in message_start event
@@ -711,15 +727,7 @@ export class AnthropicClient {
     if (usageData) {
       return usageData
     } else {
-      const estimatedTokens = Math.ceil(totalChars / 4)
-      return {
-        provider: 'anthropic',
-        model,
-        inputTokens: estimatedTokens * 0.3,
-        outputTokens: estimatedTokens * 0.7,
-        totalTokens: estimatedTokens,
-        costUsd: 0
-      }
+      return this.estimateUsageFromChars(totalChars, model)
     }
   }
 }

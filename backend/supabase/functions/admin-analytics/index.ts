@@ -17,6 +17,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { usdToInrRate } from '../_shared/services/exchange-rate.ts'
 import type { AdminUsageAnalytics, UsageStats } from '../_shared/types/usage-types.ts'
 
 const corsHeaders = {
@@ -478,8 +479,11 @@ async function handlePlAnalytics(
   const startDate = body.start_date ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   const endDate = body.end_date ?? new Date().toISOString()
 
-  // Fetch live USD→INR exchange rate
-  let exchangeRate = 84.0
+  // Fetch live USD→INR exchange rate. When the feed is unreachable, fall back to
+  // the configured rate rather than a second constant hardcoded here — that
+  // constant was 84.0 while the rest of the app used 83.5 and the real rate had
+  // passed 95, so the P&L page disagreed with every other cost figure.
+  let exchangeRate = await usdToInrRate(supabase)
   let exchangeRateIsLive = false
   try {
     const rateRes = await fetch('https://open.er-api.com/v6/latest/USD', {
@@ -494,7 +498,7 @@ async function handlePlAnalytics(
       }
     }
   } catch {
-    console.warn('[admin-analytics/pl] Exchange rate fetch failed, using fallback 84.0')
+    console.warn(`[admin-analytics/pl] Exchange rate fetch failed, using configured ${exchangeRate}`)
   }
 
   // ── LLM costs: from usage_logs.tier (stamped at call time — always accurate) ──

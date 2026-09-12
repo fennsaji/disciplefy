@@ -66,6 +66,38 @@ export class OpenAIClient {
   }
 
   /**
+   * Usage for a stream that ended without reporting any, priced rather than
+   * zeroed.
+   *
+   * The request cost money whether or not OpenAI reported the counts. Returning
+   * costUsd 0 made it free in `usage_logs.llm_cost_usd`, which the daily cost
+   * ceiling, the pre-warm budget and the per-user daily cost limit all sum — so
+   * unreported streams spent budget that nothing counted. The token split is a
+   * rough estimate (~4 chars a token, 30/70 in to out), so this is an estimate
+   * too, but priced at the real rate rather than at nothing.
+   */
+  private estimateUsageFromChars(totalChars: number, model: string): LLMUsageMetadata {
+    const estimatedTokens = Math.ceil(totalChars / 4)
+    const inputTokens = Math.round(estimatedTokens * 0.3)
+    const outputTokens = estimatedTokens - inputTokens
+    const cost = this.costTracker.calculateCost('openai', model, inputTokens, outputTokens)
+
+    console.warn(
+      `[OpenAI] No usage reported; estimated ${estimatedTokens} tokens ` +
+        `(~$${cost.totalCost.toFixed(4)}) from ${totalChars} characters`
+    )
+
+    return {
+      provider: 'openai',
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: estimatedTokens,
+      costUsd: cost.totalCost
+    }
+  }
+
+  /**
    * Selects the optimal OpenAI model based on language and tier.
    * Premium English users get GPT-4.1-mini for better quality.
    * 
@@ -506,16 +538,7 @@ export class OpenAIClient {
                 return usageData
               } else {
                 // Fallback: estimate tokens if usage not provided
-                console.warn(`[OpenAI] ⚠️ No usage data from streaming, estimating...`)
-                const estimatedTokens = Math.ceil(totalChars / 4)
-                return {
-                  provider: 'openai',
-                  model,
-                  inputTokens: estimatedTokens * 0.3, // Rough estimate
-                  outputTokens: estimatedTokens * 0.7,
-                  totalTokens: estimatedTokens,
-                  costUsd: 0 // Can't calculate accurately without real token counts
-                }
+                return this.estimateUsageFromChars(totalChars, model)
               }
             }
 
@@ -587,15 +610,7 @@ export class OpenAIClient {
     if (usageData) {
       return usageData
     } else {
-      const estimatedTokens = Math.ceil(totalChars / 4)
-      return {
-        provider: 'openai',
-        model,
-        inputTokens: estimatedTokens * 0.3,
-        outputTokens: estimatedTokens * 0.7,
-        totalTokens: estimatedTokens,
-        costUsd: 0
-      }
+      return this.estimateUsageFromChars(totalChars, model)
     }
   }
 }
