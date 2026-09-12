@@ -569,7 +569,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           isDense: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintText: 'Search learning paths…',
+          hintText: AppLocalizations.of(context)!.searchPathsHint,
           hintStyle: AppFonts.inter(
             fontSize: 14,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
