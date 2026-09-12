@@ -46,6 +46,10 @@ Future<void> _showPermissionDeniedSnackbar(BuildContext context) async {
       backgroundColor: AppColors.warning,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      // persist:false — since Flutter 3.44 a SnackBar with an action
+      // defaults to persist:true, so it never times out AND blocks every
+      // later snackbar behind it in the app-wide queue.
+      persist: false,
       action: permanentlyDenied
           ? SnackBarAction(
               label: context.tr(TranslationKeys.commonOpenSettings),
@@ -103,7 +107,7 @@ class _NotificationSettingsView extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content:
-                      const Text('Something went wrong. Please try again.'),
+                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                   backgroundColor: AppColors.error,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
@@ -158,7 +162,7 @@ class _NotificationSettingsView extends StatelessWidget {
             }
             if (state is NotificationError) {
               return _buildErrorView(
-                  context, 'Something went wrong. Please try again.');
+                  context, context.tr(TranslationKeys.commonErrorTryAgain));
             }
             return Center(
               child: Text(

@@ -9,6 +9,8 @@ import '../bloc/phone_auth_event.dart';
 import '../bloc/phone_auth_state.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Phone number input screen for phone authentication
 class PhoneNumberInputScreen extends StatefulWidget {
@@ -77,9 +79,13 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
+              // persist:false — since Flutter 3.44 a SnackBar with an action
+              // defaults to persist:true, so it never times out AND blocks every
+              // later snackbar behind it in the app-wide queue.
+              persist: false,
               action: state.errorType == PhoneAuthErrorType.networkError
                   ? SnackBarAction(
                       label: 'Retry',

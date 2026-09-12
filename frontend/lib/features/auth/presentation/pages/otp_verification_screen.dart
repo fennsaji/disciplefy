@@ -11,6 +11,8 @@ import '../bloc/phone_auth_event.dart';
 import '../bloc/phone_auth_state.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/auth_aware_navigation_service.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -182,9 +184,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Something went wrong. Please try again.'),
+                  content:
+                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                   backgroundColor: Theme.of(context).colorScheme.error,
                   behavior: SnackBarBehavior.floating,
+                  // persist:false — since Flutter 3.44 a SnackBar with an action
+                  // defaults to persist:true, so it never times out AND blocks every
+                  // later snackbar behind it in the app-wide queue.
+                  persist: false,
                   action: state.errorType == PhoneAuthErrorType.networkError
                       ? SnackBarAction(
                           label: 'Retry',

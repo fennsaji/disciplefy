@@ -254,6 +254,10 @@ class _ChatInputState extends State<ChatInput>
             ? TranslationKeys.micPermissionBlockedMessage
             : TranslationKeys.micPermissionMessage)),
         behavior: SnackBarBehavior.floating,
+        // persist:false — since Flutter 3.44 a SnackBar with an action
+        // defaults to persist:true, so it never times out AND blocks every
+        // later snackbar behind it in the app-wide queue.
+        persist: false,
         action: permanentlyDenied
             ? SnackBarAction(
                 label: context.tr(TranslationKeys.micPermissionOpenSettings),
