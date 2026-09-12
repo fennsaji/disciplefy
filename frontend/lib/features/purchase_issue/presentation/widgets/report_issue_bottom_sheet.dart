@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../tokens/domain/entities/purchase_history.dart';
@@ -74,7 +76,7 @@ class _ReportIssueBottomSheetState extends State<ReportIssueBottomSheet> {
           } else if (state is PurchaseIssueSubmitFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Something went wrong. Please try again.'),
+                content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                 backgroundColor: AppTheme.errorColor,
                 behavior: SnackBarBehavior.floating,
               ),

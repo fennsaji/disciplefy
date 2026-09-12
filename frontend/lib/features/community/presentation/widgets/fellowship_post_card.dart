@@ -5,7 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/discipler.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -702,29 +705,22 @@ class _SharedGuideLink extends StatefulWidget {
 class _SharedGuideLinkState extends State<_SharedGuideLink> {
   bool _loading = false;
 
-  String _inputTypeLabel(String? type) {
+  String _inputTypeLabel(BuildContext context, String? type) {
     switch (type) {
       case 'scripture':
-        return 'Verse study';
+        return context.tr(TranslationKeys.communityVerseStudyLabel);
       case 'topic':
-        return 'Topic study';
+        return context.tr(TranslationKeys.communityTopicStudyLabel);
       default:
-        return 'Study guide';
+        return context.tr(TranslationKeys.communityStudyGuideLabel);
     }
   }
 
-  String _languageLabel(String? lang) {
-    switch (lang) {
-      case 'en':
-        return 'English';
-      case 'hi':
-        return 'Hindi';
-      case 'ml':
-        return 'Malayalam';
-      default:
-        return lang ?? 'English';
-    }
-  }
+  /// Each language is named in its own script, so this label reads the same
+  /// whatever the surrounding UI language is — and it stays in step with
+  /// [AppLanguage] rather than repeating the list here.
+  String _languageLabel(String? lang) =>
+      AppLanguage.fromCode(lang ?? AppLanguage.english.code).displayName;
 
   /// Navigates to the study guide.
   ///
@@ -786,7 +782,7 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
     final bgColor = accentColor.withAlpha(isDark ? 18 : 10);
 
     final meta = [
-      _inputTypeLabel(widget.post.guideInputType),
+      _inputTypeLabel(context, widget.post.guideInputType),
       _languageLabel(widget.post.guideLanguage),
     ].join(' · ');
 

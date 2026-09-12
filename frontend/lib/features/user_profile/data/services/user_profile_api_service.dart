@@ -105,6 +105,14 @@ class UserProfileApiService {
     return _updateProfile({'language_preference': languageCode});
   }
 
+  /// Update user profile study content language — the language study guides
+  /// and topics generate in, independent of [updateLanguagePreference] (the
+  /// UI language). Pass null to reset to "follow app language".
+  Future<Either<Failure, UserProfileEntity>> updateStudyContentLanguage(
+      String? languageCode) async {
+    return _updateProfile({'study_content_language': languageCode});
+  }
+
   /// Update user profile theme preference
   Future<Either<Failure, UserProfileEntity>> updateThemePreference(
       String themePreference) async {

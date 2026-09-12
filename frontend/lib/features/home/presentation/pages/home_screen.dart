@@ -13,7 +13,6 @@ import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/category_utils.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
@@ -27,7 +26,6 @@ import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
-import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
@@ -1157,6 +1155,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
         final sectionTitle = context.tr(TranslationKeys.homeForYou);
 
+        // Nothing to recommend and nothing to prompt for: drop the whole
+        // section rather than leaving a heading and a "View All" button
+        // stranded above empty space.
+        final hasSectionContent = homeState.showPersonalizationPrompt ||
+            homeState.activeLearningPath != null ||
+            homeState.isLoadingActivePath ||
+            _isLearningPathsLocked();
+        if (!hasSectionContent) return const SizedBox.shrink();
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1249,7 +1256,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               if (homeState.learningPathReason ==
                   LearningPathRecommendationReason.personalized) ...[
                 Text(
-                  "You're ready for your next step",
+                  context.tr(TranslationKeys.homeReadyForNextStep),
                   style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -1272,7 +1279,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Available offline',
+                      context.tr(TranslationKeys.homeAvailableOffline),
                       style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -1300,19 +1307,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               LockedFeatureWrapper(
                 featureKey: 'learning_paths',
                 child: _buildPlaceholderLearningPathCard(),
-              )
-            // Fallback to topics grid only if no learning path is available
-            else if (homeState.topicsError != null)
-              _buildTopicsErrorWidget(homeState.topicsError!)
-            else if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
-              _buildTopicsLoadingWidget()
-            else if (context.read<ConnectivityBloc>().state
-                is ConnectivityOffline)
-              _buildForYouOfflineWidget()
-            else if (homeState.topics.isEmpty)
-              _buildNoTopicsWidget()
-            else
-              _buildTopicsGrid(homeState.topics),
+              ),
+            // No active learning path and nothing locked: the "Explore
+            // Learning Paths" button above is the only call to action here.
+            // This used to fall back to a grid of unrelated cross-category
+            // topics (e.g. "Marriage and Faith" next to "Being the Light in
+            // Your Community") with no connection to each other or to the
+            // user — it read as generic filler rather than a personalized
+            // recommendation, which is exactly what this section promises.
           ],
         );
       },
@@ -1376,485 +1378,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
   }
 
-  Widget _buildTopicsErrorWidget(String error) {
-    final isOffline =
-        context.read<ConnectivityBloc>().state is ConnectivityOffline;
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isOffline
-            ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
-            : AppTheme.accentColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isOffline
-              ? theme.colorScheme.outline.withOpacity(0.2)
-              : AppTheme.accentColor.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            isOffline ? Icons.wifi_off : Icons.error_outline,
-            color: isOffline
-                ? theme.colorScheme.onSurfaceVariant
-                : AppTheme.accentColor,
-            size: 32,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isOffline
-                ? 'You\'re offline'
-                : context.tr(TranslationKeys.homeFailedToLoadTopics),
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isOffline
-                ? 'Personalized topics require an internet connection.'
-                : context.tr(TranslationKeys.homeSomethingWentWrong),
-            style: AppFonts.inter(
-              fontSize: 14,
-              color: theme.colorScheme.onBackground.withOpacity(0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (!isOffline) ...[
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => context
-                  .read<HomeBloc>()
-                  .add(const RefreshRecommendedTopics()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: const Icon(Icons.refresh),
-              label: Text(context.tr(TranslationKeys.homeTryAgain)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildForYouOfflineWidget() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.wifi_off,
-            color: theme.colorScheme.onSurfaceVariant,
-            size: 32,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'You\'re offline',
-            style: AppFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Learning path requires a connection',
-            style: AppFonts.inter(
-              fontSize: 14,
-              color: theme.colorScheme.onBackground.withOpacity(0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => context.push('/offline-guides'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            icon: const Icon(Icons.download_done_outlined, size: 18),
-            label: const Text('View Offline Guides'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopicsLoadingWidget() =>
-      const LearningPathCardSkeleton(compact: false);
-
-  Widget _buildLoadingTopicCard() => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: context.appBrandAccent.withOpacity(0.1),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // Match the real card
-          children: [
-            // Header row skeleton
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            context.appBrandAccent),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  height: 20,
-                  width: 60,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Title skeleton
-            Container(
-              height: 14,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: context.appBrandAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            // Description skeleton
-            Container(
-              height: 11,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: context.appBrandAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-
-            const SizedBox(height: 4),
-
-            Container(
-              height: 11,
-              width: MediaQuery.of(context).size.width * 0.6,
-              decoration: BoxDecoration(
-                color: context.appBrandAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Footer skeleton
-            Row(
-              children: [
-                Container(
-                  height: 10,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  height: 10,
-                  width: 20,
-                  decoration: BoxDecoration(
-                    color: context.appBrandAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-
-  Widget _buildNoTopicsWidget() => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: context.appBrandAccent.withOpacity(0.2),
-          ),
-        ),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.topic_outlined,
-              color: AppTheme.onSurfaceVariant,
-              size: 32,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              context.tr(TranslationKeys.homeNoTopicsAvailable),
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr(TranslationKeys.homeCheckConnection),
-              style: AppFonts.inter(
-                fontSize: 14,
-                color:
-                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-
-  Widget _buildTopicsGrid(List<RecommendedGuideTopic> topics) {
-    // Use column-based layout with IntrinsicHeight for uniform row heights
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate optimal card width (accounting for spacing)
-        const double spacing = 16.0;
-
-        // Group topics into pairs for rows
-        final List<List<RecommendedGuideTopic>> rows = [];
-        for (int i = 0; i < topics.length; i += 2) {
-          rows.add(topics.skip(i).take(2).toList());
-        }
-
-        return Column(
-          children: rows.asMap().entries.map((entry) {
-            final rowIndex = entry.key;
-            final rowTopics = entry.value;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: rowTopics != rows.last ? spacing : 0,
-              ),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // First topic in the row with stagger animation
-                    Expanded(
-                      child: FadeInWidget(
-                        delay: AppAnimations.getStaggerDelay(rowIndex * 2),
-                        slideOffset: const Offset(0, 0.1),
-                        child: _RecommendedGuideTopicCard(
-                          topic: rowTopics[0],
-                          onTap: () => _navigateToStudyGuide(rowTopics[0]),
-                        ),
-                      ),
-                    ),
-                    // Second topic if available, otherwise spacer
-                    if (rowTopics.length > 1) ...[
-                      const SizedBox(width: spacing),
-                      Expanded(
-                        child: FadeInWidget(
-                          delay:
-                              AppAnimations.getStaggerDelay(rowIndex * 2 + 1),
-                          slideOffset: const Offset(0, 0.1),
-                          child: _RecommendedGuideTopicCard(
-                            topic: rowTopics[1],
-                            onTap: () => _navigateToStudyGuide(rowTopics[1]),
-                          ),
-                        ),
-                      ),
-                    ] else ...[
-                      const SizedBox(width: spacing),
-                      const Expanded(child: SizedBox()), // Empty space
-                    ],
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  Future<void> _navigateToStudyGuide(RecommendedGuideTopic topic) async {
-    // Prevent multiple clicks during navigation
-    if (_isNavigating) {
-      return;
-    }
-
-    // Get study content language preference for token cost calculation
-    // Uses study content language (not app UI language)
-    final selectedLanguage =
-        await sl<LanguagePreferenceService>().getStudyContentLanguage();
-
-    // Check saved default_study_mode preference before showing sheet
-    final savedModeRaw =
-        await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
-
-    // For topics, the recommended mode is standard
-    const recommendedMode = StudyMode.standard;
-
-    if (!mounted) return;
-
-    if (StudyModePreferences.isRecommended(savedModeRaw)) {
-      // User prefers recommended → auto-select standard for topic type
-      Logger.debug(
-          '✅ [HOME] Using recommended mode for topic: ${recommendedMode.name}');
-      await _navigateToStudyGuideWithMode(topic, recommendedMode, false);
-    } else if (savedModeRaw != null) {
-      // User has a specific saved mode → use it directly
-      final savedMode = studyModeFromString(savedModeRaw);
-      if (savedMode != null) {
-        Logger.debug(
-            '✅ [HOME] Using saved study mode for topic: ${savedMode.name}');
-        await _navigateToStudyGuideWithMode(topic, savedMode, false);
-      } else {
-        // Invalid mode string — fall back to sheet
-        Logger.debug(
-            '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
-        final result = await ModeSelectionSheet.show(
-          context: context,
-          languageCode: selectedLanguage.code,
-          recommendedMode: recommendedMode,
-        );
-        if (result != null && mounted) {
-          await _navigateToStudyGuideWithMode(
-            topic,
-            result['mode'] as StudyMode,
-            result['rememberChoice'] as bool,
-          );
-        }
-      }
-    } else {
-      // No saved preference → show mode selection sheet
-      Logger.debug(
-          '🔍 [HOME] No saved preference - showing mode selection sheet for topic');
-      final result = await ModeSelectionSheet.show(
-        context: context,
-        languageCode: selectedLanguage.code,
-        recommendedMode: recommendedMode,
-      );
-      if (result != null && mounted) {
-        await _navigateToStudyGuideWithMode(
-          topic,
-          result['mode'] as StudyMode,
-          result['rememberChoice'] as bool,
-        );
-      }
-    }
-  }
-
-  /// Navigate to study guide with selected mode
-  Future<void> _navigateToStudyGuideWithMode(
-    RecommendedGuideTopic topic,
-    StudyMode mode,
-    bool rememberChoice,
-  ) async {
-    _isNavigating = true;
-
-    // Save user's mode preference if they chose to remember
-    if (rememberChoice) {
-      sl<LanguagePreferenceService>().saveStudyModePreference(mode);
-    }
-
-    // Get the current language from Daily Verse state
-    final dailyVerseBloc = context.read<DailyVerseBloc>();
-    final currentState = dailyVerseBloc.state;
-
-    VerseLanguage selectedVerseLanguage =
-        VerseLanguage.english; // Default to English
-    if (currentState is DailyVerseLoaded) {
-      selectedVerseLanguage = currentState.currentLanguage;
-    } else if (currentState is DailyVerseOffline) {
-      selectedVerseLanguage = currentState.currentLanguage;
-    }
-
-    final languageCode = _getLanguageCode(selectedVerseLanguage);
-
-    // Check if user has sufficient tokens for this mode
-    final tokenState = context.read<TokenBloc>().state;
-    if (tokenState is TokenLoaded && !tokenState.tokenStatus.isPremium) {
-      final costResult = await sl<TokenCostRepository>()
-          .getTokenCost(languageCode, mode.value);
-      final requiredCost = costResult.fold((f) => 0, (cost) => cost);
-      if (requiredCost > 0 &&
-          tokenState.tokenStatus.totalTokens < requiredCost &&
-          mounted) {
-        setState(() => _isNavigating = false);
-        await InsufficientTokensDialog.show(
-          context,
-          tokenStatus: tokenState.tokenStatus,
-          requiredTokens: requiredCost,
-        );
-        return;
-      }
-    }
-
-    final encodedTitle = Uri.encodeComponent(topic.title);
-    final encodedDescription = Uri.encodeComponent(topic.description);
-    final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';
-    final descriptionParam =
-        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
-
-    Logger.debug(
-        '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
-
-    // Navigate directly to study guide V2 - it will handle generation
-    context.go(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&mode=${mode.name}&source=home$topicIdParam$descriptionParam');
-
-    // Reset navigation flag after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isNavigating = false;
-        });
-      }
-    });
-  }
-
-  /// Check if learning_paths feature is locked for current user
   bool _isLearningPathsLocked() {
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
@@ -1944,251 +1467,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 }
 
-/// Recommended guide topic card widget for API-based topics.
-class _RecommendedGuideTopicCard extends StatefulWidget {
-  final RecommendedGuideTopic topic;
-  final VoidCallback onTap;
-
-  const _RecommendedGuideTopicCard({
-    required this.topic,
-    required this.onTap,
-  });
-
-  @override
-  State<_RecommendedGuideTopicCard> createState() =>
-      _RecommendedGuideTopicCardState();
-}
-
-class _RecommendedGuideTopicCardState extends State<_RecommendedGuideTopicCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.97,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: AppAnimations.defaultCurve,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    _controller.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    _controller.reverse();
-    widget.onTap();
-  }
-
-  void _onTapCancel() {
-    _controller.reverse();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final iconData = CategoryUtils.getIconForTopic(widget.topic);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        ),
-        child: Semantics(
-          button: true,
-          enabled: true,
-          label: widget.topic.title,
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : const Color(0xFFE5E7EB),
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              constraints: const BoxConstraints(
-                minHeight: 160,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header row with icon
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.08)
-                              : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          iconData,
-                          color: isDark
-                              ? Colors.white.withOpacity(0.7)
-                              : const Color(0xFF6B7280),
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.08)
-                                : const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            widget.topic.category,
-                            style: AppFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.7)
-                                  : const Color(0xFF6B7280),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Title
-                  Text(
-                    widget.topic.title,
-                    style: AppFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.9)
-                          : const Color(0xFF1F2937),
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Description
-                  Expanded(
-                    child: Text(
-                      widget.topic.description,
-                      style: AppFonts.inter(
-                        fontSize: 13,
-                        color: isDark
-                            ? Colors.white.withOpacity(0.6)
-                            : const Color(0xFF6B7280),
-                        height: 1.5,
-                      ),
-                      maxLines: widget.topic.isFromLearningPath ? 3 : 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-
-                  // Learning path badge (if from a learning path)
-                  if (widget.topic.isFromLearningPath) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.15)
-                            : Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.route_outlined,
-                            size: 12,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              widget.topic.learningPathName ?? '',
-                              style: AppFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (widget
-                              .topic.formattedPositionInPath.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              widget.topic.formattedPositionInPath,
-                              style: AppFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: isDark
-                                    ? Colors.white.withOpacity(0.5)
-                                    : const Color(0xFF9CA3AF),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Upcoming Meeting Banner
 // ---------------------------------------------------------------------------
@@ -2224,13 +1502,28 @@ class _UpcomingMeetingBannerState extends State<_UpcomingMeetingBanner> {
   Future<void> _fetchUpcomingMeeting() async {
     try {
       final repo = sl<CommunityRepository>();
-      final fellowshipsResult = await repo.getFellowships('en');
-      final fellowships = fellowshipsResult.fold(
-        (_) => <FellowshipEntity>[],
+      // Content language, matching every other getFellowships caller — the
+      // parameter picks a learning-path title translation, it does not filter
+      // which fellowships are returned.
+      String language = 'en';
+      try {
+        final resolved =
+            await sl<LanguagePreferenceService>().getStudyContentLanguage();
+        language = resolved.code;
+      } catch (_) {
+        // Keep the English default and still attempt the fetch.
+      }
+
+      final fellowshipsResult = await repo.getFellowships(language);
+      // A failed lookup is not the same as belonging to no fellowship:
+      // folding the error into an empty list makes today's meeting silently
+      // disappear from Home as though none were scheduled.
+      final fellowships = fellowshipsResult.fold<List<FellowshipEntity>?>(
+        (_) => null,
         (list) => list,
       );
 
-      if (fellowships.isEmpty) {
+      if (fellowships == null || fellowships.isEmpty) {
         if (mounted) setState(() => _loaded = true);
         return;
       }

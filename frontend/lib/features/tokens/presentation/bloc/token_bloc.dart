@@ -82,7 +82,6 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     on<UpgradeUserPlan>(_onUpgradeUserPlan);
     on<ClearTokenError>(_onClearTokenError);
     on<ValidateTokenSufficiency>(_onValidateTokenSufficiency);
-    on<PaymentSuccess>(_onPaymentSuccess);
     on<PaymentFailure>(_onPaymentFailure);
     on<ScheduleTokenResetNotification>(_onScheduleTokenResetNotification);
     on<PrefetchTokenStatus>(_onPrefetchTokenStatus);
@@ -341,47 +340,6 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         add(const GetTokenStatus());
       }
     });
-  }
-
-  /// Handles successful payment callback from Razorpay
-  Future<void> _onPaymentSuccess(
-    PaymentSuccess event,
-    Emitter<TokenState> emit,
-  ) async {
-    if (_cachedTokenStatus == null) return;
-
-    emit(TokenPurchasing(
-      currentTokenStatus: _cachedTokenStatus!,
-      tokensToPurchase: event.tokensPurchased,
-      amount: event.tokensPurchased / 10.0,
-      step: PurchaseStep.verifyingPayment,
-    ));
-
-    // TODO: Verify payment with backend
-    await Future.delayed(const Duration(seconds: 1));
-
-    emit(TokenPurchasing(
-      currentTokenStatus: _cachedTokenStatus!,
-      tokensToPurchase: event.tokensPurchased,
-      amount: event.tokensPurchased / 10.0,
-      step: PurchaseStep.updatingBalance,
-    ));
-
-    // Update token balance
-    final updatedTokenStatus = _cachedTokenStatus!.copyWith(
-      purchasedTokens:
-          _cachedTokenStatus!.purchasedTokens + event.tokensPurchased,
-      totalTokens: _cachedTokenStatus!.totalTokens + event.tokensPurchased,
-    );
-
-    _updateCache(updatedTokenStatus);
-
-    emit(TokenPurchaseSuccess(
-      updatedTokenStatus: updatedTokenStatus,
-      tokensPurchased: event.tokensPurchased,
-      amountPaid: event.tokensPurchased / 10.0,
-      paymentId: event.paymentId,
-    ));
   }
 
   /// Handles failed payment callback from Razorpay

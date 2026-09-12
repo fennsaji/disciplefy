@@ -16,6 +16,8 @@ import '../../../../core/utils/reset_progress_error_localizer.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/widgets/destructive_confirm_dialog.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/models/app_language.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
@@ -344,12 +346,16 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                                 color: Colors.white, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                  'Something went wrong. Please try again.'),
+                              child: Text(context
+                                  .tr(TranslationKeys.commonErrorTryAgain)),
                             ),
                           ],
                         ),
                         backgroundColor: AppColors.error,
+                        // persist:false — since Flutter 3.44 a SnackBar with an action
+                        // defaults to persist:true, so it never times out AND blocks every
+                        // later snackbar behind it in the app-wide queue.
+                        persist: false,
                         action: SnackBarAction(
                           label: context.tr(TranslationKeys.commonRetry),
                           textColor: Colors.white,
@@ -1027,27 +1033,13 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
     // Check if daily verse is loaded
     if (dailyVerseState is DailyVerseLoaded) {
-      final verse = dailyVerseState.verse;
-      final currentLanguage = dailyVerseState.currentLanguage;
-
-      // Add the daily verse to memory deck
-      context.read<MemoryVerseBloc>().add(
-            AddVerseFromDaily(
-              verse.id,
-              language: currentLanguage.code,
-            ),
-          );
+      _addDailyVerseToDeck(
+          context, dailyVerseState.verse, dailyVerseState.currentLanguage);
     } else if (dailyVerseState is DailyVerseOffline) {
-      final verse = dailyVerseState.verse;
-      final currentLanguage = dailyVerseState.currentLanguage;
-
-      // Add the daily verse to memory deck even in offline mode
-      context.read<MemoryVerseBloc>().add(
-            AddVerseFromDaily(
-              verse.id,
-              language: currentLanguage.code,
-            ),
-          );
+      // Works offline too, because a verse without a server id is added by its
+      // own text rather than by a lookup.
+      _addDailyVerseToDeck(
+          context, dailyVerseState.verse, dailyVerseState.currentLanguage);
     } else {
       // Daily verse not loaded yet
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1059,18 +1051,57 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     }
   }
 
-  void _showAddManuallyDialog(BuildContext context) {
+  /// Adds the day's verse to the memory deck.
+  ///
+  /// A verse the server returned without an id carries a synthetic `temp-<date>`
+  /// id locally, and the add-from-daily endpoint resolves that id against a
+  /// cache row that, in exactly those cases, was never written — so the tap
+  /// failed for the rest of the day. The entity already holds the reference and
+  /// text for every language, so add it directly instead of asking the server
+  /// to look up something it does not have.
+  void _addDailyVerseToDeck(
+    BuildContext context,
+    DailyVerseEntity verse,
+    VerseLanguage language,
+  ) {
+    final bloc = context.read<MemoryVerseBloc>();
+
+    if (verse.id.startsWith('temp-')) {
+      bloc.add(AddVerseManually(
+        verseReference: verse.getReferenceText(language),
+        verseText: verse.getVerseText(language),
+        language: language.code,
+      ));
+      return;
+    }
+
+    bloc.add(AddVerseFromDaily(verse.id, language: language.code));
+  }
+
+  Future<void> _showAddManuallyDialog(BuildContext context) async {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
 
-    // Get default language: use filter if selected, otherwise use user's preferred language
+    // Get default language: use filter if selected, otherwise the user's
+    // study content language. Verse text is scripture, not UI chrome, so it
+    // follows the content axis — the UI language is a different setting and
+    // using it here defaulted the dialog to the wrong language for anyone
+    // whose two preferences differ.
     VerseLanguage defaultLanguage;
     if (_selectedLanguageFilter != null) {
       defaultLanguage = _selectedLanguageFilter!;
     } else {
-      // Get user's preferred language from TranslationService
-      final userLanguageCode = context.translationService.currentLanguage.code;
-      defaultLanguage = _getVerseLanguageFromCode(userLanguageCode);
+      var contentLanguageCode = AppLanguage.english.code;
+      try {
+        final resolved =
+            await sl<LanguagePreferenceService>().getStudyContentLanguage();
+        contentLanguageCode = resolved.code;
+      } catch (_) {
+        // Fall back to English if the preference cannot be read.
+      }
+      defaultLanguage = _getVerseLanguageFromCode(contentLanguageCode);
     }
+
+    if (!context.mounted) return;
 
     AddManualVerseDialog.show(
       context,

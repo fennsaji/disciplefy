@@ -11,6 +11,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/utils/logger.dart';
 import 'package:disciplefy_bible_study/core/theme/app_colors.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// OAuth callback handler page
 /// Processes authorization codes from OAuth providers (Google, Apple)
@@ -194,7 +196,8 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
             // Error - show message and redirect to login
             Logger.error(
                 '🔍 [AUTH CALLBACK] ❌ Authentication failed: ${state.message}');
-            _showErrorAndRedirect('Something went wrong. Please try again.');
+            _showErrorAndRedirect(
+                context.tr(TranslationKeys.commonErrorTryAgain));
           }
         },
         child: Scaffold(

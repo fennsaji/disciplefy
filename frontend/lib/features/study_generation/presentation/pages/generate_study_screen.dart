@@ -857,7 +857,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
 
               final displayMessage = kDebugMode
                   ? state.failure.message
-                  : 'Something went wrong. Please try again.';
+                  : context.tr(TranslationKeys.commonErrorTryAgain);
 
               _showErrorDialog(
                   context, displayMessage, state.isRetryable, state.failure);
@@ -2908,7 +2908,7 @@ class _GenerateStudyScreenState extends State<_GenerateStudyScreenContent>
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Something went wrong. Please try again.'),
+                content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                 backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 3),
               ),

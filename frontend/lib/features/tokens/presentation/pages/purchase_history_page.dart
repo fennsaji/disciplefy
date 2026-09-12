@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../bloc/token_bloc.dart';
 import '../bloc/token_event.dart';
@@ -223,7 +224,8 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Something went wrong. Please try again.',
+                                  context
+                                      .tr(TranslationKeys.commonErrorTryAgain),
                                   style: theme.textTheme.bodySmall,
                                   textAlign: TextAlign.center,
                                 ),
@@ -380,7 +382,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Something went wrong. Please try again.',
+                                context.tr(TranslationKeys.commonErrorTryAgain),
                                 style: theme.textTheme.bodyMedium,
                                 textAlign: TextAlign.center,
                               ),

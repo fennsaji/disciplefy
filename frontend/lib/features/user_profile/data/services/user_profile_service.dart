@@ -46,6 +46,20 @@ class UserProfileService {
     return await _apiService.updateLanguagePreference(language.code);
   }
 
+  /// Update user's study content language (independent of the UI language).
+  /// Pass null to reset to "follow app language".
+  Future<Either<Failure, UserProfileEntity>> updateStudyContentLanguage(
+      AppLanguage? language) async {
+    final currentUser = _authService.currentUser;
+    if (!_authService.isAuthenticated || currentUser == null) {
+      return const Left(AuthenticationFailure(
+        message: 'User must be authenticated to update profile',
+      ));
+    }
+
+    return await _apiService.updateStudyContentLanguage(language?.code);
+  }
+
   /// Update user's theme preference
   Future<Either<Failure, UserProfileEntity>> updateThemePreference(
       String themePreference) async {

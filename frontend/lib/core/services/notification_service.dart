@@ -248,6 +248,26 @@ class NotificationService {
   // Permissions
   // ============================================================================
 
+  /// Whether notifications were refused for good, so a re-request raises no
+  /// dialog and only app settings can turn them back on.
+  ///
+  /// Android-only: iOS reports a permanent denial the same way through
+  /// [areNotificationsEnabled], and the OS ignores repeat requests there too,
+  /// so callers treat "asked and still not enabled" as permanent on iOS.
+  Future<bool> isPermissionPermanentlyDenied() async {
+    try {
+      if (kIsWeb || !Platform.isAndroid) return false;
+      return await Permission.notification.isPermanentlyDenied;
+    } catch (e) {
+      Logger.error('[NotificationService] Permanent denial check error: $e');
+      return false;
+    }
+  }
+
+  /// Open this app's OS settings page so the user can enable notifications
+  /// after a permanent denial, where re-requesting does nothing.
+  Future<bool> openPermissionSettings() => openAppSettings();
+
   /// Request notification permissions
   Future<bool> requestPermissions() async {
     try {

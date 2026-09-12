@@ -127,31 +127,38 @@ async function computeUsersToNotify(
 
 function buildNotificationData(
   notification: { type: string; topicId: string; topicTitle: string; topicDescription: string },
-  language: string
+  contentLanguage: string
 ): Record<string, string> {
   // topic_id alone is enough for correctness even for 'continue_learning':
   // completing the generated guide's topic is what advances
   // user_learning_path_progress (a DB trigger keyed on topic_id), not which
   // screen the guide was opened from — so no path_id needs to travel with
   // the push.
+  //
+  // `language` here drives the study guide the deep link generates, so it
+  // must be the user's study content language, not their UI language — the
+  // two are independent and the app never syncs one from the other.
   return {
     type: notification.type,
     topic_id: notification.topicId,
     topic_title: notification.topicTitle,
     topic_description: notification.topicDescription,
-    language,
+    language: contentLanguage,
   }
 }
 
 async function sendSingleNotification(
   user: RecommendedTopicUser,
-  language: string,
+  uiLanguage: string,
+  contentLanguage: string,
   fcmService: FCMService,
   supabaseUrl: string,
   serviceRoleKey: string
 ): Promise<{ success: boolean; topicSelectionFailed?: boolean; topicId?: string; notificationType?: string }> {
   try {
-    const notificationResult = await selectNotificationForUser(supabaseUrl, serviceRoleKey, user.user_id, language)
+    // The notification's own title/body text is UI copy — pick it in the
+    // user's app language.
+    const notificationResult = await selectNotificationForUser(supabaseUrl, serviceRoleKey, user.user_id, uiLanguage)
 
     if (!notificationResult.success || !notificationResult.notification) {
       console.error(`[RecommendedTopic] Notification selection failed for user ${user.user_id}:`, notificationResult.error)
@@ -159,7 +166,7 @@ async function sendSingleNotification(
     }
 
     const notification = notificationResult.notification
-    const notificationData = buildNotificationData(notification, language)
+    const notificationData = buildNotificationData(notification, contentLanguage)
 
     const result = await fcmService.sendNotification({
       token: user.fcm_token,
@@ -178,7 +185,7 @@ async function sendSingleNotification(
       title: notification.title,
       body: notification.body,
       topicId: notification.topicId || undefined,
-      language,
+      language: uiLanguage,
       deliveryStatus: result.success ? 'sent' : 'failed',
       fcmMessageId: result.messageId,
       errorMessage: result.error,
@@ -203,6 +210,7 @@ interface NotificationStats {
 async function sendNotificationBatch(
   users: RecommendedTopicUser[],
   languageMap: Map<string, string>,
+  contentLanguageMap: Map<string, string>,
   fcmService: FCMService,
   supabaseUrl: string,
   serviceRoleKey: string
@@ -221,7 +229,14 @@ async function sendNotificationBatch(
   for (let i = 0; i < users.length; i += BATCH_SIZE) {
     const batch = users.slice(i, i + BATCH_SIZE)
     const results = await Promise.allSettled(
-      batch.map(user => sendSingleNotification(user, languageMap.get(user.user_id) || 'en', fcmService, supabaseUrl, serviceRoleKey))
+      batch.map(user => sendSingleNotification(
+        user,
+        languageMap.get(user.user_id) || 'en',
+        contentLanguageMap.get(user.user_id) || 'en',
+        fcmService,
+        supabaseUrl,
+        serviceRoleKey
+      ))
     )
 
     results.forEach(result => {
@@ -253,7 +268,7 @@ async function prepareUserNotifications(
   supabase: ServiceContainer['supabaseServiceClient'],
   notificationHelper: ReturnType<typeof createNotificationHelper>,
   now: Date
-): Promise<{ usersToNotify: RecommendedTopicUser[]; languageMap: Map<string, string> } | Response> {
+): Promise<{ usersToNotify: RecommendedTopicUser[]; languageMap: Map<string, string>; contentLanguageMap: Map<string, string> } | Response> {
   const allUsers = await fetchEligibleUsersWithTimezone(supabase, now)
   if (allUsers.length === 0) return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
   console.log(`[RecommendedTopic] Found ${allUsers.length} users with tokens`)
@@ -265,8 +280,12 @@ async function prepareUserNotifications(
   console.log(`[RecommendedTopic] ${usersToNotify.length} users need notification`)
   if (usersToNotify.length === 0) return notificationHelper.createSuccessResponse('All users already received notification today', { sentCount: 0 })
 
-  const languageMap = await notificationHelper.getUserLanguagePreferences(supabase, usersToNotify.map(u => u.user_id))
-  return { usersToNotify, languageMap }
+  const userIds = usersToNotify.map(u => u.user_id)
+  const [languageMap, contentLanguageMap] = await Promise.all([
+    notificationHelper.getUserLanguagePreferences(supabase, userIds),
+    notificationHelper.getUserStudyContentLanguages(supabase, userIds),
+  ])
+  return { usersToNotify, languageMap, contentLanguageMap }
 }
 
 function isResponse(value: unknown): value is Response {
@@ -296,10 +315,10 @@ async function handleRecommendedTopicNotification(req: Request, services: Servic
   const result = await prepareUserNotifications(services.supabaseServiceClient, notificationHelper, now)
   if (isResponse(result)) return result
 
-  const { usersToNotify, languageMap } = result
+  const { usersToNotify, languageMap, contentLanguageMap } = result
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const stats = await sendNotificationBatch(usersToNotify, languageMap, new FCMService(), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const stats = await sendNotificationBatch(usersToNotify, languageMap, contentLanguageMap, new FCMService(), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   console.log(`[RecommendedTopic] Complete: ${stats.successCount} sent (${stats.continueLearningCount} Continue, ${stats.forYouCount} ForYou)`)
 

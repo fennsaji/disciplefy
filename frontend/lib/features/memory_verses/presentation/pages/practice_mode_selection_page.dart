@@ -806,7 +806,7 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Unlocked Modes Today',
+                      context.tr(TranslationKeys.practiceUnlockedModesToday),
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -814,7 +814,10 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$unlockedCount / $unlockLimit modes',
+                      context.tr(TranslationKeys.practiceModesProgress, {
+                        'count': unlockedCount,
+                        'limit': unlockLimit,
+                      }),
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: progressColor,
                         fontWeight: FontWeight.bold,
@@ -915,8 +918,17 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                   Expanded(
                     child: Text(
                       slotsRemaining == unlockLimit
-                          ? 'Choose ${unlockLimit == 1 ? 'a' : 'up to $unlockLimit'} mode${unlockLimit > 1 ? 's' : ''} to practice today'
-                          : 'You can unlock $slotsRemaining more mode${slotsRemaining > 1 ? 's' : ''} today',
+                          ? (unlockLimit == 1
+                              ? context
+                                  .tr(TranslationKeys.practiceChooseOneMode)
+                              : context.tr(TranslationKeys.practiceChooseModes,
+                                  {'limit': unlockLimit}))
+                          : (slotsRemaining == 1
+                              ? context
+                                  .tr(TranslationKeys.practiceUnlockOneMore)
+                              : context.tr(
+                                  TranslationKeys.practiceUnlockMoreModes,
+                                  {'count': slotsRemaining})),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.brightness == Brightness.dark
                             ? AppColors.infoLighter

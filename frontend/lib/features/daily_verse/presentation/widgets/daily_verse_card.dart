@@ -757,6 +757,10 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
       ]),
       backgroundColor: AppColors.success,
       duration: const Duration(seconds: 3),
+      // persist:false — since Flutter 3.44 a SnackBar with an action
+      // defaults to persist:true, so it never times out AND blocks every
+      // later snackbar behind it in the app-wide queue.
+      persist: false,
       action: SnackBarAction(
         label: 'Review Now',
         textColor: Colors.white,
@@ -766,10 +770,10 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
   }
 
   void _showErrorSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Something went wrong. Please try again.'),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
       backgroundColor: AppColors.error,
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
     ));
   }
 
@@ -781,6 +785,10 @@ class _AddToMemoryButtonState extends State<_AddToMemoryButton> {
         Expanded(child: Text('Verse already in your memory deck')),
       ]),
       backgroundColor: AppColors.warning,
+      // persist:false — since Flutter 3.44 a SnackBar with an action
+      // defaults to persist:true, so it never times out AND blocks every
+      // later snackbar behind it in the app-wide queue.
+      persist: false,
       action: SnackBarAction(
         label: 'Review',
         textColor: Colors.white,

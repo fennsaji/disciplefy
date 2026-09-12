@@ -16,6 +16,7 @@ import { extractOAuthProfileData, createProfileUpdateData, logProfileExtraction 
 interface UserProfile {
   id: string
   language_preference: string | null
+  study_content_language: string | null
   theme_preference: string
   first_name: string | null
   last_name: string | null
@@ -30,6 +31,7 @@ interface UserProfile {
 
 interface UpdateProfileRequest {
   language_preference?: string
+  study_content_language?: string | null
   theme_preference?: string
   first_name?: string | null
   last_name?: string | null
@@ -68,6 +70,19 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
       throw new AppError('VALIDATION_ERROR', 'Invalid language preference', 400)
     }
     updateData.language_preference = body.language_preference
+  }
+
+  if (body.study_content_language !== undefined) {
+    if (body.study_content_language === null) {
+      // null = follow language_preference (the frontend's 'default' sentinel)
+      updateData.study_content_language = null
+    } else {
+      const validLanguages = ['en', 'hi', 'ml']
+      if (!validLanguages.includes(body.study_content_language)) {
+        throw new AppError('VALIDATION_ERROR', 'Invalid study content language', 400)
+      }
+      updateData.study_content_language = body.study_content_language
+    }
   }
 
   if (body.theme_preference !== undefined) {
@@ -214,6 +229,7 @@ async function createDefaultProfile(
   return {
     id: userId,
     language_preference: updateData?.language_preference || null,
+    study_content_language: updateData?.study_content_language || null,
     theme_preference: updateData?.theme_preference || 'light',
     first_name: updateData?.first_name || oauthData.first_name || null,
     last_name: updateData?.last_name || oauthData.last_name || null,

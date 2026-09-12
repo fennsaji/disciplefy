@@ -59,9 +59,29 @@ class TranslationKeys {
   static const commonSave = 'common.actions.save';
   static const commonDelete = 'common.actions.delete';
   static const commonEdit = 'common.actions.edit';
+  static const commonOpenSettings = 'common.actions.open_settings';
+
+  // ==========================================================================
+  // Memory verse practice
+  // ==========================================================================
+
+  static const practiceUnlockedModesToday = 'practice.unlocked_modes_today';
+  static const practiceModesProgress = 'practice.modes_progress';
+  static const practiceChooseOneMode = 'practice.choose_one_mode';
+  static const practiceChooseModes = 'practice.choose_modes';
+  static const practiceUnlockOneMore = 'practice.unlock_one_more';
+  static const practiceUnlockMoreModes = 'practice.unlock_more_modes';
+  static const practiceStepRead = 'practice.step_read';
+  static const practiceStepSpeak = 'practice.step_speak';
+  static const practiceStepResults = 'practice.step_results';
 
   // Common Messages
   static const commonError = 'common.messages.error';
+
+  /// Shared generic failure text. Preferred over repeating the English literal
+  /// at each call site — it used to appear untranslated on Hindi and Malayalam
+  /// screens in ~40 files.
+  static const commonErrorTryAgain = 'common.messages.error_try_again';
   static const commonSuccess = 'common.messages.success';
 
   // App Exit Confirmation
@@ -141,6 +161,11 @@ class TranslationKeys {
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
   static const homeForYou = 'home.for_you';
   static const homeForYouSubtitle = 'home.for_you_subtitle';
+  static const communityVerseStudyLabel = 'community.verse_study_label';
+  static const communityTopicStudyLabel = 'community.topic_study_label';
+  static const communityStudyGuideLabel = 'community.study_guide_label';
+  static const homeReadyForNextStep = 'home.ready_for_next_step';
+  static const homeAvailableOffline = 'home.available_offline';
   static const homeExploreTopics = 'home.explore_topics';
   static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
   static const homePersonalizePromptSubtitle =
@@ -1195,6 +1220,41 @@ class TranslationKeys {
   static const discipleLevelBeliever = 'disciple_level.believer';
   static const discipleLevelDisciple = 'disciple_level.disciple';
   static const discipleLevelLeader = 'disciple_level.leader';
+  // Offline download sheet / learning path downloads
+  static const downloadsOfflineGuides = 'downloads.offline_guides';
+  static const downloadsDownloadingOfflineGuides =
+      'downloads.downloading_offline_guides';
+  static const downloadsDownloadingProgress = 'downloads.downloading_progress';
+  static const downloadsPartlyDownloaded = 'downloads.partly_downloaded';
+  static const downloadsAllAvailableOffline = 'downloads.all_available_offline';
+  static const downloadsPause = 'downloads.pause';
+  static const downloadsDownloadMore = 'downloads.download_more';
+  static const downloadsDownloadOneMore = 'downloads.download_one_more';
+  static const downloadsRemoveAll = 'downloads.remove_all';
+  static const downloadsSelectGuides = 'downloads.select_guides';
+  static const downloadsSelectAll = 'downloads.select_all';
+  static const downloadsDeselectAll = 'downloads.deselect_all';
+  static const downloadsDownloadCount = 'downloads.download_count';
+  static const downloadsDownloadCountWithCost =
+      'downloads.download_count_with_cost';
+  static const downloadsSelectAtLeastOne = 'downloads.select_at_least_one';
+  static const downloadsGuidesWithCost = 'downloads.guides_with_cost';
+  static const downloadsGuidesSelected = 'downloads.guides_selected';
+  static const downloadsStatusDownloaded = 'downloads.status_downloaded';
+  static const downloadsStatusDownloading = 'downloads.status_downloading';
+  static const downloadsStatusFailed = 'downloads.status_failed';
+  static const downloadsStatusWaiting = 'downloads.status_waiting';
+  static const downloadsStatusNotDownloaded = 'downloads.status_not_downloaded';
+  static const downloadsStatusNotQueued = 'downloads.status_not_queued';
+  static const downloadsSharePath = 'downloads.share_path';
+  static const downloadsShareFailed = 'downloads.share_failed';
+  static const downloadsDownloadForOffline = 'downloads.download_for_offline';
+  static const downloadsAvailableOffline = 'downloads.available_offline';
+  static const downloadsNotDownloadedOffline =
+      'downloads.not_downloaded_offline';
+  static const downloadsGoBack = 'downloads.go_back';
+
+  static const discipleLevelFollower = 'disciple_level.follower';
 
   // Continue Learning
   static const continueLearningTitle = 'continue_learning.title';
@@ -2282,6 +2342,9 @@ class TranslationKeys {
   static const tokenDialogNeeded = 'tokens.dialog.needed';
   static const tokenDialogCreditsUnit = 'tokens.dialog.credits_unit';
   static const tokenDialogGetMore = 'tokens.dialog.get_more';
+  static const tokenDialogPlanCreditsPerDay =
+      'tokens.dialog.plan_credits_per_day';
+  static const tokenDialogPlanUnlimited = 'tokens.dialog.plan_unlimited';
   static const tokenDialogInfoBox = 'tokens.dialog.info_box';
   static const tokenDialogPurchase = 'tokens.dialog.purchase';
   static const tokenDialogMaybeLater = 'tokens.dialog.maybe_later';
@@ -2418,4 +2481,20 @@ class TranslationKeys {
   static const resetProgressErrorAuth = 'reset_progress.error_auth';
   static const resetProgressErrorNetwork = 'reset_progress.error_network';
   static const resetProgressErrorGeneric = 'reset_progress.error_generic';
+
+  // ==========================================================================
+  // Microphone permission (Discipler voice chat and follow-up chat input)
+  // ==========================================================================
+
+  static const micPermissionTitle = 'voice_buddy.mic_permission.title';
+  static const micPermissionMessage = 'voice_buddy.mic_permission.message';
+
+  /// Shown when the permission can only be restored from app settings.
+  static const micPermissionBlockedMessage =
+      'voice_buddy.mic_permission.blocked_message';
+  static const micPermissionOpenSettings =
+      'voice_buddy.mic_permission.open_settings';
+  static const micPermissionTypeInstead =
+      'voice_buddy.mic_permission.type_instead';
+  static const micPermissionAllow = 'voice_buddy.mic_permission.allow';
 }

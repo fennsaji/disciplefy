@@ -5,12 +5,14 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i5;
 
+import 'package:disciplefy_bible_study/core/services/session_refresh.dart'
+    as _i6;
 import 'package:disciplefy_bible_study/features/auth/data/services/auth_storage_service.dart'
-    as _i7;
+    as _i8;
 import 'package:disciplefy_bible_study/features/auth/data/services/authentication_service.dart'
     as _i4;
 import 'package:disciplefy_bible_study/features/auth/domain/entities/auth_params.dart'
-    as _i6;
+    as _i7;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i3;
 import 'package:supabase_flutter/supabase_flutter.dart' as _i2;
@@ -142,6 +144,17 @@ class MockAuthenticationService extends _i1.Mock
       ) as _i5.Future<bool>);
 
   @override
+  _i5.Future<_i6.SessionRefreshOutcome> refreshTokenOutcome() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #refreshTokenOutcome,
+          [],
+        ),
+        returnValue: _i5.Future<_i6.SessionRefreshOutcome>.value(
+            _i6.SessionRefreshOutcome.refreshed),
+      ) as _i5.Future<_i6.SessionRefreshOutcome>);
+
+  @override
   _i5.Future<bool> ensureTokenValid() => (super.noSuchMethod(
         Invocation.method(
           #ensureTokenValid,
@@ -161,7 +174,7 @@ class MockAuthenticationService extends _i1.Mock
 
   @override
   _i5.Future<bool> processGoogleOAuthCallback(
-          _i6.GoogleOAuthCallbackParams? params) =>
+          _i7.GoogleOAuthCallbackParams? params) =>
       (super.noSuchMethod(
         Invocation.method(
           #processGoogleOAuthCallback,
@@ -288,13 +301,13 @@ class MockAuthenticationService extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockAuthStorageService extends _i1.Mock
-    implements _i7.AuthStorageService {
+    implements _i8.AuthStorageService {
   MockAuthStorageService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<void> storeAuthData(_i6.AuthDataStorageParams? params) =>
+  _i5.Future<void> storeAuthData(_i7.AuthDataStorageParams? params) =>
       (super.noSuchMethod(
         Invocation.method(
           #storeAuthData,

@@ -78,7 +78,6 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     super.initState();
     // Dispatch LoadDueVerses to ensure verses are available
     context.read<MemoryVerseBloc>().add(const LoadDueVerses());
-    _initializeServices();
     _startPracticeTimer();
     _triggerWalkthroughIfNeeded();
   }
@@ -126,8 +125,39 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     }
   }
 
-  Future<void> _initializeServices() async {
-    await _speechService.initialize();
+  /// Prepares speech input on demand.
+  ///
+  /// Deliberately not called from initState: the plugin's initialize() raises
+  /// the OS microphone prompt, and asking for the mic the moment this page
+  /// opens — before the user has tapped record — is what it used to do.
+  /// Returns false when the user declined or the recognizer is unavailable.
+  Future<bool> _prepareSpeech() async {
+    final permission = await _speechService.requestMicrophonePermission();
+    if (permission != MicPermission.granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr(
+                permission == MicPermission.permanentlyDenied
+                    ? TranslationKeys.micPermissionBlockedMessage
+                    : TranslationKeys.micPermissionMessage)),
+            // persist:false — since Flutter 3.44 a SnackBar with an action
+            // defaults to persist:true, so it never times out AND blocks every
+            // later snackbar behind it in the app-wide queue.
+            persist: false,
+            action: permission == MicPermission.permanentlyDenied
+                ? SnackBarAction(
+                    label:
+                        context.tr(TranslationKeys.micPermissionOpenSettings),
+                    onPressed: _speechService.openPermissionSettings,
+                  )
+                : null,
+          ),
+        );
+      }
+      return false;
+    }
+    return _speechService.initialize();
   }
 
   void _startPracticeTimer() {
@@ -157,6 +187,10 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
 
   Future<void> _startRecording() async {
     if (currentVerse == null || _isRecording) return;
+
+    // Ask for the microphone now — the moment it is actually needed.
+    if (!await _prepareSpeech()) return;
+    if (!mounted) return;
 
     setState(() {
       _isRecording = true;
@@ -557,7 +591,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
         children: [
           _buildPhaseChip(
             theme,
-            'Read',
+            context.tr(TranslationKeys.practiceStepRead),
             Icons.menu_book,
             _currentPhase == AudioPhase.reading,
             _currentPhase.index >= 0,
@@ -571,7 +605,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           ),
           _buildPhaseChip(
             theme,
-            'Speak',
+            context.tr(TranslationKeys.practiceStepSpeak),
             Icons.mic,
             _currentPhase == AudioPhase.speaking,
             _currentPhase.index >= 1,
@@ -585,7 +619,7 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
           ),
           _buildPhaseChip(
             theme,
-            'Results',
+            context.tr(TranslationKeys.practiceStepResults),
             Icons.check_circle,
             _currentPhase == AudioPhase.results,
             _currentPhase.index >= 2,

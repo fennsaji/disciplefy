@@ -212,7 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
               // Show error message for actual errors
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Something went wrong. Please try again.'),
+                  content:
+                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                   backgroundColor: theme.colorScheme.error,
                   behavior: SnackBarBehavior.floating,
                 ),

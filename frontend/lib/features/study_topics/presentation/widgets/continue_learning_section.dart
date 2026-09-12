@@ -132,7 +132,7 @@ class ContinueLearningSection extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Something went wrong. Please try again.',
+              context.tr(TranslationKeys.commonErrorTryAgain),
               style: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.error,

@@ -221,7 +221,10 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.radio_button_unchecked,
           iconColor: isDark ? Colors.white54 : Colors.black45,
           label: 'Standard',
-          detail: '${kPlanDailyCredits['standard']} credits/day — ₹79/month',
+          detail: context.tr(TranslationKeys.tokenDialogPlanCreditsPerDay, {
+            'credits': kPlanDailyCredits['standard'],
+            'price': 79,
+          }),
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
@@ -230,7 +233,10 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.info_outline,
           iconColor: colorScheme.primary,
           label: 'Plus',
-          detail: '${kPlanDailyCredits['plus']} credits/day — ₹149/month',
+          detail: context.tr(TranslationKeys.tokenDialogPlanCreditsPerDay, {
+            'credits': kPlanDailyCredits['plus'],
+            'price': 149,
+          }),
         ),
         const SizedBox(height: 8),
         _buildPlanRow(
@@ -239,7 +245,8 @@ class InsufficientTokensDialog extends StatelessWidget {
           icon: Icons.info_outline,
           iconColor: colorScheme.primary,
           label: 'Premium',
-          detail: 'Unlimited credits — ₹499/month',
+          detail: context
+              .tr(TranslationKeys.tokenDialogPlanUnlimited, {'price': 499}),
         ),
       ],
     );
@@ -258,29 +265,33 @@ class InsufficientTokensDialog extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: iconColor),
         const SizedBox(width: 10),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: '$label: ',
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.85)
-                      : colorScheme.onSurface.withOpacity(0.85),
+        // Expanded so the plan line wraps instead of running past the dialog:
+        // unconstrained, the longest row overflowed the right edge by 25px.
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$label: ',
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.85)
+                        : colorScheme.onSurface.withOpacity(0.85),
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: detail,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.6)
-                      : colorScheme.onSurface.withOpacity(0.6),
+                TextSpan(
+                  text: detail,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.6)
+                        : colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

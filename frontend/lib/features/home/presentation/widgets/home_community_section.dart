@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../community/domain/entities/fellowship_entity.dart';
@@ -196,10 +197,32 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
     _load();
   }
 
+  /// Study content language, matching the other two callers of
+  /// `getFellowships` (`fellowship_list_bloc.dart`,
+  /// `for_you_learning_paths_section.dart`). What this parameter selects is
+  /// the translation of each fellowship's current learning-path title —
+  /// generated study content, not UI chrome — so it follows the content axis.
+  /// Falls back to English only if the preference cannot be read at all.
+  Future<String> _resolveLanguageCode() async {
+    try {
+      final language =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+      return language.code;
+    } catch (_) {
+      return 'en';
+    }
+  }
+
   Future<void> _load() async {
     try {
       final repo = sl<CommunityRepository>();
-      final fellowshipsResult = await repo.getFellowships('en');
+      // This does not filter the list — membership decides which fellowships
+      // come back, so every group shows whatever language it is in. It only
+      // picks which translation of each group's current learning-path title
+      // is returned, so it has to follow the user's language rather than
+      // being pinned to English.
+      final language = await _resolveLanguageCode();
+      final fellowshipsResult = await repo.getFellowships(language);
 
       // A failed lookup is not the same as belonging to no fellowship. Folding
       // the error into an empty list would invite an existing member to join a

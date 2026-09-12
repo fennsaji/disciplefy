@@ -394,6 +394,10 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
       search: event.query,
     );
 
+    // A failed search is not an empty search: folding the error into an empty
+    // list renders "no paths found" for what was actually a network failure,
+    // with no error and no way to retry.
+    final searchFailed = result.isLeft();
     final paths = result.fold((_) => <LearningPath>[], (data) => data.paths);
 
     final afterSearch = state;
@@ -402,6 +406,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
         searchQuery: event.query,
         searchResults: paths,
         isSearching: false,
+        searchFailed: searchFailed,
       ));
     } else {
       // Bloc was reset while we were searching — emit a fresh loaded state
@@ -409,6 +414,7 @@ class LearningPathsBloc extends Bloc<LearningPathsEvent, LearningPathsState> {
         categories: const [],
         searchQuery: event.query,
         searchResults: paths,
+        searchFailed: searchFailed,
       ));
     }
   }

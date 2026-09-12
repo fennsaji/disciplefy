@@ -274,8 +274,8 @@ class _SavedScreenContent extends StatelessWidget {
                     if (state is SavedGuidesError) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content:
-                              Text('Something went wrong. Please try again.'),
+                          content: Text(
+                              context.tr(TranslationKeys.commonErrorTryAgain)),
                           backgroundColor: Theme.of(context).colorScheme.error,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -310,8 +310,8 @@ class _SavedScreenContent extends StatelessWidget {
                     }
 
                     if (state is SavedGuidesError) {
-                      return _buildErrorState(
-                          context, 'Something went wrong. Please try again.');
+                      return _buildErrorState(context,
+                          context.tr(TranslationKeys.commonErrorTryAgain));
                     }
 
                     return _buildLoadingIndicator(context, false);

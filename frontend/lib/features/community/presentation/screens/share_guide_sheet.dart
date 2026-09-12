@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/fellowship_entity.dart';
 import '../../domain/repositories/community_repository.dart';
@@ -126,8 +128,8 @@ class _ShareGuideSheetState extends State<ShareGuideSheet> {
 
     if (hasError) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
           backgroundColor: AppColors.error,
         ),
       );

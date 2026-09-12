@@ -486,6 +486,8 @@ class LearningPathCard extends StatelessWidget {
         return context.tr(TranslationKeys.discipleLevelDisciple);
       case 'leader':
         return context.tr(TranslationKeys.discipleLevelLeader);
+      case 'follower':
+        return context.tr(TranslationKeys.discipleLevelFollower);
       default:
         return _capitalize(level);
     }

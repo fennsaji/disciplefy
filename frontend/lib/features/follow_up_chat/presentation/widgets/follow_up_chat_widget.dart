@@ -359,7 +359,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.SMALL_PADDING),
             Text(
-              'Something went wrong. Please try again.',
+              context.tr(TranslationKeys.commonErrorTryAgain),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),

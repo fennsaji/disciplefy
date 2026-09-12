@@ -104,6 +104,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
         errorMessage: 'Failed to load today\'s verse',
       );
     } catch (e) {
+      Logger.error(
+          '❌ [DAILY_VERSE] Unhandled exception loading today\'s verse: $e');
       emit(DailyVerseError(
         message: 'Failed to load today\'s verse: $e',
       ));
@@ -127,6 +129,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
         errorMessage: 'Failed to load verse for ${event.date}',
       );
     } catch (e) {
+      Logger.error(
+          '❌ [DAILY_VERSE] Unhandled exception loading verse for ${event.date}: $e');
       emit(DailyVerseError(
         message: 'Failed to load verse for ${event.date}: $e',
       ));
@@ -162,6 +166,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
           errorMessage: 'Failed to load verse in ${event.language.displayName}',
         );
       } catch (e) {
+        Logger.error(
+            '❌ [DAILY_VERSE] Unhandled exception loading verse in ${event.language.displayName}: $e');
         emit(DailyVerseError(
           message: 'Failed to load verse in ${event.language.displayName}: $e',
         ));
@@ -311,9 +317,15 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     final result = await verseOperation;
 
     await result.fold(
-      (failure) async => emit(DailyVerseError(
-        message: ErrorMessageSanitizer.sanitize(failure),
-      )),
+      (failure) async {
+        // Nothing else in this fetch path logged anything, so a failure here
+        // — including the very first one, right after a fresh sign-in —
+        // previously left no trace at all to debug from.
+        Logger.error('❌ [DAILY_VERSE] $errorMessage: $failure');
+        emit(DailyVerseError(
+          message: ErrorMessageSanitizer.sanitize(failure),
+        ));
+      },
       (verse) async {
         // Load current streak for authenticated users
         final streak = await _loadStreak();

@@ -41,7 +41,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
             final theme = Theme.of(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Something went wrong. Please try again.'),
+                content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                 backgroundColor: theme.colorScheme.error,
                 behavior: SnackBarBehavior.floating,
               ),

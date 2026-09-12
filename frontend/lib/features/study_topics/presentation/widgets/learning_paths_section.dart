@@ -413,7 +413,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
               child: Text(
                 isOffline
                     ? 'You\'re offline. Learning Paths require an internet connection.'
-                    : 'Something went wrong. Please try again.',
+                    : context.tr(TranslationKeys.commonErrorTryAgain),
                 style: AppFonts.inter(
                   fontSize: 14,
                   color: isOffline
@@ -527,7 +527,11 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (displayCats.isEmpty)
-            _buildNoResultsState(context, isSearchActive)
+            _buildNoResultsState(
+              context,
+              isSearchActive,
+              searchFailed: state.searchFailed,
+            )
           else ...[
             for (int catIndex = 0; catIndex < displayCats.length; catIndex++)
               _buildCategoryRow(
@@ -565,7 +569,7 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
           isDense: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintText: 'Search learning paths…',
+          hintText: AppLocalizations.of(context)!.searchPathsHint,
           hintStyle: AppFonts.inter(
             fontSize: 14,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
@@ -641,16 +645,23 @@ class _LearningPathsSectionState extends State<LearningPathsSection> {
     );
   }
 
-  Widget _buildNoResultsState(BuildContext context, bool isSearchActive) {
+  Widget _buildNoResultsState(
+    BuildContext context,
+    bool isSearchActive, {
+    bool searchFailed = false,
+  }) {
     final theme = Theme.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
       child: Center(
         child: Text(
-          isSearchActive
-              ? 'No paths found for "${_searchController.text}"'
-              : 'No paths match the selected filters',
+          // A failed request must not claim nothing matched.
+          searchFailed
+              ? context.tr(TranslationKeys.studyTopicsSomethingWentWrong)
+              : isSearchActive
+                  ? 'No paths found for "${_searchController.text}"'
+                  : 'No paths match the selected filters',
           style: AppFonts.inter(
             fontSize: 14,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.5),

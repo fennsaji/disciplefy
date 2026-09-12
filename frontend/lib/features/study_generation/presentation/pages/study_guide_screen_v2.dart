@@ -531,10 +531,27 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
   /// Loads the fellowships the current user belongs to so the
   /// [_FellowshipShareSection] can be shown.
   Future<void> _loadUserFellowships() async {
-    final result = await sl<CommunityRepository>().getFellowships('en');
+    // Content language, like every other getFellowships caller: the parameter
+    // selects the translation of each fellowship's learning-path title, not
+    // which fellowships come back (membership decides that).
+    String language = 'en';
+    try {
+      final resolved =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
+      language = resolved.code;
+    } catch (_) {
+      // Keep the English default and still attempt the fetch.
+    }
+
+    final result = await sl<CommunityRepository>().getFellowships(language);
     if (!mounted) return;
     result.fold(
-      (_) => setState(() => _userFellowships = []),
+      // A failed lookup is not the same as belonging to no fellowship —
+      // emptying the list here hides the share section entirely, so a
+      // transient error looks like "you have no groups". Leave whatever we
+      // already had instead.
+      (_) => Logger.warning(
+          '[STUDY_GUIDE] Could not load fellowships for the share section'),
       (fellowships) => setState(() => _userFellowships = fellowships),
     );
   }
@@ -1248,7 +1265,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     setState(() {
       _isLoading = false;
       _hasError = true;
-      _errorMessage = 'Something went wrong. Please try again.';
+      _errorMessage = context.tr(TranslationKeys.commonErrorTryAgain);
       // Check for token-related errors by type or error code
       _isInsufficientTokensError = state.failure is InsufficientTokensFailure ||
           state.failure is TokenFailure ||
@@ -2135,7 +2152,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
               } else if (state is StudyPersonalNotesFailure) {
                 if (!state.isAutoSave) {
                   _showSnackBar(
-                    'Something went wrong. Please try again.',
+                    context.tr(TranslationKeys.commonErrorTryAgain),
                     Theme.of(context).colorScheme.error,
                     icon: Icons.error_outline,
                   );
@@ -4170,7 +4187,7 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
         }
         _setupAutoSave();
       } else {
-        message = 'Something went wrong. Please try again.';
+        message = context.tr(TranslationKeys.commonErrorTryAgain);
       }
     }
 
@@ -4541,7 +4558,7 @@ $appLink
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Something went wrong. Please try again.'),
+            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

@@ -161,13 +161,8 @@ pub async fn start_scheduler(
         let h = blog_http.clone();
         Box::pin(async move {
             // Per-run enabled check — fail-open if DB unreachable
-            match cron_config::get(&p, "blog_generation").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("blog_generation cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "blog_generation").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&BLOG_GENERATION_RUNNING) {
                 Some(g) => g,
@@ -213,13 +208,8 @@ pub async fn start_scheduler(
         let h = retry_http.clone();
         Box::pin(async move {
             // Per-run enabled check for blog_retry specifically
-            match cron_config::get(&p, "blog_retry").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("blog_retry cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "blog_retry").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&BLOG_RETRY_RUNNING) {
                 Some(g) => g,
@@ -260,13 +250,8 @@ pub async fn start_scheduler(
     let publish_job = Job::new_async(sched_schedule.as_str(), move |_uuid, _lock| {
         let p = sched_pool.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "blog_publish_scheduled").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("blog_publish_scheduled cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "blog_publish_scheduled").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&BLOG_PUBLISH_SCHEDULED_RUNNING) {
                 Some(g) => g,
@@ -318,13 +303,8 @@ pub async fn start_scheduler(
         let c = recon_config.clone();
         let h = recon_http.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "subscription_reconcile").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("subscription_reconcile cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "subscription_reconcile").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&SUBSCRIPTION_RECONCILE_RUNNING) {
                 Some(g) => g,
@@ -372,13 +352,8 @@ pub async fn start_scheduler(
         let c = daily_config.clone();
         let h = daily_http.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "fellowship_daily_post").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("fellowship_daily_post cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "fellowship_daily_post").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&FELLOWSHIP_DAILY_POST_RUNNING) {
                 Some(g) => g,
@@ -426,13 +401,8 @@ pub async fn start_scheduler(
         let c = worker_config.clone();
         let h = worker_http.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "discipler_reply_worker").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::debug!("discipler_reply_worker cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "discipler_reply_worker").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&DISCIPLER_REPLY_WORKER_RUNNING) {
                 Some(g) => g,
@@ -480,13 +450,8 @@ pub async fn start_scheduler(
         let c = telegram_config.clone();
         let h = telegram_http.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "telegram_daily_post").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("telegram_daily_post cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "telegram_daily_post").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&TELEGRAM_DAILY_POST_RUNNING) {
                 Some(g) => g,
@@ -534,13 +499,8 @@ pub async fn start_scheduler(
         let c = prewarm_config.clone();
         let h = prewarm_http.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "prewarm").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("prewarm cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "prewarm").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&PREWARM_RUNNING) {
                 Some(g) => g,
@@ -584,13 +544,8 @@ pub async fn start_scheduler(
         let c = reconcile_config.clone();
         let h = reconcile_http.clone();
         Box::pin(async move {
-            match cron_config::get(&p, "cost_reconcile").await {
-                Ok(cfg) if !cfg.enabled => {
-                    tracing::info!("cost_reconcile cron disabled — skipping");
-                    return;
-                }
-                Err(e) => tracing::warn!("Could not read cron_config: {} — proceeding anyway", e),
-                _ => {}
+            if !cron_config::should_run(&p, "cost_reconcile").await {
+                return;
             }
             let _guard = match CronGuard::try_acquire(&COST_RECONCILE_RUNNING) {
                 Some(g) => g,

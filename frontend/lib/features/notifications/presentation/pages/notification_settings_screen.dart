@@ -13,6 +13,7 @@ import '../widgets/notification_preference_card.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/services/notification_service.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
@@ -25,6 +26,38 @@ class NotificationSettingsScreen extends StatelessWidget {
       child: const _NotificationSettingsView(),
     );
   }
+}
+
+/// Tells the user notifications were refused, and — when the OS will no longer
+/// prompt — offers the only route that can still turn them on.
+///
+/// Without the settings action the "Enable" button is a dead end after a
+/// permanent denial: Android returns the refusal immediately, raising no
+/// dialog, so the button appears to do nothing at all.
+Future<void> _showPermissionDeniedSnackbar(BuildContext context) async {
+  final permanentlyDenied =
+      await sl<NotificationService>().isPermissionPermanentlyDenied();
+  if (!context.mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          context.tr(TranslationKeys.notificationsSettingsPermissionsDenied)),
+      backgroundColor: AppColors.warning,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      // persist:false — since Flutter 3.44 a SnackBar with an action
+      // defaults to persist:true, so it never times out AND blocks every
+      // later snackbar behind it in the app-wide queue.
+      persist: false,
+      action: permanentlyDenied
+          ? SnackBarAction(
+              label: context.tr(TranslationKeys.commonOpenSettings),
+              onPressed: sl<NotificationService>().openPermissionSettings,
+            )
+          : null,
+    ),
+  );
 }
 
 class _NotificationSettingsView extends StatelessWidget {
@@ -74,7 +107,7 @@ class _NotificationSettingsView extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content:
-                      const Text('Something went wrong. Please try again.'),
+                      Text(context.tr(TranslationKeys.commonErrorTryAgain)),
                   backgroundColor: AppColors.error,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
@@ -109,16 +142,7 @@ class _NotificationSettingsView extends StatelessWidget {
                   ),
                 );
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr(TranslationKeys
-                        .notificationsSettingsPermissionsDenied)),
-                    backgroundColor: AppColors.warning,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                );
+                _showPermissionDeniedSnackbar(context);
               }
               context
                   .read<NotificationBloc>()
@@ -138,7 +162,7 @@ class _NotificationSettingsView extends StatelessWidget {
             }
             if (state is NotificationError) {
               return _buildErrorView(
-                  context, 'Something went wrong. Please try again.');
+                  context, context.tr(TranslationKeys.commonErrorTryAgain));
             }
             return Center(
               child: Text(

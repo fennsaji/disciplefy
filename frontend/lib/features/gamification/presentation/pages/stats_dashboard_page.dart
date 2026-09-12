@@ -18,6 +18,8 @@ import '../widgets/streak_display.dart';
 import '../widgets/achievements_grid.dart';
 import '../widgets/achievement_unlock_dialog.dart';
 import '../../../../shared/widgets/gold_marks.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Stats Dashboard page showing comprehensive gamification data
 ///
@@ -529,7 +531,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Something went wrong. Please try again.',
+              context.tr(TranslationKeys.commonErrorTryAgain),
               style: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.onSurface.withOpacity(0.6),

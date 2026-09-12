@@ -11,6 +11,8 @@ import 'pdf_download_stub.dart'
     if (dart.library.io) 'pdf_download_mobile.dart' as pdf_download;
 
 import '../../domain/entities/subscription.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
@@ -161,7 +163,7 @@ class _SubscriptionPaymentHistoryPageState
             ),
             const SizedBox(height: 8),
             Text(
-              'Something went wrong. Please try again.',
+              context.tr(TranslationKeys.commonErrorTryAgain),
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -288,6 +290,10 @@ class _InvoiceCardState extends State<_InvoiceCard> {
               ),
               backgroundColor: AppColors.successDark,
               duration: const Duration(seconds: 5),
+              // persist:false — since Flutter 3.44 a SnackBar with an action
+              // defaults to persist:true, so it never times out AND blocks every
+              // later snackbar behind it in the app-wide queue.
+              persist: false,
               action: SnackBarAction(
                 label: 'OK',
                 textColor: Colors.white,
@@ -305,7 +311,7 @@ class _InvoiceCardState extends State<_InvoiceCard> {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: Text(context.tr(TranslationKeys.commonErrorTryAgain)),
             backgroundColor: AppColors.errorDark,
             duration: const Duration(seconds: 5),
           ),
