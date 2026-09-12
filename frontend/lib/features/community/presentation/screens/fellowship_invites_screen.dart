@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/utils/share_links.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../bloc/fellowship_members/fellowship_members_bloc.dart';
 import '../bloc/fellowship_members/fellowship_members_event.dart';
@@ -129,9 +130,15 @@ class _InviteCard extends StatelessWidget {
 
   String get _token => invite['token'] as String? ?? '';
 
+  // The backend already returns the correct go.disciplefy.in URL
+  // (fellowship-invites/index.ts); the fallback exists only for a payload
+  // shaped by an older backend version and must use the same host — a
+  // hardcoded app.disciplefy.in here sent people without the app to a bare
+  // client-side page with no preview and no app-store fallback, instead of
+  // the server-rendered landing page ShareLinks.fellowshipInvite already
+  // builds for every other invite-sharing path in the app.
   String get _joinUrl =>
-      (invite['join_url'] as String?) ??
-      'https://app.disciplefy.in/fellowship/join/$_token';
+      (invite['join_url'] as String?) ?? ShareLinks.fellowshipInvite(_token);
 
   @override
   Widget build(BuildContext context) {
@@ -193,10 +200,15 @@ class _InviteCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           // ── Usage + expiry ─────────────────────────────────────────────
-          Row(
+          // Wrap, not Row: "unlimited join" and the expiry text are both
+          // longer in Malayalam than in English, and together they overflowed
+          // the card by 101px — the expiry text ran clean off the screen.
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 6,
             children: [
               Icon(Icons.group_outlined, size: 14, color: primary),
-              const SizedBox(width: 4),
               Text(
                 usageLabel,
                 style: TextStyle(
@@ -206,10 +218,9 @@ class _InviteCard extends StatelessWidget {
                   color: context.appTextSecondary,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Icon(Icons.schedule_rounded,
                   size: 13, color: context.appTextTertiary),
-              const SizedBox(width: 4),
               Text(
                 l10n.inviteExpires,
                 style: TextStyle(
