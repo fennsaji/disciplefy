@@ -215,7 +215,8 @@ class SavedGuideEntity extends Equatable {
           'id': id,
           'title': displayTitle,
           'content': content,
-          'type': type.name,
+          // The study screen's input-type vocabulary is 'scripture' | 'topic'.
+          'type': type == GuideType.verse ? 'scripture' : 'topic',
           'study_mode': studyMode,
           'verse_reference': verseReference,
           'topic_name': topicName,
