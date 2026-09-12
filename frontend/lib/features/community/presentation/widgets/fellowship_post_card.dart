@@ -796,7 +796,12 @@ class _SharedGuideLinkState extends State<_SharedGuideLink> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = widget.accentColor;
+    // The app's brand primary, not postTypeAccentColor('shared_guide')'s
+    // muted teal: a Discipler daily post's guide chip (StudyGuideChip) links
+    // to a study guide the exact same way and highlights it with the brand
+    // colour, so a member's shared guide read as a different, lesser kind of
+    // link next to it. Both are "open a study guide" and should look like it.
+    final accentColor = context.appPrimary;
     final borderColor = accentColor.withAlpha(isDark ? 55 : 45);
     final bgColor = accentColor.withAlpha(isDark ? 18 : 10);
 
