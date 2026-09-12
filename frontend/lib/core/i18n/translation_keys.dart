@@ -2280,6 +2280,15 @@ class TranslationKeys {
   static const memoryStatsPracticeDays = 'memory_stats_page.practice_days';
   static const memoryStatsVerseCount = 'memory_stats_page.verse_count';
 
+  /// Shared-link outcomes for someone who is not in the fellowship.
+  static const fellowshipLinkUnavailable = 'community.link_unavailable';
+  static const fellowshipLinkNotAMember = 'community.link_not_a_member';
+  static const fellowshipThisGroup = 'community.this_group';
+  static const fellowshipJoinPromptTitle = 'community.join_prompt_title';
+  static const fellowshipJoinPromptBody = 'community.join_prompt_body';
+  static const fellowshipJoinPromptConfirm = 'community.join_prompt_confirm';
+  static const fellowshipJoinFailed = 'community.join_failed';
+
   static const fellowshipJoinToViewTitle = 'community.join_to_view_title';
   static const fellowshipJoinToViewBody = 'community.join_to_view_body';
   static const fellowshipJoinAction = 'community.join_action';

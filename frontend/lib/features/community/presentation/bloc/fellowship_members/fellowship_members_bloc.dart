@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../features/community/domain/repositories/community_repository.dart';
 import 'fellowship_members_event.dart';
 import 'fellowship_members_state.dart';
+import 'package:disciplefy_bible_study/core/error/failures.dart';
 import 'package:disciplefy_bible_study/core/utils/error_message_sanitizer.dart';
 
 /// BLoC that manages the member list for a single fellowship, plus
@@ -55,7 +56,13 @@ class FellowshipMembersBloc
     result.fold(
       (failure) => emit(state.copyWith(
         status: FellowshipMembersStatus.failure,
-        errorMessage: ErrorMessageSanitizer.sanitize(failure),
+        // A non-member has no business seeing the roster, and saying so is the
+        // feed's job — it shows an offer to join. Reporting it here as well put
+        // a red server-error toast over that offer.
+        errorMessage: failure is AuthorizationFailure
+            ? null
+            : ErrorMessageSanitizer.sanitize(failure),
+        clearErrorMessage: failure is AuthorizationFailure,
       )),
       (members) {
         // Re-derive isMentor from the loaded list — this self-corrects when

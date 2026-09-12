@@ -1024,13 +1024,19 @@ class AppRouter {
       GoRoute(
         path: '/fellowship/:fellowshipId/post/:postId',
         name: 'fellowship_post_deep',
-        redirect: (context, state) {
-          final fellowshipId = state.pathParameters['fellowshipId'] ?? '';
-          final postId = state.pathParameters['postId'] ?? '';
-          return fellowshipId.isEmpty || postId.isEmpty
-              ? AppRoutes.community
-              : '${AppRoutes.community}/$fellowshipId/post/$postId';
-        },
+        // Always the community list, never the fellowship itself.
+        //
+        // A shared link reaches people who are not in the fellowship, and this
+        // redirect cannot tell — it is synchronous, and membership is a network
+        // call away. It used to send everyone straight in, which walked
+        // non-members into a screen whose every request returns 403.
+        //
+        // DeepLinkService handles the same URL and does check, so it opens the
+        // post for members and offers to join otherwise. This route exists only
+        // so platform-initiated routing has a match at all (without one the app
+        // opened on "Something went wrong"), and the list is the safe landing
+        // spot for anyone it cannot vouch for.
+        redirect: (context, state) => AppRoutes.community,
       ),
 
       // Fellowship invite deep link — top-level, outside shell, public

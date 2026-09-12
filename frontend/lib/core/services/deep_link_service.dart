@@ -2,9 +2,14 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../di/injection_container.dart';
+import '../extensions/translation_extension.dart';
+import '../i18n/translation_keys.dart';
 import '../utils/logger.dart';
+import '../../features/community/domain/repositories/community_repository.dart';
 
 /// Listens for incoming deep links (Android App Links) and navigates
 /// to the correct screen via GoRouter.
@@ -84,7 +89,12 @@ class DeepLinkService {
             tag: _tag);
         return;
       }
-      _router.go('/community/$fellowshipId/post/$postId');
+      // Do not navigate yet: a shared link reaches people who are not in the
+      // fellowship, and the fellowship screen cannot render for them — every
+      // call it makes returns 403. Opening it anyway produced a half-drawn
+      // screen with "0 members" and a red server-error toast. Decide first,
+      // then either enter, offer to join, or say plainly that it is not open.
+      unawaited(_openFellowshipPost(fellowshipId, postId));
       return;
     }
     // Match /learning-path/<pathId>
@@ -110,6 +120,108 @@ class DeepLinkService {
     }
 
     Logger.warning('Unhandled deep link path: ${uri.path}', tag: _tag);
+  }
+
+  /// Opens a shared fellowship post, or explains why it cannot be opened.
+  ///
+  /// The fellowship lookup is the one endpoint a non-member may call for a
+  /// given fellowship, so it is what decides between three outcomes: enter
+  /// (already a member), offer to join (public), or decline politely (private).
+  /// Whatever happens, the user is left where they were rather than inside a
+  /// screen that cannot load.
+  Future<void> _openFellowshipPost(String fellowshipId, String postId) async {
+    final target = '/community/$fellowshipId/post/$postId';
+    final repository = sl<CommunityRepository>();
+
+    final result = await repository.getFellowship(fellowshipId, 'en');
+
+    final fellowship = result.fold<Map<String, dynamic>?>((failure) {
+      Logger.warning('Could not resolve shared fellowship: $failure',
+          tag: _tag);
+      return null;
+    }, (data) => data);
+
+    if (fellowship == null) {
+      // Deleted, private to the point of being unreadable, or simply offline.
+      // Either way there is nothing to show, and no reason to blame the user.
+      _showMessage(TranslationKeys.fellowshipLinkUnavailable);
+      return;
+    }
+
+    if (fellowship['caller_is_member'] == true) {
+      _router.go(target);
+      return;
+    }
+
+    if (fellowship['is_public'] == true) {
+      await _offerToJoin(fellowshipId, fellowship['name'] as String?, target);
+      return;
+    }
+
+    _showMessage(TranslationKeys.fellowshipLinkNotAMember);
+  }
+
+  /// Asks whether to join a public fellowship, and joins on confirmation.
+  Future<void> _offerToJoin(
+    String fellowshipId,
+    String? name,
+    String target,
+  ) async {
+    final context = _router.routerDelegate.navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title:
+            Text(dialogContext.tr(TranslationKeys.fellowshipJoinPromptTitle)),
+        content: Text(
+          dialogContext.tr(
+            TranslationKeys.fellowshipJoinPromptBody,
+            {
+              'name':
+                  name ?? dialogContext.tr(TranslationKeys.fellowshipThisGroup)
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.tr(TranslationKeys.commonCancel)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+                dialogContext.tr(TranslationKeys.fellowshipJoinPromptConfirm)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final joined =
+        await sl<CommunityRepository>().joinPublicFellowship(fellowshipId);
+    joined.fold(
+      (failure) {
+        Logger.warning('Join from shared link failed: $failure', tag: _tag);
+        _showMessage(TranslationKeys.fellowshipJoinFailed);
+      },
+      (_) => _router.go(target),
+    );
+  }
+
+  /// Shows a message without navigating, so the user keeps the screen they had.
+  void _showMessage(String translationKey) {
+    final context = _router.routerDelegate.navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(context.tr(translationKey)),
+        behavior: SnackBarBehavior.floating,
+      ));
   }
 
   void dispose() {

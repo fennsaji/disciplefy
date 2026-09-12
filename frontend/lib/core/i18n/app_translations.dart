@@ -10,6 +10,13 @@ class AppTranslations {
 
   static const Map<String, dynamic> _englishTranslations = {
     'community': {
+      'link_unavailable': "This group isn't available.",
+      'link_not_a_member': "You're not part of this group.",
+      'this_group': 'this group',
+      'join_prompt_title': 'Join this group?',
+      'join_prompt_body': 'Join {name} to read this post and follow along.',
+      'join_prompt_confirm': 'Join',
+      'join_failed': "Couldn't join this group. Please try again.",
       'join_to_view_title': 'Join to see this fellowship',
       'join_to_view_body':
           'You are not a member yet. Public fellowships let you join and read along.',
@@ -2178,6 +2185,14 @@ class AppTranslations {
 
   static const Map<String, dynamic> _hindiTranslations = {
     'community': {
+      'link_unavailable': 'यह ग्रुप उपलब्ध नहीं है।',
+      'link_not_a_member': 'आप इस ग्रुप का हिस्सा नहीं हैं।',
+      'this_group': 'इस ग्रुप',
+      'join_prompt_title': 'इस ग्रुप में जुड़ें?',
+      'join_prompt_body':
+          'यह पोस्ट पढ़ने और साथ चलने के लिए {name} में जुड़ें।',
+      'join_prompt_confirm': 'जुड़ें',
+      'join_failed': 'ग्रुप में जुड़ नहीं सके। कृपया दोबारा कोशिश करें।',
       'join_to_view_title': 'इस फेलोशिप को देखने के लिए जुड़ें',
       'join_to_view_body':
           'आप अभी सदस्य नहीं हैं। सार्वजनिक फेलोशिप में आप जुड़कर पढ़ सकते हैं।',
@@ -4348,6 +4363,14 @@ class AppTranslations {
 
   static const Map<String, dynamic> _malayalamTranslations = {
     'community': {
+      'link_unavailable': 'ഈ ഗ്രൂപ്പ് ലഭ്യമല്ല.',
+      'link_not_a_member': 'നിങ്ങൾ ഈ ഗ്രൂപ്പിന്റെ ഭാഗമല്ല.',
+      'this_group': 'ഈ ഗ്രൂപ്പ്',
+      'join_prompt_title': 'ഈ ഗ്രൂപ്പിൽ ചേരണോ?',
+      'join_prompt_body':
+          'ഈ പോസ്റ്റ് വായിക്കാനും ഒപ്പം നടക്കാനും {name} ൽ ചേരുക.',
+      'join_prompt_confirm': 'ചേരുക',
+      'join_failed': 'ഗ്രൂപ്പിൽ ചേരാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
       'join_to_view_title': 'ഈ ഫെല്ലോഷിപ്പ് കാണാൻ ചേരുക',
       'join_to_view_body':
           'നിങ്ങൾ ഇതുവരെ അംഗമല്ല. പൊതു ഫെല്ലോഷിപ്പുകളിൽ ചേർന്ന് വായിക്കാം.',

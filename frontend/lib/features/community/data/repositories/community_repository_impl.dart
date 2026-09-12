@@ -57,6 +57,9 @@ class CommunityRepositoryImpl implements CommunityRepository {
       return Right(models.map((m) => m.toEntity()).toList());
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
+    } on AuthorizationException catch (e) {
+      // Not a member: the screen offers to join rather than reporting a fault.
+      return Left(AuthorizationFailure(message: e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } catch (e) {
