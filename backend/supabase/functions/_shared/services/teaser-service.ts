@@ -137,9 +137,7 @@ export async function getOrCreateTeaser(
   }, lesson.language)
   const out = parseDailyTeaserOutput(result.content)
 
-  // Store before returning so the next surface on this lesson pays nothing. A
-  // conflict means another request filled the slot first — either wording is
-  // fine, so the insert is allowed to lose quietly.
+  // Store before returning so the next surface on this lesson pays nothing.
   const { error: cacheError } = await db.from('discipler_teaser_cache').insert({
     topic_key: topicKey,
     language: lesson.language,
@@ -152,10 +150,37 @@ export async function getOrCreateTeaser(
     use_count: 1,
     last_used_at: new Date().toISOString(),
   })
-  if (cacheError && cacheError.code !== '23505') {
-    console.error('[teaser-service] cache write failed', {
-      topic_key: topicKey, error: cacheError.message,
-    })
+
+  if (cacheError) {
+    // A conflict means a concurrent request for this brand-new topic won the
+    // slot first — two fellowships requesting the same never-before-seen
+    // topic at once both saw an empty cache and both called the LLM. Return
+    // the winner's wording, not this call's own generation, or the two
+    // fellowships end up with different teasers for the rest of that row's
+    // life even though the cache "worked".
+    if (cacheError.code === '23505') {
+      const { data: winner } = await db
+        .from('discipler_teaser_cache')
+        .select('hook, body, model')
+        .eq('topic_key', topicKey)
+        .eq('language', lesson.language)
+        .eq('variant', FIRST_VARIANT)
+        .single()
+
+      if (winner) {
+        console.log('[teaser-service] lost race, reusing winner', {
+          topic_key: topicKey, audience: audienceId,
+        })
+        return { hook: winner.hook, body: winner.body, model: winner.model, cached: true }
+      }
+      // Winner's row vanished between the conflict and this read (should not
+      // happen outside a concurrent delete) — fall through to this call's
+      // own generation so the caller still has something to post.
+    } else {
+      console.error('[teaser-service] cache write failed', {
+        topic_key: topicKey, error: cacheError.message,
+      })
+    }
   }
 
   console.log('[teaser-service] generated', {
