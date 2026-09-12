@@ -34,10 +34,39 @@ Deno.test('a cache-heavy call can never cost less than nothing', () => {
   assertEquals(totalCost > 0, true)
 })
 
-Deno.test('an unpriced model is charged at the highest known rate, not zero', () => {
+Deno.test('an unpriced model is charged above every model we run, not zero', () => {
+  // Opus-class rates ($5/$25 per million). The fallback must stay dearer than
+  // anything actually in the table, or switching to an untracked model
+  // under-counts spend — which is the failure this fallback exists to prevent.
   const { totalCost } = service.calculateCost('anthropic', 'claude-something-unreleased', 1000, 1000)
-  assertAlmostEquals(totalCost, 0.018, 1e-9)
+  assertAlmostEquals(totalCost, 0.03, 1e-9)
   assertEquals(totalCost > 0, true)
+
+  // Dearer than the priciest priced model, whatever that currently is.
+  const sonnet = service.calculateCost('anthropic', SONNET, 1000, 1000).totalCost
+  assertEquals(totalCost > sonnet, true)
+})
+
+Deno.test('gpt-4.1-mini is not priced like gpt-4o-mini', () => {
+  // The table assumed they matched; 4.1-mini is $0.40/$1.60 per million against
+  // 4o-mini's $0.15/$0.60, so every premium-English generation was logged at
+  // roughly a third of its real cost.
+  const mini41 = service.calculateCost('openai', 'gpt-4.1-mini-2025-04-14', 1_000_000, 0).totalCost
+  const mini4o = service.calculateCost('openai', 'gpt-4o-mini-2024-07-18', 1_000_000, 0).totalCost
+
+  assertAlmostEquals(mini41, 0.4, 1e-9)
+  assertAlmostEquals(mini4o, 0.15, 1e-9)
+  assertEquals(mini41 > mini4o, true)
+})
+
+Deno.test('gpt-3.5-turbo is priced at $0.50 and $1.50 per million', () => {
+  assertAlmostEquals(service.calculateCost('openai', 'gpt-3.5-turbo', 1_000_000, 0).totalCost, 0.5, 1e-9)
+  assertAlmostEquals(service.calculateCost('openai', 'gpt-3.5-turbo', 0, 1_000_000).totalCost, 1.5, 1e-9)
+})
+
+Deno.test('Sonnet 4.5 is priced at $3 and $15 per million', () => {
+  assertAlmostEquals(service.calculateCost('anthropic', SONNET, 1_000_000, 0).totalCost, 3, 1e-9)
+  assertAlmostEquals(service.calculateCost('anthropic', SONNET, 0, 1_000_000).totalCost, 15, 1e-9)
 })
 
 Deno.test('Haiku 4.5 is priced at $1 and $5 per million', () => {

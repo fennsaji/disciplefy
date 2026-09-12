@@ -6,26 +6,40 @@
 import type { LLMProvider, LLMCostCalculation } from '../types/usage-types.ts';
 
 // ========================================
-// LLM Pricing Configuration (as of 2026-01-17)
+// LLM Pricing Configuration
 // ========================================
+//
+// Checked against the published rate cards on 2026-09-12:
+//   platform.claude.com/docs/en/about-claude/pricing
+//   developers.openai.com/api/docs/pricing
+//
+// Every figure below is per 1K tokens; the rate cards quote per million, so
+// divide by 1000 when updating. These numbers are the app's only measure of
+// spend — the daily cost ceiling, the pre-warm budget and the per-user daily
+// cost limit all sum usage_logs.llm_cost_usd, which is computed from here — so
+// a stale entry silently moves real spending limits, in whichever direction it
+// is wrong.
 
 const LLM_PRICING = {
   openai: {
     'gpt-3.5-turbo': {
-      input_per_1k: 0.0015, // $0.0015 per 1K input tokens
-      output_per_1k: 0.002, // $0.002 per 1K output tokens
+      input_per_1k: 0.0005, // $0.50 per million input tokens
+      output_per_1k: 0.0015, // $1.50 per million output tokens
     },
     'gpt-4-turbo': {
-      input_per_1k: 0.01, // $0.01 per 1K input tokens
-      output_per_1k: 0.03, // $0.03 per 1K output tokens
+      input_per_1k: 0.01, // $10 per million input tokens
+      output_per_1k: 0.03, // $30 per million output tokens
     },
     'gpt-4o-mini-2024-07-18': {
-      input_per_1k: 0.00015, // $0.00015 per 1K input tokens
-      output_per_1k: 0.0006, // $0.0006 per 1K output tokens
+      input_per_1k: 0.00015, // $0.15 per million input tokens
+      output_per_1k: 0.0006, // $0.60 per million output tokens
     },
     'gpt-4.1-mini-2025-04-14': {
-      input_per_1k: 0.00015, // $0.00015 per 1K input tokens (same as gpt-4o-mini)
-      output_per_1k: 0.0006, // $0.0006 per 1K output tokens
+      // Not priced like gpt-4o-mini, despite the name: 4.1-mini is $0.40/$1.60
+      // per million against 4o-mini's $0.15/$0.60. Assuming they matched
+      // under-counted every premium-English generation by about 2.7x.
+      input_per_1k: 0.0004, // $0.40 per million input tokens
+      output_per_1k: 0.0016, // $1.60 per million output tokens
     },
   },
   anthropic: {
@@ -53,15 +67,29 @@ const LLM_PRICING = {
   },
 };
 
-/** A cache read is billed at 10% of the input price, a cache write at 125%. */
+/**
+ * A cache read is billed at 10% of the input price, a 5-minute cache write at
+ * 125%. Both verified against the rate card on 2026-09-12.
+ *
+ * The write multiplier assumes the default 5-minute TTL, which is what this
+ * codebase uses — nothing requests the 1-hour TTL. A 1-hour write is billed at
+ * 200%, so if one is ever introduced this constant stops being right and the
+ * write has to be priced by its own TTL.
+ */
 const CACHE_READ_MULTIPLIER = 0.1;
 const CACHE_WRITE_MULTIPLIER = 1.25;
 
 /**
- * Used when a model has no entry above. Deliberately the dearest rate we know,
- * so an untracked model overstates rather than disappears.
+ * Used when a model has no entry above. Deliberately dearer than anything we
+ * run, so an untracked model overstates rather than disappears.
+ *
+ * Set at Opus-class rates ($5/$25 per million). The old $3/$15 was described as
+ * "the dearest rate we know" but had stopped being true — Opus is $5/$25 and
+ * the Fable line $10/$50 — so switching to a model that was not in the table
+ * would have under-counted rather than over-counted, which is the one direction
+ * this fallback exists to avoid.
  */
-const FALLBACK_PRICING = { input_per_1k: 0.003, output_per_1k: 0.015 };
+const FALLBACK_PRICING = { input_per_1k: 0.005, output_per_1k: 0.025 };
 
 /** Cached-token counts, as Anthropic reports them alongside input_tokens. */
 export interface CacheTokenCounts {
