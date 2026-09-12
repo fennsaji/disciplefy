@@ -143,7 +143,15 @@ export class DailyVerseService {
       if (!(await isBibleApiCallsEnabled())) {
         console.warn('[DailyVerse] bible_api_calls_enabled is OFF — using fallback verse, no API.Bible call')
         const fallback = this.getFallbackVerse(targetDate)
-        await this.cacheVerse(dateKey, fallback)
+        // Keep the cached row's UUID on the verse: a verse handed to the client
+        // without an id gets a synthetic `temp-<date>` id there, and every
+        // feature that later resolves the verse by id (adding it to memory
+        // verses) then fails for the rest of the day.
+        try {
+          fallback.id = await this.cacheVerse(dateKey, fallback)
+        } catch (cacheError) {
+          console.warn('Failed to cache fallback verse (continuing anyway):', cacheError)
+        }
         return { ...fallback, fromCache: false }
       }
 
@@ -166,9 +174,17 @@ export class DailyVerseService {
     } catch (error) {
       console.error('Error getting daily verse:', error)
       console.log('Falling back to deterministic verse selection')
-      
-      // Return fallback verse based on date
-      return { ...this.getFallbackVerse(targetDate), fromCache: false }
+
+      // Cache the fallback too, so the response still carries a real id. This
+      // path used to return an id-less verse, which the client stored for the
+      // day under a synthetic `temp-<date>` id that no row could ever match.
+      const fallback = this.getFallbackVerse(targetDate)
+      try {
+        fallback.id = await this.cacheVerse(dateKey, fallback)
+      } catch (cacheError) {
+        console.warn('Failed to cache fallback verse (continuing anyway):', cacheError)
+      }
+      return { ...fallback, fromCache: false }
     }
   }
 
