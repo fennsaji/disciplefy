@@ -44,11 +44,12 @@ PublicFellowshipEntity _public({
   bool isOfficial = true,
   int memberCount = 3,
   int? maxMembers,
+  String language = 'en',
 }) =>
     PublicFellowshipEntity(
       id: id,
       name: 'Group $id',
-      language: 'en',
+      language: language,
       memberCount: memberCount,
       maxMembers: maxMembers,
       isOfficial: isOfficial,
@@ -249,7 +250,7 @@ void main() {
         _public(id: '2', maxMembers: 12),
         _public(id: '3', maxMembers: 12),
         _public(id: '4', maxMembers: 12),
-      ]);
+      ], languageCode: 'en');
       expect(picked.map((f) => f.id), ['2', '3']);
     });
 
@@ -257,14 +258,14 @@ void main() {
       final picked = pickSuggestedFellowships([
         _public(id: '1', memberCount: 12, maxMembers: 12),
         _public(id: '2', memberCount: 11, maxMembers: 12),
-      ]);
+      ], languageCode: 'en');
       expect(picked.map((f) => f.id), ['2']);
     });
 
     test('keeps unlimited groups regardless of member count', () {
       final picked = pickSuggestedFellowships([
         _public(id: '1', memberCount: 900),
-      ]);
+      ], languageCode: 'en');
       expect(picked.map((f) => f.id), ['1']);
     });
 
@@ -274,9 +275,30 @@ void main() {
         _public(id: '2', maxMembers: 12),
         _public(id: '3')
       ];
-      expect(pickSuggestedFellowships(all, limit: 1).length, 1);
-      expect(pickSuggestedFellowships(all, limit: 0), isEmpty);
-      expect(pickSuggestedFellowships(const []), isEmpty);
+      expect(pickSuggestedFellowships(all, languageCode: 'en', limit: 1).length,
+          1);
+      expect(
+          pickSuggestedFellowships(all, languageCode: 'en', limit: 0), isEmpty);
+      expect(pickSuggestedFellowships(const [], languageCode: 'en'), isEmpty);
+    });
+
+    test('only offers groups in the viewer\'s own language', () {
+      // An English-speaking user should never be offered "Disciplefy Hindi"
+      // or "Disciplefy Malayalam" — a group whose daily study they cannot
+      // read is worse than no suggestion at all.
+      final picked = pickSuggestedFellowships([
+        _public(id: 'en-1'),
+        _public(id: 'hi-1', language: 'hi'),
+        _public(id: 'ml-1', language: 'ml'),
+      ], languageCode: 'en');
+      expect(picked.map((f) => f.id), ['en-1']);
+    });
+
+    test('a language with no official group yields no suggestions', () {
+      final picked = pickSuggestedFellowships([
+        _public(id: 'hi-1', language: 'hi'),
+      ], languageCode: 'en');
+      expect(picked, isEmpty);
     });
   });
 }

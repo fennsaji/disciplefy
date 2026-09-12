@@ -137,15 +137,20 @@ List<RecentActivityItem> mergeRecentActivity(
 ///
 /// Only official groups are suggested — they are mentored and run the daily
 /// study, so they are the reliable first experience — and full ones are
-/// skipped because their join button could only fail. Discovery order is
-/// otherwise preserved.
+/// skipped because their join button could only fail. Restricted to
+/// [languageCode] so an English-speaking user is not offered "Disciplefy
+/// Hindi" or "Disciplefy Malayalam" — a group whose daily study they cannot
+/// read is worse than no suggestion at all. Discovery order is otherwise
+/// preserved.
 List<PublicFellowshipEntity> pickSuggestedFellowships(
   List<PublicFellowshipEntity> discovered, {
+  required String languageCode,
   int limit = 2,
 }) {
   if (limit <= 0) return const [];
   return discovered
       .where((f) => f.isOfficial)
+      .where((f) => f.language == languageCode)
       .where((f) => f.isUnlimited || f.memberCount < (f.maxMembers ?? 0))
       .take(limit)
       .toList();
@@ -278,9 +283,18 @@ class _HomeCommunitySectionState extends State<HomeCommunitySection> {
         (_) => <PublicFellowshipEntity>[],
         (p) => p.fellowships,
       );
+      // The app's UI language, not the study-content language: a group's
+      // whole point is a daily study its members can actually discuss
+      // together, so it must match the language the person is using the app
+      // in, not whichever translation happened to be picked for content.
+      final language = await sl<LanguagePreferenceService>()
+          .getSelectedLanguage()
+          .then((l) => l.code)
+          .catchError((_) => 'en');
       if (!mounted) return;
       setState(() {
-        _suggestions = pickSuggestedFellowships(discovered);
+        _suggestions =
+            pickSuggestedFellowships(discovered, languageCode: language);
         _loaded = true;
       });
     } catch (_) {
