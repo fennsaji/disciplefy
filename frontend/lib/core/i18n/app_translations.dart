@@ -30,6 +30,8 @@ class AppTranslations {
     },
     'study_guide': {
       'page_title': 'Study Guide',
+      'link_unavailable':
+          "This study guide isn't available. It may have been removed.",
       'sections': {
         'summary': 'Summary',
         'interpretation': 'Interpretation',
@@ -2212,6 +2214,7 @@ class AppTranslations {
     },
     'study_guide': {
       'page_title': 'स्टडी गाइड',
+      'link_unavailable': 'यह स्टडी गाइड उपलब्ध नहीं है। इसे हटाया जा सकता है।',
       'sections': {
         'summary': 'सारांश',
         'interpretation': 'व्याख्या',
@@ -4396,6 +4399,7 @@ class AppTranslations {
     },
     'study_guide': {
       'page_title': 'സ്റ്റഡി ഗൈഡ്',
+      'link_unavailable': 'ഈ സ്റ്റഡി ഗൈഡ് ലഭ്യമല്ല. ഇത് നീക്കം ചെയ്തിരിക്കാം.',
       'sections': {
         'summary': 'സംഗ്രഹം',
         'interpretation': 'വ്യാഖ്യാനം',

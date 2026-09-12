@@ -67,6 +67,26 @@ class ShareLinks {
     return '$origin/fellowship/join/${Uri.encodeComponent(token)}';
   }
 
+  /// Link shared from the daily verse card. There is no per-verse content to
+  /// deep-link into (the card always shows "today's" verse), so this just
+  /// opens the app to Home.
+  static String get dailyVerse {
+    final origin = shareOrigin.endsWith('/')
+        ? shareOrigin.substring(0, shareOrigin.length - 1)
+        : shareOrigin;
+    return '$origin/daily-verse';
+  }
+
+  /// Link to a specific study guide. Guides are private to their owner, so
+  /// opening this deep-links straight to the guide once signed in — the
+  /// global auth redirect sends anyone else through login first.
+  static String studyGuide(String guideId) {
+    final origin = shareOrigin.endsWith('/')
+        ? shareOrigin.substring(0, shareOrigin.length - 1)
+        : shareOrigin;
+    return '$origin/study-guide/${Uri.encodeComponent(guideId)}';
+  }
+
   /// Strips any trailing slash so joining a path never yields a double slash.
   static String get _normalisedOrigin => publicWebUrl.endsWith('/')
       ? publicWebUrl.substring(0, publicWebUrl.length - 1)

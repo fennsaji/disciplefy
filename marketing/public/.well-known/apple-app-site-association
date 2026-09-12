@@ -17,6 +17,14 @@
           {
             "/": "/learning-path/*",
             "comment": "Opens a shared learning path in the app"
+          },
+          {
+            "/": "/daily-verse",
+            "comment": "Opens the app to Home"
+          },
+          {
+            "/": "/study-guide/*",
+            "comment": "Opens a shared study guide in the app (login-gated)"
           }
         ]
       },
@@ -25,7 +33,9 @@
         "paths": [
           "/fellowship/*/post/*",
           "/fellowship/join/*",
-          "/learning-path/*"
+          "/learning-path/*",
+          "/daily-verse",
+          "/study-guide/*"
         ]
       }
     ]

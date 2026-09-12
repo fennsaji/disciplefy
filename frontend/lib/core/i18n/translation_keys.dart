@@ -2295,6 +2295,9 @@ class TranslationKeys {
   static const fellowshipJoinPromptConfirm = 'community.join_prompt_confirm';
   static const fellowshipJoinFailed = 'community.join_failed';
 
+  /// Shared-link outcome when the linked study guide can't be opened.
+  static const studyGuideLinkUnavailable = 'study_guide.link_unavailable';
+
   static const fellowshipJoinToViewTitle = 'community.join_to_view_title';
   static const fellowshipJoinToViewBody = 'community.join_to_view_body';
   static const fellowshipJoinAction = 'community.join_action';

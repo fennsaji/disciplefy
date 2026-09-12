@@ -119,6 +119,30 @@ class DeepLinkService {
       return;
     }
 
+    // Match /daily-verse — no per-verse content to deep-link into, so this
+    // just opens the app to Home.
+    if (segments.length == 1 && segments[0] == 'daily-verse') {
+      _router.go('/daily-verse');
+      return;
+    }
+
+    // Match /study-guide/<guideId>
+    if (segments.length >= 2 &&
+        segments[0] == 'study-guide' &&
+        segments[1].isNotEmpty) {
+      final guideId = segments[1];
+      final uuidPattern = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+      if (!uuidPattern.hasMatch(guideId)) {
+        Logger.warning('Invalid study guide id in deep link: ${uri.path}',
+            tag: _tag);
+        return;
+      }
+      _router.go('/study-guide/$guideId');
+      return;
+    }
+
     Logger.warning('Unhandled deep link path: ${uri.path}', tag: _tag);
   }
 

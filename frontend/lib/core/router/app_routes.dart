@@ -71,6 +71,10 @@ class AppRoutes {
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';
 
+  // Shared links
+  static const String dailyVerseShared = '/daily-verse';
+  static const String studyGuideOpen = '/study-guide/:guideId';
+
   // Leaderboard
   static const String leaderboard = '/leaderboard';
 

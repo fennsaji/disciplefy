@@ -24,6 +24,8 @@ const DEEP_LINK_PATHS = [
   '/learning-path/*',
   '/fellowship/join/*',
   '/fellowship/*/post/*',
+  '/daily-verse',
+  '/study-guide/*',
 ];
 
 module.exports = (req, res) => {

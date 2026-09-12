@@ -17,6 +17,14 @@
           {
             "/": "/fellowship/*/post/*",
             "comment": "Opens this content directly in the app"
+          },
+          {
+            "/": "/daily-verse",
+            "comment": "Opens this content directly in the app"
+          },
+          {
+            "/": "/study-guide/*",
+            "comment": "Opens this content directly in the app"
           }
         ]
       },
@@ -25,7 +33,9 @@
         "paths": [
           "/learning-path/*",
           "/fellowship/join/*",
-          "/fellowship/*/post/*"
+          "/fellowship/*/post/*",
+          "/daily-verse",
+          "/study-guide/*"
         ]
       }
     ]

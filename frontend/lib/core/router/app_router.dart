@@ -12,6 +12,7 @@ import '../../features/onboarding/presentation/pages/language_selection_screen.d
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
+import '../../features/study_generation/presentation/screens/study_guide_open_screen.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
@@ -1168,6 +1169,37 @@ class AppRouter {
             state: state,
           );
         },
+      ),
+
+      // Shared study guide link — fetches the guide by id (auth-gated by the
+      // global redirect above) then opens it.
+      GoRoute(
+        path: AppRoutes.studyGuideOpen,
+        name: 'study_guide_open',
+        pageBuilder: (context, state) {
+          final guideId = state.pathParameters['guideId']!;
+          return slideRightTransitionPage(
+            child: MaxWidthWrapper(
+              // Keyed by guideId: without this, opening a second shared-guide
+              // link while the first is still on screen reuses the same
+              // State object — initState() (and its fetch) never reruns, so
+              // the screen silently keeps showing the first guide.
+              child: StudyGuideOpenScreen(
+                key: ValueKey('study-guide-open-$guideId'),
+                guideId: guideId,
+              ),
+            ),
+            state: state,
+          );
+        },
+      ),
+
+      // Shared daily verse link — no per-verse content to deep-link into, so
+      // this just opens the app to Home.
+      GoRoute(
+        path: AppRoutes.dailyVerseShared,
+        name: 'daily_verse_shared',
+        redirect: (context, state) => AppRoutes.home,
       ),
 
       // Error Page

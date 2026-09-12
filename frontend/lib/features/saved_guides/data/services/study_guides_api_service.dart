@@ -82,6 +82,47 @@ class StudyGuidesApiService {
     }
   }
 
+  /// Fetch a single study guide by id (e.g. opening it from a shared link).
+  /// Returns null on 404 — not found, or not owned by the current user —
+  /// so the caller can fall back gracefully instead of showing a raw error.
+  Future<Map<String, dynamic>?> getStudyGuideById(String guideId) async {
+    try {
+      final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint')
+          .replace(queryParameters: {'id': guideId});
+
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.get(uri.toString(), headers: headers);
+
+      if (response.statusCode == 404) {
+        return null;
+      }
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return jsonData['data']['guide'] as Map<String, dynamic>?;
+        }
+        throw const ServerException(
+          message: 'API returned failure response',
+          code: 'API_ERROR',
+        );
+      }
+
+      throw ServerException(
+        message: 'Failed to fetch study guide: ${response.statusCode}',
+        code: 'SERVER_ERROR',
+      );
+    } catch (e) {
+      if (e is ServerException || e is AuthenticationException) {
+        rethrow;
+      }
+      throw NetworkException(
+        message: 'Failed to connect to study guides service: $e',
+        code: 'NETWORK_ERROR',
+      );
+    }
+  }
+
   /// Save or unsave a study guide
   Future<SavedGuideModel> saveUnsaveGuide({
     required String guideId,
