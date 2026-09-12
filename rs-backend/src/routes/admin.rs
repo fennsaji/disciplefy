@@ -15,7 +15,7 @@ use crate::cron::{
     FELLOWSHIP_DAILY_POST_RUNNING,
 };
 use crate::error::AppError;
-use crate::models::{cron_config, post};
+use crate::models::{content_pipeline, cron_config, post};
 use crate::services::content_formatter;
 use crate::AppState;
 
@@ -442,4 +442,36 @@ pub async fn generate_blog_from_study_guide(
             "locale": p.locale
         }
     })))
+}
+
+// ---------------------------------------------------------------------------
+// Content pipeline progress — where telegram_daily_post and prewarm start
+// ---------------------------------------------------------------------------
+
+pub async fn content_pipeline_progress(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    let rows = content_pipeline::list(&state.pool).await?;
+    Ok(Json(json!({ "success": true, "data": rows })))
+}
+
+#[derive(Deserialize)]
+pub struct SetStartPathBody {
+    /// Learning path id to start from, or null to clear the override and go
+    /// back to always picking the catalogue's earliest topic.
+    pub learning_path_id: Option<Uuid>,
+}
+
+pub async fn content_pipeline_set_start_path(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(job_name): Path<String>,
+    Json(body): Json<SetStartPathBody>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    let row =
+        content_pipeline::set_start_path(&state.pool, &job_name, body.learning_path_id).await?;
+    Ok(Json(json!({ "success": true, "data": row })))
 }
