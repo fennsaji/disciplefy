@@ -186,6 +186,8 @@ class AppTranslations {
         'delete': 'Delete',
         'edit': 'Edit',
         'open_settings': 'Open Settings',
+        'show_more': 'Show more',
+        'show_less': 'Show less',
       },
       'messages': {
         'error': 'An error occurred',
@@ -2368,6 +2370,8 @@ class AppTranslations {
         'delete': 'डिलीट करें',
         'edit': 'एडिट करें',
         'open_settings': 'सेटिंग्स खोलें',
+        'show_more': 'और देखें',
+        'show_less': 'कम देखें',
       },
       'messages': {
         'error': 'कुछ गड़बड़ हुई',
@@ -4555,6 +4559,8 @@ class AppTranslations {
         'delete': 'ഡിലീറ്റ് ചെയ്യൂ',
         'edit': 'എഡിറ്റ് ചെയ്യൂ',
         'open_settings': 'ക്രമീകരണങ്ങൾ തുറക്കുക',
+        'show_more': 'കൂടുതൽ കാണിക്കുക',
+        'show_less': 'കുറച്ച് കാണിക്കുക',
       },
       'messages': {
         'error': 'എന്തോ തെറ്റി',

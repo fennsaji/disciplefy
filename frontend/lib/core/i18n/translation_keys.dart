@@ -59,6 +59,8 @@ class TranslationKeys {
   static const commonSave = 'common.actions.save';
   static const commonDelete = 'common.actions.delete';
   static const commonEdit = 'common.actions.edit';
+  static const commonShowMore = 'common.actions.show_more';
+  static const commonShowLess = 'common.actions.show_less';
   static const commonOpenSettings = 'common.actions.open_settings';
 
   // ==========================================================================
