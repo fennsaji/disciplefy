@@ -205,6 +205,25 @@ class AuthStateProvider extends ChangeNotifier {
     return fallbackName;
   }
 
+  /// Like [profileBasedDisplayName], but empty when there is no real name to
+  /// show — i.e. when the only source is the email-derived guess or the
+  /// literal 'User'. Prefilling a name-edit field with a fabricated value
+  /// invites saving it as if the user had actually typed it.
+  String get profileBasedDisplayNameOrEmpty {
+    final profileName = _displayNameFromProfile(userProfile);
+    if (profileName != null) return profileName;
+
+    if (_currentState is auth_states.AuthenticatedState) {
+      final metadata =
+          (_currentState as auth_states.AuthenticatedState).user.userMetadata;
+      final metadataName = metadata?['full_name'] ?? metadata?['name'];
+      if (metadataName is String && metadataName.trim().isNotEmpty) {
+        return metadataName;
+      }
+    }
+    return '';
+  }
+
   /// Get user profile if available (with caching)
   Map<String, dynamic>? get userProfile {
     if (_currentState is auth_states.AuthenticatedState) {

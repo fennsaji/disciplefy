@@ -347,6 +347,12 @@ class TranslationKeys {
   // Settings Screen
   static const settingsTitle = 'settings.title';
   static const settingsAccount = 'settings.account';
+  static const settingsEditNameTitle = 'settings.edit_name_title';
+  static const settingsEditNameHint = 'settings.edit_name_hint';
+  static const settingsEditNameSave = 'settings.edit_name_save';
+  static const settingsEditNameSuccess = 'settings.edit_name_success';
+  static const settingsEditNameFailed = 'settings.edit_name_failed';
+  static const settingsEditNameInvalid = 'settings.edit_name_invalid';
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
   static const settingsSignInToSavePreferences =
       'settings.sign_in_to_save_preferences';

@@ -470,6 +470,12 @@ class AppTranslations {
     'settings': {
       'title': 'Settings',
       'account': 'Account',
+      'edit_name_title': 'Your name',
+      'edit_name_hint': 'Full name',
+      'edit_name_save': 'Save',
+      'edit_name_success': 'Name updated',
+      'edit_name_failed': "Couldn't update your name. Please try again.",
+      'edit_name_invalid': 'Enter at least 2 characters',
       'sign_in_to_sync': 'Sign in to sync your data',
       'sign_in_to_save_preferences': 'Sign in to save your preferences',
       'sign_in': 'Sign In',
@@ -2634,6 +2640,12 @@ class AppTranslations {
     'settings': {
       'title': 'सेटिंग्स',
       'account': 'खाता',
+      'edit_name_title': 'आपका नाम',
+      'edit_name_hint': 'पूरा नाम',
+      'edit_name_save': 'सेव करें',
+      'edit_name_success': 'नाम अपडेट हो गया',
+      'edit_name_failed': 'नाम अपडेट नहीं हो सका। कृपया दोबारा कोशिश करें।',
+      'edit_name_invalid': 'कम से कम 2 अक्षर दर्ज करें',
       'sign_in_to_sync': 'अपना डेटा सिंक करने के लिए साइन इन करें',
       'sign_in_to_save_preferences':
           'अपनी प्राथमिकताएं सहेजने के लिए साइन इन करें',
@@ -4821,6 +4833,12 @@ class AppTranslations {
     'settings': {
       'title': 'സെറ്റിങ്സ്',
       'account': 'അക്കൗണ്ട്',
+      'edit_name_title': 'നിങ്ങളുടെ പേര്',
+      'edit_name_hint': 'മുഴുവൻ പേര്',
+      'edit_name_save': 'സേവ് ചെയ്യുക',
+      'edit_name_success': 'പേര് അപ്ഡേറ്റ് ചെയ്തു',
+      'edit_name_failed': 'പേര് അപ്ഡേറ്റ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
+      'edit_name_invalid': 'ചുരുങ്ങിയത് 2 അക്ഷരമെങ്കിലും നൽകുക',
       'sign_in_to_sync': 'നിങ്ങളുടെ ഡാറ്റ സിങ്ക് ചെയ്യാൻ സൈൻ ഇൻ ചെയ്യുക',
       'sign_in_to_save_preferences':
           'നിങ്ങളുടെ മുൻഗണനകൾ സംരക്ഷിക്കാൻ സൈൻ ഇൻ ചെയ്യുക',
