@@ -252,16 +252,19 @@ class HttpService {
         return SessionRefreshOutcome.inconclusive;
       }
 
-      // Check if token is close to expiry (within 5 minutes)
-      final now = DateTime.now();
-      final expiryTime =
-          DateTime.fromMillisecondsSinceEpoch(currentSession.expiresAt! * 1000);
-
-      if (expiryTime.isAfter(now.add(const Duration(minutes: 5)))) {
-        Logger.debug('🔐 [HTTP] Token is still valid, no refresh needed');
-        return SessionRefreshOutcome.refreshed;
-      }
-
+      // Deliberately no "local expiry says it's still valid, skip the
+      // refresh" shortcut here. This is only ever called reactively, after
+      // the server has just returned 401 for a request made with this exact
+      // token — so the server has already told us the token is not valid
+      // *right now*, regardless of what the locally cached expiresAt claims
+      // (clock skew, an out-of-band revocation, a stale cached session).
+      // Trusting the local shortcut here meant a session that the server had
+      // actually killed could never reach a real refreshSession() call, so
+      // it could never be classified as `rejected` — the user stayed stuck
+      // in a "signed in" shell where every request 401ed forever, unable to
+      // sign in (never routed to login) or sign out (its own network call
+      // hit the same dead end).
+      //
       // Bounded, like the other refresh paths: a hung socket must not hold a
       // request open past its own timeout.
       final response = await supabase.auth
