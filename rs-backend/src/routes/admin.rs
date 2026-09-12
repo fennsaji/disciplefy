@@ -448,30 +448,37 @@ pub async fn generate_blog_from_study_guide(
 // Content pipeline progress — where telegram_daily_post and prewarm start
 // ---------------------------------------------------------------------------
 
-pub async fn content_pipeline_progress(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, AppError> {
-    verify_admin(&headers, &state).await?;
-    let rows = content_pipeline::list(&state.pool).await?;
-    Ok(Json(json!({ "success": true, "data": rows })))
-}
-
-#[derive(Deserialize)]
-pub struct SetStartPathBody {
-    /// Learning path id to start from, or null to clear the override and go
-    /// back to always picking the catalogue's earliest topic.
-    pub learning_path_id: Option<Uuid>,
-}
-
-pub async fn content_pipeline_set_start_path(
+pub async fn content_pipeline_overview(
     State(state): State<AppState>,
     headers: HeaderMap,
     Path(job_name): Path<String>,
-    Json(body): Json<SetStartPathBody>,
 ) -> Result<Json<Value>, AppError> {
     verify_admin(&headers, &state).await?;
-    let row =
-        content_pipeline::set_start_path(&state.pool, &job_name, body.learning_path_id).await?;
-    Ok(Json(json!({ "success": true, "data": row })))
+    let overview = content_pipeline::overview(&state.pool, &job_name).await?;
+    Ok(Json(json!({ "success": true, "data": overview })))
+}
+
+#[derive(Deserialize)]
+pub struct SetStartBody {
+    pub learning_path_id: Option<Uuid>,
+    /// Takes precedence over `learning_path_id`. Both null clears the override.
+    pub learning_path_topic_id: Option<Uuid>,
+}
+
+pub async fn content_pipeline_set_start(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(job_name): Path<String>,
+    Json(body): Json<SetStartBody>,
+) -> Result<Json<Value>, AppError> {
+    verify_admin(&headers, &state).await?;
+    content_pipeline::set_start(
+        &state.pool,
+        &job_name,
+        body.learning_path_id,
+        body.learning_path_topic_id,
+    )
+    .await?;
+    let overview = content_pipeline::overview(&state.pool, &job_name).await?;
+    Ok(Json(json!({ "success": true, "data": overview })))
 }

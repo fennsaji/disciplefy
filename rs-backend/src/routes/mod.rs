@@ -49,11 +49,11 @@ pub fn create_router() -> Router<AppState> {
             post(admin::generate_blog_from_study_guide),
         )
         .route(
-            "/api/v1/admin/content-pipeline/progress",
-            get(admin::content_pipeline_progress),
+            "/api/v1/admin/content-pipeline/:job_name",
+            get(admin::content_pipeline_overview),
         )
         .route(
-            "/api/v1/admin/content-pipeline/:job_name/start-path",
-            put(admin::content_pipeline_set_start_path),
+            "/api/v1/admin/content-pipeline/:job_name/start",
+            put(admin::content_pipeline_set_start),
         )
 }

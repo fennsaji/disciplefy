@@ -4,8 +4,6 @@ import { Fragment, useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { CronExpressionParser } from 'cron-parser'
 import { PageHeader } from '@/components/ui/page-header'
-import { listLearningPaths } from '@/lib/api/admin'
-import type { LearningPath } from '@/types/admin'
 
 interface CronConfig {
   name: string
@@ -18,21 +16,6 @@ interface CronConfig {
 interface CronStatus {
   is_running: boolean
   crons: CronConfig[]
-}
-
-interface ContentPipelineProgress {
-  job_name: string
-  start_learning_path_id: string | null
-  start_learning_path_title: string | null
-  updated_at: string
-  current_learning_path_id: string | null
-  current_learning_path_title: string | null
-  current_topic_title: string | null
-}
-
-const PIPELINE_JOB_LABELS: Record<string, string> = {
-  telegram_daily_post: 'Telegram channel post',
-  prewarm: 'Pre-warm (Batch API)',
 }
 
 const PRESETS = [
@@ -85,12 +68,6 @@ export default function CronsPage() {
   const [toggling, setToggling] = useState<string | null>(null)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
-  const [pipelineProgress, setPipelineProgress] = useState<ContentPipelineProgress[]>([])
-  const [pipelineLoading, setPipelineLoading] = useState(true)
-  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([])
-  const [pipelineSaving, setPipelineSaving] = useState<string | null>(null)
-  const [pipelineSelection, setPipelineSelection] = useState<Record<string, string>>({})
-
   const fetchStatus = useCallback(async () => {
     // Clear any pending poll so overlapping calls don't multiply timer chains
     if (pollRef.current) {
@@ -122,60 +99,6 @@ export default function CronsPage() {
     fetchStatus()
     return () => { if (pollRef.current) clearTimeout(pollRef.current) }
   }, [fetchStatus])
-
-  const fetchPipelineProgress = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/content-pipeline/progress')
-      if (!res.ok) throw new Error(await res.text())
-      const data = await res.json()
-      const rows: ContentPipelineProgress[] = data.data ?? []
-      setPipelineProgress(rows)
-      setPipelineSelection(
-        Object.fromEntries(
-          rows.map(r => [r.job_name, r.start_learning_path_id ?? r.current_learning_path_id ?? ''])
-        )
-      )
-    } catch {
-      toast.error('Failed to load content pipeline progress')
-    } finally {
-      setPipelineLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchPipelineProgress()
-    listLearningPaths()
-      .then(res => setLearningPaths(
-        [...res.learning_paths].sort((a, b) => a.display_order - b.display_order)
-      ))
-      .catch(() => toast.error('Failed to load learning paths'))
-  }, [fetchPipelineProgress])
-
-  const handleSaveStartPath = async (jobName: string) => {
-    const selected = pipelineSelection[jobName] ?? ''
-    setPipelineSaving(jobName)
-    try {
-      const res = await fetch(`/api/admin/content-pipeline/${jobName}/start-path`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learning_path_id: selected || null }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        throw new Error(d.error || 'Failed to save')
-      }
-      toast.success(
-        selected
-          ? `${PIPELINE_JOB_LABELS[jobName] ?? jobName} will now start from the selected path`
-          : `${PIPELINE_JOB_LABELS[jobName] ?? jobName} reset to the catalogue's earliest topic`
-      )
-      await fetchPipelineProgress()
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to save')
-    } finally {
-      setPipelineSaving(null)
-    }
-  }
 
   const handleToggle = async (cron: CronConfig) => {
     setToggling(cron.name)
@@ -420,70 +343,6 @@ export default function CronsPage() {
           </table>
         </div>
       )}
-
-      <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-        <h2 className="text-sm font-semibold text-white">Content pipeline position</h2>
-        <p className="mt-1 text-xs text-indigo-300/70">
-          Shows the learning path each job is currently working through. Pick a different
-          path and save to jump the job there — it continues forward from that path.
-        </p>
-        {pipelineLoading ? (
-          <div className="py-8 text-center text-sm text-indigo-400/60">Loading…</div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            {(['telegram_daily_post', 'prewarm'] as const).map(jobName => {
-              const row = pipelineProgress.find(p => p.job_name === jobName)
-              const baseline = row?.start_learning_path_id ?? row?.current_learning_path_id ?? ''
-              const selected = pipelineSelection[jobName] ?? ''
-              const isDirty = selected !== baseline
-              return (
-                <div
-                  key={jobName}
-                  className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      {PIPELINE_JOB_LABELS[jobName] ?? jobName}
-                    </p>
-                    <p className="mt-0.5 text-xs text-indigo-300/60">
-                      Currently on: {row?.current_learning_path_title ?? 'all topics covered'}
-                      {row?.current_topic_title ? ` — next: ${row.current_topic_title}` : ''}
-                    </p>
-                    {row?.start_learning_path_id && (
-                      <p className="mt-0.5 text-xs text-amber-400/80">
-                        Manual override active: {row.start_learning_path_title}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={selected}
-                      onChange={e =>
-                        setPipelineSelection(prev => ({ ...prev, [jobName]: e.target.value }))
-                      }
-                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
-                    >
-                      <option value="">Earliest (reset override)</option>
-                      {learningPaths.map(lp => (
-                        <option key={lp.id} value={lp.id}>
-                          {lp.display_order}. {lp.title}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleSaveStartPath(jobName)}
-                      disabled={pipelineSaving === jobName || !isDirty}
-                      className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-                    >
-                      {pipelineSaving === jobName ? 'Saving…' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
