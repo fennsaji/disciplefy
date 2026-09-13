@@ -11,6 +11,8 @@ const PAGE_SIZE = 50
 
 const FREQUENCY_LABELS: Record<number, string> = { 1: 'Daily', 2: 'every 2 days', 7: 'weekly' }
 
+const LANGUAGE_LABELS: Record<string, string> = { en: 'English', hi: 'Hindi', ml: 'Malayalam' }
+
 type TabType = 'fellowships' | 'activity'
 
 const TABS = [
@@ -289,8 +291,35 @@ function FellowshipsTab() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 uppercase">{f.language}</td>
-                      <td className="px-3 py-2">{f.max_members === null ? 'Unlimited' : `${f.member_count} / ${f.max_members}`}</td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={f.language}
+                          disabled={patchMutation.isPending}
+                          onChange={(e) => {
+                            const language = e.target.value
+                            if (language === f.language) return
+                            if (!confirm(`Change "${f.name}" to ${LANGUAGE_LABELS[language] ?? language}? Daily posts and Discipler replies will use the new language from now on.`)) {
+                              e.target.value = f.language
+                              return
+                            }
+                            patchMutation.mutate({ fellowship_id: f.id, language })
+                          }}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                        >
+                          {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                            <option key={code} value={code}>{label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <MemberLimitEditor
+                          key={`${f.id}-${f.max_members ?? 'unlimited'}`}
+                          memberCount={f.member_count}
+                          maxMembers={f.max_members}
+                          disabled={patchMutation.isPending}
+                          onSave={(maxMembers) => patchMutation.mutate({ fellowship_id: f.id, max_members: maxMembers })}
+                        />
+                      </td>
                       <td className="px-3 py-2">
                         <div className="flex flex-col gap-1">
                           {f.mentors.map((m) => (
@@ -541,6 +570,81 @@ function ActivityTab() {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Member limit for one fellowship: a whole number (at least 2) or unlimited.
+ * Lowering the limit below the current member count removes nobody; it only
+ * stops new people joining until the group is under the limit again.
+ */
+function MemberLimitEditor({
+  memberCount,
+  maxMembers,
+  disabled,
+  onSave,
+}: {
+  memberCount: number
+  maxMembers: number | null
+  disabled: boolean
+  onSave: (maxMembers: number | null) => void
+}) {
+  const [unlimited, setUnlimited] = useState(maxMembers === null)
+  const [value, setValue] = useState(String(maxMembers ?? Math.max(12, memberCount)))
+
+  const parsed = Number(value)
+  const valid = unlimited || (Number.isInteger(parsed) && parsed >= 2)
+  const next = unlimited ? null : parsed
+  const changed = valid && next !== maxMembers
+
+  const save = () => {
+    if (!changed) return
+    if (next !== null && next < memberCount &&
+      !confirm(`This group already has ${memberCount} members. Nobody is removed, but no one new can join until it is under ${next}. Continue?`)) {
+      return
+    }
+    onSave(next)
+  }
+
+  return (
+    <div className="flex min-w-[11rem] flex-col gap-1.5">
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+        {memberCount} {memberCount === 1 ? 'member' : 'members'}
+      </span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min={2}
+          step={1}
+          value={unlimited ? '' : value}
+          placeholder="∞"
+          disabled={disabled || unlimited}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save() }}
+          aria-label="Member limit"
+          className="w-20 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+        />
+        <label className="flex items-center gap-1 text-xs">
+          <input
+            type="checkbox"
+            checked={unlimited}
+            disabled={disabled}
+            onChange={(e) => setUnlimited(e.target.checked)}
+          />
+          Unlimited
+        </label>
+        {changed && (
+          <button
+            onClick={save}
+            disabled={disabled}
+            className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+          >
+            Save
+          </button>
+        )}
+      </div>
+      {!valid && <span className="text-xs text-red-600 dark:text-red-400">Enter 2 or more</span>}
     </div>
   )
 }

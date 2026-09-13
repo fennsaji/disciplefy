@@ -158,6 +158,21 @@ export async function PATCH(request: NextRequest) {
   for (const k of ['is_official', 'discipler_allowed', 'daily_post_allowed', 'is_public', 'is_active'] as const) {
     if (typeof body[k] === 'boolean') updates[k] = body[k]
   }
+  // Language and member limit are admin-only settings; mentors cannot change
+  // them from the app.
+  if (body.language !== undefined) {
+    if (!LANGUAGES.includes(body.language)) {
+      return NextResponse.json({ error: 'language must be en, hi or ml' }, { status: 400 })
+    }
+    updates.language = body.language
+  }
+  if (body.max_members !== undefined) {
+    // null = unlimited. The table requires at least 2 when a limit is set.
+    if (body.max_members !== null && (!Number.isInteger(body.max_members) || body.max_members < 2)) {
+      return NextResponse.json({ error: 'max_members must be a whole number of at least 2, or null for unlimited' }, { status: 400 })
+    }
+    updates.max_members = body.max_members
+  }
   // Discipler is granted per fellowship and is deliberately independent of
   // is_official: an admin may enable it for any group.
   const { data: current } = await supabaseAdmin.from('fellowships').select('id').eq('id', body.fellowship_id).single()
