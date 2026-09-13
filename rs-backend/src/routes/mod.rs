@@ -56,4 +56,8 @@ pub fn create_router() -> Router<AppState> {
             "/api/v1/admin/content-pipeline/:job_name/start",
             put(admin::content_pipeline_set_start),
         )
+        .route(
+            "/api/v1/admin/content-pipeline/:job_name/paths/:learning_path_id/reset",
+            post(admin::content_pipeline_reset_path),
+        )
 }
