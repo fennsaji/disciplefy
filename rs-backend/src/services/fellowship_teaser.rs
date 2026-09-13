@@ -12,8 +12,9 @@ use uuid::Uuid;
 use crate::config::Config;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
-const MAX_HOOK_CHARS: usize = 120;
-const MAX_BODY_CHARS: usize = 300;
+// Same ceilings the edge function enforces (parseDailyTeaserOutput).
+const MAX_HOOK_CHARS: usize = 100;
+const MAX_BODY_CHARS: usize = 200;
 
 #[derive(Debug, Clone)]
 pub struct Teaser {
@@ -38,7 +39,6 @@ pub struct TeaserRequest<'a> {
     pub language: &'a str,
     pub summary: &'a str,
     pub verse: Option<&'a str>,
-    pub question: Option<&'a str>,
 }
 
 /// JSON body for `fellowship-posts/daily-teaser`. `topic_id` is what the edge
@@ -53,7 +53,6 @@ fn request_body(req: &TeaserRequest<'_>) -> serde_json::Value {
         "language": req.language,
         "summary": req.summary,
         "verse": req.verse,
-        "question": req.question,
     })
 }
 
@@ -133,11 +132,10 @@ mod tests {
             language: "hi",
             summary: "s",
             verse: None,
-            question: Some("q"),
         });
         assert_eq!(body["topic_id"], topic_id.to_string());
         assert_eq!(body["language"], "hi");
-        assert_eq!(body["question"], "q");
+        assert!(body.get("question").is_none());
         assert!(body["verse"].is_null());
     }
 }

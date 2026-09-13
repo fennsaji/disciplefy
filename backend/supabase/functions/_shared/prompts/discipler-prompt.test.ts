@@ -68,24 +68,30 @@ Deno.test('teaser system prompt carries theological foundation and JSON contract
   assertEquals(p.includes('"body"'), true)
 })
 
-Deno.test('teaser user message includes language, topic, summary, verse and question', () => {
+Deno.test('teaser user message includes language, topic, summary and verse', () => {
   const m = buildDailyTeaserUserMessage({
     topicTitle: 'Your Identity in Christ', pathTitle: 'Rooted in Christ', language: 'hi',
-    summary: 'You are a new creation in Christ.', verse: 'Romans 8:28', question: 'Where do you doubt this?',
+    summary: 'You are a new creation in Christ.', verse: 'Romans 8:28',
   })
   assertEquals(m.includes('Hindi (Devanagari script)'), true)
   assertEquals(m.includes('Your Identity in Christ'), true)
   assertEquals(m.includes('Rooted in Christ'), true)
   assertEquals(m.includes('Romans 8:28'), true)
-  assertEquals(m.includes('Where do you doubt this?'), true)
+  assertEquals(m.includes('Reflection question'), false)
 })
 
-Deno.test('teaser user message omits optional verse/question when absent', () => {
+Deno.test('teaser user message omits the verse when absent', () => {
   const m = buildDailyTeaserUserMessage({
     topicTitle: 'Grace', pathTitle: 'Foundations', language: 'en', summary: 'Grace summary.',
   })
   assertEquals(m.includes('Reference'), false)
-  assertEquals(m.includes('Reflection question'), false)
+})
+
+Deno.test('teaser system prompt asks for a short, single-sentence body with no question', () => {
+  const p = buildDailyTeaserSystemPrompt()
+  assertEquals(p.includes('at most 60 characters'), true)
+  assertEquals(p.includes('exactly ONE complete sentence'), true)
+  assertEquals(p.includes('Do NOT ask a question'), true)
 })
 
 Deno.test('parseDailyTeaserOutput accepts a fenced valid response', () => {
@@ -103,8 +109,22 @@ Deno.test('parseDailyTeaserOutput rejects bad JSON', () => {
 Deno.test('parseDailyTeaserOutput rejects empty or over-length fields', () => {
   assertThrows(() => parseDailyTeaserOutput('{"hook":"","body":"x"}'))
   assertThrows(() => parseDailyTeaserOutput('{"hook":"x","body":""}'))
-  const longHook = 'a'.repeat(121)
-  assertThrows(() => parseDailyTeaserOutput(`{"hook":"${longHook}","body":"x"}`))
-  const longBody = 'b'.repeat(301)
+  const longHook = 'a'.repeat(101)
+  assertThrows(() => parseDailyTeaserOutput(`{"hook":"${longHook}","body":"x."}`))
+  const longBody = 'b'.repeat(200) + '.'
   assertThrows(() => parseDailyTeaserOutput(`{"hook":"x","body":"${longBody}"}`))
+})
+
+Deno.test('parseDailyTeaserOutput rejects a body cut off mid-sentence', () => {
+  // The shape a token-limited response takes after truncation repair.
+  assertThrows(
+    () => parseDailyTeaserOutput('{"hook":"നിന്റെ വിശ്വാസം","body":"ഫിലിപ്പിയർ 2:5-11 നമ്മെ കാണിക്കുന്നത് ഈ സ"}'),
+    Error,
+    'cut off',
+  )
+})
+
+Deno.test('parseDailyTeaserOutput accepts bodies ending in Hindi or Malayalam punctuation', () => {
+  assertEquals(parseDailyTeaserOutput('{"hook":"आज","body":"यीशु आपको जानता है।"}').body, 'यीशु आपको जानता है।')
+  assertEquals(parseDailyTeaserOutput('{"hook":"ഇന്ന്","body":"യേശു നിന്നെ അറിയുന്നു."}').body, 'യേശു നിന്നെ അറിയുന്നു.')
 })

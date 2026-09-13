@@ -128,7 +128,6 @@ export interface DailyTeaserPromptInput {
   language: 'en' | 'hi' | 'ml'
   summary: string
   verse?: string
-  question?: string
 }
 
 export interface DailyTeaserOutput {
@@ -156,8 +155,9 @@ TASK: Write a short teaser that makes a member want to open today's study post. 
 AUDIENCE & TONE: A small church WhatsApp-style group reading on a phone. Warm, direct — like a friend who just read something that moved them. Write in second person.
 
 RULES:
-- "hook": ONE sentence, at most 90 characters. No emoji, no quotation marks, no exclamation-mark spam. Do not restate the topic title. Name a tension or a felt need that the lesson answers (e.g. "You're not what your worst day says you are.").
-- "body": 1–2 sentences, at most 220 characters. Tie it to ordinary life — work, family, worry, a daily habit. Do NOT summarise the study guide. Do NOT quote the verse text (copyright) — you may name the Bible reference. No promises of health, wealth, or outcomes. No unbiblical claims.
+- Keep it SHORT. It is a teaser, not a summary — a few seconds to read.
+- "hook": ONE short sentence, at most 60 characters. No emoji, no quotation marks, no exclamation-mark spam. Do not restate the topic title. Name a tension or a felt need that the lesson answers (e.g. "You're not what your worst day says you are.").
+- "body": exactly ONE complete sentence, at most 120 characters, ending with a full stop. Tie it to ordinary life — work, family, worry, a daily habit. Do NOT ask a question. Do NOT summarise the study guide. Do NOT quote the verse text (copyright). No promises of health, wealth, or outcomes. No unbiblical claims.
 - Write entirely in the requested language's native script. Never mix languages within the response.
 - Output strictly the JSON object above and nothing else — no markdown fences, no commentary.`
 }
@@ -170,9 +170,13 @@ export function buildDailyTeaserUserMessage(input: DailyTeaserPromptInput): stri
     `Summary (for grounding only — do not quote or summarise it back):\n${input.summary}`,
   ]
   if (input.verse) lines.push(`Reference (name only, never quote the text): ${input.verse}`)
-  if (input.question) lines.push(`Reflection question (for grounding only): ${input.question}`)
   return lines.join('\n\n')
 }
+
+/** Hard ceilings, with headroom over the prompt's 60 / 120 for longer scripts. */
+export const TEASER_MAX_HOOK_CHARS = 100
+export const TEASER_MAX_BODY_CHARS = 200
+const TEASER_SENTENCE_END = /[.!?।॥…]["'”’)]*$/u
 
 export function parseDailyTeaserOutput(raw: string): DailyTeaserOutput {
   let parsed: Record<string, unknown>
@@ -183,11 +187,17 @@ export function parseDailyTeaserOutput(raw: string): DailyTeaserOutput {
   }
   const hook = parsed.hook
   const body = parsed.body
-  if (typeof hook !== 'string' || hook.trim().length === 0 || hook.trim().length > 120) {
+  if (typeof hook !== 'string' || hook.trim().length === 0 || hook.trim().length > TEASER_MAX_HOOK_CHARS) {
     throw new Error('TEASER_PARSE: bad hook')
   }
-  if (typeof body !== 'string' || body.trim().length === 0 || body.trim().length > 300) {
+  if (typeof body !== 'string' || body.trim().length === 0 || body.trim().length > TEASER_MAX_BODY_CHARS) {
     throw new Error('TEASER_PARSE: bad body')
+  }
+  // A body that stops mid-word is a response cut off at the token limit and
+  // patched into valid JSON by the parser's truncation repair — reject it so
+  // the caller falls back to its plain template instead of posting "... ഈ സ".
+  if (!TEASER_SENTENCE_END.test(body.trim())) {
+    throw new Error('TEASER_PARSE: body cut off')
   }
   return { hook: hook.trim(), body: body.trim() }
 }

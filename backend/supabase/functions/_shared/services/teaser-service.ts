@@ -23,7 +23,6 @@ export interface TeaserLesson {
   language: TeaserLanguage
   summary: string
   verse?: string
-  question?: string
 }
 
 export interface Teaser {
@@ -132,7 +131,7 @@ export async function getOrCreateTeaser(
     systemMessage: buildDailyTeaserSystemPrompt(),
     userMessage: buildDailyTeaserUserMessage({
       topicTitle: lesson.topicTitle, pathTitle: lesson.pathTitle, language: lesson.language,
-      summary: lesson.summary, verse: lesson.verse, question: lesson.question,
+      summary: lesson.summary, verse: lesson.verse,
     }),
   }, lesson.language)
   const out = parseDailyTeaserOutput(result.content)

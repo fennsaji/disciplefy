@@ -116,7 +116,6 @@ createServiceRoleFunction(async (req, supabase) => {
     // these too, so whichever surface generates a lesson's teaser first
     // produces the same wording quality — and the other reuses it.
     verse: next.verse ?? undefined,
-    question: next.question ?? undefined,
   }, TELEGRAM_AUDIENCE)
 
   const message = buildTelegramMessage({

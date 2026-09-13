@@ -18,12 +18,17 @@ class StudyGuideChip extends StatefulWidget {
   final String? inputValue;
   final String? language;
 
+  /// When set, renders a filled call-to-action button with this fixed label
+  /// above the guide [title], instead of the quiet outlined row.
+  final String? actionLabel;
+
   const StudyGuideChip({
     this.studyGuideId,
     required this.title,
     this.inputType,
     this.inputValue,
     this.language,
+    this.actionLabel,
     super.key,
   });
 
@@ -82,6 +87,8 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.actionLabel != null) return _buildActionButton(context);
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = context.appPrimary;
     final borderColor = accent.withAlpha(isDark ? 55 : 45);
@@ -130,6 +137,73 @@ class _StudyGuideChipState extends State<StudyGuideChip> {
               color: accent.withAlpha(160),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context) {
+    final accent = context.appPrimary;
+    const onAccent = Colors.white;
+
+    return Material(
+      color: accent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: _loading ? null : _navigate,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: onAccent,
+                      ),
+                    )
+                  : const Icon(Icons.menu_book_rounded,
+                      size: 20, color: onAccent),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.actionLabel!,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: onAccent,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: onAccent.withAlpha(220),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward_rounded,
+                  size: 20, color: onAccent),
+            ],
+          ),
         ),
       ),
     );

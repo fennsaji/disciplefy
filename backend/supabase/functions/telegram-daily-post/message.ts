@@ -20,7 +20,7 @@ export const BLOG_BASE_URL = 'https://www.disciplefy.in/blog'
  * The body is sent whole — a reader on Telegram gets the same thought a member
  * gets in the app, and the link is for the full study, not for the rest of a
  * sentence. Telegram's own limit is 4096 characters and hook + body are capped
- * at 90 + 220 by the prompt, so nothing here needs trimming.
+ * at 100 + 200 by parseDailyTeaserOutput, so nothing here needs trimming.
  */
 export function buildTelegramMessage(lesson: TelegramLesson): string {
   return [

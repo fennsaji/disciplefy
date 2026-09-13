@@ -243,7 +243,7 @@ fn first_sentences(text: &str, n: usize) -> String {
     out.trim().to_string()
 }
 
-/// First 2 sentences of the summary section, the reflection question, and the
+/// First sentence of the summary section, the reflection question, and the
 /// first related verse reference — the fields shared by the plain-template
 /// daily post and the teaser request built from the same guide.
 pub(crate) fn extract_daily_fields(
@@ -252,7 +252,7 @@ pub(crate) fn extract_daily_fields(
     let summary = guide
         .sections
         .get("summary")
-        .map(|s| first_sentences(s, 2))
+        .map(|s| first_sentences(s, 1))
         .unwrap_or_default();
 
     let question = guide
@@ -306,9 +306,6 @@ pub fn format_daily_post(
     if let Some(v) = &verse {
         content.push_str(&format!("\n\n✝️ {}", v));
     }
-    if let Some(q) = &question {
-        content.push_str(&format!("\n\n💬 {}", q));
-    }
 
     let content: String = content.chars().take(1900).collect();
     DailyPostContent {
@@ -352,19 +349,20 @@ mod daily_tests {
     fn builds_english_daily_post_without_teaser() {
         let d = format_daily_post("Walking by Faith", &guide(), "en", None);
         assert!(d.content.starts_with("📖 Walking by Faith\n\n"));
-        assert!(d.content.contains(
-            "Paul reminds the Corinthians that trust outlasts sight. Faith is sight fixed on the eternal."
-        ));
-        assert!(!d.content.contains("A third sentence"));
+        assert!(d
+            .content
+            .contains("Paul reminds the Corinthians that trust outlasts sight."));
+        assert!(!d.content.contains("Faith is sight fixed on the eternal."));
         assert_eq!(d.verse.as_deref(), Some("2 Corinthians 5:7"));
         assert_eq!(
             d.question.as_deref(),
             Some("When has faith carried you past what you could see?")
         );
         assert!(!d.content.contains("Open the full study"));
-        assert!(d
-            .content
-            .ends_with("When has faith carried you past what you could see?"));
+        // The reflection question stays in the guide, not the post.
+        assert!(!d.content.contains("💬"));
+        assert!(!d.content.contains("When has faith carried you"));
+        assert!(d.content.ends_with("✝️ 2 Corinthians 5:7"));
     }
 
     #[test]
