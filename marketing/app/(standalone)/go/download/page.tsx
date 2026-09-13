@@ -1,12 +1,9 @@
-// Generic "get the app" landing page, served at go.disciplefy.in/download
-// (see middleware.ts).
+// Generic "get the app" page for go.disciplefy.in/download.
 //
-// Unlike the other /go pages, this one carries no specific content to open —
-// there is no in-app screen a "download" link deep-links into — so it skips
-// OpenInApp's intent:// resolution (which only works for a path the app
-// itself has a registered App Link for) and just offers the three real
-// destinations directly, the same choice links.disciplefy.in gives, styled
-// to match the rest of the go.* pages.
+// Real visitors never see it: middleware.ts redirects them to Google Play,
+// the App Store, or the web app by user agent. It is served to link-preview
+// crawlers (so a shared link keeps its title and image) and remains the
+// manual fallback, offering the same three destinations.
 import type { Metadata } from "next";
 import { Wordmark } from "@/components/go/Wordmark";
 import {
