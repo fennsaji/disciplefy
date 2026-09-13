@@ -31,24 +31,26 @@ void main() {
     expect(find.textContaining('fully God and fully man'), findsNothing);
   });
 
-  testWidgets('study guide chip with an action label renders a filled button',
+  testWidgets(
+      'study guide chip with an action label shows the title above the label, in the accent',
       (tester) async {
+    const gold = Color(0xFF8B6914);
     await tester.pumpWidget(_wrap(
       const StudyGuideChip(
         title: 'Who is Jesus Christ?',
         actionLabel: 'Open Study Guide',
+        accent: gold,
       ),
     ));
 
-    expect(find.text('Open Study Guide'), findsOneWidget);
-    expect(find.text('Who is Jesus Christ?'), findsOneWidget);
+    final title = find.text('Who is Jesus Christ?');
+    final label = find.text('Open Study Guide');
+    expect(title, findsOneWidget);
+    expect(label, findsOneWidget);
+    expect(tester.getTopLeft(title).dy, lessThan(tester.getTopLeft(label).dy),
+        reason: 'the guide title leads; the action label sits under it');
+    expect(tester.widget<Text>(label).style?.color, gold);
     expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
-
-    final material = tester.widget<Material>(find
-        .ancestor(
-            of: find.text('Open Study Guide'), matching: find.byType(Material))
-        .first);
-    expect(material.color, AppTheme.lightTheme.colorScheme.primary);
   });
 
   testWidgets('study guide chip without an action label keeps the quiet row',

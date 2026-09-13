@@ -156,8 +156,8 @@ class DailyPostCard extends StatelessWidget {
           DailyPostBody(content: post.content, accent: accent),
 
           const SizedBox(height: 12),
-          // Filled, labelled call to action: the guide is what the post is
-          // for, and a plain outlined row read as decoration, not a link.
+          // Labelled call to action in the card's own gold: the guide is what
+          // the post is for, and a plain outlined row read as decoration.
           StudyGuideChip(
             studyGuideId: post.studyGuideId,
             title: post.guideTitle ?? post.topicTitle ?? l10n.openFullStudy,
@@ -165,6 +165,7 @@ class DailyPostCard extends StatelessWidget {
             inputValue: post.topicTitle,
             language: post.guideLanguage,
             actionLabel: l10n.openStudyGuide,
+            accent: accent,
           ),
           const SizedBox(height: 12),
 
